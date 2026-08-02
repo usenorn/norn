@@ -1,0 +1,123 @@
+package dashboard
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+
+	"github.com/usenorn/norn/internal/config"
+	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/pkg/identity"
+	"github.com/usenorn/norn/internal/repository"
+	"github.com/usenorn/norn/internal/service"
+	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
+)
+
+type handler struct {
+	accounts   service.Accounts
+	workspaces service.Workspaces
+	sessions   service.Sessions
+	blobs      repository.Blob
+	app        config.App
+	session    config.Session
+}
+
+func New(
+	accounts service.Accounts,
+	workspaces service.Workspaces,
+	sessions service.Sessions,
+	blobs repository.Blob,
+	app config.App,
+	session config.Session,
+) api.StrictServerInterface {
+	return &handler{
+		accounts:   accounts,
+		workspaces: workspaces,
+		sessions:   sessions,
+		blobs:      blobs,
+		app:        app,
+		session:    session,
+	}
+}
+
+func (h *handler) GetHealth(_ context.Context, _ api.GetHealthRequestObject) (api.GetHealthResponseObject, error) {
+	return api.GetHealth200JSONResponse{Status: api.Ok, Version: h.app.Version}, nil
+}
+
+func (h *handler) SignIn(ctx context.Context, request api.SignInRequestObject) (api.SignInResponseObject, error) {
+	issued, err := h.sessions.SignIn(ctx, service.SignInInput{
+		Email:    request.Body.Email,
+		Password: request.Body.Password,
+		Client:   middleware.ClientFrom(ctx),
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	cookie := middleware.IssuedSessionCookie(h.session, issued.Token).String()
+
+	return api.SignIn204Response{Headers: api.SignIn204ResponseHeaders{SetCookie: &cookie}}, nil
+}
+
+func (h *handler) RequestPasswordReset(ctx context.Context, request api.RequestPasswordResetRequestObject) (api.RequestPasswordResetResponseObject, error) {
+	expiresAt, err := h.accounts.RequestPasswordReset(ctx, service.RequestPasswordResetInput{
+		Email:  request.Body.Email,
+		Client: middleware.ClientFrom(ctx),
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.RequestPasswordReset202JSONResponse{ExpiresAt: expiresAt}, nil
+}
+
+func (h *handler) ConfirmPasswordReset(ctx context.Context, request api.ConfirmPasswordResetRequestObject) (api.ConfirmPasswordResetResponseObject, error) {
+	if err := h.accounts.ConfirmPasswordReset(ctx, request.Body.Token, request.Body.Password); err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	cookie := middleware.ExpiredSessionCookie(h.session).String()
+
+	return api.ConfirmPasswordReset204Response{
+		Headers: api.ConfirmPasswordReset204ResponseHeaders{SetCookie: &cookie},
+	}, nil
+}
+
+func (h *handler) SignOut(ctx context.Context, _ api.SignOutRequestObject) (api.SignOutResponseObject, error) {
+	session, ok := identity.CurrentSession(ctx)
+	if !ok {
+		return unauthorized(), nil
+	}
+
+	if err := h.sessions.SignOut(ctx, session.ID); err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	cookie := middleware.ExpiredSessionCookie(h.session).String()
+
+	return api.SignOut204Response{Headers: api.SignOut204ResponseHeaders{SetCookie: &cookie}}, nil
+}
+
+func (h *handler) currentAccountID(ctx context.Context) (uuid.UUID, bool) {
+	return identity.From(ctx)
+}
+
+func (h *handler) avatarURL(key string) string {
+	return h.blobs.URL(key)
+}

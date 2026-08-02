@@ -1,0 +1,11 @@
+.idea/
+.DS_Store
+
+.env
+.env.*
+!.env.example
+
+/norn
+*.test
+coverage.out
+*.prof

@@ -1,0 +1,13 @@
+wipe = true
+no-tests = true
+output = "internal/db/postgres"
+pkgname = "dbpostgres"
+
+[psql]
+blacklist = ["goose_db_version", "casbin_rule"]
+host = "127.0.0.1"
+port = 5433
+dbname = "norn"
+user = "norn"
+pass = "norn"
+sslmode = "disable"
