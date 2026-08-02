@@ -1,0 +1,9 @@
+Hi {{ .DisplayName }},
+
+Confirm {{ .NewEmail }} as the address for your Norn account by opening this link:
+
+{{ .ConfirmURL }}
+
+The link expires in {{ .ExpiresInHours }} hours. Until you confirm, your current address stays active.
+
+If you did not request this change, ignore this message.

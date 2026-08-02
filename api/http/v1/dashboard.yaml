@@ -1,0 +1,853 @@
+openapi: 3.0.3
+info:
+  title: Norn Dashboard API
+  version: 1.0.0
+servers:
+  - url: /v1
+security:
+  - sessionCookie: []
+tags:
+  - name: health
+  - name: auth
+  - name: accounts
+  - name: sessions
+  - name: workspaces
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getHealth
+      summary: Report service liveness
+      security: []
+      responses:
+        '200':
+          description: The service is reachable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+
+  /auth/register:
+    post:
+      tags: [auth]
+      operationId: registerAccount
+      summary: Create an instance-level account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterAccountRequest' }
+      responses:
+        '201':
+          description: The account was created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: signIn
+      summary: Exchange credentials for a session cookie
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SignInRequest' }
+      responses:
+        '204':
+          description: A session cookie was issued
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/SignInRejected' }
+        '423': { $ref: '#/components/responses/AccountLocked' }
+        '429': { $ref: '#/components/responses/TooManyAttempts' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /auth/password-reset:
+    post:
+      tags: [auth]
+      operationId: requestPasswordReset
+      summary: Email a single-use password reset link
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RequestPasswordResetRequest' }
+      responses:
+        '202':
+          description: A link was sent if the address has an account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PasswordResetRequested' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/TooManyAttempts' }
+        '503': { $ref: '#/components/responses/MailUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /auth/password-reset/confirm:
+    post:
+      tags: [auth]
+      operationId: confirmPasswordReset
+      summary: Set a new password with the emailed token, ending every session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfirmPasswordResetRequest' }
+      responses:
+        '204':
+          description: The password was replaced and every session ended
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '400': { $ref: '#/components/responses/PasswordResetLinkExpired' }
+        '409': { $ref: '#/components/responses/PasswordResetLinkUsed' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/TooManyAttempts' }
+        '503': { $ref: '#/components/responses/BreachCheckUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: signOut
+      summary: Discard the current session
+      responses:
+        '204':
+          description: The session was discarded
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /accounts/me:
+    get:
+      tags: [accounts]
+      operationId: getCurrentAccount
+      summary: Read the signed-in account
+      responses:
+        '200':
+          description: The signed-in account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [accounts]
+      operationId: updateCurrentAccount
+      summary: Update display name and timezone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProfileRequest' }
+      responses:
+        '200':
+          description: The updated account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [accounts]
+      operationId: deleteCurrentAccount
+      summary: Delete the account and anonymize its authored content
+      responses:
+        '204':
+          description: The account was anonymized
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /accounts/me/deactivate:
+    post:
+      tags: [accounts]
+      operationId: deactivateCurrentAccount
+      summary: Deactivate the account while preserving its authored content
+      responses:
+        '200':
+          description: The deactivated account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /accounts/me/password:
+    post:
+      tags: [accounts]
+      operationId: setPassword
+      summary: Establish a password for an account created without one
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetPasswordRequest' }
+      responses:
+        '204':
+          description: The password was established and the session was rotated
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/BreachCheckUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [accounts]
+      operationId: changePassword
+      summary: Replace the current password, revoking every other session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangePasswordRequest' }
+      responses:
+        '204':
+          description: The password was replaced and the session was rotated
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/BreachCheckUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /accounts/me/email-change:
+    get:
+      tags: [accounts]
+      operationId: getPendingEmailChange
+      summary: Read the pending email change, if any
+      responses:
+        '200':
+          description: The pending email change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmailChange' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [accounts]
+      operationId: requestEmailChange
+      summary: Request a new address, which stays pending until confirmed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RequestEmailChangeRequest' }
+      responses:
+        '202':
+          description: The change is pending confirmation of the new address
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmailChange' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /accounts/email-change/confirm:
+    post:
+      tags: [accounts]
+      operationId: confirmEmailChange
+      summary: Confirm a pending email change with the emailed token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfirmEmailChangeRequest' }
+      responses:
+        '200':
+          description: The account now uses the confirmed address
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /accounts/me/avatar:
+    put:
+      tags: [accounts]
+      operationId: uploadAvatar
+      summary: Replace the account avatar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: The account with its new avatar
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '415': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [accounts]
+      operationId: removeAvatar
+      summary: Remove the account avatar
+      responses:
+        '200':
+          description: The account without an avatar
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /sessions:
+    get:
+      tags: [sessions]
+      operationId: listSessions
+      summary: List the signed-in account's active sessions
+      responses:
+        '200':
+          description: The account's active sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Session' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [sessions]
+      operationId: revokeAllSessions
+      summary: Revoke every session for the account, including the current one
+      responses:
+        '204':
+          description: Every session was revoked
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /sessions/{sessionId}:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [sessions]
+      operationId: revokeSession
+      summary: Revoke a single session immediately
+      responses:
+        '204':
+          description: The session was revoked
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/auth-policy:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [workspaces]
+      operationId: getWorkspaceAuthPolicy
+      summary: Read which authentication methods the workspace accepts
+      responses:
+        '200':
+          description: The workspace authentication policy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAuthPolicy' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [workspaces]
+      operationId: setWorkspaceAuthPolicy
+      summary: Set which authentication methods the workspace accepts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetWorkspaceAuthPolicyRequest' }
+      responses:
+        '200':
+          description: The updated workspace authentication policy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAuthPolicy' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces:
+    get:
+      tags: [workspaces]
+      operationId: listWorkspaces
+      summary: List the workspaces the signed-in account belongs to
+      responses:
+        '200':
+          description: The workspaces held by the account
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Workspace' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [workspaces]
+      operationId: createWorkspace
+      summary: Create a workspace with the signed-in account as its administrator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateWorkspaceRequest' }
+      responses:
+        '201':
+          description: The created workspace
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/members:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [workspaces]
+      operationId: listWorkspaceMembers
+      summary: List workspace members
+      responses:
+        '200':
+          description: The workspace members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Membership' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [workspaces]
+      operationId: addWorkspaceMember
+      summary: Add an account to the workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddMemberRequest' }
+      responses:
+        '201':
+          description: The created membership
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Membership' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/members/{accountId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AccountId'
+    patch:
+      tags: [workspaces]
+      operationId: changeWorkspaceMemberRole
+      summary: Change a member role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangeMemberRoleRequest' }
+      responses:
+        '200':
+          description: The updated membership
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Membership' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [workspaces]
+      operationId: removeWorkspaceMember
+      summary: Remove a member from the workspace
+      responses:
+        '204':
+          description: The member was removed
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: norn_session
+
+  parameters:
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    Problem:
+      description: A problem occurred
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+    SignInRejected:
+      description: The email and password did not match
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/InvalidCredentialsProblem' }
+
+    AccountLocked:
+      description: Consecutive failures locked the account
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/AccountLockedProblem' }
+
+    TooManyAttempts:
+      description: The caller exceeded the attempt limit for its address
+      headers:
+        Retry-After:
+          schema: { type: integer, format: int32 }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/RateLimitedProblem' }
+
+    PasswordResetLinkExpired:
+      description: The reset link expired, was superseded, or is unrecognised
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ResetLinkExpiredProblem' }
+
+    PasswordResetLinkUsed:
+      description: The reset link was already used
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ResetLinkUsedProblem' }
+
+    MailUnavailable:
+      description: The instance is not configured to send mail
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/MailUnavailableProblem' }
+
+    BreachCheckUnavailable:
+      description: The password breach check could not be completed
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/BreachCheckUnavailableProblem' }
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer, format: int32 }
+        detail: { type: string }
+        instance: { type: string }
+        errors:
+          type: array
+          items: { $ref: '#/components/schemas/FieldError' }
+
+    FieldError:
+      type: object
+      required: [field, code]
+      properties:
+        field: { type: string }
+        code: { type: string }
+
+    InvalidCredentialsProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code, attemptsLeft]
+          properties:
+            code: { type: string, enum: [invalid_credentials] }
+            attemptsLeft: { type: integer, format: int32, minimum: 0 }
+
+    AccountLockedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code, unlocksAt]
+          properties:
+            code: { type: string, enum: [account_locked] }
+            unlocksAt: { type: string, format: date-time }
+
+    RateLimitedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [rate_limited] }
+
+    ResetLinkExpiredProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [reset_link_expired] }
+
+    ResetLinkUsedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [reset_link_used] }
+
+    MailUnavailableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [mail_unavailable] }
+
+    BreachCheckUnavailableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [breach_check_unavailable] }
+
+    RequestPasswordResetRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+
+    PasswordResetRequested:
+      type: object
+      required: [expiresAt]
+      properties:
+        expiresAt: { type: string, format: date-time }
+
+    ConfirmPasswordResetRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token: { type: string }
+        password: { type: string }
+
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status: { type: string, enum: [ok] }
+        version: { type: string }
+
+    AccountStatus:
+      type: string
+      enum: [active, deactivated, deleted]
+
+    MembershipRole:
+      type: string
+      enum: [admin, member]
+
+    SessionAuthMethod:
+      type: string
+      enum: [password, sso]
+
+    AuthEnforcement:
+      type: string
+      enum: [any, sso]
+
+    SessionLocation:
+      type: object
+      properties:
+        countryCode: { type: string }
+        city: { type: string }
+
+    SessionClient:
+      type: object
+      properties:
+        userAgent: { type: string }
+        ip: { type: string }
+        location: { $ref: '#/components/schemas/SessionLocation' }
+
+    Session:
+      type: object
+      required: [id, authMethod, client, issuedAt, lastUsedAt, expiresAt, current]
+      properties:
+        id: { type: string, format: uuid }
+        authMethod: { $ref: '#/components/schemas/SessionAuthMethod' }
+        client: { $ref: '#/components/schemas/SessionClient' }
+        issuedAt: { type: string, format: date-time }
+        lastUsedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        current: { type: boolean }
+
+    WorkspaceAuthPolicy:
+      type: object
+      required: [workspaceId, enforcement]
+      properties:
+        workspaceId: { type: string, format: uuid }
+        enforcement: { $ref: '#/components/schemas/AuthEnforcement' }
+
+    SetWorkspaceAuthPolicyRequest:
+      type: object
+      required: [enforcement]
+      properties:
+        enforcement: { $ref: '#/components/schemas/AuthEnforcement' }
+
+    Account:
+      type: object
+      required: [id, status, email, displayName, timezone, hasPassword, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/AccountStatus' }
+        email: { type: string }
+        displayName: { type: string }
+        timezone: { type: string }
+        avatarUrl: { type: string }
+        hasPassword: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    EmailChange:
+      type: object
+      required: [id, newEmail, requestedAt, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        newEmail: { type: string }
+        requestedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+
+    Workspace:
+      type: object
+      required: [id, slug, name, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    Membership:
+      type: object
+      required: [workspaceId, accountId, role]
+      properties:
+        workspaceId: { type: string, format: uuid }
+        accountId: { type: string, format: uuid }
+        role: { $ref: '#/components/schemas/MembershipRole' }
+
+    RegisterAccountRequest:
+      type: object
+      required: [email, displayName]
+      properties:
+        email: { type: string }
+        displayName: { type: string }
+        timezone: { type: string }
+        password: { type: string }
+
+    SignInRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        displayName: { type: string }
+        timezone: { type: string }
+
+    SetPasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password: { type: string }
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string }
+        newPassword: { type: string }
+
+    RequestEmailChangeRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+
+    ConfirmEmailChangeRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }
+
+    CreateWorkspaceRequest:
+      type: object
+      required: [slug, name]
+      properties:
+        slug: { type: string }
+        name: { type: string }
+
+    AddMemberRequest:
+      type: object
+      required: [accountId, role]
+      properties:
+        accountId: { type: string, format: uuid }
+        role: { $ref: '#/components/schemas/MembershipRole' }
+
+    ChangeMemberRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role: { $ref: '#/components/schemas/MembershipRole' }
