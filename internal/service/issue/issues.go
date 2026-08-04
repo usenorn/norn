@@ -268,6 +268,19 @@ func (s *issuesService) Update(
 			}
 		}
 
+		if target.Category == entity.StateCategoryComplete &&
+			issue.State.Category != entity.StateCategoryComplete &&
+			!input.AcknowledgeOpenChildren {
+			children, err := s.issues.ListChildren(ctx, workspaceID, issueID, decision.Scope)
+			if err != nil {
+				return err
+			}
+
+			if open := entity.OpenIssues(children); len(open) > 0 {
+				return entity.IssueChildrenOpenError{Children: open}
+			}
+		}
+
 		now := time.Now().UTC()
 
 		var timestamps *entity.StateTimestamps
@@ -598,6 +611,188 @@ func (s *issuesService) assignable(
 	}
 
 	return nil
+}
+
+func (s *issuesService) SetParent(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	input service.SetIssueParentInput,
+) (entity.Issue, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceIssue,
+		Action:      entity.ActionManage,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return entity.Issue{}, err
+	}
+
+	if input.ParentID != nil && *input.ParentID == issueID {
+		return entity.Issue{}, entity.ErrIssueParentCycle
+	}
+
+	var reparented entity.Issue
+
+	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		issue, err := s.issues.LockByID(ctx, workspaceID, issueID, decision.Scope)
+		if err != nil {
+			return err
+		}
+
+		conflicts := entity.IssueConflicts(
+			issue.FieldVersions, issue.Version, input.ExpectedVersion, []string{entity.IssueFieldParent},
+		)
+		if len(conflicts) > 0 {
+			return entity.IssueStaleError{Version: issue.Version, Conflicts: conflicts}
+		}
+
+		depth := entity.IssueRootDepth
+
+		var parent entity.Issue
+
+		if input.ParentID != nil {
+			parent, err = s.issues.GetVisible(ctx, workspaceID, *input.ParentID, decision.Scope)
+			if err != nil {
+				return err
+			}
+
+			if parent.Status != entity.IssueStatusActive {
+				return entity.ErrIssueParentNotActive
+			}
+
+			ancestors, err := s.issues.Ancestors(ctx, parent.ID)
+			if err != nil {
+				return err
+			}
+
+			if slices.Contains(ancestors, issueID) {
+				return entity.ErrIssueParentCycle
+			}
+
+			height, err := s.issues.SubtreeHeight(ctx, issueID)
+			if err != nil {
+				return err
+			}
+
+			if !entity.FitsWithinDepth(parent.Depth, height) {
+				return entity.IssueTooDeepError{
+					Depth: parent.Depth + 1 + height,
+					Max:   entity.IssueMaxDepth,
+				}
+			}
+
+			depth = parent.Depth + 1
+		}
+
+		if issue.ParentIssueID == uuid.Nil && input.ParentID == nil {
+			reparented = issue
+
+			return nil
+		}
+
+		if input.ParentID != nil && issue.ParentIssueID == *input.ParentID {
+			reparented = issue
+
+			return nil
+		}
+
+		now := time.Now().UTC()
+
+		if err := s.issues.SetParent(
+			ctx, issueID, issue.Version, input.ParentID, depth, now,
+		); err != nil {
+			return err
+		}
+
+		if err := s.recordProperty(
+			ctx, issue, decision, entity.IssueFieldParent, issue.ParentReference, parent.Reference(),
+		); err != nil {
+			return err
+		}
+
+		if err := s.recordHierarchy(
+			ctx, workspaceID, issue, decision, entity.IssueActivityKindChildRemoved, issue.ParentIssueID,
+		); err != nil {
+			return err
+		}
+
+		if err := s.recordHierarchy(
+			ctx, workspaceID, issue, decision, entity.IssueActivityKindChildAdded, parent.ID,
+		); err != nil {
+			return err
+		}
+
+		refreshed, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
+		if err != nil {
+			return err
+		}
+
+		reparented = refreshed
+
+		return nil
+	})
+	if err != nil {
+		return entity.Issue{}, err
+	}
+
+	return reparented, nil
+}
+
+func (s *issuesService) recordHierarchy(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	child entity.Issue,
+	decision entity.Decision,
+	kind entity.IssueActivityKind,
+	onIssueID uuid.UUID,
+) error {
+	if onIssueID == uuid.Nil {
+		return nil
+	}
+
+	entry := entity.IssueActivity{
+		WorkspaceID:    workspaceID,
+		IssueID:        onIssueID,
+		ActorAccountID: decision.Actor.AccountID,
+		Kind:           kind,
+		Field:          entity.IssueFieldChildren,
+	}
+
+	if kind == entity.IssueActivityKindChildAdded {
+		entry.ToValue = child.Reference()
+	} else {
+		entry.FromValue = child.Reference()
+	}
+
+	return s.activity.Record(ctx, entry)
+}
+
+func (s *issuesService) Children(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) ([]entity.Issue, entity.IssueProgress, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceIssue,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return nil, entity.IssueProgress{}, err
+	}
+
+	parent, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
+	if err != nil {
+		return nil, entity.IssueProgress{}, err
+	}
+
+	children, err := s.issues.ListChildren(ctx, workspaceID, issueID, decision.Scope)
+	if err != nil {
+		return nil, entity.IssueProgress{}, err
+	}
+
+	return children, parent.Children, nil
 }
 
 func (s *issuesService) SetStatus(

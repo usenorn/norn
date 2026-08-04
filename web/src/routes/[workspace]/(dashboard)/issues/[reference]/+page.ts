@@ -23,6 +23,9 @@ export type IssueDetail =
 			groups: LabelGroup[];
 			activity: IssueActivity[];
 			members: Member[];
+			children: Issue[];
+			childProgress: components["schemas"]["IssueProgress"];
+			candidates: Issue[];
 	  }
 	| { kind: "unavailable" };
 
@@ -54,7 +57,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 
 	const path = { workspaceId: workspace.id, issueId: issue.data.id };
 
-	const [states, labels, groups, activity, members] = await Promise.all([
+	const [states, labels, groups, activity, members, children, candidates] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			fetch,
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -75,9 +78,21 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			fetch,
 			params: { path: { workspaceId: workspace.id } },
 		}),
+		api.GET("/workspaces/{workspaceId}/issues/{issueId}/children", { fetch, params: { path } }),
+		api.GET("/workspaces/{workspaceId}/issues", {
+			fetch,
+			params: { path: { workspaceId: workspace.id }, query: { limit: 200 } },
+		}),
 	]);
 
-	if (!states.data || !labels.data || !groups.data || !activity.data || !members.data) {
+	if (
+		!states.data ||
+		!labels.data ||
+		!groups.data ||
+		!activity.data ||
+		!members.data ||
+		!children.data
+	) {
 		return { detail: { kind: "unavailable" } };
 	}
 
@@ -90,6 +105,9 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			groups: groups.data,
 			activity: activity.data.entries,
 			members: members.data.members,
+			children: children.data.issues,
+			childProgress: children.data.progress,
+			candidates: candidates.data?.issues ?? [],
 		},
 	};
 };

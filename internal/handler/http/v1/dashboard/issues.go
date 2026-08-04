@@ -86,10 +86,12 @@ func (h *handler) UpdateWorkspaceIssue(
 ) (api.UpdateWorkspaceIssueResponseObject, error) {
 	input := service.UpdateIssueInput{
 		ExpectedVersion: int(request.Body.ExpectedVersion),
-		Title:           request.Body.Title,
-		StateID:         request.Body.StateId,
-		Description:     request.Body.Description,
-		AssigneeID:      request.Body.AssigneeId,
+		AcknowledgeOpenChildren: request.Body.AcknowledgeOpenChildren != nil &&
+			*request.Body.AcknowledgeOpenChildren,
+		Title:       request.Body.Title,
+		StateID:     request.Body.StateId,
+		Description: request.Body.Description,
+		AssigneeID:  request.Body.AssigneeId,
 	}
 
 	if request.Body.Priority != nil {
@@ -225,4 +227,42 @@ func (h *handler) GetWorkspaceIssueByReference(
 	}
 
 	return api.GetWorkspaceIssueByReference200JSONResponse(issueDTO(issue)), nil
+}
+
+func (h *handler) SetWorkspaceIssueParent(
+	ctx context.Context,
+	request api.SetWorkspaceIssueParentRequestObject,
+) (api.SetWorkspaceIssueParentResponseObject, error) {
+	issue, err := h.issues.SetParent(ctx, request.WorkspaceId, request.IssueId, service.SetIssueParentInput{
+		ExpectedVersion: int(request.Body.ExpectedVersion),
+		ParentID:        request.Body.ParentId,
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SetWorkspaceIssueParent200JSONResponse(issueDTO(issue)), nil
+}
+
+func (h *handler) ListWorkspaceIssueChildren(
+	ctx context.Context,
+	request api.ListWorkspaceIssueChildrenRequestObject,
+) (api.ListWorkspaceIssueChildrenResponseObject, error) {
+	children, progress, err := h.issues.Children(ctx, request.WorkspaceId, request.IssueId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceIssueChildren200JSONResponse{
+		Issues:   issueDTOs(children),
+		Progress: issueProgressDTO(progress),
+	}, nil
 }

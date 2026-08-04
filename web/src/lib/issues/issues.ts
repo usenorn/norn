@@ -11,6 +11,10 @@ export type IssueFailure =
 	| { kind: "already_on_team" }
 	| { kind: "destination_incapable" }
 	| { kind: "status_transition" }
+	| { kind: "children_open"; children: string[] }
+	| { kind: "parent_cycle" }
+	| { kind: "parent_too_deep" }
+	| { kind: "parent_not_active" }
 	| { kind: "invalid"; fields: string[] }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
@@ -49,6 +53,8 @@ const fieldNames: Record<string, string> = {
 	estimate: "the estimate",
 	dueOn: "the due date",
 	status: "whether it is archived",
+	parent: "the parent",
+	children: "the children",
 };
 
 export function nameFields(fields: string[]): string {
@@ -72,6 +78,14 @@ export function issueFailureMessage(failure: IssueFailure): string {
 			return "That team has no state matching the one this issue is in.";
 		case "status_transition":
 			return "This issue is not in a state that allows that.";
+		case "children_open":
+			return `${failure.children.join(", ")} ${failure.children.length === 1 ? "is" : "are"} still open. Finishing this issue will leave ${failure.children.length === 1 ? "it" : "them"} where ${failure.children.length === 1 ? "it is" : "they are"}.`;
+		case "parent_cycle":
+			return "An issue cannot be filed under itself, or under anything already beneath it.";
+		case "parent_too_deep":
+			return "That would nest the work more than five levels deep. Move it somewhere shallower, or detach part of the sub-tree first.";
+		case "parent_not_active":
+			return "That issue is archived or deleted, so nothing new can be filed under it.";
 		case "invalid":
 			return `Check ${nameFields(failure.fields)}.`;
 		case "forbidden":
@@ -88,6 +102,7 @@ export function readIssueFailure(error: unknown): IssueFailure {
 		code?: string;
 		conflicts?: string[];
 		labels?: { name: string }[];
+		children?: { reference: string }[];
 		errors?: { field?: string }[];
 		status?: number;
 	};
@@ -103,6 +118,17 @@ export function readIssueFailure(error: unknown): IssueFailure {
 			return { kind: "destination_incapable" };
 		case "issue_status_transition":
 			return { kind: "status_transition" };
+		case "issue_children_open":
+			return {
+				kind: "children_open",
+				children: (problem.children ?? []).map((child) => child.reference),
+			};
+		case "issue_parent_cycle":
+			return { kind: "parent_cycle" };
+		case "issue_parent_too_deep":
+			return { kind: "parent_too_deep" };
+		case "issue_parent_not_active":
+			return { kind: "parent_not_active" };
 	}
 
 	if (problem.errors) {
@@ -122,6 +148,10 @@ export function activityLine(entry: IssueActivity): string {
 			return `${entry.fromState} → ${entry.toState}`;
 		case "team_moved":
 			return `Moved from ${entry.fromValue} to ${entry.toValue}`;
+		case "child_added":
+			return `${entry.toValue} was filed under this`;
+		case "child_removed":
+			return `${entry.fromValue} is no longer filed under this`;
 		case "archived":
 			return "Archived";
 		case "unarchived":

@@ -301,6 +301,9 @@ func signUpRequestedDTO(requested service.RequestedSignUp) api.SignUpRequested {
 }
 
 func issueDTO(issue entity.Issue) api.Issue {
+	depth := int32(issue.Depth)
+	children := issueProgressDTO(issue.Children)
+
 	dto := api.Issue{
 		State: api.IssueState{
 			Id:       issue.State.ID,
@@ -321,9 +324,18 @@ func issueDTO(issue entity.Issue) api.Issue {
 		Description:    issue.Description,
 		Priority:       api.IssuePriority(issue.Priority),
 		Status:         api.IssueStatus(issue.Status),
+		Depth:          &depth,
+		ChildProgress:  &children,
 		StateEnteredAt: issue.StateEnteredAt,
 		CreatedAt:      issue.CreatedAt,
 	}
+
+	if issue.ParentIssueID != uuid.Nil {
+		parent := issue.ParentIssueID
+		dto.ParentId = &parent
+	}
+
+	dto.ParentReference = nilIfEmpty(issue.ParentReference)
 
 	if issue.ArchivedAt != nil {
 		shelved := *issue.ArchivedAt
@@ -358,14 +370,18 @@ func issueDTO(issue entity.Issue) api.Issue {
 	return dto
 }
 
-func issuePageDTO(page service.IssuePage) api.IssuePage {
-	issues := make([]api.Issue, 0, len(page.Issues))
+func issueDTOs(issues []entity.Issue) []api.Issue {
+	dtos := make([]api.Issue, 0, len(issues))
 
-	for _, issue := range page.Issues {
-		issues = append(issues, issueDTO(issue))
+	for _, issue := range issues {
+		dtos = append(dtos, issueDTO(issue))
 	}
 
-	dto := api.IssuePage{Issues: issues}
+	return dtos
+}
+
+func issuePageDTO(page service.IssuePage) api.IssuePage {
+	dto := api.IssuePage{Issues: issueDTOs(page.Issues)}
 
 	if page.NextCursor != "" {
 		cursor := page.NextCursor
