@@ -19,6 +19,7 @@ type SSOConnection interface {
 	SaveSAML(ctx context.Context, connection entity.SAMLConnection) (entity.SAMLConnection, error)
 	Delete(ctx context.Context, workspaceID uuid.UUID) error
 	MarkVerified(ctx context.Context, workspaceID uuid.UUID, at time.Time) error
+	Verified(ctx context.Context, workspaceID uuid.UUID) (bool, error)
 	ListSAMLCertificates(ctx context.Context) ([]entity.SAMLConnection, error)
 	RecordExpiryNotice(ctx context.Context, workspaceID uuid.UUID, days int) error
 }

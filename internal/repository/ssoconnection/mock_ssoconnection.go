@@ -174,3 +174,18 @@ func (mr *MockSSOConnectionMockRecorder) SaveSAML(ctx, connection any) *gomock.C
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSAML", reflect.TypeOf((*MockSSOConnection)(nil).SaveSAML), ctx, connection)
 }
+
+// Verified mocks base method.
+func (m *MockSSOConnection) Verified(ctx context.Context, workspaceID uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Verified", ctx, workspaceID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Verified indicates an expected call of Verified.
+func (mr *MockSSOConnectionMockRecorder) Verified(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Verified", reflect.TypeOf((*MockSSOConnection)(nil).Verified), ctx, workspaceID)
+}

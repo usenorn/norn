@@ -165,6 +165,42 @@ func (e BulkOutcome) Valid() bool {
 	}
 }
 
+// Defines values for EnforcementBlocker.
+const (
+	NoConnection  EnforcementBlocker = "no_connection"
+	NoLinkedAdmin EnforcementBlocker = "no_linked_admin"
+	NotVerified   EnforcementBlocker = "not_verified"
+)
+
+// Valid indicates whether the value is a known member of the EnforcementBlocker enum.
+func (e EnforcementBlocker) Valid() bool {
+	switch e {
+	case NoConnection:
+		return true
+	case NoLinkedAdmin:
+		return true
+	case NotVerified:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EnforcementRefusedProblemCode.
+const (
+	EnforcementRefusedProblemCodeEnforcementRefused EnforcementRefusedProblemCode = "enforcement_refused"
+)
+
+// Valid indicates whether the value is a known member of the EnforcementRefusedProblemCode enum.
+func (e EnforcementRefusedProblemCode) Valid() bool {
+	switch e {
+	case EnforcementRefusedProblemCodeEnforcementRefused:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ForbiddenProblemCode.
 const (
 	ForbiddenProblemCodeForbidden ForbiddenProblemCode = "forbidden"
@@ -1310,6 +1346,24 @@ type EmailChange struct {
 	RequestedAt time.Time          `json:"requestedAt"`
 }
 
+// EnforcementBlocker defines model for EnforcementBlocker.
+type EnforcementBlocker string
+
+// EnforcementRefusedProblem defines model for EnforcementRefusedProblem.
+type EnforcementRefusedProblem struct {
+	Blocker  EnforcementBlocker            `json:"blocker"`
+	Code     EnforcementRefusedProblemCode `json:"code"`
+	Detail   *string                       `json:"detail,omitempty"`
+	Errors   *[]FieldError                 `json:"errors,omitempty"`
+	Instance *string                       `json:"instance,omitempty"`
+	Status   int32                         `json:"status"`
+	Title    string                        `json:"title"`
+	Type     string                        `json:"type"`
+}
+
+// EnforcementRefusedProblemCode defines model for EnforcementRefusedProblem.Code.
+type EnforcementRefusedProblemCode string
+
 // FieldError defines model for FieldError.
 type FieldError struct {
 	Code  string `json:"code"`
@@ -1789,6 +1843,12 @@ type ReadSamlMetadataRequest struct {
 	MetadataUrl *string `json:"metadataUrl,omitempty"`
 }
 
+// RedeemRecoveryCodeRequest defines model for RedeemRecoveryCodeRequest.
+type RedeemRecoveryCodeRequest struct {
+	Code      string `json:"code"`
+	Workspace string `json:"workspace"`
+}
+
 // ReorderWorkflowStatesRequest defines model for ReorderWorkflowStatesRequest.
 type ReorderWorkflowStatesRequest struct {
 	StateIds []openapi_types.UUID `json:"stateIds"`
@@ -1993,6 +2053,13 @@ type SignUpUnusableProblem struct {
 // SignUpUnusableProblemCode defines model for SignUpUnusableProblem.Code.
 type SignUpUnusableProblemCode string
 
+// SsoIdentity defines model for SsoIdentity.
+type SsoIdentity struct {
+	AccountId   openapi_types.UUID `json:"accountId"`
+	LinkedAt    time.Time          `json:"linkedAt"`
+	WorkspaceId openapi_types.UUID `json:"workspaceId"`
+}
+
 // SsoProblem defines model for SsoProblem.
 type SsoProblem struct {
 	Code            SsoProblemCode `json:"code"`
@@ -2156,6 +2223,12 @@ type WorkspaceAuthPolicy struct {
 	WorkspaceId openapi_types.UUID `json:"workspaceId"`
 }
 
+// WorkspaceAuthPolicyOutcome defines model for WorkspaceAuthPolicyOutcome.
+type WorkspaceAuthPolicyOutcome struct {
+	Policy        WorkspaceAuthPolicy `json:"policy"`
+	RecoveryCodes *[]string           `json:"recoveryCodes,omitempty"`
+}
+
 // WorkspaceDeletedProblem defines model for WorkspaceDeletedProblem.
 type WorkspaceDeletedProblem struct {
 	Code       WorkspaceDeletedProblemCode `json:"code"`
@@ -2249,6 +2322,9 @@ type AccountLocked = AccountLockedProblem
 
 // BreachCheckUnavailable defines model for BreachCheckUnavailable.
 type BreachCheckUnavailable = BreachCheckUnavailableProblem
+
+// EnforcementRefused defines model for EnforcementRefused.
+type EnforcementRefused = EnforcementRefusedProblem
 
 // Forbidden defines model for Forbidden.
 type Forbidden = ForbiddenProblem
@@ -2404,6 +2480,9 @@ type PreviewInvitationJSONRequestBody = PreviewInvitationRequest
 
 // BeginOidcLoginJSONRequestBody defines body for BeginOidcLogin for application/json ContentType.
 type BeginOidcLoginJSONRequestBody = BeginOidcLoginRequest
+
+// RedeemRecoveryCodeJSONRequestBody defines body for RedeemRecoveryCode for application/json ContentType.
+type RedeemRecoveryCodeJSONRequestBody = RedeemRecoveryCodeRequest
 
 // BeginSamlLoginJSONRequestBody defines body for BeginSamlLogin for application/json ContentType.
 type BeginSamlLoginJSONRequestBody = BeginOidcLoginRequest
@@ -2575,6 +2654,9 @@ type ServerInterface interface {
 	// BeginOidcLogin Start a single sign-on exchange for a workspace
 	// (POST /sso/oidc/login)
 	BeginOidcLogin(w http.ResponseWriter, r *http.Request)
+	// RedeemRecoveryCode Lift a workspace's single sign-on requirement with a recovery code
+	// (POST /sso/recovery)
+	RedeemRecoveryCode(w http.ResponseWriter, r *http.Request)
 	// BeginSamlLogin Start a SAML sign-in for a workspace
 	// (POST /sso/saml/login)
 	BeginSamlLogin(w http.ResponseWriter, r *http.Request)
@@ -2716,6 +2798,12 @@ type ServerInterface interface {
 	// GetWorkspaceSsoProtocol Read which single sign-on protocol this workspace uses
 	// (GET /workspaces/{workspaceId}/sso)
 	GetWorkspaceSsoProtocol(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListWorkspaceSsoIdentities List the accounts linked to this workspace's provider
+	// (GET /workspaces/{workspaceId}/sso/identities)
+	ListWorkspaceSsoIdentities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// UnlinkWorkspaceSsoIdentity Unlink an account from its provider identity
+	// (DELETE /workspaces/{workspaceId}/sso/identities/{accountId})
+	UnlinkWorkspaceSsoIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId openapi_types.UUID)
 	// RemoveWorkspaceOidcConnection Remove the workspace single sign-on provider
 	// (DELETE /workspaces/{workspaceId}/sso/oidc)
 	RemoveWorkspaceOidcConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -2953,6 +3041,12 @@ func (_ Unimplemented) RevokeSession(w http.ResponseWriter, r *http.Request, ses
 // BeginOidcLogin Start a single sign-on exchange for a workspace
 // (POST /sso/oidc/login)
 func (_ Unimplemented) BeginOidcLogin(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RedeemRecoveryCode Lift a workspace's single sign-on requirement with a recovery code
+// (POST /sso/recovery)
+func (_ Unimplemented) RedeemRecoveryCode(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3235,6 +3329,18 @@ func (_ Unimplemented) RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *ht
 // GetWorkspaceSsoProtocol Read which single sign-on protocol this workspace uses
 // (GET /workspaces/{workspaceId}/sso)
 func (_ Unimplemented) GetWorkspaceSsoProtocol(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceSsoIdentities List the accounts linked to this workspace's provider
+// (GET /workspaces/{workspaceId}/sso/identities)
+func (_ Unimplemented) ListWorkspaceSsoIdentities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UnlinkWorkspaceSsoIdentity Unlink an account from its provider identity
+// (DELETE /workspaces/{workspaceId}/sso/identities/{accountId})
+func (_ Unimplemented) UnlinkWorkspaceSsoIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3768,6 +3874,20 @@ func (siw *ServerInterfaceWrapper) BeginOidcLogin(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.BeginOidcLogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RedeemRecoveryCode operation middleware
+func (siw *ServerInterfaceWrapper) RedeemRecoveryCode(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RedeemRecoveryCode(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5378,6 +5498,67 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceSsoProtocol(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceSsoIdentities operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceSsoIdentities(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceSsoIdentities(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnlinkWorkspaceSsoIdentity operation middleware
+func (siw *ServerInterfaceWrapper) UnlinkWorkspaceSsoIdentity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "accountId" -------------
+	var accountId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "accountId", chi.URLParam(r, "accountId"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accountId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnlinkWorkspaceSsoIdentity(w, r, workspaceId, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RemoveWorkspaceOidcConnection operation middleware
 func (siw *ServerInterfaceWrapper) RemoveWorkspaceOidcConnection(w http.ResponseWriter, r *http.Request) {
 
@@ -6543,6 +6724,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/sso/saml/test", wrapper.TestWorkspaceSamlConnection)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/sso/identities", wrapper.ListWorkspaceSsoIdentities)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/sso/identities/{accountId}", wrapper.UnlinkWorkspaceSsoIdentity)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/sso/recovery", wrapper.RedeemRecoveryCode)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces", wrapper.ListWorkspaces)
 	})
 	r.Group(func(r chi.Router) {
@@ -6740,6 +6930,8 @@ type APITokenUnusableApplicationProblemPlusJSONResponse APITokenUnusableProblem
 type AccountLockedApplicationProblemPlusJSONResponse AccountLockedProblem
 
 type BreachCheckUnavailableApplicationProblemPlusJSONResponse BreachCheckUnavailableProblem
+
+type EnforcementRefusedApplicationProblemPlusJSONResponse EnforcementRefusedProblem
 
 type ForbiddenApplicationProblemPlusJSONResponse ForbiddenProblem
 
@@ -8667,6 +8859,85 @@ func (response BeginOidcLogin500ApplicationProblemPlusJSONResponse) VisitBeginOi
 	return err
 }
 
+type RedeemRecoveryCodeRequestObject struct {
+	Body *RedeemRecoveryCodeJSONRequestBody
+}
+
+type RedeemRecoveryCodeResponseObject interface {
+	VisitRedeemRecoveryCodeResponse(w http.ResponseWriter) error
+}
+
+type RedeemRecoveryCode204Response struct {
+}
+
+func (response RedeemRecoveryCode204Response) VisitRedeemRecoveryCodeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RedeemRecoveryCode404ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RedeemRecoveryCode404ApplicationProblemPlusJSONResponse) VisitRedeemRecoveryCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RedeemRecoveryCode409ApplicationProblemPlusJSONResponse Problem
+
+func (response RedeemRecoveryCode409ApplicationProblemPlusJSONResponse) VisitRedeemRecoveryCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RedeemRecoveryCode429ApplicationProblemPlusJSONResponse struct {
+	TooManyAttemptsApplicationProblemPlusJSONResponse
+}
+
+func (response RedeemRecoveryCode429ApplicationProblemPlusJSONResponse) VisitRedeemRecoveryCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RedeemRecoveryCode500ApplicationProblemPlusJSONResponse Problem
+
+func (response RedeemRecoveryCode500ApplicationProblemPlusJSONResponse) VisitRedeemRecoveryCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type BeginSamlLoginRequestObject struct {
 	Body *BeginSamlLoginJSONRequestBody
 }
@@ -9236,7 +9507,7 @@ type SetWorkspaceAuthPolicyResponseObject interface {
 	VisitSetWorkspaceAuthPolicyResponse(w http.ResponseWriter) error
 }
 
-type SetWorkspaceAuthPolicy200JSONResponse WorkspaceAuthPolicy
+type SetWorkspaceAuthPolicy200JSONResponse WorkspaceAuthPolicyOutcome
 
 func (response SetWorkspaceAuthPolicy200JSONResponse) VisitSetWorkspaceAuthPolicyResponse(w http.ResponseWriter) error {
 
@@ -9282,7 +9553,9 @@ func (response SetWorkspaceAuthPolicy403ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
-type SetWorkspaceAuthPolicy422ApplicationProblemPlusJSONResponse Problem
+type SetWorkspaceAuthPolicy422ApplicationProblemPlusJSONResponse struct {
+	EnforcementRefusedApplicationProblemPlusJSONResponse
+}
 
 func (response SetWorkspaceAuthPolicy422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAuthPolicyResponse(w http.ResponseWriter) error {
 
@@ -13038,6 +13311,151 @@ func (response GetWorkspaceSsoProtocol500ApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type ListWorkspaceSsoIdentitiesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceSsoIdentitiesResponseObject interface {
+	VisitListWorkspaceSsoIdentitiesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceSsoIdentities200JSONResponse []SsoIdentity
+
+func (response ListWorkspaceSsoIdentities200JSONResponse) VisitListWorkspaceSsoIdentitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSsoIdentities401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSsoIdentities401ApplicationProblemPlusJSONResponse) VisitListWorkspaceSsoIdentitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSsoIdentities403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSsoIdentities403ApplicationProblemPlusJSONResponse) VisitListWorkspaceSsoIdentitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSsoIdentities500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceSsoIdentities500ApplicationProblemPlusJSONResponse) VisitListWorkspaceSsoIdentitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceSsoIdentityRequestObject struct {
+	WorkspaceId WorkspaceId        `json:"workspaceId"`
+	AccountId   openapi_types.UUID `json:"accountId"`
+}
+
+type UnlinkWorkspaceSsoIdentityResponseObject interface {
+	VisitUnlinkWorkspaceSsoIdentityResponse(w http.ResponseWriter) error
+}
+
+type UnlinkWorkspaceSsoIdentity204Response struct {
+}
+
+func (response UnlinkWorkspaceSsoIdentity204Response) VisitUnlinkWorkspaceSsoIdentityResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnlinkWorkspaceSsoIdentity401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UnlinkWorkspaceSsoIdentity401ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceSsoIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceSsoIdentity403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UnlinkWorkspaceSsoIdentity403ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceSsoIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceSsoIdentity404ApplicationProblemPlusJSONResponse Problem
+
+func (response UnlinkWorkspaceSsoIdentity404ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceSsoIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceSsoIdentity500ApplicationProblemPlusJSONResponse Problem
+
+func (response UnlinkWorkspaceSsoIdentity500ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceSsoIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RemoveWorkspaceOidcConnectionRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -15718,6 +16136,9 @@ type StrictServerInterface interface {
 	// BeginOidcLogin Start a single sign-on exchange for a workspace
 	// (POST /sso/oidc/login)
 	BeginOidcLogin(ctx context.Context, request BeginOidcLoginRequestObject) (BeginOidcLoginResponseObject, error)
+	// RedeemRecoveryCode Lift a workspace's single sign-on requirement with a recovery code
+	// (POST /sso/recovery)
+	RedeemRecoveryCode(ctx context.Context, request RedeemRecoveryCodeRequestObject) (RedeemRecoveryCodeResponseObject, error)
 	// BeginSamlLogin Start a SAML sign-in for a workspace
 	// (POST /sso/saml/login)
 	BeginSamlLogin(ctx context.Context, request BeginSamlLoginRequestObject) (BeginSamlLoginResponseObject, error)
@@ -15859,6 +16280,12 @@ type StrictServerInterface interface {
 	// GetWorkspaceSsoProtocol Read which single sign-on protocol this workspace uses
 	// (GET /workspaces/{workspaceId}/sso)
 	GetWorkspaceSsoProtocol(ctx context.Context, request GetWorkspaceSsoProtocolRequestObject) (GetWorkspaceSsoProtocolResponseObject, error)
+	// ListWorkspaceSsoIdentities List the accounts linked to this workspace's provider
+	// (GET /workspaces/{workspaceId}/sso/identities)
+	ListWorkspaceSsoIdentities(ctx context.Context, request ListWorkspaceSsoIdentitiesRequestObject) (ListWorkspaceSsoIdentitiesResponseObject, error)
+	// UnlinkWorkspaceSsoIdentity Unlink an account from its provider identity
+	// (DELETE /workspaces/{workspaceId}/sso/identities/{accountId})
+	UnlinkWorkspaceSsoIdentity(ctx context.Context, request UnlinkWorkspaceSsoIdentityRequestObject) (UnlinkWorkspaceSsoIdentityResponseObject, error)
 	// RemoveWorkspaceOidcConnection Remove the workspace single sign-on provider
 	// (DELETE /workspaces/{workspaceId}/sso/oidc)
 	RemoveWorkspaceOidcConnection(ctx context.Context, request RemoveWorkspaceOidcConnectionRequestObject) (RemoveWorkspaceOidcConnectionResponseObject, error)
@@ -16677,6 +17104,37 @@ func (sh *strictHandler) BeginOidcLogin(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(BeginOidcLoginResponseObject); ok {
 		if err := validResponse.VisitBeginOidcLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RedeemRecoveryCode operation middleware
+func (sh *strictHandler) RedeemRecoveryCode(w http.ResponseWriter, r *http.Request) {
+	var request RedeemRecoveryCodeRequestObject
+
+	var body RedeemRecoveryCodeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RedeemRecoveryCode(ctx, request.(RedeemRecoveryCodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RedeemRecoveryCode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RedeemRecoveryCodeResponseObject); ok {
+		if err := validResponse.VisitRedeemRecoveryCodeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -18065,6 +18523,59 @@ func (sh *strictHandler) GetWorkspaceSsoProtocol(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceSsoProtocolResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceSsoProtocolResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceSsoIdentities operation middleware
+func (sh *strictHandler) ListWorkspaceSsoIdentities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceSsoIdentitiesRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceSsoIdentities(ctx, request.(ListWorkspaceSsoIdentitiesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceSsoIdentities")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceSsoIdentitiesResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceSsoIdentitiesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnlinkWorkspaceSsoIdentity operation middleware
+func (sh *strictHandler) UnlinkWorkspaceSsoIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId openapi_types.UUID) {
+	var request UnlinkWorkspaceSsoIdentityRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnlinkWorkspaceSsoIdentity(ctx, request.(UnlinkWorkspaceSsoIdentityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnlinkWorkspaceSsoIdentity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnlinkWorkspaceSsoIdentityResponseObject); ok {
+		if err := validResponse.VisitUnlinkWorkspaceSsoIdentityResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

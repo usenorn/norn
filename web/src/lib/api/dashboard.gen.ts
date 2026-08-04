@@ -475,6 +475,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/sso/identities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the accounts linked to this workspace's provider */
+        get: operations["listWorkspaceSsoIdentities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso/identities/{accountId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unlink an account from its provider identity */
+        delete: operations["unlinkWorkspaceSsoIdentity"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sso/recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lift a workspace's single sign-on requirement with a recovery code */
+        post: operations["redeemRecoveryCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces": {
         parameters: {
             query?: never;
@@ -2001,6 +2057,29 @@ export interface components {
             metadataUrl?: string;
             metadata?: string;
         };
+        /** @enum {string} */
+        EnforcementBlocker: "no_connection" | "not_verified" | "no_linked_admin";
+        EnforcementRefusedProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "enforcement_refused";
+            blocker: components["schemas"]["EnforcementBlocker"];
+        };
+        WorkspaceAuthPolicyOutcome: {
+            policy: components["schemas"]["WorkspaceAuthPolicy"];
+            recoveryCodes?: string[];
+        };
+        SsoIdentity: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            accountId: string;
+            /** Format: date-time */
+            linkedAt: string;
+        };
+        RedeemRecoveryCodeRequest: {
+            workspace: string;
+            code: string;
+        };
         Instance: {
             signupsOpen: boolean;
             password: boolean;
@@ -2256,6 +2335,15 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["SsoProblem"];
+            };
+        };
+        /** @description Single sign-on cannot be required for this workspace yet */
+        EnforcementRefused: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["EnforcementRefusedProblem"];
             };
         };
         /** @description The actor may not perform this action */
@@ -3002,18 +3090,18 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The updated workspace authentication policy */
+            /** @description The updated policy, with recovery codes when single sign-on was required */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WorkspaceAuthPolicy"];
+                    "application/json": components["schemas"]["WorkspaceAuthPolicyOutcome"];
                 };
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
-            422: components["responses"]["Problem"];
+            422: components["responses"]["EnforcementRefused"];
             500: components["responses"]["Problem"];
         };
     };
@@ -3314,6 +3402,82 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             422: components["responses"]["SsoFailed"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceSsoIdentities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The linked accounts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SsoIdentity"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unlinkWorkspaceSsoIdentity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account was unlinked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    redeemRecoveryCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedeemRecoveryCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description The requirement was lifted and password sign-in works again */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            429: components["responses"]["TooManyAttempts"];
             500: components["responses"]["Problem"];
         };
     };

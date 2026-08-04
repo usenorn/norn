@@ -1,9 +1,16 @@
-import type { SsoOutcome, SsoProviderConfiguration } from "$lib/workspace/sso";
+import type {
+	Enforcement,
+	RecoveryCodes,
+	SsoOutcome,
+	SsoProviderConfiguration,
+} from "$lib/workspace/sso";
 
 export type AuthenticationPreview = {
 	configuration?: SsoProviderConfiguration;
 	outcome?: SsoOutcome;
 	discovering?: boolean;
+	enforcement?: Enforcement;
+	codes?: RecoveryCodes;
 };
 
 export const authenticationPreviewStates: Record<string, AuthenticationPreview> = import.meta.env
@@ -88,6 +95,201 @@ export const authenticationPreviewStates: Record<string, AuthenticationPreview> 
 			},
 			saved: { configuration: { kind: "unconfigured" }, outcome: { kind: "saved" } },
 			removed: { configuration: { kind: "unconfigured" }, outcome: { kind: "removed" } },
+			enforcement_available: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2027-08-04T00:00:00Z",
+						},
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						allowIdpInitiated: false,
+						mapping: {},
+						provisioning: true,
+						certificateExpiresAt: "2027-08-04T00:00:00Z",
+						certificateDaysLeft: 365,
+						verifiedAt: "2026-08-04T10:22:00Z",
+						updatedAt: "2026-08-04T10:15:00Z",
+					},
+				},
+				enforcement: { kind: "available", enforcing: false },
+			},
+			enforcement_on: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2027-08-04T00:00:00Z",
+						},
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						allowIdpInitiated: false,
+						mapping: {},
+						provisioning: true,
+						certificateExpiresAt: "2027-08-04T00:00:00Z",
+						certificateDaysLeft: 365,
+						verifiedAt: "2026-08-04T10:22:00Z",
+						updatedAt: "2026-08-04T10:15:00Z",
+					},
+				},
+				enforcement: { kind: "available", enforcing: true },
+			},
+			enforcement_codes: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2027-08-04T00:00:00Z",
+						},
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						allowIdpInitiated: false,
+						mapping: {},
+						provisioning: true,
+						certificateExpiresAt: "2027-08-04T00:00:00Z",
+						certificateDaysLeft: 365,
+						verifiedAt: "2026-08-04T10:22:00Z",
+						updatedAt: "2026-08-04T10:15:00Z",
+					},
+				},
+				enforcement: { kind: "available", enforcing: true },
+				codes: {
+					kind: "issued",
+					codes: [
+						"WQD9-Z4MJ-RS5CTYWW",
+						"7SLS-HSQT-9RR2ZXLP",
+						"4AMN-3J2W-YRDG5S9E",
+						"H2KP-8TVC-QM6WXB3D",
+						"5RNJ-YZ4L-P97SGKTA",
+						"C3XW-DM8V-KQ2FHN5R",
+						"9BTZ-L6PY-XW4JDS7M",
+						"T8VG-R2QN-6KCLHZ4P",
+					],
+				},
+			},
+			enforcement_blocked_no_connection: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2027-08-04T00:00:00Z",
+						},
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						allowIdpInitiated: false,
+						mapping: {},
+						provisioning: true,
+						certificateExpiresAt: "2027-08-04T00:00:00Z",
+						certificateDaysLeft: 365,
+						verifiedAt: "2026-08-04T10:22:00Z",
+						updatedAt: "2026-08-04T10:15:00Z",
+					},
+				},
+				enforcement: { kind: "blocked", blocker: "no_connection" },
+			},
+			enforcement_blocked_not_verified: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2027-08-04T00:00:00Z",
+						},
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						allowIdpInitiated: false,
+						mapping: {},
+						provisioning: true,
+						certificateExpiresAt: "2027-08-04T00:00:00Z",
+						certificateDaysLeft: 365,
+						verifiedAt: "2026-08-04T10:22:00Z",
+						updatedAt: "2026-08-04T10:15:00Z",
+					},
+				},
+				enforcement: { kind: "blocked", blocker: "not_verified" },
+			},
+			enforcement_blocked_no_admin: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2027-08-04T00:00:00Z",
+						},
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						allowIdpInitiated: false,
+						mapping: {},
+						provisioning: true,
+						certificateExpiresAt: "2027-08-04T00:00:00Z",
+						certificateDaysLeft: 365,
+						verifiedAt: "2026-08-04T10:22:00Z",
+						updatedAt: "2026-08-04T10:15:00Z",
+					},
+				},
+				enforcement: { kind: "blocked", blocker: "no_linked_admin" },
+			},
+			enforcement_loading: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2027-08-04T00:00:00Z",
+						},
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						allowIdpInitiated: false,
+						mapping: {},
+						provisioning: true,
+						certificateExpiresAt: "2027-08-04T00:00:00Z",
+						certificateDaysLeft: 365,
+						verifiedAt: "2026-08-04T10:22:00Z",
+						updatedAt: "2026-08-04T10:15:00Z",
+					},
+				},
+				enforcement: { kind: "loading" },
+			},
 			saml_unverified: {
 				configuration: {
 					kind: "saml",

@@ -8,6 +8,7 @@
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import Settings from "@lucide/svelte/icons/settings";
 	import KeyRound from "@lucide/svelte/icons/key-round";
+	import ProviderRequired from "$lib/workspace/provider-required.svelte";
 	import Tags from "@lucide/svelte/icons/tags";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Users from "@lucide/svelte/icons/users";
@@ -29,6 +30,14 @@
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();
+
+	const repairable = $derived(page.url.pathname.endsWith("/settings/authentication"));
+	const narrowed = $derived(
+		!repairable &&
+			(import.meta.env.DEV && page.url.searchParams.get("state") === "provider_required"
+				? true
+				: data.narrowed)
+	);
 
 	const slug = $derived(data.workspace.slug);
 	const pathname = $derived(page.url.pathname);
@@ -256,7 +265,11 @@
 		</header>
 
 		<main class="flex min-h-0 flex-1 flex-col">
-			{@render children()}
+			{#if narrowed}
+				<ProviderRequired workspace={data.workspace} />
+			{:else}
+				{@render children()}
+			{/if}
 		</main>
 
 		<nav

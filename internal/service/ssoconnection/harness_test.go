@@ -19,6 +19,7 @@ import (
 	samlreplayrepo "github.com/usenorn/norn/internal/repository/samlreplay"
 	samlrequestrepo "github.com/usenorn/norn/internal/repository/samlrequest"
 	connectionrepo "github.com/usenorn/norn/internal/repository/ssoconnection"
+	identityrepo "github.com/usenorn/norn/internal/repository/ssoidentity"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	"github.com/usenorn/norn/internal/service"
@@ -29,6 +30,7 @@ import (
 
 type harness struct {
 	connections *connectionrepo.MockSSOConnection
+	identities  *identityrepo.MockSSOIdentity
 	requests    *samlrequestrepo.MockSAMLRequest
 	replays     *samlreplayrepo.MockSAMLReplay
 	mailer      *mailerrepo.MockMailer
@@ -46,10 +48,26 @@ type harness struct {
 func newHarness(t *testing.T) *harness {
 	t.Helper()
 
+	h := newHarnessWithoutLinking(t)
+
+	h.identities.EXPECT().
+		Get(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(entity.SSOIdentity{}, entity.ErrSSOIdentityNotFound).
+		AnyTimes()
+
+	h.identities.EXPECT().Link(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	return h
+}
+
+func newHarnessWithoutLinking(t *testing.T) *harness {
+	t.Helper()
+
 	ctrl := gomock.NewController(t)
 
 	h := &harness{
 		connections: connectionrepo.NewMockSSOConnection(ctrl),
+		identities:  identityrepo.NewMockSSOIdentity(ctrl),
 		requests:    samlrequestrepo.NewMockSAMLRequest(ctrl),
 		replays:     samlreplayrepo.NewMockSAMLReplay(ctrl),
 		mailer:      mailerrepo.NewMockMailer(ctrl),
@@ -72,6 +90,7 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = ssosvc.New(
 		h.connections,
+		h.identities,
 		h.states,
 		h.requests,
 		h.replays,

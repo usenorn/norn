@@ -218,6 +218,11 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	var refused entity.EnforcementRefusedError
+	if errors.As(err, &refused) {
+		return enforcementProblem(refused.Blocker, refused.Error()), true
+	}
+
 	if errors.Is(err, entity.ErrSSOEncryptionKeyMissing) {
 		return newProblem(http.StatusInternalServerError, err.Error()), true
 	}
@@ -309,8 +314,13 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrWorkflowStateNotFound),
 		errors.Is(err, entity.ErrAvatarMissing),
 		errors.Is(err, entity.ErrSSOConnectionNotFound),
-		errors.Is(err, entity.ErrSSOStateNotFound):
+		errors.Is(err, entity.ErrSSOStateNotFound),
+		errors.Is(err, entity.ErrSSOIdentityNotFound),
+		errors.Is(err, entity.ErrBreakGlassCodeInvalid):
 		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrBreakGlassNotEnforcing):
+		return newProblem(http.StatusConflict, err.Error()), true
 
 	case errors.Is(err, entity.ErrAccountForbidden),
 		errors.Is(err, entity.ErrWorkspaceAuthMethodNotPermitted):

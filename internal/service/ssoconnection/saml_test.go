@@ -331,3 +331,80 @@ func TestASweepDoesNotWarnTwiceAtTheSameThreshold(t *testing.T) {
 		t.Fatalf("SweepCertificates: %v", err)
 	}
 }
+
+func TestSigningInThroughTheProviderLinksTheAccountToThatIdentity(t *testing.T) {
+	h := newHarnessWithoutLinking(t)
+
+	workspaceID := uuid.New()
+	account := entity.Account{ID: uuid.New(), Status: entity.AccountStatusActive, Email: "ada@example.com"}
+
+	h.expectExchange(workspaceID, false, verifiedClaims("ada@example.com"))
+	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(account, nil)
+	h.memberships.EXPECT().Get(gomock.Any(), workspaceID, account.ID).Return(entity.Membership{}, nil)
+	h.sessions.EXPECT().
+		Start(gomock.Any(), gomock.Any()).
+		Return(service.IssuedSession{Token: "session-token"}, nil)
+
+	h.identities.EXPECT().
+		Get(gomock.Any(), workspaceID, account.ID).
+		Return(entity.SSOIdentity{}, entity.ErrSSOIdentityNotFound)
+
+	var linked entity.SSOIdentity
+
+	h.identities.EXPECT().
+		Link(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, identity entity.SSOIdentity) error {
+			linked = identity
+
+			return nil
+		})
+
+	if _, err := h.complete(); err != nil {
+		t.Fatalf("Complete: %v", err)
+	}
+
+	if linked.AccountID != account.ID || linked.WorkspaceID != workspaceID {
+		t.Fatal("the link was recorded against the wrong account or workspace")
+	}
+
+	if linked.Subject != "provider-subject" {
+		t.Fatalf(
+			"the link stored subject %q. Matching by email alone means whoever can get that "+
+				"address issued at the provider inherits the account; the subject is what makes "+
+				"the binding durable.",
+			linked.Subject,
+		)
+	}
+}
+
+func TestADifferentProviderIdentityIsRefusedForAnAlreadyLinkedAccount(t *testing.T) {
+	h := newHarnessWithoutLinking(t)
+
+	workspaceID := uuid.New()
+	account := entity.Account{ID: uuid.New(), Status: entity.AccountStatusActive, Email: "ada@example.com"}
+
+	h.expectExchange(workspaceID, false, verifiedClaims("ada@example.com"))
+	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(account, nil)
+	h.memberships.EXPECT().Get(gomock.Any(), workspaceID, account.ID).Return(entity.Membership{}, nil)
+
+	h.identities.EXPECT().
+		Get(gomock.Any(), workspaceID, account.ID).
+		Return(entity.SSOIdentity{
+			WorkspaceID: workspaceID,
+			AccountID:   account.ID,
+			Subject:     "somebody-else",
+		}, nil)
+
+	_, err := h.complete()
+	if err == nil {
+		t.Fatal(
+			"a provider identity that is not the linked one was accepted. An identity-provider " +
+				"rebuild, or somebody newly holding that email address, would silently take over " +
+				"the Norn account.",
+		)
+	}
+
+	if stage := stageOf(t, err); stage != entity.SSOStageMatching {
+		t.Fatalf("stage %q, want %q", stage, entity.SSOStageMatching)
+	}
+}

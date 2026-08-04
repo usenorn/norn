@@ -13,8 +13,11 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
+	breakglassrepo "github.com/usenorn/norn/internal/repository/breakglass"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	ssoconnectionrepo "github.com/usenorn/norn/internal/repository/ssoconnection"
+	ssoidentityrepo "github.com/usenorn/norn/internal/repository/ssoidentity"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
@@ -36,6 +39,9 @@ type harness struct {
 	teamMembers  *teammemberrepo.MockTeamMember
 	states       *workflowstaterepo.MockWorkflowState
 	authPolicies *authpolicyrepo.MockWorkspaceAuthPolicy
+	connections  *ssoconnectionrepo.MockSSOConnection
+	identities   *ssoidentityrepo.MockSSOIdentity
+	breakGlass   *breakglassrepo.MockBreakGlass
 	producer     *jobqueuerepo.MockJobProducer
 	authorizer   *authorizersvc.MockAuthorizer
 	service      service.Workspaces
@@ -62,6 +68,9 @@ func newHarness(t *testing.T) *harness {
 		teamMembers:  teammemberrepo.NewMockTeamMember(ctrl),
 		states:       workflowstaterepo.NewMockWorkflowState(ctrl),
 		authPolicies: authpolicyrepo.NewMockWorkspaceAuthPolicy(ctrl),
+		connections:  ssoconnectionrepo.NewMockSSOConnection(ctrl),
+		identities:   ssoidentityrepo.NewMockSSOIdentity(ctrl),
+		breakGlass:   breakglassrepo.NewMockBreakGlass(ctrl),
 		producer:     jobqueuerepo.NewMockJobProducer(ctrl),
 		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
 	}
@@ -74,6 +83,9 @@ func newHarness(t *testing.T) *harness {
 		h.teamMembers,
 		h.states,
 		h.authPolicies,
+		h.connections,
+		h.identities,
+		h.breakGlass,
 		h.producer,
 		h.authorizer,
 		transactor,

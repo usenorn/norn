@@ -6,6 +6,7 @@ import type { PageLoad } from "./$types";
 export type MembersData = {
 	listing: MemberListing;
 	query: string;
+	linked: string[];
 };
 
 export const load: PageLoad = async ({ fetch, url, parent }): Promise<MembersData> => {
@@ -15,16 +16,26 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<MembersDat
 	const query = url.searchParams.get("q") ?? "";
 
 	if (import.meta.env.DEV && membersPreviewStates[url.searchParams.get("state") ?? ""]) {
-		return { listing: { kind: "loading" }, query };
+		return { listing: { kind: "loading" }, query, linked: [] };
 	}
 
-	const { data } = await api.GET("/workspaces/{workspaceId}/members", {
-		fetch,
-		params: {
-			path: { workspaceId: workspace.id },
-			query: { query: query || undefined, limit: memberPageSize },
-		},
-	});
+	const [members, identities] = await Promise.all([
+		api.GET("/workspaces/{workspaceId}/members", {
+			fetch,
+			params: {
+				path: { workspaceId: workspace.id },
+				query: { query: query || undefined, limit: memberPageSize },
+			},
+		}),
+		api.GET("/workspaces/{workspaceId}/sso/identities", {
+			fetch,
+			params: { path: { workspaceId: workspace.id } },
+		}),
+	]);
 
-	return { listing: listingFor(data, query), query };
+	return {
+		listing: listingFor(members.data, query),
+		query,
+		linked: (identities.data ?? []).map((identity) => identity.accountId),
+	};
 };

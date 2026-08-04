@@ -6,10 +6,12 @@ export type SsoStage = components["schemas"]["SsoStage"];
 export type SsoProtocol = components["schemas"]["SsoProtocol"];
 
 type SaveResponses = operations["setWorkspaceOidcConnection"]["responses"];
+type PolicyResponses = operations["setWorkspaceAuthPolicy"]["responses"];
 
 type SsoProblem = components["schemas"]["SsoProblem"];
 
 export type SaveProblem = SaveResponses[403 | 422 | 500]["content"]["application/problem+json"];
+export type PolicyProblem = PolicyResponses[403 | 422 | 500]["content"]["application/problem+json"];
 
 export type SsoConfiguration =
 	| { kind: "loading" }
@@ -165,4 +167,31 @@ export function certificateAdvice(daysLeft: number | undefined): string {
 	}
 
 	return "When it expires nobody will be able to sign in through this provider.";
+}
+
+export type AuthEnforcement = components["schemas"]["AuthEnforcement"];
+export type EnforcementBlocker = components["schemas"]["EnforcementBlocker"];
+
+export type Enforcement =
+	| { kind: "loading" }
+	| { kind: "available"; enforcing: boolean }
+	| { kind: "blocked"; blocker: EnforcementBlocker }
+	| { kind: "unavailable" };
+
+export type RecoveryCodes =
+	| { kind: "none" }
+	| { kind: "issued"; codes: string[] };
+
+export const blockerCopy: Record<EnforcementBlocker, string> = {
+	no_connection: "Configure a provider above before requiring it.",
+	not_verified:
+		"Test the connection first. Requiring a provider nobody has proved works would lock everyone out at once.",
+	no_linked_admin:
+		"No administrator has signed in through this provider yet. At least one has to, so somebody can still administer this workspace afterwards.",
+};
+
+export function enforcementProblem(problem: PolicyProblem): EnforcementBlocker | null {
+	if ("blocker" in problem && problem.blocker) return problem.blocker;
+
+	return null;
 }

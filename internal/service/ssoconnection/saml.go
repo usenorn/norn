@@ -347,6 +347,7 @@ func (s *connectionsService) CompleteSAML(
 		connection.Provisioning,
 		identity.Email,
 		identity.Name,
+		identity.Subject,
 	)
 	if err != nil {
 		return exchange, err

@@ -14,6 +14,7 @@ export type WorkspaceScope = {
 	member: { id: string; name: string };
 	teams: Team[] | null;
 	projects: NavProject[];
+	narrowed: boolean;
 };
 
 export const load: LayoutLoad = async ({ fetch, params, url}): Promise<WorkspaceScope> => {
@@ -36,6 +37,7 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 	});
 
 	return {
+		narrowed: requiresProvider(teams.error),
 		now: new Date().toISOString(),
 		workspace,
 		workspaces: workspaces.data,
@@ -48,3 +50,12 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 		],
 	};
 };
+
+function requiresProvider(problem: unknown): boolean {
+	return (
+		typeof problem === "object" &&
+		problem !== null &&
+		"reason" in problem &&
+		problem.reason === "auth_method_not_permitted"
+	);
+}

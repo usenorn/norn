@@ -48,6 +48,8 @@ func TestTheAuthPolicyScreenIsReachedThroughItsOwnResource(t *testing.T) {
 		workspaceWithStatus(workspaceID, entity.WorkspaceStatusActive),
 	)
 
+	h.expectReadyForEnforcement(workspaceID)
+
 	h.authPolicies.EXPECT().
 		Upsert(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, policy entity.WorkspaceAuthPolicy) (entity.WorkspaceAuthPolicy, error) {
@@ -59,8 +61,8 @@ func TestTheAuthPolicyScreenIsReachedThroughItsOwnResource(t *testing.T) {
 		t.Fatalf("SetAuthPolicy: %v", err)
 	}
 
-	if policy.Enforcement != entity.AuthEnforcementSSO {
-		t.Fatalf("enforcement = %q, want sso", policy.Enforcement)
+	if policy.Policy.Enforcement != entity.AuthEnforcementSSO {
+		t.Fatalf("enforcement = %q, want sso", policy.Policy.Enforcement)
 	}
 }
 
@@ -81,4 +83,11 @@ func TestListMembersIsRefusedWhenTheDecisionIsRefused(t *testing.T) {
 	if !errors.Is(err, entity.ErrWorkspaceAuthMethodNotPermitted) {
 		t.Fatalf("ListMembers error = %v, want ErrWorkspaceAuthMethodNotPermitted", err)
 	}
+}
+
+func (h *harness) expectReadyForEnforcement(workspaceID uuid.UUID) {
+	h.workspaces.EXPECT().LockByIDs(gomock.Any(), []uuid.UUID{workspaceID}).Return(nil)
+	h.connections.EXPECT().Verified(gomock.Any(), workspaceID).Return(true, nil)
+	h.identities.EXPECT().AnyLinkedAdmin(gomock.Any(), workspaceID).Return(true, nil)
+	h.breakGlass.EXPECT().Replace(gomock.Any(), workspaceID, gomock.Any(), gomock.Any()).Return(nil)
 }

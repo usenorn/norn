@@ -294,3 +294,66 @@ func TestAnAnonymousRequestIsDistinguishableFromARefusedOne(t *testing.T) {
 		t.Fatalf("reason = %q, want no_actor so the edge can answer 401 rather than hiding the resource", denied.Reason)
 	}
 }
+
+func TestTheEnforcementDenialIsDistinguishableFromAnOrdinaryRefusal(t *testing.T) {
+	harness := newDecider(t, &stubEnforcer{allow: true}, entity.MembershipRoleAdmin, entity.AuthEnforcementSSO)
+
+	_, err := harness.Decide(actingAs(uuid.New(), entity.SessionAuthMethodPassword), entity.AccessRequest{
+		Resource:    entity.ResourceMembership,
+		Action:      entity.ActionRead,
+		WorkspaceID: uuid.New(),
+	})
+
+	if !errors.Is(err, entity.ErrWorkspaceAuthMethodNotPermitted) {
+		t.Fatalf(
+			"a refusal for the wrong authentication method came back as %v. A caller cannot tell "+
+				"it apart from an ordinary permission refusal, so no screen can offer to sign the "+
+				"person in through their provider.",
+			err,
+		)
+	}
+
+	if errors.Is(err, entity.ErrAccountForbidden) {
+		t.Fatal(
+			"the enforcement denial still reads as a plain forbidden, so anything switching on " +
+				"that sentinel would treat it as a role problem",
+		)
+	}
+}
+
+func TestTheSSOConnectionScreenIsNotNarrowedByTheAuthMethodEither(t *testing.T) {
+	harness := newDecider(t, &stubEnforcer{allow: true}, entity.MembershipRoleAdmin, entity.AuthEnforcementSSO)
+
+	if _, err := harness.Decide(actingAs(uuid.New(), entity.SessionAuthMethodPassword), entity.AccessRequest{
+		Resource:    entity.ResourceSSOConnection,
+		Action:      entity.ActionUpdate,
+		WorkspaceID: uuid.New(),
+	}); err != nil {
+		t.Fatalf(
+			"an admin on a password session cannot reach the provider settings (%v). That is the "+
+				"screen they need in order to repair a provider that has stopped working, so it "+
+				"has to stay reachable exactly when enforcement is refusing everything else.",
+			err,
+		)
+	}
+}
+
+func TestAnActorWithNoAuthMethodIsRefusedEvenWhereAnythingIsAccepted(t *testing.T) {
+	harness := newDecider(t, &stubEnforcer{allow: true}, entity.MembershipRoleAdmin, entity.AuthEnforcementAny)
+
+	_, err := harness.Decide(actingAs(uuid.New(), ""), entity.AccessRequest{
+		Resource:    entity.ResourceMembership,
+		Action:      entity.ActionRead,
+		WorkspaceID: uuid.New(),
+	})
+
+	var denied entity.AccessDeniedError
+	if !errors.As(err, &denied) || denied.Reason != entity.DenyReasonAuthMethodNotPermitted {
+		t.Fatalf(
+			"an actor claiming no authentication method at all was admitted to a workspace that "+
+				"accepts any method (%v). Anything that builds an actor without setting the method "+
+				"would silently gain access; refusing is the safe reading of an unknown method.",
+			err,
+		)
+	}
+}

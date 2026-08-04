@@ -24,5 +24,20 @@ type Workspaces interface {
 	PreviewMemberRemoval(ctx context.Context, workspaceID, accountID uuid.UUID) (MemberRemoval, error)
 	RemoveMember(ctx context.Context, workspaceID, accountID uuid.UUID, reassignTo *uuid.UUID) error
 	AuthPolicy(ctx context.Context, workspaceID uuid.UUID) (entity.WorkspaceAuthPolicy, error)
-	SetAuthPolicy(ctx context.Context, workspaceID uuid.UUID, enforcement entity.AuthEnforcement) (entity.WorkspaceAuthPolicy, error)
+	SetAuthPolicy(ctx context.Context, workspaceID uuid.UUID, enforcement entity.AuthEnforcement) (AuthPolicyOutcome, error)
+	EnforcementReadiness(ctx context.Context, workspaceID uuid.UUID) (entity.EnforcementBlocker, error)
+	RedeemRecoveryCode(ctx context.Context, input RedeemRecoveryCodeInput) error
+	ListSSOIdentities(ctx context.Context, workspaceID uuid.UUID) ([]entity.SSOIdentity, error)
+	UnlinkSSOIdentity(ctx context.Context, workspaceID, accountID uuid.UUID) error
+}
+
+type AuthPolicyOutcome struct {
+	Policy        entity.WorkspaceAuthPolicy
+	RecoveryCodes []string
+}
+
+type RedeemRecoveryCodeInput struct {
+	WorkspaceSlug string
+	Code          string
+	From          string
 }

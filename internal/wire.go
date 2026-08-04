@@ -27,6 +27,7 @@ import (
 	apitokenrepo "github.com/usenorn/norn/internal/repository/apitoken"
 	blobrepo "github.com/usenorn/norn/internal/repository/blob"
 	breachcheckrepo "github.com/usenorn/norn/internal/repository/breachcheck"
+	breakglassrepo "github.com/usenorn/norn/internal/repository/breakglass"
 	bulkactionrepo "github.com/usenorn/norn/internal/repository/bulkaction"
 	emailchangerepo "github.com/usenorn/norn/internal/repository/emailchange"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
@@ -49,6 +50,7 @@ import (
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	signuprepo "github.com/usenorn/norn/internal/repository/signup"
 	ssoconnectionrepo "github.com/usenorn/norn/internal/repository/ssoconnection"
+	ssoidentityrepo "github.com/usenorn/norn/internal/repository/ssoidentity"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
@@ -115,6 +117,8 @@ var baseSet = wire.NewSet(
 	teamrepo.Set,
 	teammemberrepo.Set,
 	ssoconnectionrepo.Set,
+	ssoidentityrepo.Set,
+	breakglassrepo.Set,
 	samlrequestrepo.Set,
 	samlreplayrepo.Set,
 	oidcstaterepo.Set,

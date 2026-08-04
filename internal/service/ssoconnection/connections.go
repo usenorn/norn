@@ -21,6 +21,7 @@ import (
 
 type connectionsService struct {
 	connections repository.SSOConnection
+	identities  repository.SSOIdentity
 	states      repository.OIDCState
 	requests    repository.SAMLRequest
 	replays     repository.SAMLReplay
@@ -38,6 +39,7 @@ type connectionsService struct {
 
 func New(
 	connections repository.SSOConnection,
+	identities repository.SSOIdentity,
 	states repository.OIDCState,
 	requests repository.SAMLRequest,
 	replays repository.SAMLReplay,
@@ -54,6 +56,7 @@ func New(
 ) service.SSOConnections {
 	return &connectionsService{
 		connections: connections,
+		identities:  identities,
 		states:      states,
 		requests:    requests,
 		replays:     replays,
@@ -348,6 +351,7 @@ func (s *connectionsService) admit(
 		connection.Provisioning,
 		entity.NormalizeEmail(claims.Email),
 		claims.Name,
+		claims.Subject,
 	)
 }
 
@@ -355,7 +359,7 @@ func (s *connectionsService) admitIdentity(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	provisioning bool,
-	email, name string,
+	email, name, subject string,
 ) (entity.Account, bool, error) {
 	account, err := s.accounts.GetByEmail(ctx, email)
 	if err != nil && !errors.Is(err, entity.ErrAccountNotFound) {
@@ -388,6 +392,10 @@ func (s *connectionsService) admitIdentity(
 	}
 
 	if outcome == entity.MatchOutcomeSignIn {
+		if err := s.link(ctx, workspaceID, account.ID, subject, email); err != nil {
+			return entity.Account{}, false, err
+		}
+
 		return account, false, nil
 	}
 
@@ -396,7 +404,45 @@ func (s *connectionsService) admitIdentity(
 		return entity.Account{}, false, err
 	}
 
+	if err := s.link(ctx, workspaceID, provisioned.ID, subject, email); err != nil {
+		return entity.Account{}, false, err
+	}
+
 	return provisioned, true, nil
+}
+
+func (s *connectionsService) link(
+	ctx context.Context,
+	workspaceID, accountID uuid.UUID,
+	subject, email string,
+) error {
+	if strings.TrimSpace(subject) == "" {
+		return nil
+	}
+
+	existing, err := s.identities.Get(ctx, workspaceID, accountID)
+	if err != nil && !errors.Is(err, entity.ErrSSOIdentityNotFound) {
+		return err
+	}
+
+	var linked *entity.SSOIdentity
+	if err == nil {
+		linked = &existing
+	}
+
+	if err := entity.MatchLink(linked, subject, email); err != nil {
+		return err
+	}
+
+	if linked != nil {
+		return nil
+	}
+
+	return s.identities.Link(ctx, entity.SSOIdentity{
+		WorkspaceID: workspaceID,
+		AccountID:   accountID,
+		Subject:     strings.TrimSpace(subject),
+	})
 }
 
 func (s *connectionsService) provision(
