@@ -12,42 +12,59 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/samlprovider"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 )
 
 type connectionsService struct {
-	connections repository.OIDCConnection
+	connections repository.SSOConnection
 	states      repository.OIDCState
+	requests    repository.SAMLRequest
+	replays     repository.SAMLReplay
+	provider    repository.OIDCProvider
+	saml        *samlprovider.Client
+	app         config.App
 	workspaces  repository.Workspace
 	accounts    repository.Account
 	memberships repository.Membership
-	provider    repository.OIDCProvider
+	mailer      repository.Mailer
 	sessions    service.Sessions
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
 }
 
 func New(
-	connections repository.OIDCConnection,
+	connections repository.SSOConnection,
 	states repository.OIDCState,
+	requests repository.SAMLRequest,
+	replays repository.SAMLReplay,
 	workspaces repository.Workspace,
 	accounts repository.Account,
 	memberships repository.Membership,
 	provider repository.OIDCProvider,
+	saml *samlprovider.Client,
+	mailer repository.Mailer,
 	sessions service.Sessions,
+	app config.App,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.SSOConnections {
 	return &connectionsService{
 		connections: connections,
 		states:      states,
+		requests:    requests,
+		replays:     replays,
 		workspaces:  workspaces,
 		accounts:    accounts,
 		memberships: memberships,
 		provider:    provider,
+		saml:        saml,
+		mailer:      mailer,
 		sessions:    sessions,
+		app:         app,
 		authorizer:  authorizer,
 		transactor:  transactor,
 	}
@@ -75,7 +92,7 @@ func (s *connectionsService) Get(
 		return entity.OIDCConnection{}, err
 	}
 
-	return s.connections.Get(ctx, workspaceID)
+	return s.connections.GetOIDC(ctx, workspaceID)
 }
 
 func (s *connectionsService) Discover(
@@ -138,7 +155,7 @@ func (s *connectionsService) Save(
 		return entity.OIDCConnection{}, err
 	}
 
-	return s.connections.Save(ctx, connection)
+	return s.connections.SaveOIDC(ctx, connection)
 }
 
 func (s *connectionsService) secretFor(
@@ -149,11 +166,11 @@ func (s *connectionsService) secretFor(
 		return input.ClientSecret, nil
 	}
 
-	existing, err := s.connections.Get(ctx, input.WorkspaceID)
+	existing, err := s.connections.GetOIDC(ctx, input.WorkspaceID)
 	if err != nil {
-		if errors.Is(err, entity.ErrOIDCConnectionNotFound) {
-			return "", entity.NewOIDCError(
-				entity.OIDCStageEndpoints,
+		if errors.Is(err, entity.ErrSSOConnectionNotFound) {
+			return "", entity.NewSSOError(
+				entity.SSOStageEndpoints,
 				"Enter the client secret your provider issued.",
 			)
 		}
@@ -177,12 +194,12 @@ func (s *connectionsService) BeginTest(ctx context.Context, workspaceID uuid.UUI
 		return "", err
 	}
 
-	connection, err := s.connections.Get(ctx, workspaceID)
+	connection, err := s.connections.GetOIDC(ctx, workspaceID)
 	if err != nil {
 		return "", err
 	}
 
-	return s.begin(ctx, connection, entity.OIDCPurposeTest, "")
+	return s.begin(ctx, connection, entity.SSOPurposeTest, "")
 }
 
 func (s *connectionsService) BeginLogin(
@@ -192,24 +209,24 @@ func (s *connectionsService) BeginLogin(
 	workspace, err := s.workspaces.GetBySlug(ctx, input.WorkspaceSlug)
 	if err != nil {
 		if errors.Is(err, entity.ErrWorkspaceNotFound) {
-			return "", entity.ErrOIDCConnectionNotFound
+			return "", entity.ErrSSOConnectionNotFound
 		}
 
 		return "", err
 	}
 
-	connection, err := s.connections.Get(ctx, workspace.ID)
+	connection, err := s.connections.GetOIDC(ctx, workspace.ID)
 	if err != nil {
 		return "", err
 	}
 
-	return s.begin(ctx, connection, entity.OIDCPurposeLogin, input.ReturnTo)
+	return s.begin(ctx, connection, entity.SSOPurposeLogin, input.ReturnTo)
 }
 
 func (s *connectionsService) begin(
 	ctx context.Context,
 	connection entity.OIDCConnection,
-	purpose entity.OIDCPurpose,
+	purpose entity.SSOPurpose,
 	returnTo string,
 ) (string, error) {
 	state, err := opaque()
@@ -248,29 +265,30 @@ func (s *connectionsService) begin(
 func (s *connectionsService) Complete(
 	ctx context.Context,
 	input service.CompleteOIDCInput,
-) (entity.OIDCExchange, error) {
+) (entity.SSOExchange, error) {
 	attempt, err := s.states.Take(ctx, input.State)
 	if err != nil {
-		return entity.OIDCExchange{}, err
+		return entity.SSOExchange{}, err
 	}
 
 	if !attempt.Purpose.Valid() {
-		return entity.OIDCExchange{}, entity.ErrOIDCStateNotFound
+		return entity.SSOExchange{}, entity.ErrSSOStateNotFound
 	}
 
 	workspace, err := s.workspaces.GetByID(ctx, attempt.WorkspaceID)
 	if err != nil {
-		return entity.OIDCExchange{}, err
+		return entity.SSOExchange{}, err
 	}
 
-	exchange := entity.OIDCExchange{
+	exchange := entity.SSOExchange{
+		Protocol:      entity.SSOProtocolOIDC,
 		Purpose:       attempt.Purpose,
 		WorkspaceID:   attempt.WorkspaceID,
 		WorkspaceSlug: workspace.Slug,
 		ReturnTo:      attempt.ReturnTo,
 	}
 
-	connection, err := s.connections.Get(ctx, attempt.WorkspaceID)
+	connection, err := s.connections.GetOIDC(ctx, attempt.WorkspaceID)
 	if err != nil {
 		return exchange, err
 	}
@@ -288,9 +306,9 @@ func (s *connectionsService) Complete(
 		return exchange, err
 	}
 
-	exchange.Claims = claims
+	exchange.Email = entity.NormalizeEmail(claims.Email)
 
-	if attempt.Purpose == entity.OIDCPurposeTest {
+	if attempt.Purpose == entity.SSOPurposeTest {
 		if err := s.connections.MarkVerified(ctx, attempt.WorkspaceID, time.Now().UTC()); err != nil {
 			return exchange, err
 		}
@@ -324,8 +342,21 @@ func (s *connectionsService) admit(
 	connection entity.OIDCConnection,
 	claims entity.OIDCClaims,
 ) (entity.Account, bool, error) {
-	email := entity.NormalizeEmail(claims.Email)
+	return s.admitIdentity(
+		ctx,
+		connection.WorkspaceID,
+		connection.Provisioning,
+		entity.NormalizeEmail(claims.Email),
+		claims.Name,
+	)
+}
 
+func (s *connectionsService) admitIdentity(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	provisioning bool,
+	email, name string,
+) (entity.Account, bool, error) {
 	account, err := s.accounts.GetByEmail(ctx, email)
 	if err != nil && !errors.Is(err, entity.ErrAccountNotFound) {
 		return entity.Account{}, false, err
@@ -336,13 +367,13 @@ func (s *connectionsService) admit(
 
 	if exists {
 		if account.Status != entity.AccountStatusActive {
-			return entity.Account{}, false, entity.NewOIDCError(
-				entity.OIDCStageMatching,
+			return entity.Account{}, false, entity.NewSSOError(
+				entity.SSOStageMatching,
 				"The Norn account for "+email+" is not active.",
 			)
 		}
 
-		if _, err := s.memberships.Get(ctx, connection.WorkspaceID, account.ID); err != nil {
+		if _, err := s.memberships.Get(ctx, workspaceID, account.ID); err != nil {
 			if !errors.Is(err, entity.ErrMembershipNotFound) {
 				return entity.Account{}, false, err
 			}
@@ -351,7 +382,7 @@ func (s *connectionsService) admit(
 		}
 	}
 
-	outcome := entity.ResolveMatch(exists, member, connection.Provisioning)
+	outcome := entity.ResolveMatch(exists, member, provisioning)
 	if !outcome.Admits() {
 		return entity.Account{}, false, outcome.Refusal(email)
 	}
@@ -360,7 +391,7 @@ func (s *connectionsService) admit(
 		return account, false, nil
 	}
 
-	provisioned, err := s.provision(ctx, connection.WorkspaceID, email, claims.Name)
+	provisioned, err := s.provision(ctx, workspaceID, email, name)
 	if err != nil {
 		return entity.Account{}, false, err
 	}
@@ -401,8 +432,8 @@ func (s *connectionsService) provision(
 		return nil
 	})
 	if err != nil {
-		return entity.Account{}, entity.OIDCFailure(
-			entity.OIDCStageProvisioning,
+		return entity.Account{}, entity.SSOFailure(
+			entity.SSOStageProvisioning,
 			"Norn could not create an account for "+email+".",
 			err,
 		)

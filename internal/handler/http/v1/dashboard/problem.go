@@ -218,16 +218,16 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
-	if errors.Is(err, entity.ErrOIDCEncryptionKeyMissing) {
+	if errors.Is(err, entity.ErrSSOEncryptionKeyMissing) {
 		return newProblem(http.StatusInternalServerError, err.Error()), true
 	}
 
-	if failure, ok := entity.AsOIDCError(err); ok {
+	if failure, ok := entity.AsSSOError(err); ok {
 		base := baseProblem(http.StatusUnprocessableEntity, failure.Message)
-		stage := api.OidcStage(failure.Stage)
+		stage := api.SsoStage(failure.Stage)
 
-		problem := api.OidcProblem{
-			Code:     api.OidcProblemCodeOidcFailed,
+		problem := api.SsoProblem{
+			Code:     api.SsoProblemCodeSsoFailed,
 			Stage:    stage,
 			Detail:   base.Detail,
 			Instance: base.Instance,
@@ -308,8 +308,8 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrBulkActionNotFound),
 		errors.Is(err, entity.ErrWorkflowStateNotFound),
 		errors.Is(err, entity.ErrAvatarMissing),
-		errors.Is(err, entity.ErrOIDCConnectionNotFound),
-		errors.Is(err, entity.ErrOIDCStateNotFound):
+		errors.Is(err, entity.ErrSSOConnectionNotFound),
+		errors.Is(err, entity.ErrSSOStateNotFound):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
 	case errors.Is(err, entity.ErrAccountForbidden),

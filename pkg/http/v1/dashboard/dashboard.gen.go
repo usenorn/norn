@@ -660,60 +660,6 @@ func (e MembershipSource) Valid() bool {
 	}
 }
 
-// Defines values for OidcProblemCode.
-const (
-	OidcProblemCodeOidcFailed OidcProblemCode = "oidc_failed"
-)
-
-// Valid indicates whether the value is a known member of the OidcProblemCode enum.
-func (e OidcProblemCode) Valid() bool {
-	switch e {
-	case OidcProblemCodeOidcFailed:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for OidcStage.
-const (
-	Authorization OidcStage = "authorization"
-	Claims        OidcStage = "claims"
-	Discovery     OidcStage = "discovery"
-	Endpoints     OidcStage = "endpoints"
-	IdToken       OidcStage = "id_token"
-	Jwks          OidcStage = "jwks"
-	Matching      OidcStage = "matching"
-	Provisioning  OidcStage = "provisioning"
-	TokenExchange OidcStage = "token_exchange"
-)
-
-// Valid indicates whether the value is a known member of the OidcStage enum.
-func (e OidcStage) Valid() bool {
-	switch e {
-	case Authorization:
-		return true
-	case Claims:
-		return true
-	case Discovery:
-		return true
-	case Endpoints:
-		return true
-	case IdToken:
-		return true
-	case Jwks:
-		return true
-	case Matching:
-		return true
-	case Provisioning:
-		return true
-	case TokenExchange:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for RateLimitedProblemCode.
 const (
 	RateLimited RateLimitedProblemCode = "rate_limited"
@@ -840,6 +786,102 @@ func (e SignUpUnusableProblemCode) Valid() bool {
 	case SignUpEmailTaken:
 		return true
 	case SignUpUsed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SsoProblemCode.
+const (
+	SsoProblemCodeSsoFailed SsoProblemCode = "sso_failed"
+)
+
+// Valid indicates whether the value is a known member of the SsoProblemCode enum.
+func (e SsoProblemCode) Valid() bool {
+	switch e {
+	case SsoProblemCodeSsoFailed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SsoProtocol.
+const (
+	Oidc SsoProtocol = "oidc"
+	Saml SsoProtocol = "saml"
+)
+
+// Valid indicates whether the value is a known member of the SsoProtocol enum.
+func (e SsoProtocol) Valid() bool {
+	switch e {
+	case Oidc:
+		return true
+	case Saml:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SsoStage.
+const (
+	Attributes    SsoStage = "attributes"
+	Authorization SsoStage = "authorization"
+	Certificate   SsoStage = "certificate"
+	Claims        SsoStage = "claims"
+	Conditions    SsoStage = "conditions"
+	Discovery     SsoStage = "discovery"
+	Endpoints     SsoStage = "endpoints"
+	IdToken       SsoStage = "id_token"
+	Jwks          SsoStage = "jwks"
+	Matching      SsoStage = "matching"
+	Metadata      SsoStage = "metadata"
+	Provisioning  SsoStage = "provisioning"
+	Replay        SsoStage = "replay"
+	Request       SsoStage = "request"
+	Response      SsoStage = "response"
+	Signature     SsoStage = "signature"
+	TokenExchange SsoStage = "token_exchange"
+)
+
+// Valid indicates whether the value is a known member of the SsoStage enum.
+func (e SsoStage) Valid() bool {
+	switch e {
+	case Attributes:
+		return true
+	case Authorization:
+		return true
+	case Certificate:
+		return true
+	case Claims:
+		return true
+	case Conditions:
+		return true
+	case Discovery:
+		return true
+	case Endpoints:
+		return true
+	case IdToken:
+		return true
+	case Jwks:
+		return true
+	case Matching:
+		return true
+	case Metadata:
+		return true
+	case Provisioning:
+		return true
+	case Replay:
+		return true
+	case Request:
+		return true
+	case Response:
+		return true
+	case Signature:
+		return true
+	case TokenExchange:
 		return true
 	default:
 		return false
@@ -1707,25 +1749,6 @@ type OidcEndpoints struct {
 	UserinfoEndpoint      *string `json:"userinfoEndpoint,omitempty"`
 }
 
-// OidcProblem defines model for OidcProblem.
-type OidcProblem struct {
-	Code            OidcProblemCode `json:"code"`
-	Detail          *string         `json:"detail,omitempty"`
-	Errors          *[]FieldError   `json:"errors,omitempty"`
-	Instance        *string         `json:"instance,omitempty"`
-	ProviderMessage *string         `json:"providerMessage,omitempty"`
-	Stage           OidcStage       `json:"stage"`
-	Status          int32           `json:"status"`
-	Title           string          `json:"title"`
-	Type            string          `json:"type"`
-}
-
-// OidcProblemCode defines model for OidcProblem.Code.
-type OidcProblemCode string
-
-// OidcStage defines model for OidcStage.
-type OidcStage string
-
 // PasswordResetRequested defines model for PasswordResetRequested.
 type PasswordResetRequested struct {
 	ExpiresAt time.Time `json:"expiresAt"`
@@ -1759,6 +1782,12 @@ type RateLimitedProblem struct {
 
 // RateLimitedProblemCode defines model for RateLimitedProblem.Code.
 type RateLimitedProblemCode string
+
+// ReadSamlMetadataRequest defines model for ReadSamlMetadataRequest.
+type ReadSamlMetadataRequest struct {
+	Metadata    *string `json:"metadata,omitempty"`
+	MetadataUrl *string `json:"metadataUrl,omitempty"`
+}
 
 // ReorderWorkflowStatesRequest defines model for ReorderWorkflowStatesRequest.
 type ReorderWorkflowStatesRequest struct {
@@ -1810,6 +1839,22 @@ type ResetLinkUsedProblem struct {
 
 // ResetLinkUsedProblemCode defines model for ResetLinkUsedProblem.Code.
 type ResetLinkUsedProblemCode string
+
+// SamlAttributeMapping defines model for SamlAttributeMapping.
+type SamlAttributeMapping struct {
+	Email  *string `json:"email,omitempty"`
+	Groups *string `json:"groups,omitempty"`
+	Name   *string `json:"name,omitempty"`
+}
+
+// SamlDescriptor defines model for SamlDescriptor.
+type SamlDescriptor struct {
+	Certificates []string  `json:"certificates"`
+	EntityId     string    `json:"entityId"`
+	ExpiresAt    time.Time `json:"expiresAt"`
+	SloUrl       *string   `json:"sloUrl,omitempty"`
+	SsoUrl       string    `json:"ssoUrl"`
+}
 
 // Session defines model for Session.
 type Session struct {
@@ -1879,6 +1924,16 @@ type SetWorkspaceOidcConnectionRequest struct {
 	Scopes       *[]string      `json:"scopes,omitempty"`
 }
 
+// SetWorkspaceSamlConnectionRequest defines model for SetWorkspaceSamlConnectionRequest.
+type SetWorkspaceSamlConnectionRequest struct {
+	AllowIdpInitiated *bool                 `json:"allowIdpInitiated,omitempty"`
+	Descriptor        *SamlDescriptor       `json:"descriptor,omitempty"`
+	Mapping           *SamlAttributeMapping `json:"mapping,omitempty"`
+	Metadata          *string               `json:"metadata,omitempty"`
+	MetadataUrl       *string               `json:"metadataUrl,omitempty"`
+	Provisioning      *bool                 `json:"provisioning,omitempty"`
+}
+
 // SignInRequest defines model for SignInRequest.
 type SignInRequest struct {
 	Email    string `json:"email"`
@@ -1937,6 +1992,28 @@ type SignUpUnusableProblem struct {
 
 // SignUpUnusableProblemCode defines model for SignUpUnusableProblem.Code.
 type SignUpUnusableProblemCode string
+
+// SsoProblem defines model for SsoProblem.
+type SsoProblem struct {
+	Code            SsoProblemCode `json:"code"`
+	Detail          *string        `json:"detail,omitempty"`
+	Errors          *[]FieldError  `json:"errors,omitempty"`
+	Instance        *string        `json:"instance,omitempty"`
+	ProviderMessage *string        `json:"providerMessage,omitempty"`
+	Stage           SsoStage       `json:"stage"`
+	Status          int32          `json:"status"`
+	Title           string         `json:"title"`
+	Type            string         `json:"type"`
+}
+
+// SsoProblemCode defines model for SsoProblem.Code.
+type SsoProblemCode string
+
+// SsoProtocol defines model for SsoProtocol.
+type SsoProtocol string
+
+// SsoStage defines model for SsoStage.
+type SsoStage string
 
 // StateCategory defines model for StateCategory.
 type StateCategory string
@@ -2109,6 +2186,31 @@ type WorkspaceOidcConnection struct {
 	WorkspaceId  openapi_types.UUID `json:"workspaceId"`
 }
 
+// WorkspaceSamlConnection defines model for WorkspaceSamlConnection.
+type WorkspaceSamlConnection struct {
+	AcsUrl               string               `json:"acsUrl"`
+	AllowIdpInitiated    bool                 `json:"allowIdpInitiated"`
+	CertificateDaysLeft  *int32               `json:"certificateDaysLeft,omitempty"`
+	CertificateExpiresAt time.Time            `json:"certificateExpiresAt"`
+	Descriptor           SamlDescriptor       `json:"descriptor"`
+	Mapping              SamlAttributeMapping `json:"mapping"`
+	MetadataUrl          string               `json:"metadataUrl"`
+	ProviderMetadataUrl  *string              `json:"providerMetadataUrl,omitempty"`
+	Provisioning         bool                 `json:"provisioning"`
+	SignInUrl            *string              `json:"signInUrl,omitempty"`
+	SpCertificate        string               `json:"spCertificate"`
+	SpEntityId           string               `json:"spEntityId"`
+	UpdatedAt            time.Time            `json:"updatedAt"`
+	VerifiedAt           *time.Time           `json:"verifiedAt,omitempty"`
+	WorkspaceId          openapi_types.UUID   `json:"workspaceId"`
+}
+
+// WorkspaceSsoProtocol defines model for WorkspaceSsoProtocol.
+type WorkspaceSsoProtocol struct {
+	Protocol    SsoProtocol        `json:"protocol"`
+	WorkspaceId openapi_types.UUID `json:"workspaceId"`
+}
+
 // WorkspaceStatus defines model for WorkspaceStatus.
 type WorkspaceStatus string
 
@@ -2169,9 +2271,6 @@ type MailUnavailable = MailUnavailableProblem
 // MembershipConflict defines model for MembershipConflict.
 type MembershipConflict = MembershipConflictProblem
 
-// OidcFailed defines model for OidcFailed.
-type OidcFailed = OidcProblem
-
 // PasswordResetLinkExpired defines model for PasswordResetLinkExpired.
 type PasswordResetLinkExpired = ResetLinkExpiredProblem
 
@@ -2189,6 +2288,9 @@ type SignUpLinkUnusable = SignUpUnusableProblem
 
 // SignUpUnavailable defines model for SignUpUnavailable.
 type SignUpUnavailable = SignUpClosedProblem
+
+// SsoFailed defines model for SsoFailed.
+type SsoFailed = SsoProblem
 
 // TeamConflict defines model for TeamConflict.
 type TeamConflict = TeamConflictProblem
@@ -2303,6 +2405,9 @@ type PreviewInvitationJSONRequestBody = PreviewInvitationRequest
 // BeginOidcLoginJSONRequestBody defines body for BeginOidcLogin for application/json ContentType.
 type BeginOidcLoginJSONRequestBody = BeginOidcLoginRequest
 
+// BeginSamlLoginJSONRequestBody defines body for BeginSamlLogin for application/json ContentType.
+type BeginSamlLoginJSONRequestBody = BeginOidcLoginRequest
+
 // CreateWorkspaceJSONRequestBody defines body for CreateWorkspace for application/json ContentType.
 type CreateWorkspaceJSONRequestBody = CreateWorkspaceRequest
 
@@ -2365,6 +2470,12 @@ type SetWorkspaceOidcConnectionJSONRequestBody = SetWorkspaceOidcConnectionReque
 
 // DiscoverOidcEndpointsJSONRequestBody defines body for DiscoverOidcEndpoints for application/json ContentType.
 type DiscoverOidcEndpointsJSONRequestBody = DiscoverOidcRequest
+
+// SetWorkspaceSamlConnectionJSONRequestBody defines body for SetWorkspaceSamlConnection for application/json ContentType.
+type SetWorkspaceSamlConnectionJSONRequestBody = SetWorkspaceSamlConnectionRequest
+
+// ReadSamlMetadataJSONRequestBody defines body for ReadSamlMetadata for application/json ContentType.
+type ReadSamlMetadataJSONRequestBody = ReadSamlMetadataRequest
 
 // CreateWorkspaceTeamJSONRequestBody defines body for CreateWorkspaceTeam for application/json ContentType.
 type CreateWorkspaceTeamJSONRequestBody = CreateTeamRequest
@@ -2464,6 +2575,9 @@ type ServerInterface interface {
 	// BeginOidcLogin Start a single sign-on exchange for a workspace
 	// (POST /sso/oidc/login)
 	BeginOidcLogin(w http.ResponseWriter, r *http.Request)
+	// BeginSamlLogin Start a SAML sign-in for a workspace
+	// (POST /sso/saml/login)
+	BeginSamlLogin(w http.ResponseWriter, r *http.Request)
 	// ListWorkspaces List the workspaces the signed-in account belongs to
 	// (GET /workspaces)
 	ListWorkspaces(w http.ResponseWriter, r *http.Request)
@@ -2596,6 +2710,12 @@ type ServerInterface interface {
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// RemoveWorkspaceSsoConnection Remove the workspace single sign-on provider, whichever protocol it uses
+	// (DELETE /workspaces/{workspaceId}/sso)
+	RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceSsoProtocol Read which single sign-on protocol this workspace uses
+	// (GET /workspaces/{workspaceId}/sso)
+	GetWorkspaceSsoProtocol(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// RemoveWorkspaceOidcConnection Remove the workspace single sign-on provider
 	// (DELETE /workspaces/{workspaceId}/sso/oidc)
 	RemoveWorkspaceOidcConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -2611,6 +2731,18 @@ type ServerInterface interface {
 	// TestWorkspaceOidcConnection Start a real round trip to the provider that records verification
 	// (POST /workspaces/{workspaceId}/sso/oidc/test)
 	TestWorkspaceOidcConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceSamlConnection Read the workspace SAML provider
+	// (GET /workspaces/{workspaceId}/sso/saml)
+	GetWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// SetWorkspaceSamlConnection Configure the workspace SAML provider
+	// (PUT /workspaces/{workspaceId}/sso/saml)
+	SetWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ReadSamlMetadata Read a provider's metadata from a URL or pasted document, without saving
+	// (POST /workspaces/{workspaceId}/sso/saml/metadata)
+	ReadSamlMetadata(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// TestWorkspaceSamlConnection Start a real round trip to the provider that records verification
+	// (POST /workspaces/{workspaceId}/sso/saml/test)
+	TestWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// ListWorkspaceTeams List the teams the signed-in account may see in the workspace
 	// (GET /workspaces/{workspaceId}/teams)
 	ListWorkspaceTeams(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceTeamsParams)
@@ -2821,6 +2953,12 @@ func (_ Unimplemented) RevokeSession(w http.ResponseWriter, r *http.Request, ses
 // BeginOidcLogin Start a single sign-on exchange for a workspace
 // (POST /sso/oidc/login)
 func (_ Unimplemented) BeginOidcLogin(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// BeginSamlLogin Start a SAML sign-in for a workspace
+// (POST /sso/saml/login)
+func (_ Unimplemented) BeginSamlLogin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3088,6 +3226,18 @@ func (_ Unimplemented) RestoreWorkspace(w http.ResponseWriter, r *http.Request, 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// RemoveWorkspaceSsoConnection Remove the workspace single sign-on provider, whichever protocol it uses
+// (DELETE /workspaces/{workspaceId}/sso)
+func (_ Unimplemented) RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceSsoProtocol Read which single sign-on protocol this workspace uses
+// (GET /workspaces/{workspaceId}/sso)
+func (_ Unimplemented) GetWorkspaceSsoProtocol(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // RemoveWorkspaceOidcConnection Remove the workspace single sign-on provider
 // (DELETE /workspaces/{workspaceId}/sso/oidc)
 func (_ Unimplemented) RemoveWorkspaceOidcConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
@@ -3115,6 +3265,30 @@ func (_ Unimplemented) DiscoverOidcEndpoints(w http.ResponseWriter, r *http.Requ
 // TestWorkspaceOidcConnection Start a real round trip to the provider that records verification
 // (POST /workspaces/{workspaceId}/sso/oidc/test)
 func (_ Unimplemented) TestWorkspaceOidcConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceSamlConnection Read the workspace SAML provider
+// (GET /workspaces/{workspaceId}/sso/saml)
+func (_ Unimplemented) GetWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceSamlConnection Configure the workspace SAML provider
+// (PUT /workspaces/{workspaceId}/sso/saml)
+func (_ Unimplemented) SetWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReadSamlMetadata Read a provider's metadata from a URL or pasted document, without saving
+// (POST /workspaces/{workspaceId}/sso/saml/metadata)
+func (_ Unimplemented) ReadSamlMetadata(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// TestWorkspaceSamlConnection Start a real round trip to the provider that records verification
+// (POST /workspaces/{workspaceId}/sso/saml/test)
+func (_ Unimplemented) TestWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3594,6 +3768,20 @@ func (siw *ServerInterfaceWrapper) BeginOidcLogin(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.BeginOidcLogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// BeginSamlLogin operation middleware
+func (siw *ServerInterfaceWrapper) BeginSamlLogin(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BeginSamlLogin(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5138,6 +5326,58 @@ func (siw *ServerInterfaceWrapper) RestoreWorkspace(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// RemoveWorkspaceSsoConnection operation middleware
+func (siw *ServerInterfaceWrapper) RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveWorkspaceSsoConnection(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceSsoProtocol operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceSsoProtocol(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceSsoProtocol(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RemoveWorkspaceOidcConnection operation middleware
 func (siw *ServerInterfaceWrapper) RemoveWorkspaceOidcConnection(w http.ResponseWriter, r *http.Request) {
 
@@ -5259,6 +5499,110 @@ func (siw *ServerInterfaceWrapper) TestWorkspaceOidcConnection(w http.ResponseWr
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.TestWorkspaceOidcConnection(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceSamlConnection operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceSamlConnection(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceSamlConnection operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceSamlConnection(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReadSamlMetadata operation middleware
+func (siw *ServerInterfaceWrapper) ReadSamlMetadata(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReadSamlMetadata(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// TestWorkspaceSamlConnection operation middleware
+func (siw *ServerInterfaceWrapper) TestWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TestWorkspaceSamlConnection(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -6115,6 +6459,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/sso/oidc/login", wrapper.BeginOidcLogin)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/sso/saml/login", wrapper.BeginSamlLogin)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/accounts/me", wrapper.DeleteCurrentAccount)
 	})
 	r.Group(func(r chi.Router) {
@@ -6176,6 +6523,24 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/sso/oidc/test", wrapper.TestWorkspaceOidcConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/sso", wrapper.RemoveWorkspaceSsoConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/sso", wrapper.GetWorkspaceSsoProtocol)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/sso/saml", wrapper.GetWorkspaceSamlConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/sso/saml", wrapper.SetWorkspaceSamlConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/sso/saml/metadata", wrapper.ReadSamlMetadata)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/sso/saml/test", wrapper.TestWorkspaceSamlConnection)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces", wrapper.ListWorkspaces)
@@ -6390,8 +6755,6 @@ type MailUnavailableApplicationProblemPlusJSONResponse MailUnavailableProblem
 
 type MembershipConflictApplicationProblemPlusJSONResponse MembershipConflictProblem
 
-type OidcFailedApplicationProblemPlusJSONResponse OidcProblem
-
 type PasswordResetLinkExpiredApplicationProblemPlusJSONResponse ResetLinkExpiredProblem
 
 type PasswordResetLinkUsedApplicationProblemPlusJSONResponse ResetLinkUsedProblem
@@ -6405,6 +6768,8 @@ type SignUpLinkExpiredApplicationProblemPlusJSONResponse SignUpExpiredProblem
 type SignUpLinkUnusableApplicationProblemPlusJSONResponse SignUpUnusableProblem
 
 type SignUpUnavailableApplicationProblemPlusJSONResponse SignUpClosedProblem
+
+type SsoFailedApplicationProblemPlusJSONResponse SsoProblem
 
 type TeamConflictApplicationProblemPlusJSONResponse TeamConflictProblem
 
@@ -8273,7 +8638,7 @@ func (response BeginOidcLogin404ApplicationProblemPlusJSONResponse) VisitBeginOi
 }
 
 type BeginOidcLogin422ApplicationProblemPlusJSONResponse struct {
-	OidcFailedApplicationProblemPlusJSONResponse
+	SsoFailedApplicationProblemPlusJSONResponse
 }
 
 func (response BeginOidcLogin422ApplicationProblemPlusJSONResponse) VisitBeginOidcLoginResponse(w http.ResponseWriter) error {
@@ -8291,6 +8656,74 @@ func (response BeginOidcLogin422ApplicationProblemPlusJSONResponse) VisitBeginOi
 type BeginOidcLogin500ApplicationProblemPlusJSONResponse Problem
 
 func (response BeginOidcLogin500ApplicationProblemPlusJSONResponse) VisitBeginOidcLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginSamlLoginRequestObject struct {
+	Body *BeginSamlLoginJSONRequestBody
+}
+
+type BeginSamlLoginResponseObject interface {
+	VisitBeginSamlLoginResponse(w http.ResponseWriter) error
+}
+
+type BeginSamlLogin200JSONResponse OidcAuthorization
+
+func (response BeginSamlLogin200JSONResponse) VisitBeginSamlLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginSamlLogin404ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response BeginSamlLogin404ApplicationProblemPlusJSONResponse) VisitBeginSamlLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginSamlLogin422ApplicationProblemPlusJSONResponse struct {
+	SsoFailedApplicationProblemPlusJSONResponse
+}
+
+func (response BeginSamlLogin422ApplicationProblemPlusJSONResponse) VisitBeginSamlLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginSamlLogin500ApplicationProblemPlusJSONResponse Problem
+
+func (response BeginSamlLogin500ApplicationProblemPlusJSONResponse) VisitBeginSamlLoginResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -12447,6 +12880,164 @@ func (response RestoreWorkspace500ApplicationProblemPlusJSONResponse) VisitResto
 	return err
 }
 
+type RemoveWorkspaceSsoConnectionRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type RemoveWorkspaceSsoConnectionResponseObject interface {
+	VisitRemoveWorkspaceSsoConnectionResponse(w http.ResponseWriter) error
+}
+
+type RemoveWorkspaceSsoConnection204Response struct {
+}
+
+func (response RemoveWorkspaceSsoConnection204Response) VisitRemoveWorkspaceSsoConnectionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveWorkspaceSsoConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceSsoConnection401ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceSsoConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceSsoConnection403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceSsoConnection403ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceSsoConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceSsoConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceSsoConnection404ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceSsoConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceSsoConnection500ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceSsoConnection500ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceSsoConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSsoProtocolRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceSsoProtocolResponseObject interface {
+	VisitGetWorkspaceSsoProtocolResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceSsoProtocol200JSONResponse WorkspaceSsoProtocol
+
+func (response GetWorkspaceSsoProtocol200JSONResponse) VisitGetWorkspaceSsoProtocolResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSsoProtocol401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSsoProtocol401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSsoProtocolResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSsoProtocol403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSsoProtocol403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSsoProtocolResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSsoProtocol404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceSsoProtocol404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSsoProtocolResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSsoProtocol500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceSsoProtocol500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSsoProtocolResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RemoveWorkspaceOidcConnectionRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -12661,7 +13252,7 @@ func (response SetWorkspaceOidcConnection403ApplicationProblemPlusJSONResponse) 
 }
 
 type SetWorkspaceOidcConnection422ApplicationProblemPlusJSONResponse struct {
-	OidcFailedApplicationProblemPlusJSONResponse
+	SsoFailedApplicationProblemPlusJSONResponse
 }
 
 func (response SetWorkspaceOidcConnection422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceOidcConnectionResponse(w http.ResponseWriter) error {
@@ -12746,7 +13337,7 @@ func (response DiscoverOidcEndpoints403ApplicationProblemPlusJSONResponse) Visit
 }
 
 type DiscoverOidcEndpoints422ApplicationProblemPlusJSONResponse struct {
-	OidcFailedApplicationProblemPlusJSONResponse
+	SsoFailedApplicationProblemPlusJSONResponse
 }
 
 func (response DiscoverOidcEndpoints422ApplicationProblemPlusJSONResponse) VisitDiscoverOidcEndpointsResponse(w http.ResponseWriter) error {
@@ -12844,7 +13435,7 @@ func (response TestWorkspaceOidcConnection404ApplicationProblemPlusJSONResponse)
 }
 
 type TestWorkspaceOidcConnection422ApplicationProblemPlusJSONResponse struct {
-	OidcFailedApplicationProblemPlusJSONResponse
+	SsoFailedApplicationProblemPlusJSONResponse
 }
 
 func (response TestWorkspaceOidcConnection422ApplicationProblemPlusJSONResponse) VisitTestWorkspaceOidcConnectionResponse(w http.ResponseWriter) error {
@@ -12862,6 +13453,356 @@ func (response TestWorkspaceOidcConnection422ApplicationProblemPlusJSONResponse)
 type TestWorkspaceOidcConnection500ApplicationProblemPlusJSONResponse Problem
 
 func (response TestWorkspaceOidcConnection500ApplicationProblemPlusJSONResponse) VisitTestWorkspaceOidcConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSamlConnectionRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceSamlConnectionResponseObject interface {
+	VisitGetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceSamlConnection200JSONResponse WorkspaceSamlConnection
+
+func (response GetWorkspaceSamlConnection200JSONResponse) VisitGetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSamlConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSamlConnection401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSamlConnection403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSamlConnection403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSamlConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceSamlConnection404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSamlConnection500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceSamlConnection500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceSamlConnectionRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *SetWorkspaceSamlConnectionJSONRequestBody
+}
+
+type SetWorkspaceSamlConnectionResponseObject interface {
+	VisitSetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceSamlConnection200JSONResponse WorkspaceSamlConnection
+
+func (response SetWorkspaceSamlConnection200JSONResponse) VisitSetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceSamlConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceSamlConnection401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceSamlConnection403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceSamlConnection403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceSamlConnection422ApplicationProblemPlusJSONResponse struct {
+	SsoFailedApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceSamlConnection422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceSamlConnection500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceSamlConnection500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadSamlMetadataRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *ReadSamlMetadataJSONRequestBody
+}
+
+type ReadSamlMetadataResponseObject interface {
+	VisitReadSamlMetadataResponse(w http.ResponseWriter) error
+}
+
+type ReadSamlMetadata200JSONResponse SamlDescriptor
+
+func (response ReadSamlMetadata200JSONResponse) VisitReadSamlMetadataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadSamlMetadata401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReadSamlMetadata401ApplicationProblemPlusJSONResponse) VisitReadSamlMetadataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadSamlMetadata403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ReadSamlMetadata403ApplicationProblemPlusJSONResponse) VisitReadSamlMetadataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadSamlMetadata422ApplicationProblemPlusJSONResponse struct {
+	SsoFailedApplicationProblemPlusJSONResponse
+}
+
+func (response ReadSamlMetadata422ApplicationProblemPlusJSONResponse) VisitReadSamlMetadataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadSamlMetadata500ApplicationProblemPlusJSONResponse Problem
+
+func (response ReadSamlMetadata500ApplicationProblemPlusJSONResponse) VisitReadSamlMetadataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceSamlConnectionRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type TestWorkspaceSamlConnectionResponseObject interface {
+	VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error
+}
+
+type TestWorkspaceSamlConnection200JSONResponse OidcAuthorization
+
+func (response TestWorkspaceSamlConnection200JSONResponse) VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceSamlConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response TestWorkspaceSamlConnection401ApplicationProblemPlusJSONResponse) VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceSamlConnection403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response TestWorkspaceSamlConnection403ApplicationProblemPlusJSONResponse) VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceSamlConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response TestWorkspaceSamlConnection404ApplicationProblemPlusJSONResponse) VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceSamlConnection422ApplicationProblemPlusJSONResponse struct {
+	SsoFailedApplicationProblemPlusJSONResponse
+}
+
+func (response TestWorkspaceSamlConnection422ApplicationProblemPlusJSONResponse) VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceSamlConnection500ApplicationProblemPlusJSONResponse Problem
+
+func (response TestWorkspaceSamlConnection500ApplicationProblemPlusJSONResponse) VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -14777,6 +15718,9 @@ type StrictServerInterface interface {
 	// BeginOidcLogin Start a single sign-on exchange for a workspace
 	// (POST /sso/oidc/login)
 	BeginOidcLogin(ctx context.Context, request BeginOidcLoginRequestObject) (BeginOidcLoginResponseObject, error)
+	// BeginSamlLogin Start a SAML sign-in for a workspace
+	// (POST /sso/saml/login)
+	BeginSamlLogin(ctx context.Context, request BeginSamlLoginRequestObject) (BeginSamlLoginResponseObject, error)
 	// ListWorkspaces List the workspaces the signed-in account belongs to
 	// (GET /workspaces)
 	ListWorkspaces(ctx context.Context, request ListWorkspacesRequestObject) (ListWorkspacesResponseObject, error)
@@ -14909,6 +15853,12 @@ type StrictServerInterface interface {
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(ctx context.Context, request RestoreWorkspaceRequestObject) (RestoreWorkspaceResponseObject, error)
+	// RemoveWorkspaceSsoConnection Remove the workspace single sign-on provider, whichever protocol it uses
+	// (DELETE /workspaces/{workspaceId}/sso)
+	RemoveWorkspaceSsoConnection(ctx context.Context, request RemoveWorkspaceSsoConnectionRequestObject) (RemoveWorkspaceSsoConnectionResponseObject, error)
+	// GetWorkspaceSsoProtocol Read which single sign-on protocol this workspace uses
+	// (GET /workspaces/{workspaceId}/sso)
+	GetWorkspaceSsoProtocol(ctx context.Context, request GetWorkspaceSsoProtocolRequestObject) (GetWorkspaceSsoProtocolResponseObject, error)
 	// RemoveWorkspaceOidcConnection Remove the workspace single sign-on provider
 	// (DELETE /workspaces/{workspaceId}/sso/oidc)
 	RemoveWorkspaceOidcConnection(ctx context.Context, request RemoveWorkspaceOidcConnectionRequestObject) (RemoveWorkspaceOidcConnectionResponseObject, error)
@@ -14924,6 +15874,18 @@ type StrictServerInterface interface {
 	// TestWorkspaceOidcConnection Start a real round trip to the provider that records verification
 	// (POST /workspaces/{workspaceId}/sso/oidc/test)
 	TestWorkspaceOidcConnection(ctx context.Context, request TestWorkspaceOidcConnectionRequestObject) (TestWorkspaceOidcConnectionResponseObject, error)
+	// GetWorkspaceSamlConnection Read the workspace SAML provider
+	// (GET /workspaces/{workspaceId}/sso/saml)
+	GetWorkspaceSamlConnection(ctx context.Context, request GetWorkspaceSamlConnectionRequestObject) (GetWorkspaceSamlConnectionResponseObject, error)
+	// SetWorkspaceSamlConnection Configure the workspace SAML provider
+	// (PUT /workspaces/{workspaceId}/sso/saml)
+	SetWorkspaceSamlConnection(ctx context.Context, request SetWorkspaceSamlConnectionRequestObject) (SetWorkspaceSamlConnectionResponseObject, error)
+	// ReadSamlMetadata Read a provider's metadata from a URL or pasted document, without saving
+	// (POST /workspaces/{workspaceId}/sso/saml/metadata)
+	ReadSamlMetadata(ctx context.Context, request ReadSamlMetadataRequestObject) (ReadSamlMetadataResponseObject, error)
+	// TestWorkspaceSamlConnection Start a real round trip to the provider that records verification
+	// (POST /workspaces/{workspaceId}/sso/saml/test)
+	TestWorkspaceSamlConnection(ctx context.Context, request TestWorkspaceSamlConnectionRequestObject) (TestWorkspaceSamlConnectionResponseObject, error)
 	// ListWorkspaceTeams List the teams the signed-in account may see in the workspace
 	// (GET /workspaces/{workspaceId}/teams)
 	ListWorkspaceTeams(ctx context.Context, request ListWorkspaceTeamsRequestObject) (ListWorkspaceTeamsResponseObject, error)
@@ -15715,6 +16677,37 @@ func (sh *strictHandler) BeginOidcLogin(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(BeginOidcLoginResponseObject); ok {
 		if err := validResponse.VisitBeginOidcLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// BeginSamlLogin operation middleware
+func (sh *strictHandler) BeginSamlLogin(w http.ResponseWriter, r *http.Request) {
+	var request BeginSamlLoginRequestObject
+
+	var body BeginSamlLoginJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BeginSamlLogin(ctx, request.(BeginSamlLoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BeginSamlLogin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BeginSamlLoginResponseObject); ok {
+		if err := validResponse.VisitBeginSamlLoginResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -17027,6 +18020,58 @@ func (sh *strictHandler) RestoreWorkspace(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// RemoveWorkspaceSsoConnection operation middleware
+func (sh *strictHandler) RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request RemoveWorkspaceSsoConnectionRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveWorkspaceSsoConnection(ctx, request.(RemoveWorkspaceSsoConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveWorkspaceSsoConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveWorkspaceSsoConnectionResponseObject); ok {
+		if err := validResponse.VisitRemoveWorkspaceSsoConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceSsoProtocol operation middleware
+func (sh *strictHandler) GetWorkspaceSsoProtocol(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceSsoProtocolRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceSsoProtocol(ctx, request.(GetWorkspaceSsoProtocolRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceSsoProtocol")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceSsoProtocolResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceSsoProtocolResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RemoveWorkspaceOidcConnection operation middleware
 func (sh *strictHandler) RemoveWorkspaceOidcConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	var request RemoveWorkspaceOidcConnectionRequestObject
@@ -17164,6 +18209,124 @@ func (sh *strictHandler) TestWorkspaceOidcConnection(w http.ResponseWriter, r *h
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(TestWorkspaceOidcConnectionResponseObject); ok {
 		if err := validResponse.VisitTestWorkspaceOidcConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceSamlConnection operation middleware
+func (sh *strictHandler) GetWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceSamlConnectionRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceSamlConnection(ctx, request.(GetWorkspaceSamlConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceSamlConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceSamlConnectionResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceSamlConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceSamlConnection operation middleware
+func (sh *strictHandler) SetWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request SetWorkspaceSamlConnectionRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body SetWorkspaceSamlConnectionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceSamlConnection(ctx, request.(SetWorkspaceSamlConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceSamlConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceSamlConnectionResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceSamlConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReadSamlMetadata operation middleware
+func (sh *strictHandler) ReadSamlMetadata(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ReadSamlMetadataRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body ReadSamlMetadataJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReadSamlMetadata(ctx, request.(ReadSamlMetadataRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReadSamlMetadata")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReadSamlMetadataResponseObject); ok {
+		if err := validResponse.VisitReadSamlMetadataResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// TestWorkspaceSamlConnection operation middleware
+func (sh *strictHandler) TestWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request TestWorkspaceSamlConnectionRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TestWorkspaceSamlConnection(ctx, request.(TestWorkspaceSamlConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TestWorkspaceSamlConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TestWorkspaceSamlConnectionResponseObject); ok {
+		if err := validResponse.VisitTestWorkspaceSamlConnectionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

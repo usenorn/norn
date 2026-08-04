@@ -1,3 +1,5 @@
+import type { components } from "$lib/api/dashboard.gen";
+
 export type Diagnostic = { key: string; value: string };
 
 export type SignInFailure =
@@ -9,16 +11,8 @@ export type SignInFailure =
 
 export type SsoPhase = "redirecting" | "returning";
 
-export type SsoStage =
-	| "discovery"
-	| "endpoints"
-	| "jwks"
-	| "authorization"
-	| "token_exchange"
-	| "id_token"
-	| "claims"
-	| "matching"
-	| "provisioning";
+
+export type SsoStage = components["schemas"]["SsoStage"];
 
 export type SsoFailure =
 	| { kind: "rejected"; diagnostics: Diagnostic[]; reference: string }

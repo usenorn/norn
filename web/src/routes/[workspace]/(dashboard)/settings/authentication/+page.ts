@@ -1,19 +1,20 @@
 import { apiFor } from "$lib/api";
-import type { SsoConfiguration } from "$lib/workspace/sso";
+import type { SsoProviderConfiguration } from "$lib/workspace/sso";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({
 	fetch,
 	parent,
 	url,
-}): Promise<{ configuration: SsoConfiguration }> => {
+}): Promise<{ configuration: SsoProviderConfiguration }> => {
 	const api = apiFor(url);
 
 	const { workspace } = await parent();
+	const params = { path: { workspaceId: workspace.id } };
 
-	const { data, error } = await api.GET("/workspaces/{workspaceId}/sso/oidc", {
+	const { data: chosen, error } = await api.GET("/workspaces/{workspaceId}/sso", {
 		fetch,
-		params: { path: { workspaceId: workspace.id } },
+		params,
 	});
 
 	if (error) {
@@ -22,7 +23,17 @@ export const load: PageLoad = async ({
 		return { configuration: { kind: error.status === 403 ? "forbidden" : "unavailable" } };
 	}
 
-	if (!data) return { configuration: { kind: "unconfigured" } };
+	if (chosen?.protocol === "saml") {
+		const { data } = await api.GET("/workspaces/{workspaceId}/sso/saml", { fetch, params });
 
-	return { configuration: { kind: "configured", connection: data } };
+		return data
+			? { configuration: { kind: "saml", connection: data } }
+			: { configuration: { kind: "unavailable" } };
+	}
+
+	const { data } = await api.GET("/workspaces/{workspaceId}/sso/oidc", { fetch, params });
+
+	return data
+		? { configuration: { kind: "oidc", connection: data } }
+		: { configuration: { kind: "unavailable" } };
 };

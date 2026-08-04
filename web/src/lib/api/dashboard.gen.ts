@@ -157,6 +157,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sso/saml/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a SAML sign-in for a workspace */
+        post: operations["beginSamlLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/me": {
         parameters: {
             query?: never;
@@ -374,6 +391,84 @@ export interface paths {
         put?: never;
         /** Start a real round trip to the provider that records verification */
         post: operations["testWorkspaceOidcConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read which single sign-on protocol this workspace uses */
+        get: operations["getWorkspaceSsoProtocol"];
+        put?: never;
+        post?: never;
+        /** Remove the workspace single sign-on provider, whichever protocol it uses */
+        delete: operations["removeWorkspaceSsoConnection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso/saml": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read the workspace SAML provider */
+        get: operations["getWorkspaceSamlConnection"];
+        /** Configure the workspace SAML provider */
+        put: operations["setWorkspaceSamlConnection"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso/saml/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read a provider's metadata from a URL or pasted document, without saving */
+        post: operations["readSamlMetadata"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso/saml/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a real round trip to the provider that records verification */
+        post: operations["testWorkspaceSamlConnection"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1803,7 +1898,9 @@ export interface components {
             accountId: string;
         };
         /** @enum {string} */
-        OidcStage: "discovery" | "endpoints" | "jwks" | "authorization" | "token_exchange" | "id_token" | "claims" | "matching" | "provisioning";
+        SsoProtocol: "oidc" | "saml";
+        /** @enum {string} */
+        SsoStage: "discovery" | "endpoints" | "jwks" | "authorization" | "token_exchange" | "id_token" | "claims" | "matching" | "provisioning" | "metadata" | "certificate" | "request" | "response" | "signature" | "conditions" | "replay" | "attributes";
         OidcEndpoints: {
             issuer: string;
             authorizationEndpoint: string;
@@ -1846,11 +1943,63 @@ export interface components {
         OidcAuthorization: {
             authorizationUrl: string;
         };
-        OidcProblem: components["schemas"]["Problem"] & {
+        SsoProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "oidc_failed";
-            stage: components["schemas"]["OidcStage"];
+            code: "sso_failed";
+            stage: components["schemas"]["SsoStage"];
             providerMessage?: string;
+        };
+        WorkspaceSsoProtocol: {
+            /** Format: uuid */
+            workspaceId: string;
+            protocol: components["schemas"]["SsoProtocol"];
+        };
+        SamlDescriptor: {
+            entityId: string;
+            ssoUrl: string;
+            sloUrl?: string;
+            certificates: string[];
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        SamlAttributeMapping: {
+            email?: string;
+            name?: string;
+            groups?: string;
+        };
+        WorkspaceSamlConnection: {
+            /** Format: uuid */
+            workspaceId: string;
+            descriptor: components["schemas"]["SamlDescriptor"];
+            providerMetadataUrl?: string;
+            spEntityId: string;
+            spCertificate: string;
+            acsUrl: string;
+            metadataUrl: string;
+            signInUrl?: string;
+            allowIdpInitiated: boolean;
+            mapping: components["schemas"]["SamlAttributeMapping"];
+            provisioning: boolean;
+            /** Format: date-time */
+            certificateExpiresAt: string;
+            /** Format: int32 */
+            certificateDaysLeft?: number;
+            /** Format: date-time */
+            verifiedAt?: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        SetWorkspaceSamlConnectionRequest: {
+            metadataUrl?: string;
+            metadata?: string;
+            descriptor?: components["schemas"]["SamlDescriptor"];
+            allowIdpInitiated?: boolean;
+            mapping?: components["schemas"]["SamlAttributeMapping"];
+            provisioning?: boolean;
+        };
+        ReadSamlMetadataRequest: {
+            metadataUrl?: string;
+            metadata?: string;
         };
         Instance: {
             signupsOpen: boolean;
@@ -2101,12 +2250,12 @@ export interface components {
             };
         };
         /** @description The exchange with the provider broke at a named stage */
-        OidcFailed: {
+        SsoFailed: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["OidcProblem"];
+                "application/problem+json": components["schemas"]["SsoProblem"];
             };
         };
         /** @description The actor may not perform this action */
@@ -2435,7 +2584,34 @@ export interface operations {
                 };
             };
             404: components["responses"]["Problem"];
-            422: components["responses"]["OidcFailed"];
+            422: components["responses"]["SsoFailed"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    beginSamlLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BeginOidcLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Send the browser to this address to authenticate */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OidcAuthorization"];
+                };
+            };
+            404: components["responses"]["Problem"];
+            422: components["responses"]["SsoFailed"];
             500: components["responses"]["Problem"];
         };
     };
@@ -2893,7 +3069,7 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
-            422: components["responses"]["OidcFailed"];
+            422: components["responses"]["SsoFailed"];
             500: components["responses"]["Problem"];
         };
     };
@@ -2947,7 +3123,7 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
-            422: components["responses"]["OidcFailed"];
+            422: components["responses"]["SsoFailed"];
             500: components["responses"]["Problem"];
         };
     };
@@ -2974,7 +3150,170 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
-            422: components["responses"]["OidcFailed"];
+            422: components["responses"]["SsoFailed"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceSsoProtocol: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The configured protocol */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceSsoProtocol"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceSsoConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The provider was removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceSamlConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The configured provider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceSamlConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceSamlConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetWorkspaceSamlConnectionRequest"];
+            };
+        };
+        responses: {
+            /** @description The saved provider, always unverified until it is tested again */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceSamlConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["SsoFailed"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    readSamlMetadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReadSamlMetadataRequest"];
+            };
+        };
+        responses: {
+            /** @description What the metadata describes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SamlDescriptor"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["SsoFailed"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    testWorkspaceSamlConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Send the browser to this address to complete the test */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OidcAuthorization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["SsoFailed"];
             500: components["responses"]["Problem"];
         };
     };

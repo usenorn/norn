@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/hibiken/asynq"
 
@@ -77,4 +78,16 @@ func NewServer(cfg config.Asynq, logger *slog.Logger) *Server {
 	})
 
 	return &Server{Server: server}
+}
+
+type Scheduler struct {
+	*asynq.Scheduler
+}
+
+func NewScheduler(cfg config.Asynq, logger *slog.Logger) *Scheduler {
+	return &Scheduler{Scheduler: asynq.NewScheduler(redisOpt(cfg), &asynq.SchedulerOpts{
+		Logger:   &serverLogger{logger: logger},
+		LogLevel: asynq.InfoLevel,
+		Location: time.UTC,
+	})}
 }

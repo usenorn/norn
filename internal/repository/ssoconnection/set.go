@@ -1,4 +1,4 @@
-package oidcconnection
+package ssoconnection
 
 import "github.com/goforj/wire"
 

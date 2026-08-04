@@ -21,6 +21,7 @@ import (
 	"github.com/usenorn/norn/internal/pkg/oidcprovider"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/pkg/pwned"
+	"github.com/usenorn/norn/internal/pkg/samlprovider"
 	"github.com/usenorn/norn/internal/pkg/smtp"
 	"github.com/usenorn/norn/internal/pkg/taskqueue"
 	"github.com/usenorn/norn/internal/pkg/valkey"
@@ -41,14 +42,16 @@ import (
 	"github.com/usenorn/norn/internal/repository/labelgroup"
 	"github.com/usenorn/norn/internal/repository/mailer"
 	"github.com/usenorn/norn/internal/repository/membership"
-	"github.com/usenorn/norn/internal/repository/oidcconnection"
 	oidcprovider2 "github.com/usenorn/norn/internal/repository/oidcprovider"
 	"github.com/usenorn/norn/internal/repository/oidcstate"
 	"github.com/usenorn/norn/internal/repository/passwordhistory"
 	"github.com/usenorn/norn/internal/repository/passwordreset"
+	"github.com/usenorn/norn/internal/repository/samlreplay"
+	"github.com/usenorn/norn/internal/repository/samlrequest"
 	"github.com/usenorn/norn/internal/repository/session"
 	"github.com/usenorn/norn/internal/repository/signinthrottle"
 	"github.com/usenorn/norn/internal/repository/signup"
+	"github.com/usenorn/norn/internal/repository/ssoconnection"
 	"github.com/usenorn/norn/internal/repository/team"
 	"github.com/usenorn/norn/internal/repository/teammember"
 	"github.com/usenorn/norn/internal/repository/workflowstate"
@@ -64,7 +67,7 @@ import (
 	"github.com/usenorn/norn/internal/service/jobs"
 	label2 "github.com/usenorn/norn/internal/service/label"
 	session2 "github.com/usenorn/norn/internal/service/session"
-	"github.com/usenorn/norn/internal/service/ssoconnection"
+	ssoconnection2 "github.com/usenorn/norn/internal/service/ssoconnection"
 	team2 "github.com/usenorn/norn/internal/service/team"
 	workflowstate2 "github.com/usenorn/norn/internal/service/workflowstate"
 	workspace2 "github.com/usenorn/norn/internal/service/workspace"
@@ -199,15 +202,20 @@ func InitApp(cfgFile string) (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	oidcConnection := oidcconnection.New(postgresClient, crypterCrypter)
+	ssoConnection := ssoconnection.New(postgresClient, crypterCrypter)
 	oidc := config.NewOIDC(configConfig)
 	oidcState := oidcstate.New(client, oidc)
+	saml := config.NewSAML(configConfig)
+	samlRequest := samlrequest.New(client, saml)
+	samlReplay := samlreplay.New(client, saml)
 	oidcproviderClient := oidcprovider.New(oidc)
 	oidcProvider := oidcprovider2.New(oidcproviderClient, app)
-	ssoConnections := ssoconnection.New(oidcConnection, oidcState, repositoryWorkspace, repositoryAccount, repositoryMembership, oidcProvider, sessions, serviceAuthorizer, postgresClient)
+	samlproviderClient := samlprovider.New(saml)
+	ssoConnections := ssoconnection2.New(ssoConnection, oidcState, samlRequest, samlReplay, repositoryWorkspace, repositoryAccount, repositoryMembership, oidcProvider, samlproviderClient, repositoryMailer, sessions, app, serviceAuthorizer, postgresClient)
 	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, bulkOperations, workflowStates, labels, apiTokens, sessions, ssoConnections, repositoryBlob, app, instance, configSession)
 	callback := sso.NewCallback(ssoConnections, configSession)
-	handler := router.New(http, configSession, sessions, apiTokens, strictServerInterface, callback)
+	ssoSAML := sso.NewSAML(ssoConnections, configSession)
+	handler := router.New(http, configSession, sessions, apiTokens, strictServerInterface, callback, ssoSAML)
 	logger, err := logging.New(app)
 	if err != nil {
 		cleanup7()
@@ -236,6 +244,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	saml := config.NewSAML(configConfig)
 	asynq := config.NewAsynq(configConfig)
 	app := config.NewApp(configConfig)
 	logger, err := logging.New(app)
@@ -243,6 +252,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 		return nil, nil, err
 	}
 	server := taskqueue.NewServer(asynq, logger)
+	scheduler := taskqueue.NewScheduler(asynq, logger)
 	configPostgres := config.NewPostgres(configConfig)
 	client, cleanup, err := postgres.New(configPostgres)
 	if err != nil {
@@ -348,8 +358,30 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	bulkAction := bulkaction.New(client)
 	bulkOperations := bulkoperation.New(bulkAction, repositoryIssue, workflowState, repositoryLabel, issueActivity, repositoryMembership, jobProducer, serviceAuthorizer, client)
 	bulkApplyHandler := job.NewBulkApplyHandler(bulkOperations)
-	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler)
-	worker := NewWorker(server, serveMux, logger)
+	security := config.NewSecurity(configConfig)
+	crypterCrypter, err := crypter.New(security)
+	if err != nil {
+		cleanup7()
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	ssoConnection := ssoconnection.New(client, crypterCrypter)
+	oidc := config.NewOIDC(configConfig)
+	oidcState := oidcstate.New(valkeyClient, oidc)
+	samlRequest := samlrequest.New(valkeyClient, saml)
+	samlReplay := samlreplay.New(valkeyClient, saml)
+	oidcproviderClient := oidcprovider.New(oidc)
+	oidcProvider := oidcprovider2.New(oidcproviderClient, app)
+	samlproviderClient := samlprovider.New(saml)
+	ssoConnections := ssoconnection2.New(ssoConnection, oidcState, samlRequest, samlReplay, repositoryWorkspace, repositoryAccount, repositoryMembership, oidcProvider, samlproviderClient, repositoryMailer, sessions, app, serviceAuthorizer, client)
+	ssoCertificateSweepHandler := job.NewSSOCertificateSweepHandler(ssoConnections)
+	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler)
+	worker := NewWorker(saml, server, scheduler, serveMux, logger)
 	return worker, func() {
 		cleanup7()
 		cleanup6()
@@ -459,7 +491,7 @@ func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, objectstore.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, oidcprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, issueactivity.Set, issuerelation.Set, bulkaction.Set, label.Set, labelgroup.Set, workflowstate.Set, apitoken.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, oidcconnection.Set, oidcstate.Set, oidcprovider2.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, label2.Set, workflowstate2.Set, apitoken2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection.Set, dashboard.Set, sso.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, objectstore.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, issueactivity.Set, issuerelation.Set, bulkaction.Set, label.Set, labelgroup.Set, workflowstate.Set, apitoken.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, label2.Set, workflowstate2.Set, apitoken2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, dashboard.Set, sso.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

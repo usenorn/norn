@@ -17,6 +17,7 @@
 	import { api } from "$lib/api";
 	import { onDate } from "$lib/time";
 	import { ssoConnectionSchema } from "$lib/workspace/sso-schema";
+	import SamlPanel from "$lib/workspace/saml-panel.svelte";
 	import {
 		failureMessage,
 		failureTitle,
@@ -25,9 +26,11 @@
 		scopeText,
 		stageAdvice,
 		type OidcConnection,
-		type SsoConfiguration,
+		type SamlConnection,
 		type SsoFailure,
 		type SsoOutcome,
+		type SsoProtocol,
+		type SsoProviderConfiguration,
 	} from "$lib/workspace/sso";
 	import { authenticationPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -42,7 +45,9 @@
 			: undefined
 	);
 
-	let saved = $state<SsoConfiguration | null>(null);
+	let saved = $state<SsoProviderConfiguration | null>(null);
+	let chosen = $state<SsoProtocol | null>(null);
+	let samlBusy = $state(false);
 	let liveOutcome = $state<SsoOutcome>(
 		page.url.searchParams.get("tested") === "1" ? { kind: "verified" } : { kind: "idle" }
 	);
@@ -50,18 +55,27 @@
 	let testing = $state(false);
 	let removing = $state(false);
 
-	const configuration = $derived<SsoConfiguration>(
+	const configuration = $derived<SsoProviderConfiguration>(
 		saved ?? preview?.configuration ?? data.configuration
 	);
 	const outcome = $derived<SsoOutcome>(preview?.outcome ?? liveOutcome);
 	const workspace = $derived(data.workspace);
 	const connection = $derived<OidcConnection | null>(
-		configuration.kind === "configured" ? configuration.connection : null
+		configuration.kind === "oidc" ? configuration.connection : null
 	);
+	const samlConnection = $derived<SamlConnection | null>(
+		configuration.kind === "saml" ? configuration.connection : null
+	);
+	const configured = $derived<SsoProtocol | null>(
+		configuration.kind === "oidc" ? "oidc" : configuration.kind === "saml" ? "saml" : null
+	);
+	const protocol = $derived<SsoProtocol>(chosen ?? configured ?? "oidc");
+	const replacing = $derived(configured !== null && configured !== protocol);
 	const redirectUri = $derived(
 		connection?.redirectUri ?? `${page.url.origin}/v1/sso/oidc/callback`
 	);
 	const entryPoint = $derived(`${page.url.origin}/sso?workspace=${workspace.slug}`);
+	const anyConnection = $derived(connection !== null || samlConnection !== null);
 	const failure = $derived<SsoFailure | null>(
 		outcome.kind === "failed" ? outcome.failure : null
 	);
@@ -116,7 +130,7 @@
 					return;
 				}
 
-				saved = { kind: "configured", connection: result };
+				saved = { kind: "oidc", connection: result };
 				liveOutcome = { kind: "saved" };
 				formData.update((current) => ({ ...current, clientSecret: "" }), { taint: false });
 				await invalidateAll();
@@ -128,7 +142,7 @@
 	const { form: formData, errors, enhance, submitting } = form;
 
 	const busy = $derived(
-		discovering || testing || removing || (preview?.discovering ?? false) || $submitting
+		discovering || testing || removing || samlBusy || (preview?.discovering ?? false) || $submitting
 	);
 
 	$effect(() => {
@@ -224,7 +238,7 @@
 		liveOutcome = { kind: "idle" };
 
 		try {
-			const { error } = await api.DELETE("/workspaces/{workspaceId}/sso/oidc", {
+			const { error } = await api.DELETE("/workspaces/{workspaceId}/sso", {
 				params: { path: { workspaceId: workspace.id } },
 			});
 
@@ -332,8 +346,45 @@
 
 				<section class="flex flex-col gap-2">
 					<div class="flex flex-col gap-1">
+						<h2 class="text-md font-medium tracking-snug text-ink-900">Protocol</h2>
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							A workspace uses one provider. Choosing the other protocol replaces the one
+							configured now.
+						</p>
+					</div>
+
+					<div class="flex flex-wrap gap-2">
+						{#each [["oidc", "OpenID Connect"], ["saml", "SAML 2.0"]] as [value, label] (value)}
+							<Button
+								variant={protocol === value ? "default" : "secondary"}
+								size="sm"
+								disabled={busy}
+								onclick={() => (chosen = value as SsoProtocol)}
+							>
+								{label}
+							</Button>
+						{/each}
+					</div>
+
+					{#if replacing}
+						<Alert.Root variant="warning">
+							<TriangleAlert aria-hidden="true" />
+							<Alert.Title>This replaces your current provider</Alert.Title>
+							<Alert.Description>
+								Saving {protocol === "saml" ? "a SAML" : "an OpenID Connect"} provider removes the
+								{configured === "saml" ? "SAML" : "OpenID Connect"} one. People already signed in
+								stay signed in.
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
+				</section>
+
+				<section class="flex flex-col gap-2">
+					<div class="flex flex-col gap-1">
 						<h2 class="text-md font-medium tracking-snug text-ink-900">
-							Single sign-on with OpenID Connect
+							{protocol === "saml"
+								? "Single sign-on with SAML 2.0"
+								: "Single sign-on with OpenID Connect"}
 						</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
 							Members of {workspace.name} sign in through your identity provider instead of a Norn
@@ -361,268 +412,283 @@
 					{/if}
 				</section>
 
+				{#if protocol === "saml"}
+					<SamlPanel
+						{workspace}
+						connection={samlConnection}
+						busy={busy}
+						onfailure={(f) => (liveOutcome = f ? { kind: "failed", failure: f } : { kind: "idle" })}
+						onsaved={() => {
+							chosen = null;
+							liveOutcome = { kind: "saved" };
+						}}
+						onbusy={(working) => (samlBusy = working)}
+					/>
+				{:else}
 				<form id={formId} method="POST" use:enhance class="flex flex-col gap-4">
-					<Form.Field {form} name="issuer">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Issuer URL</Form.Label>
-								<div class="flex gap-2">
-									<Input
-										{...props}
-										class="flex-1"
-										placeholder="https://login.example.com"
-										autocapitalize="none"
-										spellcheck="false"
-										disabled={busy}
-										bind:value={$formData.issuer}
-									/>
-									<Button
-										type="button"
-										variant="secondary"
-										disabled={busy}
-										onclick={discover}
-									>
-										{discovering || preview?.discovering ? "Reading" : "Discover"}
-									</Button>
-								</div>
-							{/snippet}
-						</Form.Control>
-						<Form.Description class="text-sm text-muted-foreground">
-							Discover reads /.well-known/openid-configuration and fills in the endpoints below.
-						</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-
-					<Form.Field {form} name="manual">
-						<Form.Control>
-							{#snippet children({ props })}
-								<div class="flex items-start gap-2">
-									<Checkbox
-										{...props}
-										disabled={busy}
-										bind:checked={$formData.manual}
-									/>
-									<div class="flex flex-col gap-0.5">
-										<Form.Label>Enter the endpoints by hand</Form.Label>
-										<span class="text-sm leading-normal text-muted-foreground text-pretty">
-											For a provider that does not publish a discovery document.
-										</span>
+						<Form.Field {form} name="issuer">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Issuer URL</Form.Label>
+									<div class="flex gap-2">
+										<Input
+											{...props}
+											class="flex-1"
+											placeholder="https://login.example.com"
+											autocapitalize="none"
+											spellcheck="false"
+											disabled={busy}
+											bind:value={$formData.issuer}
+										/>
+										<Button
+											type="button"
+											variant="secondary"
+											disabled={busy}
+											onclick={discover}
+										>
+											{discovering || preview?.discovering ? "Reading" : "Discover"}
+										</Button>
 									</div>
-								</div>
-							{/snippet}
-						</Form.Control>
-					</Form.Field>
+								{/snippet}
+							</Form.Control>
+							<Form.Description class="text-sm text-muted-foreground">
+								Discover reads /.well-known/openid-configuration and fills in the endpoints below.
+							</Form.Description>
+							<Form.FieldErrors />
+						</Form.Field>
 
-					{#if $formData.manual}
-						<Form.Field {form} name="authorizationEndpoint">
+						<Form.Field {form} name="manual">
 							<Form.Control>
 								{#snippet children({ props })}
-									<Form.Label>Authorization endpoint</Form.Label>
+									<div class="flex items-start gap-2">
+										<Checkbox
+											{...props}
+											disabled={busy}
+											bind:checked={$formData.manual}
+										/>
+										<div class="flex flex-col gap-0.5">
+											<Form.Label>Enter the endpoints by hand</Form.Label>
+											<span class="text-sm leading-normal text-muted-foreground text-pretty">
+												For a provider that does not publish a discovery document.
+											</span>
+										</div>
+									</div>
+								{/snippet}
+							</Form.Control>
+						</Form.Field>
+
+						{#if $formData.manual}
+							<Form.Field {form} name="authorizationEndpoint">
+								<Form.Control>
+									{#snippet children({ props })}
+										<Form.Label>Authorization endpoint</Form.Label>
+										<Input
+											{...props}
+											autocapitalize="none"
+											spellcheck="false"
+											disabled={busy}
+											bind:value={$formData.authorizationEndpoint}
+										/>
+									{/snippet}
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+
+							<Form.Field {form} name="tokenEndpoint">
+								<Form.Control>
+									{#snippet children({ props })}
+										<Form.Label>Token endpoint</Form.Label>
+										<Input
+											{...props}
+											autocapitalize="none"
+											spellcheck="false"
+											disabled={busy}
+											bind:value={$formData.tokenEndpoint}
+										/>
+									{/snippet}
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+
+							<Form.Field {form} name="jwksUri">
+								<Form.Control>
+									{#snippet children({ props })}
+										<Form.Label>JWKS URI</Form.Label>
+										<Input
+											{...props}
+											autocapitalize="none"
+											spellcheck="false"
+											disabled={busy}
+											bind:value={$formData.jwksUri}
+										/>
+									{/snippet}
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+
+							<Form.Field {form} name="userinfoEndpoint">
+								<Form.Control>
+									{#snippet children({ props })}
+										<Form.Label>Userinfo endpoint</Form.Label>
+										<Input
+											{...props}
+											autocapitalize="none"
+											spellcheck="false"
+											disabled={busy}
+											bind:value={$formData.userinfoEndpoint}
+										/>
+									{/snippet}
+								</Form.Control>
+								<Form.Description class="text-sm text-muted-foreground">
+									Optional. Norn reads identities from the ID token.
+								</Form.Description>
+								<Form.FieldErrors />
+							</Form.Field>
+						{:else if connection}
+							<div class="flex flex-col gap-1 rounded-lg border border-line-subtle p-3">
+								<Eyebrow class="text-ink-600">Discovered endpoints</Eyebrow>
+								<dl class="flex flex-col gap-1">
+									<div class="flex flex-col">
+										<dt class="text-sm text-muted-foreground">Authorization</dt>
+										<dd class="font-mono text-xs break-all text-ink-900">
+											{connection.endpoints.authorizationEndpoint}
+										</dd>
+									</div>
+									<div class="flex flex-col">
+										<dt class="text-sm text-muted-foreground">Token</dt>
+										<dd class="font-mono text-xs break-all text-ink-900">
+											{connection.endpoints.tokenEndpoint}
+										</dd>
+									</div>
+									<div class="flex flex-col">
+										<dt class="text-sm text-muted-foreground">JWKS</dt>
+										<dd class="font-mono text-xs break-all text-ink-900">
+											{connection.endpoints.jwksUri}
+										</dd>
+									</div>
+								</dl>
+							</div>
+						{/if}
+
+						<Form.Field {form} name="clientId">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Client ID</Form.Label>
 									<Input
 										{...props}
 										autocapitalize="none"
 										spellcheck="false"
 										disabled={busy}
-										bind:value={$formData.authorizationEndpoint}
+										bind:value={$formData.clientId}
 									/>
 								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
 
-						<Form.Field {form} name="tokenEndpoint">
+						<Form.Field {form} name="clientSecret">
 							<Form.Control>
 								{#snippet children({ props })}
-									<Form.Label>Token endpoint</Form.Label>
+									<Form.Label>Client secret</Form.Label>
 									<Input
 										{...props}
-										autocapitalize="none"
-										spellcheck="false"
+										type="password"
+										autocomplete="off"
+										placeholder={connection?.secretSet ? "Stored — leave blank to keep it" : ""}
 										disabled={busy}
-										bind:value={$formData.tokenEndpoint}
-									/>
-								{/snippet}
-							</Form.Control>
-							<Form.FieldErrors />
-						</Form.Field>
-
-						<Form.Field {form} name="jwksUri">
-							<Form.Control>
-								{#snippet children({ props })}
-									<Form.Label>JWKS URI</Form.Label>
-									<Input
-										{...props}
-										autocapitalize="none"
-										spellcheck="false"
-										disabled={busy}
-										bind:value={$formData.jwksUri}
-									/>
-								{/snippet}
-							</Form.Control>
-							<Form.FieldErrors />
-						</Form.Field>
-
-						<Form.Field {form} name="userinfoEndpoint">
-							<Form.Control>
-								{#snippet children({ props })}
-									<Form.Label>Userinfo endpoint</Form.Label>
-									<Input
-										{...props}
-										autocapitalize="none"
-										spellcheck="false"
-										disabled={busy}
-										bind:value={$formData.userinfoEndpoint}
+										bind:value={$formData.clientSecret}
 									/>
 								{/snippet}
 							</Form.Control>
 							<Form.Description class="text-sm text-muted-foreground">
-								Optional. Norn reads identities from the ID token.
+								{connection?.secretSet
+									? "The stored secret is never shown again. Leave this blank unless you are replacing it."
+									: "Stored encrypted. It is never returned by the API."}
 							</Form.Description>
 							<Form.FieldErrors />
 						</Form.Field>
-					{:else if connection}
-						<div class="flex flex-col gap-1 rounded-lg border border-line-subtle p-3">
-							<Eyebrow class="text-ink-600">Discovered endpoints</Eyebrow>
-							<dl class="flex flex-col gap-1">
-								<div class="flex flex-col">
-									<dt class="text-sm text-muted-foreground">Authorization</dt>
-									<dd class="font-mono text-xs break-all text-ink-900">
-										{connection.endpoints.authorizationEndpoint}
-									</dd>
-								</div>
-								<div class="flex flex-col">
-									<dt class="text-sm text-muted-foreground">Token</dt>
-									<dd class="font-mono text-xs break-all text-ink-900">
-										{connection.endpoints.tokenEndpoint}
-									</dd>
-								</div>
-								<div class="flex flex-col">
-									<dt class="text-sm text-muted-foreground">JWKS</dt>
-									<dd class="font-mono text-xs break-all text-ink-900">
-										{connection.endpoints.jwksUri}
-									</dd>
-								</div>
-							</dl>
-						</div>
-					{/if}
 
-					<Form.Field {form} name="clientId">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Client ID</Form.Label>
-								<Input
-									{...props}
-									autocapitalize="none"
-									spellcheck="false"
-									disabled={busy}
-									bind:value={$formData.clientId}
-								/>
-							{/snippet}
-						</Form.Control>
-						<Form.FieldErrors />
-					</Form.Field>
-
-					<Form.Field {form} name="clientSecret">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Client secret</Form.Label>
-								<Input
-									{...props}
-									type="password"
-									autocomplete="off"
-									placeholder={connection?.secretSet ? "Stored — leave blank to keep it" : ""}
-									disabled={busy}
-									bind:value={$formData.clientSecret}
-								/>
-							{/snippet}
-						</Form.Control>
-						<Form.Description class="text-sm text-muted-foreground">
-							{connection?.secretSet
-								? "The stored secret is never shown again. Leave this blank unless you are replacing it."
-								: "Stored encrypted. It is never returned by the API."}
-						</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-
-					<Form.Field {form} name="scopes">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Scopes</Form.Label>
-								<Input
-									{...props}
-									autocapitalize="none"
-									spellcheck="false"
-									disabled={busy}
-									bind:value={$formData.scopes}
-								/>
-							{/snippet}
-						</Form.Control>
-						<Form.Description class="text-sm text-muted-foreground">
-							Space separated. openid is always requested whether or not you list it.
-						</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-
-					<Form.Field {form} name="groupsClaim">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Groups claim</Form.Label>
-								<Input
-									{...props}
-									autocapitalize="none"
-									spellcheck="false"
-									placeholder="groups"
-									disabled={busy}
-									bind:value={$formData.groupsClaim}
-								/>
-							{/snippet}
-						</Form.Control>
-						<Form.Description class="text-sm text-muted-foreground">
-							Optional. Groups are read and stored; mapping them to teams is not built yet.
-						</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-
-					<Form.Field {form} name="provisioning">
-						<Form.Control>
-							{#snippet children({ props })}
-								<div class="flex items-start gap-2">
-									<Checkbox
+						<Form.Field {form} name="scopes">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Scopes</Form.Label>
+									<Input
 										{...props}
+										autocapitalize="none"
+										spellcheck="false"
 										disabled={busy}
-										bind:checked={$formData.provisioning}
+										bind:value={$formData.scopes}
 									/>
-									<div class="flex flex-col gap-0.5">
-										<Form.Label>Create accounts on first sign-in</Form.Label>
-										<span class="text-sm leading-normal text-muted-foreground text-pretty">
-											Anyone your provider vouches for gets a Norn account and joins {workspace.name}
-											as a member. With this off, only people already invited can sign in.
-										</span>
+								{/snippet}
+							</Form.Control>
+							<Form.Description class="text-sm text-muted-foreground">
+								Space separated. openid is always requested whether or not you list it.
+							</Form.Description>
+							<Form.FieldErrors />
+						</Form.Field>
+
+						<Form.Field {form} name="groupsClaim">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Groups claim</Form.Label>
+									<Input
+										{...props}
+										autocapitalize="none"
+										spellcheck="false"
+										placeholder="groups"
+										disabled={busy}
+										bind:value={$formData.groupsClaim}
+									/>
+								{/snippet}
+							</Form.Control>
+							<Form.Description class="text-sm text-muted-foreground">
+								Optional. Groups are read and stored; mapping them to teams is not built yet.
+							</Form.Description>
+							<Form.FieldErrors />
+						</Form.Field>
+
+						<Form.Field {form} name="provisioning">
+							<Form.Control>
+								{#snippet children({ props })}
+									<div class="flex items-start gap-2">
+										<Checkbox
+											{...props}
+											disabled={busy}
+											bind:checked={$formData.provisioning}
+										/>
+										<div class="flex flex-col gap-0.5">
+											<Form.Label>Create accounts on first sign-in</Form.Label>
+											<span class="text-sm leading-normal text-muted-foreground text-pretty">
+												Anyone your provider vouches for gets a Norn account and joins {workspace.name}
+												as a member. With this off, only people already invited can sign in.
+											</span>
+										</div>
 									</div>
-								</div>
-							{/snippet}
-						</Form.Control>
-					</Form.Field>
-				</form>
+								{/snippet}
+							</Form.Control>
+						</Form.Field>
+					</form>
 
-				<div class="flex flex-wrap gap-2">
-					<Button type="submit" form={formId} disabled={busy}>
-						{$submitting ? "Saving" : connection ? "Save changes" : "Save provider"}
-					</Button>
-
-					{#if connection}
-						<Button type="button" variant="secondary" disabled={busy} onclick={test}>
-							{testing ? "Opening your provider" : "Test connection"}
+					<div class="flex flex-wrap gap-2">
+						<Button type="submit" form={formId} disabled={busy}>
+							{$submitting ? "Saving" : connection ? "Save changes" : "Save provider"}
 						</Button>
-					{/if}
-				</div>
 
-				{#if connection}
+						{#if connection}
+							<Button type="button" variant="secondary" disabled={busy} onclick={test}>
+								{testing ? "Opening your provider" : "Test connection"}
+							</Button>
+						{/if}
+					</div>
+
+				{/if}
+
+				{#if anyConnection}
 					<div class="flex flex-col gap-1 rounded-lg border border-line-subtle p-3">
 						<Eyebrow class="text-ink-600">Status</Eyebrow>
-						{#if connection.verifiedAt}
+						{#if connection?.verifiedAt ?? samlConnection?.verifiedAt}
 							<p class="text-md leading-normal text-ink-900">
-								Tested successfully on {onDate(connection.verifiedAt, workspace.timezone)}.
+								Tested successfully on {onDate((connection?.verifiedAt ?? samlConnection?.verifiedAt)!, workspace.timezone)}.
 							</p>
 						{:else}
 							<p class="text-md leading-normal text-ink-900">Not tested yet.</p>
@@ -632,7 +698,9 @@
 							</p>
 						{/if}
 					</div>
+				{/if}
 
+				{#if anyConnection}
 					<section class="flex flex-col gap-4 rounded-lg border border-destructive/40 p-4">
 						<div class="flex flex-col gap-1">
 							<h2 class="text-md font-medium tracking-snug text-ink-900">Remove this provider</h2>

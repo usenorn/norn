@@ -40,7 +40,7 @@ export const load: PageLoad = async ({
 			exchange: {
 				status: "failed",
 				failure:
-					"code" in error && error.code === "oidc_failed"
+					"code" in error && error.code === "sso_failed"
 						? {
 								kind: "stage",
 								stage: error.stage,

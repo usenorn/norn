@@ -197,7 +197,28 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }
         '404': { $ref: '#/components/responses/Problem' }
-        '422': { $ref: '#/components/responses/OidcFailed' }
+        '422': { $ref: '#/components/responses/SsoFailed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /sso/saml/login:
+    post:
+      tags: [sso]
+      operationId: beginSamlLogin
+      summary: Start a SAML sign-in for a workspace
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BeginOidcLoginRequest' }
+      responses:
+        '200':
+          description: Send the browser to this address to authenticate
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OidcAuthorization' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/SsoFailed' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /accounts/me:
@@ -509,7 +530,7 @@ paths:
               schema: { $ref: '#/components/schemas/WorkspaceOidcConnection' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
-        '422': { $ref: '#/components/responses/OidcFailed' }
+        '422': { $ref: '#/components/responses/SsoFailed' }
         '500': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [sso]
@@ -543,7 +564,7 @@ paths:
               schema: { $ref: '#/components/schemas/OidcEndpoints' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
-        '422': { $ref: '#/components/responses/OidcFailed' }
+        '422': { $ref: '#/components/responses/SsoFailed' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/sso/oidc/test:
@@ -562,7 +583,115 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
-        '422': { $ref: '#/components/responses/OidcFailed' }
+        '422': { $ref: '#/components/responses/SsoFailed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [sso]
+      operationId: getWorkspaceSsoProtocol
+      summary: Read which single sign-on protocol this workspace uses
+      responses:
+        '200':
+          description: The configured protocol
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSsoProtocol' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [sso]
+      operationId: removeWorkspaceSsoConnection
+      summary: Remove the workspace single sign-on provider, whichever protocol it uses
+      responses:
+        '204':
+          description: The provider was removed
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/saml:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [sso]
+      operationId: getWorkspaceSamlConnection
+      summary: Read the workspace SAML provider
+      responses:
+        '200':
+          description: The configured provider
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSamlConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [sso]
+      operationId: setWorkspaceSamlConnection
+      summary: Configure the workspace SAML provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetWorkspaceSamlConnectionRequest' }
+      responses:
+        '200':
+          description: The saved provider, always unverified until it is tested again
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSamlConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/SsoFailed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/saml/metadata:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [sso]
+      operationId: readSamlMetadata
+      summary: Read a provider's metadata from a URL or pasted document, without saving
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReadSamlMetadataRequest' }
+      responses:
+        '200':
+          description: What the metadata describes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SamlDescriptor' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/SsoFailed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/saml/test:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [sso]
+      operationId: testWorkspaceSamlConnection
+      summary: Start a real round trip to the provider that records verification
+      responses:
+        '200':
+          description: Send the browser to this address to complete the test
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OidcAuthorization' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/SsoFailed' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces:
@@ -2081,11 +2210,11 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/LabelConflictProblem' }
 
-    OidcFailed:
+    SsoFailed:
       description: The exchange with the provider broke at a named stage
       content:
         application/problem+json:
-          schema: { $ref: '#/components/schemas/OidcProblem' }
+          schema: { $ref: '#/components/schemas/SsoProblem' }
 
     Forbidden:
       description: The actor may not perform this action
@@ -3030,9 +3159,15 @@ components:
       properties:
         accountId: { type: string, format: uuid }
 
-    OidcStage:
+    SsoProtocol:
       type: string
-      enum: [discovery, endpoints, jwks, authorization, token_exchange, id_token, claims, matching, provisioning]
+      enum: [oidc, saml]
+
+    SsoStage:
+      type: string
+      enum: [discovery, endpoints, jwks, authorization, token_exchange, id_token, claims,
+             matching, provisioning, metadata, certificate, request, response, signature,
+             conditions, replay, attributes]
 
     OidcEndpoints:
       type: object
@@ -3095,15 +3230,78 @@ components:
       properties:
         authorizationUrl: { type: string }
 
-    OidcProblem:
+    SsoProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
         - type: object
           required: [code, stage]
           properties:
-            code: { type: string, enum: [oidc_failed] }
-            stage: { $ref: '#/components/schemas/OidcStage' }
+            code: { type: string, enum: [sso_failed] }
+            stage: { $ref: '#/components/schemas/SsoStage' }
             providerMessage: { type: string }
+
+    WorkspaceSsoProtocol:
+      type: object
+      required: [workspaceId, protocol]
+      properties:
+        workspaceId: { type: string, format: uuid }
+        protocol: { $ref: '#/components/schemas/SsoProtocol' }
+
+    SamlDescriptor:
+      type: object
+      required: [entityId, ssoUrl, certificates, expiresAt]
+      properties:
+        entityId: { type: string }
+        ssoUrl: { type: string }
+        sloUrl: { type: string }
+        certificates:
+          type: array
+          items: { type: string }
+        expiresAt: { type: string, format: date-time }
+
+    SamlAttributeMapping:
+      type: object
+      properties:
+        email: { type: string }
+        name: { type: string }
+        groups: { type: string }
+
+    WorkspaceSamlConnection:
+      type: object
+      required: [workspaceId, descriptor, spEntityId, spCertificate, acsUrl, metadataUrl,
+                 allowIdpInitiated, mapping, provisioning, certificateExpiresAt, updatedAt]
+      properties:
+        workspaceId: { type: string, format: uuid }
+        descriptor: { $ref: '#/components/schemas/SamlDescriptor' }
+        providerMetadataUrl: { type: string }
+        spEntityId: { type: string }
+        spCertificate: { type: string }
+        acsUrl: { type: string }
+        metadataUrl: { type: string }
+        signInUrl: { type: string }
+        allowIdpInitiated: { type: boolean }
+        mapping: { $ref: '#/components/schemas/SamlAttributeMapping' }
+        provisioning: { type: boolean }
+        certificateExpiresAt: { type: string, format: date-time }
+        certificateDaysLeft: { type: integer, format: int32 }
+        verifiedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    SetWorkspaceSamlConnectionRequest:
+      type: object
+      properties:
+        metadataUrl: { type: string }
+        metadata: { type: string }
+        descriptor: { $ref: '#/components/schemas/SamlDescriptor' }
+        allowIdpInitiated: { type: boolean }
+        mapping: { $ref: '#/components/schemas/SamlAttributeMapping' }
+        provisioning: { type: boolean }
+
+    ReadSamlMetadataRequest:
+      type: object
+      properties:
+        metadataUrl: { type: string }
+        metadata: { type: string }
 
     Instance:
       type: object

@@ -54,8 +54,8 @@ func (c *Client) context(ctx context.Context) context.Context {
 func (c *Client) Discover(ctx context.Context, issuer string) (entity.OIDCEndpoints, error) {
 	provider, err := oidc.NewProvider(c.context(ctx), strings.TrimRight(strings.TrimSpace(issuer), "/"))
 	if err != nil {
-		return entity.OIDCEndpoints{}, entity.OIDCFailure(
-			entity.OIDCStageDiscovery,
+		return entity.OIDCEndpoints{}, entity.SSOFailure(
+			entity.SSOStageDiscovery,
 			"Norn could not read the discovery document at that issuer.",
 			err,
 		)
@@ -68,8 +68,8 @@ func (c *Client) Discover(ctx context.Context, issuer string) (entity.OIDCEndpoi
 	}
 
 	if err := provider.Claims(&document); err != nil {
-		return entity.OIDCEndpoints{}, entity.OIDCFailure(
-			entity.OIDCStageDiscovery,
+		return entity.OIDCEndpoints{}, entity.SSOFailure(
+			entity.SSOStageDiscovery,
 			"The discovery document could not be read.",
 			err,
 		)
@@ -133,8 +133,8 @@ func (s *Session) AuthCodeURL(state, nonce, verifier string) string {
 func (s *Session) Exchange(ctx context.Context, code, verifier, nonce string) (entity.OIDCClaims, error) {
 	token, err := s.config.Exchange(s.client.context(ctx), code, oauth2.VerifierOption(verifier))
 	if err != nil {
-		return entity.OIDCClaims{}, entity.OIDCFailure(
-			entity.OIDCStageTokenExchange,
+		return entity.OIDCClaims{}, entity.SSOFailure(
+			entity.SSOStageTokenExchange,
 			"The provider refused to exchange the sign-in code for a token.",
 			providerMessage(err),
 		)
@@ -142,24 +142,24 @@ func (s *Session) Exchange(ctx context.Context, code, verifier, nonce string) (e
 
 	raw, present := token.Extra("id_token").(string)
 	if !present || raw == "" {
-		return entity.OIDCClaims{}, entity.NewOIDCError(
-			entity.OIDCStageIDToken,
+		return entity.OIDCClaims{}, entity.NewSSOError(
+			entity.SSOStageIDToken,
 			"The provider returned no ID token. Check that the openid scope is allowed for this client.",
 		)
 	}
 
 	verified, err := s.verifier.Verify(s.client.context(ctx), raw)
 	if err != nil {
-		return entity.OIDCClaims{}, entity.OIDCFailure(
-			entity.OIDCStageIDToken,
+		return entity.OIDCClaims{}, entity.SSOFailure(
+			entity.SSOStageIDToken,
 			"The ID token from the provider could not be verified.",
 			err,
 		)
 	}
 
 	if verified.Nonce != nonce {
-		return entity.OIDCClaims{}, entity.NewOIDCError(
-			entity.OIDCStageIDToken,
+		return entity.OIDCClaims{}, entity.NewSSOError(
+			entity.SSOStageIDToken,
 			"The ID token does not belong to this sign-in attempt.",
 		)
 	}
@@ -177,8 +177,8 @@ func claimsOf(token *oidc.IDToken) (entity.OIDCClaims, error) {
 	}
 
 	if err := token.Claims(&payload); err != nil {
-		return entity.OIDCClaims{}, entity.OIDCFailure(
-			entity.OIDCStageClaims,
+		return entity.OIDCClaims{}, entity.SSOFailure(
+			entity.SSOStageClaims,
 			"The claims in the ID token could not be read.",
 			err,
 		)

@@ -18,6 +18,7 @@ import (
 	oidcproviderpkg "github.com/usenorn/norn/internal/pkg/oidcprovider"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/pkg/pwned"
+	samlproviderpkg "github.com/usenorn/norn/internal/pkg/samlprovider"
 	"github.com/usenorn/norn/internal/pkg/smtp"
 	"github.com/usenorn/norn/internal/pkg/taskqueue"
 	"github.com/usenorn/norn/internal/pkg/valkey"
@@ -38,14 +39,16 @@ import (
 	labelgrouprepo "github.com/usenorn/norn/internal/repository/labelgroup"
 	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
-	oidcconnectionrepo "github.com/usenorn/norn/internal/repository/oidcconnection"
 	oidcproviderrepo "github.com/usenorn/norn/internal/repository/oidcprovider"
 	oidcstaterepo "github.com/usenorn/norn/internal/repository/oidcstate"
 	passwordhistoryrepo "github.com/usenorn/norn/internal/repository/passwordhistory"
 	passwordresetrepo "github.com/usenorn/norn/internal/repository/passwordreset"
+	samlreplayrepo "github.com/usenorn/norn/internal/repository/samlreplay"
+	samlrequestrepo "github.com/usenorn/norn/internal/repository/samlrequest"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	signuprepo "github.com/usenorn/norn/internal/repository/signup"
+	ssoconnectionrepo "github.com/usenorn/norn/internal/repository/ssoconnection"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
@@ -81,6 +84,7 @@ var baseSet = wire.NewSet(
 	pwned.Set,
 	crypter.Set,
 	oidcproviderpkg.Set,
+	samlproviderpkg.Set,
 
 	wire.Bind(new(repository.Transactor), new(*postgres.Client)),
 
@@ -110,7 +114,9 @@ var baseSet = wire.NewSet(
 	invitationrepo.Set,
 	teamrepo.Set,
 	teammemberrepo.Set,
-	oidcconnectionrepo.Set,
+	ssoconnectionrepo.Set,
+	samlrequestrepo.Set,
+	samlreplayrepo.Set,
 	oidcstaterepo.Set,
 	oidcproviderrepo.Set,
 

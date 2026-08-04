@@ -1,88 +1,12 @@
 package entity
 
 import (
-	"errors"
-	"fmt"
-	"net/url"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 )
-
-var (
-	ErrOIDCConnectionNotFound = errors.New("no single sign-on provider is configured for this workspace")
-	ErrOIDCStateNotFound      = errors.New("this sign-in attempt has expired or was already used")
-	ErrOIDCNotVerified        = errors.New("this provider has not completed a successful test")
-
-	ErrOIDCEncryptionKeyMissing = errors.New(
-		"this instance has no encryption key, so a provider secret cannot be stored. " +
-			"Set NORN_SECURITY_ENCRYPTION_KEY to 32 base64-encoded random bytes and restart",
-	)
-)
-
-type OIDCStage string
-
-const (
-	OIDCStageDiscovery     OIDCStage = "discovery"
-	OIDCStageEndpoints     OIDCStage = "endpoints"
-	OIDCStageJWKS          OIDCStage = "jwks"
-	OIDCStageAuthorization OIDCStage = "authorization"
-	OIDCStageTokenExchange OIDCStage = "token_exchange"
-	OIDCStageIDToken       OIDCStage = "id_token"
-	OIDCStageClaims        OIDCStage = "claims"
-	OIDCStageMatching      OIDCStage = "matching"
-	OIDCStageProvisioning  OIDCStage = "provisioning"
-)
-
-func (s OIDCStage) Valid() bool {
-	switch s {
-	case OIDCStageDiscovery, OIDCStageEndpoints, OIDCStageJWKS, OIDCStageAuthorization,
-		OIDCStageTokenExchange, OIDCStageIDToken, OIDCStageClaims, OIDCStageMatching,
-		OIDCStageProvisioning:
-		return true
-	default:
-		return false
-	}
-}
-
-type OIDCError struct {
-	Stage   OIDCStage
-	Message string
-	Detail  string
-	Subject string
-	cause   error
-}
-
-func NewOIDCError(stage OIDCStage, message string) *OIDCError {
-	return &OIDCError{Stage: stage, Message: message}
-}
-
-func OIDCFailure(stage OIDCStage, message string, cause error) *OIDCError {
-	failure := &OIDCError{Stage: stage, Message: message, cause: cause}
-	if cause != nil {
-		failure.Detail = cause.Error()
-	}
-
-	return failure
-}
-
-func (e *OIDCError) Error() string {
-	if e.Detail == "" {
-		return fmt.Sprintf("%s: %s", e.Stage, e.Message)
-	}
-
-	return fmt.Sprintf("%s: %s: %s", e.Stage, e.Message, e.Detail)
-}
-
-func (e *OIDCError) Unwrap() error { return e.cause }
-
-func AsOIDCError(err error) (*OIDCError, bool) {
-	var failure *OIDCError
-
-	return failure, errors.As(err, &failure)
-}
 
 var DefaultOIDCScopes = []string{"openid", "email", "profile"}
 
@@ -136,12 +60,12 @@ func (e OIDCEndpoints) Validate() error {
 		{"JWKS URI", e.JWKSURI},
 	} {
 		if strings.TrimSpace(endpoint.value) == "" {
-			return NewOIDCError(OIDCStageEndpoints, "The "+endpoint.label+" is missing.")
+			return NewSSOError(SSOStageEndpoints, "The "+endpoint.label+" is missing.")
 		}
 
 		if err := requireHTTPSURL(endpoint.value); err != nil {
-			return NewOIDCError(
-				OIDCStageEndpoints,
+			return NewSSOError(
+				SSOStageEndpoints,
 				"The "+endpoint.label+" is not a usable https address.",
 			)
 		}
@@ -152,47 +76,17 @@ func (e OIDCEndpoints) Validate() error {
 
 func ValidateOIDCIssuer(issuer string) error {
 	if strings.TrimSpace(issuer) == "" {
-		return NewOIDCError(OIDCStageDiscovery, "Enter the issuer URL from your provider.")
+		return NewSSOError(SSOStageDiscovery, "Enter the issuer URL from your provider.")
 	}
 
 	if err := requireHTTPSURL(issuer); err != nil {
-		return NewOIDCError(
-			OIDCStageDiscovery,
+		return NewSSOError(
+			SSOStageDiscovery,
 			"The issuer must be an https URL, for example https://login.example.com.",
 		)
 	}
 
 	return nil
-}
-
-func requireHTTPSURL(value string) error {
-	parsed, err := url.Parse(strings.TrimSpace(value))
-	if err != nil {
-		return err
-	}
-
-	if parsed.Host == "" {
-		return errors.New("no host")
-	}
-
-	if parsed.Scheme == "https" {
-		return nil
-	}
-
-	if parsed.Scheme == "http" && LoopbackHost(parsed.Hostname()) {
-		return nil
-	}
-
-	return errors.New("not https")
-}
-
-func LoopbackHost(host string) bool {
-	switch host {
-	case "localhost", "127.0.0.1", "::1", "host.docker.internal":
-		return true
-	default:
-		return false
-	}
 }
 
 type OIDCConnection struct {
@@ -221,11 +115,11 @@ func (c OIDCConnection) Validate() error {
 	}
 
 	if strings.TrimSpace(c.ClientID) == "" {
-		return NewOIDCError(OIDCStageEndpoints, "Enter the client ID your provider issued.")
+		return NewSSOError(SSOStageEndpoints, "Enter the client ID your provider issued.")
 	}
 
 	if strings.TrimSpace(c.ClientSecret) == "" {
-		return NewOIDCError(OIDCStageEndpoints, "Enter the client secret your provider issued.")
+		return NewSSOError(SSOStageEndpoints, "Enter the client secret your provider issued.")
 	}
 
 	return nil
@@ -241,22 +135,22 @@ type OIDCClaims struct {
 
 func ValidateClaims(claims OIDCClaims) error {
 	if strings.TrimSpace(claims.Subject) == "" {
-		return NewOIDCError(
-			OIDCStageClaims,
+		return NewSSOError(
+			SSOStageClaims,
 			"The provider did not return a subject claim identifying the user.",
 		)
 	}
 
 	if strings.TrimSpace(claims.Email) == "" {
-		return NewOIDCError(
-			OIDCStageClaims,
+		return NewSSOError(
+			SSOStageClaims,
 			"The provider did not return an email address. Add the email scope to the client.",
 		)
 	}
 
 	if claims.EmailVerified != nil && !*claims.EmailVerified {
-		return NewOIDCError(
-			OIDCStageClaims,
+		return NewSSOError(
+			SSOStageClaims,
 			"The provider reports "+NormalizeEmail(claims.Email)+" as unverified.",
 		)
 	}
@@ -264,74 +158,8 @@ func ValidateClaims(claims OIDCClaims) error {
 	return nil
 }
 
-type MatchOutcome string
-
-const (
-	MatchOutcomeSignIn    MatchOutcome = "sign_in"
-	MatchOutcomeProvision MatchOutcome = "provision"
-	MatchOutcomeNotMember MatchOutcome = "not_member"
-	MatchOutcomeNoAccount MatchOutcome = "no_account"
-)
-
-func ResolveMatch(accountExists, isMember, provisioning bool) MatchOutcome {
-	switch {
-	case accountExists && isMember:
-		return MatchOutcomeSignIn
-	case accountExists:
-		return MatchOutcomeNotMember
-	case provisioning:
-		return MatchOutcomeProvision
-	default:
-		return MatchOutcomeNoAccount
-	}
-}
-
-func (o MatchOutcome) Admits() bool {
-	return o == MatchOutcomeSignIn || o == MatchOutcomeProvision
-}
-
-func (o MatchOutcome) Refusal(email string) error {
-	switch o {
-	case MatchOutcomeNotMember:
-		failure := NewOIDCError(
-			OIDCStageMatching,
-			NormalizeEmail(email)+" signed in with your provider but is not a member of this workspace.",
-		)
-		failure.Subject = NormalizeEmail(email)
-
-		return failure
-	case MatchOutcomeNoAccount:
-		failure := NewOIDCError(
-			OIDCStageProvisioning,
-			"There is no Norn account for "+NormalizeEmail(email)+
-				", and just-in-time provisioning is turned off.",
-		)
-		failure.Subject = NormalizeEmail(email)
-
-		return failure
-	default:
-		return nil
-	}
-}
-
-type OIDCPurpose string
-
-const (
-	OIDCPurposeLogin OIDCPurpose = "login"
-	OIDCPurposeTest  OIDCPurpose = "test"
-)
-
-func (p OIDCPurpose) Valid() bool {
-	switch p {
-	case OIDCPurposeLogin, OIDCPurposeTest:
-		return true
-	default:
-		return false
-	}
-}
-
 type OIDCState struct {
-	Purpose     OIDCPurpose
+	Purpose     SSOPurpose
 	WorkspaceID uuid.UUID
 	Nonce       string
 	Verifier    string
@@ -349,15 +177,4 @@ type OIDCRedemption struct {
 	Code     string
 	Nonce    string
 	Verifier string
-}
-
-type OIDCExchange struct {
-	Purpose       OIDCPurpose
-	WorkspaceID   uuid.UUID
-	WorkspaceSlug string
-	ReturnTo      string
-	Claims        OIDCClaims
-	Session       Session
-	Token         string
-	Provisioned   bool
 }

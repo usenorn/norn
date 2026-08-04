@@ -7,6 +7,7 @@ import (
 
 	"github.com/hibiken/asynq"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/handler/job"
 	"github.com/usenorn/norn/internal/observability/logging"
@@ -14,9 +15,11 @@ import (
 )
 
 type Worker struct {
-	server *taskqueue.Server
-	mux    *asynq.ServeMux
-	logger *slog.Logger
+	saml      config.SAML
+	server    *taskqueue.Server
+	scheduler *taskqueue.Scheduler
+	mux       *asynq.ServeMux
+	logger    *slog.Logger
 }
 
 func NewServeMux(
@@ -28,6 +31,7 @@ func NewServeMux(
 	workspacePurge *job.WorkspacePurgeHandler,
 	issuePurge *job.IssuePurgeHandler,
 	bulkApply *job.BulkApplyHandler,
+	certificateSweep *job.SSOCertificateSweepHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -38,19 +42,40 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeWorkspacePurge, workspacePurge)
 	mux.Handle(entity.TaskTypeIssuePurge, issuePurge)
 	mux.Handle(entity.TaskTypeBulkApply, bulkApply)
+	mux.Handle(entity.TaskTypeSSOCertificateSweep, certificateSweep)
 
 	return mux
 }
 
-func NewWorker(server *taskqueue.Server, mux *asynq.ServeMux, logger *slog.Logger) *Worker {
-	return &Worker{server: server, mux: mux, logger: logger}
+func NewWorker(
+	saml config.SAML,
+	server *taskqueue.Server,
+	scheduler *taskqueue.Scheduler,
+	mux *asynq.ServeMux,
+	logger *slog.Logger,
+) *Worker {
+	return &Worker{saml: saml, server: server, scheduler: scheduler, mux: mux, logger: logger}
 }
 
 func (w *Worker) Run(ctx context.Context) error {
 	ctx = logging.Into(ctx, w.logger)
 
+	if _, err := w.scheduler.Register(
+		w.saml.CertificateSweepSchedule,
+		asynq.NewTask(entity.TaskTypeSSOCertificateSweep, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register certificate sweep: %w", err)
+	}
+
 	if err := w.server.Start(w.mux); err != nil {
 		return fmt.Errorf("start worker: %w", err)
+	}
+
+	if err := w.scheduler.Start(); err != nil {
+		w.server.Shutdown()
+
+		return fmt.Errorf("start scheduler: %w", err)
 	}
 
 	logging.From(ctx).InfoContext(ctx, "worker started")
@@ -58,6 +83,7 @@ func (w *Worker) Run(ctx context.Context) error {
 	<-ctx.Done()
 
 	logging.From(ctx).InfoContext(ctx, "worker draining")
+	w.scheduler.Shutdown()
 	w.server.Shutdown()
 
 	return nil

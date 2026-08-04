@@ -8,10 +8,10 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-func stageOf(t *testing.T, err error) entity.OIDCStage {
+func stageOf(t *testing.T, err error) entity.SSOStage {
 	t.Helper()
 
-	failure, ok := entity.AsOIDCError(err)
+	failure, ok := entity.AsSSOError(err)
 	if !ok {
 		t.Fatalf("error %v is not an OIDC failure, so no screen can say where it broke", err)
 	}
@@ -20,19 +20,19 @@ func stageOf(t *testing.T, err error) entity.OIDCStage {
 }
 
 func TestEveryStageIsDistinguishableFromTheOthers(t *testing.T) {
-	stages := []entity.OIDCStage{
-		entity.OIDCStageDiscovery,
-		entity.OIDCStageEndpoints,
-		entity.OIDCStageJWKS,
-		entity.OIDCStageAuthorization,
-		entity.OIDCStageTokenExchange,
-		entity.OIDCStageIDToken,
-		entity.OIDCStageClaims,
-		entity.OIDCStageMatching,
-		entity.OIDCStageProvisioning,
+	stages := []entity.SSOStage{
+		entity.SSOStageDiscovery,
+		entity.SSOStageEndpoints,
+		entity.SSOStageJWKS,
+		entity.SSOStageAuthorization,
+		entity.SSOStageTokenExchange,
+		entity.SSOStageIDToken,
+		entity.SSOStageClaims,
+		entity.SSOStageMatching,
+		entity.SSOStageProvisioning,
 	}
 
-	seen := make(map[entity.OIDCStage]struct{}, len(stages))
+	seen := make(map[entity.SSOStage]struct{}, len(stages))
 
 	for _, stage := range stages {
 		if !stage.Valid() {
@@ -45,7 +45,7 @@ func TestEveryStageIsDistinguishableFromTheOthers(t *testing.T) {
 
 		seen[stage] = struct{}{}
 
-		if got := stageOf(t, entity.NewOIDCError(stage, "something went wrong")); got != stage {
+		if got := stageOf(t, entity.NewSSOError(stage, "something went wrong")); got != stage {
 			t.Errorf("a %q failure reported itself as %q", stage, got)
 		}
 	}
@@ -54,7 +54,7 @@ func TestEveryStageIsDistinguishableFromTheOthers(t *testing.T) {
 		t.Fatalf("expected nine distinct stages, got %d", len(seen))
 	}
 
-	for _, notAStage := range []entity.OIDCStage{"", "network", "TOKEN_EXCHANGE"} {
+	for _, notAStage := range []entity.SSOStage{"", "network", "TOKEN_EXCHANGE"} {
 		if notAStage.Valid() {
 			t.Errorf("%q was accepted as a stage", notAStage)
 		}
@@ -63,7 +63,7 @@ func TestEveryStageIsDistinguishableFromTheOthers(t *testing.T) {
 
 func TestAFailureKeepsWhatTheProviderActuallySaid(t *testing.T) {
 	cause := errors.New("invalid_client: client secret mismatch")
-	failure := entity.OIDCFailure(entity.OIDCStageTokenExchange, "The provider refused the exchange.", cause)
+	failure := entity.SSOFailure(entity.SSOStageTokenExchange, "The provider refused the exchange.", cause)
 
 	if failure.Detail != cause.Error() {
 		t.Fatalf(
@@ -126,8 +126,8 @@ func TestClaimsMustCarryASubjectAndAnEmail(t *testing.T) {
 			continue
 		}
 
-		if stage := stageOf(t, err); stage != entity.OIDCStageClaims {
-			t.Errorf("%s: failed at stage %q, want %q", name, stage, entity.OIDCStageClaims)
+		if stage := stageOf(t, err); stage != entity.SSOStageClaims {
+			t.Errorf("%s: failed at stage %q, want %q", name, stage, entity.SSOStageClaims)
 		}
 	}
 }
@@ -190,8 +190,8 @@ func TestProvisioningNeverPromotesSomeoneWhoWasAlreadyTurnedAway(t *testing.T) {
 
 func TestARefusalNamesTheStageThatMatchesTheReason(t *testing.T) {
 	notMember := entity.MatchOutcomeNotMember.Refusal("Ada@Example.com")
-	if stage := stageOf(t, notMember); stage != entity.OIDCStageMatching {
-		t.Errorf("a non-member refusal reported stage %q, want %q", stage, entity.OIDCStageMatching)
+	if stage := stageOf(t, notMember); stage != entity.SSOStageMatching {
+		t.Errorf("a non-member refusal reported stage %q, want %q", stage, entity.SSOStageMatching)
 	}
 
 	if !strings.Contains(notMember.Error(), "ada@example.com") {
@@ -199,8 +199,8 @@ func TestARefusalNamesTheStageThatMatchesTheReason(t *testing.T) {
 	}
 
 	noAccount := entity.MatchOutcomeNoAccount.Refusal("ada@example.com")
-	if stage := stageOf(t, noAccount); stage != entity.OIDCStageProvisioning {
-		t.Errorf("a missing-account refusal reported stage %q, want %q", stage, entity.OIDCStageProvisioning)
+	if stage := stageOf(t, noAccount); stage != entity.SSOStageProvisioning {
+		t.Errorf("a missing-account refusal reported stage %q, want %q", stage, entity.SSOStageProvisioning)
 	}
 
 	for _, admitted := range []entity.MatchOutcome{entity.MatchOutcomeSignIn, entity.MatchOutcomeProvision} {
@@ -287,8 +287,8 @@ func TestAProviderAddressMustBeReachableOverTLS(t *testing.T) {
 				continue
 			}
 
-			if stage := stageOf(t, err); stage != entity.OIDCStageDiscovery {
-				t.Errorf("%s: reported stage %q, want %q", name, stage, entity.OIDCStageDiscovery)
+			if stage := stageOf(t, err); stage != entity.SSOStageDiscovery {
+				t.Errorf("%s: reported stage %q, want %q", name, stage, entity.SSOStageDiscovery)
 			}
 		}
 	}
@@ -324,8 +324,8 @@ func TestManuallyEnteredEndpointsAreCheckedTheSameWayDiscoveredOnesAre(t *testin
 			continue
 		}
 
-		if stage := stageOf(t, err); stage != entity.OIDCStageEndpoints {
-			t.Errorf("%s: reported stage %q, want %q", name, stage, entity.OIDCStageEndpoints)
+		if stage := stageOf(t, err); stage != entity.SSOStageEndpoints {
+			t.Errorf("%s: reported stage %q, want %q", name, stage, entity.SSOStageEndpoints)
 		}
 	}
 }
@@ -366,13 +366,13 @@ func TestAConnectionIsOnlyUsableOnceItHasBeenTested(t *testing.T) {
 }
 
 func TestBothPurposesAreRecognisedAndNothingElseIs(t *testing.T) {
-	for _, purpose := range []entity.OIDCPurpose{entity.OIDCPurposeLogin, entity.OIDCPurposeTest} {
+	for _, purpose := range []entity.SSOPurpose{entity.SSOPurposeLogin, entity.SSOPurposeTest} {
 		if !purpose.Valid() {
 			t.Errorf("%q is not accepted as a purpose", purpose)
 		}
 	}
 
-	for _, purpose := range []entity.OIDCPurpose{"", "signup", "LOGIN"} {
+	for _, purpose := range []entity.SSOPurpose{"", "signup", "LOGIN"} {
 		if purpose.Valid() {
 			t.Errorf("%q was accepted as a purpose", purpose)
 		}

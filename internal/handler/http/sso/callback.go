@@ -1,6 +1,7 @@
 package sso
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -33,8 +34,8 @@ func (c *Callback) Handle(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
 	if refusal := query.Get("error"); refusal != "" {
-		c.fail(w, r, entity.NewOIDCError(
-			entity.OIDCStageAuthorization,
+		c.fail(w, r, entity.NewSSOError(
+			entity.SSOStageAuthorization,
 			providerRefusal(refusal, query.Get("error_description")),
 		), "")
 
@@ -54,7 +55,7 @@ func (c *Callback) Handle(w http.ResponseWriter, r *http.Request) {
 
 	workspace := "/" + exchange.WorkspaceSlug
 
-	if exchange.Purpose == entity.OIDCPurposeTest {
+	if exchange.Purpose == entity.SSOPurposeTest {
 		redirect(w, r, workspace+settingsScreen+"?tested=1")
 
 		return
@@ -71,11 +72,22 @@ func (c *Callback) Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Callback) fail(w http.ResponseWriter, r *http.Request, err error, workspace string) {
+	failure(w, r, err, workspace)
+}
+
+func failure(w http.ResponseWriter, r *http.Request, err error, workspace string) {
 	logging.From(r.Context()).Warn("single sign-on exchange failed", "error", err.Error())
 
 	target := url.Values{}
 
-	if failure, ok := entity.AsOIDCError(err); ok {
+	if errors.Is(err, entity.ErrSSOStateNotFound) {
+		err = entity.NewSSOError(
+			entity.SSOStageReplay,
+			"This sign-in has already been used, or it took too long. Start a new one.",
+		)
+	}
+
+	if failure, ok := entity.AsSSOError(err); ok {
 		target.Set("stage", string(failure.Stage))
 		target.Set("message", failure.Message)
 
@@ -87,7 +99,7 @@ func (c *Callback) fail(w http.ResponseWriter, r *http.Request, err error, works
 			target.Set("subject", failure.Subject)
 		}
 	} else {
-		target.Set("stage", string(entity.OIDCStageAuthorization))
+		target.Set("stage", string(entity.SSOStageAuthorization))
 		target.Set("message", "This sign-in attempt could not be completed.")
 	}
 

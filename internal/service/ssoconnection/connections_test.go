@@ -13,10 +13,10 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-func stageOf(t *testing.T, err error) entity.OIDCStage {
+func stageOf(t *testing.T, err error) entity.SSOStage {
 	t.Helper()
 
-	failure, ok := entity.AsOIDCError(err)
+	failure, ok := entity.AsSSOError(err)
 	if !ok {
 		t.Fatalf("error %v is not an OIDC failure, so the screen cannot say where it broke", err)
 	}
@@ -28,7 +28,7 @@ func (h *harness) expectExchange(workspaceID uuid.UUID, provisioning bool, claim
 	h.states.EXPECT().
 		Take(gomock.Any(), "the-state").
 		Return(entity.OIDCState{
-			Purpose:     entity.OIDCPurposeLogin,
+			Purpose:     entity.SSOPurposeLogin,
 			WorkspaceID: workspaceID,
 			Nonce:       "the-nonce",
 			Verifier:    "the-verifier",
@@ -39,7 +39,7 @@ func (h *harness) expectExchange(workspaceID uuid.UUID, provisioning bool, claim
 		Return(entity.Workspace{ID: workspaceID, Slug: "northwind"}, nil)
 
 	h.connections.EXPECT().
-		Get(gomock.Any(), workspaceID).
+		GetOIDC(gomock.Any(), workspaceID).
 		Return(connection(workspaceID, provisioning), nil)
 
 	h.provider.EXPECT().
@@ -47,7 +47,7 @@ func (h *harness) expectExchange(workspaceID uuid.UUID, provisioning bool, claim
 		Return(claims, nil)
 }
 
-func (h *harness) complete() (entity.OIDCExchange, error) {
+func (h *harness) complete() (entity.SSOExchange, error) {
 	return h.service.Complete(context.Background(), service.CompleteOIDCInput{
 		State: "the-state",
 		Code:  "the-code",
@@ -125,8 +125,8 @@ func TestAnAccountThatIsNotAMemberIsTurnedAwayEvenThoughItExists(t *testing.T) {
 		)
 	}
 
-	if stage := stageOf(t, err); stage != entity.OIDCStageMatching {
-		t.Fatalf("refused at stage %q, want %q", stage, entity.OIDCStageMatching)
+	if stage := stageOf(t, err); stage != entity.SSOStageMatching {
+		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageMatching)
 	}
 
 	if !strings.Contains(err.Error(), "ada@example.com") {
@@ -149,8 +149,8 @@ func TestAnUnknownAddressIsRefusedWhenProvisioningIsOff(t *testing.T) {
 		t.Fatal("an unknown address was admitted with provisioning turned off")
 	}
 
-	if stage := stageOf(t, err); stage != entity.OIDCStageProvisioning {
-		t.Fatalf("refused at stage %q, want %q", stage, entity.OIDCStageProvisioning)
+	if stage := stageOf(t, err); stage != entity.SSOStageProvisioning {
+		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageProvisioning)
 	}
 }
 
@@ -295,8 +295,8 @@ func TestADeactivatedAccountCannotComeBackInThroughTheProvider(t *testing.T) {
 		)
 	}
 
-	if stage := stageOf(t, err); stage != entity.OIDCStageMatching {
-		t.Fatalf("refused at stage %q, want %q", stage, entity.OIDCStageMatching)
+	if stage := stageOf(t, err); stage != entity.SSOStageMatching {
+		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageMatching)
 	}
 }
 
@@ -315,8 +315,8 @@ func TestAnUnverifiedAddressNeverReachesTheAccountLookup(t *testing.T) {
 		t.Fatal("the provider said the address was unverified and Norn signed the person in anyway")
 	}
 
-	if stage := stageOf(t, err); stage != entity.OIDCStageClaims {
-		t.Fatalf("refused at stage %q, want %q", stage, entity.OIDCStageClaims)
+	if stage := stageOf(t, err); stage != entity.SSOStageClaims {
+		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageClaims)
 	}
 }
 
@@ -328,7 +328,7 @@ func TestATestRoundTripRecordsVerificationAndMintsNoSession(t *testing.T) {
 	h.states.EXPECT().
 		Take(gomock.Any(), "the-state").
 		Return(entity.OIDCState{
-			Purpose:     entity.OIDCPurposeTest,
+			Purpose:     entity.SSOPurposeTest,
 			WorkspaceID: workspaceID,
 			Nonce:       "the-nonce",
 			Verifier:    "the-verifier",
@@ -339,7 +339,7 @@ func TestATestRoundTripRecordsVerificationAndMintsNoSession(t *testing.T) {
 		Return(entity.Workspace{ID: workspaceID, Slug: "northwind"}, nil)
 
 	h.connections.EXPECT().
-		Get(gomock.Any(), workspaceID).
+		GetOIDC(gomock.Any(), workspaceID).
 		Return(connection(workspaceID, false), nil)
 
 	h.provider.EXPECT().
@@ -360,7 +360,7 @@ func TestATestRoundTripRecordsVerificationAndMintsNoSession(t *testing.T) {
 		)
 	}
 
-	if exchange.Purpose != entity.OIDCPurposeTest {
+	if exchange.Purpose != entity.SSOPurposeTest {
 		t.Fatalf("purpose %q, want test", exchange.Purpose)
 	}
 }
@@ -372,11 +372,11 @@ func TestATestRoundTripDoesNotNeedTheAdminToBeAMember(t *testing.T) {
 
 	h.states.EXPECT().
 		Take(gomock.Any(), "the-state").
-		Return(entity.OIDCState{Purpose: entity.OIDCPurposeTest, WorkspaceID: workspaceID}, nil)
+		Return(entity.OIDCState{Purpose: entity.SSOPurposeTest, WorkspaceID: workspaceID}, nil)
 	h.workspaces.EXPECT().
 		GetByID(gomock.Any(), workspaceID).
 		Return(entity.Workspace{ID: workspaceID, Slug: "northwind"}, nil)
-	h.connections.EXPECT().Get(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
+	h.connections.EXPECT().GetOIDC(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
 	h.provider.EXPECT().
 		Exchange(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(verifiedClaims("someone-else@example.com"), nil)
@@ -399,15 +399,15 @@ func TestAFailedExchangeDoesNotRecordVerification(t *testing.T) {
 
 	h.states.EXPECT().
 		Take(gomock.Any(), "the-state").
-		Return(entity.OIDCState{Purpose: entity.OIDCPurposeTest, WorkspaceID: workspaceID}, nil)
+		Return(entity.OIDCState{Purpose: entity.SSOPurposeTest, WorkspaceID: workspaceID}, nil)
 	h.workspaces.EXPECT().
 		GetByID(gomock.Any(), workspaceID).
 		Return(entity.Workspace{ID: workspaceID, Slug: "northwind"}, nil)
-	h.connections.EXPECT().Get(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
+	h.connections.EXPECT().GetOIDC(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
 	h.provider.EXPECT().
 		Exchange(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(entity.OIDCClaims{}, entity.OIDCFailure(
-			entity.OIDCStageTokenExchange,
+		Return(entity.OIDCClaims{}, entity.SSOFailure(
+			entity.SSOStageTokenExchange,
 			"The provider refused to exchange the sign-in code for a token.",
 			errors.New("invalid_client: client secret mismatch"),
 		))
@@ -417,11 +417,11 @@ func TestAFailedExchangeDoesNotRecordVerification(t *testing.T) {
 		t.Fatal("a failed exchange was reported as success")
 	}
 
-	if stage := stageOf(t, err); stage != entity.OIDCStageTokenExchange {
-		t.Fatalf("stage %q, want %q", stage, entity.OIDCStageTokenExchange)
+	if stage := stageOf(t, err); stage != entity.SSOStageTokenExchange {
+		t.Fatalf("stage %q, want %q", stage, entity.SSOStageTokenExchange)
 	}
 
-	failure, _ := entity.AsOIDCError(err)
+	failure, _ := entity.AsSSOError(err)
 	if !strings.Contains(failure.Detail, "client secret mismatch") {
 		t.Fatalf(
 			"detail %q loses the provider's own words, which is the only thing that tells an "+
@@ -436,10 +436,10 @@ func TestAStateIsSpentOnFirstUse(t *testing.T) {
 
 	h.states.EXPECT().
 		Take(gomock.Any(), "the-state").
-		Return(entity.OIDCState{}, entity.ErrOIDCStateNotFound)
+		Return(entity.OIDCState{}, entity.ErrSSOStateNotFound)
 
 	_, err := h.complete()
-	if !errors.Is(err, entity.ErrOIDCStateNotFound) {
+	if !errors.Is(err, entity.ErrSSOStateNotFound) {
 		t.Fatalf(
 			"replaying a spent state gave %v. Take must delete on read, so a captured callback "+
 				"URL cannot be used twice.",
@@ -456,7 +456,7 @@ func TestBeginningALoginStoresEverythingTheCallbackWillNeed(t *testing.T) {
 	h.workspaces.EXPECT().
 		GetBySlug(gomock.Any(), "northwind").
 		Return(entity.Workspace{ID: workspaceID, Slug: "northwind"}, nil)
-	h.connections.EXPECT().Get(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
+	h.connections.EXPECT().GetOIDC(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
 
 	var (
 		stored entity.OIDCState
@@ -493,7 +493,7 @@ func TestBeginningALoginStoresEverythingTheCallbackWillNeed(t *testing.T) {
 		t.Fatal("no authorization URL was produced")
 	}
 
-	if stored.Purpose != entity.OIDCPurposeLogin {
+	if stored.Purpose != entity.SSOPurposeLogin {
 		t.Errorf("stored purpose %q, want login", stored.Purpose)
 	}
 
@@ -532,7 +532,7 @@ func TestTwoSignInAttemptsNeverShareAState(t *testing.T) {
 		Return(entity.Workspace{ID: workspaceID}, nil).
 		Times(2)
 	h.connections.EXPECT().
-		Get(gomock.Any(), workspaceID).
+		GetOIDC(gomock.Any(), workspaceID).
 		Return(connection(workspaceID, false), nil).
 		Times(2)
 	h.provider.EXPECT().AuthCodeURL(gomock.Any(), gomock.Any(), gomock.Any()).Return("url").Times(2)
@@ -579,7 +579,7 @@ func TestASignInCannotBeSentBackToAnotherSite(t *testing.T) {
 		h.workspaces.EXPECT().
 			GetBySlug(gomock.Any(), "northwind").
 			Return(entity.Workspace{ID: workspaceID}, nil)
-		h.connections.EXPECT().Get(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
+		h.connections.EXPECT().GetOIDC(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
 		h.provider.EXPECT().AuthCodeURL(gomock.Any(), gomock.Any(), gomock.Any()).Return("url")
 
 		var stored entity.OIDCState
@@ -616,12 +616,12 @@ func TestSavingWithoutRetypingTheSecretKeepsTheStoredOne(t *testing.T) {
 	h.allow(workspaceID)
 
 	existing := connection(workspaceID, false)
-	h.connections.EXPECT().Get(gomock.Any(), workspaceID).Return(existing, nil)
+	h.connections.EXPECT().GetOIDC(gomock.Any(), workspaceID).Return(existing, nil)
 
 	var saved entity.OIDCConnection
 
 	h.connections.EXPECT().
-		Save(gomock.Any(), gomock.Any()).
+		SaveOIDC(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, c entity.OIDCConnection) (entity.OIDCConnection, error) {
 			saved = c
 
@@ -657,8 +657,8 @@ func TestAFirstSaveWithNoSecretIsRefusedRatherThanStoredEmpty(t *testing.T) {
 	h.allow(workspaceID)
 
 	h.connections.EXPECT().
-		Get(gomock.Any(), workspaceID).
-		Return(entity.OIDCConnection{}, entity.ErrOIDCConnectionNotFound)
+		GetOIDC(gomock.Any(), workspaceID).
+		Return(entity.OIDCConnection{}, entity.ErrSSOConnectionNotFound)
 
 	endpoints := connection(workspaceID, false).Endpoints
 
@@ -672,8 +672,8 @@ func TestAFirstSaveWithNoSecretIsRefusedRatherThanStoredEmpty(t *testing.T) {
 		t.Fatal("a connection was created with no client secret at all")
 	}
 
-	if stage := stageOf(t, err); stage != entity.OIDCStageEndpoints {
-		t.Fatalf("stage %q, want %q", stage, entity.OIDCStageEndpoints)
+	if stage := stageOf(t, err); stage != entity.SSOStageEndpoints {
+		t.Fatalf("stage %q, want %q", stage, entity.SSOStageEndpoints)
 	}
 }
 
@@ -693,7 +693,7 @@ func TestTypingEndpointsInByHandSkipsDiscoveryAndIsRecordedAsManual(t *testing.T
 	var saved entity.OIDCConnection
 
 	h.connections.EXPECT().
-		Save(gomock.Any(), gomock.Any()).
+		SaveOIDC(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, c entity.OIDCConnection) (entity.OIDCConnection, error) {
 			saved = c
 
@@ -734,7 +734,7 @@ func TestSavingWithoutEndpointsDiscoversThemFromTheIssuer(t *testing.T) {
 	var saved entity.OIDCConnection
 
 	h.connections.EXPECT().
-		Save(gomock.Any(), gomock.Any()).
+		SaveOIDC(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, c entity.OIDCConnection) (entity.OIDCConnection, error) {
 			saved = c
 
@@ -767,8 +767,8 @@ func TestADiscoveryFailureIsReportedRatherThanSavedHalfWay(t *testing.T) {
 
 	h.provider.EXPECT().
 		Discover(gomock.Any(), gomock.Any()).
-		Return(entity.OIDCEndpoints{}, entity.OIDCFailure(
-			entity.OIDCStageDiscovery,
+		Return(entity.OIDCEndpoints{}, entity.SSOFailure(
+			entity.SSOStageDiscovery,
 			"Norn could not read the discovery document at that issuer.",
 			errors.New("404 Not Found"),
 		))
@@ -783,8 +783,8 @@ func TestADiscoveryFailureIsReportedRatherThanSavedHalfWay(t *testing.T) {
 		t.Fatal("a connection was saved even though discovery failed")
 	}
 
-	if stage := stageOf(t, err); stage != entity.OIDCStageDiscovery {
-		t.Fatalf("stage %q, want %q", stage, entity.OIDCStageDiscovery)
+	if stage := stageOf(t, err); stage != entity.SSOStageDiscovery {
+		t.Fatalf("stage %q, want %q", stage, entity.SSOStageDiscovery)
 	}
 }
 
@@ -799,7 +799,7 @@ func TestScopesAlwaysIncludeOpenidNoMatterWhatWasSubmitted(t *testing.T) {
 	var saved entity.OIDCConnection
 
 	h.connections.EXPECT().
-		Save(gomock.Any(), gomock.Any()).
+		SaveOIDC(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, c entity.OIDCConnection) (entity.OIDCConnection, error) {
 			saved = c
 
@@ -847,7 +847,7 @@ func TestBeginningALoginNeverAsksWhetherTheCallerMayDoIt(t *testing.T) {
 	h.workspaces.EXPECT().
 		GetBySlug(gomock.Any(), "northwind").
 		Return(entity.Workspace{ID: workspaceID}, nil)
-	h.connections.EXPECT().Get(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
+	h.connections.EXPECT().GetOIDC(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
 	h.states.EXPECT().Put(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	h.provider.EXPECT().AuthCodeURL(gomock.Any(), gomock.Any(), gomock.Any()).Return("url")
 
@@ -869,7 +869,7 @@ func TestAWorkspaceWithNoProviderLooksTheSameAsOneThatDoesNotExist(t *testing.T)
 		WorkspaceSlug: "nowhere",
 	})
 
-	if !errors.Is(err, entity.ErrOIDCConnectionNotFound) {
+	if !errors.Is(err, entity.ErrSSOConnectionNotFound) {
 		t.Fatalf(
 			"a missing workspace gave %v rather than the same answer as a workspace with no "+
 				"provider. An unauthenticated caller must not be able to enumerate slugs here.",

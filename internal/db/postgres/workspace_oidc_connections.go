@@ -36,10 +36,9 @@ type WorkspaceOidcConnection struct {
 	ClientSecretSealed    []byte            `boil:"client_secret_sealed" json:"client_secret_sealed" toml:"client_secret_sealed" yaml:"client_secret_sealed"`
 	Scopes                types.StringArray `boil:"scopes" json:"scopes" toml:"scopes" yaml:"scopes"`
 	GroupsClaim           string            `boil:"groups_claim" json:"groups_claim" toml:"groups_claim" yaml:"groups_claim"`
-	Provisioning          bool              `boil:"provisioning" json:"provisioning" toml:"provisioning" yaml:"provisioning"`
-	VerifiedAt            null.Time         `boil:"verified_at" json:"verified_at,omitempty" toml:"verified_at" yaml:"verified_at,omitempty"`
 	CreatedAt             time.Time         `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt             time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Protocol              null.String       `boil:"protocol" json:"protocol,omitempty" toml:"protocol" yaml:"protocol,omitempty"`
 
 	R *workspaceOidcConnectionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceOidcConnectionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -57,10 +56,9 @@ var WorkspaceOidcConnectionColumns = struct {
 	ClientSecretSealed    string
 	Scopes                string
 	GroupsClaim           string
-	Provisioning          string
-	VerifiedAt            string
 	CreatedAt             string
 	UpdatedAt             string
+	Protocol              string
 }{
 	WorkspaceID:           "workspace_id",
 	Issuer:                "issuer",
@@ -73,10 +71,9 @@ var WorkspaceOidcConnectionColumns = struct {
 	ClientSecretSealed:    "client_secret_sealed",
 	Scopes:                "scopes",
 	GroupsClaim:           "groups_claim",
-	Provisioning:          "provisioning",
-	VerifiedAt:            "verified_at",
 	CreatedAt:             "created_at",
 	UpdatedAt:             "updated_at",
+	Protocol:              "protocol",
 }
 
 var WorkspaceOidcConnectionTableColumns = struct {
@@ -91,10 +88,9 @@ var WorkspaceOidcConnectionTableColumns = struct {
 	ClientSecretSealed    string
 	Scopes                string
 	GroupsClaim           string
-	Provisioning          string
-	VerifiedAt            string
 	CreatedAt             string
 	UpdatedAt             string
+	Protocol              string
 }{
 	WorkspaceID:           "workspace_oidc_connections.workspace_id",
 	Issuer:                "workspace_oidc_connections.issuer",
@@ -107,10 +103,9 @@ var WorkspaceOidcConnectionTableColumns = struct {
 	ClientSecretSealed:    "workspace_oidc_connections.client_secret_sealed",
 	Scopes:                "workspace_oidc_connections.scopes",
 	GroupsClaim:           "workspace_oidc_connections.groups_claim",
-	Provisioning:          "workspace_oidc_connections.provisioning",
-	VerifiedAt:            "workspace_oidc_connections.verified_at",
 	CreatedAt:             "workspace_oidc_connections.created_at",
 	UpdatedAt:             "workspace_oidc_connections.updated_at",
+	Protocol:              "workspace_oidc_connections.protocol",
 }
 
 // Generated where
@@ -127,10 +122,9 @@ var WorkspaceOidcConnectionWhere = struct {
 	ClientSecretSealed    whereHelper__byte
 	Scopes                whereHelpertypes_StringArray
 	GroupsClaim           whereHelperstring
-	Provisioning          whereHelperbool
-	VerifiedAt            whereHelpernull_Time
 	CreatedAt             whereHelpertime_Time
 	UpdatedAt             whereHelpertime_Time
+	Protocol              whereHelpernull_String
 }{
 	WorkspaceID:           whereHelperstring{field: "\"workspace_oidc_connections\".\"workspace_id\""},
 	Issuer:                whereHelperstring{field: "\"workspace_oidc_connections\".\"issuer\""},
@@ -143,10 +137,9 @@ var WorkspaceOidcConnectionWhere = struct {
 	ClientSecretSealed:    whereHelper__byte{field: "\"workspace_oidc_connections\".\"client_secret_sealed\""},
 	Scopes:                whereHelpertypes_StringArray{field: "\"workspace_oidc_connections\".\"scopes\""},
 	GroupsClaim:           whereHelperstring{field: "\"workspace_oidc_connections\".\"groups_claim\""},
-	Provisioning:          whereHelperbool{field: "\"workspace_oidc_connections\".\"provisioning\""},
-	VerifiedAt:            whereHelpernull_Time{field: "\"workspace_oidc_connections\".\"verified_at\""},
 	CreatedAt:             whereHelpertime_Time{field: "\"workspace_oidc_connections\".\"created_at\""},
 	UpdatedAt:             whereHelpertime_Time{field: "\"workspace_oidc_connections\".\"updated_at\""},
+	Protocol:              whereHelpernull_String{field: "\"workspace_oidc_connections\".\"protocol\""},
 }
 
 // WorkspaceOidcConnectionRels is where relationship names are stored.
@@ -186,11 +179,11 @@ func (r *workspaceOidcConnectionR) GetWorkspace() *Workspace {
 type workspaceOidcConnectionL struct{}
 
 var (
-	workspaceOidcConnectionAllColumns            = []string{"workspace_id", "issuer", "discovered", "authorization_endpoint", "token_endpoint", "jwks_uri", "userinfo_endpoint", "client_id", "client_secret_sealed", "scopes", "groups_claim", "provisioning", "verified_at", "created_at", "updated_at"}
+	workspaceOidcConnectionAllColumns            = []string{"workspace_id", "issuer", "discovered", "authorization_endpoint", "token_endpoint", "jwks_uri", "userinfo_endpoint", "client_id", "client_secret_sealed", "scopes", "groups_claim", "created_at", "updated_at", "protocol"}
 	workspaceOidcConnectionColumnsWithoutDefault = []string{"workspace_id", "issuer", "authorization_endpoint", "token_endpoint", "jwks_uri", "client_id", "client_secret_sealed"}
-	workspaceOidcConnectionColumnsWithDefault    = []string{"discovered", "userinfo_endpoint", "scopes", "groups_claim", "provisioning", "verified_at", "created_at", "updated_at"}
+	workspaceOidcConnectionColumnsWithDefault    = []string{"discovered", "userinfo_endpoint", "scopes", "groups_claim", "created_at", "updated_at", "protocol"}
 	workspaceOidcConnectionPrimaryKeyColumns     = []string{"workspace_id"}
-	workspaceOidcConnectionGeneratedColumns      = []string{}
+	workspaceOidcConnectionGeneratedColumns      = []string{"protocol"}
 )
 
 type (
@@ -754,6 +747,7 @@ func (o *WorkspaceOidcConnection) Insert(ctx context.Context, exec boil.ContextE
 			workspaceOidcConnectionColumnsWithoutDefault,
 			nzDefaults,
 		)
+		wl = strmangle.SetComplement(wl, workspaceOidcConnectionGeneratedColumns)
 
 		cache.valueMapping, err = queries.BindMapping(workspaceOidcConnectionType, workspaceOidcConnectionMapping, wl)
 		if err != nil {
@@ -830,6 +824,7 @@ func (o *WorkspaceOidcConnection) Update(ctx context.Context, exec boil.ContextE
 			workspaceOidcConnectionAllColumns,
 			workspaceOidcConnectionPrimaryKeyColumns,
 		)
+		wl = strmangle.SetComplement(wl, workspaceOidcConnectionGeneratedColumns)
 
 		if !columns.IsWhitelist() {
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
@@ -1007,6 +1002,9 @@ func (o *WorkspaceOidcConnection) Upsert(ctx context.Context, exec boil.ContextE
 			workspaceOidcConnectionAllColumns,
 			workspaceOidcConnectionPrimaryKeyColumns,
 		)
+
+		insert = strmangle.SetComplement(insert, workspaceOidcConnectionGeneratedColumns)
+		update = strmangle.SetComplement(update, workspaceOidcConnectionGeneratedColumns)
 
 		if updateOnConflict && len(update) == 0 {
 			return errors.New("dbpostgres: unable to upsert workspace_oidc_connections, could not build update column list")

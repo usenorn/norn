@@ -21,6 +21,7 @@ type Config struct {
 	Workspace Workspace `mapstructure:"workspace"`
 	Security  Security  `mapstructure:"security"`
 	OIDC      OIDC      `mapstructure:"oidc"`
+	SAML      SAML      `mapstructure:"saml"`
 }
 
 type Security struct {
@@ -31,6 +32,16 @@ type OIDC struct {
 	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
 	MaxResponseSize int64         `mapstructure:"max_response_size"`
 	StateTTL        time.Duration `mapstructure:"state_ttl"`
+}
+
+type SAML struct {
+	CertificateSweepSchedule string        `mapstructure:"certificate_sweep_schedule"`
+	RequestTimeout           time.Duration `mapstructure:"request_timeout"`
+	MaxResponseSize          int64         `mapstructure:"max_response_size"`
+	StateTTL                 time.Duration `mapstructure:"state_ttl"`
+	ReplayTTL                time.Duration `mapstructure:"replay_ttl"`
+	MaxClockSkew             time.Duration `mapstructure:"max_clock_skew"`
+	MaxIssueDelay            time.Duration `mapstructure:"max_issue_delay"`
 }
 
 type Workspace struct {
