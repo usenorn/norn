@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/usenorn/norn/internal/config"
@@ -154,5 +155,25 @@ func TestAKeySealedByOneInstanceCannotBeOpenedByAnother(t *testing.T) {
 
 	if _, err := second.Open(sealed); !errors.Is(err, crypter.ErrCiphertext) {
 		t.Fatalf("a different key opened the ciphertext (%v)", err)
+	}
+}
+
+func TestTheRefusalWithoutAKeyNamesTheSettingToChange(t *testing.T) {
+	c, err := crypter.New(config.Security{})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	_, err = c.Seal([]byte("client secret"))
+	if err == nil {
+		t.Fatal("sealing without a key succeeded")
+	}
+
+	if !strings.Contains(err.Error(), "encryption key") {
+		t.Fatalf(
+			"the refusal reads %q, which does not tell an operator that a key is what is "+
+				"missing. This is the one error an install without a key will ever see.",
+			err,
+		)
 	}
 }

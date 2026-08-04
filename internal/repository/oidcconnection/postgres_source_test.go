@@ -177,3 +177,18 @@ func between(t *testing.T, body, opening, closing string) string {
 
 	return body[start : start+end]
 }
+
+func TestAnInstanceWithoutAnEncryptionKeyGetsATellingErrorNotACrash(t *testing.T) {
+	body := source(t)
+
+	if !strings.Contains(body, "crypter.ErrKeyMissing") {
+		t.Fatal(
+			"a missing encryption key is not translated into a domain error, so an install " +
+				"that never set one gets a bare 500 with nothing naming the setting to change.",
+		)
+	}
+
+	if strings.Count(body, "entity.ErrOIDCEncryptionKeyMissing") < 2 {
+		t.Error("only one of sealing and opening translates the missing key")
+	}
+}
