@@ -6,6 +6,7 @@ import type { Project } from "$lib/projects/projects";
 import type { Issue } from "$lib/issues/issues";
 import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
+import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type { WorkflowState } from "$lib/team/states";
 import type { PageLoad } from "./$types";
 
@@ -33,6 +34,7 @@ export type IssueDetail =
 			cycles: Cycle[];
 			projects: Project[];
 			comments: CommentThread;
+			attachments: AttachmentPanel;
 	  }
 	| { kind: "unavailable" };
 
@@ -76,6 +78,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 		cycles,
 		projects,
 		comments,
+		attachments,
 	] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			fetch,
@@ -112,6 +115,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			params: { path: { workspaceId: workspace.id } },
 		}),
 		api.GET("/workspaces/{workspaceId}/issues/{issueId}/comments", { fetch, params: { path } }),
+		api.GET("/workspaces/{workspaceId}/issues/{issueId}/attachments", { fetch, params: { path } }),
 	]);
 
 	if (
@@ -142,6 +146,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			cycles: (cycles.data ?? []).filter((cycle) => cycle.phase !== "closed"),
 			projects: (projects.data ?? []).filter((project) => !project.archived),
 			comments: readThread(comments.data),
+			attachments: readAttachments(attachments.data),
 		},
 	};
 };
@@ -151,4 +156,13 @@ function readThread(page: components["schemas"]["IssueCommentPage"] | undefined)
 	if (page.comments.length === 0) return { kind: "empty" };
 
 	return { kind: "ready", comments: page.comments, nextCursor: page.nextCursor };
+}
+
+function readAttachments(
+	page: components["schemas"]["AttachmentList"] | undefined
+): AttachmentPanel {
+	if (!page) return { kind: "unavailable" };
+	if (page.attachments.length === 0) return { kind: "empty" };
+
+	return { kind: "ready", attachments: page.attachments };
 }

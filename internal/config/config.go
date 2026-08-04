@@ -6,23 +6,24 @@ import (
 )
 
 type Config struct {
-	App       App       `mapstructure:"app"`
-	Instance  Instance  `mapstructure:"instance"`
-	HTTP      HTTP      `mapstructure:"http"`
-	Postgres  Postgres  `mapstructure:"postgres"`
-	Valkey    Valkey    `mapstructure:"valkey"`
-	Asynq     Asynq     `mapstructure:"asynq"`
-	SMTP      SMTP      `mapstructure:"smtp"`
-	Storage   Storage   `mapstructure:"storage"`
-	Session   Session   `mapstructure:"session"`
-	Casbin    Casbin    `mapstructure:"casbin"`
-	GeoIP     GeoIP     `mapstructure:"geoip"`
-	Password  Password  `mapstructure:"password"`
-	Workspace Workspace `mapstructure:"workspace"`
-	Security  Security  `mapstructure:"security"`
-	OIDC      OIDC      `mapstructure:"oidc"`
-	SAML      SAML      `mapstructure:"saml"`
-	Cycles    Cycles    `mapstructure:"cycles"`
+	App         App         `mapstructure:"app"`
+	Instance    Instance    `mapstructure:"instance"`
+	HTTP        HTTP        `mapstructure:"http"`
+	Postgres    Postgres    `mapstructure:"postgres"`
+	Valkey      Valkey      `mapstructure:"valkey"`
+	Asynq       Asynq       `mapstructure:"asynq"`
+	SMTP        SMTP        `mapstructure:"smtp"`
+	Storage     Storage     `mapstructure:"storage"`
+	Attachments Attachments `mapstructure:"attachments"`
+	Session     Session     `mapstructure:"session"`
+	Casbin      Casbin      `mapstructure:"casbin"`
+	GeoIP       GeoIP       `mapstructure:"geoip"`
+	Password    Password    `mapstructure:"password"`
+	Workspace   Workspace   `mapstructure:"workspace"`
+	Security    Security    `mapstructure:"security"`
+	OIDC        OIDC        `mapstructure:"oidc"`
+	SAML        SAML        `mapstructure:"saml"`
+	Cycles      Cycles      `mapstructure:"cycles"`
 }
 
 type Security struct {
@@ -145,7 +146,14 @@ type Password struct {
 	BreachCheckTimeout  time.Duration `mapstructure:"breach_check_timeout"`
 }
 
+const (
+	StorageBackendFilesystem = "filesystem"
+	StorageBackendS3         = "s3"
+)
+
 type Storage struct {
+	Backend         string        `mapstructure:"backend"`
+	Root            string        `mapstructure:"root"`
 	Endpoint        string        `mapstructure:"endpoint"`
 	Region          string        `mapstructure:"region"`
 	Bucket          string        `mapstructure:"bucket"`
@@ -154,6 +162,16 @@ type Storage struct {
 	UsePathStyle    bool          `mapstructure:"use_path_style"`
 	PublicBaseURL   string        `mapstructure:"public_base_url"`
 	Timeout         time.Duration `mapstructure:"timeout"`
+}
+
+type Attachments struct {
+	MaxFileBytes      int64         `mapstructure:"max_file_bytes"`
+	MaxWorkspaceBytes int64         `mapstructure:"max_workspace_bytes"`
+	UploadTTL         time.Duration `mapstructure:"upload_ttl"`
+	LinkTTL           time.Duration `mapstructure:"link_ttl"`
+	TransferTimeout   time.Duration `mapstructure:"transfer_timeout"`
+	ReclaimSchedule   string        `mapstructure:"reclaim_schedule"`
+	ReclaimBatch      int           `mapstructure:"reclaim_batch"`
 }
 
 type Session struct {

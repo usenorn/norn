@@ -4,7 +4,7 @@ MIGRATIONS_DIR := db/migrations/postgres
 
 .DEFAULT_GOAL := infra
 
-.PHONY: env infra infra-up infra-down infra-reset infra-ps infra-logs \
+.PHONY: env infra infra-up infra-down infra-reset infra-ps infra-logs garage-cors \
 	psql valkey-cli garage migration db-gen gen wire build test test-race lint vuln fmt
 
 env:
@@ -34,6 +34,14 @@ valkey-cli:
 
 garage:
 	$(COMPOSE) exec garage /garage $(args)
+
+garage-cors:
+	AWS_ACCESS_KEY_ID="$${GARAGE_DEFAULT_ACCESS_KEY}" \
+	AWS_SECRET_ACCESS_KEY="$${GARAGE_DEFAULT_SECRET_KEY}" \
+	AWS_DEFAULT_REGION="$${NORN_STORAGE_REGION:-garage}" \
+	aws --endpoint-url "$${NORN_STORAGE_ENDPOINT:-http://127.0.0.1:3900}" s3api put-bucket-cors \
+		--bucket "$${GARAGE_DEFAULT_BUCKET:-norn-local}" \
+		--cors-configuration file://deploy/local/garage-cors.json
 
 migration:
 	@test -n "$(name)" || { echo "usage: make migration name=create_users" >&2; exit 1; }

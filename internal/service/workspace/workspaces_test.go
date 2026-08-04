@@ -13,6 +13,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
+	blobrepo "github.com/usenorn/norn/internal/repository/blob"
 	breakglassrepo "github.com/usenorn/norn/internal/repository/breakglass"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
@@ -43,6 +44,7 @@ type harness struct {
 	identities   *ssoidentityrepo.MockSSOIdentity
 	breakGlass   *breakglassrepo.MockBreakGlass
 	producer     *jobqueuerepo.MockJobProducer
+	blobs        *blobrepo.MockBlob
 	authorizer   *authorizersvc.MockAuthorizer
 	service      service.Workspaces
 }
@@ -72,6 +74,7 @@ func newHarness(t *testing.T) *harness {
 		identities:   ssoidentityrepo.NewMockSSOIdentity(ctrl),
 		breakGlass:   breakglassrepo.NewMockBreakGlass(ctrl),
 		producer:     jobqueuerepo.NewMockJobProducer(ctrl),
+		blobs:        blobrepo.NewMockBlob(ctrl),
 		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
 	}
 
@@ -87,6 +90,7 @@ func newHarness(t *testing.T) *harness {
 		h.identities,
 		h.breakGlass,
 		h.producer,
+		h.blobs,
 		h.authorizer,
 		transactor,
 		config.Workspace{DeletionGracePeriod: deletionGracePeriod},

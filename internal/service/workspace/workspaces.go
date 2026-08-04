@@ -27,6 +27,7 @@ type workspacesService struct {
 	identities   repository.SSOIdentity
 	breakGlass   repository.BreakGlass
 	producer     repository.JobProducer
+	blobs        repository.Blob
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
 	workspaceCfg config.Workspace
@@ -44,6 +45,7 @@ func New(
 	identities repository.SSOIdentity,
 	breakGlass repository.BreakGlass,
 	producer repository.JobProducer,
+	blobs repository.Blob,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 	workspaceCfg config.Workspace,
@@ -60,6 +62,7 @@ func New(
 		identities:   identities,
 		breakGlass:   breakGlass,
 		producer:     producer,
+		blobs:        blobs,
 		authorizer:   authorizer,
 		transactor:   transactor,
 		workspaceCfg: workspaceCfg,
@@ -284,7 +287,13 @@ func (s *workspacesService) Purge(ctx context.Context, workspaceID uuid.UUID) er
 		return nil
 	}
 
-	return s.workspaces.Purge(ctx, workspaceID)
+	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if err := s.blobs.RemoveAll(ctx, entity.AttachmentPrefix(workspaceID)); err != nil {
+			return err
+		}
+
+		return s.workspaces.Purge(ctx, workspaceID)
+	})
 }
 
 func (s *workspacesService) ListForAccount(ctx context.Context, accountID uuid.UUID) ([]entity.Workspace, error) {

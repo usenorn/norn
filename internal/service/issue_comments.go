@@ -30,6 +30,7 @@ type PostCommentInput struct {
 	ParentCommentID uuid.UUID
 	Body            string
 	Mentions        []CommentMentionInput
+	AttachmentIDs   []uuid.UUID
 }
 
 type CommentPosted struct {

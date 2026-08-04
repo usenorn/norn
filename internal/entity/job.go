@@ -18,6 +18,9 @@ const (
 	TaskTypeSSOCertificateSweep     = "sso:certificate_sweep"
 	TaskTypeBulkApply               = "issue:bulk_apply"
 	TaskTypeCycleGeneration         = "cycle:generate"
+	TaskTypeAttachmentReclaim       = "attachment:reclaim"
+
+	AttachmentReclaimTaskID = "attachment-reclaim"
 
 	QueueDefault = "default"
 	QueueMail    = "mail"

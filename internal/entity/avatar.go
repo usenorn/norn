@@ -1,6 +1,9 @@
 package entity
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 const (
 	AvatarMaxBytes    = 2 << 20
@@ -24,4 +27,14 @@ func AvatarExtension(contentType string) (string, bool) {
 	extension, ok := avatarExtensions[contentType]
 
 	return extension, ok
+}
+
+func AvatarContentType(key string) string {
+	for contentType, extension := range avatarExtensions {
+		if strings.HasSuffix(key, extension) {
+			return contentType
+		}
+	}
+
+	return AttachmentGenericType
 }

@@ -78,6 +78,27 @@ func (e AccountStatus) Valid() bool {
 	}
 }
 
+// Defines values for AttachmentStatus.
+const (
+	AttachmentStatusDiscarded AttachmentStatus = "discarded"
+	AttachmentStatusPending   AttachmentStatus = "pending"
+	AttachmentStatusStored    AttachmentStatus = "stored"
+)
+
+// Valid indicates whether the value is a known member of the AttachmentStatus enum.
+func (e AttachmentStatus) Valid() bool {
+	switch e {
+	case AttachmentStatusDiscarded:
+		return true
+	case AttachmentStatusPending:
+		return true
+	case AttachmentStatusStored:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AuthEnforcement.
 const (
 	AuthEnforcementAny AuthEnforcement = "any"
@@ -1476,6 +1497,30 @@ func (e StateCategory) Valid() bool {
 	}
 }
 
+// Defines values for StorageRefusedProblemCode.
+const (
+	AttachmentMissing         StorageRefusedProblemCode = "attachment_missing"
+	AttachmentNotPending      StorageRefusedProblemCode = "attachment_not_pending"
+	AttachmentTooLarge        StorageRefusedProblemCode = "attachment_too_large"
+	WorkspaceStorageExhausted StorageRefusedProblemCode = "workspace_storage_exhausted"
+)
+
+// Valid indicates whether the value is a known member of the StorageRefusedProblemCode enum.
+func (e StorageRefusedProblemCode) Valid() bool {
+	switch e {
+	case AttachmentMissing:
+		return true
+	case AttachmentNotPending:
+		return true
+	case AttachmentTooLarge:
+		return true
+	case WorkspaceStorageExhausted:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TeamConflictProblemCode.
 const (
 	TeamConflictProblemCodeTeamArchived     TeamConflictProblemCode = "team_archived"
@@ -1784,6 +1829,53 @@ type AddProjectMemberRequest struct {
 // AddTeamMemberRequest defines model for AddTeamMemberRequest.
 type AddTeamMemberRequest struct {
 	AccountId openapi_types.UUID `json:"accountId"`
+}
+
+// Attachment defines model for Attachment.
+type Attachment struct {
+	ByteSize  int64               `json:"byteSize"`
+	CommentId *openapi_types.UUID `json:"commentId,omitempty"`
+
+	// ContentPath The same-origin path that trades issue access for the bytes.
+	ContentPath string             `json:"contentPath"`
+	ContentType string             `json:"contentType"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	FileName    string             `json:"fileName"`
+	Id          openapi_types.UUID `json:"id"`
+
+	// Inline Whether Norn will serve this file for display rather than download.
+	Inline  bool               `json:"inline"`
+	IssueId openapi_types.UUID `json:"issueId"`
+
+	// Status A file is pending until its bytes have landed and been settled.
+	Status              AttachmentStatus    `json:"status"`
+	UploadedByAccountId *openapi_types.UUID `json:"uploadedByAccountId,omitempty"`
+	UploadedByName      *string             `json:"uploadedByName,omitempty"`
+	WorkspaceId         openapi_types.UUID  `json:"workspaceId"`
+}
+
+// AttachmentList defines model for AttachmentList.
+type AttachmentList struct {
+	Attachments []Attachment `json:"attachments"`
+}
+
+// AttachmentReservation defines model for AttachmentReservation.
+type AttachmentReservation struct {
+	Attachment Attachment `json:"attachment"`
+
+	// Transfer One request that carries the bytes, wherever they are meant to go.
+	Transfer AttachmentTransfer `json:"transfer"`
+}
+
+// AttachmentStatus A file is pending until its bytes have landed and been settled.
+type AttachmentStatus string
+
+// AttachmentTransfer One request that carries the bytes, wherever they are meant to go.
+type AttachmentTransfer struct {
+	ExpiresAt time.Time         `json:"expiresAt"`
+	Headers   map[string]string `json:"headers"`
+	Method    string            `json:"method"`
+	Url       string            `json:"url"`
 }
 
 // AuthEnforcement defines model for AuthEnforcement.
@@ -2683,9 +2775,10 @@ type PasswordResetRequested struct {
 
 // PostCommentRequest defines model for PostCommentRequest.
 type PostCommentRequest struct {
-	Body            string              `json:"body"`
-	Mentions        *[]MentionTarget    `json:"mentions,omitempty"`
-	ParentCommentId *openapi_types.UUID `json:"parentCommentId,omitempty"`
+	AttachmentIds   *[]openapi_types.UUID `json:"attachmentIds,omitempty"`
+	Body            string                `json:"body"`
+	Mentions        *[]MentionTarget      `json:"mentions,omitempty"`
+	ParentCommentId *openapi_types.UUID   `json:"parentCommentId,omitempty"`
 }
 
 // PostProjectStatusRequest defines model for PostProjectStatusRequest.
@@ -2834,6 +2927,13 @@ type RequestSignUpRequest struct {
 	Email       string  `json:"email"`
 	Password    string  `json:"password"`
 	Timezone    *string `json:"timezone,omitempty"`
+}
+
+// ReserveAttachmentRequest defines model for ReserveAttachmentRequest.
+type ReserveAttachmentRequest struct {
+	ByteSize    int64   `json:"byteSize"`
+	ContentType *string `json:"contentType,omitempty"`
+	FileName    string  `json:"fileName"`
 }
 
 // ResetLinkExpiredProblem defines model for ResetLinkExpiredProblem.
@@ -3109,6 +3209,23 @@ type SsoStage string
 // StateCategory defines model for StateCategory.
 type StateCategory string
 
+// StorageRefusedProblem defines model for StorageRefusedProblem.
+type StorageRefusedProblem struct {
+	ByteSize    *int64                    `json:"byteSize,omitempty"`
+	Code        StorageRefusedProblemCode `json:"code"`
+	Detail      *string                   `json:"detail,omitempty"`
+	Errors      *[]FieldError             `json:"errors,omitempty"`
+	Instance    *string                   `json:"instance,omitempty"`
+	MaxBytes    *int64                    `json:"maxBytes,omitempty"`
+	Status      int32                     `json:"status"`
+	StoredBytes *int64                    `json:"storedBytes,omitempty"`
+	Title       string                    `json:"title"`
+	Type        string                    `json:"type"`
+}
+
+// StorageRefusedProblemCode defines model for StorageRefusedProblem.Code.
+type StorageRefusedProblemCode string
+
 // Team defines model for Team.
 type Team struct {
 	ArchivedAt  *time.Time         `json:"archivedAt,omitempty"`
@@ -3368,8 +3485,19 @@ type WorkspaceSsoProtocol struct {
 // WorkspaceStatus defines model for WorkspaceStatus.
 type WorkspaceStatus string
 
+// WorkspaceStorage defines model for WorkspaceStorage.
+type WorkspaceStorage struct {
+	MaxBytes    *int64     `json:"maxBytes,omitempty"`
+	StoredBytes int64      `json:"storedBytes"`
+	Unlimited   bool       `json:"unlimited"`
+	UpdatedAt   *time.Time `json:"updatedAt,omitempty"`
+}
+
 // AccountId defines model for AccountId.
 type AccountId = openapi_types.UUID
+
+// AttachmentId defines model for AttachmentId.
+type AttachmentId = openapi_types.UUID
 
 // CommentId defines model for CommentId.
 type CommentId = openapi_types.UUID
@@ -3475,6 +3603,9 @@ type SignUpUnavailable = SignUpClosedProblem
 
 // SsoFailed defines model for SsoFailed.
 type SsoFailed = SsoProblem
+
+// StorageRefused defines model for StorageRefused.
+type StorageRefused = StorageRefusedProblem
 
 // TeamConflict defines model for TeamConflict.
 type TeamConflict = TeamConflictProblem
@@ -3665,6 +3796,9 @@ type QueryWorkspaceIssuesJSONRequestBody = IssueQueryRequest
 // UpdateWorkspaceIssueJSONRequestBody defines body for UpdateWorkspaceIssue for application/json ContentType.
 type UpdateWorkspaceIssueJSONRequestBody = UpdateIssueRequest
 
+// ReserveWorkspaceIssueAttachmentJSONRequestBody defines body for ReserveWorkspaceIssueAttachment for application/json ContentType.
+type ReserveWorkspaceIssueAttachmentJSONRequestBody = ReserveAttachmentRequest
+
 // PostWorkspaceIssueCommentJSONRequestBody defines body for PostWorkspaceIssueComment for application/json ContentType.
 type PostWorkspaceIssueCommentJSONRequestBody = PostCommentRequest
 
@@ -3808,6 +3942,9 @@ type ServerInterface interface {
 	// ChangePassword Replace the current password, revoking every other session
 	// (PUT /accounts/me/password)
 	ChangePassword(w http.ResponseWriter, r *http.Request)
+	// DownloadAccountAvatar Trade a session for a short-lived link to an avatar
+	// (GET /accounts/{accountId}/avatar)
+	DownloadAccountAvatar(w http.ResponseWriter, r *http.Request, accountId openapi_types.UUID)
 	// SignIn Exchange credentials for a session cookie
 	// (POST /auth/login)
 	SignIn(w http.ResponseWriter, r *http.Request)
@@ -3871,6 +4008,9 @@ type ServerInterface interface {
 	// UpdateWorkspace Change the workspace display name and timezone
 	// (PATCH /workspaces/{workspaceId})
 	UpdateWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
+	// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
+	DownloadWorkspaceAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, attachmentId AttachmentId)
 	// GetWorkspaceAuthPolicy Read which authentication methods the workspace accepts
 	// (GET /workspaces/{workspaceId}/auth-policy)
 	GetWorkspaceAuthPolicy(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -3934,6 +4074,18 @@ type ServerInterface interface {
 	// ListWorkspaceIssueActivity List what has happened to an issue, newest first
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/activity)
 	ListWorkspaceIssueActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueActivityParams)
+	// ListWorkspaceIssueAttachments List the files hanging off an issue, oldest first
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/attachments)
+	ListWorkspaceIssueAttachments(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// ReserveWorkspaceIssueAttachment Reserve room for a file and say where to send its bytes
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/attachments)
+	ReserveWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// RemoveWorkspaceIssueAttachment Take a file off an issue and give its room back
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId})
+	RemoveWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, attachmentId AttachmentId)
+	// FinalizeWorkspaceIssueAttachment Confirm the bytes landed, and settle what the file actually is
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}/finalize)
+	FinalizeWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, attachmentId AttachmentId)
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 	ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -4117,6 +4269,9 @@ type ServerInterface interface {
 	// TestWorkspaceSamlConnection Start a real round trip to the provider that records verification
 	// (POST /workspaces/{workspaceId}/sso/saml/test)
 	TestWorkspaceSamlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceStorage How much this workspace is storing, and how much it may
+	// (GET /workspaces/{workspaceId}/storage)
+	GetWorkspaceStorage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// ListWorkspaceTeams List the teams the signed-in account may see in the workspace
 	// (GET /workspaces/{workspaceId}/teams)
 	ListWorkspaceTeams(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceTeamsParams)
@@ -4279,6 +4434,12 @@ func (_ Unimplemented) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// DownloadAccountAvatar Trade a session for a short-lived link to an avatar
+// (GET /accounts/{accountId}/avatar)
+func (_ Unimplemented) DownloadAccountAvatar(w http.ResponseWriter, r *http.Request, accountId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // SignIn Exchange credentials for a session cookie
 // (POST /auth/login)
 func (_ Unimplemented) SignIn(w http.ResponseWriter, r *http.Request) {
@@ -4405,6 +4566,12 @@ func (_ Unimplemented) UpdateWorkspace(w http.ResponseWriter, r *http.Request, w
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
+// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
+func (_ Unimplemented) DownloadWorkspaceAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, attachmentId AttachmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // GetWorkspaceAuthPolicy Read which authentication methods the workspace accepts
 // (GET /workspaces/{workspaceId}/auth-policy)
 func (_ Unimplemented) GetWorkspaceAuthPolicy(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
@@ -4528,6 +4695,30 @@ func (_ Unimplemented) UpdateWorkspaceIssue(w http.ResponseWriter, r *http.Reque
 // ListWorkspaceIssueActivity List what has happened to an issue, newest first
 // (GET /workspaces/{workspaceId}/issues/{issueId}/activity)
 func (_ Unimplemented) ListWorkspaceIssueActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueActivityParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueAttachments List the files hanging off an issue, oldest first
+// (GET /workspaces/{workspaceId}/issues/{issueId}/attachments)
+func (_ Unimplemented) ListWorkspaceIssueAttachments(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReserveWorkspaceIssueAttachment Reserve room for a file and say where to send its bytes
+// (POST /workspaces/{workspaceId}/issues/{issueId}/attachments)
+func (_ Unimplemented) ReserveWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveWorkspaceIssueAttachment Take a file off an issue and give its room back
+// (DELETE /workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId})
+func (_ Unimplemented) RemoveWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, attachmentId AttachmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// FinalizeWorkspaceIssueAttachment Confirm the bytes landed, and settle what the file actually is
+// (POST /workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}/finalize)
+func (_ Unimplemented) FinalizeWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, attachmentId AttachmentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4897,6 +5088,12 @@ func (_ Unimplemented) TestWorkspaceSamlConnection(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetWorkspaceStorage How much this workspace is storing, and how much it may
+// (GET /workspaces/{workspaceId}/storage)
+func (_ Unimplemented) GetWorkspaceStorage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceTeams List the teams the signed-in account may see in the workspace
 // (GET /workspaces/{workspaceId}/teams)
 func (_ Unimplemented) ListWorkspaceTeams(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceTeamsParams) {
@@ -5240,6 +5437,32 @@ func (siw *ServerInterfaceWrapper) ChangePassword(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// DownloadAccountAvatar operation middleware
+func (siw *ServerInterfaceWrapper) DownloadAccountAvatar(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "accountId" -------------
+	var accountId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "accountId", chi.URLParam(r, "accountId"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accountId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DownloadAccountAvatar(w, r, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SignIn operation middleware
 func (siw *ServerInterfaceWrapper) SignIn(w http.ResponseWriter, r *http.Request) {
 
@@ -5573,6 +5796,41 @@ func (siw *ServerInterfaceWrapper) UpdateWorkspace(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateWorkspace(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DownloadWorkspaceAttachment operation middleware
+func (siw *ServerInterfaceWrapper) DownloadWorkspaceAttachment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "attachmentId" -------------
+	var attachmentId AttachmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "attachmentId", chi.URLParam(r, "attachmentId"), &attachmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "attachmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DownloadWorkspaceAttachment(w, r, workspaceId, attachmentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -6406,6 +6664,164 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceIssueActivity(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWorkspaceIssueActivity(w, r, workspaceId, issueId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueAttachments operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueAttachments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueAttachments(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReserveWorkspaceIssueAttachment operation middleware
+func (siw *ServerInterfaceWrapper) ReserveWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReserveWorkspaceIssueAttachment(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveWorkspaceIssueAttachment operation middleware
+func (siw *ServerInterfaceWrapper) RemoveWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "attachmentId" -------------
+	var attachmentId AttachmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "attachmentId", chi.URLParam(r, "attachmentId"), &attachmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "attachmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveWorkspaceIssueAttachment(w, r, workspaceId, issueId, attachmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// FinalizeWorkspaceIssueAttachment operation middleware
+func (siw *ServerInterfaceWrapper) FinalizeWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "attachmentId" -------------
+	var attachmentId AttachmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "attachmentId", chi.URLParam(r, "attachmentId"), &attachmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "attachmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.FinalizeWorkspaceIssueAttachment(w, r, workspaceId, issueId, attachmentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -8567,6 +8983,32 @@ func (siw *ServerInterfaceWrapper) TestWorkspaceSamlConnection(w http.ResponseWr
 	handler.ServeHTTP(w, r)
 }
 
+// GetWorkspaceStorage operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceStorage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceStorage(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceTeams operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceTeams(w http.ResponseWriter, r *http.Request) {
 
@@ -10068,6 +10510,27 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/activity", wrapper.ListWorkspaceIssueActivity)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/attachments", wrapper.ListWorkspaceIssueAttachments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/attachments", wrapper.ReserveWorkspaceIssueAttachment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}", wrapper.RemoveWorkspaceIssueAttachment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}/finalize", wrapper.FinalizeWorkspaceIssueAttachment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/attachments/{attachmentId}/content", wrapper.DownloadWorkspaceAttachment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/storage", wrapper.GetWorkspaceStorage)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/accounts/{accountId}/avatar", wrapper.DownloadAccountAvatar)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/comments", wrapper.ListWorkspaceIssueComments)
 	})
 	r.Group(func(r chi.Router) {
@@ -10272,6 +10735,8 @@ type SignUpLinkUnusableApplicationProblemPlusJSONResponse SignUpUnusableProblem
 type SignUpUnavailableApplicationProblemPlusJSONResponse SignUpClosedProblem
 
 type SsoFailedApplicationProblemPlusJSONResponse SsoProblem
+
+type StorageRefusedApplicationProblemPlusJSONResponse StorageRefusedProblem
 
 type TeamConflictApplicationProblemPlusJSONResponse TeamConflictProblem
 
@@ -11081,6 +11546,78 @@ func (response ChangePassword503ApplicationProblemPlusJSONResponse) VisitChangeP
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadAccountAvatarRequestObject struct {
+	AccountId openapi_types.UUID `json:"accountId"`
+}
+
+type DownloadAccountAvatarResponseObject interface {
+	VisitDownloadAccountAvatarResponse(w http.ResponseWriter) error
+}
+
+type DownloadAccountAvatar303ResponseHeaders struct {
+	CacheControl *string
+	Location     *string
+}
+
+type DownloadAccountAvatar303Response struct {
+	Headers DownloadAccountAvatar303ResponseHeaders
+}
+
+func (response DownloadAccountAvatar303Response) VisitDownloadAccountAvatarResponse(w http.ResponseWriter) error {
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(303)
+	return nil
+}
+
+type DownloadAccountAvatar401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DownloadAccountAvatar401ApplicationProblemPlusJSONResponse) VisitDownloadAccountAvatarResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadAccountAvatar404ApplicationProblemPlusJSONResponse Problem
+
+func (response DownloadAccountAvatar404ApplicationProblemPlusJSONResponse) VisitDownloadAccountAvatarResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadAccountAvatar500ApplicationProblemPlusJSONResponse Problem
+
+func (response DownloadAccountAvatar500ApplicationProblemPlusJSONResponse) VisitDownloadAccountAvatarResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -12729,6 +13266,95 @@ func (response UpdateWorkspace422ApplicationProblemPlusJSONResponse) VisitUpdate
 type UpdateWorkspace500ApplicationProblemPlusJSONResponse Problem
 
 func (response UpdateWorkspace500ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadWorkspaceAttachmentRequestObject struct {
+	WorkspaceId  WorkspaceId  `json:"workspaceId"`
+	AttachmentId AttachmentId `json:"attachmentId"`
+}
+
+type DownloadWorkspaceAttachmentResponseObject interface {
+	VisitDownloadWorkspaceAttachmentResponse(w http.ResponseWriter) error
+}
+
+type DownloadWorkspaceAttachment303ResponseHeaders struct {
+	CacheControl *string
+	Location     *string
+}
+
+type DownloadWorkspaceAttachment303Response struct {
+	Headers DownloadWorkspaceAttachment303ResponseHeaders
+}
+
+func (response DownloadWorkspaceAttachment303Response) VisitDownloadWorkspaceAttachmentResponse(w http.ResponseWriter) error {
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(303)
+	return nil
+}
+
+type DownloadWorkspaceAttachment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DownloadWorkspaceAttachment401ApplicationProblemPlusJSONResponse) VisitDownloadWorkspaceAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadWorkspaceAttachment403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DownloadWorkspaceAttachment403ApplicationProblemPlusJSONResponse) VisitDownloadWorkspaceAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadWorkspaceAttachment404ApplicationProblemPlusJSONResponse Problem
+
+func (response DownloadWorkspaceAttachment404ApplicationProblemPlusJSONResponse) VisitDownloadWorkspaceAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadWorkspaceAttachment500ApplicationProblemPlusJSONResponse Problem
+
+func (response DownloadWorkspaceAttachment500ApplicationProblemPlusJSONResponse) VisitDownloadWorkspaceAttachmentResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -14571,6 +15197,409 @@ func (response ListWorkspaceIssueActivity422ApplicationProblemPlusJSONResponse) 
 type ListWorkspaceIssueActivity500ApplicationProblemPlusJSONResponse Problem
 
 func (response ListWorkspaceIssueActivity500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueAttachmentsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueAttachmentsResponseObject interface {
+	VisitListWorkspaceIssueAttachmentsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueAttachments200JSONResponse AttachmentList
+
+func (response ListWorkspaceIssueAttachments200JSONResponse) VisitListWorkspaceIssueAttachmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueAttachments401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueAttachments401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueAttachmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueAttachments403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueAttachments403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueAttachmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueAttachments404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueAttachments404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueAttachmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueAttachments500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueAttachments500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueAttachmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReserveWorkspaceIssueAttachmentRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *ReserveWorkspaceIssueAttachmentJSONRequestBody
+}
+
+type ReserveWorkspaceIssueAttachmentResponseObject interface {
+	VisitReserveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error
+}
+
+type ReserveWorkspaceIssueAttachment201JSONResponse AttachmentReservation
+
+func (response ReserveWorkspaceIssueAttachment201JSONResponse) VisitReserveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReserveWorkspaceIssueAttachment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReserveWorkspaceIssueAttachment401ApplicationProblemPlusJSONResponse) VisitReserveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReserveWorkspaceIssueAttachment403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ReserveWorkspaceIssueAttachment403ApplicationProblemPlusJSONResponse) VisitReserveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReserveWorkspaceIssueAttachment404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReserveWorkspaceIssueAttachment404ApplicationProblemPlusJSONResponse) VisitReserveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReserveWorkspaceIssueAttachment409ApplicationProblemPlusJSONResponse struct {
+	StorageRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response ReserveWorkspaceIssueAttachment409ApplicationProblemPlusJSONResponse) VisitReserveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReserveWorkspaceIssueAttachment413ApplicationProblemPlusJSONResponse StorageRefusedProblem
+
+func (response ReserveWorkspaceIssueAttachment413ApplicationProblemPlusJSONResponse) VisitReserveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReserveWorkspaceIssueAttachment422ApplicationProblemPlusJSONResponse Problem
+
+func (response ReserveWorkspaceIssueAttachment422ApplicationProblemPlusJSONResponse) VisitReserveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReserveWorkspaceIssueAttachment500ApplicationProblemPlusJSONResponse Problem
+
+func (response ReserveWorkspaceIssueAttachment500ApplicationProblemPlusJSONResponse) VisitReserveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueAttachmentRequestObject struct {
+	WorkspaceId  WorkspaceId  `json:"workspaceId"`
+	IssueId      IssueId      `json:"issueId"`
+	AttachmentId AttachmentId `json:"attachmentId"`
+}
+
+type RemoveWorkspaceIssueAttachmentResponseObject interface {
+	VisitRemoveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error
+}
+
+type RemoveWorkspaceIssueAttachment204Response struct {
+}
+
+func (response RemoveWorkspaceIssueAttachment204Response) VisitRemoveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveWorkspaceIssueAttachment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceIssueAttachment401ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueAttachment403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceIssueAttachment403ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueAttachment404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceIssueAttachment404ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueAttachment500ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceIssueAttachment500ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinalizeWorkspaceIssueAttachmentRequestObject struct {
+	WorkspaceId  WorkspaceId  `json:"workspaceId"`
+	IssueId      IssueId      `json:"issueId"`
+	AttachmentId AttachmentId `json:"attachmentId"`
+}
+
+type FinalizeWorkspaceIssueAttachmentResponseObject interface {
+	VisitFinalizeWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error
+}
+
+type FinalizeWorkspaceIssueAttachment200JSONResponse Attachment
+
+func (response FinalizeWorkspaceIssueAttachment200JSONResponse) VisitFinalizeWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinalizeWorkspaceIssueAttachment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response FinalizeWorkspaceIssueAttachment401ApplicationProblemPlusJSONResponse) VisitFinalizeWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinalizeWorkspaceIssueAttachment403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response FinalizeWorkspaceIssueAttachment403ApplicationProblemPlusJSONResponse) VisitFinalizeWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinalizeWorkspaceIssueAttachment404ApplicationProblemPlusJSONResponse Problem
+
+func (response FinalizeWorkspaceIssueAttachment404ApplicationProblemPlusJSONResponse) VisitFinalizeWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinalizeWorkspaceIssueAttachment409ApplicationProblemPlusJSONResponse struct {
+	StorageRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response FinalizeWorkspaceIssueAttachment409ApplicationProblemPlusJSONResponse) VisitFinalizeWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinalizeWorkspaceIssueAttachment413ApplicationProblemPlusJSONResponse StorageRefusedProblem
+
+func (response FinalizeWorkspaceIssueAttachment413ApplicationProblemPlusJSONResponse) VisitFinalizeWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinalizeWorkspaceIssueAttachment500ApplicationProblemPlusJSONResponse Problem
+
+func (response FinalizeWorkspaceIssueAttachment500ApplicationProblemPlusJSONResponse) VisitFinalizeWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -20330,6 +21359,88 @@ func (response TestWorkspaceSamlConnection500ApplicationProblemPlusJSONResponse)
 	return err
 }
 
+type GetWorkspaceStorageRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceStorageResponseObject interface {
+	VisitGetWorkspaceStorageResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceStorage200JSONResponse WorkspaceStorage
+
+func (response GetWorkspaceStorage200JSONResponse) VisitGetWorkspaceStorageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceStorage401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceStorage401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceStorageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceStorage403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceStorage403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceStorageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceStorage404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceStorage404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceStorageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceStorage500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceStorage500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceStorageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceTeamsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	Params      ListWorkspaceTeamsParams
@@ -23211,6 +24322,9 @@ type StrictServerInterface interface {
 	// ChangePassword Replace the current password, revoking every other session
 	// (PUT /accounts/me/password)
 	ChangePassword(ctx context.Context, request ChangePasswordRequestObject) (ChangePasswordResponseObject, error)
+	// DownloadAccountAvatar Trade a session for a short-lived link to an avatar
+	// (GET /accounts/{accountId}/avatar)
+	DownloadAccountAvatar(ctx context.Context, request DownloadAccountAvatarRequestObject) (DownloadAccountAvatarResponseObject, error)
 	// SignIn Exchange credentials for a session cookie
 	// (POST /auth/login)
 	SignIn(ctx context.Context, request SignInRequestObject) (SignInResponseObject, error)
@@ -23274,6 +24388,9 @@ type StrictServerInterface interface {
 	// UpdateWorkspace Change the workspace display name and timezone
 	// (PATCH /workspaces/{workspaceId})
 	UpdateWorkspace(ctx context.Context, request UpdateWorkspaceRequestObject) (UpdateWorkspaceResponseObject, error)
+	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
+	// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
+	DownloadWorkspaceAttachment(ctx context.Context, request DownloadWorkspaceAttachmentRequestObject) (DownloadWorkspaceAttachmentResponseObject, error)
 	// GetWorkspaceAuthPolicy Read which authentication methods the workspace accepts
 	// (GET /workspaces/{workspaceId}/auth-policy)
 	GetWorkspaceAuthPolicy(ctx context.Context, request GetWorkspaceAuthPolicyRequestObject) (GetWorkspaceAuthPolicyResponseObject, error)
@@ -23337,6 +24454,18 @@ type StrictServerInterface interface {
 	// ListWorkspaceIssueActivity List what has happened to an issue, newest first
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/activity)
 	ListWorkspaceIssueActivity(ctx context.Context, request ListWorkspaceIssueActivityRequestObject) (ListWorkspaceIssueActivityResponseObject, error)
+	// ListWorkspaceIssueAttachments List the files hanging off an issue, oldest first
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/attachments)
+	ListWorkspaceIssueAttachments(ctx context.Context, request ListWorkspaceIssueAttachmentsRequestObject) (ListWorkspaceIssueAttachmentsResponseObject, error)
+	// ReserveWorkspaceIssueAttachment Reserve room for a file and say where to send its bytes
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/attachments)
+	ReserveWorkspaceIssueAttachment(ctx context.Context, request ReserveWorkspaceIssueAttachmentRequestObject) (ReserveWorkspaceIssueAttachmentResponseObject, error)
+	// RemoveWorkspaceIssueAttachment Take a file off an issue and give its room back
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId})
+	RemoveWorkspaceIssueAttachment(ctx context.Context, request RemoveWorkspaceIssueAttachmentRequestObject) (RemoveWorkspaceIssueAttachmentResponseObject, error)
+	// FinalizeWorkspaceIssueAttachment Confirm the bytes landed, and settle what the file actually is
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}/finalize)
+	FinalizeWorkspaceIssueAttachment(ctx context.Context, request FinalizeWorkspaceIssueAttachmentRequestObject) (FinalizeWorkspaceIssueAttachmentResponseObject, error)
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 	ListWorkspaceIssueChildren(ctx context.Context, request ListWorkspaceIssueChildrenRequestObject) (ListWorkspaceIssueChildrenResponseObject, error)
@@ -23520,6 +24649,9 @@ type StrictServerInterface interface {
 	// TestWorkspaceSamlConnection Start a real round trip to the provider that records verification
 	// (POST /workspaces/{workspaceId}/sso/saml/test)
 	TestWorkspaceSamlConnection(ctx context.Context, request TestWorkspaceSamlConnectionRequestObject) (TestWorkspaceSamlConnectionResponseObject, error)
+	// GetWorkspaceStorage How much this workspace is storing, and how much it may
+	// (GET /workspaces/{workspaceId}/storage)
+	GetWorkspaceStorage(ctx context.Context, request GetWorkspaceStorageRequestObject) (GetWorkspaceStorageResponseObject, error)
 	// ListWorkspaceTeams List the teams the signed-in account may see in the workspace
 	// (GET /workspaces/{workspaceId}/teams)
 	ListWorkspaceTeams(ctx context.Context, request ListWorkspaceTeamsRequestObject) (ListWorkspaceTeamsResponseObject, error)
@@ -23950,6 +25082,32 @@ func (sh *strictHandler) ChangePassword(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ChangePasswordResponseObject); ok {
 		if err := validResponse.VisitChangePasswordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DownloadAccountAvatar operation middleware
+func (sh *strictHandler) DownloadAccountAvatar(w http.ResponseWriter, r *http.Request, accountId openapi_types.UUID) {
+	var request DownloadAccountAvatarRequestObject
+
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DownloadAccountAvatar(ctx, request.(DownloadAccountAvatarRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DownloadAccountAvatar")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DownloadAccountAvatarResponseObject); ok {
+		if err := validResponse.VisitDownloadAccountAvatarResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -24546,6 +25704,33 @@ func (sh *strictHandler) UpdateWorkspace(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateWorkspaceResponseObject); ok {
 		if err := validResponse.VisitUpdateWorkspaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DownloadWorkspaceAttachment operation middleware
+func (sh *strictHandler) DownloadWorkspaceAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, attachmentId AttachmentId) {
+	var request DownloadWorkspaceAttachmentRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AttachmentId = attachmentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DownloadWorkspaceAttachment(ctx, request.(DownloadWorkspaceAttachmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DownloadWorkspaceAttachment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DownloadWorkspaceAttachmentResponseObject); ok {
+		if err := validResponse.VisitDownloadWorkspaceAttachmentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -25156,6 +26341,123 @@ func (sh *strictHandler) ListWorkspaceIssueActivity(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListWorkspaceIssueActivityResponseObject); ok {
 		if err := validResponse.VisitListWorkspaceIssueActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueAttachments operation middleware
+func (sh *strictHandler) ListWorkspaceIssueAttachments(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueAttachmentsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueAttachments(ctx, request.(ListWorkspaceIssueAttachmentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueAttachments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueAttachmentsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueAttachmentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReserveWorkspaceIssueAttachment operation middleware
+func (sh *strictHandler) ReserveWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ReserveWorkspaceIssueAttachmentRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body ReserveWorkspaceIssueAttachmentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReserveWorkspaceIssueAttachment(ctx, request.(ReserveWorkspaceIssueAttachmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReserveWorkspaceIssueAttachment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReserveWorkspaceIssueAttachmentResponseObject); ok {
+		if err := validResponse.VisitReserveWorkspaceIssueAttachmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveWorkspaceIssueAttachment operation middleware
+func (sh *strictHandler) RemoveWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, attachmentId AttachmentId) {
+	var request RemoveWorkspaceIssueAttachmentRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.AttachmentId = attachmentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveWorkspaceIssueAttachment(ctx, request.(RemoveWorkspaceIssueAttachmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveWorkspaceIssueAttachment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveWorkspaceIssueAttachmentResponseObject); ok {
+		if err := validResponse.VisitRemoveWorkspaceIssueAttachmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// FinalizeWorkspaceIssueAttachment operation middleware
+func (sh *strictHandler) FinalizeWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, attachmentId AttachmentId) {
+	var request FinalizeWorkspaceIssueAttachmentRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.AttachmentId = attachmentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.FinalizeWorkspaceIssueAttachment(ctx, request.(FinalizeWorkspaceIssueAttachmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "FinalizeWorkspaceIssueAttachment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(FinalizeWorkspaceIssueAttachmentResponseObject); ok {
+		if err := validResponse.VisitFinalizeWorkspaceIssueAttachmentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -26968,6 +28270,32 @@ func (sh *strictHandler) TestWorkspaceSamlConnection(w http.ResponseWriter, r *h
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(TestWorkspaceSamlConnectionResponseObject); ok {
 		if err := validResponse.VisitTestWorkspaceSamlConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceStorage operation middleware
+func (sh *strictHandler) GetWorkspaceStorage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceStorageRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceStorage(ctx, request.(GetWorkspaceStorageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceStorage")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceStorageResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceStorageResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

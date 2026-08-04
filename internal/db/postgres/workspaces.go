@@ -115,50 +115,56 @@ var WorkspaceWhere = struct {
 
 // WorkspaceRels is where relationship names are stored.
 var WorkspaceRels = struct {
-	DefaultTeam              string
-	WorkspaceAuthPolicy      string
-	WorkspaceOidcConnection  string
-	WorkspaceSsoConnection   string
-	WorkspaceBreakGlassCodes string
-	WorkspaceBulkActions     string
-	WorkspaceInvitations     string
-	WorkspaceLabelGroups     string
-	WorkspaceLabels          string
-	WorkspaceMemberships     string
-	WorkspaceProjects        string
-	WorkspaceSavedViews      string
-	WorkspaceTeams           string
+	DefaultTeam               string
+	WorkspaceAuthPolicy       string
+	WorkspaceOidcConnection   string
+	WorkspaceSsoConnection    string
+	WorkspaceStorageLedger    string
+	WorkspaceBreakGlassCodes  string
+	WorkspaceBulkActions      string
+	WorkspaceInvitations      string
+	WorkspaceIssueAttachments string
+	WorkspaceLabelGroups      string
+	WorkspaceLabels           string
+	WorkspaceMemberships      string
+	WorkspaceProjects         string
+	WorkspaceSavedViews       string
+	WorkspaceTeams            string
 }{
-	DefaultTeam:              "DefaultTeam",
-	WorkspaceAuthPolicy:      "WorkspaceAuthPolicy",
-	WorkspaceOidcConnection:  "WorkspaceOidcConnection",
-	WorkspaceSsoConnection:   "WorkspaceSsoConnection",
-	WorkspaceBreakGlassCodes: "WorkspaceBreakGlassCodes",
-	WorkspaceBulkActions:     "WorkspaceBulkActions",
-	WorkspaceInvitations:     "WorkspaceInvitations",
-	WorkspaceLabelGroups:     "WorkspaceLabelGroups",
-	WorkspaceLabels:          "WorkspaceLabels",
-	WorkspaceMemberships:     "WorkspaceMemberships",
-	WorkspaceProjects:        "WorkspaceProjects",
-	WorkspaceSavedViews:      "WorkspaceSavedViews",
-	WorkspaceTeams:           "WorkspaceTeams",
+	DefaultTeam:               "DefaultTeam",
+	WorkspaceAuthPolicy:       "WorkspaceAuthPolicy",
+	WorkspaceOidcConnection:   "WorkspaceOidcConnection",
+	WorkspaceSsoConnection:    "WorkspaceSsoConnection",
+	WorkspaceStorageLedger:    "WorkspaceStorageLedger",
+	WorkspaceBreakGlassCodes:  "WorkspaceBreakGlassCodes",
+	WorkspaceBulkActions:      "WorkspaceBulkActions",
+	WorkspaceInvitations:      "WorkspaceInvitations",
+	WorkspaceIssueAttachments: "WorkspaceIssueAttachments",
+	WorkspaceLabelGroups:      "WorkspaceLabelGroups",
+	WorkspaceLabels:           "WorkspaceLabels",
+	WorkspaceMemberships:      "WorkspaceMemberships",
+	WorkspaceProjects:         "WorkspaceProjects",
+	WorkspaceSavedViews:       "WorkspaceSavedViews",
+	WorkspaceTeams:            "WorkspaceTeams",
 }
 
 // workspaceR is where relationships are stored.
 type workspaceR struct {
-	DefaultTeam              *WorkspaceTeam               `boil:"DefaultTeam" json:"DefaultTeam" toml:"DefaultTeam" yaml:"DefaultTeam"`
-	WorkspaceAuthPolicy      *WorkspaceAuthPolicy         `boil:"WorkspaceAuthPolicy" json:"WorkspaceAuthPolicy" toml:"WorkspaceAuthPolicy" yaml:"WorkspaceAuthPolicy"`
-	WorkspaceOidcConnection  *WorkspaceOidcConnection     `boil:"WorkspaceOidcConnection" json:"WorkspaceOidcConnection" toml:"WorkspaceOidcConnection" yaml:"WorkspaceOidcConnection"`
-	WorkspaceSsoConnection   *WorkspaceSsoConnection      `boil:"WorkspaceSsoConnection" json:"WorkspaceSsoConnection" toml:"WorkspaceSsoConnection" yaml:"WorkspaceSsoConnection"`
-	WorkspaceBreakGlassCodes WorkspaceBreakGlassCodeSlice `boil:"WorkspaceBreakGlassCodes" json:"WorkspaceBreakGlassCodes" toml:"WorkspaceBreakGlassCodes" yaml:"WorkspaceBreakGlassCodes"`
-	WorkspaceBulkActions     WorkspaceBulkActionSlice     `boil:"WorkspaceBulkActions" json:"WorkspaceBulkActions" toml:"WorkspaceBulkActions" yaml:"WorkspaceBulkActions"`
-	WorkspaceInvitations     WorkspaceInvitationSlice     `boil:"WorkspaceInvitations" json:"WorkspaceInvitations" toml:"WorkspaceInvitations" yaml:"WorkspaceInvitations"`
-	WorkspaceLabelGroups     WorkspaceLabelGroupSlice     `boil:"WorkspaceLabelGroups" json:"WorkspaceLabelGroups" toml:"WorkspaceLabelGroups" yaml:"WorkspaceLabelGroups"`
-	WorkspaceLabels          WorkspaceLabelSlice          `boil:"WorkspaceLabels" json:"WorkspaceLabels" toml:"WorkspaceLabels" yaml:"WorkspaceLabels"`
-	WorkspaceMemberships     WorkspaceMembershipSlice     `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
-	WorkspaceProjects        WorkspaceProjectSlice        `boil:"WorkspaceProjects" json:"WorkspaceProjects" toml:"WorkspaceProjects" yaml:"WorkspaceProjects"`
-	WorkspaceSavedViews      WorkspaceSavedViewSlice      `boil:"WorkspaceSavedViews" json:"WorkspaceSavedViews" toml:"WorkspaceSavedViews" yaml:"WorkspaceSavedViews"`
-	WorkspaceTeams           WorkspaceTeamSlice           `boil:"WorkspaceTeams" json:"WorkspaceTeams" toml:"WorkspaceTeams" yaml:"WorkspaceTeams"`
+	DefaultTeam               *WorkspaceTeam                `boil:"DefaultTeam" json:"DefaultTeam" toml:"DefaultTeam" yaml:"DefaultTeam"`
+	WorkspaceAuthPolicy       *WorkspaceAuthPolicy          `boil:"WorkspaceAuthPolicy" json:"WorkspaceAuthPolicy" toml:"WorkspaceAuthPolicy" yaml:"WorkspaceAuthPolicy"`
+	WorkspaceOidcConnection   *WorkspaceOidcConnection      `boil:"WorkspaceOidcConnection" json:"WorkspaceOidcConnection" toml:"WorkspaceOidcConnection" yaml:"WorkspaceOidcConnection"`
+	WorkspaceSsoConnection    *WorkspaceSsoConnection       `boil:"WorkspaceSsoConnection" json:"WorkspaceSsoConnection" toml:"WorkspaceSsoConnection" yaml:"WorkspaceSsoConnection"`
+	WorkspaceStorageLedger    *WorkspaceStorageLedger       `boil:"WorkspaceStorageLedger" json:"WorkspaceStorageLedger" toml:"WorkspaceStorageLedger" yaml:"WorkspaceStorageLedger"`
+	WorkspaceBreakGlassCodes  WorkspaceBreakGlassCodeSlice  `boil:"WorkspaceBreakGlassCodes" json:"WorkspaceBreakGlassCodes" toml:"WorkspaceBreakGlassCodes" yaml:"WorkspaceBreakGlassCodes"`
+	WorkspaceBulkActions      WorkspaceBulkActionSlice      `boil:"WorkspaceBulkActions" json:"WorkspaceBulkActions" toml:"WorkspaceBulkActions" yaml:"WorkspaceBulkActions"`
+	WorkspaceInvitations      WorkspaceInvitationSlice      `boil:"WorkspaceInvitations" json:"WorkspaceInvitations" toml:"WorkspaceInvitations" yaml:"WorkspaceInvitations"`
+	WorkspaceIssueAttachments WorkspaceIssueAttachmentSlice `boil:"WorkspaceIssueAttachments" json:"WorkspaceIssueAttachments" toml:"WorkspaceIssueAttachments" yaml:"WorkspaceIssueAttachments"`
+	WorkspaceLabelGroups      WorkspaceLabelGroupSlice      `boil:"WorkspaceLabelGroups" json:"WorkspaceLabelGroups" toml:"WorkspaceLabelGroups" yaml:"WorkspaceLabelGroups"`
+	WorkspaceLabels           WorkspaceLabelSlice           `boil:"WorkspaceLabels" json:"WorkspaceLabels" toml:"WorkspaceLabels" yaml:"WorkspaceLabels"`
+	WorkspaceMemberships      WorkspaceMembershipSlice      `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
+	WorkspaceProjects         WorkspaceProjectSlice         `boil:"WorkspaceProjects" json:"WorkspaceProjects" toml:"WorkspaceProjects" yaml:"WorkspaceProjects"`
+	WorkspaceSavedViews       WorkspaceSavedViewSlice       `boil:"WorkspaceSavedViews" json:"WorkspaceSavedViews" toml:"WorkspaceSavedViews" yaml:"WorkspaceSavedViews"`
+	WorkspaceTeams            WorkspaceTeamSlice            `boil:"WorkspaceTeams" json:"WorkspaceTeams" toml:"WorkspaceTeams" yaml:"WorkspaceTeams"`
 }
 
 // NewStruct creates a new relationship struct
@@ -230,6 +236,22 @@ func (r *workspaceR) GetWorkspaceSsoConnection() *WorkspaceSsoConnection {
 	return r.WorkspaceSsoConnection
 }
 
+func (o *Workspace) GetWorkspaceStorageLedger() *WorkspaceStorageLedger {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceStorageLedger()
+}
+
+func (r *workspaceR) GetWorkspaceStorageLedger() *WorkspaceStorageLedger {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceStorageLedger
+}
+
 func (o *Workspace) GetWorkspaceBreakGlassCodes() WorkspaceBreakGlassCodeSlice {
 	if o == nil {
 		return nil
@@ -276,6 +298,22 @@ func (r *workspaceR) GetWorkspaceInvitations() WorkspaceInvitationSlice {
 	}
 
 	return r.WorkspaceInvitations
+}
+
+func (o *Workspace) GetWorkspaceIssueAttachments() WorkspaceIssueAttachmentSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceIssueAttachments()
+}
+
+func (r *workspaceR) GetWorkspaceIssueAttachments() WorkspaceIssueAttachmentSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceIssueAttachments
 }
 
 func (o *Workspace) GetWorkspaceLabelGroups() WorkspaceLabelGroupSlice {
@@ -734,6 +772,17 @@ func (o *Workspace) WorkspaceSsoConnection(mods ...qm.QueryMod) workspaceSsoConn
 	return WorkspaceSsoConnections(queryMods...)
 }
 
+// WorkspaceStorageLedger pointed to by the foreign key.
+func (o *Workspace) WorkspaceStorageLedger(mods ...qm.QueryMod) workspaceStorageLedgerQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"workspace_id\" = ?", o.ID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceStorageLedgers(queryMods...)
+}
+
 // WorkspaceBreakGlassCodes retrieves all the workspace_break_glass_code's WorkspaceBreakGlassCodes with an executor.
 func (o *Workspace) WorkspaceBreakGlassCodes(mods ...qm.QueryMod) workspaceBreakGlassCodeQuery {
 	var queryMods []qm.QueryMod
@@ -774,6 +823,20 @@ func (o *Workspace) WorkspaceInvitations(mods ...qm.QueryMod) workspaceInvitatio
 	)
 
 	return WorkspaceInvitations(queryMods...)
+}
+
+// WorkspaceIssueAttachments retrieves all the workspace_issue_attachment's WorkspaceIssueAttachments with an executor.
+func (o *Workspace) WorkspaceIssueAttachments(mods ...qm.QueryMod) workspaceIssueAttachmentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_attachments\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueAttachments(queryMods...)
 }
 
 // WorkspaceLabelGroups retrieves all the workspace_label_group's WorkspaceLabelGroups with an executor.
@@ -1335,6 +1398,123 @@ func (workspaceL) LoadWorkspaceSsoConnection(ctx context.Context, e boil.Context
 	return nil
 }
 
+// LoadWorkspaceStorageLedger allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-1 relationship.
+func (workspaceL) LoadWorkspaceStorageLedger(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_storage_ledger`),
+		qm.WhereIn(`workspace_storage_ledger.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceStorageLedger")
+	}
+
+	var resultSlice []*WorkspaceStorageLedger
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceStorageLedger")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_storage_ledger")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_storage_ledger")
+	}
+
+	if len(workspaceStorageLedgerAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.WorkspaceStorageLedger = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceStorageLedgerR{}
+		}
+		foreign.R.Workspace = object
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceStorageLedger = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceStorageLedgerR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadWorkspaceBreakGlassCodes allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceL) LoadWorkspaceBreakGlassCodes(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
@@ -1664,6 +1844,119 @@ func (workspaceL) LoadWorkspaceInvitations(ctx context.Context, e boil.ContextEx
 				local.R.WorkspaceInvitations = append(local.R.WorkspaceInvitations, foreign)
 				if foreign.R == nil {
 					foreign.R = &workspaceInvitationR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceIssueAttachments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceIssueAttachments(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_attachments`),
+		qm.WhereIn(`workspace_issue_attachments.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_attachments")
+	}
+
+	var resultSlice []*WorkspaceIssueAttachment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_attachments")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_attachments")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_attachments")
+	}
+
+	if len(workspaceIssueAttachmentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceIssueAttachments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueAttachmentR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceIssueAttachments = append(local.R.WorkspaceIssueAttachments, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueAttachmentR{}
 				}
 				foreign.R.Workspace = local
 				break
@@ -2582,6 +2875,56 @@ func (o *Workspace) SetWorkspaceSsoConnection(ctx context.Context, exec boil.Con
 	return nil
 }
 
+// SetWorkspaceStorageLedger of the workspace to the related item.
+// Sets o.R.WorkspaceStorageLedger to related.
+// Adds o to related.R.Workspace.
+func (o *Workspace) SetWorkspaceStorageLedger(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceStorageLedger) error {
+	var err error
+
+	if insert {
+		related.WorkspaceID = o.ID
+
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	} else {
+		updateQuery := fmt.Sprintf(
+			"UPDATE \"workspace_storage_ledger\" SET %s WHERE %s",
+			strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+			strmangle.WhereClause("\"", "\"", 2, workspaceStorageLedgerPrimaryKeyColumns),
+		)
+		values := []any{o.ID, related.WorkspaceID}
+
+		if boil.IsDebug(ctx) {
+			writer := boil.DebugWriterFrom(ctx)
+			fmt.Fprintln(writer, updateQuery)
+			fmt.Fprintln(writer, values)
+		}
+		if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+			return errors.Wrap(err, "failed to update foreign table")
+		}
+
+		related.WorkspaceID = o.ID
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceStorageLedger: related,
+		}
+	} else {
+		o.R.WorkspaceStorageLedger = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceStorageLedgerR{
+			Workspace: o,
+		}
+	} else {
+		related.R.Workspace = o
+	}
+	return nil
+}
+
 // AddWorkspaceBreakGlassCodes adds the given related objects to the existing relationships
 // of the workspace, optionally inserting them as new records.
 // Appends related to o.R.WorkspaceBreakGlassCodes.
@@ -2732,6 +3075,59 @@ func (o *Workspace) AddWorkspaceInvitations(ctx context.Context, exec boil.Conte
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceInvitationR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceIssueAttachments adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceIssueAttachments.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceIssueAttachments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueAttachment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_attachments\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueAttachmentPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceIssueAttachments: related,
+		}
+	} else {
+		o.R.WorkspaceIssueAttachments = append(o.R.WorkspaceIssueAttachments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueAttachmentR{
 				Workspace: o,
 			}
 		} else {

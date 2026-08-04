@@ -1910,6 +1910,147 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/attachments:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueAttachments
+      summary: List the files hanging off an issue, oldest first
+      responses:
+        '200':
+          description: Every file whose upload finished
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AttachmentList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [issues]
+      operationId: reserveWorkspaceIssueAttachment
+      summary: Reserve room for a file and say where to send its bytes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReserveAttachmentRequest' }
+      responses:
+        '201':
+          description: The reserved file, and the one request that carries its bytes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AttachmentReservation' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/StorageRefused' }
+        '413': { $ref: '#/components/responses/StorageRefused' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+      - $ref: '#/components/parameters/AttachmentId'
+    delete:
+      tags: [issues]
+      operationId: removeWorkspaceIssueAttachment
+      summary: Take a file off an issue and give its room back
+      responses:
+        '204':
+          description: The file is gone
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}/finalize:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+      - $ref: '#/components/parameters/AttachmentId'
+    post:
+      tags: [issues]
+      operationId: finalizeWorkspaceIssueAttachment
+      summary: Confirm the bytes landed, and settle what the file actually is
+      responses:
+        '200':
+          description: The file as Norn will serve it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Attachment' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/StorageRefused' }
+        '413': { $ref: '#/components/responses/StorageRefused' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/attachments/{attachmentId}/content:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AttachmentId'
+    get:
+      tags: [issues]
+      operationId: downloadWorkspaceAttachment
+      summary: Trade access to the issue for a short-lived link to the bytes
+      responses:
+        '303':
+          description: Follow this link. It expires, and it is the only thing that carries the bytes.
+          headers:
+            Location:
+              schema: { type: string }
+            Cache-Control:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/storage:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [workspaces]
+      operationId: getWorkspaceStorage
+      summary: How much this workspace is storing, and how much it may
+      responses:
+        '200':
+          description: What the workspace is storing
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceStorage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /accounts/{accountId}/avatar:
+    parameters:
+      - name: accountId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [accounts]
+      operationId: downloadAccountAvatar
+      summary: Trade a session for a short-lived link to an avatar
+      responses:
+        '303':
+          description: Follow this link; it expires
+          headers:
+            Location:
+              schema: { type: string }
+            Cache-Control:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/comments:
     get:
       tags: [issues]
@@ -3110,6 +3251,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    AttachmentId:
+      name: attachmentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     CommentId:
       name: commentId
       in: path
@@ -3189,6 +3335,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/WorkflowStateConflictProblem' }
+
+    StorageRefused:
+      description: The file is too big, or the workspace has no room for it
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/StorageRefusedProblem' }
 
     CommentConflict:
       description: The comment refuses the change
@@ -3667,6 +3819,94 @@ components:
             type: string
             enum: [assignee, estimate, dueOn, cycle, project]
 
+    Attachment:
+      type: object
+      required: [id, workspaceId, issueId, fileName, contentType, byteSize, status, inline, contentPath, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        commentId: { type: string, format: uuid }
+        fileName: { type: string }
+        contentType: { type: string }
+        byteSize: { type: integer, format: int64 }
+        status: { $ref: '#/components/schemas/AttachmentStatus' }
+        inline:
+          type: boolean
+          description: Whether Norn will serve this file for display rather than download.
+        contentPath:
+          type: string
+          description: The same-origin path that trades issue access for the bytes.
+        uploadedByAccountId: { type: string, format: uuid }
+        uploadedByName: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    AttachmentStatus:
+      type: string
+      description: A file is pending until its bytes have landed and been settled.
+      enum: [pending, stored, discarded]
+
+    AttachmentList:
+      type: object
+      required: [attachments]
+      properties:
+        attachments:
+          type: array
+          items: { $ref: '#/components/schemas/Attachment' }
+
+    ReserveAttachmentRequest:
+      type: object
+      required: [fileName, byteSize]
+      properties:
+        fileName: { type: string, minLength: 1, maxLength: 255 }
+        contentType: { type: string, maxLength: 255 }
+        byteSize: { type: integer, format: int64, minimum: 1 }
+
+    AttachmentReservation:
+      type: object
+      required: [attachment, transfer]
+      properties:
+        attachment: { $ref: '#/components/schemas/Attachment' }
+        transfer: { $ref: '#/components/schemas/AttachmentTransfer' }
+
+    AttachmentTransfer:
+      type: object
+      description: One request that carries the bytes, wherever they are meant to go.
+      required: [url, method, headers, expiresAt]
+      properties:
+        url: { type: string }
+        method: { type: string }
+        headers:
+          type: object
+          additionalProperties: { type: string }
+        expiresAt: { type: string, format: date-time }
+
+    WorkspaceStorage:
+      type: object
+      required: [storedBytes, unlimited]
+      properties:
+        storedBytes: { type: integer, format: int64 }
+        maxBytes: { type: integer, format: int64 }
+        unlimited: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+
+    StorageRefusedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - attachment_too_large
+                - workspace_storage_exhausted
+                - attachment_not_pending
+                - attachment_missing
+            byteSize: { type: integer, format: int64 }
+            storedBytes: { type: integer, format: int64 }
+            maxBytes: { type: integer, format: int64 }
+
     IssueCommentPage:
       type: object
       required: [comments]
@@ -3747,6 +3987,10 @@ components:
       properties:
         body: { type: string, minLength: 1, maxLength: 20000 }
         parentCommentId: { type: string, format: uuid }
+        attachmentIds:
+          type: array
+          maxItems: 20
+          items: { type: string, format: uuid }
         mentions:
           type: array
           maxItems: 20

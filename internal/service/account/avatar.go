@@ -108,3 +108,20 @@ func detectContentType(content []byte) string {
 
 	return http.DetectContentType(content)
 }
+
+func (s *accountsService) AvatarContent(ctx context.Context, accountID uuid.UUID) (string, error) {
+	account, err := s.accounts.GetByID(ctx, accountID)
+	if err != nil {
+		return "", err
+	}
+
+	if account.AvatarObjectKey == "" {
+		return "", entity.ErrAvatarMissing
+	}
+
+	return s.blobs.PresignGet(ctx, account.AvatarObjectKey, entity.ServeSpec{
+		ContentType: entity.AttachmentServedType(entity.AvatarContentType(account.AvatarObjectKey)),
+		Disposition: entity.AttachmentDispositionIn,
+		FileName:    "avatar",
+	}, s.attachments.LinkTTL)
+}

@@ -34,6 +34,7 @@ type accountsService struct {
 	app             config.App
 	smtp            config.SMTP
 	instance        config.Instance
+	attachments     config.Attachments
 }
 
 func New(
@@ -56,6 +57,7 @@ func New(
 	app config.App,
 	smtp config.SMTP,
 	instance config.Instance,
+	attachments config.Attachments,
 ) service.Accounts {
 	return &accountsService{
 		accounts:        accounts,
@@ -77,6 +79,7 @@ func New(
 		app:             app,
 		smtp:            smtp,
 		instance:        instance,
+		attachments:     attachments,
 	}
 }
 

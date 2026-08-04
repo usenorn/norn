@@ -142,6 +142,24 @@ func (c *Client) EnqueueWorkspacePurge(ctx context.Context, payload entity.Works
 	return nil
 }
 
+func (c *Client) EnqueueAttachmentReclaim(ctx context.Context) error {
+	task := asynq.NewTask(entity.TaskTypeAttachmentReclaim, nil)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueDefault),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.TaskID(entity.AttachmentReclaimTaskID),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue attachment reclaim: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) EnqueueIssuePurge(ctx context.Context, payload entity.IssuePurgePayload, processAt time.Time) error {
 	encoded, err := json.Marshal(payload)
 	if err != nil {

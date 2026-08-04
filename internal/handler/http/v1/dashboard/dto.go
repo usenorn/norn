@@ -12,7 +12,7 @@ import (
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
 
-func accountDTO(account entity.Account, avatarURL string) api.Account {
+func accountDTO(account entity.Account) api.Account {
 	dto := api.Account{
 		Id:          account.ID,
 		Status:      api.AccountStatus(account.Status),
@@ -23,8 +23,9 @@ func accountDTO(account entity.Account, avatarURL string) api.Account {
 		CreatedAt:   account.CreatedAt,
 	}
 
-	if avatarURL != "" {
-		dto.AvatarUrl = &avatarURL
+	if account.AvatarObjectKey != "" {
+		avatarPath := "/v1/accounts/" + account.ID.String() + "/avatar"
+		dto.AvatarUrl = &avatarPath
 	}
 
 	return dto
@@ -1189,4 +1190,73 @@ func mentionInputs(targets []api.MentionTarget) []service.CommentMentionInput {
 	}
 
 	return inputs
+}
+
+func attachmentDTO(attachment entity.Attachment) api.Attachment {
+	dto := api.Attachment{
+		Id:          attachment.ID,
+		WorkspaceId: attachment.WorkspaceID,
+		IssueId:     attachment.IssueID,
+		FileName:    attachment.FileName,
+		ContentType: attachment.ContentType,
+		ByteSize:    attachment.SizeBytes,
+		Status:      api.AttachmentStatus(attachment.Status),
+		Inline:      attachment.Inline(),
+		ContentPath: attachmentContentPath(attachment),
+		CreatedAt:   attachment.CreatedAt,
+	}
+
+	if attachment.CommentID != uuid.Nil {
+		comment := attachment.CommentID
+		dto.CommentId = &comment
+	}
+
+	if attachment.UploaderID != uuid.Nil {
+		uploader := attachment.UploaderID
+		dto.UploadedByAccountId = &uploader
+		dto.UploadedByName = nilIfEmpty(attachment.UploaderName)
+	}
+
+	return dto
+}
+
+func attachmentContentPath(attachment entity.Attachment) string {
+	return "/v1/workspaces/" + attachment.WorkspaceID.String() +
+		"/attachments/" + attachment.ID.String() + "/content"
+}
+
+func attachmentDTOs(attachments []entity.Attachment) []api.Attachment {
+	dtos := make([]api.Attachment, 0, len(attachments))
+	for _, attachment := range attachments {
+		dtos = append(dtos, attachmentDTO(attachment))
+	}
+
+	return dtos
+}
+
+func attachmentReservationDTO(reservation service.AttachmentReservation) api.AttachmentReservation {
+	return api.AttachmentReservation{
+		Attachment: attachmentDTO(reservation.Attachment),
+		Transfer: api.AttachmentTransfer{
+			Url:       reservation.Transfer.URL,
+			Method:    reservation.Transfer.Method,
+			Headers:   reservation.Transfer.Headers,
+			ExpiresAt: reservation.Transfer.ExpiresAt,
+		},
+	}
+}
+
+func workspaceStorageDTO(ledger entity.WorkspaceStorage) api.WorkspaceStorage {
+	dto := api.WorkspaceStorage{
+		StoredBytes: ledger.StoredBytes,
+		Unlimited:   ledger.Unlimited(),
+		UpdatedAt:   &ledger.UpdatedAt,
+	}
+
+	if !ledger.Unlimited() {
+		maxBytes := ledger.MaxBytes
+		dto.MaxBytes = &maxBytes
+	}
+
+	return dto
 }

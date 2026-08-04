@@ -23,6 +23,7 @@
 		type IssueComment,
 		type MentionTarget,
 	} from "$lib/comments/comments";
+	import type { UploadTask } from "$lib/attachments/upload";
 	import type { Member } from "$lib/issues/members";
 	import type { Team } from "$lib/team/teams";
 
@@ -40,6 +41,11 @@
 		onremove,
 		onreact,
 		onmore,
+		uploads,
+		onfiles,
+		oncancelupload,
+		onretryupload,
+		ondismissupload,
 	}: {
 		thread: CommentThread;
 		members: Member[];
@@ -49,11 +55,21 @@
 		working?: boolean;
 		failure?: CommentFailure | null;
 		unreachable?: CommentMention[];
-		onpost: (body: string, mentions: MentionTarget[], parentCommentId?: string) => void;
+		onpost: (
+			body: string,
+			mentions: MentionTarget[],
+			attachmentIds: string[],
+			parentCommentId?: string
+		) => void;
 		onedit: (commentId: string, body: string) => void;
 		onremove: (commentId: string) => void;
 		onreact: (commentId: string, reaction: CommentReaction, on: boolean) => void;
 		onmore: () => void;
+		uploads?: UploadTask[];
+		onfiles?: (files: File[]) => void;
+		oncancelupload?: (id: string) => void;
+		onretryupload?: (id: string) => void;
+		ondismissupload?: (id: string) => void;
 	} = $props();
 
 	let replyingTo = $state("");
@@ -197,9 +213,9 @@
 					{working}
 					placeholder="Reply to {authorLabel(comment)}"
 					submitLabel="Reply"
-					onsubmit={(body, mentions) => {
+					onsubmit={(body, mentions, attachmentIds) => {
 						replyingTo = "";
-						onpost(body, mentions, comment.id);
+						onpost(body, mentions, attachmentIds, comment.id);
 					}}
 					oncancel={() => (replyingTo = "")}
 				/>
@@ -252,8 +268,13 @@
 		{members}
 		{teams}
 		{working}
+		{uploads}
+		{onfiles}
+		{oncancelupload}
+		{onretryupload}
+		{ondismissupload}
 		placeholder="Leave a comment"
 		submitLabel="Comment"
-		onsubmit={(body, mentions) => onpost(body, mentions)}
+		onsubmit={(body, mentions, attachmentIds) => onpost(body, mentions, attachmentIds)}
 	/>
 </section>

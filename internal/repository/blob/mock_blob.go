@@ -13,7 +13,9 @@ import (
 	context "context"
 	io "io"
 	reflect "reflect"
+	time "time"
 
+	entity "github.com/usenorn/norn/internal/entity"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -55,6 +57,51 @@ func (mr *MockBlobMockRecorder) Delete(ctx, key any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockBlob)(nil).Delete), ctx, key)
 }
 
+// Open mocks base method.
+func (m *MockBlob) Open(ctx context.Context, key string) (io.ReadSeekCloser, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Open", ctx, key)
+	ret0, _ := ret[0].(io.ReadSeekCloser)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Open indicates an expected call of Open.
+func (mr *MockBlobMockRecorder) Open(ctx, key any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Open", reflect.TypeOf((*MockBlob)(nil).Open), ctx, key)
+}
+
+// PresignGet mocks base method.
+func (m *MockBlob) PresignGet(ctx context.Context, key string, serve entity.ServeSpec, ttl time.Duration) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PresignGet", ctx, key, serve, ttl)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PresignGet indicates an expected call of PresignGet.
+func (mr *MockBlobMockRecorder) PresignGet(ctx, key, serve, ttl any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PresignGet", reflect.TypeOf((*MockBlob)(nil).PresignGet), ctx, key, serve, ttl)
+}
+
+// PresignPut mocks base method.
+func (m *MockBlob) PresignPut(ctx context.Context, key string, ttl time.Duration) (entity.BlobTicket, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PresignPut", ctx, key, ttl)
+	ret0, _ := ret[0].(entity.BlobTicket)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PresignPut indicates an expected call of PresignPut.
+func (mr *MockBlobMockRecorder) PresignPut(ctx, key, ttl any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PresignPut", reflect.TypeOf((*MockBlob)(nil).PresignPut), ctx, key, ttl)
+}
+
 // Put mocks base method.
 func (m *MockBlob) Put(ctx context.Context, key, contentType string, body io.Reader, size int64) error {
 	m.ctrl.T.Helper()
@@ -69,16 +116,46 @@ func (mr *MockBlobMockRecorder) Put(ctx, key, contentType, body, size any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockBlob)(nil).Put), ctx, key, contentType, body, size)
 }
 
-// URL mocks base method.
-func (m *MockBlob) URL(key string) string {
+// RemoveAll mocks base method.
+func (m *MockBlob) RemoveAll(ctx context.Context, prefix string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "URL", key)
-	ret0, _ := ret[0].(string)
+	ret := m.ctrl.Call(m, "RemoveAll", ctx, prefix)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// URL indicates an expected call of URL.
-func (mr *MockBlobMockRecorder) URL(key any) *gomock.Call {
+// RemoveAll indicates an expected call of RemoveAll.
+func (mr *MockBlobMockRecorder) RemoveAll(ctx, prefix any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "URL", reflect.TypeOf((*MockBlob)(nil).URL), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAll", reflect.TypeOf((*MockBlob)(nil).RemoveAll), ctx, prefix)
+}
+
+// Sniff mocks base method.
+func (m *MockBlob) Sniff(ctx context.Context, key string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Sniff", ctx, key)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Sniff indicates an expected call of Sniff.
+func (mr *MockBlobMockRecorder) Sniff(ctx, key any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sniff", reflect.TypeOf((*MockBlob)(nil).Sniff), ctx, key)
+}
+
+// Stat mocks base method.
+func (m *MockBlob) Stat(ctx context.Context, key string) (entity.BlobObject, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Stat", ctx, key)
+	ret0, _ := ret[0].(entity.BlobObject)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Stat indicates an expected call of Stat.
+func (mr *MockBlobMockRecorder) Stat(ctx, key any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stat", reflect.TypeOf((*MockBlob)(nil).Stat), ctx, key)
 }

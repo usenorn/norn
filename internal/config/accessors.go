@@ -24,6 +24,8 @@ func NewSMTP(cfg Config) SMTP { return cfg.SMTP }
 
 func NewStorage(cfg Config) Storage { return cfg.Storage }
 
+func NewAttachments(cfg Config) Attachments { return cfg.Attachments }
+
 func NewSession(cfg Config) Session { return cfg.Session }
 
 func NewCasbin(cfg Config) Casbin { return cfg.Casbin }

@@ -28,6 +28,7 @@ type Accounts interface {
 	SendPasswordResetSSONotice(ctx context.Context, accountID uuid.UUID) error
 	UploadAvatar(ctx context.Context, accountID uuid.UUID, upload AvatarUpload) (entity.Account, error)
 	RemoveAvatar(ctx context.Context, accountID uuid.UUID) (entity.Account, error)
+	AvatarContent(ctx context.Context, accountID uuid.UUID) (string, error)
 	SetPassword(ctx context.Context, accountID uuid.UUID, password string) (IssuedSession, error)
 	ChangePassword(ctx context.Context, accountID uuid.UUID, currentPassword, newPassword string) (IssuedSession, error)
 	Deactivate(ctx context.Context, accountID uuid.UUID) (entity.Account, error)

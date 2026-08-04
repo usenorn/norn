@@ -1,0 +1,18 @@
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": ["http://localhost:5173"],
+      "AllowedMethods": ["PUT", "GET", "HEAD"],
+      "AllowedHeaders": ["content-type"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3000
+    },
+    {
+      "AllowedOrigins": ["http://localhost:5174"],
+      "AllowedMethods": ["PUT", "GET", "HEAD"],
+      "AllowedHeaders": ["content-type"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}

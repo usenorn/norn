@@ -9,7 +9,6 @@ import (
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/pkg/identity"
-	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -22,6 +21,7 @@ type handler struct {
 	issues         service.Issues
 	issueRelations service.IssueRelations
 	issueComments  service.IssueComments
+	attachments    service.Attachments
 	bulkOperations service.BulkOperations
 	workflowStates service.WorkflowStates
 	labels         service.Labels
@@ -32,7 +32,6 @@ type handler struct {
 	projects       service.Projects
 	savedViews     service.SavedViews
 	triages        service.Triages
-	blobs          repository.Blob
 	app            config.App
 	instance       config.Instance
 	session        config.Session
@@ -46,6 +45,7 @@ func New(
 	issues service.Issues,
 	issueRelations service.IssueRelations,
 	issueComments service.IssueComments,
+	attachments service.Attachments,
 	bulkOperations service.BulkOperations,
 	workflowStates service.WorkflowStates,
 	labels service.Labels,
@@ -56,7 +56,6 @@ func New(
 	projects service.Projects,
 	savedViews service.SavedViews,
 	triages service.Triages,
-	blobs repository.Blob,
 	app config.App,
 	instance config.Instance,
 	session config.Session,
@@ -69,6 +68,7 @@ func New(
 		issues:         issues,
 		issueRelations: issueRelations,
 		issueComments:  issueComments,
+		attachments:    attachments,
 		bulkOperations: bulkOperations,
 		workflowStates: workflowStates,
 		labels:         labels,
@@ -79,7 +79,6 @@ func New(
 		projects:       projects,
 		savedViews:     savedViews,
 		triages:        triages,
-		blobs:          blobs,
 		app:            app,
 		instance:       instance,
 		session:        session,
@@ -172,10 +171,6 @@ func (h *handler) SignOut(ctx context.Context, _ api.SignOutRequestObject) (api.
 
 func (h *handler) currentAccountID(ctx context.Context) (uuid.UUID, bool) {
 	return identity.From(ctx)
-}
-
-func (h *handler) avatarURL(key string) string {
-	return h.blobs.URL(key)
 }
 
 func (h *handler) oidcRedirectBase() string {

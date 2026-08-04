@@ -15,12 +15,13 @@ import (
 )
 
 type Worker struct {
-	saml      config.SAML
-	cycles    config.Cycles
-	server    *taskqueue.Server
-	scheduler *taskqueue.Scheduler
-	mux       *asynq.ServeMux
-	logger    *slog.Logger
+	saml        config.SAML
+	cycles      config.Cycles
+	attachments config.Attachments
+	server      *taskqueue.Server
+	scheduler   *taskqueue.Scheduler
+	mux         *asynq.ServeMux
+	logger      *slog.Logger
 }
 
 func NewServeMux(
@@ -34,6 +35,7 @@ func NewServeMux(
 	bulkApply *job.BulkApplyHandler,
 	certificateSweep *job.SSOCertificateSweepHandler,
 	cycleGeneration *job.CycleGenerationHandler,
+	attachmentReclaim *job.AttachmentReclaimHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -46,6 +48,7 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeBulkApply, bulkApply)
 	mux.Handle(entity.TaskTypeSSOCertificateSweep, certificateSweep)
 	mux.Handle(entity.TaskTypeCycleGeneration, cycleGeneration)
+	mux.Handle(entity.TaskTypeAttachmentReclaim, attachmentReclaim)
 
 	return mux
 }
@@ -53,18 +56,20 @@ func NewServeMux(
 func NewWorker(
 	saml config.SAML,
 	cycles config.Cycles,
+	attachments config.Attachments,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	mux *asynq.ServeMux,
 	logger *slog.Logger,
 ) *Worker {
 	return &Worker{
-		saml:      saml,
-		cycles:    cycles,
-		server:    server,
-		scheduler: scheduler,
-		mux:       mux,
-		logger:    logger,
+		saml:        saml,
+		cycles:      cycles,
+		attachments: attachments,
+		server:      server,
+		scheduler:   scheduler,
+		mux:         mux,
+		logger:      logger,
 	}
 }
 
@@ -85,6 +90,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueDefault),
 	); err != nil {
 		return fmt.Errorf("register cycle generation: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.attachments.ReclaimSchedule,
+		asynq.NewTask(entity.TaskTypeAttachmentReclaim, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register attachment reclaim: %w", err)
 	}
 
 	if err := w.server.Start(w.mux); err != nil {

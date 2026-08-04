@@ -6,6 +6,10 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Label } from "$lib/components/ui/label/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
+	import UploadList from "$lib/attachments/upload-list.svelte";
+	import { attachmentMarkdown } from "$lib/attachments/attachments";
+	import { settled, type UploadTask } from "$lib/attachments/upload";
 	import type { MentionTarget } from "$lib/comments/comments";
 	import type { Member } from "$lib/issues/members";
 	import type { Team } from "$lib/team/teams";
@@ -21,6 +25,11 @@
 		submitLabel = "Comment",
 		onsubmit,
 		oncancel,
+		uploads,
+		onfiles,
+		oncancelupload,
+		onretryupload,
+		ondismissupload,
 	}: {
 		members: Member[];
 		teams: Team[];
@@ -28,14 +37,21 @@
 		body?: string;
 		placeholder?: string;
 		submitLabel?: string;
-		onsubmit: (body: string, mentions: MentionTarget[]) => void;
+		onsubmit: (body: string, mentions: MentionTarget[], attachmentIds: string[]) => void;
 		oncancel?: () => void;
+		uploads?: UploadTask[];
+		onfiles?: (files: File[]) => void;
+		oncancelupload?: (id: string) => void;
+		onretryupload?: (id: string) => void;
+		ondismissupload?: (id: string) => void;
 	} = $props();
 
 	const id = $props.id();
 
 	let draft = $state(untrack(() => body));
 	let chosen = $state.raw<Candidate[]>([]);
+	let field = $state<HTMLTextAreaElement | null>(null);
+	let dropping = $state(false);
 
 	const candidates = $derived<Candidate[]>([
 		...members
@@ -55,6 +71,56 @@
 	const picked = $derived(new Set(chosen.map((candidate) => candidate.key)));
 	const available = $derived(candidates.filter((candidate) => !picked.has(candidate.key)));
 	const empty = $derived(draft.trim() === "");
+	const inFlight = $derived((uploads ?? []).some((task) => !settled(task)));
+	const attached = $derived(
+		(uploads ?? []).filter((task) => task.state === "done" && task.attachment)
+	);
+
+	const spliced = new Set<string>();
+
+	$effect(() => {
+		for (const task of uploads ?? []) {
+			if (task.state !== "done" || !task.attachment || spliced.has(task.id)) continue;
+
+			spliced.add(task.id);
+			insert(attachmentMarkdown(task.attachment));
+		}
+	});
+
+	function insert(text: string) {
+		const at = field?.selectionStart ?? draft.length;
+		const spaced = draft === "" || draft.endsWith("\n") ? text : `\n${text}`;
+
+		draft = draft.slice(0, at) + spaced + draft.slice(at);
+
+		if (field) {
+			const caret = at + spaced.length;
+
+			field.focus();
+			requestAnimationFrame(() => field?.setSelectionRange(caret, caret));
+		}
+	}
+
+	function take(files: File[]) {
+		if (files.length === 0 || !onfiles) return;
+
+		onfiles(files);
+	}
+
+	function dropped(event: DragEvent) {
+		dropping = false;
+
+		take(Array.from(event.dataTransfer?.files ?? []));
+	}
+
+	function pasted(event: ClipboardEvent) {
+		const files = Array.from(event.clipboardData?.files ?? []);
+
+		if (files.length === 0) return;
+
+		event.preventDefault();
+		take(files);
+	}
 
 	function mention(candidate: Candidate) {
 		chosen = [...chosen, candidate];
@@ -66,11 +132,12 @@
 	}
 
 	function send() {
-		if (empty || working) return;
+		if (empty || working || inFlight) return;
 
 		const mentions = chosen.map((candidate) => candidate.target);
+		const attachmentIds = attached.map((task) => task.attachment?.id ?? "").filter(Boolean);
 
-		onsubmit(draft.trim(), mentions);
+		onsubmit(draft.trim(), mentions, attachmentIds);
 
 		if (!oncancel) {
 			draft = "";
@@ -79,17 +146,44 @@
 	}
 </script>
 
-<div class="flex flex-col gap-2">
+<div
+	class="flex flex-col gap-2 rounded-lg {dropping ? 'border border-dashed border-ring p-2' : ''}"
+	role="group"
+	ondragover={(event) => {
+		if (!onfiles) return;
+		event.preventDefault();
+		dropping = true;
+	}}
+	ondragleave={() => (dropping = false)}
+	ondrop={(event) => {
+		if (!onfiles) return;
+		event.preventDefault();
+		dropped(event);
+	}}
+>
 	<Label for="comment-{id}" class="sr-only">{placeholder}</Label>
 	<Textarea
+		bind:ref={field}
 		id="comment-{id}"
 		bind:value={draft}
 		{placeholder}
 		rows={4}
 		disabled={working}
 		class="font-mono text-sm"
+		onpaste={pasted}
 	/>
-	<p class="text-xs text-muted-foreground">Markdown. Stored exactly as you type it.</p>
+	<p class="text-xs text-muted-foreground">
+		Markdown. Stored exactly as you type it.{onfiles ? " Drop or paste a file to attach it." : ""}
+	</p>
+
+	{#if uploads && uploads.length > 0}
+		<UploadList
+			{uploads}
+			oncancel={(taskId) => oncancelupload?.(taskId)}
+			onretry={(taskId) => onretryupload?.(taskId)}
+			ondismiss={(taskId) => ondismissupload?.(taskId)}
+		/>
+	{/if}
 
 	{#if chosen.length > 0}
 		<ul class="flex flex-wrap gap-1">
@@ -111,9 +205,13 @@
 	{/if}
 
 	<div class="flex flex-wrap items-center gap-2">
-		<Button size="sm" disabled={working || empty} onclick={send}>
-			{working ? "Working" : submitLabel}
+		<Button size="sm" disabled={working || empty || inFlight} onclick={send}>
+			{working ? "Working" : inFlight ? "Uploading" : submitLabel}
 		</Button>
+
+		{#if onfiles}
+			<AttachmentPicker disabled={working} onfiles={take} />
+		{/if}
 
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
