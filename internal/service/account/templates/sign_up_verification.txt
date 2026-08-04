@@ -1,0 +1,9 @@
+Hi {{ .DisplayName }},
+
+Confirm this address to finish creating your Norn account:
+
+{{ .ConfirmURL }}
+
+The link works once and lasts an hour. Your account does not exist until you open it.
+
+If you did not sign up for Norn, ignore this message. Nothing was created.

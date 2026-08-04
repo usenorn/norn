@@ -8,15 +8,24 @@ import (
 )
 
 const (
+	TaskTypeSignUpVerification      = "account:sign_up_verification"
 	TaskTypeEmailChangeConfirmation = "account:email_change_confirmation"
 	TaskTypePasswordReset           = "account:password_reset"
 	TaskTypePasswordResetSSONotice  = "account:password_reset_sso_notice"
+	TaskTypeInvitation              = "workspace:invitation"
+	TaskTypeWorkspacePurge          = "workspace:purge"
+	TaskTypeIssuePurge              = "issue:purge"
 
 	QueueDefault = "default"
 	QueueMail    = "mail"
 )
 
 var ErrTaskNotFound = errors.New("task not found")
+
+type SignUpVerificationPayload struct {
+	SignUpID uuid.UUID
+	Token    string
+}
 
 type EmailChangeConfirmationPayload struct {
 	EmailChangeID uuid.UUID
@@ -30,6 +39,19 @@ type PasswordResetPayload struct {
 
 type PasswordResetSSONoticePayload struct {
 	AccountID uuid.UUID
+}
+
+type InvitationPayload struct {
+	InvitationID uuid.UUID
+	Token        string
+}
+
+type WorkspacePurgePayload struct {
+	WorkspaceID uuid.UUID
+}
+
+type IssuePurgePayload struct {
+	IssueID uuid.UUID
 }
 
 type TaskState string

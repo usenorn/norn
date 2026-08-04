@@ -41,18 +41,19 @@ func (m *MockAuthorizer) EXPECT() *MockAuthorizerMockRecorder {
 	return m.recorder
 }
 
-// Authorize mocks base method.
-func (m *MockAuthorizer) Authorize(ctx context.Context, role entity.MembershipRole, resource, action string) error {
+// Decide mocks base method.
+func (m *MockAuthorizer) Decide(ctx context.Context, request entity.AccessRequest) (entity.Decision, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Authorize", ctx, role, resource, action)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "Decide", ctx, request)
+	ret0, _ := ret[0].(entity.Decision)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// Authorize indicates an expected call of Authorize.
-func (mr *MockAuthorizerMockRecorder) Authorize(ctx, role, resource, action any) *gomock.Call {
+// Decide indicates an expected call of Decide.
+func (mr *MockAuthorizerMockRecorder) Decide(ctx, request any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authorize", reflect.TypeOf((*MockAuthorizer)(nil).Authorize), ctx, role, resource, action)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Decide", reflect.TypeOf((*MockAuthorizer)(nil).Decide), ctx, request)
 }
 
 // SeedPolicy mocks base method.

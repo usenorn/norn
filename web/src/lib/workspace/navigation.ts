@@ -32,7 +32,7 @@ export function primaryNav(workspace: string): NavEntry[] {
 			label: "Reviews",
 			href: at("/reviews"),
 			icon: CircleDot,
-			iconClass: "text-status-review",
+			iconClass: "text-status-active",
 			count: 3,
 		},
 		{ label: "Triage", href: at("/triage"), icon: Zap, count: 12 },

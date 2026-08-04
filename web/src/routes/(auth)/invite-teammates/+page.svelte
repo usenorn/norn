@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
+	import { defaults, superForm } from "sveltekit-superforms";
+	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import Check from "@lucide/svelte/icons/check";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
@@ -11,22 +13,30 @@
 	import Users from "@lucide/svelte/icons/users";
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Form from "$lib/components/ui/form/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import TeamKey from "$lib/components/norn/team-key.svelte";
+	import { teamSummary } from "$lib/team/teams";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
 	import { Progress } from "$lib/components/ui/progress/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import { api } from "$lib/api";
+	import { inviteSchema } from "$lib/workspace/invite-schema";
 	import {
-		inviteRoles,
+		inviteFromResult,
 		isEmailAddress,
 		parseAddresses,
 		type Invite,
-		type InviteRole,
 		type InviteStatus,
 	} from "$lib/workspace/invites";
+	import { membershipRoles, roleLabels, type MembershipRole } from "$lib/workspace/members";
 	import { invitePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+
+	const formId = "invite-form";
+	const settleIntervalMs = 1500;
+	const settleAttempts = 8;
 
 	let { data }: PageProps = $props();
 
@@ -34,35 +44,183 @@
 		import.meta.env.DEV ? invitePreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	let text = $state("");
-	let roles = $state<Record<string, InviteRole>>({});
+	let roles = $state<Record<string, MembershipRole>>({});
+	let teamIds = $state<Record<string, string[]>>({});
 	let removed = $state<string[]>([]);
+	let sent = $state<Invite[] | null>(null);
+	let settling = $state(false);
+	let copied = $state(false);
+	let unavailable = $state(false);
 
-	const workspace = $derived(data.auth.workspace);
-	const emailConfigured = $derived(preview?.emailConfigured ?? true);
-	const sending = $derived(preview?.sending ?? false);
+	const workspace = $derived(data.target.name);
+
+	const form = superForm(defaults(zod4(inviteSchema)), {
+		id: formId,
+		SPA: true,
+		validators: zod4Client(inviteSchema),
+		resetForm: false,
+		onUpdate: async ({ form: submitted }) => {
+			if (!submitted.valid) return;
+
+			unavailable = false;
+
+			const requested = parseAddresses(submitted.data.addresses).map((email) => ({
+				email,
+				role: roles[email] ?? "member",
+				teamIds: teamsFor(email),
+			}));
+
+			try {
+				const { data: batch, error } = await api.POST(
+					"/workspaces/{workspaceId}/invitations",
+					{
+						params: { path: { workspaceId: data.target.id } },
+						body: { invitations: requested },
+					}
+				);
+
+				if (error || !batch) {
+					unavailable = true;
+
+					return;
+				}
+
+				sent = batch.results.map((result, i) =>
+					inviteFromResult(result, requested[i].role, requested[i].teamIds)
+				);
+
+				await settle();
+			} catch {
+				unavailable = true;
+			}
+		},
+	});
+	const { form: formData, enhance, submitting } = form;
 
 	$effect(() => {
 		const seed = preview?.text;
-		if (seed !== undefined) text = seed;
+		if (seed !== undefined) formData.update((current) => ({ ...current, addresses: seed }), { taint: false });
 	});
 
+	async function settle() {
+		if (!sent?.some((row) => row.status === "pending")) return;
+
+		settling = true;
+
+		for (let attempt = 0; attempt < settleAttempts; attempt++) {
+			await new Promise((resolve) => setTimeout(resolve, settleIntervalMs));
+
+			const { data: listed } = await api.GET("/workspaces/{workspaceId}/invitations", {
+				params: { path: { workspaceId: data.target.id } },
+			});
+
+			if (!listed) break;
+
+			const delivery = new Map(listed.map((invitation) => [invitation.id, invitation.delivery]));
+
+			sent =
+				sent?.map((row) => {
+					const state = row.invitationId ? delivery.get(row.invitationId) : undefined;
+					return state && state !== "pending" ? { ...row, status: state as InviteStatus } : row;
+				}) ?? null;
+
+			if (!sent?.some((row) => row.status === "pending")) break;
+		}
+
+		settling = false;
+	}
+
+	async function retryFailed() {
+		const failed = rows.filter((row) => row.status === "failed" && row.invitationId);
+		if (failed.length === 0) return;
+
+		settling = true;
+
+		for (const row of failed) {
+			const { data: issued } = await api.POST(
+				"/workspaces/{workspaceId}/invitations/{invitationId}/resend",
+				{
+					params: {
+						path: { workspaceId: data.target.id, invitationId: row.invitationId! },
+					},
+				}
+			);
+
+			if (!issued) continue;
+
+			sent =
+				sent?.map((current) =>
+					current.invitationId === row.invitationId
+						? { ...current, status: issued.invitation.delivery as InviteStatus, url: issued.url }
+						: current
+				) ?? null;
+		}
+
+		settling = false;
+
+		await settle();
+	}
+
+	async function copyLinks() {
+		const links = rows.map((row) => row.url).filter((url): url is string => Boolean(url));
+		if (links.length === 0) return;
+
+		await navigator.clipboard.writeText(links.join("\n"));
+		copied = true;
+	}
+
+	function inviteMore() {
+		sent = null;
+		removed = [];
+		copied = false;
+		formData.update((current) => ({ ...current, addresses: "" }), { taint: false });
+	}
+
+	async function remove(row: Invite) {
+		if (!row.invitationId) {
+			removed = [...removed, row.email];
+
+			return;
+		}
+
+		settling = true;
+
+		const { error } = await api.DELETE("/workspaces/{workspaceId}/invitations/{invitationId}", {
+			params: { path: { workspaceId: data.target.id, invitationId: row.invitationId } },
+		});
+
+		settling = false;
+
+		if (error) {
+			unavailable = true;
+
+			return;
+		}
+
+		removed = [...removed, row.email];
+	}
+
+	function teamsFor(email: string): string[] {
+		return teamIds[email] ?? (data.target.defaultTeamId ? [data.target.defaultTeamId] : []);
+	}
+
 	const composed = $derived<Invite[]>(
-		parseAddresses(text).map((email) => ({
+		parseAddresses($formData.addresses).map((email) => ({
 			email,
-			role: "Member",
-			status: (isEmailAddress(email)
-				? emailConfigured
-					? "pending"
-					: "link_only"
-				: "invalid") as InviteStatus,
+			role: roles[email] ?? "member",
+			teamIds: teamsFor(email),
+			status: (isEmailAddress(email) ? "pending" : "invalid") as InviteStatus,
 		}))
 	);
 
 	const rows = $derived<Invite[]>(
-		(preview?.rows ?? composed)
+		(preview?.rows ?? sent ?? composed)
 			.filter((row) => !removed.includes(row.email))
-			.map((row) => ({ ...row, role: roles[row.email] ?? row.role }))
+			.map((row) => ({
+				...row,
+				role: roles[row.email] ?? row.role,
+				teamIds: teamIds[row.email] ?? row.teamIds,
+			}))
 	);
 
 	const counts = $derived({
@@ -76,11 +234,19 @@
 		failed: rows.filter((row) => row.status === "failed").length,
 	});
 
-	const allSent = $derived(counts.total > 0 && counts.sent === counts.total);
+	const busy = $derived($submitting || settling);
+	const sending = $derived(preview?.sending ?? (busy && counts.total > 0));
+	const emailConfigured = $derived(preview?.emailConfigured ?? counts.linkOnly === 0);
+
+	const allSent = $derived(
+		counts.sent > 0 && counts.sendable === 0 && counts.linkOnly === 0 && counts.failed === 0
+	);
 	const composing = $derived(!sending && counts.sent === 0 && counts.failed === 0);
 
 	const title = $derived(
-		allSent ? `Invited ${counts.sent} people to ${workspace}` : "Invite your team"
+		allSent
+			? `Invited ${counts.sent} ${counts.sent === 1 ? "person" : "people"} to ${workspace}`
+			: "Invite your team"
 	);
 	const lede = $derived(
 		allSent
@@ -108,6 +274,15 @@
 	});
 
 	const notice = $derived.by(() => {
+		if (unavailable) {
+			return {
+				variant: "destructive" as const,
+				icon: CircleX,
+				title: "Could not send those invitations",
+				body: "We couldn't reach the server just now. Nothing was created — wait a moment and try again.",
+				action: null,
+			};
+		}
 		if (!emailConfigured) {
 			return {
 				variant: "destructive" as const,
@@ -189,8 +364,9 @@
 		link_only: "text-muted-foreground",
 	};
 
-	const editable = (status: InviteStatus) => status === "pending" || status === "link_only";
-	const removable = (status: InviteStatus) => editable(status) || status === "invalid";
+	const pendable = (status: InviteStatus) => status === "pending" || status === "link_only";
+	const editable = (row: Invite) => !row.invitationId && pendable(row.status);
+	const removable = (row: Invite) => pendable(row.status) || row.status === "invalid";
 </script>
 
 <svelte:head><title>{title} · Norn</title></svelte:head>
@@ -199,6 +375,9 @@
 	<div class="notch w-full max-w-140">
 		<div class="flex flex-col gap-4 p-5 sm:p-6">
 			<div class="flex flex-col gap-1.5">
+				{#if !allSent}
+					<Eyebrow>Step 4 of 4</Eyebrow>
+				{/if}
 				<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
 			</div>
@@ -211,11 +390,11 @@
 					<Alert.Description>{notice.body}</Alert.Description>
 					{#if notice.action}
 						<Alert.Action class="flex flex-wrap items-center gap-2">
-							<Button variant="secondary" size="sm">
+							<Button variant="secondary" size="sm" disabled={busy} onclick={copyLinks}>
 								<Copy aria-hidden="true" />
-								{notice.action}
+								{copied ? "Copied" : notice.action}
 							</Button>
-							<Button variant="ghost" size="sm">
+							<Button variant="ghost" size="sm" href="/settings/instance/mail">
 								Configure SMTP
 								<ExternalLink aria-hidden="true" />
 							</Button>
@@ -225,18 +404,26 @@
 			{/if}
 
 			{#if composing}
-				<div class="flex flex-col gap-1">
-					<Label for="invite-addresses">Email addresses</Label>
-					<Textarea
-						id="invite-addresses"
-						rows={3}
-						placeholder={"jun@northwind.co, milo@northwind.co\nada@northwind.co"}
-						bind:value={text}
-					/>
-					<p class="text-sm text-muted-foreground">
-						Paste a list — commas, spaces or line breaks all work.
-					</p>
-				</div>
+				<form id={formId} method="POST" use:enhance>
+					<Form.Field {form} name="addresses">
+						<Form.Control>
+							{#snippet children({ props })}
+								<Form.Label>Email addresses</Form.Label>
+								<Textarea
+									{...props}
+									rows={3}
+									placeholder={"jun@northwind.co, milo@northwind.co\nada@northwind.co"}
+									disabled={busy}
+									bind:value={$formData.addresses}
+								/>
+							{/snippet}
+						</Form.Control>
+						<Form.FieldErrors />
+						<Form.Description>
+							Paste a list — commas, spaces or line breaks all work.
+						</Form.Description>
+					</Form.Field>
+				</form>
 			{/if}
 
 			{#if counts.total > 0}
@@ -271,32 +458,60 @@
 										{rowNote[row.status]}
 									</span>
 								{/if}
-								{#if editable(row.status) || removable(row.status)}
+								{#if editable(row) || removable(row)}
 									<span class="ml-auto flex shrink-0 items-center gap-2">
-										{#if editable(row.status)}
+										{#if editable(row)}
 											<span class="w-[106px]">
 												<Select.Root
 													type="single"
 													value={row.role}
-													onValueChange={(value) => (roles[row.email] = value as InviteRole)}
+													disabled={busy}
+													onValueChange={(value) => (roles[row.email] = value as MembershipRole)}
 												>
 													<Select.Trigger size="sm" aria-label="Role for {row.email}">
-														{row.role}
+														{roleLabels[row.role]}
 													</Select.Trigger>
 													<Select.Content>
-														{#each inviteRoles as role (role)}
-															<Select.Item value={role} label={role}>{role}</Select.Item>
+														{#each membershipRoles as role (role)}
+															<Select.Item value={role} label={roleLabels[role]}>
+																{roleLabels[role]}
+															</Select.Item>
 														{/each}
 													</Select.Content>
 												</Select.Root>
 											</span>
+											{#if data.teams.length > 0}
+												<span class="w-[124px]">
+													<Select.Root
+														type="multiple"
+														value={row.teamIds}
+														disabled={busy}
+														onValueChange={(value) => (teamIds[row.email] = value)}
+													>
+														<Select.Trigger size="sm" aria-label="Teams for {row.email}">
+															{teamSummary(row.teamIds, data.teams)}
+														</Select.Trigger>
+														<Select.Content>
+															{#each data.teams as team (team.id)}
+																<Select.Item value={team.id} label={team.name}>
+																	<TeamKey key={team.key} />
+																	{team.name}
+																</Select.Item>
+															{/each}
+														</Select.Content>
+													</Select.Root>
+												</span>
+											{/if}
 										{/if}
-										{#if removable(row.status)}
+										{#if removable(row)}
 											<Button
 												variant="ghost"
 												size="icon-xs"
-												aria-label="Remove {row.email}"
-												onclick={() => (removed = [...removed, row.email])}
+												aria-label={row.invitationId
+													? `Revoke the invitation for ${row.email}`
+													: `Remove ${row.email}`}
+												disabled={busy}
+												onclick={() => remove(row)}
 											>
 												<X aria-hidden="true" />
 											</Button>
@@ -325,12 +540,22 @@
 
 			<div class="flex flex-wrap items-center gap-2">
 				{#if allSent}
-					<Button href="/import">{cta}</Button>
+					<Button href={`/${data.target.slug}`}>{cta}</Button>
+				{:else if counts.failed > 0}
+					<Button disabled={busy} onclick={retryFailed}>{cta}</Button>
+				{:else if !emailConfigured && counts.linkOnly > 0}
+					<Button disabled={busy} onclick={copyLinks}>{copied ? "Copied" : cta}</Button>
 				{:else}
-					<Button disabled={sending}>{cta}</Button>
+					<Button type="submit" form={formId} disabled={busy || counts.sendable === 0}>
+						{cta}
+					</Button>
 				{/if}
 				{#if secondary}
-					<Button variant="ghost">{secondary}</Button>
+					{#if allSent}
+						<Button variant="ghost" onclick={inviteMore}>{secondary}</Button>
+					{:else}
+						<Button variant="ghost" href={`/${data.target.slug}`}>{secondary}</Button>
+					{/if}
 				{/if}
 			</div>
 

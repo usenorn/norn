@@ -1,7 +1,8 @@
-import type { AuthConfig, SignInFailure } from "$lib/auth/types";
+import type { Instance } from "$lib/auth/instance";
+import type { SignInFailure } from "$lib/auth/types";
 
 export type SignInPreview = {
-	auth?: Partial<AuthConfig>;
+	auth?: Partial<Instance>;
 	failure?: SignInFailure;
 };
 
@@ -10,7 +11,7 @@ export const signInPreviewStates: Record<string, SignInPreview> = import.meta.en
 			default: {},
 			sso: { auth: { sso: { name: "Okta" } } },
 			ssoonly: {
-				auth: { workspace: "Northwind", password: false, sso: { name: "Okta" } },
+				auth: { password: false, sso: { name: "Okta" } },
 			},
 			invalid: { failure: { kind: "invalid_credentials", attemptsLeft: 3 } },
 			locked: { failure: { kind: "account_locked", unlocksAt: "14:32" } },

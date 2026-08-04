@@ -1,55 +1,259 @@
-import type { Task } from "$lib/tasks/types";
+import type { Issue, IssueProgress } from "$lib/issues/board";
+import type { WorkflowState } from "$lib/team/states";
+import type { Team } from "$lib/team/teams";
+import type { Member } from "./+page";
 
-const bug = { name: "Bug", color: "magenta" } as const;
-const design = { name: "Design", color: "violet" } as const;
-const infra = { name: "Infra", color: "cyan" } as const;
-const spec = { name: "Needs spec", color: "orchid" } as const;
+export type IssuesPreview = {
+	team: Team | null;
+	states?: WorkflowState[];
+	issues?: Issue[];
+	progress?: IssueProgress;
+	members?: Member[];
+};
 
-function task(
-	id: string,
-	title: string,
-	status: Task["status"],
-	priority: Task["priority"],
-	assignee: string | null,
-	date: string | null,
-	labels: Task["labels"],
-	project: string
-): Task {
-	return {
-		id,
-		title,
-		status,
-		priority,
-		assignee,
-		date,
-		labels,
-		project,
-		cycle: status === "backlog" ? null : "24",
-	};
-}
-
-export const issuesFixture: Task[] = import.meta.env.DEV
-	? [
-			task("BIL-112", "Proration is off by one day on annual plans", "review", "urgent", "Rae Okafor", "Jul 28", [bug], "Billing"),
-			task("MOB-241", "Offline queue drops edits on reconnect", "started", "urgent", "Rae Okafor", "Jul 29", [bug], "Mobile"),
-			task("MOB-236", "Keyboard navigation for the board view", "review", "medium", "Rae Okafor", "Jul 30", [design], "Mobile"),
-			task("BIL-118", "Invoice PDFs should include the tax ID", "todo", "high", "Rae Okafor", "Jul 30", [], "Billing"),
-			task("MOB-238", "Ship the weekly digest email", "started", "high", "Rae Okafor", "Aug 1", [spec], "Mobile"),
-			task("GRW-64", "Rewrite the empty states across settings", "todo", "medium", "Rae Okafor", "Aug 2", [design], "Growth"),
-			task("MOB-244", "Cache avatars between sessions", "todo", "low", "Rae Okafor", "Aug 3", [infra], "Mobile"),
-			task("GRW-71", "Instrument the onboarding funnel", "todo", "medium", "Rae Okafor", "Aug 8", [infra], "Growth"),
-			task("BIL-121", "Dunning emails for failed cards", "backlog", "high", "Rae Okafor", null, [spec], "Billing"),
-			task("MOB-249", "Drop support for iOS 15", "backlog", "low", "Rae Okafor", null, [], "Mobile"),
-			task("MOB-252", "Realtime presence flickers on slow links", "started", "high", "Jun Park", "Aug 5", [bug], "Mobile"),
-			task("GRW-73", "A/B test the invite email subject", "todo", "medium", "Jun Park", "Aug 6", [spec], "Growth"),
-			task("BIL-124", "Support EU VAT on the team plan", "started", "medium", "Milo Vance", "Aug 8", [], "Billing"),
-			task("MOB-247", "Swipe actions on the task row", "review", "medium", "Ada Ling", "Aug 4", [design], "Mobile"),
-			task("GRW-75", "Referral landing page", "backlog", "low", null, null, [], "Growth"),
-			task("MOB-230", "Audit contrast on the dusk theme", "done", "low", "Ada Ling", "Jul 29", [design], "Mobile"),
-			task("GRW-58", "Landing page hero copy pass", "done", "medium", "Rae Okafor", "Jul 28", [], "Growth"),
-			task("MOB-233", "Board columns collapse state", "done", "medium", "Jun Park", "Jul 27", [], "Mobile"),
-			task("BIL-104", "Retire the legacy checkout", "canceled", "none", null, "Jul 22", [], "Billing"),
-		]
-	: [];
-
-export const people = ["Rae Okafor", "Jun Park", "Milo Vance", "Ada Ling"];
+export const issuesPreviewStates: Record<string, IssuesPreview> = import.meta.env.DEV
+	? {
+			no_teams: { team: null },
+			unavailable: {
+				team: {
+					id: "00000000-0000-4000-8000-000000000101",
+					workspaceId: "00000000-0000-4000-8000-000000000000",
+					key: "MOB",
+					name: "Mobile",
+					visibility: "public",
+					status: "active",
+					createdAt: "2026-01-04T09:00:00Z",
+				},
+			},
+			empty: {
+				team: {
+					id: "00000000-0000-4000-8000-000000000101",
+					workspaceId: "00000000-0000-4000-8000-000000000000",
+					key: "MOB",
+					name: "Mobile",
+					visibility: "public",
+					status: "active",
+					createdAt: "2026-01-04T09:00:00Z",
+				},
+				states: [
+					{
+						id: "00000000-0000-4000-8000-000000000301",
+						teamId: "00000000-0000-4000-8000-000000000101",
+						name: "Backlog",
+						category: "not_started",
+						position: 1,
+						isDefault: false,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000302",
+						teamId: "00000000-0000-4000-8000-000000000101",
+						name: "Todo",
+						category: "not_started",
+						position: 2,
+						isDefault: true,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000303",
+						teamId: "00000000-0000-4000-8000-000000000101",
+						name: "In progress",
+						category: "active",
+						position: 3,
+						isDefault: false,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000305",
+						teamId: "00000000-0000-4000-8000-000000000101",
+						name: "Done",
+						category: "complete",
+						position: 4,
+						isDefault: false,
+						isCompletion: true,
+					},
+				],
+				issues: [],
+				members: [],
+				progress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
+			},
+			renamed: {
+				team: {
+					id: "00000000-0000-4000-8000-000000000102",
+					workspaceId: "00000000-0000-4000-8000-000000000000",
+					key: "DSG",
+					name: "Design",
+					visibility: "public",
+					status: "active",
+					createdAt: "2026-02-11T09:00:00Z",
+				},
+				states: [
+					{
+						id: "00000000-0000-4000-8000-000000000401",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Icebox",
+						category: "not_started",
+						position: 1,
+						isDefault: false,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000402",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Ready",
+						category: "not_started",
+						position: 2,
+						isDefault: true,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000403",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Sketching",
+						category: "active",
+						position: 3,
+						isDefault: false,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000404",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Critique",
+						category: "active",
+						position: 4,
+						isDefault: false,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000405",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Shipped",
+						category: "complete",
+						position: 5,
+						isDefault: false,
+						isCompletion: true,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000406",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Dropped",
+						category: "abandoned",
+						position: 6,
+						isDefault: false,
+						isCompletion: false,
+					},
+				],
+				issues: [
+					{
+						id: "00000000-0000-4000-8000-000000000501",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "none",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000403",
+							name: "Sketching",
+							category: "active",
+							position: 3,
+						},
+						labels: [
+							{
+								id: "00000000-0000-4000-8000-000000000701",
+								workspaceId: "00000000-0000-4000-8000-000000000000",
+								name: "Needs spec",
+								color: "cyan",
+							},
+						],
+						number: 14,
+						reference: "DSG-14",
+						title: "Rework the empty states across settings",
+						createdAt: "2026-07-30T09:00:00Z",
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000502",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "none",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000404",
+							name: "Critique",
+							category: "active",
+							position: 4,
+						},
+						labels: [
+							{
+								id: "00000000-0000-4000-8000-000000000702",
+								workspaceId: "00000000-0000-4000-8000-000000000000",
+								groupId: "00000000-0000-4000-8000-000000000601",
+								name: "Blocker",
+								color: "magenta",
+							},
+						],
+						number: 15,
+						reference: "DSG-15",
+						title: "Audit contrast on the dusk theme",
+						createdAt: "2026-07-31T09:00:00Z",
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000503",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "none",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000402",
+							name: "Ready",
+							category: "not_started",
+							position: 2,
+						},
+						labels: [],
+						number: 16,
+						reference: "DSG-16",
+						title: "Swipe actions on the issue row",
+						createdAt: "2026-08-01T09:00:00Z",
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000504",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "none",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000405",
+							name: "Shipped",
+							category: "complete",
+							position: 5,
+						},
+						labels: [],
+						number: 12,
+						reference: "DSG-12",
+						title: "Board column collapse state",
+						createdAt: "2026-07-27T09:00:00Z",
+					},
+				],
+				members: [],
+				progress: { notStarted: 1, active: 2, complete: 1, abandoned: 0 },
+			},
+		}
+	: {};

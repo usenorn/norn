@@ -14,7 +14,7 @@ import (
 )
 
 func (s *accountsService) UploadAvatar(ctx context.Context, accountID uuid.UUID, upload service.AvatarUpload) (entity.Account, error) {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return entity.Account{}, err
 	}
 
@@ -65,7 +65,7 @@ func (s *accountsService) UploadAvatar(ctx context.Context, accountID uuid.UUID,
 }
 
 func (s *accountsService) RemoveAvatar(ctx context.Context, accountID uuid.UUID) (entity.Account, error) {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return entity.Account{}, err
 	}
 

@@ -6,12 +6,19 @@ servers:
   - url: /v1
 security:
   - sessionCookie: []
+  - bearerToken: []
 tags:
   - name: health
+  - name: instance
   - name: auth
   - name: accounts
   - name: sessions
   - name: workspaces
+  - name: teams
+  - name: invitations
+  - name: issues
+  - name: states
+  - name: tokens
 
 paths:
   /health:
@@ -27,25 +34,66 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Health' }
 
-  /auth/register:
+  /instance:
+    get:
+      tags: [instance]
+      operationId: getInstance
+      summary: Describe what this instance offers before anyone signs in
+      security: []
+      responses:
+        '200':
+          description: The public instance configuration
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Instance' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /auth/sign-up:
     post:
       tags: [auth]
-      operationId: registerAccount
-      summary: Create an instance-level account
+      operationId: requestSignUp
+      summary: Hold a pending sign-up and send its one-time verification link
       security: []
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/RegisterAccountRequest' }
+            schema: { $ref: '#/components/schemas/RequestSignUpRequest' }
       responses:
-        '201':
-          description: The account was created
+        '202':
+          description: The address must be confirmed before the account exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SignUpRequested' }
+        '403': { $ref: '#/components/responses/SignUpUnavailable' }
+        '409': { $ref: '#/components/responses/SignUpLinkUnusable' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/TooManyAttempts' }
+        '503': { $ref: '#/components/responses/BreachCheckUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /auth/sign-up/confirm:
+    post:
+      tags: [auth]
+      operationId: confirmSignUp
+      summary: Create the account behind a verified sign-up and sign the person in
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfirmSignUpRequest' }
+      responses:
+        '200':
+          description: The account the link created
+          headers:
+            Set-Cookie:
+              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Account' }
-        '409': { $ref: '#/components/responses/Problem' }
-        '422': { $ref: '#/components/responses/Problem' }
+        '400': { $ref: '#/components/responses/SignUpLinkExpired' }
+        '409': { $ref: '#/components/responses/SignUpLinkUnusable' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /auth/login:
@@ -169,7 +217,7 @@ paths:
         '204':
           description: The account was anonymized
         '401': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MembershipConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /accounts/me/deactivate:
@@ -184,7 +232,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Account' }
         '401': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MembershipConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /accounts/me/password:
@@ -383,7 +431,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/WorkspaceAuthPolicy' }
         '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '500': { $ref: '#/components/responses/Problem' }
     put:
       tags: [workspaces]
@@ -401,7 +449,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/WorkspaceAuthPolicy' }
         '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
@@ -440,23 +488,108 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [workspaces]
+      operationId: getWorkspace
+      summary: Read a workspace the signed-in account belongs to
+      responses:
+        '200':
+          description: The workspace
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [workspaces]
+      operationId: updateWorkspace
+      summary: Change the workspace display name and timezone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateWorkspaceRequest' }
+      responses:
+        '200':
+          description: The updated workspace
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/WorkspaceDeleted' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [workspaces]
+      operationId: deleteWorkspace
+      summary: Delete the workspace into a recoverable state
+      responses:
+        '200':
+          description: The workspace, now pending deletion until its purge date
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/WorkspaceDeleted' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/restore:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [workspaces]
+      operationId: restoreWorkspace
+      summary: Recover a workspace before its purge date passes
+      responses:
+        '200':
+          description: The restored workspace
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/members:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
     get:
       tags: [workspaces]
       operationId: listWorkspaceMembers
-      summary: List workspace members
+      summary: List workspace members, searchable and paged by cursor
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+        - name: cursor
+          in: query
+          required: false
+          schema: { type: string }
       responses:
         '200':
-          description: The workspace members
+          description: One page of workspace members
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/Membership' }
+              schema: { $ref: '#/components/schemas/MemberPage' }
         '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
     post:
       tags: [workspaces]
@@ -474,7 +607,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Membership' }
         '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
@@ -499,25 +632,1057 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Membership' }
         '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MembershipConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [workspaces]
       operationId: removeWorkspaceMember
-      summary: Remove a member from the workspace
+      summary: Remove a member, optionally handing their work to another member
+      parameters:
+        - name: reassignTo
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
       responses:
         '204':
           description: The member was removed
         '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MembershipConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/members/{accountId}/removal:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AccountId'
+    get:
+      tags: [workspaces]
+      operationId: previewWorkspaceMemberRemoval
+      summary: Report what removing this member would affect
+      responses:
+        '200':
+          description: What removing the member would affect
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemberRemovalPreview' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [teams]
+      operationId: listWorkspaceTeams
+      summary: List the teams the signed-in account may see in the workspace
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/TeamStatus' }
+      responses:
+        '200':
+          description: The teams visible to the account
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Team' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [teams]
+      operationId: createWorkspaceTeam
+      summary: Create a team with a name and the immutable key its issues carry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTeamRequest' }
+      responses:
+        '201':
+          description: The created team
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/TeamConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/TeamId'
+    get:
+      tags: [teams]
+      operationId: getWorkspaceTeam
+      summary: Read a team the signed-in account may see
+      responses:
+        '200':
+          description: The team
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [teams]
+      operationId: updateWorkspaceTeam
+      summary: Change the team display name and visibility
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateTeamRequest' }
+      responses:
+        '200':
+          description: The updated team
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/TeamConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/archive:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/TeamId'
+    post:
+      tags: [teams]
+      operationId: archiveWorkspaceTeam
+      summary: Archive a team, keeping its issues readable and its key reserved
+      responses:
+        '200':
+          description: The archived team
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/TeamConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/unarchive:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/TeamId'
+    post:
+      tags: [teams]
+      operationId: unarchiveWorkspaceTeam
+      summary: Return an archived team to active use
+      responses:
+        '200':
+          description: The restored team
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/TeamConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/members:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/TeamId'
+    get:
+      tags: [teams]
+      operationId: listWorkspaceTeamMembers
+      summary: List the accounts on the team
+      responses:
+        '200':
+          description: The team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TeamMember' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [teams]
+      operationId: addWorkspaceTeamMember
+      summary: Add a workspace member to the team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddTeamMemberRequest' }
+      responses:
+        '201':
+          description: The created team membership
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamMember' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/TeamConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/members/{accountId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/TeamId'
+      - $ref: '#/components/parameters/AccountId'
+    delete:
+      tags: [teams]
+      operationId: removeWorkspaceTeamMember
+      summary: Remove an account from the team
+      responses:
+        '204':
+          description: The account was removed from the team
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/TeamConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/tokens:
+    get:
+      tags: [tokens]
+      operationId: listWorkspaceAPITokens
+      summary: List the caller's live API tokens in this workspace
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The caller's tokens
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/APIToken' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [tokens]
+      operationId: mintWorkspaceAPIToken
+      summary: Mint a token whose scopes cannot exceed the caller's own rights
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MintAPITokenRequest' }
+      responses:
+        '201':
+          description: The token, carrying its secret for the only time
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MintedAPIToken' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/APITokenUnusable' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/tokens/{tokenId}:
+    delete:
+      tags: [tokens]
+      operationId: revokeWorkspaceAPIToken
+      summary: Revoke one of the caller's tokens
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TokenId'
+      responses:
+        '204':
+          description: The token was revoked
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/states:
+    get:
+      tags: [states]
+      operationId: listWorkflowStates
+      summary: List a team's workflow states in order
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: The team's states, ordered
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkflowState' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [states]
+      operationId: createWorkflowState
+      summary: Add a state to a team's workflow
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateWorkflowStateRequest' }
+      responses:
+        '201':
+          description: The state that was added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkflowState' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/WorkflowStateConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/states/order:
+    put:
+      tags: [states]
+      operationId: reorderWorkflowStates
+      summary: Replace the team's state order with the given permutation
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReorderWorkflowStatesRequest' }
+      responses:
+        '200':
+          description: The states in their new order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkflowState' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/states/{stateId}:
+    patch:
+      tags: [states]
+      operationId: updateWorkflowState
+      summary: Rename a state or move it to another category
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/StateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateWorkflowStateRequest' }
+      responses:
+        '200':
+          description: The updated state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkflowState' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/WorkflowStateConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [states]
+      operationId: removeWorkflowState
+      summary: Remove a state, moving every issue in it to another state
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/StateId'
+        - name: replacementStateId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: The state was removed and its issues moved
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/WorkflowStateConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/states/{stateId}/default:
+    post:
+      tags: [states]
+      operationId: setDefaultWorkflowState
+      summary: Make this the state new issues start in
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/StateId'
+      responses:
+        '200':
+          description: The team's states, with the new default flagged
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkflowState' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/states/{stateId}/completion:
+    post:
+      tags: [states]
+      operationId: setCompletionWorkflowState
+      summary: Make this the state that counts as done
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/StateId'
+      responses:
+        '200':
+          description: The team's states, with the new completion state flagged
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkflowState' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/progress:
+    get:
+      tags: [issues]
+      operationId: getWorkspaceIssueProgress
+      summary: Report per-category tallies over the issues the caller may see
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: teamId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Per-category tallies
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueProgress' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues:
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssues
+      summary: List the issues the caller may see, newest first
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: teamId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          description: Repeat to include more than one; defaults to active issues only
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/IssueStatus' }
+        - name: limit
+          in: query
+          schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+        - name: cursor
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: A page of visible issues
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssuePage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [issues]
+      operationId: createWorkspaceIssue
+      summary: Raise an issue in a team the caller can see
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateIssueRequest' }
+      responses:
+        '201':
+          description: The issue that was raised
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/by-reference/{reference}:
+    get:
+      tags: [issues]
+      operationId: getWorkspaceIssueByReference
+      summary: Read one issue by the reference people quote, such as MOB-14
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: reference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The issue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/activity:
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueActivity
+      summary: List what has happened to an issue, newest first
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+        - name: limit
+          in: query
+          schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+        - name: cursor
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: A page of activity
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueActivityPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}:
+    patch:
+      tags: [issues]
+      operationId: updateWorkspaceIssue
+      summary: Change any of an issue's properties, refusing edits made against a stale read
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateIssueRequest' }
+      responses:
+        '200':
+          description: The issue as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    get:
+      tags: [issues]
+      operationId: getWorkspaceIssue
+      summary: Read one issue, or report it missing when the caller may not see it
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      responses:
+        '200':
+          description: The issue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/invitations:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [invitations]
+      operationId: listWorkspaceInvitations
+      summary: List the workspace invitations administrators see beside members
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/InvitationStatus' }
+      responses:
+        '200':
+          description: The workspace invitations
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Invitation' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [invitations]
+      operationId: createWorkspaceInvitations
+      summary: Invite a batch of addresses, reporting an outcome for each
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateInvitationsRequest' }
+      responses:
+        '201':
+          description: One result per requested address, in the order requested
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InvitationBatch' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/invitations/{invitationId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/InvitationId'
+    delete:
+      tags: [invitations]
+      operationId: revokeWorkspaceInvitation
+      summary: Revoke a pending invitation, invalidating its link
+      responses:
+        '204':
+          description: The invitation was revoked
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/invitations/{invitationId}/resend:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/InvitationId'
+    post:
+      tags: [invitations]
+      operationId: resendWorkspaceInvitation
+      summary: Issue a fresh link for a pending invitation, invalidating the previous one
+      responses:
+        '200':
+          description: The invitation and its new single-use link
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssuedInvitation' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /invitations/preview:
+    post:
+      tags: [invitations]
+      operationId: previewInvitation
+      summary: Describe an invitation link before anyone acts on it
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PreviewInvitationRequest' }
+      responses:
+        '200':
+          description: What the link leads to
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InvitationPreview' }
+        '400': { $ref: '#/components/responses/InvitationLinkExpired' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/InvitationLinkUnusable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /invitations/accept:
+    post:
+      tags: [invitations]
+      operationId: acceptInvitation
+      summary: Join the workspace, creating an account when there is none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AcceptInvitationRequest' }
+      responses:
+        '200':
+          description: The membership the invitation granted
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AcceptedInvitation' }
+        '400': { $ref: '#/components/responses/InvitationLinkExpired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/InvitationLinkUnusable' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/TooManyAttempts' }
+        '503': { $ref: '#/components/responses/BreachCheckUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/labels:
+    get:
+      tags: [labels]
+      operationId: listWorkspaceLabels
+      summary: List the labels this actor can see, workspace-wide and team-scoped
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The labels, ordered by name
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Label' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [labels]
+      operationId: createWorkspaceLabel
+      summary: Define a label for the workspace or for a single team
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateLabelRequest' }
+      responses:
+        '201':
+          description: The label that was created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Label' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/LabelConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/labels/{labelId}:
+    patch:
+      tags: [labels]
+      operationId: updateWorkspaceLabel
+      summary: Rename a label, recolour it, or move it between groups
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/LabelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateLabelRequest' }
+      responses:
+        '200':
+          description: The updated label, with the same id it has always had
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Label' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/LabelConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [labels]
+      operationId: removeWorkspaceLabel
+      summary: Remove a label, acknowledging how many issues carry it
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/LabelId'
+        - name: acknowledgedIssues
+          in: query
+          required: true
+          description: The number of issues the caller was told this label is on
+          schema: { type: integer, format: int32, minimum: 0 }
+      responses:
+        '204': { description: The label was removed }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/LabelConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/labels/{labelId}/usage:
+    get:
+      tags: [labels]
+      operationId: getWorkspaceLabelUsage
+      summary: How many issues carry this label, within the actor's scope
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/LabelId'
+      responses:
+        '200':
+          description: The number of issues carrying the label
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LabelUsage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/labels/{labelId}/merge:
+    post:
+      tags: [labels]
+      operationId: mergeWorkspaceLabel
+      summary: Merge this label into another, moving every application
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/LabelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MergeLabelRequest' }
+      responses:
+        '200':
+          description: The surviving label
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Label' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/LabelConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/label-groups:
+    get:
+      tags: [labels]
+      operationId: listWorkspaceLabelGroups
+      summary: List the workspace's label groups
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The label groups, ordered by name
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/LabelGroup' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [labels]
+      operationId: createWorkspaceLabelGroup
+      summary: Create a group whose labels are mutually exclusive on an issue
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LabelGroupRequest' }
+      responses:
+        '201':
+          description: The group that was created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LabelGroup' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/LabelConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/label-groups/{groupId}:
+    patch:
+      tags: [labels]
+      operationId: renameWorkspaceLabelGroup
+      summary: Rename a label group
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LabelGroupRequest' }
+      responses:
+        '200':
+          description: The renamed group
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LabelGroup' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/LabelConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [labels]
+      operationId: removeWorkspaceLabelGroup
+      summary: Remove a group, releasing its labels rather than deleting them
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '204': { description: The group was removed and its labels released }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/status:
+    post:
+      tags: [issues]
+      operationId: setWorkspaceIssueStatus
+      summary: Archive, delete or restore an issue without losing its reference
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetIssueStatusRequest' }
+      responses:
+        '200':
+          description: The issue as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/team:
+    post:
+      tags: [issues]
+      operationId: moveWorkspaceIssueToTeam
+      summary: Move an issue to another team, keeping its reference and remapping its state
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MoveIssueRequest' }
+      responses:
+        '200':
+          description: The issue on its new team
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/labels:
+    put:
+      tags: [issues]
+      operationId: setWorkspaceIssueLabels
+      summary: Replace the labels on an issue with the given set
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetIssueLabelsRequest' }
+      responses:
+        '200':
+          description: The labels the issue now carries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Label' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
+    bearerToken:
+      type: http
+      scheme: bearer
     sessionCookie:
       type: apiKey
       in: cookie
@@ -534,6 +1699,41 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    InvitationId:
+      name: invitationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    TokenId:
+      name: tokenId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    StateId:
+      name: stateId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IssueId:
+      name: issueId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    LabelId:
+      name: labelId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
 
   responses:
     Problem:
@@ -541,6 +1741,18 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
+
+    TeamConflict:
+      description: The key is taken, or the team or workspace refuses the change
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/TeamConflictProblem' }
+
+    MembershipConflict:
+      description: The membership refuses the change, or the workspace does
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/MembershipConflictProblem' }
 
     SignInRejected:
       description: The email and password did not match
@@ -575,6 +1787,54 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/ResetLinkUsedProblem' }
 
+    APITokenUnusable:
+      description: The token name is taken, or its scopes exceed the caller's rights
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/APITokenUnusableProblem' }
+
+    WorkflowStateConflict:
+      description: The state cannot change without leaving the team unusable
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/WorkflowStateConflictProblem' }
+
+    IssueConflict:
+      description: The issue changed since it was read
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/IssueConflictProblem' }
+
+    LabelConflict:
+      description: The label cannot change without losing or duplicating work
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/LabelConflictProblem' }
+
+    Forbidden:
+      description: The actor may not perform this action
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ForbiddenProblem' }
+
+    SignUpUnavailable:
+      description: The instance does not create accounts from the sign-up form
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/SignUpClosedProblem' }
+
+    SignUpLinkExpired:
+      description: The sign-up link expired or is unrecognised
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/SignUpExpiredProblem' }
+
+    SignUpLinkUnusable:
+      description: The link was already used, or an account already has the address
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/SignUpUnusableProblem' }
+
     MailUnavailable:
       description: The instance is not configured to send mail
       content:
@@ -586,6 +1846,24 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/BreachCheckUnavailableProblem' }
+
+    InvitationLinkExpired:
+      description: The invitation link expired or is unrecognised
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/InvitationExpiredProblem' }
+
+    InvitationLinkUnusable:
+      description: The invitation was revoked, already accepted, or addressed to someone else
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/InvitationUnusableProblem' }
+
+    WorkspaceDeleted:
+      description: The workspace is pending deletion and accepts nothing but restore
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/WorkspaceDeletedProblem' }
 
   schemas:
     Problem:
@@ -650,6 +1928,398 @@ components:
           properties:
             code: { type: string, enum: [reset_link_used] }
 
+    LabelColor:
+      type: string
+      enum: [neutral, cyan, blue, violet, orchid, magenta]
+
+    Label:
+      type: object
+      required: [id, workspaceId, name, color]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        groupId: { type: string, format: uuid }
+        name: { type: string }
+        color: { $ref: '#/components/schemas/LabelColor' }
+
+    LabelGroup:
+      type: object
+      required: [id, workspaceId, name]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        name: { type: string }
+
+    LabelUsage:
+      type: object
+      required: [issues]
+      properties:
+        issues: { type: integer, format: int32 }
+
+    CreateLabelRequest:
+      type: object
+      required: [name, color]
+      properties:
+        name: { type: string }
+        color: { $ref: '#/components/schemas/LabelColor' }
+        teamId: { type: string, format: uuid }
+        groupId: { type: string, format: uuid }
+
+    IssueStatus:
+      type: string
+      enum: [active, archived, pending_deletion]
+
+    SetIssueStatusRequest:
+      type: object
+      required: [status, expectedVersion]
+      properties:
+        status: { $ref: '#/components/schemas/IssueStatus' }
+        expectedVersion: { type: integer, format: int32 }
+
+    MoveIssueRequest:
+      type: object
+      required: [teamId, expectedVersion]
+      properties:
+        teamId: { type: string, format: uuid }
+        expectedVersion: { type: integer, format: int32 }
+        acknowledgeLabelLoss: { type: boolean }
+
+    UpdateLabelRequest:
+      type: object
+      properties:
+        name: { type: string }
+        color: { $ref: '#/components/schemas/LabelColor' }
+        groupId:
+          type: string
+          format: uuid
+          nullable: true
+
+    MergeLabelRequest:
+      type: object
+      required: [intoLabelId]
+      properties:
+        intoLabelId: { type: string, format: uuid }
+
+    LabelGroupRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+
+    SetIssueLabelsRequest:
+      type: object
+      required: [labelIds, expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32 }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+
+    LabelConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - label_name_taken
+                - label_group_name_taken
+                - label_group_exclusive
+                - label_group_in_use
+                - label_usage_changed
+                - label_merge_scope_narrows
+                - label_merge_group_mismatch
+            issues: { type: integer, format: int32 }
+
+    StateCategory:
+      type: string
+      enum: [not_started, active, complete, abandoned]
+
+    WorkflowState:
+      type: object
+      required: [id, teamId, name, category, position, isDefault, isCompletion]
+      properties:
+        id: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        name: { type: string }
+        category: { $ref: '#/components/schemas/StateCategory' }
+        position: { type: integer, format: int32 }
+        isDefault: { type: boolean }
+        isCompletion: { type: boolean }
+
+    CreateWorkflowStateRequest:
+      type: object
+      required: [name, category]
+      properties:
+        name: { type: string }
+        category: { $ref: '#/components/schemas/StateCategory' }
+
+    UpdateWorkflowStateRequest:
+      type: object
+      properties:
+        name: { type: string }
+        category: { $ref: '#/components/schemas/StateCategory' }
+
+    ReorderWorkflowStatesRequest:
+      type: object
+      required: [stateIds]
+      properties:
+        stateIds:
+          type: array
+          items: { type: string, format: uuid }
+
+    WorkflowStateConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - state_name_taken
+                - state_last_in_category
+                - state_is_default
+                - state_is_completion
+
+    IssuePriority:
+      type: string
+      enum: [urgent, high, medium, low, none]
+
+    UpdateIssueRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32 }
+        title: { type: string }
+        stateId: { type: string, format: uuid }
+        description: { type: string }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        assigneeId: { type: string, format: uuid }
+        estimate: { type: integer, format: int32 }
+        dueOn: { type: string, format: date }
+        clear:
+          type: array
+          description: Properties to reset; absent means unchanged, which a nullable field cannot express
+          items:
+            type: string
+            enum: [assignee, estimate, dueOn]
+
+    IssueConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - issue_stale
+                - issue_reference_taken
+                - issue_already_on_team
+                - issue_labels_out_of_scope
+                - issue_destination_incapable
+                - issue_status_transition
+                - label_out_of_scope
+            version: { type: integer, format: int32 }
+            conflicts:
+              type: array
+              items: { type: string }
+            labels:
+              type: array
+              items: { $ref: '#/components/schemas/Label' }
+
+    IssueProgress:
+      type: object
+      required: [notStarted, active, complete, abandoned]
+      properties:
+        notStarted: { type: integer, format: int32 }
+        active: { type: integer, format: int32 }
+        complete: { type: integer, format: int32 }
+        abandoned: { type: integer, format: int32 }
+
+    IssueActivity:
+      type: object
+      required: [id, issueId, kind, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        actorAccountId: { type: string, format: uuid }
+        actorName: { type: string }
+        kind:
+          type: string
+          enum:
+            - created
+            - state_changed
+            - property_changed
+            - team_moved
+            - archived
+            - unarchived
+            - deleted
+            - restored
+        fromState: { type: string }
+        toState: { type: string }
+        field: { type: string }
+        fromValue: { type: string }
+        toValue: { type: string }
+        version: { type: integer, format: int32 }
+        createdAt: { type: string, format: date-time }
+
+    IssueActivityPage:
+      type: object
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          items: { $ref: '#/components/schemas/IssueActivity' }
+        nextCursor: { type: string }
+
+    Issue:
+      type: object
+      required: [id, workspaceId, teamId, teamKey, referenceKey, number, reference, title, description, priority, status, state, labels, version, stateEnteredAt, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        teamKey: { type: string }
+        referenceKey: { type: string }
+        version: { type: integer, format: int32 }
+        description: { type: string }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        assigneeAccountId: { type: string, format: uuid }
+        estimate: { type: integer, format: int32 }
+        dueOn: { type: string, format: date }
+        stateEnteredAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/IssueStatus' }
+        archivedAt: { type: string, format: date-time }
+        state: { $ref: '#/components/schemas/IssueState' }
+        labels:
+          type: array
+          items: { $ref: '#/components/schemas/Label' }
+        number: { type: integer, format: int32 }
+        reference: { type: string }
+        title: { type: string }
+        createdByAccountId: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+
+    IssueState:
+      type: object
+      required: [id, name, category, position]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        category: { $ref: '#/components/schemas/StateCategory' }
+        position: { type: integer, format: int32 }
+
+    IssuePage:
+      type: object
+      required: [issues]
+      properties:
+        issues:
+          type: array
+          items: { $ref: '#/components/schemas/Issue' }
+        nextCursor: { type: string }
+
+    CreateIssueRequest:
+      type: object
+      required: [teamId, title]
+      properties:
+        teamId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        assigneeId: { type: string, format: uuid }
+        estimate: { type: integer, format: int32 }
+        dueOn: { type: string, format: date }
+
+    APIScope:
+      type: string
+
+    APIToken:
+      type: object
+      required: [id, workspaceId, name, scopes, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        name: { type: string }
+        scopes:
+          type: array
+          items: { $ref: '#/components/schemas/APIScope' }
+        expiresAt: { type: string, format: date-time }
+        lastUsedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    MintedAPIToken:
+      type: object
+      required: [token, value]
+      properties:
+        token: { $ref: '#/components/schemas/APIToken' }
+        value: { type: string }
+
+    MintAPITokenRequest:
+      type: object
+      required: [name, scopes]
+      properties:
+        name: { type: string }
+        scopes:
+          type: array
+          items: { $ref: '#/components/schemas/APIScope' }
+        expiresAt: { type: string, format: date-time }
+
+    APITokenUnusableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [token_name_taken, token_scope_invalid, token_scope_exceeds, token_may_not_mint]
+
+    ForbiddenProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [forbidden] }
+            reason:
+              type: string
+              enum:
+                - role_lacks_action
+                - auth_method_not_permitted
+                - token_permission_missing
+                - token_workspace_mismatch
+                - instance_admin_required
+
+    SignUpClosedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [sign_up_closed] }
+
+    SignUpExpiredProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [sign_up_expired, sign_up_invalid] }
+
+    SignUpUnusableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [sign_up_used, sign_up_email_taken] }
+
     MailUnavailableProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -665,6 +2335,59 @@ components:
           required: [code]
           properties:
             code: { type: string, enum: [breach_check_unavailable] }
+
+    InvitationExpiredProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [invitation_expired, invitation_invalid] }
+
+    WorkspaceDeletedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [workspace_deleted] }
+            purgeAfter: { type: string, format: date-time }
+
+    MembershipConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [last_admin, self_role_change, directory_managed, workspace_deleted]
+            workspaceIds:
+              type: array
+              items: { type: string, format: uuid }
+            purgeAfter: { type: string, format: date-time }
+
+    TeamConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [team_key_taken, team_archived, team_not_archived, team_member_exists, workspace_deleted]
+            purgeAfter: { type: string, format: date-time }
+
+    InvitationUnusableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [invitation_revoked, invitation_accepted, invitation_address_mismatch, account_exists]
+            invitedEmail: { type: string }
 
     RequestPasswordResetRequest:
       type: object
@@ -698,7 +2421,11 @@ components:
 
     MembershipRole:
       type: string
-      enum: [admin, member]
+      enum: [admin, member, viewer]
+
+    MembershipSource:
+      type: string
+      enum: [manual, directory]
 
     SessionAuthMethod:
       type: string
@@ -768,31 +2495,160 @@ components:
         requestedAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
 
+    WorkspaceStatus:
+      type: string
+      enum: [active, pending_deletion]
+
     Workspace:
       type: object
-      required: [id, slug, name, createdAt]
+      required: [id, slug, name, status, timezone, createdAt]
       properties:
         id: { type: string, format: uuid }
         slug: { type: string }
         name: { type: string }
+        status: { $ref: '#/components/schemas/WorkspaceStatus' }
+        timezone: { type: string }
+        defaultTeamId: { type: string, format: uuid }
         createdAt: { type: string, format: date-time }
+        deletionRequestedAt: { type: string, format: date-time }
+        purgeAfter: { type: string, format: date-time }
+
+    UpdateWorkspaceRequest:
+      type: object
+      properties:
+        name: { type: string }
+        timezone: { type: string }
+        defaultTeamId: { type: string, format: uuid }
 
     Membership:
       type: object
-      required: [workspaceId, accountId, role]
+      required: [workspaceId, accountId, role, source]
       properties:
         workspaceId: { type: string, format: uuid }
         accountId: { type: string, format: uuid }
         role: { $ref: '#/components/schemas/MembershipRole' }
+        source: { $ref: '#/components/schemas/MembershipSource' }
+        displayName: { type: string }
+        email: { type: string }
+        joinedAt: { type: string, format: date-time }
+        lastActiveAt: { type: string, format: date-time }
+        lastAuthMethod: { $ref: '#/components/schemas/SessionAuthMethod' }
 
-    RegisterAccountRequest:
+    MemberPage:
       type: object
-      required: [email, displayName]
+      required: [members]
+      properties:
+        members:
+          type: array
+          items: { $ref: '#/components/schemas/Membership' }
+        nextCursor: { type: string }
+
+    MemberRemovalPreview:
+      type: object
+      required: [member, teams, soleAdmin, directoryManaged]
+      properties:
+        member: { $ref: '#/components/schemas/Membership' }
+        teams:
+          type: array
+          items: { $ref: '#/components/schemas/Team' }
+        soleAdmin: { type: boolean }
+        directoryManaged: { type: boolean }
+
+    TeamStatus:
+      type: string
+      enum: [active, archived]
+
+    TeamVisibility:
+      type: string
+      enum: [public, private]
+
+    Team:
+      type: object
+      required: [id, workspaceId, key, name, status, visibility, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        key: { type: string }
+        name: { type: string }
+        status: { $ref: '#/components/schemas/TeamStatus' }
+        visibility: { $ref: '#/components/schemas/TeamVisibility' }
+        createdAt: { type: string, format: date-time }
+        archivedAt: { type: string, format: date-time }
+
+    CreateTeamRequest:
+      type: object
+      required: [key, name]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        visibility: { $ref: '#/components/schemas/TeamVisibility' }
+
+    UpdateTeamRequest:
+      type: object
+      properties:
+        name: { type: string }
+        visibility: { $ref: '#/components/schemas/TeamVisibility' }
+
+    TeamMember:
+      type: object
+      required: [teamId, accountId, displayName, email]
+      properties:
+        teamId: { type: string, format: uuid }
+        accountId: { type: string, format: uuid }
+        displayName: { type: string }
+        email: { type: string }
+        joinedAt: { type: string, format: date-time }
+
+    AddTeamMemberRequest:
+      type: object
+      required: [accountId]
+      properties:
+        accountId: { type: string, format: uuid }
+
+    Instance:
+      type: object
+      required: [signupsOpen, password, selfHosted, host, version]
+      properties:
+        signupsOpen: { type: boolean }
+        password: { type: boolean }
+        selfHosted: { type: boolean }
+        host: { type: string }
+        version: { type: string }
+        sso: { $ref: '#/components/schemas/InstanceSso' }
+
+    InstanceSso:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+
+    RequestSignUpRequest:
+      type: object
+      required: [email, displayName, password]
       properties:
         email: { type: string }
         displayName: { type: string }
         timezone: { type: string }
         password: { type: string }
+
+    SignUpDelivery:
+      type: string
+      enum: [mailed, link_only]
+
+    SignUpRequested:
+      type: object
+      required: [email, delivery, expiresAt]
+      properties:
+        email: { type: string }
+        delivery: { $ref: '#/components/schemas/SignUpDelivery' }
+        expiresAt: { type: string, format: date-time }
+        url: { type: string }
+
+    ConfirmSignUpRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }
 
     SignInRequest:
       type: object
@@ -838,6 +2694,14 @@ components:
       properties:
         slug: { type: string }
         name: { type: string }
+        team: { $ref: '#/components/schemas/CreateWorkspaceTeam' }
+
+    CreateWorkspaceTeam:
+      type: object
+      required: [key, name]
+      properties:
+        key: { type: string }
+        name: { type: string }
 
     AddMemberRequest:
       type: object
@@ -851,3 +2715,114 @@ components:
       required: [role]
       properties:
         role: { $ref: '#/components/schemas/MembershipRole' }
+
+    InvitationStatus:
+      type: string
+      enum: [pending, accepted, revoked]
+
+    InvitationDelivery:
+      type: string
+      enum: [pending, sent, failed, link_only]
+
+    InvitationOutcome:
+      type: string
+      enum: [created, invalid_email, already_member]
+
+    Invitation:
+      type: object
+      required: [id, workspaceId, email, role, status, delivery, invitedAt, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        email: { type: string }
+        role: { $ref: '#/components/schemas/MembershipRole' }
+        status: { $ref: '#/components/schemas/InvitationStatus' }
+        delivery: { $ref: '#/components/schemas/InvitationDelivery' }
+        teamIds:
+          type: array
+          items: { type: string, format: uuid }
+        invitedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        acceptedAt: { type: string, format: date-time }
+
+    InvitationRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email: { type: string }
+        role: { $ref: '#/components/schemas/MembershipRole' }
+        teamIds:
+          type: array
+          items: { type: string, format: uuid }
+
+    CreateInvitationsRequest:
+      type: object
+      required: [invitations]
+      properties:
+        invitations:
+          type: array
+          items: { $ref: '#/components/schemas/InvitationRequest' }
+
+    InvitationResult:
+      type: object
+      required: [email, outcome]
+      properties:
+        email: { type: string }
+        outcome: { $ref: '#/components/schemas/InvitationOutcome' }
+        invitation: { $ref: '#/components/schemas/Invitation' }
+        url: { type: string }
+
+    InvitationBatch:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items: { $ref: '#/components/schemas/InvitationResult' }
+
+    IssuedInvitation:
+      type: object
+      required: [invitation, url]
+      properties:
+        invitation: { $ref: '#/components/schemas/Invitation' }
+        url: { type: string }
+
+    PreviewInvitationRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }
+
+    InvitationPreview:
+      type: object
+      required: [workspace, email, role, expiresAt, accountExists, ssoEnforced]
+      properties:
+        workspace: { $ref: '#/components/schemas/InvitationWorkspace' }
+        email: { type: string }
+        role: { $ref: '#/components/schemas/MembershipRole' }
+        expiresAt: { type: string, format: date-time }
+        accountExists: { type: boolean }
+        ssoEnforced: { type: boolean }
+
+    InvitationWorkspace:
+      type: object
+      required: [slug, name]
+      properties:
+        slug: { type: string }
+        name: { type: string }
+
+    AcceptInvitationRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }
+        displayName: { type: string }
+        timezone: { type: string }
+        password: { type: string }
+
+    AcceptedInvitation:
+      type: object
+      required: [workspace, membership]
+      properties:
+        workspace: { $ref: '#/components/schemas/Workspace' }
+        membership: { $ref: '#/components/schemas/Membership' }

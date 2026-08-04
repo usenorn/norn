@@ -22,6 +22,14 @@ export const createWorkspacePreviewStates: Record<string, CreateWorkspacePreview
 					suggestions: ["northwind-co", "northwind-hq", "northwind-eng"],
 				},
 			},
+			team_key_taken: {
+				form: { name: "Northwind", slug: "northwind", teamName: "Mobile", teamKey: "MOB" },
+				failure: {
+					kind: "team_key_taken",
+					key: "MOB",
+					suggestions: ["MOBI", "MOBIL", "MBL"],
+				},
+			},
 			creating: {
 				form: { name: "Northwind", slug: "northwind", teamName: "Mobile", teamKey: "MOB" },
 				busy: true,

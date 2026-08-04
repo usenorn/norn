@@ -2,6 +2,7 @@ package entity
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 	"unicode/utf8"
@@ -17,18 +18,76 @@ const (
 )
 
 var (
-	ErrWorkspaceNotFound  = errors.New("workspace not found")
-	ErrWorkspaceSlugTaken = errors.New("workspace slug already taken")
+	ErrWorkspaceNotFound   = errors.New("workspace not found")
+	ErrWorkspaceSlugTaken  = errors.New("workspace slug already taken")
+	ErrWorkspaceDeleted    = errors.New("workspace is pending deletion")
+	ErrWorkspaceNotDeleted = errors.New("workspace is not pending deletion")
 )
+
+type WorkspaceDeletedError struct {
+	PurgeAfter *time.Time
+}
+
+func (e WorkspaceDeletedError) Error() string {
+	if e.PurgeAfter == nil {
+		return ErrWorkspaceDeleted.Error()
+	}
+
+	return fmt.Sprintf("%s until %s", ErrWorkspaceDeleted, e.PurgeAfter.Format(time.RFC3339))
+}
+
+func (e WorkspaceDeletedError) Unwrap() error {
+	return ErrWorkspaceDeleted
+}
 
 var workspaceSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
+type WorkspaceStatus string
+
+const (
+	WorkspaceStatusActive          WorkspaceStatus = "active"
+	WorkspaceStatusPendingDeletion WorkspaceStatus = "pending_deletion"
+)
+
+func (s WorkspaceStatus) Valid() bool {
+	switch s {
+	case WorkspaceStatusActive, WorkspaceStatusPendingDeletion:
+		return true
+	default:
+		return false
+	}
+}
+
+func (s WorkspaceStatus) CanTransitionTo(target WorkspaceStatus) bool {
+	switch s {
+	case WorkspaceStatusActive:
+		return target == WorkspaceStatusPendingDeletion
+	case WorkspaceStatusPendingDeletion:
+		return target == WorkspaceStatusActive
+	default:
+		return false
+	}
+}
+
 type Workspace struct {
-	ID        uuid.UUID
-	Slug      string
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID                  uuid.UUID
+	Slug                string
+	Name                string
+	Status              WorkspaceStatus
+	Timezone            string
+	DefaultTeamID       *uuid.UUID
+	DeletionRequestedAt *time.Time
+	PurgeAfter          *time.Time
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+func (w Workspace) Deleted() bool {
+	return w.Status == WorkspaceStatusPendingDeletion
+}
+
+func (w Workspace) PurgeDueAt(now time.Time) bool {
+	return w.Deleted() && w.PurgeAfter != nil && !now.Before(*w.PurgeAfter)
 }
 
 func ValidateWorkspaceName(field, name string) FieldError {

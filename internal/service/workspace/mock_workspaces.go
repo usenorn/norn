@@ -44,10 +44,10 @@ func (m *MockWorkspaces) EXPECT() *MockWorkspacesMockRecorder {
 }
 
 // AddMember mocks base method.
-func (m *MockWorkspaces) AddMember(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.Membership, error) {
+func (m *MockWorkspaces) AddMember(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.WorkspaceMember, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddMember", ctx, workspaceID, accountID, role)
-	ret0, _ := ret[0].(entity.Membership)
+	ret0, _ := ret[0].(entity.WorkspaceMember)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -74,10 +74,10 @@ func (mr *MockWorkspacesMockRecorder) AuthPolicy(ctx, workspaceID any) *gomock.C
 }
 
 // ChangeMemberRole mocks base method.
-func (m *MockWorkspaces) ChangeMemberRole(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.Membership, error) {
+func (m *MockWorkspaces) ChangeMemberRole(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.WorkspaceMember, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeMemberRole", ctx, workspaceID, accountID, role)
-	ret0, _ := ret[0].(entity.Membership)
+	ret0, _ := ret[0].(entity.WorkspaceMember)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -103,6 +103,36 @@ func (mr *MockWorkspacesMockRecorder) Create(ctx, input any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockWorkspaces)(nil).Create), ctx, input)
 }
 
+// Delete mocks base method.
+func (m *MockWorkspaces) Delete(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockWorkspacesMockRecorder) Delete(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockWorkspaces)(nil).Delete), ctx, workspaceID)
+}
+
+// Get mocks base method.
+func (m *MockWorkspaces) Get(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockWorkspacesMockRecorder) Get(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockWorkspaces)(nil).Get), ctx, workspaceID)
+}
+
 // ListForAccount mocks base method.
 func (m *MockWorkspaces) ListForAccount(ctx context.Context, accountID uuid.UUID) ([]entity.Workspace, error) {
 	m.ctrl.T.Helper()
@@ -119,32 +149,76 @@ func (mr *MockWorkspacesMockRecorder) ListForAccount(ctx, accountID any) *gomock
 }
 
 // ListMembers mocks base method.
-func (m *MockWorkspaces) ListMembers(ctx context.Context, workspaceID uuid.UUID) ([]entity.Membership, error) {
+func (m *MockWorkspaces) ListMembers(ctx context.Context, workspaceID uuid.UUID, input service.ListMembersInput) (service.MemberPage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListMembers", ctx, workspaceID)
-	ret0, _ := ret[0].([]entity.Membership)
+	ret := m.ctrl.Call(m, "ListMembers", ctx, workspaceID, input)
+	ret0, _ := ret[0].(service.MemberPage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListMembers indicates an expected call of ListMembers.
-func (mr *MockWorkspacesMockRecorder) ListMembers(ctx, workspaceID any) *gomock.Call {
+func (mr *MockWorkspacesMockRecorder) ListMembers(ctx, workspaceID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembers", reflect.TypeOf((*MockWorkspaces)(nil).ListMembers), ctx, workspaceID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembers", reflect.TypeOf((*MockWorkspaces)(nil).ListMembers), ctx, workspaceID, input)
+}
+
+// PreviewMemberRemoval mocks base method.
+func (m *MockWorkspaces) PreviewMemberRemoval(ctx context.Context, workspaceID, accountID uuid.UUID) (service.MemberRemoval, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PreviewMemberRemoval", ctx, workspaceID, accountID)
+	ret0, _ := ret[0].(service.MemberRemoval)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PreviewMemberRemoval indicates an expected call of PreviewMemberRemoval.
+func (mr *MockWorkspacesMockRecorder) PreviewMemberRemoval(ctx, workspaceID, accountID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PreviewMemberRemoval", reflect.TypeOf((*MockWorkspaces)(nil).PreviewMemberRemoval), ctx, workspaceID, accountID)
+}
+
+// Purge mocks base method.
+func (m *MockWorkspaces) Purge(ctx context.Context, workspaceID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Purge", ctx, workspaceID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Purge indicates an expected call of Purge.
+func (mr *MockWorkspacesMockRecorder) Purge(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Purge", reflect.TypeOf((*MockWorkspaces)(nil).Purge), ctx, workspaceID)
 }
 
 // RemoveMember mocks base method.
-func (m *MockWorkspaces) RemoveMember(ctx context.Context, workspaceID, accountID uuid.UUID) error {
+func (m *MockWorkspaces) RemoveMember(ctx context.Context, workspaceID, accountID uuid.UUID, reassignTo *uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveMember", ctx, workspaceID, accountID)
+	ret := m.ctrl.Call(m, "RemoveMember", ctx, workspaceID, accountID, reassignTo)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveMember indicates an expected call of RemoveMember.
-func (mr *MockWorkspacesMockRecorder) RemoveMember(ctx, workspaceID, accountID any) *gomock.Call {
+func (mr *MockWorkspacesMockRecorder) RemoveMember(ctx, workspaceID, accountID, reassignTo any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMember", reflect.TypeOf((*MockWorkspaces)(nil).RemoveMember), ctx, workspaceID, accountID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMember", reflect.TypeOf((*MockWorkspaces)(nil).RemoveMember), ctx, workspaceID, accountID, reassignTo)
+}
+
+// Restore mocks base method.
+func (m *MockWorkspaces) Restore(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Restore", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Restore indicates an expected call of Restore.
+func (mr *MockWorkspacesMockRecorder) Restore(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restore", reflect.TypeOf((*MockWorkspaces)(nil).Restore), ctx, workspaceID)
 }
 
 // SetAuthPolicy mocks base method.
@@ -160,4 +234,19 @@ func (m *MockWorkspaces) SetAuthPolicy(ctx context.Context, workspaceID uuid.UUI
 func (mr *MockWorkspacesMockRecorder) SetAuthPolicy(ctx, workspaceID, enforcement any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAuthPolicy", reflect.TypeOf((*MockWorkspaces)(nil).SetAuthPolicy), ctx, workspaceID, enforcement)
+}
+
+// Update mocks base method.
+func (m *MockWorkspaces) Update(ctx context.Context, workspaceID uuid.UUID, input service.UpdateWorkspaceInput) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", ctx, workspaceID, input)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockWorkspacesMockRecorder) Update(ctx, workspaceID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockWorkspaces)(nil).Update), ctx, workspaceID, input)
 }

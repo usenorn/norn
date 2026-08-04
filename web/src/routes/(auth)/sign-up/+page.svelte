@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { defaults, superForm } from "sveltekit-superforms";
+	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
@@ -12,12 +12,18 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import InstanceLine from "$lib/components/norn/instance-line.svelte";
+	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import { api } from "$lib/api";
+	import { emailMessage, passwordMessage } from "$lib/auth/password-reset";
 	import {
-		minPasswordLength,
-		personalEmailDomain,
-		signUpSchema,
-	} from "$lib/auth/sign-up-schema";
-	import type { SignUpOutcome } from "$lib/auth/types";
+		displayNameMessage,
+		signUpFailure,
+		signUpSent,
+		type SignUpProblem,
+	} from "$lib/auth/sign-up";
+	import { minPasswordLength, signUpSchema, type SignUpInput } from "$lib/auth/sign-up-schema";
+	import type { SignUpOutcome, SignUpResend } from "$lib/auth/types";
 	import { signUpPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -28,22 +34,75 @@
 	);
 
 	let submitOutcome = $state<SignUpOutcome | null>(null);
+	let submitResend = $state<SignUpResend | null>(null);
+	let resending = $state(false);
+	let copied = $state(false);
+	let heading = $state<HTMLHeadingElement | null>(null);
 
 	const auth = $derived({ ...data.auth, ...preview?.auth });
 	const outcome = $derived<SignUpOutcome | null>(submitOutcome ?? preview?.outcome ?? null);
+	const resend = $derived<SignUpResend>(submitResend ?? preview?.resend ?? "idle");
+
+	async function requestSignUp(input: SignUpInput): Promise<SignUpProblem | null> {
+		const { data: requested, error } = await api.POST("/auth/sign-up", {
+			body: {
+				email: input.email,
+				displayName: input.name,
+				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+				password: input.password,
+			},
+		});
+
+		if (error) return error;
+		if (requested) submitOutcome = signUpSent(requested);
+
+		return null;
+	}
 
 	const form = superForm(defaults(zod4(signUpSchema)), {
 		SPA: true,
 		validators: zod4Client(signUpSchema),
 		resetForm: false,
-		onUpdate: ({ form: submitted }) => {
+		onUpdate: async ({ form: submitted }) => {
 			if (!submitted.valid) return;
-			submitOutcome = {
-				kind: "verification_sent",
-				email: submitted.data.email,
-				sentAt: null,
-				expiresAt: null,
-			};
+
+			submitOutcome = null;
+			submitResend = null;
+
+			try {
+				const error = await requestSignUp(submitted.data);
+
+				if (!error) return;
+
+				const failure = signUpFailure(error);
+
+				if (failure) {
+					submitOutcome = failure;
+
+					return;
+				}
+
+				let handled = false;
+
+				for (const field of error.errors ?? []) {
+					if (field.field === "email") {
+						setError(submitted, "email", emailMessage(field.code));
+						handled = true;
+					}
+					if (field.field === "display_name") {
+						setError(submitted, "name", displayNameMessage(field.code));
+						handled = true;
+					}
+					if (field.field === "password") {
+						setError(submitted, "password", passwordMessage(field.code));
+						handled = true;
+					}
+				}
+
+				if (!handled) submitOutcome = { kind: "unavailable" };
+			} catch {
+				submitOutcome = { kind: "unavailable" };
+			}
 		},
 	});
 	const { form: formData, enhance, submitting } = form;
@@ -53,22 +112,70 @@
 		if (prefill) formData.update((current) => ({ ...current, ...prefill }), { taint: false });
 	});
 
-	const busy = $derived(preview?.busy || $submitting);
+	const busy = $derived(preview?.busy || $submitting || resending);
 	const valid = $derived(signUpSchema.safeParse($formData).success);
 
-	const verification = $derived(outcome?.kind === "verification_sent" ? outcome : null);
+	const verification = $derived(
+		outcome?.kind === "verification_sent" || outcome?.kind === "link_only" ? outcome : null
+	);
+	const linkOnly = $derived(outcome?.kind === "link_only" ? outcome : null);
 	const ssoDomain = $derived(outcome?.kind === "domain_uses_sso" ? outcome : null);
-	const showForm = $derived(auth.signupsOpen && !verification && !ssoDomain);
-	const personalEmail = $derived(personalEmailDomain.test($formData.email));
-	const emailRejected = $derived(personalEmail || outcome?.kind === "email_taken");
+	const closed = $derived(!auth.signupsOpen || outcome?.kind === "closed");
+	const showForm = $derived(!closed && !verification && !ssoDomain);
 	const passwordMismatch = $derived(
 		$formData.passwordConfirm.length > 0 && $formData.password !== $formData.passwordConfirm
+	);
+
+	async function resendLink() {
+		resending = true;
+		submitResend = null;
+
+		try {
+			const error = await requestSignUp($formData);
+
+			if (!error) return;
+
+			const failure = signUpFailure(error);
+
+			if (failure?.kind === "rate_limited") {
+				submitResend = "limited";
+
+				return;
+			}
+
+			if (failure) {
+				submitOutcome = failure;
+
+				return;
+			}
+
+			submitResend = "unavailable";
+		} catch {
+			submitResend = "unavailable";
+		} finally {
+			resending = false;
+		}
+	}
+
+	async function copyLink() {
+		if (!linkOnly) return;
+		await navigator.clipboard.writeText(linkOnly.url);
+		copied = true;
+	}
+
+	$effect(() => {
+		if (!outcome) return;
+		heading?.focus();
+	});
+
+	const eyebrow = $derived(
+		closed || ssoDomain ? null : verification ? "Step 2 of 4" : "Step 1 of 4"
 	);
 
 	const title = $derived(
 		verification
 			? "Check your email"
-			: !auth.signupsOpen
+			: closed
 				? "Signups are closed here"
 				: ssoDomain
 					? `${ssoDomain.organization} uses single sign-on`
@@ -76,19 +183,21 @@
 	);
 
 	const lede = $derived(
-		verification
-			? "A confirmation link is on its way. It works once and lasts an hour."
-			: !auth.signupsOpen
-				? "This instance does not create accounts from the sign-up form."
-				: ssoDomain
-					? "Your domain is already set up with an identity provider."
-					: busy
-						? "Checking the address and reserving your workspace."
-						: "Free for up to 10 people. You name your workspace next."
+		linkOnly
+			? "This instance cannot send mail, so open the link below to finish."
+			: verification
+				? "A confirmation link is on its way. It works once and lasts an hour."
+				: closed
+					? "This instance does not create accounts from the sign-up form."
+					: ssoDomain
+						? "Your domain is already set up with an identity provider."
+						: busy
+							? "Checking the address and reserving your account."
+							: "Free for up to 10 people. You name your workspace next."
 	);
 
 	const notice = $derived.by(() => {
-		if (!auth.signupsOpen) {
+		if (closed) {
 			return {
 				variant: "muted" as const,
 				icon: CircleDashed,
@@ -112,20 +221,28 @@
 				body: "Sign in instead, or reset the password from the sign-in screen.",
 			};
 		}
-		if (outcome?.kind === "delivery_failed") {
+		if (outcome?.kind === "rate_limited") {
+			return {
+				variant: "warning" as const,
+				icon: CircleAlert,
+				title: "Too many attempts from this address",
+				body: "Wait a minute and try again.",
+			};
+		}
+		if (outcome?.kind === "breach_check_unavailable") {
+			return {
+				variant: "warning" as const,
+				icon: CircleAlert,
+				title: "The password breach check is unavailable",
+				body: "Passwords are checked against known breaches before an account is made. Try again shortly.",
+			};
+		}
+		if (outcome?.kind === "unavailable") {
 			return {
 				variant: "destructive" as const,
 				icon: TriangleAlert,
-				title: "Could not create the account",
-				body: "Email delivery is down, so the confirmation link cannot be sent. Nothing was created.",
-			};
-		}
-		if (personalEmail) {
-			return {
-				variant: "muted" as const,
-				icon: Info,
-				title: "Norn needs a work email",
-				body: "Personal addresses cannot start a workspace. Use the address your team uses.",
+				title: "Could not reach the server",
+				body: "Nothing was created. Check your connection and try again.",
 			};
 		}
 		return null;
@@ -149,25 +266,44 @@
 	});
 
 	const action = $derived.by(() => {
-		if (verification) return { label: "I have confirmed, continue", href: "/create-workspace" };
-		if (!auth.signupsOpen) return { label: "Go to sign in", href: "/sign-in" };
-		if (ssoDomain) return { label: `Continue with ${ssoDomain.provider}`, href: "/sso" };
-		if (outcome?.kind === "email_taken") return { label: "Sign in instead", href: "/sign-in" };
-		if (busy) return { label: "Creating account", href: null };
-		if (outcome?.kind === "delivery_failed") return { label: "Try again", href: null };
-		return { label: "Create account", href: null };
+		if (linkOnly) {
+			return { label: "Open the confirmation link", href: linkOnly.url, onclick: null };
+		}
+		if (closed) return { label: "Go to sign in", href: "/sign-in", onclick: null };
+		if (ssoDomain) {
+			return { label: `Continue with ${ssoDomain.provider}`, href: "/sso", onclick: null };
+		}
+		if (outcome?.kind === "email_taken") {
+			return { label: "Sign in instead", href: "/sign-in", onclick: null };
+		}
+		if (verification) {
+			return {
+				label: busy ? "Sending" : "Send another link",
+				href: null,
+				onclick: resendLink,
+			};
+		}
+		return {
+			label: busy ? "Creating account" : "Create account",
+			href: null,
+			onclick: null,
+		};
 	});
 
-	const actionDisabled = $derived(busy || (action.href === null && !busy && !valid));
+	const actionDisabled = $derived(
+		busy || (action.href === null && action.onclick === null && !valid)
+	);
 
 	function startAgain() {
 		submitOutcome = null;
+		submitResend = null;
+		copied = false;
 		formData.update((current) => ({ ...current, password: "", passwordConfirm: "", terms: false }));
 	}
 
 	const note = $derived(
 		verification
-			? "The link opens the workspace step."
+			? "Opening the link creates your account and signs you in."
 			: showForm && !outcome && !busy && !valid
 				? "A workspace is created for you. You can invite people right after."
 				: null
@@ -180,7 +316,12 @@
 	<div class="notch w-full max-w-98">
 		<div class="flex flex-col gap-4 p-5 sm:p-6">
 			<div class="flex flex-col gap-1.5">
-				<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>
+				{#if eyebrow}
+					<Eyebrow>{eyebrow}</Eyebrow>
+				{/if}
+				<h1 bind:this={heading} tabindex="-1" class="text-2xl font-medium tracking-title text-ink-900">
+					{title}
+				</h1>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
 			</div>
 
@@ -193,18 +334,56 @@
 				</Alert.Root>
 			{/if}
 
+			{#if linkOnly}
+				<Alert.Root variant="destructive">
+					<TriangleAlert aria-hidden="true" />
+					<Alert.Title>Email delivery isn't configured</Alert.Title>
+					<Alert.Description>
+						No message was sent. Open the link yourself, or copy it somewhere safe — it works once
+						and lasts an hour.
+					</Alert.Description>
+				</Alert.Root>
+				<div class="flex flex-col gap-2">
+					<p class="rounded-lg border border-line-strong bg-paper-0 px-3 py-2.5 font-mono text-xs break-all text-ink-600">
+						{linkOnly.url}
+					</p>
+					<div class="flex flex-wrap gap-2">
+						<Button variant="outline" size="sm" onclick={copyLink}>
+							{copied ? "Copied" : "Copy link"}
+						</Button>
+					</div>
+				</div>
+			{/if}
+
 			{#if verification}
 				<div class="flex flex-col gap-3">
-					<dl
-						class="flex flex-col gap-1 rounded-lg border border-line-strong bg-paper-0 px-3 py-2.5"
-					>
-						{#each [["sent to", verification.email], ["sent at", verification.sentAt], ["expires", verification.expiresAt]].filter(([, value]) => value) as [key, value] (key)}
+					<dl class="flex flex-col gap-1 rounded-lg border border-line-strong bg-paper-0 px-3 py-2.5">
+						{#each [["sent to", verification.email], ["expires", verification.expiresAt]] as [key, value] (key)}
 							<div class="flex gap-2 font-mono text-xs leading-normal">
 								<dt class="w-18 flex-none text-muted-foreground">{key}</dt>
 								<dd class="min-w-0 flex-1 break-all text-ink-600">{value}</dd>
 							</div>
 						{/each}
 					</dl>
+					<div aria-live="polite">
+						{#if resend === "limited"}
+							<Alert.Root variant="warning">
+								<CircleAlert aria-hidden="true" />
+								<Alert.Title>Too many links requested</Alert.Title>
+								<Alert.Description>
+									Wait a minute before asking for another. The last link still works.
+								</Alert.Description>
+							</Alert.Root>
+						{:else if resend === "unavailable"}
+							<Alert.Root variant="destructive">
+								<TriangleAlert aria-hidden="true" />
+								<Alert.Title>Could not send another link</Alert.Title>
+								<Alert.Description>
+									The last link still works. Try again in a moment.
+								</Alert.Description>
+							</Alert.Root>
+						{/if}
+					</div>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Nothing is created until you open the link. Wrong address?
 						<button
@@ -249,16 +428,13 @@
 									spellcheck="false"
 									placeholder="you@company.com"
 									disabled={busy}
-									aria-invalid={emailRejected ? "true" : undefined}
 									bind:value={$formData.email}
 								/>
 							{/snippet}
 						</Form.Control>
-						{#if !emailRejected}
-							<Form.Description class="text-sm text-muted-foreground">
-								Used for sign-in and notifications.
-							</Form.Description>
-						{/if}
+						<Form.Description class="text-sm text-muted-foreground">
+							Used for sign-in and notifications.
+						</Form.Description>
 						<Form.FieldErrors />
 					</Form.Field>
 
@@ -276,6 +452,7 @@
 									/>
 								{/snippet}
 							</Form.Control>
+							<Form.FieldErrors />
 						</Form.Field>
 						<ul class="flex flex-col gap-1">
 							{#each passwordRules as rule (rule.label)}
@@ -345,6 +522,8 @@
 			<div class="flex flex-col gap-2">
 				{#if action.href}
 					<Button href={action.href} class="w-full">{action.label}</Button>
+				{:else if action.onclick}
+					<Button class="w-full" disabled={busy} onclick={action.onclick}>{action.label}</Button>
 				{:else}
 					<Button type="submit" form="sign-up-form" class="w-full" disabled={actionDisabled}>
 						{action.label}
@@ -377,8 +556,6 @@
 				Open your invitation
 			</a>
 		</p>
-		{#if auth.selfHosted && auth.instance}
-			<p class="text-center font-mono text-xs break-all text-muted-foreground">{auth.instance}</p>
-		{/if}
+		<InstanceLine instance={auth} />
 	</div>
 </div>

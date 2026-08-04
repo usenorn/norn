@@ -4,15 +4,21 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
+	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	teamrepo "github.com/usenorn/norn/internal/repository/team"
+	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
+	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	authpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	"github.com/usenorn/norn/internal/service"
@@ -20,11 +26,17 @@ import (
 	workspacesvc "github.com/usenorn/norn/internal/service/workspace"
 )
 
+const deletionGracePeriod = 720 * time.Hour
+
 type harness struct {
 	workspaces   *workspacerepo.MockWorkspace
 	memberships  *membershiprepo.MockMembership
 	accounts     *accountrepo.MockAccount
+	teams        *teamrepo.MockTeam
+	teamMembers  *teammemberrepo.MockTeamMember
+	states       *workflowstaterepo.MockWorkflowState
 	authPolicies *authpolicyrepo.MockWorkspaceAuthPolicy
+	producer     *jobqueuerepo.MockJobProducer
 	authorizer   *authorizersvc.MockAuthorizer
 	service      service.Workspaces
 }
@@ -46,7 +58,11 @@ func newHarness(t *testing.T) *harness {
 		workspaces:   workspacerepo.NewMockWorkspace(ctrl),
 		memberships:  membershiprepo.NewMockMembership(ctrl),
 		accounts:     accountrepo.NewMockAccount(ctrl),
+		teams:        teamrepo.NewMockTeam(ctrl),
+		teamMembers:  teammemberrepo.NewMockTeamMember(ctrl),
+		states:       workflowstaterepo.NewMockWorkflowState(ctrl),
 		authPolicies: authpolicyrepo.NewMockWorkspaceAuthPolicy(ctrl),
+		producer:     jobqueuerepo.NewMockJobProducer(ctrl),
 		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
 	}
 
@@ -54,30 +70,67 @@ func newHarness(t *testing.T) *harness {
 		h.workspaces,
 		h.memberships,
 		h.accounts,
+		h.teams,
+		h.teamMembers,
+		h.states,
 		h.authPolicies,
+		h.producer,
 		h.authorizer,
 		transactor,
+		config.Workspace{DeletionGracePeriod: deletionGracePeriod},
 	)
 
 	return h
 }
 
 func (h *harness) expectActorMayManageMembers(workspaceID, actorID uuid.UUID) {
-	h.memberships.EXPECT().
-		Get(gomock.Any(), workspaceID, actorID).
-		Return(entity.Membership{WorkspaceID: workspaceID, AccountID: actorID, Role: entity.MembershipRoleAdmin}, nil)
-
-	h.expectAuthEnforcement(workspaceID, entity.AuthEnforcementAny)
-
-	h.authorizer.EXPECT().
-		Authorize(gomock.Any(), entity.MembershipRoleAdmin, entity.ResourceMembership, entity.ActionManage).
-		Return(nil)
+	h.expectActorMayManageMembersOn(workspaceID, actorID, entity.WorkspaceStatusActive)
 }
 
-func (h *harness) expectAuthEnforcement(workspaceID uuid.UUID, enforcement entity.AuthEnforcement) {
-	h.authPolicies.EXPECT().
-		Get(gomock.Any(), workspaceID).
-		Return(entity.WorkspaceAuthPolicy{WorkspaceID: workspaceID, Enforcement: enforcement}, nil)
+func (h *harness) expectActorMayManageMembersOn(workspaceID, actorID uuid.UUID, status entity.WorkspaceStatus) {
+	h.expectActorMayActOn(workspaceID, actorID, entity.ResourceMembership, entity.ActionManage, workspaceWithStatus(workspaceID, status))
+}
+
+func (h *harness) expectActorMayReadMembers(workspaceID, actorID uuid.UUID) {
+	h.expectActorMayActOn(workspaceID, actorID, entity.ResourceMembership, entity.ActionRead, workspaceWithStatus(workspaceID, entity.WorkspaceStatusActive))
+}
+
+func workspaceWithStatus(workspaceID uuid.UUID, status entity.WorkspaceStatus) entity.Workspace {
+	workspace := entity.Workspace{
+		ID:       workspaceID,
+		Slug:     "northwind",
+		Name:     "Northwind",
+		Status:   status,
+		Timezone: entity.DefaultTimezone,
+	}
+
+	if status == entity.WorkspaceStatusPendingDeletion {
+		requestedAt := time.Now().UTC()
+		purgeAfter := requestedAt.Add(deletionGracePeriod)
+		workspace.DeletionRequestedAt = &requestedAt
+		workspace.PurgeAfter = &purgeAfter
+	}
+
+	return workspace
+}
+
+func (h *harness) expectAccount(account entity.Account) {
+	h.accounts.EXPECT().GetByID(gomock.Any(), account.ID).Return(account, nil)
+}
+
+func (h *harness) expectMembership(
+	workspaceID, accountID uuid.UUID,
+	role entity.MembershipRole,
+	source entity.MembershipSource,
+) {
+	h.memberships.EXPECT().
+		Get(gomock.Any(), workspaceID, accountID).
+		Return(entity.Membership{
+			WorkspaceID: workspaceID,
+			AccountID:   accountID,
+			Role:        role,
+			Source:      source,
+		}, nil)
 }
 
 func passwordSession(accountID uuid.UUID) entity.Session {
@@ -163,12 +216,13 @@ func TestRemoveMemberIsRefusedForTheLastAdministrator(t *testing.T) {
 	workspaceID := uuid.New()
 
 	h.expectActorMayManageMembers(workspaceID, actorID)
+	h.expectMembership(workspaceID, actorID, entity.MembershipRoleAdmin, entity.MembershipSourceManual)
 	h.workspaces.EXPECT().LockByIDs(gomock.Any(), []uuid.UUID{workspaceID}).Return(nil)
 	h.memberships.EXPECT().
 		ListWorkspaceIDsWithoutOtherActiveAdmin(gomock.Any(), actorID).
 		Return([]uuid.UUID{workspaceID}, nil)
 
-	err := h.service.RemoveMember(actingAs(actorID), workspaceID, actorID)
+	err := h.service.RemoveMember(actingAs(actorID), workspaceID, actorID, nil)
 	if !errors.Is(err, entity.ErrAccountLastWorkspaceAdmin) {
 		t.Fatalf("RemoveMember error = %v, want ErrAccountLastWorkspaceAdmin", err)
 	}
@@ -182,11 +236,12 @@ func TestRemoveMemberSucceedsForANonAdministrator(t *testing.T) {
 	workspaceID := uuid.New()
 
 	h.expectActorMayManageMembers(workspaceID, actorID)
+	h.expectMembership(workspaceID, memberID, entity.MembershipRoleMember, entity.MembershipSourceManual)
 	h.workspaces.EXPECT().LockByIDs(gomock.Any(), []uuid.UUID{workspaceID}).Return(nil)
 	h.memberships.EXPECT().ListWorkspaceIDsWithoutOtherActiveAdmin(gomock.Any(), memberID).Return(nil, nil)
 	h.memberships.EXPECT().Delete(gomock.Any(), workspaceID, memberID).Return(nil)
 
-	if err := h.service.RemoveMember(actingAs(actorID), workspaceID, memberID); err != nil {
+	if err := h.service.RemoveMember(actingAs(actorID), workspaceID, memberID, nil); err != nil {
 		t.Fatalf("RemoveMember: %v", err)
 	}
 }
@@ -195,18 +250,20 @@ func TestDemotingTheLastAdministratorIsRefused(t *testing.T) {
 	h := newHarness(t)
 
 	actorID := uuid.New()
+	otherAdminID := uuid.New()
 	workspaceID := uuid.New()
 
 	h.expectActorMayManageMembers(workspaceID, actorID)
+	h.expectMembership(workspaceID, otherAdminID, entity.MembershipRoleAdmin, entity.MembershipSourceManual)
 	h.workspaces.EXPECT().LockByIDs(gomock.Any(), []uuid.UUID{workspaceID}).Return(nil)
 	h.memberships.EXPECT().
-		ListWorkspaceIDsWithoutOtherActiveAdmin(gomock.Any(), actorID).
+		ListWorkspaceIDsWithoutOtherActiveAdmin(gomock.Any(), otherAdminID).
 		Return([]uuid.UUID{workspaceID}, nil)
 
 	_, err := h.service.ChangeMemberRole(
 		actingAs(actorID),
 		workspaceID,
-		actorID,
+		otherAdminID,
 		entity.MembershipRoleMember,
 	)
 	if !errors.Is(err, entity.ErrAccountLastWorkspaceAdmin) {
@@ -222,9 +279,11 @@ func TestPromotingToAdministratorSkipsTheLastAdminGuard(t *testing.T) {
 	workspaceID := uuid.New()
 
 	h.expectActorMayManageMembers(workspaceID, actorID)
+	h.expectMembership(workspaceID, memberID, entity.MembershipRoleMember, entity.MembershipSourceManual)
 	h.memberships.EXPECT().
 		UpdateRole(gomock.Any(), workspaceID, memberID, entity.MembershipRoleAdmin).
 		Return(entity.Membership{WorkspaceID: workspaceID, AccountID: memberID, Role: entity.MembershipRoleAdmin}, nil)
+	h.expectAccount(entity.Account{ID: memberID, DisplayName: "Rae Okafor", Email: "rae@northwind.co"})
 
 	if _, err := h.service.ChangeMemberRole(
 		actingAs(actorID),
@@ -242,9 +301,12 @@ func TestAddMemberIsRefusedForANonMemberActor(t *testing.T) {
 	actorID := uuid.New()
 	workspaceID := uuid.New()
 
-	h.memberships.EXPECT().
-		Get(gomock.Any(), workspaceID, actorID).
-		Return(entity.Membership{}, entity.ErrMembershipNotFound)
+	h.expectDecisionRefused(
+		workspaceID,
+		entity.ResourceMembership,
+		entity.ActionManage,
+		entity.AccessDeniedError{Reason: entity.DenyReasonNotAMember, Resource: entity.ResourceMembership},
+	)
 
 	_, err := h.service.AddMember(
 		actingAs(actorID),

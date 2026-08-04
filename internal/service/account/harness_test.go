@@ -21,11 +21,13 @@ import (
 	passwordhistoryrepo "github.com/usenorn/norn/internal/repository/passwordhistory"
 	passwordresetrepo "github.com/usenorn/norn/internal/repository/passwordreset"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
+	signuprepo "github.com/usenorn/norn/internal/repository/signup"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	workspaceauthpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	"github.com/usenorn/norn/internal/service"
 	accountsvc "github.com/usenorn/norn/internal/service/account"
+	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 )
 
@@ -38,6 +40,7 @@ type harness struct {
 	accounts        *accountrepo.MockAccount
 	emailChanges    *emailchangerepo.MockEmailChange
 	passwordResets  *passwordresetrepo.MockPasswordReset
+	signUps         *signuprepo.MockSignUp
 	passwordHistory *passwordhistoryrepo.MockPasswordHistory
 	memberships     *membershiprepo.MockMembership
 	workspaces      *workspacerepo.MockWorkspace
@@ -49,6 +52,7 @@ type harness struct {
 	producer        *jobqueuerepo.MockJobProducer
 	transactor      *transactorrepo.MockTransactor
 	sessions        *sessionsvc.MockSessions
+	authorizer      *authorizersvc.MockAuthorizer
 	service         service.Accounts
 }
 
@@ -61,6 +65,7 @@ func newHarness(t *testing.T) *harness {
 		accounts:        accountrepo.NewMockAccount(ctrl),
 		emailChanges:    emailchangerepo.NewMockEmailChange(ctrl),
 		passwordResets:  passwordresetrepo.NewMockPasswordReset(ctrl),
+		signUps:         signuprepo.NewMockSignUp(ctrl),
 		passwordHistory: passwordhistoryrepo.NewMockPasswordHistory(ctrl),
 		memberships:     membershiprepo.NewMockMembership(ctrl),
 		workspaces:      workspacerepo.NewMockWorkspace(ctrl),
@@ -72,6 +77,7 @@ func newHarness(t *testing.T) *harness {
 		producer:        jobqueuerepo.NewMockJobProducer(ctrl),
 		transactor:      transactorrepo.NewMockTransactor(ctrl),
 		sessions:        sessionsvc.NewMockSessions(ctrl),
+		authorizer:      authorizersvc.NewMockAuthorizer(ctrl),
 	}
 
 	h.transactor.EXPECT().
@@ -81,16 +87,41 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, request entity.AccessRequest) (entity.Decision, error) {
+			actor, ok := identity.Actor(ctx)
+			if !ok {
+				return entity.Decision{}, entity.ErrAccountForbidden
+			}
+
+			if request.Subject != uuid.Nil && actor.AccountID != request.Subject {
+				return entity.Decision{}, entity.ErrAccountForbidden
+			}
+
+			return entity.Decision{Actor: actor}, nil
+		}).
+		AnyTimes()
+
 	h.service = newServiceWithSMTP(h, config.SMTP{Host: "smtp.test", FromAddress: "no-reply@norn.test"})
 
 	return h
 }
 
 func newServiceWithSMTP(h *harness, smtp config.SMTP) service.Accounts {
+	return newService(h, smtp, config.Instance{SignupsOpen: true, PasswordAuth: true})
+}
+
+func newServiceWithInstance(h *harness, instance config.Instance) service.Accounts {
+	return newService(h, config.SMTP{Host: "smtp.test", FromAddress: "no-reply@norn.test"}, instance)
+}
+
+func newService(h *harness, smtp config.SMTP, instance config.Instance) service.Accounts {
 	return accountsvc.New(
 		h.accounts,
 		h.emailChanges,
 		h.passwordResets,
+		h.signUps,
 		h.passwordHistory,
 		h.memberships,
 		h.workspaces,
@@ -102,8 +133,10 @@ func newServiceWithSMTP(h *harness, smtp config.SMTP) service.Accounts {
 		h.producer,
 		h.transactor,
 		h.sessions,
+		h.authorizer,
 		config.App{BaseURL: baseURL},
 		smtp,
+		instance,
 	)
 }
 

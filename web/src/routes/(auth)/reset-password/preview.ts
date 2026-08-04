@@ -1,7 +1,8 @@
-import type { AuthConfig, PasswordReset } from "$lib/auth/types";
+import type { Instance } from "$lib/auth/instance";
+import type { PasswordReset } from "$lib/auth/types";
 
 export type ResetPasswordPreview = {
-	auth?: Partial<AuthConfig>;
+	auth?: Partial<Instance>;
 	reset?: PasswordReset;
 };
 
@@ -16,7 +17,7 @@ export const resetPasswordPreviewStates: Record<string, ResetPasswordPreview> = 
 			nomail: { reset: { kind: "mail_unavailable" } },
 			unavailable: { reset: { kind: "unavailable" } },
 			sso: {
-				auth: { workspace: "Northwind", password: false, sso: { name: "Okta" } },
+				auth: { password: false, sso: { name: "Okta" } },
 			},
 		}
 	: {};

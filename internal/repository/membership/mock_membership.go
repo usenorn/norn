@@ -12,6 +12,7 @@ package membership
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
@@ -115,19 +116,19 @@ func (mr *MockMembershipMockRecorder) ListAdminWorkspaceIDs(ctx, accountID any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAdminWorkspaceIDs", reflect.TypeOf((*MockMembership)(nil).ListAdminWorkspaceIDs), ctx, accountID)
 }
 
-// ListByWorkspaceID mocks base method.
-func (m *MockMembership) ListByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]entity.Membership, error) {
+// ListPageByWorkspaceID mocks base method.
+func (m *MockMembership) ListPageByWorkspaceID(ctx context.Context, workspaceID uuid.UUID, page entity.MembershipPage) ([]entity.WorkspaceMember, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListByWorkspaceID", ctx, workspaceID)
-	ret0, _ := ret[0].([]entity.Membership)
+	ret := m.ctrl.Call(m, "ListPageByWorkspaceID", ctx, workspaceID, page)
+	ret0, _ := ret[0].([]entity.WorkspaceMember)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListByWorkspaceID indicates an expected call of ListByWorkspaceID.
-func (mr *MockMembershipMockRecorder) ListByWorkspaceID(ctx, workspaceID any) *gomock.Call {
+// ListPageByWorkspaceID indicates an expected call of ListPageByWorkspaceID.
+func (mr *MockMembershipMockRecorder) ListPageByWorkspaceID(ctx, workspaceID, page any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByWorkspaceID", reflect.TypeOf((*MockMembership)(nil).ListByWorkspaceID), ctx, workspaceID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPageByWorkspaceID", reflect.TypeOf((*MockMembership)(nil).ListPageByWorkspaceID), ctx, workspaceID, page)
 }
 
 // ListWorkspaceIDsWithoutOtherActiveAdmin mocks base method.
@@ -143,6 +144,20 @@ func (m *MockMembership) ListWorkspaceIDsWithoutOtherActiveAdmin(ctx context.Con
 func (mr *MockMembershipMockRecorder) ListWorkspaceIDsWithoutOtherActiveAdmin(ctx, accountID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWorkspaceIDsWithoutOtherActiveAdmin", reflect.TypeOf((*MockMembership)(nil).ListWorkspaceIDsWithoutOtherActiveAdmin), ctx, accountID)
+}
+
+// RecordActivity mocks base method.
+func (m *MockMembership) RecordActivity(ctx context.Context, accountID uuid.UUID, activeAt time.Time, method entity.SessionAuthMethod) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordActivity", ctx, accountID, activeAt, method)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordActivity indicates an expected call of RecordActivity.
+func (mr *MockMembershipMockRecorder) RecordActivity(ctx, accountID, activeAt, method any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordActivity", reflect.TypeOf((*MockMembership)(nil).RecordActivity), ctx, accountID, activeAt, method)
 }
 
 // UpdateRole mocks base method.

@@ -21,7 +21,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/register": {
+    "/instance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Describe what this instance offers before anyone signs in */
+        get: operations["getInstance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sign-up": {
         parameters: {
             query?: never;
             header?: never;
@@ -30,8 +47,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create an instance-level account */
-        post: operations["registerAccount"];
+        /** Hold a pending sign-up and send its one-time verification link */
+        post: operations["requestSignUp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sign-up/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create the account behind a verified sign-up and sign the person in */
+        post: operations["confirmSignUp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -288,6 +322,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read a workspace the signed-in account belongs to */
+        get: operations["getWorkspace"];
+        put?: never;
+        post?: never;
+        /** Delete the workspace into a recoverable state */
+        delete: operations["deleteWorkspace"];
+        options?: never;
+        head?: never;
+        /** Change the workspace display name and timezone */
+        patch: operations["updateWorkspace"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recover a workspace before its purge date passes */
+        post: operations["restoreWorkspace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/members": {
         parameters: {
             query?: never;
@@ -297,7 +371,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** List workspace members */
+        /** List workspace members, searchable and paged by cursor */
         get: operations["listWorkspaceMembers"];
         put?: never;
         /** Add an account to the workspace */
@@ -321,12 +395,615 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Remove a member from the workspace */
+        /** Remove a member, optionally handing their work to another member */
         delete: operations["removeWorkspaceMember"];
         options?: never;
         head?: never;
         /** Change a member role */
         patch: operations["changeWorkspaceMemberRole"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/members/{accountId}/removal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                accountId: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        /** Report what removing this member would affect */
+        get: operations["previewWorkspaceMemberRemoval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the teams the signed-in account may see in the workspace */
+        get: operations["listWorkspaceTeams"];
+        put?: never;
+        /** Create a team with a name and the immutable key its issues carry */
+        post: operations["createWorkspaceTeam"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        /** Read a team the signed-in account may see */
+        get: operations["getWorkspaceTeam"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change the team display name and visibility */
+        patch: operations["updateWorkspaceTeam"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive a team, keeping its issues readable and its key reserved */
+        post: operations["archiveWorkspaceTeam"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/unarchive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Return an archived team to active use */
+        post: operations["unarchiveWorkspaceTeam"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        /** List the accounts on the team */
+        get: operations["listWorkspaceTeamMembers"];
+        put?: never;
+        /** Add a workspace member to the team */
+        post: operations["addWorkspaceTeamMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/members/{accountId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+                accountId: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an account from the team */
+        delete: operations["removeWorkspaceTeamMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the caller's live API tokens in this workspace */
+        get: operations["listWorkspaceAPITokens"];
+        put?: never;
+        /** Mint a token whose scopes cannot exceed the caller's own rights */
+        post: operations["mintWorkspaceAPIToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/tokens/{tokenId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke one of the caller's tokens */
+        delete: operations["revokeWorkspaceAPIToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/states": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a team's workflow states in order */
+        get: operations["listWorkflowStates"];
+        put?: never;
+        /** Add a state to a team's workflow */
+        post: operations["createWorkflowState"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/states/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace the team's state order with the given permutation */
+        put: operations["reorderWorkflowStates"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/states/{stateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a state, moving every issue in it to another state */
+        delete: operations["removeWorkflowState"];
+        options?: never;
+        head?: never;
+        /** Rename a state or move it to another category */
+        patch: operations["updateWorkflowState"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/states/{stateId}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make this the state new issues start in */
+        post: operations["setDefaultWorkflowState"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/states/{stateId}/completion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make this the state that counts as done */
+        post: operations["setCompletionWorkflowState"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report per-category tallies over the issues the caller may see */
+        get: operations["getWorkspaceIssueProgress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the issues the caller may see, newest first */
+        get: operations["listWorkspaceIssues"];
+        put?: never;
+        /** Raise an issue in a team the caller can see */
+        post: operations["createWorkspaceIssue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/by-reference/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one issue by the reference people quote, such as MOB-14 */
+        get: operations["getWorkspaceIssueByReference"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List what has happened to an issue, newest first */
+        get: operations["listWorkspaceIssueActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one issue, or report it missing when the caller may not see it */
+        get: operations["getWorkspaceIssue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change any of an issue's properties, refusing edits made against a stale read */
+        patch: operations["updateWorkspaceIssue"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the workspace invitations administrators see beside members */
+        get: operations["listWorkspaceInvitations"];
+        put?: never;
+        /** Invite a batch of addresses, reporting an outcome for each */
+        post: operations["createWorkspaceInvitations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/invitations/{invitationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                invitationId: components["parameters"]["InvitationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a pending invitation, invalidating its link */
+        delete: operations["revokeWorkspaceInvitation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/invitations/{invitationId}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                invitationId: components["parameters"]["InvitationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue a fresh link for a pending invitation, invalidating the previous one */
+        post: operations["resendWorkspaceInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Describe an invitation link before anyone acts on it */
+        post: operations["previewInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Join the workspace, creating an account when there is none */
+        post: operations["acceptInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the labels this actor can see, workspace-wide and team-scoped */
+        get: operations["listWorkspaceLabels"];
+        put?: never;
+        /** Define a label for the workspace or for a single team */
+        post: operations["createWorkspaceLabel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/labels/{labelId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a label, acknowledging how many issues carry it */
+        delete: operations["removeWorkspaceLabel"];
+        options?: never;
+        head?: never;
+        /** Rename a label, recolour it, or move it between groups */
+        patch: operations["updateWorkspaceLabel"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/labels/{labelId}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How many issues carry this label, within the actor's scope */
+        get: operations["getWorkspaceLabelUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/labels/{labelId}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merge this label into another, moving every application */
+        post: operations["mergeWorkspaceLabel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/label-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the workspace's label groups */
+        get: operations["listWorkspaceLabelGroups"];
+        put?: never;
+        /** Create a group whose labels are mutually exclusive on an issue */
+        post: operations["createWorkspaceLabelGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/label-groups/{groupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a group, releasing its labels rather than deleting them */
+        delete: operations["removeWorkspaceLabelGroup"];
+        options?: never;
+        head?: never;
+        /** Rename a label group */
+        patch: operations["renameWorkspaceLabelGroup"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive, delete or restore an issue without losing its reference */
+        post: operations["setWorkspaceIssueStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move an issue to another team, keeping its reference and remapping its state */
+        post: operations["moveWorkspaceIssueToTeam"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace the labels on an issue with the given set */
+        put: operations["setWorkspaceIssueLabels"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -371,6 +1048,276 @@ export interface components {
             /** @enum {string} */
             code: "reset_link_used";
         };
+        /** @enum {string} */
+        LabelColor: "neutral" | "cyan" | "blue" | "violet" | "orchid" | "magenta";
+        Label: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            teamId?: string;
+            /** Format: uuid */
+            groupId?: string;
+            name: string;
+            color: components["schemas"]["LabelColor"];
+        };
+        LabelGroup: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+        };
+        LabelUsage: {
+            /** Format: int32 */
+            issues: number;
+        };
+        CreateLabelRequest: {
+            name: string;
+            color: components["schemas"]["LabelColor"];
+            /** Format: uuid */
+            teamId?: string;
+            /** Format: uuid */
+            groupId?: string;
+        };
+        /** @enum {string} */
+        IssueStatus: "active" | "archived" | "pending_deletion";
+        SetIssueStatusRequest: {
+            status: components["schemas"]["IssueStatus"];
+            /** Format: int32 */
+            expectedVersion: number;
+        };
+        MoveIssueRequest: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: int32 */
+            expectedVersion: number;
+            acknowledgeLabelLoss?: boolean;
+        };
+        UpdateLabelRequest: {
+            name?: string;
+            color?: components["schemas"]["LabelColor"];
+            /** Format: uuid */
+            groupId?: string | null;
+        };
+        MergeLabelRequest: {
+            /** Format: uuid */
+            intoLabelId: string;
+        };
+        LabelGroupRequest: {
+            name: string;
+        };
+        SetIssueLabelsRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            labelIds: string[];
+        };
+        LabelConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "label_name_taken" | "label_group_name_taken" | "label_group_exclusive" | "label_group_in_use" | "label_usage_changed" | "label_merge_scope_narrows" | "label_merge_group_mismatch";
+            /** Format: int32 */
+            issues?: number;
+        };
+        /** @enum {string} */
+        StateCategory: "not_started" | "active" | "complete" | "abandoned";
+        WorkflowState: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            teamId: string;
+            name: string;
+            category: components["schemas"]["StateCategory"];
+            /** Format: int32 */
+            position: number;
+            isDefault: boolean;
+            isCompletion: boolean;
+        };
+        CreateWorkflowStateRequest: {
+            name: string;
+            category: components["schemas"]["StateCategory"];
+        };
+        UpdateWorkflowStateRequest: {
+            name?: string;
+            category?: components["schemas"]["StateCategory"];
+        };
+        ReorderWorkflowStatesRequest: {
+            stateIds: string[];
+        };
+        WorkflowStateConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "state_name_taken" | "state_last_in_category" | "state_is_default" | "state_is_completion";
+        };
+        /** @enum {string} */
+        IssuePriority: "urgent" | "high" | "medium" | "low" | "none";
+        UpdateIssueRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            title?: string;
+            /** Format: uuid */
+            stateId?: string;
+            description?: string;
+            priority?: components["schemas"]["IssuePriority"];
+            /** Format: uuid */
+            assigneeId?: string;
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: date */
+            dueOn?: string;
+            /** @description Properties to reset; absent means unchanged, which a nullable field cannot express */
+            clear?: ("assignee" | "estimate" | "dueOn")[];
+        };
+        IssueConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_destination_incapable" | "issue_status_transition" | "label_out_of_scope";
+            /** Format: int32 */
+            version?: number;
+            conflicts?: string[];
+            labels?: components["schemas"]["Label"][];
+        };
+        IssueProgress: {
+            /** Format: int32 */
+            notStarted: number;
+            /** Format: int32 */
+            active: number;
+            /** Format: int32 */
+            complete: number;
+            /** Format: int32 */
+            abandoned: number;
+        };
+        IssueActivity: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            issueId: string;
+            /** Format: uuid */
+            actorAccountId?: string;
+            actorName?: string;
+            /** @enum {string} */
+            kind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored";
+            fromState?: string;
+            toState?: string;
+            field?: string;
+            fromValue?: string;
+            toValue?: string;
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        IssueActivityPage: {
+            entries: components["schemas"]["IssueActivity"][];
+            nextCursor?: string;
+        };
+        Issue: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            teamId: string;
+            teamKey: string;
+            referenceKey: string;
+            /** Format: int32 */
+            version: number;
+            description: string;
+            priority: components["schemas"]["IssuePriority"];
+            /** Format: uuid */
+            assigneeAccountId?: string;
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: date */
+            dueOn?: string;
+            /** Format: date-time */
+            stateEnteredAt: string;
+            /** Format: date-time */
+            completedAt?: string;
+            status: components["schemas"]["IssueStatus"];
+            /** Format: date-time */
+            archivedAt?: string;
+            state: components["schemas"]["IssueState"];
+            labels: components["schemas"]["Label"][];
+            /** Format: int32 */
+            number: number;
+            reference: string;
+            title: string;
+            /** Format: uuid */
+            createdByAccountId?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        IssueState: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            category: components["schemas"]["StateCategory"];
+            /** Format: int32 */
+            position: number;
+        };
+        IssuePage: {
+            issues: components["schemas"]["Issue"][];
+            nextCursor?: string;
+        };
+        CreateIssueRequest: {
+            /** Format: uuid */
+            teamId: string;
+            title: string;
+            description?: string;
+            priority?: components["schemas"]["IssuePriority"];
+            /** Format: uuid */
+            assigneeId?: string;
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: date */
+            dueOn?: string;
+        };
+        APIScope: string;
+        APIToken: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+            scopes: components["schemas"]["APIScope"][];
+            /** Format: date-time */
+            expiresAt?: string;
+            /** Format: date-time */
+            lastUsedAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        MintedAPIToken: {
+            token: components["schemas"]["APIToken"];
+            value: string;
+        };
+        MintAPITokenRequest: {
+            name: string;
+            scopes: components["schemas"]["APIScope"][];
+            /** Format: date-time */
+            expiresAt?: string;
+        };
+        APITokenUnusableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "token_name_taken" | "token_scope_invalid" | "token_scope_exceeds" | "token_may_not_mint";
+        };
+        ForbiddenProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "forbidden";
+            /** @enum {string} */
+            reason?: "role_lacks_action" | "auth_method_not_permitted" | "token_permission_missing" | "token_workspace_mismatch" | "instance_admin_required";
+        };
+        SignUpClosedProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "sign_up_closed";
+        };
+        SignUpExpiredProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "sign_up_expired" | "sign_up_invalid";
+        };
+        SignUpUnusableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "sign_up_used" | "sign_up_email_taken";
+        };
         MailUnavailableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "mail_unavailable";
@@ -378,6 +1325,34 @@ export interface components {
         BreachCheckUnavailableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "breach_check_unavailable";
+        };
+        InvitationExpiredProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "invitation_expired" | "invitation_invalid";
+        };
+        WorkspaceDeletedProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "workspace_deleted";
+            /** Format: date-time */
+            purgeAfter?: string;
+        };
+        MembershipConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "last_admin" | "self_role_change" | "directory_managed" | "workspace_deleted";
+            workspaceIds?: string[];
+            /** Format: date-time */
+            purgeAfter?: string;
+        };
+        TeamConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "team_key_taken" | "team_archived" | "team_not_archived" | "team_member_exists" | "workspace_deleted";
+            /** Format: date-time */
+            purgeAfter?: string;
+        };
+        InvitationUnusableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "invitation_revoked" | "invitation_accepted" | "invitation_address_mismatch" | "account_exists";
+            invitedEmail?: string;
         };
         RequestPasswordResetRequest: {
             email: string;
@@ -398,7 +1373,9 @@ export interface components {
         /** @enum {string} */
         AccountStatus: "active" | "deactivated" | "deleted";
         /** @enum {string} */
-        MembershipRole: "admin" | "member";
+        MembershipRole: "admin" | "member" | "viewer";
+        /** @enum {string} */
+        MembershipSource: "manual" | "directory";
         /** @enum {string} */
         SessionAuthMethod: "password" | "sso";
         /** @enum {string} */
@@ -454,13 +1431,29 @@ export interface components {
             /** Format: date-time */
             expiresAt: string;
         };
+        /** @enum {string} */
+        WorkspaceStatus: "active" | "pending_deletion";
         Workspace: {
             /** Format: uuid */
             id: string;
             slug: string;
             name: string;
+            status: components["schemas"]["WorkspaceStatus"];
+            timezone: string;
+            /** Format: uuid */
+            defaultTeamId?: string;
             /** Format: date-time */
             createdAt: string;
+            /** Format: date-time */
+            deletionRequestedAt?: string;
+            /** Format: date-time */
+            purgeAfter?: string;
+        };
+        UpdateWorkspaceRequest: {
+            name?: string;
+            timezone?: string;
+            /** Format: uuid */
+            defaultTeamId?: string;
         };
         Membership: {
             /** Format: uuid */
@@ -468,12 +1461,94 @@ export interface components {
             /** Format: uuid */
             accountId: string;
             role: components["schemas"]["MembershipRole"];
+            source: components["schemas"]["MembershipSource"];
+            displayName?: string;
+            email?: string;
+            /** Format: date-time */
+            joinedAt?: string;
+            /** Format: date-time */
+            lastActiveAt?: string;
+            lastAuthMethod?: components["schemas"]["SessionAuthMethod"];
         };
-        RegisterAccountRequest: {
+        MemberPage: {
+            members: components["schemas"]["Membership"][];
+            nextCursor?: string;
+        };
+        MemberRemovalPreview: {
+            member: components["schemas"]["Membership"];
+            teams: components["schemas"]["Team"][];
+            soleAdmin: boolean;
+            directoryManaged: boolean;
+        };
+        /** @enum {string} */
+        TeamStatus: "active" | "archived";
+        /** @enum {string} */
+        TeamVisibility: "public" | "private";
+        Team: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            key: string;
+            name: string;
+            status: components["schemas"]["TeamStatus"];
+            visibility: components["schemas"]["TeamVisibility"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            archivedAt?: string;
+        };
+        CreateTeamRequest: {
+            key: string;
+            name: string;
+            visibility?: components["schemas"]["TeamVisibility"];
+        };
+        UpdateTeamRequest: {
+            name?: string;
+            visibility?: components["schemas"]["TeamVisibility"];
+        };
+        TeamMember: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: uuid */
+            accountId: string;
+            displayName: string;
+            email: string;
+            /** Format: date-time */
+            joinedAt?: string;
+        };
+        AddTeamMemberRequest: {
+            /** Format: uuid */
+            accountId: string;
+        };
+        Instance: {
+            signupsOpen: boolean;
+            password: boolean;
+            selfHosted: boolean;
+            host: string;
+            version: string;
+            sso?: components["schemas"]["InstanceSso"];
+        };
+        InstanceSso: {
+            name: string;
+        };
+        RequestSignUpRequest: {
             email: string;
             displayName: string;
             timezone?: string;
-            password?: string;
+            password: string;
+        };
+        /** @enum {string} */
+        SignUpDelivery: "mailed" | "link_only";
+        SignUpRequested: {
+            email: string;
+            delivery: components["schemas"]["SignUpDelivery"];
+            /** Format: date-time */
+            expiresAt: string;
+            url?: string;
+        };
+        ConfirmSignUpRequest: {
+            token: string;
         };
         SignInRequest: {
             email: string;
@@ -499,6 +1574,11 @@ export interface components {
         CreateWorkspaceRequest: {
             slug: string;
             name: string;
+            team?: components["schemas"]["CreateWorkspaceTeam"];
+        };
+        CreateWorkspaceTeam: {
+            key: string;
+            name: string;
         };
         AddMemberRequest: {
             /** Format: uuid */
@@ -507,6 +1587,76 @@ export interface components {
         };
         ChangeMemberRoleRequest: {
             role: components["schemas"]["MembershipRole"];
+        };
+        /** @enum {string} */
+        InvitationStatus: "pending" | "accepted" | "revoked";
+        /** @enum {string} */
+        InvitationDelivery: "pending" | "sent" | "failed" | "link_only";
+        /** @enum {string} */
+        InvitationOutcome: "created" | "invalid_email" | "already_member";
+        Invitation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            email: string;
+            role: components["schemas"]["MembershipRole"];
+            status: components["schemas"]["InvitationStatus"];
+            delivery: components["schemas"]["InvitationDelivery"];
+            teamIds?: string[];
+            /** Format: date-time */
+            invitedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            acceptedAt?: string;
+        };
+        InvitationRequest: {
+            email: string;
+            role: components["schemas"]["MembershipRole"];
+            teamIds?: string[];
+        };
+        CreateInvitationsRequest: {
+            invitations: components["schemas"]["InvitationRequest"][];
+        };
+        InvitationResult: {
+            email: string;
+            outcome: components["schemas"]["InvitationOutcome"];
+            invitation?: components["schemas"]["Invitation"];
+            url?: string;
+        };
+        InvitationBatch: {
+            results: components["schemas"]["InvitationResult"][];
+        };
+        IssuedInvitation: {
+            invitation: components["schemas"]["Invitation"];
+            url: string;
+        };
+        PreviewInvitationRequest: {
+            token: string;
+        };
+        InvitationPreview: {
+            workspace: components["schemas"]["InvitationWorkspace"];
+            email: string;
+            role: components["schemas"]["MembershipRole"];
+            /** Format: date-time */
+            expiresAt: string;
+            accountExists: boolean;
+            ssoEnforced: boolean;
+        };
+        InvitationWorkspace: {
+            slug: string;
+            name: string;
+        };
+        AcceptInvitationRequest: {
+            token: string;
+            displayName?: string;
+            timezone?: string;
+            password?: string;
+        };
+        AcceptedInvitation: {
+            workspace: components["schemas"]["Workspace"];
+            membership: components["schemas"]["Membership"];
         };
     };
     responses: {
@@ -517,6 +1667,24 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The key is taken, or the team or workspace refuses the change */
+        TeamConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["TeamConflictProblem"];
+            };
+        };
+        /** @description The membership refuses the change, or the workspace does */
+        MembershipConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["MembershipConflictProblem"];
             };
         };
         /** @description The email and password did not match */
@@ -565,6 +1733,78 @@ export interface components {
                 "application/problem+json": components["schemas"]["ResetLinkUsedProblem"];
             };
         };
+        /** @description The token name is taken, or its scopes exceed the caller's rights */
+        APITokenUnusable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["APITokenUnusableProblem"];
+            };
+        };
+        /** @description The state cannot change without leaving the team unusable */
+        WorkflowStateConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["WorkflowStateConflictProblem"];
+            };
+        };
+        /** @description The issue changed since it was read */
+        IssueConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["IssueConflictProblem"];
+            };
+        };
+        /** @description The label cannot change without losing or duplicating work */
+        LabelConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["LabelConflictProblem"];
+            };
+        };
+        /** @description The actor may not perform this action */
+        Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ForbiddenProblem"];
+            };
+        };
+        /** @description The instance does not create accounts from the sign-up form */
+        SignUpUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["SignUpClosedProblem"];
+            };
+        };
+        /** @description The sign-up link expired or is unrecognised */
+        SignUpLinkExpired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["SignUpExpiredProblem"];
+            };
+        };
+        /** @description The link was already used, or an account already has the address */
+        SignUpLinkUnusable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["SignUpUnusableProblem"];
+            };
+        };
         /** @description The instance is not configured to send mail */
         MailUnavailable: {
             headers: {
@@ -583,10 +1823,44 @@ export interface components {
                 "application/problem+json": components["schemas"]["BreachCheckUnavailableProblem"];
             };
         };
+        /** @description The invitation link expired or is unrecognised */
+        InvitationLinkExpired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["InvitationExpiredProblem"];
+            };
+        };
+        /** @description The invitation was revoked, already accepted, or addressed to someone else */
+        InvitationLinkUnusable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["InvitationUnusableProblem"];
+            };
+        };
+        /** @description The workspace is pending deletion and accepts nothing but restore */
+        WorkspaceDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["WorkspaceDeletedProblem"];
+            };
+        };
     };
     parameters: {
         WorkspaceId: string;
         AccountId: string;
+        InvitationId: string;
+        TokenId: string;
+        StateId: string;
+        IssueId: string;
+        LabelId: string;
+        GroupId: string;
+        TeamId: string;
     };
     requestBodies: never;
     headers: never;
@@ -614,7 +1888,28 @@ export interface operations {
             };
         };
     };
-    registerAccount: {
+    getInstance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The public instance configuration */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Instance"];
+                };
+            };
+            500: components["responses"]["Problem"];
+        };
+    };
+    requestSignUp: {
         parameters: {
             query?: never;
             header?: never;
@@ -623,21 +1918,52 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RegisterAccountRequest"];
+                "application/json": components["schemas"]["RequestSignUpRequest"];
             };
         };
         responses: {
-            /** @description The account was created */
-            201: {
+            /** @description The address must be confirmed before the account exists */
+            202: {
                 headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignUpRequested"];
+                };
+            };
+            403: components["responses"]["SignUpUnavailable"];
+            409: components["responses"]["SignUpLinkUnusable"];
+            422: components["responses"]["Problem"];
+            429: components["responses"]["TooManyAttempts"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["BreachCheckUnavailable"];
+        };
+    };
+    confirmSignUp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmSignUpRequest"];
+            };
+        };
+        responses: {
+            /** @description The account the link created */
+            200: {
+                headers: {
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["Account"];
                 };
             };
-            409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
+            400: components["responses"]["SignUpLinkExpired"];
+            409: components["responses"]["SignUpLinkUnusable"];
             500: components["responses"]["Problem"];
         };
     };
@@ -785,7 +2111,7 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
+            409: components["responses"]["MembershipConflict"];
             500: components["responses"]["Problem"];
         };
     };
@@ -835,7 +2161,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
+            409: components["responses"]["MembershipConflict"];
             500: components["responses"]["Problem"];
         };
     };
@@ -1114,7 +2440,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
             500: components["responses"]["Problem"];
         };
     };
@@ -1143,7 +2469,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
             422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
@@ -1198,7 +2524,7 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
-    listWorkspaceMembers: {
+    getWorkspace: {
         parameters: {
             query?: never;
             header?: never;
@@ -1209,17 +2535,134 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The workspace members */
+            /** @description The workspace */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Membership"][];
+                    "application/json": components["schemas"]["Workspace"];
                 };
             };
             401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workspace, now pending deletion until its purge date */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workspace"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["WorkspaceDeleted"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkspaceRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated workspace */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workspace"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["WorkspaceDeleted"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    restoreWorkspace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The restored workspace */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workspace"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceMembers: {
+        parameters: {
+            query?: {
+                query?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of workspace members */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };
@@ -1248,7 +2691,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
@@ -1256,7 +2699,9 @@ export interface operations {
     };
     removeWorkspaceMember: {
         parameters: {
-            query?: never;
+            query?: {
+                reassignTo?: string;
+            };
             header?: never;
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
@@ -1274,9 +2719,10 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
+            409: components["responses"]["MembershipConflict"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };
@@ -1306,9 +2752,1372 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["MembershipConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    previewWorkspaceMemberRemoval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                accountId: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What removing the member would affect */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberRemovalPreview"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceTeams: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["TeamStatus"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The teams visible to the account */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeamRequest"];
+            };
+        };
+        responses: {
+            /** @description The created team */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["TeamConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTeamRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated team */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["TeamConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    archiveWorkspaceTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The archived team */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["TeamConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unarchiveWorkspaceTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The restored team */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["TeamConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceTeamMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team members */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMember"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    addWorkspaceTeamMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddTeamMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description The created team membership */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMember"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["TeamConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceTeamMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+                accountId: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account was removed from the team */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["TeamConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceAPITokens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's tokens */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIToken"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    mintWorkspaceAPIToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MintAPITokenRequest"];
+            };
+        };
+        responses: {
+            /** @description The token, carrying its secret for the only time */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MintedAPIToken"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["APITokenUnusable"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    revokeWorkspaceAPIToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                tokenId: components["parameters"]["TokenId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The token was revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkflowStates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team's states, ordered */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowState"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkflowState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWorkflowStateRequest"];
+            };
+        };
+        responses: {
+            /** @description The state that was added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowState"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["WorkflowStateConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    reorderWorkflowStates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderWorkflowStatesRequest"];
+            };
+        };
+        responses: {
+            /** @description The states in their new order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowState"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkflowState: {
+        parameters: {
+            query: {
+                replacementStateId: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+                stateId: components["parameters"]["StateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The state was removed and its issues moved */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["WorkflowStateConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkflowState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+                stateId: components["parameters"]["StateId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkflowStateRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowState"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["WorkflowStateConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setDefaultWorkflowState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+                stateId: components["parameters"]["StateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team's states, with the new default flagged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowState"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setCompletionWorkflowState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+                stateId: components["parameters"]["StateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team's states, with the new completion state flagged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowState"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceIssueProgress: {
+        parameters: {
+            query?: {
+                teamId?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Per-category tallies */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueProgress"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssues: {
+        parameters: {
+            query?: {
+                teamId?: string;
+                /** @description Repeat to include more than one; defaults to active issues only */
+                status?: components["schemas"]["IssueStatus"][];
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of visible issues */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuePage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue that was raised */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceIssueByReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The issue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueActivity: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of activity */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueActivityPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The issue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceInvitations: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["InvitationStatus"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workspace invitations */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invitation"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceInvitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvitationsRequest"];
+            };
+        };
+        responses: {
+            /** @description One result per requested address, in the order requested */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationBatch"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    revokeWorkspaceInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                invitationId: components["parameters"]["InvitationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The invitation was revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    resendWorkspaceInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                invitationId: components["parameters"]["InvitationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The invitation and its new single-use link */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedInvitation"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    previewInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewInvitationRequest"];
+            };
+        };
+        responses: {
+            /** @description What the link leads to */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationPreview"];
+                };
+            };
+            400: components["responses"]["InvitationLinkExpired"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["InvitationLinkUnusable"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    acceptInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptInvitationRequest"];
+            };
+        };
+        responses: {
+            /** @description The membership the invitation granted */
+            200: {
+                headers: {
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptedInvitation"];
+                };
+            };
+            400: components["responses"]["InvitationLinkExpired"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["InvitationLinkUnusable"];
+            422: components["responses"]["Problem"];
+            429: components["responses"]["TooManyAttempts"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["BreachCheckUnavailable"];
+        };
+    };
+    listWorkspaceLabels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The labels, ordered by name */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Label"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLabelRequest"];
+            };
+        };
+        responses: {
+            /** @description The label that was created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Label"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["LabelConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceLabel: {
+        parameters: {
+            query: {
+                /** @description The number of issues the caller was told this label is on */
+                acknowledgedIssues: number;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                labelId: components["parameters"]["LabelId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The label was removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["LabelConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                labelId: components["parameters"]["LabelId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLabelRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated label, with the same id it has always had */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Label"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["LabelConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceLabelUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                labelId: components["parameters"]["LabelId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The number of issues carrying the label */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelUsage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    mergeWorkspaceLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                labelId: components["parameters"]["LabelId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeLabelRequest"];
+            };
+        };
+        responses: {
+            /** @description The surviving label */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Label"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["LabelConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceLabelGroups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The label groups, ordered by name */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelGroup"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceLabelGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabelGroupRequest"];
+            };
+        };
+        responses: {
+            /** @description The group that was created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelGroup"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["LabelConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceLabelGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                groupId: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The group was removed and its labels released */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    renameWorkspaceLabelGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                groupId: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabelGroupRequest"];
+            };
+        };
+        responses: {
+            /** @description The renamed group */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelGroup"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["LabelConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceIssueStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetIssueStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    moveWorkspaceIssueToTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue on its new team */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceIssueLabels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetIssueLabelsRequest"];
+            };
+        };
+        responses: {
+            /** @description The labels the issue now carries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Label"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

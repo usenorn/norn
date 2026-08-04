@@ -13,6 +13,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
+	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	"github.com/usenorn/norn/internal/service"
@@ -25,17 +26,23 @@ func newBareHarness(t *testing.T) *harness {
 	ctrl := gomock.NewController(t)
 
 	h := &harness{
-		sessions:   sessionrepo.NewMockSession(ctrl),
-		accounts:   accountrepo.NewMockAccount(ctrl),
-		geoLocator: geolocationrepo.NewMockGeoLocator(ctrl),
-		throttle:   signinthrottlerepo.NewMockSignInThrottle(ctrl),
+		sessions:    sessionrepo.NewMockSession(ctrl),
+		accounts:    accountrepo.NewMockAccount(ctrl),
+		memberships: membershiprepo.NewMockMembership(ctrl),
+		geoLocator:  geolocationrepo.NewMockGeoLocator(ctrl),
+		throttle:    signinthrottlerepo.NewMockSignInThrottle(ctrl),
 	}
 
-	h.service = sessionsvc.New(h.sessions, h.accounts, h.geoLocator, h.throttle, config.Session{
+	h.memberships.EXPECT().
+		RecordActivity(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	h.service = sessionsvc.New(h.sessions, h.accounts, h.memberships, h.geoLocator, h.throttle, config.Session{
 		IdleTimeout:      idleTimeout,
 		AbsoluteLifetime: absoluteTime,
 		RefreshInterval:  refreshInterval,
-	})
+	}, h.authorizer)
 
 	return h
 }

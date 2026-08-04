@@ -130,6 +130,21 @@ func (mr *MockSessionsMockRecorder) SignOut(ctx, sessionID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignOut", reflect.TypeOf((*MockSessions)(nil).SignOut), ctx, sessionID)
 }
 
+// Start mocks base method.
+func (m *MockSessions) Start(ctx context.Context, input service.StartSessionInput) (service.IssuedSession, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Start", ctx, input)
+	ret0, _ := ret[0].(service.IssuedSession)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Start indicates an expected call of Start.
+func (mr *MockSessionsMockRecorder) Start(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockSessions)(nil).Start), ctx, input)
+}
+
 // Validate mocks base method.
 func (m *MockSessions) Validate(ctx context.Context, token string) (entity.Session, error) {
 	m.ctrl.T.Helper()

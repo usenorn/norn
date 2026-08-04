@@ -1,17 +1,11 @@
 import { z } from "zod";
 
-export const personalEmailDomain = /@(gmail|outlook|hotmail|yahoo|icloud|proton|live|aol)\./i;
-
 export const minPasswordLength = 12;
 
 export const signUpSchema = z
 	.object({
 		name: z.string().trim().min(2, "Enter your name."),
-		email: z
-			.email("Enter a valid email address.")
-			.refine((value) => !personalEmailDomain.test(value), {
-				error: "Use your work address, not a personal one.",
-			}),
+		email: z.email("Enter a valid email address."),
 		password: z.string().min(minPasswordLength, `Use at least ${minPasswordLength} characters.`),
 		passwordConfirm: z.string(),
 		terms: z.boolean().refine((accepted) => accepted, {

@@ -12,6 +12,7 @@ package jobqueue
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	entity "github.com/usenorn/norn/internal/entity"
 	gomock "go.uber.org/mock/gomock"
@@ -55,6 +56,34 @@ func (mr *MockJobProducerMockRecorder) EnqueueEmailChangeConfirmation(ctx, paylo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueEmailChangeConfirmation", reflect.TypeOf((*MockJobProducer)(nil).EnqueueEmailChangeConfirmation), ctx, payload)
 }
 
+// EnqueueInvitation mocks base method.
+func (m *MockJobProducer) EnqueueInvitation(ctx context.Context, payload entity.InvitationPayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueInvitation", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueInvitation indicates an expected call of EnqueueInvitation.
+func (mr *MockJobProducerMockRecorder) EnqueueInvitation(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueInvitation", reflect.TypeOf((*MockJobProducer)(nil).EnqueueInvitation), ctx, payload)
+}
+
+// EnqueueIssuePurge mocks base method.
+func (m *MockJobProducer) EnqueueIssuePurge(ctx context.Context, payload entity.IssuePurgePayload, processAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueIssuePurge", ctx, payload, processAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueIssuePurge indicates an expected call of EnqueueIssuePurge.
+func (mr *MockJobProducerMockRecorder) EnqueueIssuePurge(ctx, payload, processAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueIssuePurge", reflect.TypeOf((*MockJobProducer)(nil).EnqueueIssuePurge), ctx, payload, processAt)
+}
+
 // EnqueuePasswordReset mocks base method.
 func (m *MockJobProducer) EnqueuePasswordReset(ctx context.Context, payload entity.PasswordResetPayload) error {
 	m.ctrl.T.Helper()
@@ -81,6 +110,34 @@ func (m *MockJobProducer) EnqueuePasswordResetSSONotice(ctx context.Context, pay
 func (mr *MockJobProducerMockRecorder) EnqueuePasswordResetSSONotice(ctx, payload any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueuePasswordResetSSONotice", reflect.TypeOf((*MockJobProducer)(nil).EnqueuePasswordResetSSONotice), ctx, payload)
+}
+
+// EnqueueSignUpVerification mocks base method.
+func (m *MockJobProducer) EnqueueSignUpVerification(ctx context.Context, payload entity.SignUpVerificationPayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueSignUpVerification", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueSignUpVerification indicates an expected call of EnqueueSignUpVerification.
+func (mr *MockJobProducerMockRecorder) EnqueueSignUpVerification(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueSignUpVerification", reflect.TypeOf((*MockJobProducer)(nil).EnqueueSignUpVerification), ctx, payload)
+}
+
+// EnqueueWorkspacePurge mocks base method.
+func (m *MockJobProducer) EnqueueWorkspacePurge(ctx context.Context, payload entity.WorkspacePurgePayload, processAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueWorkspacePurge", ctx, payload, processAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueWorkspacePurge indicates an expected call of EnqueueWorkspacePurge.
+func (mr *MockJobProducerMockRecorder) EnqueueWorkspacePurge(ctx, payload, processAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueWorkspacePurge", reflect.TypeOf((*MockJobProducer)(nil).EnqueueWorkspacePurge), ctx, payload, processAt)
 }
 
 // MockJobInspector is a mock of JobInspector interface.

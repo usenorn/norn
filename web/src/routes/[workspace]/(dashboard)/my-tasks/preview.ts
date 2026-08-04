@@ -16,7 +16,7 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 							{
 								id: "BIL-112",
 								title: "Proration is off by one day on annual plans",
-								status: "review",
+								state: { name: "In review", category: "active" },
 								priority: "urgent",
 								assignee: "Rae Okafor",
 								date: "Jul 28",
@@ -27,7 +27,7 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 							{
 								id: "MOB-241",
 								title: "Offline queue drops edits on reconnect",
-								status: "started",
+								state: { name: "In progress", category: "active" },
 								priority: "urgent",
 								assignee: "Rae Okafor",
 								date: "Jul 29",
@@ -45,7 +45,7 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 							{
 								id: "MOB-236",
 								title: "Keyboard navigation for the board view",
-								status: "review",
+								state: { name: "In review", category: "active" },
 								priority: "medium",
 								assignee: "Rae Okafor",
 								date: "Jul 30",
@@ -56,7 +56,7 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 							{
 								id: "BIL-118",
 								title: "Invoice PDFs should include the tax ID",
-								status: "todo",
+								state: { name: "Todo", category: "not_started" },
 								priority: "high",
 								assignee: "Rae Okafor",
 								date: "Jul 30",
@@ -74,7 +74,7 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 							{
 								id: "MOB-238",
 								title: "Ship the weekly digest email",
-								status: "started",
+								state: { name: "In progress", category: "active" },
 								priority: "high",
 								assignee: "Rae Okafor",
 								date: "Aug 1",
@@ -85,7 +85,7 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 							{
 								id: "GRW-64",
 								title: "Rewrite the empty states across settings",
-								status: "todo",
+								state: { name: "Todo", category: "not_started" },
 								priority: "medium",
 								assignee: "Rae Okafor",
 								date: "Aug 2",
@@ -96,7 +96,7 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 							{
 								id: "MOB-244",
 								title: "Cache avatars between sessions",
-								status: "todo",
+								state: { name: "Todo", category: "not_started" },
 								priority: "low",
 								assignee: "Rae Okafor",
 								date: "Aug 3",
@@ -114,7 +114,7 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 							{
 								id: "GRW-71",
 								title: "Instrument the onboarding funnel",
-								status: "todo",
+								state: { name: "Todo", category: "not_started" },
 								priority: "medium",
 								assignee: "Rae Okafor",
 								date: "Aug 8",
@@ -125,7 +125,7 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 							{
 								id: "BIL-121",
 								title: "Dunning emails for failed cards",
-								status: "backlog",
+								state: { name: "Backlog", category: "not_started" },
 								priority: "high",
 								assignee: "Rae Okafor",
 								date: null,
@@ -136,7 +136,7 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 							{
 								id: "MOB-249",
 								title: "Drop support for iOS 15",
-								status: "backlog",
+								state: { name: "Backlog", category: "not_started" },
 								priority: "low",
 								assignee: "Rae Okafor",
 								date: null,

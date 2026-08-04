@@ -14,6 +14,12 @@ import (
 func Session(sessions service.Sessions, cfg config.Session) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if _, ok := identity.Actor(r.Context()); ok {
+				next.ServeHTTP(w, r)
+
+				return
+			}
+
 			cookie, err := r.Cookie(cfg.CookieName)
 			if err != nil || cookie.Value == "" {
 				next.ServeHTTP(w, r)

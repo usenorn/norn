@@ -60,12 +60,10 @@
 	--surface-selected: var(--paper-3);
 	--surface-scrim: rgba(4, 5, 8, 0.66);
 
-	--state-backlog: var(--ink-500);
-	--state-todo: var(--ink-700);
-	--state-started: var(--amber-500);
-	--state-review: var(--amber-400);
-	--state-done: var(--green-500);
-	--state-canceled: var(--ink-400);
+	--state-not-started: var(--ink-500);
+	--state-active: var(--amber-500);
+	--state-complete: var(--green-500);
+	--state-abandoned: var(--ink-400);
 
 	--priority-urgent: var(--red-500);
 	--priority-high: var(--ink-900);
@@ -265,12 +263,10 @@
 	--color-surface-selected: var(--surface-selected);
 	--color-surface-scrim: var(--surface-scrim);
 
-	--color-status-backlog: var(--state-backlog);
-	--color-status-todo: var(--state-todo);
-	--color-status-started: var(--state-started);
-	--color-status-review: var(--state-review);
-	--color-status-done: var(--state-done);
-	--color-status-canceled: var(--state-canceled);
+	--color-status-not-started: var(--state-not-started);
+	--color-status-active: var(--state-active);
+	--color-status-complete: var(--state-complete);
+	--color-status-abandoned: var(--state-abandoned);
 
 	--color-priority-urgent: var(--priority-urgent);
 	--color-priority-high: var(--priority-high);

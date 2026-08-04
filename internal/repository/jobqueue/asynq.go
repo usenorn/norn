@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/hibiken/asynq"
 
@@ -50,6 +51,24 @@ func (c *Client) EnqueueEmailChangeConfirmation(ctx context.Context, payload ent
 	return nil
 }
 
+func (c *Client) EnqueueSignUpVerification(ctx context.Context, payload entity.SignUpVerificationPayload) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode sign-up verification payload: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeSignUpVerification, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueMail),
+		asynq.MaxRetry(c.maxRetry),
+	); err != nil {
+		return fmt.Errorf("enqueue sign-up verification: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) EnqueuePasswordReset(ctx context.Context, payload entity.PasswordResetPayload) error {
 	encoded, err := json.Marshal(payload)
 	if err != nil {
@@ -81,6 +100,62 @@ func (c *Client) EnqueuePasswordResetSSONotice(ctx context.Context, payload enti
 		asynq.MaxRetry(c.maxRetry),
 	); err != nil {
 		return fmt.Errorf("enqueue password reset sso notice: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) EnqueueInvitation(ctx context.Context, payload entity.InvitationPayload) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode invitation payload: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeInvitation, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueMail),
+		asynq.MaxRetry(c.maxRetry),
+	); err != nil {
+		return fmt.Errorf("enqueue invitation: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) EnqueueWorkspacePurge(ctx context.Context, payload entity.WorkspacePurgePayload, processAt time.Time) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode workspace purge payload: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeWorkspacePurge, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueDefault),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.ProcessAt(processAt),
+	); err != nil {
+		return fmt.Errorf("enqueue workspace purge: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) EnqueueIssuePurge(ctx context.Context, payload entity.IssuePurgePayload, processAt time.Time) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode issue purge payload: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeIssuePurge, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueDefault),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.ProcessAt(processAt),
+	); err != nil {
+		return fmt.Errorf("enqueue issue purge: %w", err)
 	}
 
 	return nil

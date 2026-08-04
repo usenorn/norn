@@ -12,6 +12,9 @@ import (
 )
 
 const (
+	signUpVerificationSubject = "Confirm your Norn account"
+	signUpVerificationPath    = "/sign-up/confirm"
+
 	emailChangeSubject = "Confirm your new Norn email address"
 	emailChangePath    = "/account/email-change/confirm"
 
@@ -20,10 +23,13 @@ const (
 	passwordResetPath       = "/reset-password"
 )
 
-//go:embed templates/email_change.txt templates/email_change.html templates/password_reset.txt templates/password_reset.html templates/password_reset_sso.txt templates/password_reset_sso.html
+//go:embed templates/sign_up_verification.txt templates/sign_up_verification.html templates/email_change.txt templates/email_change.html templates/password_reset.txt templates/password_reset.html templates/password_reset_sso.txt templates/password_reset_sso.html
 var templates embed.FS
 
 var (
+	signUpVerificationPlain = texttemplate.Must(texttemplate.ParseFS(templates, "templates/sign_up_verification.txt"))
+	signUpVerificationHTML  = htmltemplate.Must(htmltemplate.ParseFS(templates, "templates/sign_up_verification.html"))
+
 	emailChangePlain = texttemplate.Must(texttemplate.ParseFS(templates, "templates/email_change.txt"))
 	emailChangeHTML  = htmltemplate.Must(htmltemplate.ParseFS(templates, "templates/email_change.html"))
 
@@ -33,6 +39,44 @@ var (
 	passwordResetSSOPlain = texttemplate.Must(texttemplate.ParseFS(templates, "templates/password_reset_sso.txt"))
 	passwordResetSSOHTML  = htmltemplate.Must(htmltemplate.ParseFS(templates, "templates/password_reset_sso.html"))
 )
+
+func (s *accountsService) signUpURL(token string) string {
+	confirmURL, err := url.JoinPath(s.app.BaseURL, signUpVerificationPath)
+	if err != nil {
+		return ""
+	}
+
+	return confirmURL + "?token=" + url.QueryEscape(token)
+}
+
+type signUpVerificationContent struct {
+	DisplayName string
+	ConfirmURL  string
+}
+
+func buildSignUpVerification(confirmURL, displayName, email string) (entity.Mail, error) {
+	content := signUpVerificationContent{
+		DisplayName: displayName,
+		ConfirmURL:  confirmURL,
+	}
+
+	var plain strings.Builder
+	if err := signUpVerificationPlain.ExecuteTemplate(&plain, "sign_up_verification.txt", content); err != nil {
+		return entity.Mail{}, fmt.Errorf("render sign-up verification plain body: %w", err)
+	}
+
+	var html strings.Builder
+	if err := signUpVerificationHTML.ExecuteTemplate(&html, "sign_up_verification.html", content); err != nil {
+		return entity.Mail{}, fmt.Errorf("render sign-up verification html body: %w", err)
+	}
+
+	return entity.Mail{
+		To:        email,
+		Subject:   signUpVerificationSubject,
+		PlainBody: plain.String(),
+		HTMLBody:  html.String(),
+	}, nil
+}
 
 type emailChangeContent struct {
 	DisplayName    string

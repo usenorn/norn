@@ -20,14 +20,22 @@ type Worker struct {
 }
 
 func NewServeMux(
+	signUpVerification *job.SignUpVerificationHandler,
 	emailChangeConfirmation *job.EmailChangeConfirmationHandler,
 	passwordReset *job.PasswordResetHandler,
 	passwordResetSSONotice *job.PasswordResetSSONoticeHandler,
+	invitation *job.InvitationHandler,
+	workspacePurge *job.WorkspacePurgeHandler,
+	issuePurge *job.IssuePurgeHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
+	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
 	mux.Handle(entity.TaskTypeEmailChangeConfirmation, emailChangeConfirmation)
 	mux.Handle(entity.TaskTypePasswordReset, passwordReset)
 	mux.Handle(entity.TaskTypePasswordResetSSONotice, passwordResetSSONotice)
+	mux.Handle(entity.TaskTypeInvitation, invitation)
+	mux.Handle(entity.TaskTypeWorkspacePurge, workspacePurge)
+	mux.Handle(entity.TaskTypeIssuePurge, issuePurge)
 
 	return mux
 }

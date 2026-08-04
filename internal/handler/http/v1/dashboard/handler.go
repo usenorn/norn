@@ -14,34 +14,65 @@ import (
 )
 
 type handler struct {
-	accounts   service.Accounts
-	workspaces service.Workspaces
-	sessions   service.Sessions
-	blobs      repository.Blob
-	app        config.App
-	session    config.Session
+	accounts       service.Accounts
+	workspaces     service.Workspaces
+	teams          service.Teams
+	invitations    service.Invitations
+	issues         service.Issues
+	workflowStates service.WorkflowStates
+	labels         service.Labels
+	apiTokens      service.APITokens
+	sessions       service.Sessions
+	blobs          repository.Blob
+	app            config.App
+	instance       config.Instance
+	session        config.Session
 }
 
 func New(
 	accounts service.Accounts,
 	workspaces service.Workspaces,
+	teams service.Teams,
+	invitations service.Invitations,
+	issues service.Issues,
+	workflowStates service.WorkflowStates,
+	labels service.Labels,
+	apiTokens service.APITokens,
 	sessions service.Sessions,
 	blobs repository.Blob,
 	app config.App,
+	instance config.Instance,
 	session config.Session,
 ) api.StrictServerInterface {
 	return &handler{
-		accounts:   accounts,
-		workspaces: workspaces,
-		sessions:   sessions,
-		blobs:      blobs,
-		app:        app,
-		session:    session,
+		accounts:       accounts,
+		workspaces:     workspaces,
+		teams:          teams,
+		invitations:    invitations,
+		issues:         issues,
+		workflowStates: workflowStates,
+		labels:         labels,
+		apiTokens:      apiTokens,
+		sessions:       sessions,
+		blobs:          blobs,
+		app:            app,
+		instance:       instance,
+		session:        session,
 	}
 }
 
 func (h *handler) GetHealth(_ context.Context, _ api.GetHealthRequestObject) (api.GetHealthResponseObject, error) {
 	return api.GetHealth200JSONResponse{Status: api.Ok, Version: h.app.Version}, nil
+}
+
+func (h *handler) GetInstance(_ context.Context, _ api.GetInstanceRequestObject) (api.GetInstanceResponseObject, error) {
+	return api.GetInstance200JSONResponse{
+		SignupsOpen: h.instance.SignupsOpen,
+		Password:    h.instance.PasswordAuth,
+		SelfHosted:  h.instance.SelfHosted,
+		Host:        h.app.Host(),
+		Version:     h.app.Version,
+	}, nil
 }
 
 func (h *handler) SignIn(ctx context.Context, request api.SignInRequestObject) (api.SignInResponseObject, error) {

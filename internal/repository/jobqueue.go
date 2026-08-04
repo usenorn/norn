@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/usenorn/norn/internal/entity"
 )
@@ -9,9 +10,13 @@ import (
 //go:generate go tool mockgen -source=jobqueue.go -destination=jobqueue/mock_jobqueue.go -package=jobqueue -mock_names=JobProducer=MockJobProducer,JobInspector=MockJobInspector
 
 type JobProducer interface {
+	EnqueueSignUpVerification(ctx context.Context, payload entity.SignUpVerificationPayload) error
 	EnqueueEmailChangeConfirmation(ctx context.Context, payload entity.EmailChangeConfirmationPayload) error
 	EnqueuePasswordReset(ctx context.Context, payload entity.PasswordResetPayload) error
 	EnqueuePasswordResetSSONotice(ctx context.Context, payload entity.PasswordResetSSONoticePayload) error
+	EnqueueInvitation(ctx context.Context, payload entity.InvitationPayload) error
+	EnqueueWorkspacePurge(ctx context.Context, payload entity.WorkspacePurgePayload, processAt time.Time) error
+	EnqueueIssuePurge(ctx context.Context, payload entity.IssuePurgePayload, processAt time.Time) error
 }
 
 type JobInspector interface {

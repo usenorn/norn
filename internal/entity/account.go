@@ -43,6 +43,22 @@ func (e LastWorkspaceAdminError) Unwrap() error {
 	return ErrAccountLastWorkspaceAdmin
 }
 
+type AccountKind string
+
+const (
+	AccountKindPerson AccountKind = "person"
+	AccountKindAgent  AccountKind = "agent"
+)
+
+func (k AccountKind) Valid() bool {
+	switch k {
+	case AccountKindPerson, AccountKindAgent:
+		return true
+	default:
+		return false
+	}
+}
+
 type AccountStatus string
 
 const (
@@ -76,15 +92,21 @@ func (s AccountStatus) CanTransitionTo(target AccountStatus) bool {
 type Account struct {
 	ID              uuid.UUID
 	Status          AccountStatus
+	Kind            AccountKind
 	Email           string
 	DisplayName     string
 	AvatarObjectKey string
 	Timezone        string
 	PasswordHash    string
+	InstanceAdmin   bool
 	DeactivatedAt   *time.Time
 	DeletedAt       *time.Time
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+}
+
+func (a Account) Agent() bool {
+	return a.Kind == AccountKindAgent
 }
 
 func (a Account) HasPassword() bool {

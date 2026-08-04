@@ -12,6 +12,7 @@ package workspace
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
@@ -72,6 +73,21 @@ func (mr *MockWorkspaceMockRecorder) GetByID(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockWorkspace)(nil).GetByID), ctx, id)
 }
 
+// GetBySlug mocks base method.
+func (m *MockWorkspace) GetBySlug(ctx context.Context, slug string) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBySlug", ctx, slug)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBySlug indicates an expected call of GetBySlug.
+func (mr *MockWorkspaceMockRecorder) GetBySlug(ctx, slug any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBySlug", reflect.TypeOf((*MockWorkspace)(nil).GetBySlug), ctx, slug)
+}
+
 // ListByAccountID mocks base method.
 func (m *MockWorkspace) ListByAccountID(ctx context.Context, accountID uuid.UUID) ([]entity.Workspace, error) {
 	m.ctrl.T.Helper()
@@ -99,4 +115,63 @@ func (m *MockWorkspace) LockByIDs(ctx context.Context, ids []uuid.UUID) error {
 func (mr *MockWorkspaceMockRecorder) LockByIDs(ctx, ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByIDs", reflect.TypeOf((*MockWorkspace)(nil).LockByIDs), ctx, ids)
+}
+
+// MarkPendingDeletion mocks base method.
+func (m *MockWorkspace) MarkPendingDeletion(ctx context.Context, id uuid.UUID, requestedAt, purgeAfter time.Time) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkPendingDeletion", ctx, id, requestedAt, purgeAfter)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarkPendingDeletion indicates an expected call of MarkPendingDeletion.
+func (mr *MockWorkspaceMockRecorder) MarkPendingDeletion(ctx, id, requestedAt, purgeAfter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkPendingDeletion", reflect.TypeOf((*MockWorkspace)(nil).MarkPendingDeletion), ctx, id, requestedAt, purgeAfter)
+}
+
+// Purge mocks base method.
+func (m *MockWorkspace) Purge(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Purge", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Purge indicates an expected call of Purge.
+func (mr *MockWorkspaceMockRecorder) Purge(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Purge", reflect.TypeOf((*MockWorkspace)(nil).Purge), ctx, id)
+}
+
+// Restore mocks base method.
+func (m *MockWorkspace) Restore(ctx context.Context, id uuid.UUID) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Restore", ctx, id)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Restore indicates an expected call of Restore.
+func (mr *MockWorkspaceMockRecorder) Restore(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restore", reflect.TypeOf((*MockWorkspace)(nil).Restore), ctx, id)
+}
+
+// UpdateSettings mocks base method.
+func (m *MockWorkspace) UpdateSettings(ctx context.Context, id uuid.UUID, name, timezone string, defaultTeamID *uuid.UUID) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSettings", ctx, id, name, timezone, defaultTeamID)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSettings indicates an expected call of UpdateSettings.
+func (mr *MockWorkspaceMockRecorder) UpdateSettings(ctx, id, name, timezone, defaultTeamID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSettings", reflect.TypeOf((*MockWorkspace)(nil).UpdateSettings), ctx, id, name, timezone, defaultTeamID)
 }

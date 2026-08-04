@@ -2,11 +2,14 @@
 	import { page } from "$app/state";
 	import Check from "@lucide/svelte/icons/check";
 	import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down";
+	import Lock from "@lucide/svelte/icons/lock";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Search from "@lucide/svelte/icons/search";
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import Settings from "@lucide/svelte/icons/settings";
-	import UserPlus from "@lucide/svelte/icons/user-plus";
+	import Tags from "@lucide/svelte/icons/tags";
+	import UserRound from "@lucide/svelte/icons/user-round";
+	import Users from "@lucide/svelte/icons/users";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
 	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
@@ -21,6 +24,7 @@
 		savedViews,
 		workspacePath,
 	} from "$lib/workspace/navigation";
+	import { initialsOf } from "$lib/team/members";
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();
@@ -34,14 +38,8 @@
 	const views = $derived(savedViews(slug));
 	const tabs = $derived(mobileNav(slug));
 
-	const initials = $derived(
-		data.member.name
-			.trim()
-			.split(/\s+/)
-			.slice(0, 2)
-			.map((part) => part[0])
-			.join("")
-	);
+	const initials = $derived(initialsOf(data.member.name));
+	const teams = $derived((data.teams ?? []).filter((team) => team.status === "active"));
 </script>
 
 <div class="flex h-dvh bg-background">
@@ -85,9 +83,25 @@
 				</DropdownMenu.Item>
 				<DropdownMenu.Item>
 					{#snippet child({ props })}
+						<a href={workspacePath(slug, "/settings/teams")} {...props}>
+							<Users aria-hidden="true" />
+							Teams
+						</a>
+					{/snippet}
+				</DropdownMenu.Item>
+				<DropdownMenu.Item>
+					{#snippet child({ props })}
 						<a href={workspacePath(slug, "/settings/members")} {...props}>
-							<UserPlus aria-hidden="true" />
-							Invite people
+							<UserRound aria-hidden="true" />
+							Members
+						</a>
+					{/snippet}
+				</DropdownMenu.Item>
+				<DropdownMenu.Item>
+					{#snippet child({ props })}
+						<a href={workspacePath(slug, "/settings/labels")} {...props}>
+							<Tags aria-hidden="true" />
+							Labels
 						</a>
 					{/snippet}
 				</DropdownMenu.Item>
@@ -131,6 +145,37 @@
 					active={current(entry.href)}
 				/>
 			{/each}
+
+			<SidebarSection label="Teams">
+				{#snippet action()}
+					<Button
+						variant="ghost"
+						size="icon-xs"
+						href={workspacePath(slug, "/settings/teams?new")}
+						aria-label="New team"
+					>
+						<Plus aria-hidden="true" />
+					</Button>
+				{/snippet}
+			</SidebarSection>
+			{#each teams as team (team.id)}
+				<SidebarItem
+					href={workspacePath(slug, `/settings/teams/${team.key}`)}
+					label={team.name}
+					icon={team.visibility === "private" ? Lock : Users}
+					indent
+					active={current(workspacePath(slug, `/settings/teams/${team.key}`))}
+				/>
+			{/each}
+			{#if teams.length === 0}
+				<SidebarItem
+					href={workspacePath(slug, "/settings/teams?new")}
+					label="Create a team"
+					icon={Plus}
+					indent
+					active={false}
+				/>
+			{/if}
 
 			<SidebarSection label="Projects">
 				{#snippet action()}

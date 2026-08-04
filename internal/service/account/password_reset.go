@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/service"
 )
 
@@ -42,7 +43,7 @@ func (s *accountsService) RequestPasswordReset(ctx context.Context, input servic
 		return time.Time{}, err
 	}
 
-	if account.Status != entity.AccountStatusActive {
+	if account.Agent() || account.Status != entity.AccountStatusActive {
 		return expiresAt, nil
 	}
 
@@ -161,7 +162,7 @@ func (s *accountsService) ConfirmPasswordReset(ctx context.Context, token, passw
 			return err
 		}
 
-		return s.sessions.RevokeAllByAccountID(ctx, account.ID)
+		return s.sessions.RevokeAllByAccountID(identity.Into(ctx, account.ID), account.ID)
 	})
 	if err != nil {
 		return err

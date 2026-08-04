@@ -9,22 +9,38 @@ import (
 )
 
 type (
-	accountKey struct{}
+	actorKey   struct{}
 	sessionKey struct{}
 )
 
+func WithActor(ctx context.Context, actor entity.Actor) context.Context {
+	return context.WithValue(ctx, actorKey{}, actor)
+}
+
+func Actor(ctx context.Context) (entity.Actor, bool) {
+	actor, ok := ctx.Value(actorKey{}).(entity.Actor)
+	if !ok || actor.Anonymous() {
+		return entity.Actor{}, false
+	}
+
+	return actor, true
+}
+
 func Into(ctx context.Context, accountID uuid.UUID) context.Context {
-	return context.WithValue(ctx, accountKey{}, accountID)
+	return WithActor(ctx, entity.Actor{Kind: entity.ActorKindUser, AccountID: accountID})
 }
 
 func From(ctx context.Context) (uuid.UUID, bool) {
-	accountID, ok := ctx.Value(accountKey{}).(uuid.UUID)
+	actor, ok := Actor(ctx)
+	if !ok {
+		return uuid.Nil, false
+	}
 
-	return accountID, ok
+	return actor.AccountID, true
 }
 
 func WithSession(ctx context.Context, session entity.Session) context.Context {
-	return Into(context.WithValue(ctx, sessionKey{}, session), session.AccountID)
+	return WithActor(context.WithValue(ctx, sessionKey{}, session), entity.UserActor(session))
 }
 
 func CurrentSession(ctx context.Context) (entity.Session, bool) {

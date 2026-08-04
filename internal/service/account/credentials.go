@@ -11,7 +11,7 @@ import (
 )
 
 func (s *accountsService) SetPassword(ctx context.Context, accountID uuid.UUID, password string) (service.IssuedSession, error) {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return service.IssuedSession{}, err
 	}
 
@@ -41,7 +41,7 @@ func (s *accountsService) SetPassword(ctx context.Context, accountID uuid.UUID, 
 }
 
 func (s *accountsService) ChangePassword(ctx context.Context, accountID uuid.UUID, currentPassword, newPassword string) (service.IssuedSession, error) {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return service.IssuedSession{}, err
 	}
 
@@ -70,7 +70,7 @@ func (s *accountsService) ChangePassword(ctx context.Context, accountID uuid.UUI
 	return s.storePassword(ctx, account, newPassword)
 }
 
-func (s *accountsService) validateNewPassword(ctx context.Context, field string, account entity.Account, password string) error {
+func (s *accountsService) screenPassword(ctx context.Context, field, password string) error {
 	if err := entity.NewValidationError(entity.ValidatePassword(field, password)); err != nil {
 		return err
 	}
@@ -82,6 +82,14 @@ func (s *accountsService) validateNewPassword(ctx context.Context, field string,
 
 	if compromised {
 		return entity.NewValidationError(entity.FieldError{Field: field, Code: entity.ValidationCodeBreached})
+	}
+
+	return nil
+}
+
+func (s *accountsService) validateNewPassword(ctx context.Context, field string, account entity.Account, password string) error {
+	if err := s.screenPassword(ctx, field, password); err != nil {
+		return err
 	}
 
 	reused, err := s.passwordReused(ctx, account, password)

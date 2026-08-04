@@ -1,11 +1,20 @@
 package service
 
-import "github.com/usenorn/norn/internal/entity"
+import (
+	"github.com/google/uuid"
+
+	"github.com/usenorn/norn/internal/entity"
+)
 
 type SignInInput struct {
 	Email    string
 	Password string
 	Client   entity.SessionClient
+}
+
+type StartSessionInput struct {
+	AccountID uuid.UUID
+	Client    entity.SessionClient
 }
 
 type IssuedSession struct {

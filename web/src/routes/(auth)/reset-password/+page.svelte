@@ -10,6 +10,7 @@
 	import * as Form from "$lib/components/ui/form/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import InstanceLine from "$lib/components/norn/instance-line.svelte";
 	import { api } from "$lib/api";
 	import { newPasswordSchema, resetRequestSchema } from "$lib/auth/reset-password-schema";
 	import {
@@ -136,7 +137,7 @@
 
 	const busy = $derived($requestSubmitting || $passwordSubmitting);
 
-	const ssoOnly = $derived(auth.sso !== null && !auth.password);
+	const ssoOnly = $derived(Boolean(auth.sso) && !auth.password);
 	const provider = $derived(auth.sso?.name ?? "your identity provider");
 
 	const showRequestForm = $derived(
@@ -172,7 +173,7 @@
 
 	const lede = $derived.by(() => {
 		if (ssoOnly) {
-			return `${auth.workspace} signs in through ${provider}, so there's nothing here to reset.`;
+			return `This instance signs in through ${provider}, so there's nothing here to reset.`;
 		}
 		switch (reset.kind) {
 			case "request":
@@ -374,8 +375,6 @@
 		{#if footer}
 			<p class="text-center text-sm leading-normal text-muted-foreground text-pretty">{footer}</p>
 		{/if}
-		{#if auth.selfHosted && auth.instance}
-			<p class="text-center font-mono text-xs break-all text-muted-foreground">{auth.instance}</p>
-		{/if}
+		<InstanceLine instance={auth} />
 	</div>
 </div>

@@ -10,7 +10,6 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
-	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 )
@@ -19,6 +18,7 @@ type accountsService struct {
 	accounts        repository.Account
 	emailChanges    repository.EmailChange
 	passwordResets  repository.PasswordReset
+	signUps         repository.SignUp
 	passwordHistory repository.PasswordHistory
 	memberships     repository.Membership
 	workspaces      repository.Workspace
@@ -30,14 +30,17 @@ type accountsService struct {
 	producer        repository.JobProducer
 	transactor      repository.Transactor
 	sessions        service.Sessions
+	authorizer      service.Authorizer
 	app             config.App
 	smtp            config.SMTP
+	instance        config.Instance
 }
 
 func New(
 	accounts repository.Account,
 	emailChanges repository.EmailChange,
 	passwordResets repository.PasswordReset,
+	signUps repository.SignUp,
 	passwordHistory repository.PasswordHistory,
 	memberships repository.Membership,
 	workspaces repository.Workspace,
@@ -49,13 +52,16 @@ func New(
 	producer repository.JobProducer,
 	transactor repository.Transactor,
 	sessions service.Sessions,
+	authorizer service.Authorizer,
 	app config.App,
 	smtp config.SMTP,
+	instance config.Instance,
 ) service.Accounts {
 	return &accountsService{
 		accounts:        accounts,
 		emailChanges:    emailChanges,
 		passwordResets:  passwordResets,
+		signUps:         signUps,
 		passwordHistory: passwordHistory,
 		memberships:     memberships,
 		workspaces:      workspaces,
@@ -67,18 +73,21 @@ func New(
 		producer:        producer,
 		transactor:      transactor,
 		sessions:        sessions,
+		authorizer:      authorizer,
 		app:             app,
 		smtp:            smtp,
+		instance:        instance,
 	}
 }
 
-func authorizeSelf(ctx context.Context, accountID uuid.UUID) error {
-	actor, ok := identity.From(ctx)
-	if !ok || actor != accountID {
-		return entity.ErrAccountForbidden
-	}
+func (s *accountsService) authorizeSelf(ctx context.Context, action entity.Action, accountID uuid.UUID) error {
+	_, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource: entity.ResourceAccount,
+		Action:   action,
+		Subject:  accountID,
+	})
 
-	return nil
+	return err
 }
 
 func (s *accountsService) Register(ctx context.Context, input service.RegisterAccountInput) (entity.Account, error) {
@@ -123,7 +132,7 @@ func (s *accountsService) Register(ctx context.Context, input service.RegisterAc
 }
 
 func (s *accountsService) Get(ctx context.Context, accountID uuid.UUID) (entity.Account, error) {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return entity.Account{}, err
 	}
 
@@ -131,7 +140,7 @@ func (s *accountsService) Get(ctx context.Context, accountID uuid.UUID) (entity.
 }
 
 func (s *accountsService) UpdateProfile(ctx context.Context, accountID uuid.UUID, input service.UpdateProfileInput) (entity.Account, error) {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return entity.Account{}, err
 	}
 
@@ -166,7 +175,7 @@ func (s *accountsService) UpdateProfile(ctx context.Context, accountID uuid.UUID
 }
 
 func (s *accountsService) PendingEmailChange(ctx context.Context, accountID uuid.UUID) (entity.EmailChange, error) {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return entity.EmailChange{}, err
 	}
 
@@ -174,7 +183,7 @@ func (s *accountsService) PendingEmailChange(ctx context.Context, accountID uuid
 }
 
 func (s *accountsService) RequestEmailChange(ctx context.Context, accountID uuid.UUID, newEmail string) (entity.EmailChange, error) {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return entity.EmailChange{}, err
 	}
 
@@ -324,7 +333,7 @@ func (s *accountsService) SendEmailChangeConfirmation(ctx context.Context, chang
 }
 
 func (s *accountsService) Deactivate(ctx context.Context, accountID uuid.UUID) (entity.Account, error) {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return entity.Account{}, err
 	}
 
@@ -369,7 +378,7 @@ func (s *accountsService) Deactivate(ctx context.Context, accountID uuid.UUID) (
 }
 
 func (s *accountsService) Delete(ctx context.Context, accountID uuid.UUID) error {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return err
 	}
 

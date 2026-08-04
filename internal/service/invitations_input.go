@@ -1,0 +1,56 @@
+package service
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/usenorn/norn/internal/entity"
+)
+
+type InvitationRecipient struct {
+	Email   string
+	Role    entity.MembershipRole
+	TeamIDs []uuid.UUID
+}
+
+type CreateInvitationsInput struct {
+	WorkspaceID uuid.UUID
+	Recipients  []InvitationRecipient
+}
+
+type InvitationResult struct {
+	Email      string
+	Outcome    entity.InvitationOutcome
+	Invitation entity.Invitation
+	URL        string
+}
+
+type IssuedInvitation struct {
+	Invitation entity.Invitation
+	URL        string
+}
+
+type InvitationPreview struct {
+	Workspace     entity.Workspace
+	Email         string
+	Role          entity.MembershipRole
+	ExpiresAt     time.Time
+	AccountExists bool
+	SSOEnforced   bool
+}
+
+type AcceptInvitationInput struct {
+	Token       string
+	DisplayName string
+	Timezone    string
+	Password    string
+	Client      entity.SessionClient
+}
+
+type AcceptedInvitation struct {
+	Workspace  entity.Workspace
+	Membership entity.Membership
+	Session    IssuedSession
+	SignedIn   bool
+}

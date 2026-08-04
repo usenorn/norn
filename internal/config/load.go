@@ -12,6 +12,10 @@ import (
 const envPrefix = "NORN"
 
 func New(cfgFile string) (Config, error) {
+	if err := loadDotenv(); err != nil {
+		return Config{}, fmt.Errorf("load %s: %w", dotenvFile, err)
+	}
+
 	v := viper.New()
 
 	setDefaults(v)
@@ -90,6 +94,10 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("app.base_url", "http://localhost:5173")
 	v.SetDefault("app.log_level", "info")
 
+	v.SetDefault("instance.signups_open", true)
+	v.SetDefault("instance.password_auth", true)
+	v.SetDefault("instance.self_hosted", false)
+
 	v.SetDefault("http.addr", "127.0.0.1:8080")
 	v.SetDefault("http.read_header_timeout", 5*time.Second)
 	v.SetDefault("http.read_timeout", 30*time.Second)
@@ -137,6 +145,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("password.breach_check_enabled", true)
 	v.SetDefault("password.breach_check_endpoint", "https://api.pwnedpasswords.com/range")
 	v.SetDefault("password.breach_check_timeout", 5*time.Second)
+
+	v.SetDefault("workspace.deletion_grace_period", 720*time.Hour)
 
 	v.SetDefault("storage.endpoint", "http://127.0.0.1:3900")
 	v.SetDefault("storage.region", "garage")
