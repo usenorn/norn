@@ -58,13 +58,15 @@
 				{#if attachable.length === 0}
 					<DropdownMenu.Label>No other issue can take this one</DropdownMenu.Label>
 				{:else}
-					<DropdownMenu.GroupHeading>File under</DropdownMenu.GroupHeading>
-					{#each attachable as candidate (candidate.id)}
-						<DropdownMenu.Item onSelect={() => onchoose(candidate.id)}>
-							<span class="font-mono text-xs text-muted-foreground">{candidate.reference}</span>
-							<span class="truncate">{candidate.title}</span>
-						</DropdownMenu.Item>
-					{/each}
+					<DropdownMenu.Group>
+						<DropdownMenu.GroupHeading>File under</DropdownMenu.GroupHeading>
+						{#each attachable as candidate (candidate.id)}
+							<DropdownMenu.Item onSelect={() => onchoose(candidate.id)}>
+								<span class="font-mono text-xs text-muted-foreground">{candidate.reference}</span>
+								<span class="truncate">{candidate.title}</span>
+							</DropdownMenu.Item>
+						{/each}
+					</DropdownMenu.Group>
 				{/if}
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
