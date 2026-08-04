@@ -1181,6 +1181,56 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/bulk:
+    post:
+      tags: [issues]
+      operationId: applyWorkspaceIssueBulkChange
+      summary: Change many issues at once, reporting an outcome for each
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BulkChangeRequest' }
+      responses:
+        '200':
+          description: The change was applied, with an outcome per issue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BulkActionResult' }
+        '202':
+          description: The set was too large to apply inline and is running as a job
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BulkActionResult' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/bulk-actions/{bulkActionId}:
+    get:
+      tags: [issues]
+      operationId: getWorkspaceBulkAction
+      summary: Report how far a bulk action has got and what happened to each issue
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: bulkActionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: The bulk action
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BulkActionResult' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/activity:
     get:
       tags: [issues]
@@ -2085,6 +2135,68 @@ components:
         status: { $ref: '#/components/schemas/IssueStatus' }
         expectedVersion: { type: integer, format: int32 }
 
+    BulkOutcome:
+      type: string
+      enum: [applied, unchanged, forbidden, not_found, conflict, invalid]
+
+    BulkActionStatus:
+      type: string
+      enum: [queued, running, complete, failed]
+
+    BulkChange:
+      type: object
+      description: Exactly one lifecycle change, or any combination of property changes
+      properties:
+        stateId: { type: string, format: uuid }
+        assigneeId: { type: string, format: uuid }
+        clearAssignee: { type: boolean }
+        addLabelId: { type: string, format: uuid }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        status: { $ref: '#/components/schemas/IssueStatus' }
+
+    BulkFilter:
+      type: object
+      description: The set is resolved when the action runs, with the caller's own visibility
+      properties:
+        teamId: { type: string, format: uuid }
+        status:
+          type: array
+          items: { $ref: '#/components/schemas/IssueStatus' }
+
+    BulkChangeRequest:
+      type: object
+      required: [change]
+      properties:
+        change: { $ref: '#/components/schemas/BulkChange' }
+        issueIds:
+          type: array
+          items: { type: string, format: uuid }
+        filter: { $ref: '#/components/schemas/BulkFilter' }
+
+    BulkActionOutcome:
+      type: object
+      required: [issueId, reference, outcome]
+      properties:
+        issueId: { type: string, format: uuid }
+        reference: { type: string }
+        outcome: { $ref: '#/components/schemas/BulkOutcome' }
+
+    BulkActionResult:
+      type: object
+      required: [id, status, processed, outcomes]
+      properties:
+        id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/BulkActionStatus' }
+        processed: { type: integer, format: int32 }
+        expected:
+          type: integer
+          format: int32
+          nullable: true
+          description: Absent for a filter-defined set, whose size is not known in advance
+        outcomes:
+          type: array
+          items: { $ref: '#/components/schemas/BulkActionOutcome' }
+
     IssueRelationKind:
       type: string
       description: A relation as seen from the issue you are looking at
@@ -2355,6 +2467,7 @@ components:
         fromValue: { type: string }
         toValue: { type: string }
         version: { type: integer, format: int32 }
+        bulkActionId: { type: string, format: uuid }
         createdAt: { type: string, format: date-time }
 
     IssueActivityPage:

@@ -10,4 +10,5 @@ var Set = wire.NewSet(
 	NewInvitationHandler,
 	NewWorkspacePurgeHandler,
 	NewIssuePurgeHandler,
+	NewBulkApplyHandler,
 )

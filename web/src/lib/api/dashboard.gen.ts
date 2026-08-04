@@ -720,6 +720,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change many issues at once, reporting an outcome for each */
+        post: operations["applyWorkspaceIssueBulkChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/bulk-actions/{bulkActionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report how far a bulk action has got and what happened to each issue */
+        get: operations["getWorkspaceBulkAction"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/activity": {
         parameters: {
             query?: never;
@@ -1157,6 +1191,52 @@ export interface components {
             /** Format: int32 */
             expectedVersion: number;
         };
+        /** @enum {string} */
+        BulkOutcome: "applied" | "unchanged" | "forbidden" | "not_found" | "conflict" | "invalid";
+        /** @enum {string} */
+        BulkActionStatus: "queued" | "running" | "complete" | "failed";
+        /** @description Exactly one lifecycle change, or any combination of property changes */
+        BulkChange: {
+            /** Format: uuid */
+            stateId?: string;
+            /** Format: uuid */
+            assigneeId?: string;
+            clearAssignee?: boolean;
+            /** Format: uuid */
+            addLabelId?: string;
+            priority?: components["schemas"]["IssuePriority"];
+            status?: components["schemas"]["IssueStatus"];
+        };
+        /** @description The set is resolved when the action runs, with the caller's own visibility */
+        BulkFilter: {
+            /** Format: uuid */
+            teamId?: string;
+            status?: components["schemas"]["IssueStatus"][];
+        };
+        BulkChangeRequest: {
+            change: components["schemas"]["BulkChange"];
+            issueIds?: string[];
+            filter?: components["schemas"]["BulkFilter"];
+        };
+        BulkActionOutcome: {
+            /** Format: uuid */
+            issueId: string;
+            reference: string;
+            outcome: components["schemas"]["BulkOutcome"];
+        };
+        BulkActionResult: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["BulkActionStatus"];
+            /** Format: int32 */
+            processed: number;
+            /**
+             * Format: int32
+             * @description Absent for a filter-defined set, whose size is not known in advance
+             */
+            expected?: number | null;
+            outcomes: components["schemas"]["BulkActionOutcome"][];
+        };
         /**
          * @description A relation as seen from the issue you are looking at
          * @enum {string}
@@ -1318,6 +1398,8 @@ export interface components {
             toValue?: string;
             /** Format: int32 */
             version?: number;
+            /** Format: uuid */
+            bulkActionId?: string;
             /** Format: date-time */
             createdAt: string;
         };
@@ -3581,6 +3663,72 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    applyWorkspaceIssueBulkChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description The change was applied, with an outcome per issue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkActionResult"];
+                };
+            };
+            /** @description The set was too large to apply inline and is running as a job */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkActionResult"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceBulkAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                bulkActionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The bulk action */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkActionResult"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

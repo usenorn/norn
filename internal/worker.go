@@ -27,6 +27,7 @@ func NewServeMux(
 	invitation *job.InvitationHandler,
 	workspacePurge *job.WorkspacePurgeHandler,
 	issuePurge *job.IssuePurgeHandler,
+	bulkApply *job.BulkApplyHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -36,6 +37,7 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeInvitation, invitation)
 	mux.Handle(entity.TaskTypeWorkspacePurge, workspacePurge)
 	mux.Handle(entity.TaskTypeIssuePurge, issuePurge)
+	mux.Handle(entity.TaskTypeBulkApply, bulkApply)
 
 	return mux
 }

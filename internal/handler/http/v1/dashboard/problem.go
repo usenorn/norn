@@ -257,6 +257,12 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrIssueParentNotActive):
 		return issueConflictProblem(api.IssueParentNotActive, err), true
 
+	case errors.Is(err, entity.ErrBulkChangeEmpty),
+		errors.Is(err, entity.ErrBulkChangeConflicting),
+		errors.Is(err, entity.ErrBulkSetEmpty),
+		errors.Is(err, entity.ErrBulkSetAmbiguous):
+		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
+
 	case errors.Is(err, entity.ErrIssueRelationSelf):
 		return issueConflictProblem(api.IssueRelationSelf, err), true
 
@@ -273,6 +279,7 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrTeamMembershipNotFound),
 		errors.Is(err, entity.ErrIssueNotFound),
 		errors.Is(err, entity.ErrIssueRelationNotFound),
+		errors.Is(err, entity.ErrBulkActionNotFound),
 		errors.Is(err, entity.ErrWorkflowStateNotFound),
 		errors.Is(err, entity.ErrAvatarMissing):
 		return newProblem(http.StatusNotFound, err.Error()), true

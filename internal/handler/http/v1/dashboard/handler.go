@@ -20,6 +20,7 @@ type handler struct {
 	invitations    service.Invitations
 	issues         service.Issues
 	issueRelations service.IssueRelations
+	bulkOperations service.BulkOperations
 	workflowStates service.WorkflowStates
 	labels         service.Labels
 	apiTokens      service.APITokens
@@ -37,6 +38,7 @@ func New(
 	invitations service.Invitations,
 	issues service.Issues,
 	issueRelations service.IssueRelations,
+	bulkOperations service.BulkOperations,
 	workflowStates service.WorkflowStates,
 	labels service.Labels,
 	apiTokens service.APITokens,
@@ -53,6 +55,7 @@ func New(
 		invitations:    invitations,
 		issues:         issues,
 		issueRelations: issueRelations,
+		bulkOperations: bulkOperations,
 		workflowStates: workflowStates,
 		labels:         labels,
 		apiTokens:      apiTokens,

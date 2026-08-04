@@ -26,6 +26,7 @@ import (
 	"github.com/usenorn/norn/internal/repository/apitoken"
 	"github.com/usenorn/norn/internal/repository/blob"
 	"github.com/usenorn/norn/internal/repository/breachcheck"
+	"github.com/usenorn/norn/internal/repository/bulkaction"
 	"github.com/usenorn/norn/internal/repository/emailchange"
 	"github.com/usenorn/norn/internal/repository/geolocation"
 	"github.com/usenorn/norn/internal/repository/invitation"
@@ -50,6 +51,7 @@ import (
 	account2 "github.com/usenorn/norn/internal/service/account"
 	apitoken2 "github.com/usenorn/norn/internal/service/apitoken"
 	"github.com/usenorn/norn/internal/service/authorizer"
+	"github.com/usenorn/norn/internal/service/bulkoperation"
 	invitation2 "github.com/usenorn/norn/internal/service/invitation"
 	issue2 "github.com/usenorn/norn/internal/service/issue"
 	issuerelation2 "github.com/usenorn/norn/internal/service/issuerelation"
@@ -173,10 +175,12 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	issues := issue2.New(repositoryIssue, workflowState, issueActivity, repositoryLabel, repositoryMembership, jobProducer, serviceAuthorizer, postgresClient)
 	issueRelation := issuerelation.New(postgresClient)
 	issueRelations := issuerelation2.New(issueRelation, repositoryIssue, workflowState, issueActivity, serviceAuthorizer, postgresClient)
+	bulkAction := bulkaction.New(postgresClient)
+	bulkOperations := bulkoperation.New(bulkAction, repositoryIssue, workflowState, repositoryLabel, issueActivity, repositoryMembership, jobProducer, serviceAuthorizer, postgresClient)
 	workflowStates := workflowstate2.New(workflowState, repositoryIssue, repositoryTeam, serviceAuthorizer, postgresClient)
 	labelGroup := labelgroup.New(postgresClient)
 	labels := label2.New(repositoryLabel, labelGroup, repositoryTeam, serviceAuthorizer, postgresClient)
-	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, workflowStates, labels, apiTokens, sessions, repositoryBlob, app, instance, configSession)
+	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, bulkOperations, workflowStates, labels, apiTokens, sessions, repositoryBlob, app, instance, configSession)
 	handler := router.New(http, configSession, sessions, apiTokens, strictServerInterface)
 	logger, err := logging.New(app)
 	if err != nil {
@@ -315,7 +319,10 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	repositoryLabel := label.New(client)
 	issues := issue2.New(repositoryIssue, workflowState, issueActivity, repositoryLabel, repositoryMembership, jobProducer, serviceAuthorizer, client)
 	issuePurgeHandler := job.NewIssuePurgeHandler(issues)
-	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler)
+	bulkAction := bulkaction.New(client)
+	bulkOperations := bulkoperation.New(bulkAction, repositoryIssue, workflowState, repositoryLabel, issueActivity, repositoryMembership, jobProducer, serviceAuthorizer, client)
+	bulkApplyHandler := job.NewBulkApplyHandler(bulkOperations)
+	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler)
 	worker := NewWorker(server, serveMux, logger)
 	return worker, func() {
 		cleanup7()
@@ -426,7 +433,7 @@ func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, objectstore.Set, authz.Set, geoip.Set, pwned.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, issueactivity.Set, issuerelation.Set, label.Set, labelgroup.Set, workflowstate.Set, apitoken.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, label2.Set, workflowstate2.Set, apitoken2.Set, session2.Set, authorizer.Set, jobs.Set, dashboard.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, objectstore.Set, authz.Set, geoip.Set, pwned.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, issueactivity.Set, issuerelation.Set, bulkaction.Set, label.Set, labelgroup.Set, workflowstate.Set, apitoken.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, label2.Set, workflowstate2.Set, apitoken2.Set, session2.Set, authorizer.Set, jobs.Set, dashboard.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

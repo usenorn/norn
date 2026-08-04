@@ -2,9 +2,11 @@ import type { Issue, IssueProgress } from "$lib/issues/board";
 import type { WorkflowState } from "$lib/team/states";
 import type { Team } from "$lib/team/teams";
 import type { Member } from "./+page";
+import type { BulkActionResult } from "$lib/issues/bulk";
 
 export type IssuesPreview = {
 	team: Team | null;
+	bulk?: BulkActionResult;
 	states?: WorkflowState[];
 	issues?: Issue[];
 	progress?: IssueProgress;
@@ -254,6 +256,51 @@ export const issuesPreviewStates: Record<string, IssuesPreview> = import.meta.en
 				],
 				members: [],
 				progress: { notStarted: 1, active: 2, complete: 1, abandoned: 0 },
+			},
+			bulk_running: {
+				team: null,
+				bulk: {
+					id: "00000000-0000-4000-8000-000000000a01",
+					status: "running" as const,
+					processed: 34,
+					outcomes: [],
+				},
+			},
+			bulk_partial: {
+				team: null,
+				bulk: {
+					id: "00000000-0000-4000-8000-000000000a02",
+					status: "complete" as const,
+					processed: 5,
+					expected: 5,
+					outcomes: [
+						{
+							issueId: "00000000-0000-4000-8000-000000000b01",
+							reference: "DSG-14",
+							outcome: "applied" as const,
+						},
+						{
+							issueId: "00000000-0000-4000-8000-000000000b02",
+							reference: "DSG-15",
+							outcome: "applied" as const,
+						},
+						{
+							issueId: "00000000-0000-4000-8000-000000000b03",
+							reference: "PLT-3",
+							outcome: "forbidden" as const,
+						},
+						{
+							issueId: "00000000-0000-4000-8000-000000000b04",
+							reference: "DSG-21",
+							outcome: "conflict" as const,
+						},
+						{
+							issueId: "00000000-0000-4000-8000-000000000b05",
+							reference: "DSG-22",
+							outcome: "not_found" as const,
+						},
+					],
+				},
 			},
 		}
 	: {};

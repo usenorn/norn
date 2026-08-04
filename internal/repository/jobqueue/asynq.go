@@ -161,6 +161,29 @@ func (c *Client) EnqueueIssuePurge(ctx context.Context, payload entity.IssuePurg
 	return nil
 }
 
+func (c *Client) EnqueueBulkApply(ctx context.Context, payload entity.BulkApplyPayload) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode bulk apply payload: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeBulkApply, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueDefault),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.TaskID(payload.BulkActionID.String()),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue bulk apply: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) Queues(_ context.Context) ([]entity.QueueStat, error) {
 	names, err := c.inspector.Queues()
 	if err != nil {
