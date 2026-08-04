@@ -106,6 +106,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 							},
 						},
 					],
+					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 1, active: 1, complete: 6, abandoned: 0 },
 			},
@@ -127,6 +128,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 					members: [],
 					updates: [],
 					issues: [],
+					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 0, active: 0, complete: 4, abandoned: 3 },
 			},
@@ -147,6 +149,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 					members: [],
 					updates: [],
 					issues: [],
+					activity: { kind: "empty" },
 				},
 			},
 		}

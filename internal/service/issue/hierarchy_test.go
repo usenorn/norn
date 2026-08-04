@@ -164,12 +164,12 @@ func TestReparentingWritesHistoryOnTheChildTheOldParentAndTheNewParent(t *testin
 			return nil
 		})
 
-	recorded := map[uuid.UUID]entity.IssueActivityKind{}
+	recorded := map[uuid.UUID]entity.ActivityKind{}
 
 	h.activity.EXPECT().
 		Record(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, entry entity.IssueActivity) error {
-			recorded[entry.IssueID] = entry.Kind
+		DoAndReturn(func(_ context.Context, entry entity.Activity) error {
+			recorded[entry.Subject.ID] = entry.Kind
 
 			return nil
 		}).
@@ -188,15 +188,15 @@ func TestReparentingWritesHistoryOnTheChildTheOldParentAndTheNewParent(t *testin
 		t.Fatalf("child written at depth %d, want one below its new parent at depth 2", wroteDepth)
 	}
 
-	if recorded[issueID] != entity.IssueActivityKindPropertyChanged {
+	if recorded[issueID] != entity.ActivityKindPropertyChanged {
 		t.Error("the child's own history does not record that its parent changed")
 	}
 
-	if recorded[oldParentID] != entity.IssueActivityKindChildRemoved {
+	if recorded[oldParentID] != entity.ActivityKindChildRemoved {
 		t.Error("the former parent's history does not record losing the child")
 	}
 
-	if recorded[newParentID] != entity.IssueActivityKindChildAdded {
+	if recorded[newParentID] != entity.ActivityKindChildAdded {
 		t.Error("the new parent's history does not record gaining the child")
 	}
 }

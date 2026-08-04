@@ -271,11 +271,11 @@ func TestChangingTheLabelsIsWrittenIntoTheHistoryAndBumpsTheRow(t *testing.T) {
 			return nil
 		})
 
-	var recorded entity.IssueActivity
+	var recorded entity.Activity
 
 	h.activity.EXPECT().
 		Record(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, entry entity.IssueActivity) error {
+		DoAndReturn(func(_ context.Context, entry entity.Activity) error {
 			recorded = entry
 
 			return nil

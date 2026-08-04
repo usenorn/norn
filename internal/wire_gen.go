@@ -27,6 +27,7 @@ import (
 	"github.com/usenorn/norn/internal/pkg/valkey"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/repository/account"
+	"github.com/usenorn/norn/internal/repository/activity"
 	"github.com/usenorn/norn/internal/repository/apitoken"
 	"github.com/usenorn/norn/internal/repository/attachment"
 	"github.com/usenorn/norn/internal/repository/blob"
@@ -39,7 +40,6 @@ import (
 	"github.com/usenorn/norn/internal/repository/geolocation"
 	"github.com/usenorn/norn/internal/repository/invitation"
 	"github.com/usenorn/norn/internal/repository/issue"
-	"github.com/usenorn/norn/internal/repository/issueactivity"
 	"github.com/usenorn/norn/internal/repository/issuecomment"
 	"github.com/usenorn/norn/internal/repository/issuefilterreference"
 	"github.com/usenorn/norn/internal/repository/issuerelation"
@@ -212,21 +212,21 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	repositoryInvitation := invitation.New(postgresClient)
 	invitations := invitation2.New(repositoryInvitation, repositoryMembership, repositoryWorkspace, repositoryAccount, repositoryTeam, teamMember, workspaceAuthPolicy, jobProducer, repositoryMailer, postgresClient, serviceAuthorizer, accounts, sessions, app, configSMTP)
 	repositoryIssue := issue.New(postgresClient)
-	issueActivity := issueactivity.New(postgresClient)
+	repositoryActivity := activity.New(postgresClient)
 	repositoryLabel := label.New(postgresClient)
 	repositoryCycle := cycle.New(postgresClient)
 	cycleScopeChange := cycle.NewScopeChange(postgresClient)
 	repositoryProject := project.New(postgresClient)
 	repositoryTriage := triage.New(postgresClient)
-	issues := issue2.New(repositoryIssue, workflowState, issueActivity, repositoryLabel, repositoryMembership, repositoryCycle, cycleScopeChange, repositoryProject, repositoryTeam, repositoryTriage, jobProducer, serviceAuthorizer, postgresClient)
+	issues := issue2.New(repositoryIssue, workflowState, repositoryActivity, repositoryLabel, repositoryAccount, repositoryMembership, repositoryCycle, cycleScopeChange, repositoryProject, repositoryTeam, repositoryTriage, jobProducer, serviceAuthorizer, postgresClient)
 	issueRelation := issuerelation.New(postgresClient)
-	issueRelations := issuerelation2.New(issueRelation, repositoryIssue, workflowState, issueActivity, serviceAuthorizer, postgresClient)
+	issueRelations := issuerelation2.New(issueRelation, repositoryIssue, workflowState, repositoryActivity, serviceAuthorizer, postgresClient)
 	issueComment := issuecomment.New(postgresClient)
 	repositoryAttachment := attachment.New(postgresClient)
-	issueComments := issuecomment2.New(issueComment, repositoryAttachment, repositoryIssue, repositoryTeam, issueActivity, serviceAuthorizer, postgresClient)
-	serviceAttachments := attachment2.New(repositoryAttachment, repositoryIssue, repositoryBlob, jobProducer, serviceAuthorizer, postgresClient, attachments)
+	issueComments := issuecomment2.New(issueComment, repositoryAttachment, repositoryIssue, repositoryTeam, repositoryActivity, serviceAuthorizer, postgresClient)
+	serviceAttachments := attachment2.New(repositoryAttachment, repositoryActivity, repositoryIssue, repositoryBlob, jobProducer, serviceAuthorizer, postgresClient, attachments)
 	bulkAction := bulkaction.New(postgresClient)
-	bulkOperations := bulkoperation.New(bulkAction, repositoryIssue, workflowState, repositoryLabel, issueActivity, repositoryMembership, jobProducer, serviceAuthorizer, postgresClient)
+	bulkOperations := bulkoperation.New(bulkAction, repositoryIssue, workflowState, repositoryLabel, repositoryActivity, repositoryMembership, jobProducer, serviceAuthorizer, postgresClient)
 	workflowStates := workflowstate2.New(workflowState, repositoryIssue, repositoryTeam, serviceAuthorizer, postgresClient)
 	labelGroup := labelgroup.New(postgresClient)
 	labels := label2.New(repositoryLabel, labelGroup, repositoryTeam, serviceAuthorizer, postgresClient)
@@ -243,11 +243,11 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	cycles := cycle2.New(repositoryCycle, cycleCadence, cycleScopeChange, repositoryIssue, repositoryTeam, repositoryWorkspace, serviceAuthorizer, postgresClient)
 	projectMember := project.NewMember(postgresClient)
 	projectStatusUpdate := project.NewStatusUpdate(postgresClient)
-	projects := project2.New(repositoryProject, projectMember, projectStatusUpdate, repositoryAccount, repositoryMembership, serviceAuthorizer, postgresClient)
+	projects := project2.New(repositoryProject, projectMember, projectStatusUpdate, repositoryActivity, repositoryAccount, repositoryMembership, serviceAuthorizer, postgresClient)
 	savedView := savedview.New(postgresClient)
 	issueFilterReference := issuefilterreference.New(postgresClient)
 	savedViews := savedview2.New(savedView, issueFilterReference, repositoryTeam, serviceAuthorizer, postgresClient)
-	triages := triage2.New(repositoryTriage, repositoryIssue, workflowState, issueActivity, repositoryTeam, issueRelations, issues, serviceAuthorizer, postgresClient)
+	triages := triage2.New(repositoryTriage, repositoryIssue, workflowState, repositoryActivity, repositoryTeam, issueRelations, issues, serviceAuthorizer, postgresClient)
 	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, issueComments, serviceAttachments, bulkOperations, workflowStates, labels, apiTokens, sessions, ssoConnections, cycles, projects, savedViews, triages, app, instance, configSession)
 	callback := sso.NewCallback(ssoConnections, configSession)
 	ssoSAML := sso.NewSAML(ssoConnections, configSession)
@@ -405,16 +405,16 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, jobProducer, repositoryBlob, serviceAuthorizer, client, configWorkspace)
 	workspacePurgeHandler := job.NewWorkspacePurgeHandler(workspaces)
 	repositoryIssue := issue.New(client)
-	issueActivity := issueactivity.New(client)
+	repositoryActivity := activity.New(client)
 	repositoryLabel := label.New(client)
 	repositoryCycle := cycle.New(client)
 	cycleScopeChange := cycle.NewScopeChange(client)
 	repositoryProject := project.New(client)
 	repositoryTriage := triage.New(client)
-	issues := issue2.New(repositoryIssue, workflowState, issueActivity, repositoryLabel, repositoryMembership, repositoryCycle, cycleScopeChange, repositoryProject, repositoryTeam, repositoryTriage, jobProducer, serviceAuthorizer, client)
+	issues := issue2.New(repositoryIssue, workflowState, repositoryActivity, repositoryLabel, repositoryAccount, repositoryMembership, repositoryCycle, cycleScopeChange, repositoryProject, repositoryTeam, repositoryTriage, jobProducer, serviceAuthorizer, client)
 	issuePurgeHandler := job.NewIssuePurgeHandler(issues)
 	bulkAction := bulkaction.New(client)
-	bulkOperations := bulkoperation.New(bulkAction, repositoryIssue, workflowState, repositoryLabel, issueActivity, repositoryMembership, jobProducer, serviceAuthorizer, client)
+	bulkOperations := bulkoperation.New(bulkAction, repositoryIssue, workflowState, repositoryLabel, repositoryActivity, repositoryMembership, jobProducer, serviceAuthorizer, client)
 	bulkApplyHandler := job.NewBulkApplyHandler(bulkOperations)
 	oidc := config.NewOIDC(configConfig)
 	oidcState := oidcstate.New(valkeyClient, oidc)
@@ -429,7 +429,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	serviceCycles := cycle2.New(repositoryCycle, cycleCadence, cycleScopeChange, repositoryIssue, repositoryTeam, repositoryWorkspace, serviceAuthorizer, client)
 	cycleGenerationHandler := job.NewCycleGenerationHandler(serviceCycles)
 	repositoryAttachment := attachment.New(client)
-	serviceAttachments := attachment2.New(repositoryAttachment, repositoryIssue, repositoryBlob, jobProducer, serviceAuthorizer, client, attachments)
+	serviceAttachments := attachment2.New(repositoryAttachment, repositoryActivity, repositoryIssue, repositoryBlob, jobProducer, serviceAuthorizer, client, attachments)
 	attachmentReclaimHandler := job.NewAttachmentReclaimHandler(serviceAttachments)
 	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler)
 	worker := NewWorker(saml, cycles, attachments, server, scheduler, serveMux, logger)
@@ -542,7 +542,7 @@ func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, issueactivity.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, savedview.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, apitoken.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, savedview2.Set, triage2.Set, label2.Set, workflowstate2.Set, apitoken2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, dashboard.Set, sso.Set, blob2.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, savedview.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, apitoken.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, savedview2.Set, triage2.Set, label2.Set, workflowstate2.Set, apitoken2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, dashboard.Set, sso.Set, blob2.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

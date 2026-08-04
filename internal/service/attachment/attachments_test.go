@@ -11,6 +11,7 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
+	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	blobrepo "github.com/usenorn/norn/internal/repository/blob"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
@@ -28,6 +29,7 @@ const (
 
 type harness struct {
 	attachments *attachmentrepo.MockAttachment
+	activity    *activityrepo.MockActivity
 	issues      *issuerepo.MockIssue
 	blobs       *blobrepo.MockBlob
 	jobs        *jobqueuerepo.MockJobProducer
@@ -47,6 +49,7 @@ func newHarness(t *testing.T, workspaceCap int64) *harness {
 
 	h := &harness{
 		attachments:  attachmentrepo.NewMockAttachment(ctrl),
+		activity:     activityrepo.NewMockActivity(ctrl),
 		issues:       issuerepo.NewMockIssue(ctrl),
 		blobs:        blobrepo.NewMockBlob(ctrl),
 		jobs:         jobqueuerepo.NewMockJobProducer(ctrl),
@@ -66,9 +69,10 @@ func newHarness(t *testing.T, workspaceCap int64) *harness {
 		AnyTimes()
 
 	h.jobs.EXPECT().EnqueueAttachmentReclaim(gomock.Any()).Return(nil).AnyTimes()
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	h.service = attachmentsvc.New(
-		h.attachments, h.issues, h.blobs, h.jobs, h.authorizer, transactor,
+		h.attachments, h.activity, h.issues, h.blobs, h.jobs, h.authorizer, transactor,
 		config.Attachments{
 			MaxFileBytes:      maxFileBytes,
 			MaxWorkspaceBytes: workspaceCap,

@@ -29,7 +29,7 @@ func (c *Client) WithTx(ctx context.Context, fn func(context.Context) error) err
 		return fmt.Errorf("begin transaction: %w", err)
 	}
 
-	if err := fn(context.WithValue(ctx, txKey{}, tx)); err != nil {
+	if err := fn(withOperations(context.WithValue(ctx, txKey{}, tx))); err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
 			return errors.Join(err, fmt.Errorf("rollback transaction: %w", rollbackErr))
 		}

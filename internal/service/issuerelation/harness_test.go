@@ -8,8 +8,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/usenorn/norn/internal/entity"
+	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
-	activityrepo "github.com/usenorn/norn/internal/repository/issueactivity"
 	relationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
@@ -22,7 +22,7 @@ type harness struct {
 	relations  *relationrepo.MockIssueRelation
 	issues     *issuerepo.MockIssue
 	states     *workflowstaterepo.MockWorkflowState
-	activity   *activityrepo.MockIssueActivity
+	activity   *activityrepo.MockActivity
 	authorizer *authorizersvc.MockAuthorizer
 	transactor *transactorrepo.MockTransactor
 	service    service.IssueRelations
@@ -37,7 +37,7 @@ func newHarness(t *testing.T) *harness {
 		relations:  relationrepo.NewMockIssueRelation(ctrl),
 		issues:     issuerepo.NewMockIssue(ctrl),
 		states:     workflowstaterepo.NewMockWorkflowState(ctrl),
-		activity:   activityrepo.NewMockIssueActivity(ctrl),
+		activity:   activityrepo.NewMockActivity(ctrl),
 		authorizer: authorizersvc.NewMockAuthorizer(ctrl),
 		transactor: transactorrepo.NewMockTransactor(ctrl),
 	}

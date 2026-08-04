@@ -78,6 +78,117 @@ func (e AccountStatus) Valid() bool {
 	}
 }
 
+// Defines values for ActivityActorKind.
+const (
+	ActivityActorKindAgent  ActivityActorKind = "agent"
+	ActivityActorKindSystem ActivityActorKind = "system"
+	ActivityActorKindToken  ActivityActorKind = "token"
+	ActivityActorKindUser   ActivityActorKind = "user"
+)
+
+// Valid indicates whether the value is a known member of the ActivityActorKind enum.
+func (e ActivityActorKind) Valid() bool {
+	switch e {
+	case ActivityActorKindAgent:
+		return true
+	case ActivityActorKindSystem:
+		return true
+	case ActivityActorKindToken:
+		return true
+	case ActivityActorKindUser:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ActivityKind.
+const (
+	ActivityKindArchived          ActivityKind = "archived"
+	ActivityKindAttachmentAdded   ActivityKind = "attachment_added"
+	ActivityKindAttachmentRemoved ActivityKind = "attachment_removed"
+	ActivityKindChildAdded        ActivityKind = "child_added"
+	ActivityKindChildRemoved      ActivityKind = "child_removed"
+	ActivityKindCommentDeleted    ActivityKind = "comment_deleted"
+	ActivityKindCommented         ActivityKind = "commented"
+	ActivityKindCreated           ActivityKind = "created"
+	ActivityKindDeleted           ActivityKind = "deleted"
+	ActivityKindMemberAdded       ActivityKind = "member_added"
+	ActivityKindMemberRemoved     ActivityKind = "member_removed"
+	ActivityKindPropertyChanged   ActivityKind = "property_changed"
+	ActivityKindRelationAdded     ActivityKind = "relation_added"
+	ActivityKindRelationRemoved   ActivityKind = "relation_removed"
+	ActivityKindRestored          ActivityKind = "restored"
+	ActivityKindStateChanged      ActivityKind = "state_changed"
+	ActivityKindTeamMoved         ActivityKind = "team_moved"
+	ActivityKindTriaged           ActivityKind = "triaged"
+	ActivityKindUnarchived        ActivityKind = "unarchived"
+)
+
+// Valid indicates whether the value is a known member of the ActivityKind enum.
+func (e ActivityKind) Valid() bool {
+	switch e {
+	case ActivityKindArchived:
+		return true
+	case ActivityKindAttachmentAdded:
+		return true
+	case ActivityKindAttachmentRemoved:
+		return true
+	case ActivityKindChildAdded:
+		return true
+	case ActivityKindChildRemoved:
+		return true
+	case ActivityKindCommentDeleted:
+		return true
+	case ActivityKindCommented:
+		return true
+	case ActivityKindCreated:
+		return true
+	case ActivityKindDeleted:
+		return true
+	case ActivityKindMemberAdded:
+		return true
+	case ActivityKindMemberRemoved:
+		return true
+	case ActivityKindPropertyChanged:
+		return true
+	case ActivityKindRelationAdded:
+		return true
+	case ActivityKindRelationRemoved:
+		return true
+	case ActivityKindRestored:
+		return true
+	case ActivityKindStateChanged:
+		return true
+	case ActivityKindTeamMoved:
+		return true
+	case ActivityKindTriaged:
+		return true
+	case ActivityKindUnarchived:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ActivitySubjectKind.
+const (
+	ActivitySubjectKindIssue   ActivitySubjectKind = "issue"
+	ActivitySubjectKindProject ActivitySubjectKind = "project"
+)
+
+// Valid indicates whether the value is a known member of the ActivitySubjectKind enum.
+func (e ActivitySubjectKind) Valid() bool {
+	switch e {
+	case ActivitySubjectKindIssue:
+		return true
+	case ActivitySubjectKindProject:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AttachmentStatus.
 const (
 	AttachmentStatusDiscarded AttachmentStatus = "discarded"
@@ -576,63 +687,6 @@ func (e InvitationUnusableProblemCode) Valid() bool {
 	case InvitationAddressMismatch:
 		return true
 	case InvitationRevoked:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IssueActivityKind.
-const (
-	IssueActivityKindArchived        IssueActivityKind = "archived"
-	IssueActivityKindChildAdded      IssueActivityKind = "child_added"
-	IssueActivityKindChildRemoved    IssueActivityKind = "child_removed"
-	IssueActivityKindCommentDeleted  IssueActivityKind = "comment_deleted"
-	IssueActivityKindCommented       IssueActivityKind = "commented"
-	IssueActivityKindCreated         IssueActivityKind = "created"
-	IssueActivityKindDeleted         IssueActivityKind = "deleted"
-	IssueActivityKindPropertyChanged IssueActivityKind = "property_changed"
-	IssueActivityKindRelationAdded   IssueActivityKind = "relation_added"
-	IssueActivityKindRelationRemoved IssueActivityKind = "relation_removed"
-	IssueActivityKindRestored        IssueActivityKind = "restored"
-	IssueActivityKindStateChanged    IssueActivityKind = "state_changed"
-	IssueActivityKindTeamMoved       IssueActivityKind = "team_moved"
-	IssueActivityKindTriaged         IssueActivityKind = "triaged"
-	IssueActivityKindUnarchived      IssueActivityKind = "unarchived"
-)
-
-// Valid indicates whether the value is a known member of the IssueActivityKind enum.
-func (e IssueActivityKind) Valid() bool {
-	switch e {
-	case IssueActivityKindArchived:
-		return true
-	case IssueActivityKindChildAdded:
-		return true
-	case IssueActivityKindChildRemoved:
-		return true
-	case IssueActivityKindCommentDeleted:
-		return true
-	case IssueActivityKindCommented:
-		return true
-	case IssueActivityKindCreated:
-		return true
-	case IssueActivityKindDeleted:
-		return true
-	case IssueActivityKindPropertyChanged:
-		return true
-	case IssueActivityKindRelationAdded:
-		return true
-	case IssueActivityKindRelationRemoved:
-		return true
-	case IssueActivityKindRestored:
-		return true
-	case IssueActivityKindStateChanged:
-		return true
-	case IssueActivityKindTeamMoved:
-		return true
-	case IssueActivityKindTriaged:
-		return true
-	case IssueActivityKindUnarchived:
 		return true
 	default:
 		return false
@@ -1731,6 +1785,60 @@ func (e WorkspaceStatus) Valid() bool {
 	}
 }
 
+// Defines values for ActivityOrder.
+const (
+	ActivityOrderNewest ActivityOrder = "newest"
+	ActivityOrderOldest ActivityOrder = "oldest"
+)
+
+// Valid indicates whether the value is a known member of the ActivityOrder enum.
+func (e ActivityOrder) Valid() bool {
+	switch e {
+	case ActivityOrderNewest:
+		return true
+	case ActivityOrderOldest:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListWorkspaceIssueActivityParamsOrder.
+const (
+	ListWorkspaceIssueActivityParamsOrderNewest ListWorkspaceIssueActivityParamsOrder = "newest"
+	ListWorkspaceIssueActivityParamsOrderOldest ListWorkspaceIssueActivityParamsOrder = "oldest"
+)
+
+// Valid indicates whether the value is a known member of the ListWorkspaceIssueActivityParamsOrder enum.
+func (e ListWorkspaceIssueActivityParamsOrder) Valid() bool {
+	switch e {
+	case ListWorkspaceIssueActivityParamsOrderNewest:
+		return true
+	case ListWorkspaceIssueActivityParamsOrderOldest:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListWorkspaceProjectActivityParamsOrder.
+const (
+	ListWorkspaceProjectActivityParamsOrderNewest ListWorkspaceProjectActivityParamsOrder = "newest"
+	ListWorkspaceProjectActivityParamsOrderOldest ListWorkspaceProjectActivityParamsOrder = "oldest"
+)
+
+// Valid indicates whether the value is a known member of the ListWorkspaceProjectActivityParamsOrder enum.
+func (e ListWorkspaceProjectActivityParamsOrder) Valid() bool {
+	switch e {
+	case ListWorkspaceProjectActivityParamsOrderNewest:
+		return true
+	case ListWorkspaceProjectActivityParamsOrderOldest:
+		return true
+	default:
+		return false
+	}
+}
+
 // APIScope defines model for APIScope.
 type APIScope = string
 
@@ -1802,6 +1910,49 @@ type AccountLockedProblemCode string
 
 // AccountStatus defines model for AccountStatus.
 type AccountStatus string
+
+// ActivityActorKind Who made the change — a person signed in, an integration, an agent, or Norn itself.
+type ActivityActorKind string
+
+// ActivityChange defines model for ActivityChange.
+type ActivityChange struct {
+	Field     *string            `json:"field,omitempty"`
+	FromState *string            `json:"fromState,omitempty"`
+	FromValue *string            `json:"fromValue,omitempty"`
+	Id        openapi_types.UUID `json:"id"`
+	Kind      ActivityKind       `json:"kind"`
+	ToState   *string            `json:"toState,omitempty"`
+	ToValue   *string            `json:"toValue,omitempty"`
+	Version   *int32             `json:"version,omitempty"`
+}
+
+// ActivityEvent Everything one operation changed about one subject, read as a single event.
+type ActivityEvent struct {
+	ActorAccountId *openapi_types.UUID `json:"actorAccountId,omitempty"`
+
+	// ActorKind Who made the change — a person signed in, an integration, an agent, or Norn itself.
+	ActorKind    ActivityActorKind   `json:"actorKind"`
+	ActorName    *string             `json:"actorName,omitempty"`
+	BulkActionId *openapi_types.UUID `json:"bulkActionId,omitempty"`
+	Changes      []ActivityChange    `json:"changes"`
+	CreatedAt    time.Time           `json:"createdAt"`
+	Id           openapi_types.UUID  `json:"id"`
+	IssueId      *openapi_types.UUID `json:"issueId,omitempty"`
+	ProjectId    *openapi_types.UUID `json:"projectId,omitempty"`
+	SubjectKind  ActivitySubjectKind `json:"subjectKind"`
+}
+
+// ActivityKind defines model for ActivityKind.
+type ActivityKind string
+
+// ActivityPage defines model for ActivityPage.
+type ActivityPage struct {
+	Events     []ActivityEvent `json:"events"`
+	NextCursor *string         `json:"nextCursor,omitempty"`
+}
+
+// ActivitySubjectKind defines model for ActivitySubjectKind.
+type ActivitySubjectKind string
 
 // AddIssueRelationRequest defines model for AddIssueRelationRequest.
 type AddIssueRelationRequest struct {
@@ -2399,32 +2550,6 @@ type Issue struct {
 	TriageState *TriageState       `json:"triageState,omitempty"`
 	Version     int32              `json:"version"`
 	WorkspaceId openapi_types.UUID `json:"workspaceId"`
-}
-
-// IssueActivity defines model for IssueActivity.
-type IssueActivity struct {
-	ActorAccountId *openapi_types.UUID `json:"actorAccountId,omitempty"`
-	ActorName      *string             `json:"actorName,omitempty"`
-	BulkActionId   *openapi_types.UUID `json:"bulkActionId,omitempty"`
-	CreatedAt      time.Time           `json:"createdAt"`
-	Field          *string             `json:"field,omitempty"`
-	FromState      *string             `json:"fromState,omitempty"`
-	FromValue      *string             `json:"fromValue,omitempty"`
-	Id             openapi_types.UUID  `json:"id"`
-	IssueId        openapi_types.UUID  `json:"issueId"`
-	Kind           IssueActivityKind   `json:"kind"`
-	ToState        *string             `json:"toState,omitempty"`
-	ToValue        *string             `json:"toValue,omitempty"`
-	Version        *int32              `json:"version,omitempty"`
-}
-
-// IssueActivityKind defines model for IssueActivity.Kind.
-type IssueActivityKind string
-
-// IssueActivityPage defines model for IssueActivityPage.
-type IssueActivityPage struct {
-	Entries    []IssueActivity `json:"entries"`
-	NextCursor *string         `json:"nextCursor,omitempty"`
 }
 
 // IssueChildren defines model for IssueChildren.
@@ -3496,6 +3621,15 @@ type WorkspaceStorage struct {
 // AccountId defines model for AccountId.
 type AccountId = openapi_types.UUID
 
+// ActivityCursor defines model for ActivityCursor.
+type ActivityCursor = string
+
+// ActivityLimit defines model for ActivityLimit.
+type ActivityLimit = int32
+
+// ActivityOrder defines model for ActivityOrder.
+type ActivityOrder string
+
 // AttachmentId defines model for AttachmentId.
 type AttachmentId = openapi_types.UUID
 
@@ -3660,9 +3794,15 @@ type GetWorkspaceIssueProgressParams struct {
 
 // ListWorkspaceIssueActivityParams defines parameters for ListWorkspaceIssueActivity.
 type ListWorkspaceIssueActivityParams struct {
-	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *ActivityLimit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *ActivityCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Order Oldest first tells the story forward; newest first shows what just happened.
+	Order *ListWorkspaceIssueActivityParamsOrder `form:"order,omitempty" json:"order,omitempty"`
 }
+
+// ListWorkspaceIssueActivityParamsOrder defines parameters for ListWorkspaceIssueActivity.
+type ListWorkspaceIssueActivityParamsOrder string
 
 // ListWorkspaceIssueCommentsParams defines parameters for ListWorkspaceIssueComments.
 type ListWorkspaceIssueCommentsParams struct {
@@ -3698,6 +3838,18 @@ type ListWorkspaceProjectsParams struct {
 	// Mine Only projects the caller leads or belongs to
 	Mine *bool `form:"mine,omitempty" json:"mine,omitempty"`
 }
+
+// ListWorkspaceProjectActivityParams defines parameters for ListWorkspaceProjectActivity.
+type ListWorkspaceProjectActivityParams struct {
+	Limit  *ActivityLimit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *ActivityCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Order Oldest first tells the story forward; newest first shows what just happened.
+	Order *ListWorkspaceProjectActivityParamsOrder `form:"order,omitempty" json:"order,omitempty"`
+}
+
+// ListWorkspaceProjectActivityParamsOrder defines parameters for ListWorkspaceProjectActivity.
+type ListWorkspaceProjectActivityParamsOrder string
 
 // RemoveWorkspaceSavedViewParams defines parameters for RemoveWorkspaceSavedView.
 type RemoveWorkspaceSavedViewParams struct {
@@ -4071,7 +4223,7 @@ type ServerInterface interface {
 	// UpdateWorkspaceIssue Change any of an issue's properties, refusing edits made against a stale read
 	// (PATCH /workspaces/{workspaceId}/issues/{issueId})
 	UpdateWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
-	// ListWorkspaceIssueActivity List what has happened to an issue, newest first
+	// ListWorkspaceIssueActivity Read what has happened to an issue, one event per operation
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/activity)
 	ListWorkspaceIssueActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueActivityParams)
 	// ListWorkspaceIssueAttachments List the files hanging off an issue, oldest first
@@ -4188,6 +4340,9 @@ type ServerInterface interface {
 	// UpdateWorkspaceProject Change a project's name, description, lead, target date or state
 	// (PATCH /workspaces/{workspaceId}/projects/{projectId})
 	UpdateWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
+	// ListWorkspaceProjectActivity Read what has happened to a project, one event per operation
+	// (GET /workspaces/{workspaceId}/projects/{projectId}/activity)
+	ListWorkspaceProjectActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId, params ListWorkspaceProjectActivityParams)
 	// ArchiveWorkspaceProject Archive a completed or cancelled project, keeping it retrievable
 	// (POST /workspaces/{workspaceId}/projects/{projectId}/archive)
 	ArchiveWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
@@ -4692,7 +4847,7 @@ func (_ Unimplemented) UpdateWorkspaceIssue(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ListWorkspaceIssueActivity List what has happened to an issue, newest first
+// ListWorkspaceIssueActivity Read what has happened to an issue, one event per operation
 // (GET /workspaces/{workspaceId}/issues/{issueId}/activity)
 func (_ Unimplemented) ListWorkspaceIssueActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueActivityParams) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -4923,6 +5078,12 @@ func (_ Unimplemented) GetWorkspaceProject(w http.ResponseWriter, r *http.Reques
 // UpdateWorkspaceProject Change a project's name, description, lead, target date or state
 // (PATCH /workspaces/{workspaceId}/projects/{projectId})
 func (_ Unimplemented) UpdateWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceProjectActivity Read what has happened to a project, one event per operation
+// (GET /workspaces/{workspaceId}/projects/{projectId}/activity)
+func (_ Unimplemented) ListWorkspaceProjectActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId, params ListWorkspaceProjectActivityParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -6662,6 +6823,19 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceIssueActivity(w http.ResponseWri
 		return
 	}
 
+	// ------------- Optional query parameter "order" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "order", r.URL.Query(), &params.Order, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "order"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWorkspaceIssueActivity(w, r, workspaceId, issueId, params)
 	}))
@@ -8148,6 +8322,83 @@ func (siw *ServerInterfaceWrapper) UpdateWorkspaceProject(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateWorkspaceProject(w, r, workspaceId, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceProjectActivity operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceProjectActivity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceProjectActivityParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "order" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "order", r.URL.Query(), &params.Order, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "order"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceProjectActivity(w, r, workspaceId, projectId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -10508,6 +10759,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/activity", wrapper.ListWorkspaceIssueActivity)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/activity", wrapper.ListWorkspaceProjectActivity)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/attachments", wrapper.ListWorkspaceIssueAttachments)
@@ -15120,7 +15374,7 @@ type ListWorkspaceIssueActivityResponseObject interface {
 	VisitListWorkspaceIssueActivityResponse(w http.ResponseWriter) error
 }
 
-type ListWorkspaceIssueActivity200JSONResponse IssueActivityPage
+type ListWorkspaceIssueActivity200JSONResponse ActivityPage
 
 func (response ListWorkspaceIssueActivity200JSONResponse) VisitListWorkspaceIssueActivityResponse(w http.ResponseWriter) error {
 
@@ -18992,6 +19246,104 @@ func (response UpdateWorkspaceProject422ApplicationProblemPlusJSONResponse) Visi
 type UpdateWorkspaceProject500ApplicationProblemPlusJSONResponse Problem
 
 func (response UpdateWorkspaceProject500ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectActivityRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+	Params      ListWorkspaceProjectActivityParams
+}
+
+type ListWorkspaceProjectActivityResponseObject interface {
+	VisitListWorkspaceProjectActivityResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceProjectActivity200JSONResponse ActivityPage
+
+func (response ListWorkspaceProjectActivity200JSONResponse) VisitListWorkspaceProjectActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectActivity401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceProjectActivity401ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectActivity403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceProjectActivity403ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectActivity404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceProjectActivity404ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectActivity422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceProjectActivity422ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectActivity500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceProjectActivity500ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectActivityResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -24451,7 +24803,7 @@ type StrictServerInterface interface {
 	// UpdateWorkspaceIssue Change any of an issue's properties, refusing edits made against a stale read
 	// (PATCH /workspaces/{workspaceId}/issues/{issueId})
 	UpdateWorkspaceIssue(ctx context.Context, request UpdateWorkspaceIssueRequestObject) (UpdateWorkspaceIssueResponseObject, error)
-	// ListWorkspaceIssueActivity List what has happened to an issue, newest first
+	// ListWorkspaceIssueActivity Read what has happened to an issue, one event per operation
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/activity)
 	ListWorkspaceIssueActivity(ctx context.Context, request ListWorkspaceIssueActivityRequestObject) (ListWorkspaceIssueActivityResponseObject, error)
 	// ListWorkspaceIssueAttachments List the files hanging off an issue, oldest first
@@ -24568,6 +24920,9 @@ type StrictServerInterface interface {
 	// UpdateWorkspaceProject Change a project's name, description, lead, target date or state
 	// (PATCH /workspaces/{workspaceId}/projects/{projectId})
 	UpdateWorkspaceProject(ctx context.Context, request UpdateWorkspaceProjectRequestObject) (UpdateWorkspaceProjectResponseObject, error)
+	// ListWorkspaceProjectActivity Read what has happened to a project, one event per operation
+	// (GET /workspaces/{workspaceId}/projects/{projectId}/activity)
+	ListWorkspaceProjectActivity(ctx context.Context, request ListWorkspaceProjectActivityRequestObject) (ListWorkspaceProjectActivityResponseObject, error)
 	// ArchiveWorkspaceProject Archive a completed or cancelled project, keeping it retrievable
 	// (POST /workspaces/{workspaceId}/projects/{projectId}/archive)
 	ArchiveWorkspaceProject(ctx context.Context, request ArchiveWorkspaceProjectRequestObject) (ArchiveWorkspaceProjectResponseObject, error)
@@ -27492,6 +27847,34 @@ func (sh *strictHandler) UpdateWorkspaceProject(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateWorkspaceProjectResponseObject); ok {
 		if err := validResponse.VisitUpdateWorkspaceProjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceProjectActivity operation middleware
+func (sh *strictHandler) ListWorkspaceProjectActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId, params ListWorkspaceProjectActivityParams) {
+	var request ListWorkspaceProjectActivityRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceProjectActivity(ctx, request.(ListWorkspaceProjectActivityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceProjectActivity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceProjectActivityResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceProjectActivityResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import ActivityFeedView from "$lib/activity/activity-feed.svelte";
+	import type { ActivityFeed } from "$lib/activity/activity";
 	import { goto, invalidateAll } from "$app/navigation";
 	import { page } from "$app/state";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -33,7 +35,7 @@
 	import { categoryLabels } from "$lib/team/states";
 	import { initialsOf } from "$lib/team/members";
 	import { memberName, searchDebounceMs, type Membership } from "$lib/workspace/members";
-	import { onCalendarDate, onDate } from "$lib/time";
+	import { onCalendarDate, onDate, onDateAndTime } from "$lib/time";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { projectPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -73,6 +75,46 @@
 		const next = new URL(page.url);
 		next.searchParams.delete("status");
 		goto(next, { replaceState: true, noScroll: true, keepFocus: true });
+	}
+
+	let loadedActivity = $state.raw<ActivityFeed | null>(null);
+
+	const activity = $derived<ActivityFeed>(
+		loadedActivity ?? (ready ? ready.activity : { kind: "loading" })
+	);
+
+	function when(instant: string): string {
+		return onDateAndTime(instant, data.workspace.timezone);
+	}
+
+	async function moreActivity(): Promise<void> {
+		const base = activity;
+
+		if (!ready || base.kind !== "ready" || !base.nextCursor) return;
+
+		working = true;
+
+		try {
+			const { data: page } = await api.GET(
+				"/workspaces/{workspaceId}/projects/{projectId}/activity",
+				{
+					params: {
+						path: { workspaceId: data.workspace.id, projectId: ready.project.id },
+						query: { cursor: base.nextCursor },
+					},
+				}
+			);
+
+			if (page) {
+				loadedActivity = {
+					kind: "ready",
+					events: [...base.events, ...page.events],
+					nextCursor: page.nextCursor,
+				};
+			}
+		} finally {
+			working = false;
+		}
 	}
 
 	async function act<T>(run: () => Promise<{ error?: unknown; data?: T }>) {
@@ -554,6 +596,17 @@
 							</div>
 						{/each}
 					{/if}
+				</section>
+
+				<section class="flex flex-col gap-3">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">History</h2>
+					<ActivityFeedView
+						feed={activity}
+						{when}
+						{working}
+						emptyLine="Nothing has changed since this project was created."
+						onmore={moreActivity}
+					/>
 				</section>
 
 				<section class="flex flex-col gap-4 rounded-lg border border-destructive/40 p-4">

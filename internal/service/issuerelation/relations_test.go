@@ -262,12 +262,12 @@ func TestRemovingFromEitherEndDeletesTheOneRowAndTellsBothIssues(t *testing.T) {
 			return nil
 		})
 
-	told := map[uuid.UUID]entity.IssueActivityKind{}
+	told := map[uuid.UUID]entity.ActivityKind{}
 
 	h.activity.EXPECT().
 		Record(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, entry entity.IssueActivity) error {
-			told[entry.IssueID] = entry.Kind
+		DoAndReturn(func(_ context.Context, entry entity.Activity) error {
+			told[entry.Subject.ID] = entry.Kind
 
 			return nil
 		}).
@@ -282,7 +282,7 @@ func TestRemovingFromEitherEndDeletesTheOneRowAndTellsBothIssues(t *testing.T) {
 	}
 
 	for _, id := range []uuid.UUID{a.ID, b.ID} {
-		if told[id] != entity.IssueActivityKindRelationRemoved {
+		if told[id] != entity.ActivityKindRelationRemoved {
 			t.Errorf("issue %s was not told the relation went away", id)
 		}
 	}

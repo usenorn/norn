@@ -43,6 +43,21 @@ func (m *MockProjects) EXPECT() *MockProjectsMockRecorder {
 	return m.recorder
 }
 
+// Activity mocks base method.
+func (m *MockProjects) Activity(ctx context.Context, workspaceID, projectID uuid.UUID, input service.ListActivityInput) (service.ActivityPage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Activity", ctx, workspaceID, projectID, input)
+	ret0, _ := ret[0].(service.ActivityPage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Activity indicates an expected call of Activity.
+func (mr *MockProjectsMockRecorder) Activity(ctx, workspaceID, projectID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Activity", reflect.TypeOf((*MockProjects)(nil).Activity), ctx, workspaceID, projectID, input)
+}
+
 // AddMember mocks base method.
 func (m *MockProjects) AddMember(ctx context.Context, workspaceID, projectID, accountID uuid.UUID) (service.ProjectMemberView, error) {
 	m.ctrl.T.Helper()

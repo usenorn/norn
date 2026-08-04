@@ -51,13 +51,14 @@ type ProgressInput struct {
 	ProjectID *uuid.UUID
 }
 
-type ListIssueActivityInput struct {
+type ListActivityInput struct {
 	Cursor string
+	Order  entity.ActivityOrder
 	Limit  int
 }
 
-type IssueActivityPage struct {
-	Entries    []entity.IssueActivity
+type ActivityPage struct {
+	Events     []entity.ActivityEvent
 	NextCursor string
 }
 

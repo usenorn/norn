@@ -14,7 +14,7 @@ export type Member = components["schemas"]["Membership"];
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type IssueActivity = components["schemas"]["IssueActivity"];
+import type { ActivityFeed } from "$lib/activity/activity";
 
 export type IssueDetail =
 	| { kind: "loading" }
@@ -25,7 +25,7 @@ export type IssueDetail =
 			states: WorkflowState[];
 			labels: Label[];
 			groups: LabelGroup[];
-			activity: IssueActivity[];
+			activity: ActivityFeed;
 			members: Member[];
 			children: Issue[];
 			relations: components["schemas"]["IssueRelationGroup"][];
@@ -137,7 +137,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			states: states.data,
 			labels: labels.data,
 			groups: groups.data,
-			activity: activity.data.entries,
+			activity: readActivity(activity.data),
 			members: members.data.members,
 			children: children.data.issues,
 			childProgress: children.data.progress,
@@ -165,4 +165,11 @@ function readAttachments(
 	if (page.attachments.length === 0) return { kind: "empty" };
 
 	return { kind: "ready", attachments: page.attachments };
+}
+
+function readActivity(page: components["schemas"]["ActivityPage"] | undefined): ActivityFeed {
+	if (!page) return { kind: "unavailable" };
+	if (page.events.length === 0) return { kind: "empty" };
+
+	return { kind: "ready", events: page.events, nextCursor: page.nextCursor };
 }

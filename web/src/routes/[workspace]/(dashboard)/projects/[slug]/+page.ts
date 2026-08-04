@@ -2,6 +2,8 @@ import { apiFor } from "$lib/api";
 import type { IssueProgress } from "$lib/issues/board";
 import type { ProjectDetail } from "$lib/projects/projects";
 import { projectPreviewStates } from "./preview";
+import type { components } from "$lib/api/dashboard.gen";
+import type { ActivityFeed } from "$lib/activity/activity";
 import type { PageLoad } from "./$types";
 
 export type ProjectPageData = {
@@ -36,7 +38,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url }): Promise<Pr
 
 	const path = { workspaceId: workspace.id, projectId: project.id };
 
-	const [members, updates, issues, progress] = await Promise.all([
+	const [members, updates, issues, activity, progress] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/projects/{projectId}/members", { fetch, params: { path } }),
 		api.GET("/workspaces/{workspaceId}/projects/{projectId}/status", { fetch, params: { path } }),
 		api.GET("/workspaces/{workspaceId}/issues", {
@@ -45,6 +47,10 @@ export const load: PageLoad = async ({ fetch, params, parent, url }): Promise<Pr
 				path: { workspaceId: workspace.id },
 				query: { projectId: project.id, limit: 200 },
 			},
+		}),
+		api.GET("/workspaces/{workspaceId}/projects/{projectId}/activity", {
+			fetch,
+			params: { path: { workspaceId: workspace.id, projectId: project.id } },
 		}),
 		api.GET("/workspaces/{workspaceId}/issues/progress", {
 			fetch,
@@ -59,7 +65,15 @@ export const load: PageLoad = async ({ fetch, params, parent, url }): Promise<Pr
 			members: members.data ?? [],
 			updates: updates.data ?? [],
 			issues: issues.data?.issues ?? [],
+			activity: readActivity(activity.data),
 		},
 		progress: progress.data,
 	};
 };
+
+function readActivity(page: components["schemas"]["ActivityPage"] | undefined): ActivityFeed {
+	if (!page) return { kind: "unavailable" };
+	if (page.events.length === 0) return { kind: "empty" };
+
+	return { kind: "ready", events: page.events, nextCursor: page.nextCursor };
+}

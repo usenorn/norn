@@ -1010,59 +1010,70 @@ func issueProgressDTO(progress entity.IssueProgress) api.IssueProgress {
 	}
 }
 
-func issueActivityDTO(activity entity.IssueActivity) api.IssueActivity {
-	dto := api.IssueActivity{
-		Id:        activity.ID,
-		IssueId:   activity.IssueID,
-		Kind:      api.IssueActivityKind(activity.Kind),
-		CreatedAt: activity.CreatedAt,
+func activityEventDTO(event entity.ActivityEvent) api.ActivityEvent {
+	dto := api.ActivityEvent{
+		Id:          event.ID,
+		SubjectKind: api.ActivitySubjectKind(event.Subject.Kind),
+		ActorKind:   api.ActivityActorKind(event.ActorKind),
+		Changes:     activityChangeDTOs(event.Changes),
+		CreatedAt:   event.CreatedAt,
 	}
 
-	if activity.ActorAccountID != uuid.Nil {
-		actor := activity.ActorAccountID
+	subject := event.Subject.ID
+
+	if event.Subject.Kind == entity.ActivitySubjectProject {
+		dto.ProjectId = &subject
+	} else {
+		dto.IssueId = &subject
+	}
+
+	if event.ActorAccountID != uuid.Nil {
+		actor := event.ActorAccountID
 		dto.ActorAccountId = &actor
+		dto.ActorName = nilIfEmpty(event.ActorName)
 	}
 
-	if activity.ActorName != "" {
-		name := activity.ActorName
-		dto.ActorName = &name
-	}
-
-	dto.Field = nilIfEmpty(activity.Field)
-	dto.FromValue = nilIfEmpty(activity.FromValue)
-	dto.ToValue = nilIfEmpty(activity.ToValue)
-
-	if activity.BulkActionID != uuid.Nil {
-		bulk := activity.BulkActionID
+	if event.BulkActionID != uuid.Nil {
+		bulk := event.BulkActionID
 		dto.BulkActionId = &bulk
-	}
-
-	if activity.Version > 0 {
-		version := int32(activity.Version)
-		dto.Version = &version
-	}
-
-	if activity.FromState != "" {
-		from := activity.FromState
-		dto.FromState = &from
-	}
-
-	if activity.ToState != "" {
-		to := activity.ToState
-		dto.ToState = &to
 	}
 
 	return dto
 }
 
-func issueActivityPageDTO(page service.IssueActivityPage) api.IssueActivityPage {
-	entries := make([]api.IssueActivity, 0, len(page.Entries))
+func activityChangeDTOs(changes []entity.Activity) []api.ActivityChange {
+	dtos := make([]api.ActivityChange, 0, len(changes))
 
-	for _, entry := range page.Entries {
-		entries = append(entries, issueActivityDTO(entry))
+	for _, change := range changes {
+		dto := api.ActivityChange{
+			Id:        change.ID,
+			Kind:      api.ActivityKind(change.Kind),
+			Field:     nilIfEmpty(change.Field),
+			FromValue: nilIfEmpty(change.FromValue),
+			ToValue:   nilIfEmpty(change.ToValue),
+			FromState: nilIfEmpty(change.FromState),
+			ToState:   nilIfEmpty(change.ToState),
+		}
+
+		if change.Version > 0 {
+			version := int32(change.Version)
+			dto.Version = &version
+		}
+
+		dtos = append(dtos, dto)
 	}
 
-	dto := api.IssueActivityPage{Entries: entries}
+	return dtos
+}
+
+func activityPageDTO(page service.ActivityPage) api.ActivityPage {
+	events := make([]api.ActivityEvent, 0, len(page.Events))
+
+	for _, event := range page.Events {
+		events = append(events, activityEventDTO(event))
+	}
+
+	dto := api.ActivityPage{Events: events}
 
 	if page.NextCursor != "" {
 		cursor := page.NextCursor

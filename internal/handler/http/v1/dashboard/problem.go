@@ -1393,3 +1393,7 @@ func (r problemResponse) VisitDownloadAccountAvatarResponse(w http.ResponseWrite
 func (r problemResponse) VisitGetWorkspaceStorageResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
+
+func (r problemResponse) VisitListWorkspaceProjectActivityResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}

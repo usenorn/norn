@@ -3,7 +3,6 @@ import type { components } from "$lib/api/dashboard.gen";
 export type Issue = components["schemas"]["Issue"];
 export type IssuePriority = components["schemas"]["IssuePriority"];
 export type IssueStatus = components["schemas"]["IssueStatus"];
-export type IssueActivity = components["schemas"]["IssueActivity"];
 export type IssueRelationKind = components["schemas"]["IssueRelationKind"];
 export type IssueRelation = components["schemas"]["IssueRelation"];
 export type IssueRelationGroup = components["schemas"]["IssueRelationGroup"];
@@ -70,7 +69,7 @@ export function statusLabel(status: IssueStatus): string {
 	}
 }
 
-const fieldNames: Record<string, string> = {
+const conflictFields: Record<string, string> = {
 	title: "the title",
 	state: "the state",
 	team: "the team",
@@ -84,10 +83,11 @@ const fieldNames: Record<string, string> = {
 	parent: "the parent",
 	children: "the children",
 	project: "the project",
+	cycle: "the cycle",
 };
 
 export function nameFields(fields: string[]): string {
-	const named = fields.map((field) => fieldNames[field] ?? field);
+	const named = fields.map((field) => conflictFields[field] ?? field);
 
 	if (named.length === 0) return "something";
 	if (named.length === 1) return named[0];
@@ -195,47 +195,3 @@ export function readIssueFailure(error: unknown): IssueFailure {
 	return { kind: "unavailable" };
 }
 
-export function activityLine(entry: IssueActivity): string {
-	switch (entry.kind) {
-		case "created":
-			return `Raised in ${entry.toState}`;
-		case "state_changed":
-			return `${entry.fromState} → ${entry.toState}`;
-		case "team_moved":
-			return `Moved from ${entry.fromValue} to ${entry.toValue}`;
-		case "child_added":
-			return `${entry.toValue} was filed under this`;
-		case "child_removed":
-			return `${entry.fromValue} is no longer filed under this`;
-		case "relation_added":
-			return `Now ${relationHeading((entry.field ?? "relates_to") as IssueRelationKind).toLowerCase()} ${entry.toValue}`;
-		case "relation_removed":
-			return `No longer linked to ${entry.fromValue}`;
-		case "archived":
-			return "Archived";
-		case "unarchived":
-			return "Taken out of the archive";
-		case "deleted":
-			return "Deleted";
-		case "restored":
-			return "Restored";
-		case "commented":
-			return "Commented";
-		case "comment_deleted":
-			return "Deleted a comment";
-		case "property_changed":
-			return propertyLine(entry);
-		default:
-			return "Changed";
-	}
-}
-
-function propertyLine(entry: IssueActivity): string {
-	const field = fieldNames[entry.field ?? ""] ?? entry.field ?? "a property";
-
-	if (entry.fromValue && entry.toValue) return `Changed ${field} from ${entry.fromValue} to ${entry.toValue}`;
-	if (entry.toValue) return `Set ${field} to ${entry.toValue}`;
-	if (entry.fromValue) return `Cleared ${field}, which was ${entry.fromValue}`;
-
-	return `Changed ${field}`;
-}

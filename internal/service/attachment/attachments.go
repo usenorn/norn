@@ -19,6 +19,7 @@ const abandonGrace = time.Hour
 
 type attachmentsService struct {
 	attachments repository.Attachment
+	activity    repository.Activity
 	issues      repository.Issue
 	blobs       repository.Blob
 	jobs        repository.JobProducer
@@ -29,6 +30,7 @@ type attachmentsService struct {
 
 func New(
 	attachments repository.Attachment,
+	activity repository.Activity,
 	issues repository.Issue,
 	blobs repository.Blob,
 	jobs repository.JobProducer,
@@ -38,6 +40,7 @@ func New(
 ) service.Attachments {
 	return &attachmentsService{
 		attachments: attachments,
+		activity:    activity,
 		issues:      issues,
 		blobs:       blobs,
 		jobs:        jobs,
@@ -172,7 +175,8 @@ func (s *attachmentsService) Finalize(
 	ctx context.Context,
 	workspaceID, issueID, attachmentID uuid.UUID,
 ) (entity.Attachment, error) {
-	if _, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage); err != nil {
+	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
+	if err != nil {
 		return entity.Attachment{}, err
 	}
 
@@ -225,7 +229,11 @@ func (s *attachmentsService) Finalize(
 			}
 		}
 
-		return s.attachments.Settle(ctx, attachmentID, object.Size, served, time.Now().UTC())
+		if err := s.attachments.Settle(ctx, attachmentID, object.Size, served, time.Now().UTC()); err != nil {
+			return err
+		}
+
+		return s.record(ctx, decision, reserved, entity.ActivityKindAttachmentAdded)
 	}); err != nil {
 		if errors.Is(err, entity.ErrStorageExhausted) {
 			return entity.Attachment{}, s.refuse(ctx, reserved, err)
@@ -263,7 +271,8 @@ func (s *attachmentsService) Remove(
 	ctx context.Context,
 	workspaceID, issueID, attachmentID uuid.UUID,
 ) error {
-	if _, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage); err != nil {
+	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
+	if err != nil {
 		return err
 	}
 
@@ -281,7 +290,11 @@ func (s *attachmentsService) Remove(
 			return err
 		}
 
-		return s.attachments.Discard(ctx, attachmentID, time.Now().UTC())
+		if err := s.attachments.Discard(ctx, attachmentID, time.Now().UTC()); err != nil {
+			return err
+		}
+
+		return s.record(ctx, decision, attachment, entity.ActivityKindAttachmentRemoved)
 	}); err != nil {
 		return err
 	}
@@ -289,6 +302,23 @@ func (s *attachmentsService) Remove(
 	s.kick(ctx)
 
 	return nil
+}
+
+func (s *attachmentsService) record(
+	ctx context.Context,
+	decision entity.Decision,
+	attachment entity.Attachment,
+	kind entity.ActivityKind,
+) error {
+	return s.activity.Record(ctx, entity.Activity{
+		WorkspaceID:    attachment.WorkspaceID,
+		Subject:        entity.IssueSubject(attachment.IssueID),
+		ActorAccountID: decision.Actor.AccountID,
+		ActorKind:      decision.Actor.Kind,
+		Kind:           kind,
+		Field:          entity.ActivityFieldAttachment,
+		ToValue:        attachment.FileName,
+	})
 }
 
 func (s *attachmentsService) Content(

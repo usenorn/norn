@@ -10,8 +10,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/usenorn/norn/internal/entity"
+	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
-	issueactivityrepo "github.com/usenorn/norn/internal/repository/issueactivity"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
@@ -27,7 +27,7 @@ type harness struct {
 	triage     *triagerepo.MockTriage
 	issues     *issuerepo.MockIssue
 	states     *workflowstaterepo.MockWorkflowState
-	activity   *issueactivityrepo.MockIssueActivity
+	activity   *activityrepo.MockActivity
 	teams      *teamrepo.MockTeam
 	relations  *issuerelationsvc.MockIssueRelations
 	issueMoves *issuesvc.MockIssues
@@ -50,7 +50,7 @@ func newHarness(t *testing.T) *harness {
 		triage:      triagerepo.NewMockTriage(ctrl),
 		issues:      issuerepo.NewMockIssue(ctrl),
 		states:      workflowstaterepo.NewMockWorkflowState(ctrl),
-		activity:    issueactivityrepo.NewMockIssueActivity(ctrl),
+		activity:    activityrepo.NewMockActivity(ctrl),
 		teams:       teamrepo.NewMockTeam(ctrl),
 		relations:   issuerelationsvc.NewMockIssueRelations(ctrl),
 		issueMoves:  issuesvc.NewMockIssues(ctrl),
@@ -112,13 +112,13 @@ func (h *harness) abandonedState() entity.WorkflowState {
 	}
 }
 
-func (h *harness) captureDecision() *entity.IssueActivity {
-	recorded := &entity.IssueActivity{}
+func (h *harness) captureDecision() *entity.Activity {
+	recorded := &entity.Activity{}
 
 	h.activity.EXPECT().
 		Record(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, entry entity.IssueActivity) error {
-			if entry.Kind == entity.IssueActivityKindTriaged {
+		DoAndReturn(func(_ context.Context, entry entity.Activity) error {
+			if entry.Kind == entity.ActivityKindTriaged {
 				*recorded = entry
 			}
 
@@ -146,7 +146,7 @@ func TestAcceptingLetsTheIssueThroughAndSaysWhoDecided(t *testing.T) {
 		t.Fatalf("Accept: %v", err)
 	}
 
-	if recorded.Kind != entity.IssueActivityKindTriaged {
+	if recorded.Kind != entity.ActivityKindTriaged {
 		t.Fatal(
 			"accepting an issue recorded no triage activity. The reporter may ask what happened " +
 				"to it, and the answer has to be written down at the moment it is decided.",
@@ -359,7 +359,7 @@ func TestReassigningToATeamThatTriagesLeavesItWaitingThere(t *testing.T) {
 		t.Fatalf("Reassign: %v", err)
 	}
 
-	if recorded.Kind != entity.IssueActivityKindTriaged || recorded.ToValue != "Platform" {
+	if recorded.Kind != entity.ActivityKindTriaged || recorded.ToValue != "Platform" {
 		t.Fatalf(
 			"handing the issue to another team recorded %+v. Passing something on is a decision "+
 				"someone made and the next team will want to know who sent it.",

@@ -10,6 +10,7 @@ var TableNames = struct {
 	AccountSignUps                 string
 	Accounts                       string
 	APITokens                      string
+	WorkspaceActivity              string
 	WorkspaceAuthPolicies          string
 	WorkspaceBreakGlassCodes       string
 	WorkspaceBulkActionOutcomes    string
@@ -18,7 +19,6 @@ var TableNames = struct {
 	WorkspaceCycles                string
 	WorkspaceInvitationTeams       string
 	WorkspaceInvitations           string
-	WorkspaceIssueActivity         string
 	WorkspaceIssueAttachments      string
 	WorkspaceIssueCommentMentions  string
 	WorkspaceIssueCommentReactions string
@@ -53,6 +53,7 @@ var TableNames = struct {
 	AccountSignUps:                 "account_sign_ups",
 	Accounts:                       "accounts",
 	APITokens:                      "api_tokens",
+	WorkspaceActivity:              "workspace_activity",
 	WorkspaceAuthPolicies:          "workspace_auth_policies",
 	WorkspaceBreakGlassCodes:       "workspace_break_glass_codes",
 	WorkspaceBulkActionOutcomes:    "workspace_bulk_action_outcomes",
@@ -61,7 +62,6 @@ var TableNames = struct {
 	WorkspaceCycles:                "workspace_cycles",
 	WorkspaceInvitationTeams:       "workspace_invitation_teams",
 	WorkspaceInvitations:           "workspace_invitations",
-	WorkspaceIssueActivity:         "workspace_issue_activity",
 	WorkspaceIssueAttachments:      "workspace_issue_attachments",
 	WorkspaceIssueCommentMentions:  "workspace_issue_comment_mentions",
 	WorkspaceIssueCommentReactions: "workspace_issue_comment_reactions",

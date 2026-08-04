@@ -19,7 +19,7 @@ type operationsService struct {
 	issues     repository.Issue
 	states     repository.WorkflowState
 	labels     repository.Label
-	activity   repository.IssueActivity
+	activity   repository.Activity
 	members    repository.Membership
 	jobs       repository.JobProducer
 	authorizer service.Authorizer
@@ -31,7 +31,7 @@ func New(
 	issues repository.Issue,
 	states repository.WorkflowState,
 	labels repository.Label,
-	activity repository.IssueActivity,
+	activity repository.Activity,
 	members repository.Membership,
 	jobs repository.JobProducer,
 	authorizer service.Authorizer,
@@ -361,7 +361,7 @@ func (s *operationsService) restatus(
 		return err
 	}
 
-	return s.record(ctx, action, decision, issue, entity.IssueActivity{
+	return s.record(ctx, action, decision, issue, entity.Activity{
 		Kind:      statusKind(issue.Status, lifecycle.Status),
 		Field:     entity.IssueFieldStatus,
 		FromValue: string(issue.Status),
@@ -369,16 +369,16 @@ func (s *operationsService) restatus(
 	})
 }
 
-func statusKind(from, to entity.IssueStatus) entity.IssueActivityKind {
+func statusKind(from, to entity.IssueStatus) entity.ActivityKind {
 	switch {
 	case to == entity.IssueStatusArchived && from == entity.IssueStatusActive:
-		return entity.IssueActivityKindArchived
+		return entity.ActivityKindArchived
 	case to == entity.IssueStatusPendingDeletion:
-		return entity.IssueActivityKindDeleted
+		return entity.ActivityKindDeleted
 	case from == entity.IssueStatusPendingDeletion:
-		return entity.IssueActivityKindRestored
+		return entity.ActivityKindRestored
 	default:
-		return entity.IssueActivityKindUnarchived
+		return entity.ActivityKindUnarchived
 	}
 }
 
@@ -434,8 +434,8 @@ func (s *operationsService) label(
 		return err
 	}
 
-	return s.record(ctx, action, decision, issue, entity.IssueActivity{
-		Kind:      entity.IssueActivityKindPropertyChanged,
+	return s.record(ctx, action, decision, issue, entity.Activity{
+		Kind:      entity.ActivityKindPropertyChanged,
 		Field:     entity.IssueFieldLabels,
 		FromValue: labelNames(current.Labels),
 		ToValue:   labelNames(append(current.Labels, label)),
@@ -513,20 +513,18 @@ func (s *operationsService) edit(
 	}
 
 	if target.ID != uuid.Nil && target.ID != issue.State.ID {
-		if err := s.record(ctx, action, decision, issue, entity.IssueActivity{
-			Kind:        entity.IssueActivityKindStateChanged,
-			FromStateID: issue.State.ID,
-			ToStateID:   target.ID,
-			FromState:   issue.State.Name,
-			ToState:     target.Name,
+		if err := s.record(ctx, action, decision, issue, entity.Activity{
+			Kind:      entity.ActivityKindStateChanged,
+			FromState: issue.State.Name,
+			ToState:   target.Name,
 		}); err != nil {
 			return err
 		}
 	}
 
 	if action.Change.Priority != nil {
-		if err := s.record(ctx, action, decision, issue, entity.IssueActivity{
-			Kind:      entity.IssueActivityKindPropertyChanged,
+		if err := s.record(ctx, action, decision, issue, entity.Activity{
+			Kind:      entity.ActivityKindPropertyChanged,
 			Field:     entity.IssueFieldPriority,
 			FromValue: string(issue.Priority),
 			ToValue:   string(*action.Change.Priority),
@@ -536,8 +534,8 @@ func (s *operationsService) edit(
 	}
 
 	if action.Change.AssigneeID != nil || action.Change.ClearAssignee {
-		if err := s.record(ctx, action, decision, issue, entity.IssueActivity{
-			Kind:  entity.IssueActivityKindPropertyChanged,
+		if err := s.record(ctx, action, decision, issue, entity.Activity{
+			Kind:  entity.ActivityKindPropertyChanged,
 			Field: entity.IssueFieldAssignee,
 		}); err != nil {
 			return err
@@ -552,11 +550,12 @@ func (s *operationsService) record(
 	action entity.BulkAction,
 	decision entity.Decision,
 	issue entity.Issue,
-	entry entity.IssueActivity,
+	entry entity.Activity,
 ) error {
 	entry.WorkspaceID = action.WorkspaceID
-	entry.IssueID = issue.ID
+	entry.Subject = entity.IssueSubject(issue.ID)
 	entry.ActorAccountID = decision.Actor.AccountID
+	entry.ActorKind = decision.Actor.Kind
 	entry.Version = issue.Version + 1
 	entry.BulkActionID = action.ID
 

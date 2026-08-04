@@ -63,6 +63,7 @@ type Projects interface {
 	ListMembers(ctx context.Context, workspaceID, projectID uuid.UUID) ([]ProjectMemberView, error)
 	AddMember(ctx context.Context, workspaceID, projectID, accountID uuid.UUID) (ProjectMemberView, error)
 	RemoveMember(ctx context.Context, workspaceID, projectID, accountID uuid.UUID) error
+	Activity(ctx context.Context, workspaceID, projectID uuid.UUID, input ListActivityInput) (ActivityPage, error)
 	PostStatus(ctx context.Context, workspaceID, projectID uuid.UUID, input PostProjectStatusInput) (entity.ProjectStatusUpdate, error)
 	ListStatus(ctx context.Context, workspaceID, projectID uuid.UUID) ([]entity.ProjectStatusUpdate, error)
 }
