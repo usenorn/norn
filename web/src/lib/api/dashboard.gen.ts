@@ -1185,6 +1185,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read an issue's conversation, oldest first, with the replies to each comment */
+        get: operations["listWorkspaceIssueComments"];
+        put?: never;
+        /** Leave a comment, or a reply to one, naming anyone it could not reach */
+        post: operations["postWorkspaceIssueComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a comment's words, leaving the slot its replies hang off */
+        delete: operations["removeWorkspaceIssueComment"];
+        options?: never;
+        head?: never;
+        /** Rewrite your own comment, marking it as edited */
+        patch: operations["editWorkspaceIssueComment"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** React to a comment, once, whatever you already did */
+        put: operations["reactToWorkspaceIssueComment"];
+        post?: never;
+        /** Take back your reaction */
+        delete: operations["unreactToWorkspaceIssueComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}": {
         parameters: {
             query?: never;
@@ -2008,6 +2062,77 @@ export interface components {
             /** @description Properties to reset; absent means unchanged, which a nullable field cannot express */
             clear?: ("assignee" | "estimate" | "dueOn" | "cycle" | "project")[];
         };
+        IssueCommentPage: {
+            comments: components["schemas"]["IssueComment"][];
+            nextCursor?: string;
+        };
+        IssueComment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            issueId: string;
+            /** Format: uuid */
+            parentCommentId?: string;
+            /** Format: uuid */
+            authorAccountId?: string;
+            authorName?: string;
+            authorKind: components["schemas"]["CommentAuthorKind"];
+            body: string;
+            edited: boolean;
+            deleted: boolean;
+            /** Format: date-time */
+            editedAt?: string;
+            /** Format: date-time */
+            deletedAt?: string;
+            mentions: components["schemas"]["CommentMention"][];
+            reactions: components["schemas"]["CommentReactionTally"][];
+            replies: components["schemas"]["IssueComment"][];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @enum {string} */
+        CommentAuthorKind: "person" | "agent";
+        /** @enum {string} */
+        CommentReaction: "up" | "down" | "celebrate" | "thinking" | "eyes" | "heart";
+        CommentReactionTally: {
+            reaction: components["schemas"]["CommentReaction"];
+            accountIds: string[];
+        };
+        /** @enum {string} */
+        CommentMentionKind: "account" | "team";
+        CommentMention: {
+            kind: components["schemas"]["CommentMentionKind"];
+            /** Format: uuid */
+            accountId?: string;
+            /** Format: uuid */
+            teamId?: string;
+            name: string;
+            notified: boolean;
+        };
+        MentionTarget: {
+            kind: components["schemas"]["CommentMentionKind"];
+            /** Format: uuid */
+            accountId?: string;
+            /** Format: uuid */
+            teamId?: string;
+        };
+        PostCommentRequest: {
+            body: string;
+            /** Format: uuid */
+            parentCommentId?: string;
+            mentions?: components["schemas"]["MentionTarget"][];
+        };
+        EditCommentRequest: {
+            body: string;
+        };
+        PostedComment: {
+            comment: components["schemas"]["IssueComment"];
+            unreachable: components["schemas"]["CommentMention"][];
+        };
+        CommentConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "comment_deleted" | "comment_not_replyable";
+        };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
@@ -2203,7 +2328,7 @@ export interface components {
             actorAccountId?: string;
             actorName?: string;
             /** @enum {string} */
-            kind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged";
+            kind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted";
             fromState?: string;
             toState?: string;
             field?: string;
@@ -3062,6 +3187,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["WorkflowStateConflictProblem"];
             };
         };
+        /** @description The comment refuses the change */
+        CommentConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["CommentConflictProblem"];
+            };
+        };
         /** @description The issue changed since it was read */
         IssueConflict: {
             headers: {
@@ -3219,6 +3353,8 @@ export interface components {
         SavedViewId: string;
         LabelId: string;
         GroupId: string;
+        CommentId: string;
+        Reaction: components["schemas"]["CommentReaction"];
         TeamId: string;
     };
     requestBodies: never;
@@ -5793,6 +5929,193 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueComments: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of top-level comments, each carrying its replies */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueCommentPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    postWorkspaceIssueComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description The comment as posted, with any mention that will not be notified */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostedComment"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["CommentConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceIssueComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                commentId: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The comment was deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["CommentConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    editWorkspaceIssueComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                commentId: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description The comment as it now reads */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueComment"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["CommentConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    reactToWorkspaceIssueComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                commentId: components["parameters"]["CommentId"];
+                reaction: components["parameters"]["Reaction"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The comment with its reactions as they now stand */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueComment"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["CommentConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unreactToWorkspaceIssueComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                commentId: components["parameters"]["CommentId"];
+                reaction: components["parameters"]["Reaction"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The comment with its reactions as they now stand */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueComment"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["CommentConflict"];
             422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };

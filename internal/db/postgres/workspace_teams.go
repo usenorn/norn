@@ -108,23 +108,26 @@ var WorkspaceTeamWhere = struct {
 
 // WorkspaceTeamRels is where relationship names are stored.
 var WorkspaceTeamRels = struct {
-	Workspace                    string
-	TeamWorkspaceIssueNumber     string
-	TeamWorkspaceInvitationTeams string
-	DefaultTeamWorkspaces        string
+	Workspace                         string
+	TeamWorkspaceIssueNumber          string
+	TeamWorkspaceInvitationTeams      string
+	TeamWorkspaceIssueCommentMentions string
+	DefaultTeamWorkspaces             string
 }{
-	Workspace:                    "Workspace",
-	TeamWorkspaceIssueNumber:     "TeamWorkspaceIssueNumber",
-	TeamWorkspaceInvitationTeams: "TeamWorkspaceInvitationTeams",
-	DefaultTeamWorkspaces:        "DefaultTeamWorkspaces",
+	Workspace:                         "Workspace",
+	TeamWorkspaceIssueNumber:          "TeamWorkspaceIssueNumber",
+	TeamWorkspaceInvitationTeams:      "TeamWorkspaceInvitationTeams",
+	TeamWorkspaceIssueCommentMentions: "TeamWorkspaceIssueCommentMentions",
+	DefaultTeamWorkspaces:             "DefaultTeamWorkspaces",
 }
 
 // workspaceTeamR is where relationships are stored.
 type workspaceTeamR struct {
-	Workspace                    *Workspace                   `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	TeamWorkspaceIssueNumber     *WorkspaceIssueNumber        `boil:"TeamWorkspaceIssueNumber" json:"TeamWorkspaceIssueNumber" toml:"TeamWorkspaceIssueNumber" yaml:"TeamWorkspaceIssueNumber"`
-	TeamWorkspaceInvitationTeams WorkspaceInvitationTeamSlice `boil:"TeamWorkspaceInvitationTeams" json:"TeamWorkspaceInvitationTeams" toml:"TeamWorkspaceInvitationTeams" yaml:"TeamWorkspaceInvitationTeams"`
-	DefaultTeamWorkspaces        WorkspaceSlice               `boil:"DefaultTeamWorkspaces" json:"DefaultTeamWorkspaces" toml:"DefaultTeamWorkspaces" yaml:"DefaultTeamWorkspaces"`
+	Workspace                         *Workspace                        `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	TeamWorkspaceIssueNumber          *WorkspaceIssueNumber             `boil:"TeamWorkspaceIssueNumber" json:"TeamWorkspaceIssueNumber" toml:"TeamWorkspaceIssueNumber" yaml:"TeamWorkspaceIssueNumber"`
+	TeamWorkspaceInvitationTeams      WorkspaceInvitationTeamSlice      `boil:"TeamWorkspaceInvitationTeams" json:"TeamWorkspaceInvitationTeams" toml:"TeamWorkspaceInvitationTeams" yaml:"TeamWorkspaceInvitationTeams"`
+	TeamWorkspaceIssueCommentMentions WorkspaceIssueCommentMentionSlice `boil:"TeamWorkspaceIssueCommentMentions" json:"TeamWorkspaceIssueCommentMentions" toml:"TeamWorkspaceIssueCommentMentions" yaml:"TeamWorkspaceIssueCommentMentions"`
+	DefaultTeamWorkspaces             WorkspaceSlice                    `boil:"DefaultTeamWorkspaces" json:"DefaultTeamWorkspaces" toml:"DefaultTeamWorkspaces" yaml:"DefaultTeamWorkspaces"`
 }
 
 // NewStruct creates a new relationship struct
@@ -178,6 +181,22 @@ func (r *workspaceTeamR) GetTeamWorkspaceInvitationTeams() WorkspaceInvitationTe
 	}
 
 	return r.TeamWorkspaceInvitationTeams
+}
+
+func (o *WorkspaceTeam) GetTeamWorkspaceIssueCommentMentions() WorkspaceIssueCommentMentionSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetTeamWorkspaceIssueCommentMentions()
+}
+
+func (r *workspaceTeamR) GetTeamWorkspaceIssueCommentMentions() WorkspaceIssueCommentMentionSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.TeamWorkspaceIssueCommentMentions
 }
 
 func (o *WorkspaceTeam) GetDefaultTeamWorkspaces() WorkspaceSlice {
@@ -548,6 +567,20 @@ func (o *WorkspaceTeam) TeamWorkspaceInvitationTeams(mods ...qm.QueryMod) worksp
 	return WorkspaceInvitationTeams(queryMods...)
 }
 
+// TeamWorkspaceIssueCommentMentions retrieves all the workspace_issue_comment_mention's WorkspaceIssueCommentMentions with an executor via team_id column.
+func (o *WorkspaceTeam) TeamWorkspaceIssueCommentMentions(mods ...qm.QueryMod) workspaceIssueCommentMentionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_comment_mentions\".\"team_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueCommentMentions(queryMods...)
+}
+
 // DefaultTeamWorkspaces retrieves all the workspace's Workspaces with an executor via default_team_id column.
 func (o *WorkspaceTeam) DefaultTeamWorkspaces(mods ...qm.QueryMod) workspaceQuery {
 	var queryMods []qm.QueryMod
@@ -912,6 +945,119 @@ func (workspaceTeamL) LoadTeamWorkspaceInvitationTeams(ctx context.Context, e bo
 	return nil
 }
 
+// LoadTeamWorkspaceIssueCommentMentions allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceTeamL) LoadTeamWorkspaceIssueCommentMentions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceTeam any, mods queries.Applicator) error {
+	var slice []*WorkspaceTeam
+	var object *WorkspaceTeam
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceTeam.(*WorkspaceTeam)
+		if !ok {
+			object = new(WorkspaceTeam)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceTeam)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceTeam))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceTeam.(*[]*WorkspaceTeam)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceTeam)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceTeam))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceTeamR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceTeamR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_comment_mentions`),
+		qm.WhereIn(`workspace_issue_comment_mentions.team_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_comment_mentions")
+	}
+
+	var resultSlice []*WorkspaceIssueCommentMention
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_comment_mentions")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_comment_mentions")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_comment_mentions")
+	}
+
+	if len(workspaceIssueCommentMentionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.TeamWorkspaceIssueCommentMentions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueCommentMentionR{}
+			}
+			foreign.R.Team = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.TeamID) {
+				local.R.TeamWorkspaceIssueCommentMentions = append(local.R.TeamWorkspaceIssueCommentMentions, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueCommentMentionR{}
+				}
+				foreign.R.Team = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadDefaultTeamWorkspaces allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceTeamL) LoadDefaultTeamWorkspaces(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceTeam any, mods queries.Applicator) error {
@@ -1172,6 +1318,133 @@ func (o *WorkspaceTeam) AddTeamWorkspaceInvitationTeams(ctx context.Context, exe
 			rel.R.Team = o
 		}
 	}
+	return nil
+}
+
+// AddTeamWorkspaceIssueCommentMentions adds the given related objects to the existing relationships
+// of the workspace_team, optionally inserting them as new records.
+// Appends related to o.R.TeamWorkspaceIssueCommentMentions.
+// Sets related.R.Team appropriately.
+func (o *WorkspaceTeam) AddTeamWorkspaceIssueCommentMentions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCommentMention) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.TeamID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_comment_mentions\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"team_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueCommentMentionPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.TeamID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceTeamR{
+			TeamWorkspaceIssueCommentMentions: related,
+		}
+	} else {
+		o.R.TeamWorkspaceIssueCommentMentions = append(o.R.TeamWorkspaceIssueCommentMentions, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueCommentMentionR{
+				Team: o,
+			}
+		} else {
+			rel.R.Team = o
+		}
+	}
+	return nil
+}
+
+// SetTeamWorkspaceIssueCommentMentions removes all previously related items of the
+// workspace_team replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Team's TeamWorkspaceIssueCommentMentions accordingly.
+// Replaces o.R.TeamWorkspaceIssueCommentMentions with related.
+// Sets related.R.Team's TeamWorkspaceIssueCommentMentions accordingly.
+func (o *WorkspaceTeam) SetTeamWorkspaceIssueCommentMentions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCommentMention) error {
+	query := "update \"workspace_issue_comment_mentions\" set \"team_id\" = null where \"team_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.TeamWorkspaceIssueCommentMentions {
+			queries.SetScanner(&rel.TeamID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Team = nil
+		}
+		o.R.TeamWorkspaceIssueCommentMentions = nil
+	}
+
+	return o.AddTeamWorkspaceIssueCommentMentions(ctx, exec, insert, related...)
+}
+
+// RemoveTeamWorkspaceIssueCommentMentions relationships from objects passed in.
+// Removes related items from R.TeamWorkspaceIssueCommentMentions (uses pointer comparison, removal does not keep order)
+// Sets related.R.Team.
+func (o *WorkspaceTeam) RemoveTeamWorkspaceIssueCommentMentions(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceIssueCommentMention) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.TeamID, nil)
+		if rel.R != nil {
+			rel.R.Team = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("team_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.TeamWorkspaceIssueCommentMentions {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.TeamWorkspaceIssueCommentMentions)
+			if ln > 1 && i < ln-1 {
+				o.R.TeamWorkspaceIssueCommentMentions[i] = o.R.TeamWorkspaceIssueCommentMentions[ln-1]
+			}
+			o.R.TeamWorkspaceIssueCommentMentions = o.R.TeamWorkspaceIssueCommentMentions[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

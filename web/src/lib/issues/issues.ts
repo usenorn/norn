@@ -219,6 +219,10 @@ export function activityLine(entry: IssueActivity): string {
 			return "Deleted";
 		case "restored":
 			return "Restored";
+		case "commented":
+			return "Commented";
+		case "comment_deleted":
+			return "Deleted a comment";
 		case "property_changed":
 			return propertyLine(entry);
 		default:

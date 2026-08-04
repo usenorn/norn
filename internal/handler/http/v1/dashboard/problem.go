@@ -349,6 +349,7 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrProjectNotFound),
 		errors.Is(err, entity.ErrProjectMembershipNotFound),
 		errors.Is(err, entity.ErrSavedViewNotFound),
+		errors.Is(err, entity.ErrIssueCommentNotFound),
 		errors.Is(err, entity.ErrTriageDisabled),
 		errors.Is(err, entity.ErrBreakGlassCodeInvalid):
 		return newProblem(http.StatusNotFound, err.Error()), true
@@ -357,8 +358,16 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrSavedViewNotShareable):
 		return newProblem(http.StatusForbidden, err.Error()), true
 
-	case errors.Is(err, entity.ErrProjectNotLead):
+	case errors.Is(err, entity.ErrProjectNotLead),
+		errors.Is(err, entity.ErrIssueCommentNotAuthor),
+		errors.Is(err, entity.ErrIssueCommentNotDeletable):
 		return newProblem(http.StatusForbidden, err.Error()), true
+
+	case errors.Is(err, entity.ErrIssueCommentDeleted):
+		return commentConflictProblem(api.CommentConflictProblemCodeCommentDeleted, err), true
+
+	case errors.Is(err, entity.ErrIssueCommentNotReplyable):
+		return commentConflictProblem(api.CommentConflictProblemCodeCommentNotReplyable, err), true
 
 	case errors.Is(err, entity.ErrProjectSlugTaken):
 		return projectConflictProblem(api.ProjectConflictProblemCodeProjectSlugTaken, err), true
@@ -1260,6 +1269,22 @@ func cycleConflictProblem(code api.CycleConflictProblemCode, err error) problemR
 	}
 }
 
+func commentConflictProblem(code api.CommentConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.CommentConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
 func issueConflictProblem(code api.IssueConflictProblemCode, err error) problemResponse {
 	base := baseProblem(http.StatusConflict, err.Error())
 
@@ -1274,4 +1299,28 @@ func issueConflictProblem(code api.IssueConflictProblemCode, err error) problemR
 			Type:     base.Type,
 		},
 	}
+}
+
+func (r problemResponse) VisitListWorkspaceIssueCommentsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitPostWorkspaceIssueCommentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitEditWorkspaceIssueCommentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceIssueCommentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitReactToWorkspaceIssueCommentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUnreactToWorkspaceIssueCommentResponse(w http.ResponseWriter) error {
+	return r.write(w)
 }

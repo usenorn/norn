@@ -1910,6 +1910,143 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/comments:
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueComments
+      summary: Read an issue's conversation, oldest first, with the replies to each comment
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+        - name: limit
+          in: query
+          schema: { type: integer, format: int32, minimum: 1, maximum: 100 }
+        - name: cursor
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: A page of top-level comments, each carrying its replies
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueCommentPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [issues]
+      operationId: postWorkspaceIssueComment
+      summary: Leave a comment, or a reply to one, naming anyone it could not reach
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostCommentRequest' }
+      responses:
+        '201':
+          description: The comment as posted, with any mention that will not be notified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PostedComment' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/CommentConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}:
+    patch:
+      tags: [issues]
+      operationId: editWorkspaceIssueComment
+      summary: Rewrite your own comment, marking it as edited
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+        - $ref: '#/components/parameters/CommentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EditCommentRequest' }
+      responses:
+        '200':
+          description: The comment as it now reads
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueComment' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/CommentConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [issues]
+      operationId: removeWorkspaceIssueComment
+      summary: Remove a comment's words, leaving the slot its replies hang off
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+        - $ref: '#/components/parameters/CommentId'
+      responses:
+        '204':
+          description: The comment was deleted
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/CommentConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction}:
+    put:
+      tags: [issues]
+      operationId: reactToWorkspaceIssueComment
+      summary: React to a comment, once, whatever you already did
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+        - $ref: '#/components/parameters/CommentId'
+        - $ref: '#/components/parameters/Reaction'
+      responses:
+        '200':
+          description: The comment with its reactions as they now stand
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueComment' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/CommentConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [issues]
+      operationId: unreactToWorkspaceIssueComment
+      summary: Take back your reaction
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+        - $ref: '#/components/parameters/CommentId'
+        - $ref: '#/components/parameters/Reaction'
+      responses:
+        '200':
+          description: The comment with its reactions as they now stand
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueComment' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/CommentConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}:
     patch:
       tags: [issues]
@@ -2973,6 +3110,16 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    CommentId:
+      name: commentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Reaction:
+      name: reaction
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/CommentReaction' }
     TeamId:
       name: teamId
       in: path
@@ -3042,6 +3189,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/WorkflowStateConflictProblem' }
+
+    CommentConflict:
+      description: The comment refuses the change
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/CommentConflictProblem' }
 
     IssueConflict:
       description: The issue changed since it was read
@@ -3514,6 +3667,118 @@ components:
             type: string
             enum: [assignee, estimate, dueOn, cycle, project]
 
+    IssueCommentPage:
+      type: object
+      required: [comments]
+      properties:
+        comments:
+          type: array
+          items: { $ref: '#/components/schemas/IssueComment' }
+        nextCursor: { type: string }
+
+    IssueComment:
+      type: object
+      required: [id, issueId, authorKind, body, edited, deleted, mentions, reactions, replies, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        parentCommentId: { type: string, format: uuid }
+        authorAccountId: { type: string, format: uuid }
+        authorName: { type: string }
+        authorKind: { $ref: '#/components/schemas/CommentAuthorKind' }
+        body: { type: string }
+        edited: { type: boolean }
+        deleted: { type: boolean }
+        editedAt: { type: string, format: date-time }
+        deletedAt: { type: string, format: date-time }
+        mentions:
+          type: array
+          items: { $ref: '#/components/schemas/CommentMention' }
+        reactions:
+          type: array
+          items: { $ref: '#/components/schemas/CommentReactionTally' }
+        replies:
+          type: array
+          items: { $ref: '#/components/schemas/IssueComment' }
+        createdAt: { type: string, format: date-time }
+
+    CommentAuthorKind:
+      type: string
+      enum: [person, agent]
+
+    CommentReaction:
+      type: string
+      enum: [up, down, celebrate, thinking, eyes, heart]
+
+    CommentReactionTally:
+      type: object
+      required: [reaction, accountIds]
+      properties:
+        reaction: { $ref: '#/components/schemas/CommentReaction' }
+        accountIds:
+          type: array
+          items: { type: string, format: uuid }
+
+    CommentMentionKind:
+      type: string
+      enum: [account, team]
+
+    CommentMention:
+      type: object
+      required: [kind, name, notified]
+      properties:
+        kind: { $ref: '#/components/schemas/CommentMentionKind' }
+        accountId: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        name: { type: string }
+        notified: { type: boolean }
+
+    MentionTarget:
+      type: object
+      required: [kind]
+      properties:
+        kind: { $ref: '#/components/schemas/CommentMentionKind' }
+        accountId: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+
+    PostCommentRequest:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 20000 }
+        parentCommentId: { type: string, format: uuid }
+        mentions:
+          type: array
+          maxItems: 20
+          items: { $ref: '#/components/schemas/MentionTarget' }
+
+    EditCommentRequest:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 20000 }
+
+    PostedComment:
+      type: object
+      required: [comment, unreachable]
+      properties:
+        comment: { $ref: '#/components/schemas/IssueComment' }
+        unreachable:
+          type: array
+          items: { $ref: '#/components/schemas/CommentMention' }
+
+    CommentConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - comment_deleted
+                - comment_not_replyable
+
     IssueConflictProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -3811,6 +4076,8 @@ components:
             - relation_added
             - relation_removed
             - triaged
+            - commented
+            - comment_deleted
         fromState: { type: string }
         toState: { type: string }
         field: { type: string }
