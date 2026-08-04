@@ -35,6 +35,7 @@ import (
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issueactivityrepo "github.com/usenorn/norn/internal/repository/issueactivity"
+	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
 	issuefilterreferencerepo "github.com/usenorn/norn/internal/repository/issuefilterreference"
 	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
@@ -68,6 +69,7 @@ import (
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
+	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
@@ -117,6 +119,7 @@ var baseSet = wire.NewSet(
 	bulkactionrepo.Set,
 	cyclerepo.Set,
 	projectrepo.Set,
+	issuecommentrepo.Set,
 	savedviewrepo.Set,
 	triagerepo.Set,
 	issuefilterreferencerepo.Set,
@@ -147,6 +150,7 @@ var baseSet = wire.NewSet(
 	bulkoperationsvc.Set,
 	cyclesvc.Set,
 	projectsvc.Set,
+	issuecommentsvc.Set,
 	savedviewsvc.Set,
 	triagesvc.Set,
 	labelsvc.Set,

@@ -19,7 +19,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
 	import { cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
-	import { renderMarkdown } from "$lib/issues/markdown";
+	import Markdown from "$lib/issues/markdown.svelte";
 	import {
 		activityLine,
 		issueFailureMessage,
@@ -43,6 +43,15 @@
 	import IssueParent from "$lib/issues/issue-parent.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import IssueRelations from "$lib/issues/issue-relations.svelte";
+	import CommentThreadView from "$lib/comments/comment-thread.svelte";
+	import {
+		readCommentFailure,
+		type CommentFailure,
+		type CommentMention,
+		type CommentReaction,
+		type CommentThread,
+		type MentionTarget,
+	} from "$lib/comments/comments";
 	import {
 		conflictFailure,
 		labelFailureMessage,
@@ -53,7 +62,7 @@
 		type LabelFailure,
 	} from "$lib/labels/labels";
 	import { workspacePath } from "$lib/workspace/navigation";
-	import { issueDetailPreviewStates } from "./preview";
+	import { commentPreviewStates, issueDetailPreviewStates } from "./preview";
 	import type { IssueDetail } from "./+page";
 	import type { PageProps } from "./$types";
 
@@ -64,12 +73,20 @@
 			? issueDetailPreviewStates[page.url.searchParams.get("state") ?? ""]
 			: undefined
 	);
+	const commentPreview = $derived(
+		import.meta.env.DEV
+			? commentPreviewStates[page.url.searchParams.get("comments") ?? ""]
+			: undefined
+	);
 
 	let applied = $state<Label[] | null>(null);
 	let labelFailure = $state<LabelFailure | null>(null);
 	let failure = $state<IssueFailure | null>(null);
 	let editing = $state(false);
 	let pendingTeamId = $state("");
+	let commentFailure = $state<CommentFailure | null>(null);
+	let unreachable = $state.raw<CommentMention[]>([]);
+	let loadedComments = $state.raw<CommentThread | null>(null);
 	let pendingStateId = $state("");
 
 	const detail = $derived<IssueDetail>(preview?.detail ?? data.detail);
@@ -88,7 +105,9 @@
 	const assigneeName = $derived(
 		ready?.members.find((member) => member.accountId === issue?.assigneeAccountId)?.displayName ?? ""
 	);
-	const described = $derived(renderMarkdown(issue?.description ?? ""));
+	const thread = $derived<CommentThread>(
+		commentPreview?.thread ?? loadedComments ?? ready?.comments ?? { kind: "loading" }
+	);
 
 	const form = superForm(defaults(zod4(issueEditSchema)), {
 		id: "issue-edit",
@@ -412,6 +431,147 @@
 		}
 	}
 
+	async function comment(
+		body: string,
+		mentions: MentionTarget[],
+		parentCommentId?: string
+	): Promise<void> {
+		if (!issue) return;
+
+		await act(async () => {
+			const { data: posted, error } = await api.POST(
+				"/workspaces/{workspaceId}/issues/{issueId}/comments",
+				{
+					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+					body: { body, parentCommentId, mentions },
+				}
+			);
+
+			if (error || !posted) {
+				commentFailure = readCommentFailure(error);
+
+				return;
+			}
+
+			unreachable = posted.unreachable;
+			loadedComments = null;
+			await invalidateAll();
+		});
+	}
+
+	async function editComment(commentId: string, body: string): Promise<void> {
+		if (!issue) return;
+
+		await act(async () => {
+			const { error } = await api.PATCH(
+				"/workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}",
+				{
+					params: { path: { workspaceId: data.workspace.id, issueId: issue.id, commentId } },
+					body: { body },
+				}
+			);
+
+			if (error) {
+				commentFailure = readCommentFailure(error);
+
+				return;
+			}
+
+			loadedComments = null;
+			await invalidateAll();
+		});
+	}
+
+	async function removeComment(commentId: string): Promise<void> {
+		if (!issue) return;
+
+		await act(async () => {
+			const { error } = await api.DELETE(
+				"/workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}",
+				{ params: { path: { workspaceId: data.workspace.id, issueId: issue.id, commentId } } }
+			);
+
+			if (error) {
+				commentFailure = readCommentFailure(error);
+
+				return;
+			}
+
+			loadedComments = null;
+			await invalidateAll();
+		});
+	}
+
+	async function react(commentId: string, reaction: CommentReaction, on: boolean): Promise<void> {
+		if (!issue) return;
+
+		const path = { workspaceId: data.workspace.id, issueId: issue.id, commentId, reaction };
+
+		await act(async () => {
+			const { error } = on
+				? await api.PUT(
+						"/workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction}",
+						{ params: { path } }
+					)
+				: await api.DELETE(
+						"/workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction}",
+						{ params: { path } }
+					);
+
+			if (error) {
+				commentFailure = readCommentFailure(error);
+
+				return;
+			}
+
+			loadedComments = null;
+			await invalidateAll();
+		});
+	}
+
+	async function moreComments(): Promise<void> {
+		const base = thread;
+
+		if (!issue || base.kind !== "ready" || !base.nextCursor) return;
+
+		await act(async () => {
+			const { data: page, error } = await api.GET(
+				"/workspaces/{workspaceId}/issues/{issueId}/comments",
+				{
+					params: {
+						path: { workspaceId: data.workspace.id, issueId: issue.id },
+						query: { cursor: base.nextCursor },
+					},
+				}
+			);
+
+			if (error || !page) {
+				commentFailure = readCommentFailure(error);
+
+				return;
+			}
+
+			loadedComments = {
+				kind: "ready",
+				comments: [...base.comments, ...page.comments],
+				nextCursor: page.nextCursor,
+			};
+		});
+	}
+
+	async function act(run: () => Promise<void>): Promise<void> {
+		working = true;
+		commentFailure = null;
+
+		try {
+			await run();
+		} catch {
+			commentFailure = { kind: "unavailable" };
+		} finally {
+			working = false;
+		}
+	}
+
 	function when(timestamp: string): string {
 		return onDateAndTime(timestamp, data.workspace.timezone);
 	}
@@ -636,13 +796,8 @@
 
 					<section class="flex flex-col gap-2">
 						<h2 class="text-sm font-medium text-ink-900">Description</h2>
-						{#if described}
-							<div
-								class="prose prose-sm max-w-none text-ink-900 prose-headings:font-medium prose-headings:tracking-snug prose-a:text-link prose-pre:bg-paper-2 prose-code:font-mono"
-							>
-								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-								{@html described}
-							</div>
+						{#if issue.description.trim()}
+							<Markdown source={issue.description} />
 						{:else}
 							<p class="text-sm text-muted-foreground">No description yet.</p>
 						{/if}
@@ -1032,6 +1187,22 @@
 						good after 30 days, and can be restored until then. Neither ever frees its reference.
 					</p>
 				</section>
+
+				<CommentThreadView
+					{thread}
+					members={ready.members}
+					teams={data.teams ?? []}
+					accountId={data.member.id}
+					{when}
+					working={working || Boolean(commentPreview?.working)}
+					failure={commentFailure ?? commentPreview?.failure ?? null}
+					unreachable={commentPreview?.unreachable ?? unreachable}
+					onpost={comment}
+					onedit={editComment}
+					onremove={removeComment}
+					onreact={react}
+					onmore={moreComments}
+				/>
 
 				<section class="flex flex-col gap-2">
 					<h2 class="text-sm font-medium text-ink-900">Activity</h2>

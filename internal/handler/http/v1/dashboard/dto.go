@@ -1078,3 +1078,115 @@ func nilIfEmpty(value string) *string {
 
 	return &value
 }
+
+func commentDTO(comment entity.IssueComment) api.IssueComment {
+	dto := api.IssueComment{
+		Id:         comment.ID,
+		IssueId:    comment.IssueID,
+		AuthorKind: api.CommentAuthorKind(comment.AuthorKind),
+		Body:       comment.Body,
+		Edited:     comment.Edited(),
+		Deleted:    comment.Deleted(),
+		EditedAt:   comment.EditedAt,
+		DeletedAt:  comment.DeletedAt,
+		Mentions:   commentMentionDTOs(comment.Mentions),
+		Reactions:  commentReactionDTOs(comment.Reactions),
+		Replies:    commentDTOs(comment.Replies),
+		CreatedAt:  comment.CreatedAt,
+	}
+
+	if comment.ParentCommentID != uuid.Nil {
+		parent := comment.ParentCommentID
+		dto.ParentCommentId = &parent
+	}
+
+	if comment.AuthorAccountID != uuid.Nil {
+		author := comment.AuthorAccountID
+		dto.AuthorAccountId = &author
+		dto.AuthorName = nilIfEmpty(comment.AuthorName)
+	}
+
+	return dto
+}
+
+func commentDTOs(comments []entity.IssueComment) []api.IssueComment {
+	dtos := make([]api.IssueComment, 0, len(comments))
+	for _, comment := range comments {
+		dtos = append(dtos, commentDTO(comment))
+	}
+
+	return dtos
+}
+
+func commentPageDTO(thread service.CommentThread) api.IssueCommentPage {
+	return api.IssueCommentPage{
+		Comments:   commentDTOs(thread.Comments),
+		NextCursor: nilIfEmpty(thread.NextCursor),
+	}
+}
+
+func postedCommentDTO(posted service.CommentPosted) api.PostedComment {
+	return api.PostedComment{
+		Comment:     commentDTO(posted.Comment),
+		Unreachable: commentMentionDTOs(posted.Unreachable),
+	}
+}
+
+func commentMentionDTOs(mentions []entity.CommentMention) []api.CommentMention {
+	dtos := make([]api.CommentMention, 0, len(mentions))
+
+	for _, mention := range mentions {
+		dto := api.CommentMention{
+			Kind:     api.CommentMentionKind(mention.Kind),
+			Name:     mention.Name,
+			Notified: mention.Visible,
+		}
+
+		if mention.AccountID != uuid.Nil {
+			account := mention.AccountID
+			dto.AccountId = &account
+		}
+
+		if mention.TeamID != uuid.Nil {
+			team := mention.TeamID
+			dto.TeamId = &team
+		}
+
+		dtos = append(dtos, dto)
+	}
+
+	return dtos
+}
+
+func commentReactionDTOs(tallies []entity.CommentReactionTally) []api.CommentReactionTally {
+	dtos := make([]api.CommentReactionTally, 0, len(tallies))
+
+	for _, tally := range tallies {
+		dtos = append(dtos, api.CommentReactionTally{
+			Reaction:   api.CommentReaction(tally.Reaction),
+			AccountIds: tally.Accounts,
+		})
+	}
+
+	return dtos
+}
+
+func mentionInputs(targets []api.MentionTarget) []service.CommentMentionInput {
+	inputs := make([]service.CommentMentionInput, 0, len(targets))
+
+	for _, target := range targets {
+		input := service.CommentMentionInput{Kind: entity.MentionKind(target.Kind)}
+
+		if target.AccountId != nil {
+			input.AccountID = *target.AccountId
+		}
+
+		if target.TeamId != nil {
+			input.TeamID = *target.TeamId
+		}
+
+		inputs = append(inputs, input)
+	}
+
+	return inputs
+}

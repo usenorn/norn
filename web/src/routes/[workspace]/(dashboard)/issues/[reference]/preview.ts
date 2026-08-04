@@ -1,6 +1,18 @@
+import type {
+	CommentFailure,
+	CommentMention,
+	CommentThread,
+} from "$lib/comments/comments";
 import type { IssueDetail } from "./+page";
 
 export type IssueDetailPreview = { detail: IssueDetail };
+
+export type CommentPreview = {
+	thread: CommentThread;
+	unreachable?: CommentMention[];
+	failure?: CommentFailure;
+	working?: boolean;
+};
 
 export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = import.meta.env.DEV
 	? {
@@ -117,6 +129,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					children: [],
 					childProgress: { notStarted: 2, active: 1, complete: 3, abandoned: 0 },
 					candidates: [],
+					comments: { kind: "empty" },
 					members: [
 						{
 							workspaceId: "00000000-0000-4000-8000-000000000000",
@@ -201,6 +214,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					children: [],
 					childProgress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
 					candidates: [],
+					comments: { kind: "empty" },
 					members: [],
 					activity: [
 						{
@@ -250,6 +264,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					children: [],
 					childProgress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
 					candidates: [],
+					comments: { kind: "empty" },
 					members: [],
 					activity: [
 						{
@@ -301,6 +316,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					children: [],
 					childProgress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
 					candidates: [],
+					comments: { kind: "empty" },
 					members: [],
 					activity: [
 						{
@@ -352,6 +368,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					labels: [],
 					members: [],
 					candidates: [],
+					comments: { kind: "empty" },
 					childProgress: { notStarted: 1, active: 0, complete: 2, abandoned: 0 },
 					relations: [],
 					cycles: [],
@@ -453,6 +470,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					labels: [],
 					members: [],
 					candidates: [],
+					comments: { kind: "empty" },
 					children: [],
 					childProgress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
 					relations: [
@@ -603,6 +621,275 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 							archived: false,
 							concealedWork: false,
 							createdAt: "2026-06-01T09:00:00Z",
+						},
+					],
+				},
+			},
+		}
+	: {};
+
+export const commentPreviewStates: Record<string, CommentPreview> = import.meta.env.DEV
+	? {
+			loading: { thread: { kind: "loading" } },
+			unavailable: { thread: { kind: "unavailable" } },
+			empty: { thread: { kind: "empty" } },
+			thread: {
+				thread: {
+					kind: "ready",
+					comments: [
+						{
+							id: "00000000-0000-4000-8000-000000000c01",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000201",
+							authorName: "Rae Whitfield",
+							authorKind: "person" as const,
+							body: "I traced it to the retry loop:\n\n```go\nfor attempt := range 3 {\n\tif err := upload(ctx); err == nil {\n\t\tbreak\n\t}\n}\n```\n\nIt never backs off, so a slow connection just times out three times as fast.",
+							edited: false,
+							deleted: false,
+							mentions: [],
+							reactions: [
+								{
+									reaction: "up" as const,
+									accountIds: ["00000000-0000-4000-8000-000000000202"],
+								},
+							],
+							replies: [],
+							createdAt: "2026-08-01T09:12:00Z",
+						},
+					],
+				},
+			},
+			with_replies: {
+				thread: {
+					kind: "ready",
+					comments: [
+						{
+							id: "00000000-0000-4000-8000-000000000c02",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000201",
+							authorName: "Rae Whitfield",
+							authorKind: "person" as const,
+							body: "Is this the same thing we fixed in the uploader last quarter?",
+							edited: false,
+							deleted: false,
+							mentions: [],
+							reactions: [],
+							replies: [
+								{
+									id: "00000000-0000-4000-8000-000000000c03",
+									issueId: "00000000-0000-4000-8000-000000000501",
+									parentCommentId: "00000000-0000-4000-8000-000000000c02",
+									authorAccountId: "00000000-0000-4000-8000-000000000202",
+									authorName: "Milo Fenwick",
+									authorKind: "person" as const,
+									body: "Different code path — that one was the thumbnailer.",
+									edited: false,
+									deleted: false,
+									mentions: [],
+									reactions: [],
+									replies: [],
+									createdAt: "2026-08-01T10:02:00Z",
+								},
+							],
+							createdAt: "2026-08-01T09:40:00Z",
+						},
+					],
+				},
+			},
+			deleted_parent: {
+				thread: {
+					kind: "ready",
+					comments: [
+						{
+							id: "00000000-0000-4000-8000-000000000c04",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000201",
+							authorName: "Rae Whitfield",
+							authorKind: "person" as const,
+							body: "",
+							edited: false,
+							deleted: true,
+							deletedAt: "2026-08-02T08:00:00Z",
+							mentions: [],
+							reactions: [],
+							replies: [
+								{
+									id: "00000000-0000-4000-8000-000000000c05",
+									issueId: "00000000-0000-4000-8000-000000000501",
+									parentCommentId: "00000000-0000-4000-8000-000000000c04",
+									authorAccountId: "00000000-0000-4000-8000-000000000202",
+									authorName: "Milo Fenwick",
+									authorKind: "person" as const,
+									body: "For the record, we shipped the fix on Friday.",
+									edited: false,
+									deleted: false,
+									mentions: [],
+									reactions: [],
+									replies: [],
+									createdAt: "2026-08-02T09:00:00Z",
+								},
+							],
+							createdAt: "2026-08-01T18:00:00Z",
+						},
+					],
+				},
+			},
+			edited: {
+				thread: {
+					kind: "ready",
+					comments: [
+						{
+							id: "00000000-0000-4000-8000-000000000c06",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000201",
+							authorName: "Rae Whitfield",
+							authorKind: "person" as const,
+							body: "Reproduced on a throttled connection, not only on 3G.",
+							edited: true,
+							editedAt: "2026-08-02T11:30:00Z",
+							deleted: false,
+							mentions: [],
+							reactions: [],
+							replies: [],
+							createdAt: "2026-08-02T11:00:00Z",
+						},
+					],
+				},
+			},
+			agent_authored: {
+				thread: {
+					kind: "ready",
+					comments: [
+						{
+							id: "00000000-0000-4000-8000-000000000c07",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000203",
+							authorName: "Release bot",
+							authorKind: "agent" as const,
+							body: "Deployed `v2026.8.2` to production. This issue's branch is included.",
+							edited: false,
+							deleted: false,
+							mentions: [],
+							reactions: [],
+							replies: [],
+							createdAt: "2026-08-02T14:00:00Z",
+						},
+					],
+				},
+			},
+			mention_unreachable: {
+				unreachable: [
+					{
+						kind: "account" as const,
+						accountId: "00000000-0000-4000-8000-000000000204",
+						name: "Ines Barlow",
+						notified: false,
+					},
+				],
+				thread: {
+					kind: "ready",
+					comments: [
+						{
+							id: "00000000-0000-4000-8000-000000000c08",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000201",
+							authorName: "Rae Whitfield",
+							authorKind: "person" as const,
+							body: "@Ines Barlow do you remember why we capped the retries at three?",
+							edited: false,
+							deleted: false,
+							mentions: [
+								{
+									kind: "account" as const,
+									accountId: "00000000-0000-4000-8000-000000000204",
+									name: "Ines Barlow",
+									notified: false,
+								},
+							],
+							reactions: [],
+							replies: [],
+							createdAt: "2026-08-03T09:00:00Z",
+						},
+					],
+				},
+			},
+			long_thread: {
+				thread: {
+					kind: "ready",
+					nextCursor: "preview-cursor",
+					comments: [
+						{
+							id: "00000000-0000-4000-8000-000000000c09",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000201",
+							authorName: "Rae Whitfield",
+							authorKind: "person" as const,
+							body: "Starting a list of everything we have ruled out.",
+							edited: false,
+							deleted: false,
+							mentions: [],
+							reactions: [],
+							replies: [],
+							createdAt: "2026-08-03T10:00:00Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000c10",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000202",
+							authorName: "Milo Fenwick",
+							authorKind: "person" as const,
+							body: "Not the CDN — the same file uploads fine through the API.",
+							edited: false,
+							deleted: false,
+							mentions: [],
+							reactions: [],
+							replies: [],
+							createdAt: "2026-08-03T10:20:00Z",
+						},
+					],
+				},
+			},
+			posting: {
+				working: true,
+				thread: {
+					kind: "ready",
+					comments: [
+						{
+							id: "00000000-0000-4000-8000-000000000c11",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000201",
+							authorName: "Rae Whitfield",
+							authorKind: "person" as const,
+							body: "Sending this one now.",
+							edited: false,
+							deleted: false,
+							mentions: [],
+							reactions: [],
+							replies: [],
+							createdAt: "2026-08-03T11:00:00Z",
+						},
+					],
+				},
+			},
+			comment_failed: {
+				failure: { kind: "deleted" },
+				thread: {
+					kind: "ready",
+					comments: [
+						{
+							id: "00000000-0000-4000-8000-000000000c12",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000201",
+							authorName: "Rae Whitfield",
+							authorKind: "person" as const,
+							body: "",
+							edited: false,
+							deleted: true,
+							deletedAt: "2026-08-03T12:00:00Z",
+							mentions: [],
+							reactions: [],
+							replies: [],
+							createdAt: "2026-08-03T11:30:00Z",
 						},
 					],
 				},

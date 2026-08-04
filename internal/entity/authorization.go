@@ -20,6 +20,7 @@ const (
 	ResourceProject        Resource = "project"
 	ResourceLabel          Resource = "label"
 	ResourceSavedView      Resource = "saved_view"
+	ResourceComment        Resource = "comment"
 	ResourceAPIToken       Resource = "api_token"
 	ResourceAuthPolicy     Resource = "auth_policy"
 	ResourceSSOConnection  Resource = "sso_connection"

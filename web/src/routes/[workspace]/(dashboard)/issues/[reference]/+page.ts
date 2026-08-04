@@ -5,6 +5,7 @@ import type { Cycle } from "$lib/cycles/cycles";
 import type { Project } from "$lib/projects/projects";
 import type { Issue } from "$lib/issues/issues";
 import type { Label, LabelGroup } from "$lib/labels/labels";
+import type { CommentThread } from "$lib/comments/comments";
 import type { WorkflowState } from "$lib/team/states";
 import type { PageLoad } from "./$types";
 
@@ -31,6 +32,7 @@ export type IssueDetail =
 			candidates: Issue[];
 			cycles: Cycle[];
 			projects: Project[];
+			comments: CommentThread;
 	  }
 	| { kind: "unavailable" };
 
@@ -62,8 +64,19 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 
 	const path = { workspaceId: workspace.id, issueId: issue.data.id };
 
-	const [states, labels, groups, activity, members, children, candidates, relations, cycles, projects] =
-		await Promise.all([
+	const [
+		states,
+		labels,
+		groups,
+		activity,
+		members,
+		children,
+		candidates,
+		relations,
+		cycles,
+		projects,
+		comments,
+	] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			fetch,
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -98,6 +111,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			fetch,
 			params: { path: { workspaceId: workspace.id } },
 		}),
+		api.GET("/workspaces/{workspaceId}/issues/{issueId}/comments", { fetch, params: { path } }),
 	]);
 
 	if (
@@ -127,6 +141,14 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			relations: relations.data.groups,
 			cycles: (cycles.data ?? []).filter((cycle) => cycle.phase !== "closed"),
 			projects: (projects.data ?? []).filter((project) => !project.archived),
+			comments: readThread(comments.data),
 		},
 	};
 };
+
+function readThread(page: components["schemas"]["IssueCommentPage"] | undefined): CommentThread {
+	if (!page) return { kind: "unavailable" };
+	if (page.comments.length === 0) return { kind: "empty" };
+
+	return { kind: "ready", comments: page.comments, nextCursor: page.nextCursor };
+}
