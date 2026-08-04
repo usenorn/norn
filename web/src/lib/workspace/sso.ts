@@ -20,7 +20,7 @@ export type SsoConfiguration =
 export type SsoFailure =
 	| { kind: "stage"; stage: OidcStage; message: string; providerMessage?: string }
 	| { kind: "forbidden" }
-	| { kind: "unavailable" };
+	| { kind: "unavailable"; detail?: string };
 
 export type SsoOutcome =
 	| { kind: "idle" }
@@ -71,7 +71,7 @@ export function saveFailure(problem: SaveProblem): SsoFailure {
 		};
 	}
 
-	return { kind: "unavailable" };
+	return { kind: "unavailable", detail: problem.detail };
 }
 
 export function failureMessage(failure: SsoFailure): string {
@@ -81,7 +81,7 @@ export function failureMessage(failure: SsoFailure): string {
 		case "forbidden":
 			return "You may not change how this workspace signs people in.";
 		case "unavailable":
-			return "We could not reach the server. Nothing changed.";
+			return failure.detail ?? "We could not reach the server. Nothing changed.";
 	}
 }
 

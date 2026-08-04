@@ -15,6 +15,11 @@ var (
 	ErrOIDCConnectionNotFound = errors.New("no single sign-on provider is configured for this workspace")
 	ErrOIDCStateNotFound      = errors.New("this sign-in attempt has expired or was already used")
 	ErrOIDCNotVerified        = errors.New("this provider has not completed a successful test")
+
+	ErrOIDCEncryptionKeyMissing = errors.New(
+		"this instance has no encryption key, so a provider secret cannot be stored. " +
+			"Set NORN_SECURITY_ENCRYPTION_KEY to 32 base64-encoded random bytes and restart",
+	)
 )
 
 type OIDCStage string

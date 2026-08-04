@@ -218,6 +218,10 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	if errors.Is(err, entity.ErrOIDCEncryptionKeyMissing) {
+		return newProblem(http.StatusInternalServerError, err.Error()), true
+	}
+
 	if failure, ok := entity.AsOIDCError(err); ok {
 		base := baseProblem(http.StatusUnprocessableEntity, failure.Message)
 		stage := api.OidcStage(failure.Stage)

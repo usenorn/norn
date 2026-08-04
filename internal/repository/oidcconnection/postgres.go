@@ -107,6 +107,10 @@ func (r *connectionRepository) scan(row scanner) (entity.OIDCConnection, error) 
 
 	secret, err := r.crypter.Open(sealed)
 	if err != nil {
+		if errors.Is(err, crypter.ErrKeyMissing) {
+			return entity.OIDCConnection{}, entity.ErrOIDCEncryptionKeyMissing
+		}
+
 		return entity.OIDCConnection{}, fmt.Errorf("open oidc client secret: %w", err)
 	}
 
@@ -146,6 +150,10 @@ func (r *connectionRepository) Save(
 ) (entity.OIDCConnection, error) {
 	sealed, err := r.crypter.Seal([]byte(connection.ClientSecret))
 	if err != nil {
+		if errors.Is(err, crypter.ErrKeyMissing) {
+			return entity.OIDCConnection{}, entity.ErrOIDCEncryptionKeyMissing
+		}
+
 		return entity.OIDCConnection{}, err
 	}
 
