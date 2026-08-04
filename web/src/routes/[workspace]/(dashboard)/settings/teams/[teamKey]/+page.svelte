@@ -14,6 +14,7 @@
 	import * as Select from "$lib/components/ui/select/index.js";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import WorkflowStates from "$lib/components/norn/workflow-states.svelte";
+	import CycleCadence from "$lib/team/cycle-cadence.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { api } from "$lib/api";
@@ -25,6 +26,7 @@
 		type MemberFailure,
 		type TeamRoster,
 	} from "$lib/team/members";
+	import type { CadenceSetting } from "$lib/cycles/cycles";
 	import type { StateList } from "$lib/team/states";
 	import { settingsFor, teamOf, type TeamSettings } from "$lib/team/team-settings";
 	import { teamSettingsSchema } from "$lib/team/team-settings-schema";
@@ -64,6 +66,7 @@
 	const settings = $derived<TeamSettings>(submitted ?? preview?.settings ?? data.settings);
 	const roster = $derived<TeamRoster>(submittedRoster ?? preview?.roster ?? data.roster);
 	const states = $derived<StateList>(preview?.states ?? data.states);
+	const cadence = $derived<CadenceSetting>(preview?.cadence ?? data.cadence);
 	const failure = $derived<MemberFailure | null>(preview?.failure ?? memberFailure);
 	const team = $derived(teamOf(settings));
 	const archived = $derived(settings.kind === "archived");
@@ -536,6 +539,13 @@
 					workspaceId={data.workspace.id}
 					{team}
 					list={states}
+					locked={busy || archived || readOnly}
+				/>
+
+				<CycleCadence
+					workspace={data.workspace}
+					{team}
+					setting={cadence}
 					locked={busy || archived || readOnly}
 				/>
 

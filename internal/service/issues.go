@@ -22,6 +22,6 @@ type Issues interface {
 	Purge(ctx context.Context, issueID uuid.UUID) error
 	MoveToTeam(ctx context.Context, workspaceID, issueID uuid.UUID, input MoveIssueInput) (entity.Issue, error)
 	SetLabels(ctx context.Context, workspaceID, issueID uuid.UUID, input SetIssueLabelsInput) ([]entity.Label, error)
-	Progress(ctx context.Context, workspaceID uuid.UUID, teamID *uuid.UUID) (entity.IssueProgress, error)
+	Progress(ctx context.Context, workspaceID uuid.UUID, input ProgressInput) (entity.IssueProgress, error)
 	Activity(ctx context.Context, workspaceID, issueID uuid.UUID, input ListIssueActivityInput) (IssueActivityPage, error)
 }

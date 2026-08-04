@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -337,6 +338,13 @@ func issueDTO(issue entity.Issue) api.Issue {
 		dto.ParentId = &parent
 	}
 
+	if issue.CycleID != uuid.Nil {
+		cycle := issue.CycleID
+		number := int32(issue.CycleNumber)
+		dto.CycleId = &cycle
+		dto.CycleNumber = &number
+	}
+
 	dto.ParentReference = nilIfEmpty(issue.ParentReference)
 
 	if issue.ArchivedAt != nil {
@@ -433,6 +441,93 @@ func bulkResultDTO(
 	}
 
 	return dto
+}
+
+func cycleDTO(view service.CycleView) api.Cycle {
+	dto := api.Cycle{
+		Id:          view.Cycle.ID,
+		WorkspaceId: view.Cycle.WorkspaceID,
+		TeamId:      view.Cycle.TeamID,
+		TeamKey:     view.Cycle.TeamKey,
+		Number:      int32(view.Cycle.Number),
+		Name:        "Cycle " + strconv.Itoa(view.Cycle.Number),
+		StartsOn:    calendarDate(view.Cycle.StartsOn),
+		EndsOn:      calendarDate(view.Cycle.EndsOn),
+		Phase:       api.CyclePhase(view.Phase),
+	}
+
+	if view.Cycle.ClosedAt != nil {
+		closed := *view.Cycle.ClosedAt
+		dto.ClosedAt = &closed
+	}
+
+	if view.Cycle.ClosedByAccountID != uuid.Nil {
+		account := view.Cycle.ClosedByAccountID
+		dto.ClosedByAccountId = &account
+	}
+
+	if view.Cycle.Rollover != entity.CycleRolloverNone {
+		rollover := api.CycleRollover(view.Cycle.Rollover)
+		dto.Rollover = &rollover
+	}
+
+	return dto
+}
+
+func calendarDate(date string) openapi_types.Date {
+	parsed, err := time.Parse(time.DateOnly, date)
+	if err != nil {
+		return openapi_types.Date{}
+	}
+
+	return openapi_types.Date{Time: parsed}
+}
+
+func cycleDTOs(views []service.CycleView) []api.Cycle {
+	dtos := make([]api.Cycle, 0, len(views))
+
+	for _, view := range views {
+		dtos = append(dtos, cycleDTO(view))
+	}
+
+	return dtos
+}
+
+func cadenceDTO(view service.CadenceView) api.CycleCadence {
+	return api.CycleCadence{
+		TeamId:      view.Cadence.TeamID,
+		LengthWeeks: int32(view.Cadence.LengthWeeks),
+		StartsOn:    int32(view.Cadence.Weekday()),
+		Upcoming:    cycleDTOs(view.Upcoming),
+	}
+}
+
+func cycleScopeDTO(scope service.CycleScope) api.CycleScope {
+	changes := make([]api.CycleScopeChange, 0, len(scope.Changes))
+
+	for _, change := range scope.Changes {
+		dto := api.CycleScopeChange{
+			Id:             change.ID,
+			IssueId:        change.IssueID,
+			IssueReference: change.IssueReference,
+			IssueTitle:     change.IssueTitle,
+			Change:         api.CycleScopeChangeKind(change.Change),
+			ChangedAt:      change.ChangedAt,
+		}
+
+		if change.ActorAccountID != uuid.Nil {
+			actor := change.ActorAccountID
+			dto.ActorAccountId = &actor
+		}
+
+		changes = append(changes, dto)
+	}
+
+	return api.CycleScope{
+		Original: issueDTOs(scope.Original),
+		Added:    issueDTOs(scope.Added),
+		Changes:  changes,
+	}
 }
 
 func issueDTOs(issues []entity.Issue) []api.Issue {

@@ -22,6 +22,7 @@ var policyResources = []entity.Resource{
 	entity.ResourceTeam,
 	entity.ResourceTeamMembership,
 	entity.ResourceIssue,
+	entity.ResourceCycle,
 	entity.ResourceLabel,
 	entity.ResourceAPIToken,
 }

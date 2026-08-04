@@ -12,4 +12,5 @@ var Set = wire.NewSet(
 	NewIssuePurgeHandler,
 	NewBulkApplyHandler,
 	NewSSOCertificateSweepHandler,
+	NewCycleGenerationHandler,
 )

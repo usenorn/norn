@@ -150,18 +150,18 @@ func (mr *MockIssuesMockRecorder) MoveToTeam(ctx, workspaceID, issueID, input an
 }
 
 // Progress mocks base method.
-func (m *MockIssues) Progress(ctx context.Context, workspaceID uuid.UUID, teamID *uuid.UUID) (entity.IssueProgress, error) {
+func (m *MockIssues) Progress(ctx context.Context, workspaceID uuid.UUID, input service.ProgressInput) (entity.IssueProgress, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Progress", ctx, workspaceID, teamID)
+	ret := m.ctrl.Call(m, "Progress", ctx, workspaceID, input)
 	ret0, _ := ret[0].(entity.IssueProgress)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Progress indicates an expected call of Progress.
-func (mr *MockIssuesMockRecorder) Progress(ctx, workspaceID, teamID any) *gomock.Call {
+func (mr *MockIssuesMockRecorder) Progress(ctx, workspaceID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Progress", reflect.TypeOf((*MockIssues)(nil).Progress), ctx, workspaceID, teamID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Progress", reflect.TypeOf((*MockIssues)(nil).Progress), ctx, workspaceID, input)
 }
 
 // Purge mocks base method.

@@ -2,6 +2,7 @@
 	import { page } from "$app/state";
 	import Check from "@lucide/svelte/icons/check";
 	import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down";
+	import Layers from "@lucide/svelte/icons/layers";
 	import Lock from "@lucide/svelte/icons/lock";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Search from "@lucide/svelte/icons/search";
@@ -26,6 +27,7 @@
 		savedViews,
 		workspacePath,
 	} from "$lib/workspace/navigation";
+	import { cyclePath } from "$lib/cycles/cycles";
 	import { initialsOf } from "$lib/team/members";
 	import type { LayoutProps } from "./$types";
 
@@ -50,6 +52,7 @@
 
 	const initials = $derived(initialsOf(data.member.name));
 	const teams = $derived((data.teams ?? []).filter((team) => team.status === "active"));
+	const cycleFor = $derived((teamId: string) => data.cycles.find((entry) => entry.teamId === teamId));
 </script>
 
 <div class="flex h-dvh bg-background">
@@ -177,6 +180,7 @@
 				{/snippet}
 			</SidebarSection>
 			{#each teams as team (team.id)}
+				{@const running = cycleFor(team.id)}
 				<SidebarItem
 					href={workspacePath(slug, `/settings/teams/${team.key}`)}
 					label={team.name}
@@ -184,6 +188,15 @@
 					indent
 					active={current(workspacePath(slug, `/settings/teams/${team.key}`))}
 				/>
+				{#if running}
+					<SidebarItem
+						href={cyclePath(slug, running.cycle)}
+						label={running.cycle.name}
+						icon={Layers}
+						indent
+						active={current(cyclePath(slug, running.cycle))}
+					/>
+				{/if}
 			{/each}
 			{#if teams.length === 0}
 				<SidebarItem

@@ -29,4 +29,6 @@ type Issue interface {
 	ListChildren(ctx context.Context, workspaceID, parentID uuid.UUID, scope entity.TeamScope) ([]entity.Issue, error)
 	ProgressByParent(ctx context.Context, scope entity.TeamScope, parentIDs []uuid.UUID) (map[uuid.UUID]entity.IssueProgress, error)
 	ProgressByCategory(ctx context.Context, scope entity.TeamScope, teamID *uuid.UUID) (entity.IssueProgress, error)
+	ProgressByCycle(ctx context.Context, scope entity.TeamScope, cycleID uuid.UUID) (entity.IssueProgress, error)
+	MoveIssuesToCycle(ctx context.Context, issueIDs []uuid.UUID, cycleID *uuid.UUID, changedAt time.Time) error
 }

@@ -1391,6 +1391,10 @@ paths:
         - name: teamId
           in: query
           schema: { type: string, format: uuid }
+        - name: cycleId
+          in: query
+          description: Tally one cycle instead of a team; takes precedence over teamId
+          schema: { type: string, format: uuid }
       responses:
         '200':
           description: Per-category tallies
@@ -1409,6 +1413,9 @@ paths:
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
         - name: teamId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: cycleId
           in: query
           schema: { type: string, format: uuid }
         - name: status
@@ -2134,6 +2141,170 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/cycles:
+    get:
+      tags: [cycles]
+      operationId: listWorkspaceCycles
+      summary: List the cycles of the teams the caller may see
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: teamId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: phase
+          in: query
+          schema: { $ref: '#/components/schemas/CyclePhase' }
+      responses:
+        '200':
+          description: Cycles ordered by their start date
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Cycle' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/cycles/current:
+    get:
+      tags: [cycles]
+      operationId: listCurrentWorkspaceCycles
+      summary: Report the cycle each visible team is on, or the one it starts next
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: One entry per visible team that uses cycles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TeamCycle' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/cycles/{cycleId}:
+    get:
+      tags: [cycles]
+      operationId: getWorkspaceCycle
+      summary: Read one cycle
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CycleId'
+      responses:
+        '200':
+          description: The cycle
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cycle' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/cycles/{cycleId}/scope:
+    get:
+      tags: [cycles]
+      operationId: getWorkspaceCycleScope
+      summary: Separate the cycle's original scope from what changed after it started
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CycleId'
+      responses:
+        '200':
+          description: The cycle's scope and its changes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CycleScope' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/cycles/{cycleId}/close:
+    post:
+      tags: [cycles]
+      operationId: closeWorkspaceCycle
+      summary: Close an ended cycle, deciding where unfinished issues go
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CycleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CloseCycleRequest' }
+      responses:
+        '200':
+          description: The closed cycle
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cycle' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/CycleConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence:
+    get:
+      tags: [cycles]
+      operationId: getTeamCycleCadence
+      summary: Read how often a team runs cycles
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: The team's cadence and the cycles it has queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CycleCadence' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [cycles]
+      operationId: setTeamCycleCadence
+      summary: Start the team on cycles, or change how long they run
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetCycleCadenceRequest' }
+      responses:
+        '200':
+          description: The cadence now in force
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CycleCadence' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [cycles]
+      operationId: deleteTeamCycleCadence
+      summary: Stop the team using cycles, keeping the ones it has already run
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '204': { description: The team no longer uses cycles }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
     bearerToken:
@@ -2172,6 +2343,11 @@ components:
       schema: { type: string, format: uuid }
     IssueId:
       name: issueId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    CycleId:
+      name: cycleId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -2260,6 +2436,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/IssueConflictProblem' }
+
+    CycleConflict:
+      description: The cycle refuses the change, or needs a decision first
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/CycleConflictProblem' }
 
     LabelConflict:
       description: The label cannot change without losing or duplicating work
@@ -2698,12 +2880,13 @@ components:
         assigneeId: { type: string, format: uuid }
         estimate: { type: integer, format: int32 }
         dueOn: { type: string, format: date }
+        cycleId: { type: string, format: uuid }
         clear:
           type: array
           description: Properties to reset; absent means unchanged, which a nullable field cannot express
           items:
             type: string
-            enum: [assignee, estimate, dueOn]
+            enum: [assignee, estimate, dueOn, cycle]
 
     IssueConflictProblem:
       allOf:
@@ -2727,6 +2910,8 @@ components:
                 - issue_relation_exists
                 - issue_relation_self
                 - label_out_of_scope
+                - cycle_closed
+                - cycle_team_mismatch
             version: { type: integer, format: int32 }
             conflicts:
               type: array
@@ -2739,6 +2924,26 @@ components:
               items: { $ref: '#/components/schemas/Issue' }
             relation: { $ref: '#/components/schemas/IssueRelation' }
 
+    CycleConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - cycle_closed
+                - cycle_overlaps
+                - cycle_team_mismatch
+                - cycle_rollover_required
+                - cycle_not_ended
+                - cycle_no_next_cycle
+            open:
+              type: array
+              description: The unfinished issues that still need a destination
+              items: { $ref: '#/components/schemas/Issue' }
+
     IssueProgress:
       type: object
       required: [notStarted, active, complete, abandoned]
@@ -2747,6 +2952,107 @@ components:
         active: { type: integer, format: int32 }
         complete: { type: integer, format: int32 }
         abandoned: { type: integer, format: int32 }
+
+    CyclePhase:
+      type: string
+      enum: [upcoming, current, ended, closed]
+
+    CycleRollover:
+      type: string
+      enum: [next, backlog]
+
+    Cycle:
+      type: object
+      required: [id, workspaceId, teamId, teamKey, number, name, startsOn, endsOn, phase]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        teamKey: { type: string }
+        number: { type: integer, format: int32 }
+        name: { type: string }
+        startsOn: { type: string, format: date }
+        endsOn: { type: string, format: date }
+        phase: { $ref: '#/components/schemas/CyclePhase' }
+        closedAt: { type: string, format: date-time }
+        closedByAccountId: { type: string, format: uuid }
+        rollover: { $ref: '#/components/schemas/CycleRollover' }
+
+    TeamCycle:
+      type: object
+      required: [teamId, cycle]
+      properties:
+        teamId: { type: string, format: uuid }
+        cycle: { $ref: '#/components/schemas/Cycle' }
+
+    CycleCadence:
+      type: object
+      required: [teamId, lengthWeeks, startsOn, upcoming]
+      properties:
+        teamId: { type: string, format: uuid }
+        lengthWeeks: { type: integer, format: int32, minimum: 1, maximum: 4 }
+        startsOn:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 6
+          description: Weekday cycles begin on, Sunday being 0
+        upcoming:
+          type: array
+          items: { $ref: '#/components/schemas/Cycle' }
+
+    SetCycleCadenceRequest:
+      type: object
+      required: [lengthWeeks, startsOn]
+      properties:
+        lengthWeeks: { type: integer, format: int32, minimum: 1, maximum: 4 }
+        startsOn: { type: integer, format: int32, minimum: 0, maximum: 6 }
+
+    CycleScopeChangeKind:
+      type: string
+      enum: [added, removed, rolled_over, returned]
+
+    CycleScopeChange:
+      type: object
+      required: [id, issueId, issueReference, issueTitle, change, changedAt]
+      properties:
+        id: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        issueReference: { type: string }
+        issueTitle: { type: string }
+        change: { $ref: '#/components/schemas/CycleScopeChangeKind' }
+        actorAccountId: { type: string, format: uuid }
+        changedAt: { type: string, format: date-time }
+
+    CycleScope:
+      type: object
+      required: [original, added, changes]
+      properties:
+        original:
+          type: array
+          items: { $ref: '#/components/schemas/Issue' }
+        added:
+          type: array
+          items: { $ref: '#/components/schemas/Issue' }
+        changes:
+          type: array
+          items: { $ref: '#/components/schemas/CycleScopeChange' }
+
+    CloseCycleRequest:
+      type: object
+      properties:
+        rollover: { $ref: '#/components/schemas/CycleRollover' }
+        overrides:
+          type: array
+          description: Issues that go somewhere other than the rollover chosen for the rest
+          items: { $ref: '#/components/schemas/CycleRolloverOverride' }
+
+    CycleRolloverOverride:
+      type: object
+      required: [issueId, destination]
+      properties:
+        issueId: { type: string, format: uuid }
+        destination: { $ref: '#/components/schemas/CycleRollover' }
 
     IssueActivity:
       type: object
@@ -2811,6 +3117,8 @@ components:
         parentId: { type: string, format: uuid }
         parentReference: { type: string }
         depth: { type: integer, format: int32 }
+        cycleId: { type: string, format: uuid }
+        cycleNumber: { type: integer, format: int32 }
         childProgress: { $ref: '#/components/schemas/IssueProgress' }
         blocked: { type: boolean }
         state: { $ref: '#/components/schemas/IssueState' }

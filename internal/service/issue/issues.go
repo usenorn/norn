@@ -16,14 +16,16 @@ import (
 )
 
 type issuesService struct {
-	issues      repository.Issue
-	states      repository.WorkflowState
-	activity    repository.IssueActivity
-	labels      repository.Label
-	memberships repository.Membership
-	jobs        repository.JobProducer
-	authorizer  service.Authorizer
-	transactor  repository.Transactor
+	issues       repository.Issue
+	states       repository.WorkflowState
+	activity     repository.IssueActivity
+	labels       repository.Label
+	memberships  repository.Membership
+	cycles       repository.Cycle
+	scopeChanges repository.CycleScopeChange
+	jobs         repository.JobProducer
+	authorizer   service.Authorizer
+	transactor   repository.Transactor
 }
 
 func New(
@@ -32,19 +34,23 @@ func New(
 	activity repository.IssueActivity,
 	labels repository.Label,
 	memberships repository.Membership,
+	cycles repository.Cycle,
+	scopeChanges repository.CycleScopeChange,
 	jobs repository.JobProducer,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.Issues {
 	return &issuesService{
-		issues:      issues,
-		states:      states,
-		activity:    activity,
-		labels:      labels,
-		memberships: memberships,
-		jobs:        jobs,
-		authorizer:  authorizer,
-		transactor:  transactor,
+		issues:       issues,
+		states:       states,
+		activity:     activity,
+		labels:       labels,
+		memberships:  memberships,
+		cycles:       cycles,
+		scopeChanges: scopeChanges,
+		jobs:         jobs,
+		authorizer:   authorizer,
+		transactor:   transactor,
 	}
 }
 
@@ -157,7 +163,11 @@ func (s *issuesService) List(
 		return service.IssuePage{}, err
 	}
 
-	page := entity.IssuePage{Limit: input.Limit, Statuses: entity.RequestedIssueStatuses(input.Statuses)}.Normalized()
+	page := entity.IssuePage{
+		Limit:    input.Limit,
+		Statuses: entity.RequestedIssueStatuses(input.Statuses),
+		CycleID:  input.CycleID,
+	}.Normalized()
 
 	if input.Cursor != "" {
 		cursor, err := entity.DecodeIssueCursor(input.Cursor)
@@ -215,9 +225,11 @@ func (s *issuesService) Update(
 		Assignee:      input.AssigneeID,
 		Estimate:      input.Estimate,
 		DueOn:         input.DueOn,
+		CycleID:       input.CycleID,
 		ClearAssignee: slices.Contains(input.Clear, entity.IssueFieldAssignee),
 		ClearEstimate: slices.Contains(input.Clear, entity.IssueFieldEstimate),
 		ClearDueOn:    slices.Contains(input.Clear, entity.IssueFieldDueOn),
+		ClearCycle:    slices.Contains(input.Clear, entity.IssueFieldCycle),
 	}
 
 	touched := change.Touched()
@@ -268,6 +280,15 @@ func (s *issuesService) Update(
 			}
 		}
 
+		var joining entity.Cycle
+
+		if change.CycleID != nil {
+			joining, err = s.joinable(ctx, issue, *change.CycleID, decision)
+			if err != nil {
+				return err
+			}
+		}
+
 		if target.Category == entity.StateCategoryComplete &&
 			issue.State.Category != entity.StateCategoryComplete &&
 			!input.AcknowledgeOpenChildren {
@@ -296,7 +317,11 @@ func (s *issuesService) Update(
 			return err
 		}
 
-		if err := s.recordChanges(ctx, issue, decision, change); err != nil {
+		if err := s.recordChanges(ctx, issue, decision, change, joining); err != nil {
+			return err
+		}
+
+		if err := s.recordScope(ctx, issue, decision, joining, change, now); err != nil {
 			return err
 		}
 
@@ -466,7 +491,7 @@ func unique(ids []uuid.UUID) []uuid.UUID {
 func (s *issuesService) Progress(
 	ctx context.Context,
 	workspaceID uuid.UUID,
-	teamID *uuid.UUID,
+	input service.ProgressInput,
 ) (entity.IssueProgress, error) {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceIssue,
@@ -478,7 +503,11 @@ func (s *issuesService) Progress(
 		return entity.IssueProgress{}, err
 	}
 
-	return s.issues.ProgressByCategory(ctx, decision.Scope, teamID)
+	if input.CycleID != nil {
+		return s.issues.ProgressByCycle(ctx, decision.Scope, *input.CycleID)
+	}
+
+	return s.issues.ProgressByCategory(ctx, decision.Scope, input.TeamID)
 }
 
 func (s *issuesService) Activity(
@@ -587,6 +616,7 @@ var clearable = []string{
 	entity.IssueFieldAssignee,
 	entity.IssueFieldEstimate,
 	entity.IssueFieldDueOn,
+	entity.IssueFieldCycle,
 }
 
 func (s *issuesService) assignable(
@@ -611,6 +641,86 @@ func (s *issuesService) assignable(
 	}
 
 	return nil
+}
+
+func (s *issuesService) joinable(
+	ctx context.Context,
+	issue entity.Issue,
+	cycleID uuid.UUID,
+	decision entity.Decision,
+) (entity.Cycle, error) {
+	cycle, err := s.cycles.GetVisible(ctx, issue.WorkspaceID, cycleID, decision.Scope)
+	if err != nil {
+		return entity.Cycle{}, err
+	}
+
+	if cycle.TeamID != issue.TeamID {
+		return entity.Cycle{}, entity.ErrCycleTeamMismatch
+	}
+
+	if cycle.Closed() {
+		return entity.Cycle{}, entity.ErrCycleClosed
+	}
+
+	return cycle, nil
+}
+
+func (s *issuesService) recordScope(
+	ctx context.Context,
+	issue entity.Issue,
+	decision entity.Decision,
+	joining entity.Cycle,
+	change entity.IssueChange,
+	now time.Time,
+) error {
+	if change.CycleID == nil && !change.ClearCycle {
+		return nil
+	}
+
+	today := entity.Today(now, decision.Workspace.Timezone)
+
+	if issue.CycleID != uuid.Nil && issue.CycleID != joining.ID {
+		left, err := s.cycles.GetVisible(ctx, issue.WorkspaceID, issue.CycleID, decision.Scope)
+		if err != nil {
+			return err
+		}
+
+		if left.Closed() {
+			return entity.ErrCycleClosed
+		}
+
+		if err := s.markScope(ctx, left, issue, decision, entity.CycleScopeChangeRemoved, today, now); err != nil {
+			return err
+		}
+	}
+
+	if joining.ID == uuid.Nil || joining.ID == issue.CycleID {
+		return nil
+	}
+
+	return s.markScope(ctx, joining, issue, decision, entity.CycleScopeChangeAdded, today, now)
+}
+
+func (s *issuesService) markScope(
+	ctx context.Context,
+	cycle entity.Cycle,
+	issue entity.Issue,
+	decision entity.Decision,
+	kind entity.CycleScopeChangeKind,
+	today string,
+	now time.Time,
+) error {
+	if !cycle.Started(today) {
+		return nil
+	}
+
+	return s.scopeChanges.Record(ctx, entity.CycleScopeChange{
+		CycleID:        cycle.ID,
+		IssueID:        issue.ID,
+		Change:         kind,
+		ActorAccountID: decision.Actor.AccountID,
+		ChangedAt:      now,
+	})
 }
 
 func (s *issuesService) SetParent(
@@ -980,6 +1090,12 @@ func (s *issuesService) MoveToTeam(
 			return err
 		}
 
+		if err := s.recordScope(
+			ctx, issue, decision, entity.Cycle{}, entity.IssueChange{ClearCycle: true}, now,
+		); err != nil {
+			return err
+		}
+
 		refreshed, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
 		if err != nil {
 			return err
@@ -1028,6 +1144,7 @@ func (s *issuesService) recordChanges(
 	issue entity.Issue,
 	decision entity.Decision,
 	change entity.IssueChange,
+	joining entity.Cycle,
 ) error {
 	changes := []struct {
 		field string
@@ -1041,6 +1158,7 @@ func (s *issuesService) recordChanges(
 		{entity.IssueFieldEstimate, estimateOf(issue.Estimate), estimateChange(change), change.Estimate != nil || change.ClearEstimate},
 		{entity.IssueFieldDueOn, issue.DueOn, dueChange(change), change.DueOn != nil || change.ClearDueOn},
 		{entity.IssueFieldAssignee, "", "", change.Assignee != nil || change.ClearAssignee},
+		{entity.IssueFieldCycle, cycleName(issue.CycleNumber), cycleChange(change, joining), change.CycleID != nil || change.ClearCycle},
 	}
 
 	for _, entry := range changes {
@@ -1094,6 +1212,22 @@ func dueChange(change entity.IssueChange) string {
 	}
 
 	return *change.DueOn
+}
+
+func cycleName(number int) string {
+	if number == 0 {
+		return ""
+	}
+
+	return "Cycle " + strconv.Itoa(number)
+}
+
+func cycleChange(change entity.IssueChange, joining entity.Cycle) string {
+	if change.CycleID == nil {
+		return ""
+	}
+
+	return cycleName(joining.Number)
 }
 
 func labelNames(labels []entity.Label) string {

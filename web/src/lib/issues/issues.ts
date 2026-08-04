@@ -40,6 +40,8 @@ export type IssueFailure =
 	| { kind: "parent_not_active" }
 	| { kind: "relation_exists"; held: string }
 	| { kind: "relation_self" }
+	| { kind: "cycle_closed" }
+	| { kind: "cycle_team_mismatch" }
 	| { kind: "invalid"; fields: string[] }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
@@ -115,6 +117,10 @@ export function issueFailureMessage(failure: IssueFailure): string {
 			return `These two issues already hold a relation${failure.held ? ` — this one ${failure.held}` : ""}. Remove it before recording a different one.`;
 		case "relation_self":
 			return "An issue cannot be linked to itself.";
+		case "cycle_closed":
+			return "A closed cycle cannot take on work or give it up. What it contained is history.";
+		case "cycle_team_mismatch":
+			return "That cycle belongs to a different team.";
 		case "invalid":
 			return `Check ${nameFields(failure.fields)}.`;
 		case "forbidden":
@@ -168,6 +174,10 @@ export function readIssueFailure(error: unknown): IssueFailure {
 			};
 		case "issue_relation_self":
 			return { kind: "relation_self" };
+		case "cycle_closed":
+			return { kind: "cycle_closed" };
+		case "cycle_team_mismatch":
+			return { kind: "cycle_team_mismatch" };
 	}
 
 	if (problem.errors) {

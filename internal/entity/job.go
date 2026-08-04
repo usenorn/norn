@@ -17,6 +17,7 @@ const (
 	TaskTypeIssuePurge              = "issue:purge"
 	TaskTypeSSOCertificateSweep     = "sso:certificate_sweep"
 	TaskTypeBulkApply               = "issue:bulk_apply"
+	TaskTypeCycleGeneration         = "cycle:generate"
 
 	QueueDefault = "default"
 	QueueMail    = "mail"

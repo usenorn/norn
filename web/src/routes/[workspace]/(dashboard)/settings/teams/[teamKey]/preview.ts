@@ -1,4 +1,5 @@
 import type { MemberFailure, TeamRoster } from "$lib/team/members";
+import type { CadenceSetting } from "$lib/cycles/cycles";
 import type { StateList } from "$lib/team/states";
 import type { TeamSettings } from "$lib/team/team-settings";
 
@@ -6,6 +7,7 @@ export type TeamDetailPreview = {
 	settings: TeamSettings;
 	roster: TeamRoster;
 	states?: StateList;
+	cadence?: CadenceSetting;
 	failure?: MemberFailure;
 	busy?: boolean;
 };
@@ -369,6 +371,96 @@ export const teamDetailPreviewStates: Record<string, TeamDetailPreview> = import
 						},
 					],
 				},
+			},
+			cycles_off: {
+				settings: {
+					kind: "ready",
+					team: {
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						key: "MOB",
+						name: "Mobile",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				roster: { kind: "empty" },
+				cadence: { kind: "disabled" },
+			},
+			cycles_on: {
+				settings: {
+					kind: "ready",
+					team: {
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						key: "MOB",
+						name: "Mobile",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				roster: { kind: "empty" },
+				cadence: {
+					kind: "enabled",
+					cadence: {
+						teamId: "00000000-0000-4000-8000-000000000101",
+						lengthWeeks: 2,
+						startsOn: 1,
+						upcoming: [
+							{
+								id: "00000000-0000-4000-8000-000000000514",
+								workspaceId: "00000000-0000-4000-8000-000000000001",
+								teamId: "00000000-0000-4000-8000-000000000101",
+								teamKey: "MOB",
+								number: 25,
+								name: "Cycle 25",
+								startsOn: "2026-08-10",
+								endsOn: "2026-08-23",
+								phase: "upcoming",
+							},
+							{
+								id: "00000000-0000-4000-8000-000000000515",
+								workspaceId: "00000000-0000-4000-8000-000000000001",
+								teamId: "00000000-0000-4000-8000-000000000101",
+								teamKey: "MOB",
+								number: 26,
+								name: "Cycle 26",
+								startsOn: "2026-08-24",
+								endsOn: "2026-09-06",
+								phase: "upcoming",
+							},
+							{
+								id: "00000000-0000-4000-8000-000000000516",
+								workspaceId: "00000000-0000-4000-8000-000000000001",
+								teamId: "00000000-0000-4000-8000-000000000101",
+								teamKey: "MOB",
+								number: 27,
+								name: "Cycle 27",
+								startsOn: "2026-09-07",
+								endsOn: "2026-09-20",
+								phase: "upcoming",
+							},
+						],
+					},
+				},
+			},
+			cycles_unavailable: {
+				settings: {
+					kind: "ready",
+					team: {
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						key: "MOB",
+						name: "Mobile",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				roster: { kind: "empty" },
+				cadence: { kind: "unavailable" },
 			},
 			not_found: { settings: { kind: "not_found" }, roster: { kind: "unavailable" } },
 			unavailable: { settings: { kind: "unavailable" }, roster: { kind: "unavailable" } },

@@ -18,7 +18,7 @@
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
-	import { dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
+	import { cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
 	import { renderMarkdown } from "$lib/issues/markdown";
 	import {
 		activityLine,
@@ -37,6 +37,7 @@
 	import * as Form from "$lib/components/ui/form/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import Layers from "@lucide/svelte/icons/layers";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import IssueParent from "$lib/issues/issue-parent.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
@@ -257,6 +258,12 @@
 		if (!issue) return;
 
 		await patch(accountId === "" ? { clear: ["assignee"] } : { assigneeId: accountId });
+	}
+
+	async function setCycle(cycleId: string) {
+		if (!issue || (issue.cycleId ?? "") === cycleId) return;
+
+		await patch(cycleId === "" ? { clear: ["cycle"] } : { cycleId });
 	}
 
 	async function addRelation(
@@ -722,6 +729,43 @@
 								</DropdownMenu.RadioGroup>
 							</DropdownMenu.Content>
 						</DropdownMenu.Root>
+					</div>
+				</section>
+
+				<section class="flex flex-col gap-2">
+					<h2 class="text-sm font-medium text-ink-900">Cycle</h2>
+					<div>
+						{#if ready.cycles.length === 0}
+							<p class="text-sm leading-normal text-muted-foreground text-pretty">
+								{issue.teamKey} does not use cycles.
+							</p>
+						{:else}
+							<DropdownMenu.Root>
+								<DropdownMenu.Trigger>
+									{#snippet child({ props })}
+										<Button {...props} variant="outline" size="sm" disabled={working}>
+											<Layers aria-hidden="true" />
+											{issue.cycleNumber ? `Cycle ${issue.cycleNumber}` : "No cycle"}
+											<ChevronDown aria-hidden="true" />
+										</Button>
+									{/snippet}
+								</DropdownMenu.Trigger>
+								<DropdownMenu.Content align="start" class="max-h-80 overflow-auto">
+									<DropdownMenu.RadioGroup
+										value={issue.cycleId ?? ""}
+										onValueChange={(value) => setCycle(value)}
+									>
+										<DropdownMenu.RadioItem value="">No cycle</DropdownMenu.RadioItem>
+										<DropdownMenu.Separator />
+										{#each ready.cycles as cycle (cycle.id)}
+											<DropdownMenu.RadioItem value={cycle.id}>
+												{cycle.name} · {cycleWindow(cycle.startsOn, cycle.endsOn)}
+											</DropdownMenu.RadioItem>
+										{/each}
+									</DropdownMenu.RadioGroup>
+								</DropdownMenu.Content>
+							</DropdownMenu.Root>
+						{/if}
 					</div>
 				</section>
 

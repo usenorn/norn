@@ -62,3 +62,15 @@ export function dueLabel(due: string | undefined, now: string, timezone: string)
 export function overdue(due: string | undefined, now: string): boolean {
 	return Boolean(due) && daysBetween(now, due as string) < 0;
 }
+
+export function onCalendarDate(date: string): string {
+	return new Date(`${date}T00:00:00Z`).toLocaleString(locale, {
+		month: "short",
+		day: "numeric",
+		timeZone: "UTC",
+	});
+}
+
+export function cycleWindow(startsOn: string, endsOn: string): string {
+	return `${onCalendarDate(startsOn)} – ${onCalendarDate(endsOn)}`;
+}

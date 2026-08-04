@@ -80,6 +80,8 @@ type Issue struct {
 	ParentIssueID      uuid.UUID
 	ParentReference    string
 	Depth              int
+	CycleID            uuid.UUID
+	CycleNumber        int
 	Children           IssueProgress
 	Blocked            bool
 	CreatedByAccountID uuid.UUID
@@ -169,6 +171,7 @@ type IssuePage struct {
 	Cursor   *IssueCursor
 	Limit    int
 	Statuses []IssueStatus
+	CycleID  *uuid.UUID
 }
 
 func (p IssuePage) Normalized() IssuePage {

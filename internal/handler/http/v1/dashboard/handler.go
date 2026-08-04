@@ -27,6 +27,7 @@ type handler struct {
 	apiTokens      service.APITokens
 	sessions       service.Sessions
 	ssoConnections service.SSOConnections
+	cycles         service.Cycles
 	blobs          repository.Blob
 	app            config.App
 	instance       config.Instance
@@ -46,6 +47,7 @@ func New(
 	apiTokens service.APITokens,
 	sessions service.Sessions,
 	ssoConnections service.SSOConnections,
+	cycles service.Cycles,
 	blobs repository.Blob,
 	app config.App,
 	instance config.Instance,
@@ -64,6 +66,7 @@ func New(
 		apiTokens:      apiTokens,
 		sessions:       sessions,
 		ssoConnections: ssoConnections,
+		cycles:         cycles,
 		blobs:          blobs,
 		app:            app,
 		instance:       instance,
