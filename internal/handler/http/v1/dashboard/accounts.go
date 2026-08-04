@@ -28,7 +28,7 @@ func (h *handler) GetCurrentAccount(ctx context.Context, _ api.GetCurrentAccount
 		return nil, err
 	}
 
-	return api.GetCurrentAccount200JSONResponse(accountDTO(account, h.avatarURL(account.AvatarObjectKey))), nil
+	return api.GetCurrentAccount200JSONResponse(accountDTO(account)), nil
 }
 
 func (h *handler) UpdateCurrentAccount(ctx context.Context, request api.UpdateCurrentAccountRequestObject) (api.UpdateCurrentAccountResponseObject, error) {
@@ -49,7 +49,7 @@ func (h *handler) UpdateCurrentAccount(ctx context.Context, request api.UpdateCu
 		return nil, err
 	}
 
-	return api.UpdateCurrentAccount200JSONResponse(accountDTO(account, h.avatarURL(account.AvatarObjectKey))), nil
+	return api.UpdateCurrentAccount200JSONResponse(accountDTO(account)), nil
 }
 
 func (h *handler) DeactivateCurrentAccount(ctx context.Context, _ api.DeactivateCurrentAccountRequestObject) (api.DeactivateCurrentAccountResponseObject, error) {
@@ -67,7 +67,7 @@ func (h *handler) DeactivateCurrentAccount(ctx context.Context, _ api.Deactivate
 		return nil, err
 	}
 
-	return api.DeactivateCurrentAccount200JSONResponse(accountDTO(account, h.avatarURL(account.AvatarObjectKey))), nil
+	return api.DeactivateCurrentAccount200JSONResponse(accountDTO(account)), nil
 }
 
 func (h *handler) DeleteCurrentAccount(ctx context.Context, _ api.DeleteCurrentAccountRequestObject) (api.DeleteCurrentAccountResponseObject, error) {
@@ -173,7 +173,7 @@ func (h *handler) ConfirmEmailChange(ctx context.Context, request api.ConfirmEma
 		return nil, err
 	}
 
-	return api.ConfirmEmailChange200JSONResponse(accountDTO(account, h.avatarURL(account.AvatarObjectKey))), nil
+	return api.ConfirmEmailChange200JSONResponse(accountDTO(account)), nil
 }
 
 func (h *handler) UploadAvatar(ctx context.Context, request api.UploadAvatarRequestObject) (api.UploadAvatarResponseObject, error) {
@@ -206,7 +206,7 @@ func (h *handler) UploadAvatar(ctx context.Context, request api.UploadAvatarRequ
 		return nil, err
 	}
 
-	return api.UploadAvatar200JSONResponse(accountDTO(account, h.avatarURL(account.AvatarObjectKey))), nil
+	return api.UploadAvatar200JSONResponse(accountDTO(account)), nil
 }
 
 func (h *handler) RemoveAvatar(ctx context.Context, _ api.RemoveAvatarRequestObject) (api.RemoveAvatarResponseObject, error) {
@@ -224,5 +224,5 @@ func (h *handler) RemoveAvatar(ctx context.Context, _ api.RemoveAvatarRequestObj
 		return nil, err
 	}
 
-	return api.RemoveAvatar200JSONResponse(accountDTO(account, h.avatarURL(account.AvatarObjectKey))), nil
+	return api.RemoveAvatar200JSONResponse(accountDTO(account)), nil
 }

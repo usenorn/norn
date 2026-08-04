@@ -16,6 +16,7 @@ type JobProducer interface {
 	EnqueuePasswordResetSSONotice(ctx context.Context, payload entity.PasswordResetSSONoticePayload) error
 	EnqueueInvitation(ctx context.Context, payload entity.InvitationPayload) error
 	EnqueueWorkspacePurge(ctx context.Context, payload entity.WorkspacePurgePayload, processAt time.Time) error
+	EnqueueAttachmentReclaim(ctx context.Context) error
 	EnqueueIssuePurge(ctx context.Context, payload entity.IssuePurgePayload, processAt time.Time) error
 	EnqueueBulkApply(ctx context.Context, payload entity.BulkApplyPayload) error
 }

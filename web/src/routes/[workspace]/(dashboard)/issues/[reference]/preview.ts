@@ -3,9 +3,17 @@ import type {
 	CommentMention,
 	CommentThread,
 } from "$lib/comments/comments";
+import type { AttachmentPanel } from "$lib/attachments/attachments";
+import type { UploadTask } from "$lib/attachments/upload";
 import type { IssueDetail } from "./+page";
 
 export type IssueDetailPreview = { detail: IssueDetail };
+
+export type AttachmentPreview = {
+	panel: AttachmentPanel;
+	uploads?: UploadTask[];
+	bodyUploads?: UploadTask[];
+};
 
 export type CommentPreview = {
 	thread: CommentThread;
@@ -130,6 +138,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					childProgress: { notStarted: 2, active: 1, complete: 3, abandoned: 0 },
 					candidates: [],
 					comments: { kind: "empty" },
+					attachments: { kind: "empty" },
 					members: [
 						{
 							workspaceId: "00000000-0000-4000-8000-000000000000",
@@ -215,6 +224,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					childProgress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
 					candidates: [],
 					comments: { kind: "empty" },
+					attachments: { kind: "empty" },
 					members: [],
 					activity: [
 						{
@@ -265,6 +275,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					childProgress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
 					candidates: [],
 					comments: { kind: "empty" },
+					attachments: { kind: "empty" },
 					members: [],
 					activity: [
 						{
@@ -317,6 +328,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					childProgress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
 					candidates: [],
 					comments: { kind: "empty" },
+					attachments: { kind: "empty" },
 					members: [],
 					activity: [
 						{
@@ -369,6 +381,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					members: [],
 					candidates: [],
 					comments: { kind: "empty" },
+					attachments: { kind: "empty" },
 					childProgress: { notStarted: 1, active: 0, complete: 2, abandoned: 0 },
 					relations: [],
 					cycles: [],
@@ -471,6 +484,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					members: [],
 					candidates: [],
 					comments: { kind: "empty" },
+					attachments: { kind: "empty" },
 					children: [],
 					childProgress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
 					relations: [
@@ -893,6 +907,194 @@ export const commentPreviewStates: Record<string, CommentPreview> = import.meta.
 						},
 					],
 				},
+			},
+		}
+	: {};
+
+export const attachmentPreviewStates: Record<string, AttachmentPreview> = import.meta.env.DEV
+	? {
+			loading: { panel: { kind: "loading" } },
+			unavailable: { panel: { kind: "unavailable" } },
+			empty: { panel: { kind: "empty" } },
+			ready: {
+				panel: {
+					kind: "ready",
+					attachments: [
+						{
+							id: "00000000-0000-4000-8000-000000000f01",
+							workspaceId: "00000000-0000-4000-8000-000000000000",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							fileName: "checkout-empty-state.png",
+							contentType: "image/png",
+							byteSize: 184_320,
+							status: "stored" as const,
+							inline: true,
+							contentPath:
+								"/v1/workspaces/00000000-0000-4000-8000-000000000000/attachments/00000000-0000-4000-8000-000000000f01/content",
+							uploadedByName: "Rae Whitfield",
+							createdAt: "2026-08-03T09:00:00Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000f02",
+							workspaceId: "00000000-0000-4000-8000-000000000000",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							fileName: "session.har",
+							contentType: "application/octet-stream",
+							byteSize: 2_411_724,
+							status: "stored" as const,
+							inline: false,
+							contentPath:
+								"/v1/workspaces/00000000-0000-4000-8000-000000000000/attachments/00000000-0000-4000-8000-000000000f02/content",
+							uploadedByName: "Milo Fenwick",
+							createdAt: "2026-08-03T09:20:00Z",
+						},
+					],
+				},
+			},
+			svg_stored_not_inlined: {
+				panel: {
+					kind: "ready",
+					attachments: [
+						{
+							id: "00000000-0000-4000-8000-000000000f03",
+							workspaceId: "00000000-0000-4000-8000-000000000000",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							fileName: "wordmark.svg",
+							contentType: "application/octet-stream",
+							byteSize: 4_096,
+							status: "stored" as const,
+							inline: false,
+							contentPath:
+								"/v1/workspaces/00000000-0000-4000-8000-000000000000/attachments/00000000-0000-4000-8000-000000000f03/content",
+							createdAt: "2026-08-03T10:00:00Z",
+						},
+					],
+				},
+			},
+			uploading: {
+				panel: { kind: "empty" },
+				uploads: [
+					{
+						id: "upload-1",
+						name: "screen-recording.mov",
+						size: 18_874_368,
+						sent: 7_927_234,
+						state: "sending" as const,
+					},
+				],
+			},
+			uploading_many: {
+				panel: { kind: "empty" },
+				uploads: [
+					{ id: "upload-1", name: "trace.json", size: 512_000, sent: 0, state: "reserving" as const },
+					{
+						id: "upload-2",
+						name: "screenshot.png",
+						size: 240_000,
+						sent: 187_200,
+						state: "sending" as const,
+					},
+					{
+						id: "upload-3",
+						name: "heap.prof",
+						size: 96_000,
+						sent: 96_000,
+						state: "finalizing" as const,
+					},
+				],
+			},
+			too_large: {
+				panel: { kind: "empty" },
+				uploads: [
+					{
+						id: "upload-1",
+						name: "raw-capture.mkv",
+						size: 419_430_400,
+						sent: 0,
+						state: "failed" as const,
+						failure: { kind: "too_large", maxBytes: 26_214_400 },
+					},
+				],
+			},
+			workspace_full: {
+				panel: { kind: "empty" },
+				uploads: [
+					{
+						id: "upload-1",
+						name: "trace.json",
+						size: 512_000,
+						sent: 0,
+						state: "failed" as const,
+						failure: { kind: "workspace_full", storedBytes: 10_726_932_480, maxBytes: 10_737_418_240 },
+					},
+				],
+			},
+			expired: {
+				panel: { kind: "empty" },
+				uploads: [
+					{
+						id: "upload-1",
+						name: "diagram.png",
+						size: 64_000,
+						sent: 64_000,
+						state: "failed" as const,
+						failure: { kind: "expired" },
+					},
+				],
+			},
+			upload_failed: {
+				panel: { kind: "empty" },
+				uploads: [
+					{
+						id: "upload-1",
+						name: "diagram.png",
+						size: 64_000,
+						sent: 22_000,
+						state: "failed" as const,
+						failure: { kind: "unavailable" },
+					},
+				],
+			},
+			cancelled: {
+				panel: { kind: "empty" },
+				uploads: [
+					{
+						id: "upload-1",
+						name: "huge-dump.sql",
+						size: 8_388_608,
+						sent: 2_097_152,
+						state: "cancelled" as const,
+					},
+				],
+			},
+			settled: {
+				panel: {
+					kind: "ready",
+					attachments: [
+						{
+							id: "00000000-0000-4000-8000-000000000f04",
+							workspaceId: "00000000-0000-4000-8000-000000000000",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							fileName: "diagram.png",
+							contentType: "image/png",
+							byteSize: 64_000,
+							status: "stored" as const,
+							inline: true,
+							contentPath:
+								"/v1/workspaces/00000000-0000-4000-8000-000000000000/attachments/00000000-0000-4000-8000-000000000f04/content",
+							createdAt: "2026-08-03T11:00:00Z",
+						},
+					],
+				},
+				uploads: [
+					{
+						id: "upload-1",
+						name: "diagram.png",
+						size: 64_000,
+						sent: 64_000,
+						state: "done" as const,
+					},
+				],
 			},
 		}
 	: {};

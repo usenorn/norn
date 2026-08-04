@@ -7,8 +7,10 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
 	"github.com/usenorn/norn/internal/config"
+	"github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/handler/http/sso"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -18,31 +20,41 @@ const apiBasePath = "/v1"
 func New(
 	cfg config.HTTP,
 	sessionCfg config.Session,
+	attachmentCfg config.Attachments,
 	sessions service.Sessions,
 	tokens service.APITokens,
 	dashboard api.StrictServerInterface,
 	callback *sso.Callback,
 	samlEdge *sso.SAML,
+	blobEdge *blob.Edge,
 ) http.Handler {
 	base := chi.NewRouter()
 	base.Use(
 		middleware.Recovery,
 		middleware.CorrelationID,
 		middleware.AccessLog,
-		chimiddleware.Timeout(cfg.RequestTimeout),
-		maxRequestBytes(cfg.MaxRequestBytes),
+		middleware.SecurityHeaders,
 		middleware.ClientCapture(cfg),
 	)
 
-	base.Get(sso.CallbackPath, callback.Handle)
-	base.Get(sso.MetadataPath, samlEdge.Metadata)
-	base.Post(sso.ACSPath, samlEdge.Consume)
+	bounded := base.With(
+		chimiddleware.Timeout(cfg.RequestTimeout),
+		maxRequestBytes(cfg.MaxRequestBytes),
+	)
+	bounded.Get(sso.CallbackPath, callback.Handle)
+	bounded.Get(sso.MetadataPath, samlEdge.Metadata)
+	bounded.Post(sso.ACSPath, samlEdge.Consume)
+
+	transfers := base.With(chimiddleware.Timeout(attachmentCfg.TransferTimeout))
+	transfers.Put(blob.UploadPath, blobEdge.Receive)
+	transfers.Get(blob.DownloadPath, blobEdge.Serve)
 
 	strict := api.NewStrictHandlerWithOptions(dashboard, nil, api.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			middleware.WriteProblem(w, r, http.StatusBadRequest, err.Error())
 		},
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, _ error) {
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			logging.From(r.Context()).ErrorContext(r.Context(), "request failed", "error", err.Error())
 			middleware.WriteProblem(w, r, http.StatusInternalServerError, "")
 		},
 	})
@@ -53,6 +65,8 @@ func New(
 		Middlewares: []api.MiddlewareFunc{
 			middleware.BearerToken(tokens),
 			middleware.Session(sessions, sessionCfg),
+			maxRequestBytes(cfg.MaxRequestBytes),
+			chimiddleware.Timeout(cfg.RequestTimeout),
 		},
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			middleware.WriteProblem(w, r, http.StatusBadRequest, err.Error())

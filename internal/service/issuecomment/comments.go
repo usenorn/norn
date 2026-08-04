@@ -14,16 +14,18 @@ import (
 const mentionsField = "mentions"
 
 type issueCommentsService struct {
-	comments   repository.IssueComment
-	issues     repository.Issue
-	teams      repository.Team
-	activity   repository.IssueActivity
-	authorizer service.Authorizer
-	transactor repository.Transactor
+	comments    repository.IssueComment
+	attachments repository.Attachment
+	issues      repository.Issue
+	teams       repository.Team
+	activity    repository.IssueActivity
+	authorizer  service.Authorizer
+	transactor  repository.Transactor
 }
 
 func New(
 	comments repository.IssueComment,
+	attachments repository.Attachment,
 	issues repository.Issue,
 	teams repository.Team,
 	activity repository.IssueActivity,
@@ -31,12 +33,13 @@ func New(
 	transactor repository.Transactor,
 ) service.IssueComments {
 	return &issueCommentsService{
-		comments:   comments,
-		issues:     issues,
-		teams:      teams,
-		activity:   activity,
-		authorizer: authorizer,
-		transactor: transactor,
+		comments:    comments,
+		attachments: attachments,
+		issues:      issues,
+		teams:       teams,
+		activity:    activity,
+		authorizer:  authorizer,
+		transactor:  transactor,
 	}
 }
 
@@ -169,6 +172,12 @@ func (s *issueCommentsService) Post(
 		}
 
 		if err := s.comments.RecordMentions(ctx, posted.ID, mentions); err != nil {
+			return err
+		}
+
+		if err := s.attachments.ClaimForComment(
+			ctx, workspaceID, issueID, posted.ID, input.AttachmentIDs,
+		); err != nil {
 			return err
 		}
 

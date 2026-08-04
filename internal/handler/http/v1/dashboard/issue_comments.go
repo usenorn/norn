@@ -49,6 +49,10 @@ func (h *handler) PostWorkspaceIssueComment(
 		input.Mentions = mentionInputs(*request.Body.Mentions)
 	}
 
+	if request.Body.AttachmentIds != nil {
+		input.AttachmentIDs = *request.Body.AttachmentIds
+	}
+
 	posted, err := h.issueComments.Post(ctx, request.WorkspaceId, request.IssueId, input)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

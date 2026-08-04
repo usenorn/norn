@@ -58,7 +58,7 @@ func (h *handler) ConfirmSignUp(ctx context.Context, request api.ConfirmSignUpRe
 	cookie := middleware.IssuedSessionCookie(h.session, confirmed.Session.Token).String()
 
 	return api.ConfirmSignUp200JSONResponse{
-		Body:    accountDTO(confirmed.Account, ""),
+		Body:    accountDTO(confirmed.Account),
 		Headers: api.ConfirmSignUp200ResponseHeaders{SetCookie: &cookie},
 	}, nil
 }

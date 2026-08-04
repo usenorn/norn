@@ -6,6 +6,7 @@ import (
 	"github.com/goforj/wire"
 
 	"github.com/usenorn/norn/internal/config"
+	blobedge "github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/router"
 	ssohandler "github.com/usenorn/norn/internal/handler/http/sso"
 	dashboardhandler "github.com/usenorn/norn/internal/handler/http/v1/dashboard"
@@ -14,7 +15,6 @@ import (
 	"github.com/usenorn/norn/internal/pkg/authz"
 	"github.com/usenorn/norn/internal/pkg/crypter"
 	"github.com/usenorn/norn/internal/pkg/geoip"
-	"github.com/usenorn/norn/internal/pkg/objectstore"
 	oidcproviderpkg "github.com/usenorn/norn/internal/pkg/oidcprovider"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/pkg/pwned"
@@ -25,7 +25,9 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	apitokenrepo "github.com/usenorn/norn/internal/repository/apitoken"
+	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	blobrepo "github.com/usenorn/norn/internal/repository/blob"
+	blobgrantrepo "github.com/usenorn/norn/internal/repository/blobgrant"
 	breachcheckrepo "github.com/usenorn/norn/internal/repository/breachcheck"
 	breakglassrepo "github.com/usenorn/norn/internal/repository/breakglass"
 	bulkactionrepo "github.com/usenorn/norn/internal/repository/bulkaction"
@@ -64,6 +66,7 @@ import (
 	workspaceauthpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	accountsvc "github.com/usenorn/norn/internal/service/account"
 	apitokensvc "github.com/usenorn/norn/internal/service/apitoken"
+	attachmentsvc "github.com/usenorn/norn/internal/service/attachment"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	bulkoperationsvc "github.com/usenorn/norn/internal/service/bulkoperation"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
@@ -91,7 +94,6 @@ var baseSet = wire.NewSet(
 	valkey.Set,
 	taskqueue.Set,
 	smtp.Set,
-	objectstore.Set,
 	authz.Set,
 	geoip.Set,
 	pwned.Set,
@@ -119,6 +121,8 @@ var baseSet = wire.NewSet(
 	bulkactionrepo.Set,
 	cyclerepo.Set,
 	projectrepo.Set,
+	attachmentrepo.Set,
+	blobgrantrepo.Set,
 	issuecommentrepo.Set,
 	savedviewrepo.Set,
 	triagerepo.Set,
@@ -150,6 +154,7 @@ var baseSet = wire.NewSet(
 	bulkoperationsvc.Set,
 	cyclesvc.Set,
 	projectsvc.Set,
+	attachmentsvc.Set,
 	issuecommentsvc.Set,
 	savedviewsvc.Set,
 	triagesvc.Set,
@@ -163,6 +168,7 @@ var baseSet = wire.NewSet(
 
 	dashboardhandler.Set,
 	ssohandler.Set,
+	blobedge.Set,
 	router.Set,
 	job.Set,
 

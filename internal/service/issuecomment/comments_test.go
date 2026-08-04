@@ -11,6 +11,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
+	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issueactivityrepo "github.com/usenorn/norn/internal/repository/issueactivity"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
@@ -22,12 +23,13 @@ import (
 )
 
 type harness struct {
-	comments   *issuecommentrepo.MockIssueComment
-	issues     *issuerepo.MockIssue
-	teams      *teamrepo.MockTeam
-	activity   *issueactivityrepo.MockIssueActivity
-	authorizer *authorizersvc.MockAuthorizer
-	service    service.IssueComments
+	comments    *issuecommentrepo.MockIssueComment
+	attachments *attachmentrepo.MockAttachment
+	issues      *issuerepo.MockIssue
+	teams       *teamrepo.MockTeam
+	activity    *issueactivityrepo.MockIssueActivity
+	authorizer  *authorizersvc.MockAuthorizer
+	service     service.IssueComments
 
 	workspaceID uuid.UUID
 	issueID     uuid.UUID
@@ -44,6 +46,7 @@ func newHarness(t *testing.T) *harness {
 
 	h := &harness{
 		comments:    issuecommentrepo.NewMockIssueComment(ctrl),
+		attachments: attachmentrepo.NewMockAttachment(ctrl),
 		issues:      issuerepo.NewMockIssue(ctrl),
 		teams:       teamrepo.NewMockTeam(ctrl),
 		activity:    issueactivityrepo.NewMockIssueActivity(ctrl),
@@ -65,7 +68,7 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = issuecommentsvc.New(
-		h.comments, h.issues, h.teams, h.activity, h.authorizer, transactor,
+		h.comments, h.attachments, h.issues, h.teams, h.activity, h.authorizer, transactor,
 	)
 
 	return h
@@ -123,6 +126,10 @@ func (h *harness) accepts() {
 		}).
 		AnyTimes()
 	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.attachments.EXPECT().
+		ClaimForComment(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
 }
 
 func TestCommentingOnAnIssueYouCannotSeeIsIndistinguishableFromItNotExisting(t *testing.T) {

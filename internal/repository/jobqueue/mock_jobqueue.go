@@ -42,6 +42,20 @@ func (m *MockJobProducer) EXPECT() *MockJobProducerMockRecorder {
 	return m.recorder
 }
 
+// EnqueueAttachmentReclaim mocks base method.
+func (m *MockJobProducer) EnqueueAttachmentReclaim(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueAttachmentReclaim", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueAttachmentReclaim indicates an expected call of EnqueueAttachmentReclaim.
+func (mr *MockJobProducerMockRecorder) EnqueueAttachmentReclaim(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueAttachmentReclaim", reflect.TypeOf((*MockJobProducer)(nil).EnqueueAttachmentReclaim), ctx)
+}
+
 // EnqueueBulkApply mocks base method.
 func (m *MockJobProducer) EnqueueBulkApply(ctx context.Context, payload entity.BulkApplyPayload) error {
 	m.ctrl.T.Helper()

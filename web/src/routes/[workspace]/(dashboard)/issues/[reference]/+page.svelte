@@ -44,6 +44,17 @@
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import IssueRelations from "$lib/issues/issue-relations.svelte";
 	import CommentThreadView from "$lib/comments/comment-thread.svelte";
+	import AttachmentList from "$lib/attachments/attachment-list.svelte";
+	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
+	import UploadList from "$lib/attachments/upload-list.svelte";
+	import {
+		attachmentMarkdown,
+		attachmentFailureMessage,
+		readAttachmentFailure,
+		type AttachmentFailure,
+		type AttachmentPanel,
+	} from "$lib/attachments/attachments";
+	import { newTask, settled, upload, type UploadTask } from "$lib/attachments/upload";
 	import {
 		readCommentFailure,
 		type CommentFailure,
@@ -62,7 +73,7 @@
 		type LabelFailure,
 	} from "$lib/labels/labels";
 	import { workspacePath } from "$lib/workspace/navigation";
-	import { commentPreviewStates, issueDetailPreviewStates } from "./preview";
+	import { attachmentPreviewStates, commentPreviewStates, issueDetailPreviewStates } from "./preview";
 	import type { IssueDetail } from "./+page";
 	import type { PageProps } from "./$types";
 
@@ -71,6 +82,11 @@
 	const preview = $derived(
 		import.meta.env.DEV
 			? issueDetailPreviewStates[page.url.searchParams.get("state") ?? ""]
+			: undefined
+	);
+	const attachmentPreview = $derived(
+		import.meta.env.DEV
+			? attachmentPreviewStates[page.url.searchParams.get("attachments") ?? ""]
 			: undefined
 	);
 	const commentPreview = $derived(
@@ -87,6 +103,13 @@
 	let commentFailure = $state<CommentFailure | null>(null);
 	let unreachable = $state.raw<CommentMention[]>([]);
 	let loadedComments = $state.raw<CommentThread | null>(null);
+	let commentUploads = $state.raw<UploadTask[]>([]);
+	let bodyUploads = $state.raw<UploadTask[]>([]);
+	let attachmentFailure = $state<AttachmentFailure | null>(null);
+	let uploadSequence = 0;
+
+	const aborts = new Map<string, () => void>();
+	const sources = new Map<string, File>();
 	let pendingStateId = $state("");
 
 	const detail = $derived<IssueDetail>(preview?.detail ?? data.detail);
@@ -105,6 +128,12 @@
 	const assigneeName = $derived(
 		ready?.members.find((member) => member.accountId === issue?.assigneeAccountId)?.displayName ?? ""
 	);
+	const attachments = $derived<AttachmentPanel>(
+		attachmentPreview?.panel ??
+			(ready ? ready.attachments : ({ kind: "loading" } as AttachmentPanel))
+	);
+	const shownCommentUploads = $derived(attachmentPreview?.uploads ?? commentUploads);
+
 	const thread = $derived<CommentThread>(
 		commentPreview?.thread ?? loadedComments ?? ready?.comments ?? { kind: "loading" }
 	);
@@ -434,6 +463,7 @@
 	async function comment(
 		body: string,
 		mentions: MentionTarget[],
+		attachmentIds: string[],
 		parentCommentId?: string
 	): Promise<void> {
 		if (!issue) return;
@@ -443,7 +473,7 @@
 				"/workspaces/{workspaceId}/issues/{issueId}/comments",
 				{
 					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-					body: { body, parentCommentId, mentions },
+					body: { body, parentCommentId, mentions, attachmentIds },
 				}
 			);
 
@@ -455,6 +485,7 @@
 
 			unreachable = posted.unreachable;
 			loadedComments = null;
+			commentUploads = [];
 			await invalidateAll();
 		});
 	}
@@ -570,6 +601,112 @@
 		} finally {
 			working = false;
 		}
+	}
+
+	function replaceTask(into: "comment" | "body", task: UploadTask) {
+		const list = into === "comment" ? commentUploads : bodyUploads;
+		const next = list.some((entry) => entry.id === task.id)
+			? list.map((entry) => (entry.id === task.id ? task : entry))
+			: [...list, task];
+
+		if (into === "comment") {
+			commentUploads = next;
+		} else {
+			bodyUploads = next;
+		}
+	}
+
+	function begin(into: "comment" | "body", files: File[]) {
+		if (!issue) return;
+
+		attachmentFailure = null;
+
+		for (const file of files) {
+			const taskId = `upload-${(uploadSequence += 1)}`;
+			const task = newTask(taskId, file);
+
+			sources.set(taskId, file);
+			replaceTask(into, task);
+
+			void run(into, taskId, file, task);
+		}
+	}
+
+	async function run(into: "comment" | "body", taskId: string, file: File, task: UploadTask) {
+		if (!issue) return;
+
+		await upload(
+			{ workspaceId: data.workspace.id, issueId: issue.id },
+			file,
+			task,
+			(next) => {
+				replaceTask(into, next);
+
+				if (next.state === "done" && next.attachment) {
+					if (into === "body") {
+						$formData.description = joined($formData.description, attachmentMarkdown(next.attachment));
+					}
+
+					void invalidateAll();
+				}
+			},
+			(abort) => aborts.set(taskId, abort)
+		);
+	}
+
+	function joined(body: string, markdown: string): string {
+		if (body.trim() === "") return markdown;
+
+		return body.endsWith("\n") ? body + markdown : `${body}\n${markdown}`;
+	}
+
+	function cancelUpload(taskId: string) {
+		aborts.get(taskId)?.();
+	}
+
+	function retryUpload(into: "comment" | "body", taskId: string) {
+		const file = sources.get(taskId);
+
+		if (!file) return;
+
+		const task = newTask(taskId, file);
+
+		replaceTask(into, task);
+		void run(into, taskId, file, task);
+	}
+
+	function dismissUpload(into: "comment" | "body", taskId: string) {
+		const list = into === "comment" ? commentUploads : bodyUploads;
+		const next = list.filter((entry) => entry.id !== taskId);
+
+		if (into === "comment") {
+			commentUploads = next;
+		} else {
+			bodyUploads = next;
+		}
+	}
+
+	async function removeAttachment(attachmentId: string) {
+		if (!issue) return;
+
+		await act(async () => {
+			const { error } = await api.DELETE(
+				"/workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}",
+				{
+					params: {
+						path: { workspaceId: data.workspace.id, issueId: issue.id, attachmentId },
+					},
+				}
+			);
+
+			if (error) {
+				attachmentFailure = readAttachmentFailure(error);
+
+				return;
+			}
+
+			await invalidateAll();
+		});
 	}
 
 	function when(timestamp: string): string {
@@ -1188,8 +1325,46 @@
 					</p>
 				</section>
 
+				<section class="flex flex-col gap-3">
+					<h2 class="text-sm font-medium text-ink-900">Files</h2>
+
+					{#if attachmentFailure}
+						<Alert.Root variant="destructive">
+							<CircleX aria-hidden="true" />
+							<Alert.Title>That did not stick</Alert.Title>
+							<Alert.Description>{attachmentFailureMessage(attachmentFailure)}</Alert.Description>
+						</Alert.Root>
+					{/if}
+
+					<AttachmentList panel={attachments} {working} onremove={removeAttachment} />
+
+					<UploadList
+						uploads={attachmentPreview?.bodyUploads ?? bodyUploads}
+						oncancel={cancelUpload}
+						onretry={(taskId) => retryUpload("body", taskId)}
+						ondismiss={(taskId) => dismissUpload("body", taskId)}
+					/>
+
+					<div>
+						<AttachmentPicker
+							disabled={working}
+							label="Attach a file"
+							onfiles={(files) => begin("body", files)}
+						/>
+					</div>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Anyone who can open this issue can open its files, and nobody else. An image is shown
+						where it is written into the description or a comment.
+					</p>
+				</section>
+
 				<CommentThreadView
 					{thread}
+					uploads={shownCommentUploads}
+					onfiles={(files) => begin("comment", files)}
+					oncancelupload={cancelUpload}
+					onretryupload={(taskId) => retryUpload("comment", taskId)}
+					ondismissupload={(taskId) => dismissUpload("comment", taskId)}
 					members={ready.members}
 					teams={data.teams ?? []}
 					accountId={data.member.id}

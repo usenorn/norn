@@ -374,11 +374,51 @@ func TestPurgeDestroysTheWorkspaceOnlyOnceItsWindowHasElapsed(t *testing.T) {
 
 	pending := pendingWorkspace(workspaceID, time.Now().UTC().Add(-2*deletionGracePeriod))
 
+	emptied := false
+
 	h.workspaces.EXPECT().GetByID(gomock.Any(), workspaceID).Return(pending, nil)
-	h.workspaces.EXPECT().Purge(gomock.Any(), workspaceID).Return(nil)
+	h.blobs.EXPECT().
+		RemoveAll(gomock.Any(), entity.AttachmentPrefix(workspaceID)).
+		DoAndReturn(func(context.Context, string) error {
+			emptied = true
+
+			return nil
+		})
+	h.workspaces.EXPECT().
+		Purge(gomock.Any(), workspaceID).
+		DoAndReturn(func(context.Context, uuid.UUID) error {
+			if !emptied {
+				t.Fatal(
+					"the workspace rows went before its stored files. A cascade cannot reach " +
+						"object storage, so the only record of which bytes to delete would be " +
+						"gone and they would be paid for forever.",
+				)
+			}
+
+			return nil
+		})
 
 	if err := h.service.Purge(context.Background(), workspaceID); err != nil {
 		t.Fatalf("Purge: %v", err)
+	}
+}
+
+func TestPurgeIsAbandonedWhenTheStoredFilesCannotBeRemoved(t *testing.T) {
+	h := newHarness(t)
+	workspaceID := uuid.New()
+
+	pending := pendingWorkspace(workspaceID, time.Now().UTC().Add(-2*deletionGracePeriod))
+	unreachable := errors.New("storage is unreachable")
+
+	h.workspaces.EXPECT().GetByID(gomock.Any(), workspaceID).Return(pending, nil)
+	h.blobs.EXPECT().RemoveAll(gomock.Any(), gomock.Any()).Return(unreachable)
+
+	if err := h.service.Purge(context.Background(), workspaceID); !errors.Is(err, unreachable) {
+		t.Fatalf(
+			"Purge returned %v. When storage is down the transaction has to fail so asynq retries; "+
+				"committing anyway would strand the bytes with nothing left that names them.",
+			err,
+		)
 	}
 }
 

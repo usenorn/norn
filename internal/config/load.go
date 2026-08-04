@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -84,6 +85,77 @@ func validate(cfg Config) error {
 		)
 	}
 
+	return validateStorage(cfg)
+}
+
+func validateStorage(cfg Config) error {
+	switch cfg.Storage.Backend {
+	case StorageBackendFilesystem:
+		if cfg.Storage.Root == "" {
+			return fmt.Errorf("storage.root is required when storage.backend is %q", StorageBackendFilesystem)
+		}
+	case StorageBackendS3:
+		if err := separateOrigins(cfg.App.BaseURL, storageOrigin(cfg.Storage)); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf(
+			"storage.backend (%q) must be %q or %q",
+			cfg.Storage.Backend, StorageBackendFilesystem, StorageBackendS3,
+		)
+	}
+
+	if cfg.Attachments.MaxFileBytes <= 0 {
+		return fmt.Errorf("attachments.max_file_bytes (%d) must be positive", cfg.Attachments.MaxFileBytes)
+	}
+
+	if cfg.Attachments.MaxWorkspaceBytes < 0 {
+		return fmt.Errorf(
+			"attachments.max_workspace_bytes (%d) must not be negative; 0 means unlimited",
+			cfg.Attachments.MaxWorkspaceBytes,
+		)
+	}
+
+	if cfg.Attachments.MaxWorkspaceBytes > 0 && cfg.Attachments.MaxWorkspaceBytes < cfg.Attachments.MaxFileBytes {
+		return fmt.Errorf(
+			"attachments.max_workspace_bytes (%d) is below attachments.max_file_bytes (%d), so no file could ever be stored",
+			cfg.Attachments.MaxWorkspaceBytes, cfg.Attachments.MaxFileBytes,
+		)
+	}
+
+	if cfg.Attachments.UploadTTL <= 0 || cfg.Attachments.LinkTTL <= 0 {
+		return fmt.Errorf("attachments.upload_ttl and attachments.link_ttl must be positive")
+	}
+
+	return nil
+}
+
+func storageOrigin(cfg Storage) string {
+	if cfg.PublicBaseURL != "" {
+		return cfg.PublicBaseURL
+	}
+
+	return cfg.Endpoint
+}
+
+func separateOrigins(app, storage string) error {
+	appURL, err := url.Parse(app)
+	if err != nil {
+		return fmt.Errorf("app.base_url is not a URL: %w", err)
+	}
+
+	storageURL, err := url.Parse(storage)
+	if err != nil {
+		return fmt.Errorf("storage endpoint is not a URL: %w", err)
+	}
+
+	if appURL.Host != "" && appURL.Host == storageURL.Host {
+		return fmt.Errorf(
+			"storage must not share a host with app.base_url (%s); uploaded files would then be served by an origin that holds the session cookie",
+			appURL.Host,
+		)
+	}
+
 	return nil
 }
 
@@ -163,6 +235,8 @@ func setDefaults(v *viper.Viper) {
 
 	v.SetDefault("workspace.deletion_grace_period", 720*time.Hour)
 
+	v.SetDefault("storage.backend", StorageBackendFilesystem)
+	v.SetDefault("storage.root", "./data/blobs")
 	v.SetDefault("storage.endpoint", "http://127.0.0.1:3900")
 	v.SetDefault("storage.region", "garage")
 	v.SetDefault("storage.bucket", "norn-local")
@@ -171,6 +245,13 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("storage.use_path_style", true)
 	v.SetDefault("storage.public_base_url", "")
 	v.SetDefault("storage.timeout", 30*time.Second)
+	v.SetDefault("attachments.max_file_bytes", int64(25<<20))
+	v.SetDefault("attachments.max_workspace_bytes", int64(0))
+	v.SetDefault("attachments.upload_ttl", 15*time.Minute)
+	v.SetDefault("attachments.link_ttl", 5*time.Minute)
+	v.SetDefault("attachments.transfer_timeout", 10*time.Minute)
+	v.SetDefault("attachments.reclaim_schedule", "*/5 * * * *")
+	v.SetDefault("attachments.reclaim_batch", 200)
 
 	v.SetDefault("session.cookie_name", "norn_session")
 	v.SetDefault("session.cookie_path", "/")

@@ -1185,6 +1185,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** List the files hanging off an issue, oldest first */
+        get: operations["listWorkspaceIssueAttachments"];
+        put?: never;
+        /** Reserve room for a file and say where to send its bytes */
+        post: operations["reserveWorkspaceIssueAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                attachmentId: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take a file off an issue and give its room back */
+        delete: operations["removeWorkspaceIssueAttachment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                attachmentId: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm the bytes landed, and settle what the file actually is */
+        post: operations["finalizeWorkspaceIssueAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/attachments/{attachmentId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                attachmentId: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        /** Trade access to the issue for a short-lived link to the bytes */
+        get: operations["downloadWorkspaceAttachment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** How much this workspace is storing, and how much it may */
+        get: operations["getWorkspaceStorage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{accountId}/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        /** Trade a session for a short-lived link to an avatar */
+        get: operations["downloadAccountAvatar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/comments": {
         parameters: {
             query?: never;
@@ -2062,6 +2183,77 @@ export interface components {
             /** @description Properties to reset; absent means unchanged, which a nullable field cannot express */
             clear?: ("assignee" | "estimate" | "dueOn" | "cycle" | "project")[];
         };
+        Attachment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            issueId: string;
+            /** Format: uuid */
+            commentId?: string;
+            fileName: string;
+            contentType: string;
+            /** Format: int64 */
+            byteSize: number;
+            status: components["schemas"]["AttachmentStatus"];
+            /** @description Whether Norn will serve this file for display rather than download. */
+            inline: boolean;
+            /** @description The same-origin path that trades issue access for the bytes. */
+            contentPath: string;
+            /** Format: uuid */
+            uploadedByAccountId?: string;
+            uploadedByName?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @description A file is pending until its bytes have landed and been settled.
+         * @enum {string}
+         */
+        AttachmentStatus: "pending" | "stored" | "discarded";
+        AttachmentList: {
+            attachments: components["schemas"]["Attachment"][];
+        };
+        ReserveAttachmentRequest: {
+            fileName: string;
+            contentType?: string;
+            /** Format: int64 */
+            byteSize: number;
+        };
+        AttachmentReservation: {
+            attachment: components["schemas"]["Attachment"];
+            transfer: components["schemas"]["AttachmentTransfer"];
+        };
+        /** @description One request that carries the bytes, wherever they are meant to go. */
+        AttachmentTransfer: {
+            url: string;
+            method: string;
+            headers: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        WorkspaceStorage: {
+            /** Format: int64 */
+            storedBytes: number;
+            /** Format: int64 */
+            maxBytes?: number;
+            unlimited: boolean;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        StorageRefusedProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "attachment_too_large" | "workspace_storage_exhausted" | "attachment_not_pending" | "attachment_missing";
+            /** Format: int64 */
+            byteSize?: number;
+            /** Format: int64 */
+            storedBytes?: number;
+            /** Format: int64 */
+            maxBytes?: number;
+        };
         IssueCommentPage: {
             comments: components["schemas"]["IssueComment"][];
             nextCursor?: string;
@@ -2120,6 +2312,7 @@ export interface components {
             body: string;
             /** Format: uuid */
             parentCommentId?: string;
+            attachmentIds?: string[];
             mentions?: components["schemas"]["MentionTarget"][];
         };
         EditCommentRequest: {
@@ -3187,6 +3380,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["WorkflowStateConflictProblem"];
             };
         };
+        /** @description The file is too big, or the workspace has no room for it */
+        StorageRefused: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["StorageRefusedProblem"];
+            };
+        };
         /** @description The comment refuses the change */
         CommentConflict: {
             headers: {
@@ -3353,6 +3555,7 @@ export interface components {
         SavedViewId: string;
         LabelId: string;
         GroupId: string;
+        AttachmentId: string;
         CommentId: string;
         Reaction: components["schemas"]["CommentReaction"];
         TeamId: string;
@@ -5930,6 +6133,201 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueAttachments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every file whose upload finished */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    reserveWorkspaceIssueAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReserveAttachmentRequest"];
+            };
+        };
+        responses: {
+            /** @description The reserved file, and the one request that carries its bytes */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentReservation"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["StorageRefused"];
+            413: components["responses"]["StorageRefused"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceIssueAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                attachmentId: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    finalizeWorkspaceIssueAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                attachmentId: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file as Norn will serve it */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attachment"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["StorageRefused"];
+            413: components["responses"]["StorageRefused"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    downloadWorkspaceAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                attachmentId: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Follow this link. It expires, and it is the only thing that carries the bytes. */
+            303: {
+                headers: {
+                    Location?: string;
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceStorage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What the workspace is storing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceStorage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    downloadAccountAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Follow this link; it expires */
+            303: {
+                headers: {
+                    Location?: string;
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

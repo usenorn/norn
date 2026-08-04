@@ -137,6 +137,7 @@ func newService(h *harness, smtp config.SMTP, instance config.Instance) service.
 		config.App{BaseURL: baseURL},
 		smtp,
 		instance,
+		config.Attachments{LinkTTL: 5 * time.Minute},
 	)
 }
 

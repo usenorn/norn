@@ -44,6 +44,21 @@ func (m *MockAccounts) EXPECT() *MockAccountsMockRecorder {
 	return m.recorder
 }
 
+// AvatarContent mocks base method.
+func (m *MockAccounts) AvatarContent(ctx context.Context, accountID uuid.UUID) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AvatarContent", ctx, accountID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AvatarContent indicates an expected call of AvatarContent.
+func (mr *MockAccountsMockRecorder) AvatarContent(ctx, accountID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AvatarContent", reflect.TypeOf((*MockAccounts)(nil).AvatarContent), ctx, accountID)
+}
+
 // ChangePassword mocks base method.
 func (m *MockAccounts) ChangePassword(ctx context.Context, accountID uuid.UUID, currentPassword, newPassword string) (service.IssuedSession, error) {
 	m.ctrl.T.Helper()

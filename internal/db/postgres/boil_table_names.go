@@ -19,6 +19,7 @@ var TableNames = struct {
 	WorkspaceInvitationTeams       string
 	WorkspaceInvitations           string
 	WorkspaceIssueActivity         string
+	WorkspaceIssueAttachments      string
 	WorkspaceIssueCommentMentions  string
 	WorkspaceIssueCommentReactions string
 	WorkspaceIssueComments         string
@@ -38,6 +39,7 @@ var TableNames = struct {
 	WorkspaceSavedViews            string
 	WorkspaceSsoConnections        string
 	WorkspaceSsoIdentities         string
+	WorkspaceStorageLedger         string
 	WorkspaceTeamCycleCadences     string
 	WorkspaceTeamMembers           string
 	WorkspaceTeamTriageSettings    string
@@ -60,6 +62,7 @@ var TableNames = struct {
 	WorkspaceInvitationTeams:       "workspace_invitation_teams",
 	WorkspaceInvitations:           "workspace_invitations",
 	WorkspaceIssueActivity:         "workspace_issue_activity",
+	WorkspaceIssueAttachments:      "workspace_issue_attachments",
 	WorkspaceIssueCommentMentions:  "workspace_issue_comment_mentions",
 	WorkspaceIssueCommentReactions: "workspace_issue_comment_reactions",
 	WorkspaceIssueComments:         "workspace_issue_comments",
@@ -79,6 +82,7 @@ var TableNames = struct {
 	WorkspaceSavedViews:            "workspace_saved_views",
 	WorkspaceSsoConnections:        "workspace_sso_connections",
 	WorkspaceSsoIdentities:         "workspace_sso_identities",
+	WorkspaceStorageLedger:         "workspace_storage_ledger",
 	WorkspaceTeamCycleCadences:     "workspace_team_cycle_cadences",
 	WorkspaceTeamMembers:           "workspace_team_members",
 	WorkspaceTeamTriageSettings:    "workspace_team_triage_settings",

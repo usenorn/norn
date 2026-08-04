@@ -350,6 +350,8 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrProjectMembershipNotFound),
 		errors.Is(err, entity.ErrSavedViewNotFound),
 		errors.Is(err, entity.ErrIssueCommentNotFound),
+		errors.Is(err, entity.ErrAttachmentNotFound),
+		errors.Is(err, entity.ErrBlobNotFound),
 		errors.Is(err, entity.ErrTriageDisabled),
 		errors.Is(err, entity.ErrBreakGlassCodeInvalid):
 		return newProblem(http.StatusNotFound, err.Error()), true
@@ -362,6 +364,18 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrIssueCommentNotAuthor),
 		errors.Is(err, entity.ErrIssueCommentNotDeletable):
 		return newProblem(http.StatusForbidden, err.Error()), true
+
+	case errors.Is(err, entity.ErrAttachmentTooLarge):
+		return storageRefusedProblem(api.AttachmentTooLarge, http.StatusRequestEntityTooLarge, err), true
+
+	case errors.Is(err, entity.ErrStorageExhausted):
+		return storageRefusedProblem(api.WorkspaceStorageExhausted, http.StatusConflict, err), true
+
+	case errors.Is(err, entity.ErrAttachmentNotPending):
+		return storageRefusedProblem(api.AttachmentNotPending, http.StatusConflict, err), true
+
+	case errors.Is(err, entity.ErrAttachmentMissing):
+		return storageRefusedProblem(api.AttachmentMissing, http.StatusConflict, err), true
 
 	case errors.Is(err, entity.ErrIssueCommentDeleted):
 		return commentConflictProblem(api.CommentConflictProblemCodeCommentDeleted, err), true
@@ -1285,6 +1299,33 @@ func commentConflictProblem(code api.CommentConflictProblemCode, err error) prob
 	}
 }
 
+func storageRefusedProblem(code api.StorageRefusedProblemCode, status int, err error) problemResponse {
+	base := baseProblem(status, err.Error())
+	body := api.StorageRefusedProblem{
+		Code:     code,
+		Detail:   base.Detail,
+		Instance: base.Instance,
+		Status:   base.Status,
+		Title:    base.Title,
+		Type:     base.Type,
+	}
+
+	var oversized entity.AttachmentTooLargeError
+	if errors.As(err, &oversized) {
+		body.ByteSize = &oversized.SizeBytes
+		body.MaxBytes = &oversized.MaxBytes
+	}
+
+	var exhausted entity.StorageExhaustedError
+	if errors.As(err, &exhausted) {
+		body.ByteSize = &exhausted.SizeBytes
+		body.StoredBytes = &exhausted.StoredBytes
+		body.MaxBytes = &exhausted.MaxBytes
+	}
+
+	return problemResponse{status: status, body: body}
+}
+
 func issueConflictProblem(code api.IssueConflictProblemCode, err error) problemResponse {
 	base := baseProblem(http.StatusConflict, err.Error())
 
@@ -1322,5 +1363,33 @@ func (r problemResponse) VisitReactToWorkspaceIssueCommentResponse(w http.Respon
 }
 
 func (r problemResponse) VisitUnreactToWorkspaceIssueCommentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueAttachmentsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitReserveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitFinalizeWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceIssueAttachmentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDownloadWorkspaceAttachmentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDownloadAccountAvatarResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceStorageResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
