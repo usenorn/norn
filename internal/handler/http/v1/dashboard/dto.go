@@ -674,6 +674,133 @@ func issueQueryResultDTO(result service.IssueQueryResult, grouped bool) api.Issu
 	return dto
 }
 
+func savedViewDTO(summary service.SavedViewSummary) api.SavedView {
+	view := summary.View
+
+	dto := api.SavedView{
+		Id:          view.ID,
+		WorkspaceId: view.WorkspaceID,
+		Name:        view.Name,
+		Sharing:     api.SavedViewSharing(view.Sharing),
+		Filter:      issueFilterDTO(view.Filter),
+		Sort:        issueSortDTOs(view.Sort),
+		Editable:    summary.Editable,
+		CreatedAt:   view.CreatedAt,
+		UpdatedAt:   view.UpdatedAt,
+	}
+
+	if view.TeamID != uuid.Nil {
+		team := view.TeamID
+		dto.TeamId = &team
+		dto.TeamName = nilIfEmpty(view.TeamName)
+	}
+
+	if view.AuthorID != uuid.Nil {
+		author := view.AuthorID
+		dto.CreatedByAccountId = &author
+		dto.CreatedByName = nilIfEmpty(view.AuthorName)
+	}
+
+	if view.GroupBy != "" {
+		groupBy := api.IssueGroupBy(view.GroupBy)
+		dto.GroupBy = &groupBy
+	}
+
+	return dto
+}
+
+func savedViewDTOs(summaries []service.SavedViewSummary) []api.SavedView {
+	dtos := make([]api.SavedView, 0, len(summaries))
+	for _, summary := range summaries {
+		dtos = append(dtos, savedViewDTO(summary))
+	}
+
+	return dtos
+}
+
+func savedViewDetailDTO(detail service.SavedViewDetail) api.SavedViewDetail {
+	references := make([]api.IssueFilterReference, 0, len(detail.References))
+
+	for _, reference := range detail.References {
+		dto := api.IssueFilterReference{
+			Field: api.IssueFilterField(reference.Field),
+			Value: reference.Value,
+			State: api.IssueFilterReferenceState(reference.State),
+		}
+
+		dto.Name = nilIfEmpty(reference.Name)
+
+		references = append(references, dto)
+	}
+
+	return api.SavedViewDetail{
+		View:       savedViewDTO(detail.Summary),
+		References: references,
+	}
+}
+
+func issueFilterDTO(filter entity.IssueFilter) api.IssueFilter {
+	dto := api.IssueFilter{}
+
+	if len(filter.All) > 0 {
+		all := issueFilterDTOs(filter.All)
+		dto.All = &all
+	}
+
+	if len(filter.Any) > 0 {
+		any := issueFilterDTOs(filter.Any)
+		dto.Any = &any
+	}
+
+	if filter.Not != nil {
+		negated := issueFilterDTO(*filter.Not)
+		dto.Not = &negated
+	}
+
+	if filter.Field != "" {
+		field := api.IssueFilterField(filter.Field)
+		dto.Field = &field
+	}
+
+	if filter.Op != "" {
+		op := api.IssueFilterOp(filter.Op)
+		dto.Op = &op
+	}
+
+	if len(filter.Values) > 0 {
+		values := filter.Values
+		dto.Values = &values
+	}
+
+	return dto
+}
+
+func issueFilterDTOs(filters []entity.IssueFilter) []api.IssueFilter {
+	dtos := make([]api.IssueFilter, 0, len(filters))
+	for _, filter := range filters {
+		dtos = append(dtos, issueFilterDTO(filter))
+	}
+
+	return dtos
+}
+
+func issueSortDTOs(sort []entity.IssueSort) []api.IssueSort {
+	dtos := make([]api.IssueSort, 0, len(sort))
+
+	for _, key := range sort {
+		dto := api.IssueSort{Field: api.IssueSortField(key.Field)}
+
+		if key.Descending {
+			descending := true
+			dto.Descending = &descending
+		}
+
+		dtos = append(dtos, dto)
+	}
+
+	return dtos
+}
+
 func issueFilterFrom(dto *api.IssueFilter) *entity.IssueFilter {
 	if dto == nil {
 		return nil

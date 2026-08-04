@@ -150,6 +150,26 @@ func problemFor(err error) (problemResponse, bool) {
 		return problem, true
 	}
 
+	var sharedView entity.SavedViewSharedError
+	if errors.As(err, &sharedView) {
+		base := baseProblem(http.StatusConflict, sharedView.Error())
+		sharing := api.SavedViewSharing(sharedView.Sharing)
+
+		return problemResponse{
+			status: http.StatusConflict,
+			body: api.SavedViewConflictProblem{
+				Code:     api.SavedViewShared,
+				Sharing:  &sharing,
+				TeamName: nilIfEmpty(sharedView.TeamName),
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+	}
+
 	var lastAdmin entity.LastWorkspaceAdminError
 	if errors.As(err, &lastAdmin) {
 		problem := membershipConflictProblem(api.MembershipConflictProblemCodeLastAdmin, lastAdmin)
@@ -325,8 +345,13 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrCycleCadenceNotFound),
 		errors.Is(err, entity.ErrProjectNotFound),
 		errors.Is(err, entity.ErrProjectMembershipNotFound),
+		errors.Is(err, entity.ErrSavedViewNotFound),
 		errors.Is(err, entity.ErrBreakGlassCodeInvalid):
 		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrSavedViewNotOwner),
+		errors.Is(err, entity.ErrSavedViewNotShareable):
+		return newProblem(http.StatusForbidden, err.Error()), true
 
 	case errors.Is(err, entity.ErrProjectNotLead):
 		return newProblem(http.StatusForbidden, err.Error()), true
@@ -884,6 +909,30 @@ func (r problemResponse) VisitListWorkspaceIssuesResponse(w http.ResponseWriter)
 }
 
 func (r problemResponse) VisitQueryWorkspaceIssuesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitReorderWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

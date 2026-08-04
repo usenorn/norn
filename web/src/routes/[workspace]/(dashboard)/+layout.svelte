@@ -26,9 +26,9 @@
 		isCurrent,
 		mobileNav,
 		primaryNav,
-		savedViews,
 		workspacePath,
 	} from "$lib/workspace/navigation";
+	import { viewEntries, viewsPath } from "$lib/views/views";
 	import { cyclePath } from "$lib/cycles/cycles";
 	import { projectPath, projectsPath } from "$lib/projects/projects";
 	import { initialsOf } from "$lib/team/members";
@@ -50,7 +50,7 @@
 	const current = $derived((href: string) => isCurrent(pathname, search, href));
 
 	const nav = $derived(primaryNav(slug));
-	const views = $derived(savedViews(slug));
+	const views = $derived(viewEntries(slug, data.views ?? []));
 	const tabs = $derived(mobileNav(slug));
 
 	const initials = $derived(initialsOf(data.member.name));
@@ -242,7 +242,12 @@
 
 			<SidebarSection label="Views">
 				{#snippet action()}
-					<Button variant="ghost" size="icon-xs" aria-label="Manage saved views">
+					<Button
+						variant="ghost"
+						size="icon-xs"
+						href={viewsPath(slug)}
+						aria-label="Manage saved views"
+					>
 						<Settings aria-hidden="true" />
 					</Button>
 				{/snippet}
@@ -256,6 +261,13 @@
 					active={current(view.href)}
 				/>
 			{/each}
+			<SidebarItem
+				href={viewsPath(slug)}
+				label={views.length === 0 ? "Save a view" : "All views"}
+				icon={views.length === 0 ? Plus : List}
+				indent
+				active={current(viewsPath(slug))}
+			/>
 		</nav>
 
 		<div class="flex-1"></div>

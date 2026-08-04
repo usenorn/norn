@@ -37,15 +37,6 @@ export function allOf(...parts: (IssueFilter | undefined)[]): IssueFilter | unde
 
 export type IssueQueryBody = components["schemas"]["IssueQueryRequest"];
 
-export function boardQuery(teamId: string, tab: IssueTab, cursor?: string): IssueQueryBody {
-	return {
-		filter: allOf(teamFilter(teamId), tabFilter(tab)),
-		groupBy: "state",
-		limit: issuePageSize,
-		cursor,
-	};
-}
-
 export function tallyOf(groups: IssueGroupTally[] | undefined, key: string): number | undefined {
 	return groups?.find((group) => group.key === key)?.issues;
 }

@@ -35,6 +35,7 @@ import (
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issueactivityrepo "github.com/usenorn/norn/internal/repository/issueactivity"
+	issuefilterreferencerepo "github.com/usenorn/norn/internal/repository/issuefilterreference"
 	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
@@ -48,6 +49,7 @@ import (
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	samlreplayrepo "github.com/usenorn/norn/internal/repository/samlreplay"
 	samlrequestrepo "github.com/usenorn/norn/internal/repository/samlrequest"
+	savedviewrepo "github.com/usenorn/norn/internal/repository/savedview"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	signuprepo "github.com/usenorn/norn/internal/repository/signup"
@@ -69,6 +71,7 @@ import (
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
+	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
@@ -112,6 +115,8 @@ var baseSet = wire.NewSet(
 	bulkactionrepo.Set,
 	cyclerepo.Set,
 	projectrepo.Set,
+	savedviewrepo.Set,
+	issuefilterreferencerepo.Set,
 	labelrepo.Set,
 	labelgrouprepo.Set,
 	workflowstaterepo.Set,
@@ -139,6 +144,7 @@ var baseSet = wire.NewSet(
 	bulkoperationsvc.Set,
 	cyclesvc.Set,
 	projectsvc.Set,
+	savedviewsvc.Set,
 	labelsvc.Set,
 	workflowstatesvc.Set,
 	apitokensvc.Set,
