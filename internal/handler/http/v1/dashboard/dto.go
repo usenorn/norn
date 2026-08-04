@@ -383,6 +383,24 @@ func issueDTO(issue entity.Issue) api.Issue {
 		dto.CreatedByAccountId = &author
 	}
 
+	if issue.TriageState != "" {
+		state := api.TriageState(issue.TriageState)
+		dto.TriageState = &state
+	}
+
+	if issue.TriageSource != "" {
+		source := api.TriageSource(issue.TriageSource)
+		dto.TriageSource = &source
+	}
+
+	if issue.TriageDecidedBy != uuid.Nil {
+		decider := issue.TriageDecidedBy
+		dto.TriageDecidedByAccountId = &decider
+		dto.TriageDecidedByName = nilIfEmpty(issue.TriageDecidedName)
+	}
+
+	dto.TriageDecidedAt = issue.TriageDecidedAt
+
 	return dto
 }
 
@@ -672,6 +690,31 @@ func issueQueryResultDTO(result service.IssueQueryResult, grouped bool) api.Issu
 	}
 
 	return dto
+}
+
+func triageQueueDTO(queue service.TriageQueue) api.TriageQueue {
+	teams := make([]api.IssueGroupTally, 0, len(queue.Teams))
+	for _, team := range queue.Teams {
+		teams = append(teams, api.IssueGroupTally{Key: team.Key, Issues: int32(team.Issues)})
+	}
+
+	dto := api.TriageQueue{Issues: issueDTOs(queue.Issues), Teams: teams}
+
+	if queue.NextCursor != "" {
+		cursor := queue.NextCursor
+		dto.NextCursor = &cursor
+	}
+
+	return dto
+}
+
+func triageSettingsDTO(settings entity.TriageSettings) api.TriageSettings {
+	return api.TriageSettings{
+		TeamId:            settings.TeamID,
+		RouteAgents:       settings.RouteAgents,
+		RouteIntegrations: settings.RouteIntegrations,
+		RouteNonMembers:   settings.RouteNonMembers,
+	}
 }
 
 func savedViewDTO(summary service.SavedViewSummary) api.SavedView {

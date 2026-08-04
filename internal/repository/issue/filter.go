@@ -65,17 +65,28 @@ func (b *builder) bind(value any) string {
 	return fmt.Sprintf("$%d", len(b.args))
 }
 
-func (b *builder) scope(scope entity.TeamScope) string {
+func (b *builder) scope(scope entity.TeamScope, waiting bool) string {
+	triage := decided
+	if waiting {
+		triage = stillWaiting
+	}
+
 	return fmt.Sprintf(
-		"i.workspace_id = %s AND (%s::boolean IS TRUE OR i.team_id = ANY(%s::uuid[]))",
+		"i.workspace_id = %s AND (%s::boolean IS TRUE OR i.team_id = ANY(%s::uuid[])) AND %s",
 		b.bind(scope.WorkspaceID.String()),
 		b.bind(scope.AllTeams),
 		b.bind(teamIDs(scope)),
+		triage,
 	)
 }
 
-func (b *builder) where(scope entity.TeamScope, filter *entity.IssueFilter) string {
-	clause := b.scope(scope)
+const (
+	decided      = `i.triage_state IS DISTINCT FROM 'waiting'`
+	stillWaiting = `i.triage_state = 'waiting'`
+)
+
+func (b *builder) where(scope entity.TeamScope, page entity.IssuePage, filter *entity.IssueFilter) string {
+	clause := b.scope(scope, page.Waiting)
 
 	if filter == nil || filter.Empty() {
 		return clause
@@ -381,7 +392,7 @@ func (r *issueRepository) pageStatement(
 		sort = entity.DefaultIssueSort()
 	}
 
-	where := b.where(scope, page.Filter) + b.legacy(page)
+	where := b.where(scope, page, page.Filter) + b.legacy(page)
 
 	if keyset := b.keyset(sort, page.QueryCursor); keyset != "" {
 		where += " AND (" + keyset + ")"
@@ -420,7 +431,7 @@ func tallyStatement(
 	groupBy entity.IssueGroupBy,
 ) (string, []any) {
 	b := &builder{}
-	where := b.where(scope, page.Filter) + b.legacy(page)
+	where := b.where(scope, page, page.Filter) + b.legacy(page)
 
 	joins := issueJoins
 	if groupBy == entity.IssueGroupByLabel {

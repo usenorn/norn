@@ -17,7 +17,7 @@ func TestAValueNeverReachesTheStatementItIsOnlyEverAnArgument(t *testing.T) {
 	hostile := "'; DROP TABLE workspace_issues; --"
 
 	b := &builder{}
-	where := b.where(scopeOf(uuid.New()), &entity.IssueFilter{
+	where := b.where(scopeOf(uuid.New()), entity.IssuePage{}, &entity.IssueFilter{
 		Field:  entity.IssueFilterFieldPriority,
 		Op:     entity.IssueFilterOpIs,
 		Values: []string{hostile},
@@ -61,7 +61,7 @@ func TestEveryCompiledStatementCarriesTheCallersScope(t *testing.T) {
 	for name, filter := range filters {
 		t.Run(name, func(t *testing.T) {
 			b := &builder{}
-			where := b.where(scopeOf(uuid.New()), filter)
+			where := b.where(scopeOf(uuid.New()), entity.IssuePage{}, filter)
 
 			if !strings.Contains(where, "i.team_id = ANY(") {
 				t.Fatalf(
@@ -81,7 +81,7 @@ func TestEveryCompiledStatementCarriesTheCallersScope(t *testing.T) {
 
 func TestACallersDisjunctionCannotReachAroundTheScope(t *testing.T) {
 	b := &builder{}
-	where := b.where(scopeOf(uuid.New()), &entity.IssueFilter{Any: []entity.IssueFilter{
+	where := b.where(scopeOf(uuid.New()), entity.IssuePage{}, &entity.IssueFilter{Any: []entity.IssueFilter{
 		{Field: entity.IssueFilterFieldPriority, Op: entity.IssueFilterOpIs, Values: []string{"high"}},
 		{Field: entity.IssueFilterFieldStatus, Op: entity.IssueFilterOpIs, Values: []string{"active"}},
 	}})
@@ -291,5 +291,51 @@ func TestThePageStatementIsAlwaysScopedAndTotallyOrdered(t *testing.T) {
 
 	if len(args) == 0 {
 		t.Fatal("the page statement bound no arguments, so something was inlined")
+	}
+}
+
+func TestEveryCompiledStatementDecidesAboutTriage(t *testing.T) {
+	filters := map[string]*entity.IssueFilter{
+		"no filter": nil,
+		"a leaf":    {Field: entity.IssueFilterFieldPriority, Op: entity.IssueFilterOpIs, Values: []string{"high"}},
+		"a disjunction": {Any: []entity.IssueFilter{
+			{Field: entity.IssueFilterFieldPriority, Op: entity.IssueFilterOpIs, Values: []string{"high"}},
+			{Field: entity.IssueFilterFieldStatus, Op: entity.IssueFilterOpIs, Values: []string{"active"}},
+		}},
+	}
+
+	for name, filter := range filters {
+		t.Run(name, func(t *testing.T) {
+			b := &builder{}
+
+			if where := b.where(scopeOf(uuid.New()), entity.IssuePage{}, filter); !strings.Contains(where, decided) {
+				t.Fatalf(
+					"the compiled statement admits issues still waiting in triage:\n%s\n"+
+						"A backlog that counts work nobody has agreed to do is the thing triage "+
+						"exists to prevent, so the predicate belongs beside the scope where no "+
+						"caller can forget it.",
+					where,
+				)
+			}
+
+			queue := &builder{}
+
+			if where := queue.where(scopeOf(uuid.New()), entity.IssuePage{Waiting: true}, filter); !strings.Contains(where, stillWaiting) {
+				t.Fatalf(
+					"the queue's own statement does not ask for waiting work:\n%s\nThe backlog and "+
+						"the queue are the same engine asking opposite questions; if the flag is "+
+						"ignored the queue silently shows the backlog.",
+					where,
+				)
+			}
+		})
+	}
+
+	for _, group := range entity.IssueGroupBys() {
+		statement, _ := tallyStatement(scopeOf(uuid.New()), entity.IssuePage{}, groupKeys[group], group)
+
+		if !strings.Contains(statement, decided) {
+			t.Errorf("the %s tally counts issues still waiting in triage", group)
+		}
 	}
 }

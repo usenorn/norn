@@ -299,6 +299,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrIssueDestinationIncapable):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueDestinationIncapable, err), true
 
+	case errors.Is(err, entity.ErrIssueNotWaiting):
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueNotWaiting, err), true
+
 	case errors.Is(err, entity.ErrIssueStatusTransition):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueStatusTransition, err), true
 
@@ -346,6 +349,7 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrProjectNotFound),
 		errors.Is(err, entity.ErrProjectMembershipNotFound),
 		errors.Is(err, entity.ErrSavedViewNotFound),
+		errors.Is(err, entity.ErrTriageDisabled),
 		errors.Is(err, entity.ErrBreakGlassCodeInvalid):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
@@ -913,6 +917,38 @@ func (r problemResponse) VisitQueryWorkspaceIssuesResponse(w http.ResponseWriter
 }
 
 func (r problemResponse) VisitListWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceTriageResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAcceptWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDeclineWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitMergeWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitReassignWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDeleteTeamTriageSettingsResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

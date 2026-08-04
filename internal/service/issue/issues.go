@@ -24,6 +24,8 @@ type issuesService struct {
 	cycles       repository.Cycle
 	scopeChanges repository.CycleScopeChange
 	projects     repository.Project
+	teams        repository.Team
+	triage       repository.Triage
 	jobs         repository.JobProducer
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
@@ -38,6 +40,8 @@ func New(
 	cycles repository.Cycle,
 	scopeChanges repository.CycleScopeChange,
 	projects repository.Project,
+	teams repository.Team,
+	triage repository.Triage,
 	jobs repository.JobProducer,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
@@ -51,6 +55,8 @@ func New(
 		cycles:       cycles,
 		scopeChanges: scopeChanges,
 		projects:     projects,
+		teams:        teams,
+		triage:       triage,
 		jobs:         jobs,
 		authorizer:   authorizer,
 		transactor:   transactor,
@@ -81,16 +87,31 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		return entity.Issue{}, err
 	}
 
+	arriving := entity.Issue{
+		WorkspaceID:        input.WorkspaceID,
+		TeamID:             input.TeamID,
+		Title:              input.Title,
+		Description:        input.Description,
+		Priority:           input.Priority,
+		AssigneeAccountID:  input.AssigneeAccountID,
+		Estimate:           input.Estimate,
+		DueOn:              input.DueOn,
+		State:              entity.IssueState{ID: state.ID},
+		CreatedByAccountID: decision.Actor.AccountID,
+	}
+
+	if arriving.Priority == "" {
+		arriving.Priority = entity.IssuePriorityNone
+	}
+
+	if err := s.route(ctx, &arriving, decision); err != nil {
+		return entity.Issue{}, err
+	}
+
 	var created entity.Issue
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		created, err = s.issues.Create(ctx, entity.Issue{
-			WorkspaceID:        input.WorkspaceID,
-			TeamID:             input.TeamID,
-			Title:              input.Title,
-			State:              entity.IssueState{ID: state.ID},
-			CreatedByAccountID: decision.Actor.AccountID,
-		})
+		created, err = s.issues.Create(ctx, arriving)
 		if err != nil {
 			return err
 		}

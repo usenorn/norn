@@ -30,6 +30,7 @@ type handler struct {
 	cycles         service.Cycles
 	projects       service.Projects
 	savedViews     service.SavedViews
+	triages        service.Triages
 	blobs          repository.Blob
 	app            config.App
 	instance       config.Instance
@@ -52,6 +53,7 @@ func New(
 	cycles service.Cycles,
 	projects service.Projects,
 	savedViews service.SavedViews,
+	triages service.Triages,
 	blobs repository.Blob,
 	app config.App,
 	instance config.Instance,
@@ -73,6 +75,7 @@ func New(
 		cycles:         cycles,
 		projects:       projects,
 		savedViews:     savedViews,
+		triages:        triages,
 		blobs:          blobs,
 		app:            app,
 		instance:       instance,

@@ -1,5 +1,6 @@
 import type { MemberFailure, TeamRoster } from "$lib/team/members";
 import type { CadenceSetting } from "$lib/cycles/cycles";
+import type { TriageSetting } from "$lib/triage/triage";
 import type { StateList } from "$lib/team/states";
 import type { TeamSettings } from "$lib/team/team-settings";
 
@@ -8,6 +9,7 @@ export type TeamDetailPreview = {
 	roster: TeamRoster;
 	states?: StateList;
 	cadence?: CadenceSetting;
+	triage?: TriageSetting;
 	failure?: MemberFailure;
 	busy?: boolean;
 };

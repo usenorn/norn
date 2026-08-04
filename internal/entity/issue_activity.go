@@ -32,6 +32,7 @@ const (
 	IssueActivityKindChildRemoved    IssueActivityKind = "child_removed"
 	IssueActivityKindRelationAdded   IssueActivityKind = "relation_added"
 	IssueActivityKindRelationRemoved IssueActivityKind = "relation_removed"
+	IssueActivityKindTriaged         IssueActivityKind = "triaged"
 )
 
 func IssueActivityKinds() []IssueActivityKind {
@@ -48,6 +49,7 @@ func IssueActivityKinds() []IssueActivityKind {
 		IssueActivityKindChildRemoved,
 		IssueActivityKindRelationAdded,
 		IssueActivityKindRelationRemoved,
+		IssueActivityKindTriaged,
 	}
 }
 

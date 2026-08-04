@@ -87,8 +87,17 @@ type Issue struct {
 	Children           IssueProgress
 	Blocked            bool
 	CreatedByAccountID uuid.UUID
+	TriageState        TriageState
+	TriageSource       ActorKind
+	TriageDecidedBy    uuid.UUID
+	TriageDecidedName  string
+	TriageDecidedAt    *time.Time
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
+}
+
+func (i Issue) Waiting() bool {
+	return i.TriageState.Waiting()
 }
 
 func (i Issue) Reference() string {
@@ -179,6 +188,7 @@ type IssuePage struct {
 	Filter      *IssueFilter
 	Sort        []IssueSort
 	QueryCursor *IssueQueryCursor
+	Waiting     bool
 }
 
 func (p IssuePage) Normalized() IssuePage {
