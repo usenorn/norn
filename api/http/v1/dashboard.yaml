@@ -18,6 +18,7 @@ tags:
   - name: invitations
   - name: issues
   - name: saved-views
+  - name: triage
   - name: states
   - name: tokens
   - name: sso
@@ -1471,6 +1472,184 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/triage:
+    get:
+      tags: [triage]
+      operationId: listWorkspaceTriage
+      summary: What has arrived and nobody has decided about yet
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: limit
+          in: query
+          schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+        - name: cursor
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: The waiting issues, and how many are waiting per team
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TriageQueue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/triage/{issueId}/accept:
+    post:
+      tags: [triage]
+      operationId: acceptWorkspaceTriageIssue
+      summary: Let an issue through into the team's backlog
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      responses:
+        '200':
+          description: The issue, now part of the team's work
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/triage/{issueId}/decline:
+    post:
+      tags: [triage]
+      operationId: declineWorkspaceTriageIssue
+      summary: Turn an issue down, keeping it and who decided
+      description: >-
+        Declining is not deletion. The issue closes into the team's abandoned state, keeps its
+        reference, and the decision is written into its history so whoever reported it can be told.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      responses:
+        '200':
+          description: The issue, now closed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/triage/{issueId}/merge:
+    post:
+      tags: [triage]
+      operationId: mergeWorkspaceTriageIssue
+      summary: Fold an issue into one that already says the same thing
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MergeTriageIssueRequest' }
+      responses:
+        '200':
+          description: The issue, now recorded as a duplicate and closed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/triage/{issueId}/reassign:
+    post:
+      tags: [triage]
+      operationId: reassignWorkspaceTriageIssue
+      summary: Hand an issue to another team to decide about
+      description: >-
+        The issue keeps waiting, in the other team's queue. If that team does not triage, it goes
+        straight into their backlog rather than waiting somewhere nobody looks.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReassignTriageIssueRequest' }
+      responses:
+        '200':
+          description: The issue, now the other team's to decide about
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/triage:
+    get:
+      tags: [triage]
+      operationId: getTeamTriageSettings
+      summary: Read what a team holds back for review
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: The team's triage rules
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TriageSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: The team does not triage incoming issues }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [triage]
+      operationId: setTeamTriageSettings
+      summary: Start holding incoming issues for review, or change what is held
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetTriageSettingsRequest' }
+      responses:
+        '200':
+          description: The team's triage rules as they now stand
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TriageSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [triage]
+      operationId: deleteTeamTriageSettings
+      summary: Stop holding anything back, sending everything to the backlog
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '204':
+          description: Everything filed into this team now goes straight to its backlog
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/saved-views:
@@ -3348,6 +3527,7 @@ components:
                 - issue_reference_taken
                 - issue_already_on_team
                 - issue_labels_out_of_scope
+                - issue_not_waiting
                 - issue_destination_incapable
                 - issue_status_transition
                 - issue_parent_cycle
@@ -3630,6 +3810,7 @@ components:
             - child_removed
             - relation_added
             - relation_removed
+            - triaged
         fromState: { type: string }
         toState: { type: string }
         field: { type: string }
@@ -3684,6 +3865,11 @@ components:
         reference: { type: string }
         title: { type: string }
         createdByAccountId: { type: string, format: uuid }
+        triageState: { $ref: '#/components/schemas/TriageState' }
+        triageSource: { $ref: '#/components/schemas/TriageSource' }
+        triageDecidedByAccountId: { type: string, format: uuid }
+        triageDecidedByName: { type: string }
+        triageDecidedAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
 
     IssueState:
@@ -3694,6 +3880,65 @@ components:
         name: { type: string }
         category: { $ref: '#/components/schemas/StateCategory' }
         position: { type: integer, format: int32 }
+
+    TriageState:
+      type: string
+      description: Absent when the issue never went through triage.
+      enum: [waiting, accepted, declined, merged]
+
+    TriageSource:
+      type: string
+      description: Who filed it, as the routing rules see them.
+      enum: [user, token, agent]
+
+    TriageQueue:
+      type: object
+      required: [issues, teams]
+      properties:
+        issues:
+          type: array
+          items: { $ref: '#/components/schemas/Issue' }
+        nextCursor: { type: string }
+        teams:
+          type: array
+          description: How many are waiting on each team, within the caller's own visibility
+          items: { $ref: '#/components/schemas/IssueGroupTally' }
+
+    TriageSettings:
+      type: object
+      required: [teamId, routeAgents, routeIntegrations, routeNonMembers]
+      properties:
+        teamId: { type: string, format: uuid }
+        routeAgents: { type: boolean }
+        routeIntegrations: { type: boolean }
+        routeNonMembers:
+          type: boolean
+          description: Hold issues filed by someone who is not on this team
+
+    SetTriageSettingsRequest:
+      type: object
+      required: [routeAgents, routeIntegrations, routeNonMembers]
+      properties:
+        routeAgents: { type: boolean }
+        routeIntegrations: { type: boolean }
+        routeNonMembers: { type: boolean }
+
+    MergeTriageIssueRequest:
+      type: object
+      required: [duplicateOfId]
+      properties:
+        duplicateOfId:
+          type: string
+          format: uuid
+          description: The issue that survives; this one is recorded as duplicating it
+
+    ReassignTriageIssueRequest:
+      type: object
+      required: [teamId, expectedVersion]
+      properties:
+        teamId: { type: string, format: uuid }
+        expectedVersion: { type: integer, format: int32 }
+        acknowledgeLabelLoss: { type: boolean }
 
     SavedViewSharing:
       type: string

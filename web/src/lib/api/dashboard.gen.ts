@@ -930,6 +930,116 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/triage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What has arrived and nobody has decided about yet */
+        get: operations["listWorkspaceTriage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/triage/{issueId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Let an issue through into the team's backlog */
+        post: operations["acceptWorkspaceTriageIssue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/triage/{issueId}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Turn an issue down, keeping it and who decided
+         * @description Declining is not deletion. The issue closes into the team's abandoned state, keeps its reference, and the decision is written into its history so whoever reported it can be told.
+         */
+        post: operations["declineWorkspaceTriageIssue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/triage/{issueId}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fold an issue into one that already says the same thing */
+        post: operations["mergeWorkspaceTriageIssue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/triage/{issueId}/reassign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hand an issue to another team to decide about
+         * @description The issue keeps waiting, in the other team's queue. If that team does not triage, it goes straight into their backlog rather than waiting somewhere nobody looks.
+         */
+        post: operations["reassignWorkspaceTriageIssue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/triage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read what a team holds back for review */
+        get: operations["getTeamTriageSettings"];
+        /** Start holding incoming issues for review, or change what is held */
+        put: operations["setTeamTriageSettings"];
+        post?: never;
+        /** Stop holding anything back, sending everything to the backlog */
+        delete: operations["deleteTeamTriageSettings"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/saved-views": {
         parameters: {
             query?: never;
@@ -1900,7 +2010,7 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
@@ -2093,7 +2203,7 @@ export interface components {
             actorAccountId?: string;
             actorName?: string;
             /** @enum {string} */
-            kind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed";
+            kind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged";
             fromState?: string;
             toState?: string;
             field?: string;
@@ -2158,6 +2268,13 @@ export interface components {
             title: string;
             /** Format: uuid */
             createdByAccountId?: string;
+            triageState?: components["schemas"]["TriageState"];
+            triageSource?: components["schemas"]["TriageSource"];
+            /** Format: uuid */
+            triageDecidedByAccountId?: string;
+            triageDecidedByName?: string;
+            /** Format: date-time */
+            triageDecidedAt?: string;
             /** Format: date-time */
             createdAt: string;
         };
@@ -2168,6 +2285,49 @@ export interface components {
             category: components["schemas"]["StateCategory"];
             /** Format: int32 */
             position: number;
+        };
+        /**
+         * @description Absent when the issue never went through triage.
+         * @enum {string}
+         */
+        TriageState: "waiting" | "accepted" | "declined" | "merged";
+        /**
+         * @description Who filed it, as the routing rules see them.
+         * @enum {string}
+         */
+        TriageSource: "user" | "token" | "agent";
+        TriageQueue: {
+            issues: components["schemas"]["Issue"][];
+            nextCursor?: string;
+            /** @description How many are waiting on each team, within the caller's own visibility */
+            teams: components["schemas"]["IssueGroupTally"][];
+        };
+        TriageSettings: {
+            /** Format: uuid */
+            teamId: string;
+            routeAgents: boolean;
+            routeIntegrations: boolean;
+            /** @description Hold issues filed by someone who is not on this team */
+            routeNonMembers: boolean;
+        };
+        SetTriageSettingsRequest: {
+            routeAgents: boolean;
+            routeIntegrations: boolean;
+            routeNonMembers: boolean;
+        };
+        MergeTriageIssueRequest: {
+            /**
+             * Format: uuid
+             * @description The issue that survives; this one is recorded as duplicating it
+             */
+            duplicateOfId: string;
+        };
+        ReassignTriageIssueRequest: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: int32 */
+            expectedVersion: number;
+            acknowledgeLabelLoss?: boolean;
         };
         /** @enum {string} */
         SavedViewSharing: "personal" | "team" | "workspace";
@@ -5065,6 +5225,247 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceTriage: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The waiting issues, and how many are waiting per team */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TriageQueue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    acceptWorkspaceTriageIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The issue, now part of the team's work */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    declineWorkspaceTriageIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The issue, now closed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    mergeWorkspaceTriageIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeTriageIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue, now recorded as a duplicate and closed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    reassignWorkspaceTriageIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReassignTriageIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue, now the other team's to decide about */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getTeamTriageSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team's triage rules */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TriageSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            /** @description The team does not triage incoming issues */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            500: components["responses"]["Problem"];
+        };
+    };
+    setTeamTriageSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTriageSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description The team's triage rules as they now stand */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TriageSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteTeamTriageSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Everything filed into this team now goes straight to its backlog */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

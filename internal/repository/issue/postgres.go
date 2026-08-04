@@ -41,6 +41,11 @@ const issueColumns = `
        coalesce(i.project_id::text, ''),
        coalesce(pr.name, ''),
        coalesce(i.created_by_account_id::text, ''),
+       coalesce(i.triage_state, ''),
+       coalesce(i.triage_source, ''),
+       coalesce(i.triage_decided_by_account_id::text, ''),
+       coalesce(td.display_name, ''),
+       i.triage_decided_at,
        i.created_at,
        i.updated_at,
        t.key,
@@ -56,7 +61,8 @@ JOIN workspace_teams t ON t.id = i.team_id
 JOIN workspace_workflow_states s ON s.id = i.state_id AND s.team_id = i.team_id
 LEFT JOIN workspace_issues p ON p.id = i.parent_issue_id
 LEFT JOIN workspace_cycles c ON c.id = i.cycle_id
-LEFT JOIN workspace_projects pr ON pr.id = i.project_id`
+LEFT JOIN workspace_projects pr ON pr.id = i.project_id
+LEFT JOIN accounts td ON td.id = i.triage_decided_by_account_id`
 
 const visibleIssueQuery = `
 SELECT` + issueColumns + issueJoins + `
@@ -81,9 +87,12 @@ WITH allocated AS (
 ), inserted AS (
     INSERT INTO workspace_issues (
         id, workspace_id, team_id, reference_key, number, title, state_id,
-        created_by_account_id, created_at, updated_at
+        created_by_account_id, description, priority, assignee_account_id,
+        estimate, due_on, triage_state, triage_source, created_at, updated_at
     )
-    SELECT $1, $2, $3, t.key, allocated.number, $4, $5, $6, $7, $7
+    SELECT $1, $2, $3, t.key, allocated.number, $4, $5, $6,
+           $8, $9, nullif($10, '')::uuid, nullif($11, 0), nullif($12, '')::date,
+           nullif($13, ''), nullif($14, ''), $7, $7
     FROM allocated
     JOIN workspace_teams t ON t.id = $3
     RETURNING id, workspace_id, team_id, reference_key, number, title, state_id,
@@ -91,7 +100,8 @@ WITH allocated AS (
               estimate, due_on, state_entered_at, completed_at,
               status, archived_at,
               parent_issue_id, depth, cycle_id, project_id,
-              created_by_account_id, created_at, updated_at
+              created_by_account_id, triage_state, triage_source,
+              triage_decided_by_account_id, triage_decided_at, created_at, updated_at
 )
 SELECT` + issueColumns + `
 FROM inserted i
@@ -99,7 +109,8 @@ JOIN workspace_teams t ON t.id = i.team_id
 JOIN workspace_workflow_states s ON s.id = i.state_id AND s.team_id = i.team_id
 LEFT JOIN workspace_issues p ON p.id = i.parent_issue_id
 LEFT JOIN workspace_cycles c ON c.id = i.cycle_id
-LEFT JOIN workspace_projects pr ON pr.id = i.project_id`
+LEFT JOIN workspace_projects pr ON pr.id = i.project_id
+LEFT JOIN accounts td ON td.id = i.triage_decided_by_account_id`
 
 const lockIssueQuery = `
 SELECT` + issueColumns + issueJoins + `
@@ -294,6 +305,7 @@ WHERE i.workspace_id = $1
   AND ($8::boolean IS NOT TRUE OR i.cycle_id = $9::uuid)
   AND ($10::boolean IS NOT TRUE OR i.project_id = $11::uuid)
   AND i.status = 'active'
+  AND i.triage_state IS DISTINCT FROM 'waiting'
 GROUP BY i.parent_issue_id, s.category`
 
 const issueLabelsQuery = `
@@ -356,6 +368,11 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		completedAt   sql.NullTime
 		archivedAt    sql.NullTime
 		fieldVersions []byte
+
+		triageState   string
+		triageSource  string
+		triageDecider string
+		triageAt      sql.NullTime
 	)
 
 	if err := row.Scan(
@@ -383,6 +400,11 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		&project,
 		&issue.ProjectName,
 		&createdBy,
+		&triageState,
+		&triageSource,
+		&triageDecider,
+		&issue.TriageDecidedName,
+		&triageAt,
 		&issue.CreatedAt,
 		&issue.UpdatedAt,
 		&issue.TeamKey,
@@ -398,6 +420,13 @@ func scanIssue(row scanner) (entity.Issue, error) {
 	issue.State.Category = entity.StateCategory(category)
 	issue.Priority = entity.IssuePriority(priority)
 	issue.Status = entity.IssueStatus(status)
+	issue.TriageState = entity.TriageState(triageState)
+	issue.TriageSource = entity.ActorKind(triageSource)
+
+	if triageAt.Valid {
+		decided := triageAt.Time
+		issue.TriageDecidedAt = &decided
+	}
 
 	if archivedAt.Valid {
 		shelved := archivedAt.Time
@@ -441,6 +470,12 @@ func scanIssue(row scanner) (entity.Issue, error) {
 	if createdBy != "" {
 		if issue.CreatedByAccountID, err = uuid.Parse(createdBy); err != nil {
 			return entity.Issue{}, fmt.Errorf("parse issue author id: %w", err)
+		}
+	}
+
+	if triageDecider != "" {
+		if issue.TriageDecidedBy, err = uuid.Parse(triageDecider); err != nil {
+			return entity.Issue{}, fmt.Errorf("parse triage decider id: %w", err)
 		}
 	}
 
@@ -491,6 +526,14 @@ func teamIDs(scope entity.TeamScope) []string {
 	return ids
 }
 
+func text(id uuid.UUID) string {
+	if id == uuid.Nil {
+		return ""
+	}
+
+	return id.String()
+}
+
 func (r *issueRepository) Create(ctx context.Context, issue entity.Issue) (entity.Issue, error) {
 	if issue.ID == uuid.Nil {
 		issue.ID = uuid.New()
@@ -514,6 +557,13 @@ func (r *issueRepository) Create(ctx context.Context, issue entity.Issue) (entit
 		issue.State.ID.String(),
 		author,
 		now,
+		issue.Description,
+		string(issue.Priority),
+		text(issue.AssigneeAccountID),
+		issue.Estimate,
+		issue.DueOn,
+		string(issue.TriageState),
+		string(issue.TriageSource),
 	))
 	if err != nil {
 		if translated := translateWriteError(err); !errors.Is(translated, err) {

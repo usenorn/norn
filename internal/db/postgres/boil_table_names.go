@@ -37,6 +37,7 @@ var TableNames = struct {
 	WorkspaceSsoIdentities        string
 	WorkspaceTeamCycleCadences    string
 	WorkspaceTeamMembers          string
+	WorkspaceTeamTriageSettings   string
 	WorkspaceTeams                string
 	WorkspaceWorkflowStates       string
 	Workspaces                    string
@@ -74,6 +75,7 @@ var TableNames = struct {
 	WorkspaceSsoIdentities:        "workspace_sso_identities",
 	WorkspaceTeamCycleCadences:    "workspace_team_cycle_cadences",
 	WorkspaceTeamMembers:          "workspace_team_members",
+	WorkspaceTeamTriageSettings:   "workspace_team_triage_settings",
 	WorkspaceTeams:                "workspace_teams",
 	WorkspaceWorkflowStates:       "workspace_workflow_states",
 	Workspaces:                    "workspaces",

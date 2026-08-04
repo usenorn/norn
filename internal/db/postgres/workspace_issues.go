@@ -25,223 +25,253 @@ import (
 
 // WorkspaceIssue is an object representing the database table.
 type WorkspaceIssue struct {
-	ID                  string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID         string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	TeamID              string      `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
-	Number              int         `boil:"number" json:"number" toml:"number" yaml:"number"`
-	Title               string      `boil:"title" json:"title" toml:"title" yaml:"title"`
-	CreatedByAccountID  null.String `boil:"created_by_account_id" json:"created_by_account_id,omitempty" toml:"created_by_account_id" yaml:"created_by_account_id,omitempty"`
-	CreatedAt           time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt           time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	StateID             string      `boil:"state_id" json:"state_id" toml:"state_id" yaml:"state_id"`
-	ReferenceKey        string      `boil:"reference_key" json:"reference_key" toml:"reference_key" yaml:"reference_key"`
-	Version             int         `boil:"version" json:"version" toml:"version" yaml:"version"`
-	FieldVersions       types.JSON  `boil:"field_versions" json:"field_versions" toml:"field_versions" yaml:"field_versions"`
-	Description         string      `boil:"description" json:"description" toml:"description" yaml:"description"`
-	Priority            string      `boil:"priority" json:"priority" toml:"priority" yaml:"priority"`
-	AssigneeAccountID   null.String `boil:"assignee_account_id" json:"assignee_account_id,omitempty" toml:"assignee_account_id" yaml:"assignee_account_id,omitempty"`
-	Estimate            null.Int    `boil:"estimate" json:"estimate,omitempty" toml:"estimate" yaml:"estimate,omitempty"`
-	DueOn               null.Time   `boil:"due_on" json:"due_on,omitempty" toml:"due_on" yaml:"due_on,omitempty"`
-	StateEnteredAt      time.Time   `boil:"state_entered_at" json:"state_entered_at" toml:"state_entered_at" yaml:"state_entered_at"`
-	CompletedAt         null.Time   `boil:"completed_at" json:"completed_at,omitempty" toml:"completed_at" yaml:"completed_at,omitempty"`
-	Status              string      `boil:"status" json:"status" toml:"status" yaml:"status"`
-	ArchivedAt          null.Time   `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
-	DeletionRequestedAt null.Time   `boil:"deletion_requested_at" json:"deletion_requested_at,omitempty" toml:"deletion_requested_at" yaml:"deletion_requested_at,omitempty"`
-	PurgeAfter          null.Time   `boil:"purge_after" json:"purge_after,omitempty" toml:"purge_after" yaml:"purge_after,omitempty"`
-	ParentIssueID       null.String `boil:"parent_issue_id" json:"parent_issue_id,omitempty" toml:"parent_issue_id" yaml:"parent_issue_id,omitempty"`
-	Depth               int         `boil:"depth" json:"depth" toml:"depth" yaml:"depth"`
-	CycleID             null.String `boil:"cycle_id" json:"cycle_id,omitempty" toml:"cycle_id" yaml:"cycle_id,omitempty"`
-	ProjectID           null.String `boil:"project_id" json:"project_id,omitempty" toml:"project_id" yaml:"project_id,omitempty"`
+	ID                       string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID              string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	TeamID                   string      `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
+	Number                   int         `boil:"number" json:"number" toml:"number" yaml:"number"`
+	Title                    string      `boil:"title" json:"title" toml:"title" yaml:"title"`
+	CreatedByAccountID       null.String `boil:"created_by_account_id" json:"created_by_account_id,omitempty" toml:"created_by_account_id" yaml:"created_by_account_id,omitempty"`
+	CreatedAt                time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt                time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	StateID                  string      `boil:"state_id" json:"state_id" toml:"state_id" yaml:"state_id"`
+	ReferenceKey             string      `boil:"reference_key" json:"reference_key" toml:"reference_key" yaml:"reference_key"`
+	Version                  int         `boil:"version" json:"version" toml:"version" yaml:"version"`
+	FieldVersions            types.JSON  `boil:"field_versions" json:"field_versions" toml:"field_versions" yaml:"field_versions"`
+	Description              string      `boil:"description" json:"description" toml:"description" yaml:"description"`
+	Priority                 string      `boil:"priority" json:"priority" toml:"priority" yaml:"priority"`
+	AssigneeAccountID        null.String `boil:"assignee_account_id" json:"assignee_account_id,omitempty" toml:"assignee_account_id" yaml:"assignee_account_id,omitempty"`
+	Estimate                 null.Int    `boil:"estimate" json:"estimate,omitempty" toml:"estimate" yaml:"estimate,omitempty"`
+	DueOn                    null.Time   `boil:"due_on" json:"due_on,omitempty" toml:"due_on" yaml:"due_on,omitempty"`
+	StateEnteredAt           time.Time   `boil:"state_entered_at" json:"state_entered_at" toml:"state_entered_at" yaml:"state_entered_at"`
+	CompletedAt              null.Time   `boil:"completed_at" json:"completed_at,omitempty" toml:"completed_at" yaml:"completed_at,omitempty"`
+	Status                   string      `boil:"status" json:"status" toml:"status" yaml:"status"`
+	ArchivedAt               null.Time   `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
+	DeletionRequestedAt      null.Time   `boil:"deletion_requested_at" json:"deletion_requested_at,omitempty" toml:"deletion_requested_at" yaml:"deletion_requested_at,omitempty"`
+	PurgeAfter               null.Time   `boil:"purge_after" json:"purge_after,omitempty" toml:"purge_after" yaml:"purge_after,omitempty"`
+	ParentIssueID            null.String `boil:"parent_issue_id" json:"parent_issue_id,omitempty" toml:"parent_issue_id" yaml:"parent_issue_id,omitempty"`
+	Depth                    int         `boil:"depth" json:"depth" toml:"depth" yaml:"depth"`
+	CycleID                  null.String `boil:"cycle_id" json:"cycle_id,omitempty" toml:"cycle_id" yaml:"cycle_id,omitempty"`
+	ProjectID                null.String `boil:"project_id" json:"project_id,omitempty" toml:"project_id" yaml:"project_id,omitempty"`
+	TriageState              null.String `boil:"triage_state" json:"triage_state,omitempty" toml:"triage_state" yaml:"triage_state,omitempty"`
+	TriageSource             null.String `boil:"triage_source" json:"triage_source,omitempty" toml:"triage_source" yaml:"triage_source,omitempty"`
+	TriageDecidedByAccountID null.String `boil:"triage_decided_by_account_id" json:"triage_decided_by_account_id,omitempty" toml:"triage_decided_by_account_id" yaml:"triage_decided_by_account_id,omitempty"`
+	TriageDecidedAt          null.Time   `boil:"triage_decided_at" json:"triage_decided_at,omitempty" toml:"triage_decided_at" yaml:"triage_decided_at,omitempty"`
 
 	R *workspaceIssueR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceIssueColumns = struct {
-	ID                  string
-	WorkspaceID         string
-	TeamID              string
-	Number              string
-	Title               string
-	CreatedByAccountID  string
-	CreatedAt           string
-	UpdatedAt           string
-	StateID             string
-	ReferenceKey        string
-	Version             string
-	FieldVersions       string
-	Description         string
-	Priority            string
-	AssigneeAccountID   string
-	Estimate            string
-	DueOn               string
-	StateEnteredAt      string
-	CompletedAt         string
-	Status              string
-	ArchivedAt          string
-	DeletionRequestedAt string
-	PurgeAfter          string
-	ParentIssueID       string
-	Depth               string
-	CycleID             string
-	ProjectID           string
+	ID                       string
+	WorkspaceID              string
+	TeamID                   string
+	Number                   string
+	Title                    string
+	CreatedByAccountID       string
+	CreatedAt                string
+	UpdatedAt                string
+	StateID                  string
+	ReferenceKey             string
+	Version                  string
+	FieldVersions            string
+	Description              string
+	Priority                 string
+	AssigneeAccountID        string
+	Estimate                 string
+	DueOn                    string
+	StateEnteredAt           string
+	CompletedAt              string
+	Status                   string
+	ArchivedAt               string
+	DeletionRequestedAt      string
+	PurgeAfter               string
+	ParentIssueID            string
+	Depth                    string
+	CycleID                  string
+	ProjectID                string
+	TriageState              string
+	TriageSource             string
+	TriageDecidedByAccountID string
+	TriageDecidedAt          string
 }{
-	ID:                  "id",
-	WorkspaceID:         "workspace_id",
-	TeamID:              "team_id",
-	Number:              "number",
-	Title:               "title",
-	CreatedByAccountID:  "created_by_account_id",
-	CreatedAt:           "created_at",
-	UpdatedAt:           "updated_at",
-	StateID:             "state_id",
-	ReferenceKey:        "reference_key",
-	Version:             "version",
-	FieldVersions:       "field_versions",
-	Description:         "description",
-	Priority:            "priority",
-	AssigneeAccountID:   "assignee_account_id",
-	Estimate:            "estimate",
-	DueOn:               "due_on",
-	StateEnteredAt:      "state_entered_at",
-	CompletedAt:         "completed_at",
-	Status:              "status",
-	ArchivedAt:          "archived_at",
-	DeletionRequestedAt: "deletion_requested_at",
-	PurgeAfter:          "purge_after",
-	ParentIssueID:       "parent_issue_id",
-	Depth:               "depth",
-	CycleID:             "cycle_id",
-	ProjectID:           "project_id",
+	ID:                       "id",
+	WorkspaceID:              "workspace_id",
+	TeamID:                   "team_id",
+	Number:                   "number",
+	Title:                    "title",
+	CreatedByAccountID:       "created_by_account_id",
+	CreatedAt:                "created_at",
+	UpdatedAt:                "updated_at",
+	StateID:                  "state_id",
+	ReferenceKey:             "reference_key",
+	Version:                  "version",
+	FieldVersions:            "field_versions",
+	Description:              "description",
+	Priority:                 "priority",
+	AssigneeAccountID:        "assignee_account_id",
+	Estimate:                 "estimate",
+	DueOn:                    "due_on",
+	StateEnteredAt:           "state_entered_at",
+	CompletedAt:              "completed_at",
+	Status:                   "status",
+	ArchivedAt:               "archived_at",
+	DeletionRequestedAt:      "deletion_requested_at",
+	PurgeAfter:               "purge_after",
+	ParentIssueID:            "parent_issue_id",
+	Depth:                    "depth",
+	CycleID:                  "cycle_id",
+	ProjectID:                "project_id",
+	TriageState:              "triage_state",
+	TriageSource:             "triage_source",
+	TriageDecidedByAccountID: "triage_decided_by_account_id",
+	TriageDecidedAt:          "triage_decided_at",
 }
 
 var WorkspaceIssueTableColumns = struct {
-	ID                  string
-	WorkspaceID         string
-	TeamID              string
-	Number              string
-	Title               string
-	CreatedByAccountID  string
-	CreatedAt           string
-	UpdatedAt           string
-	StateID             string
-	ReferenceKey        string
-	Version             string
-	FieldVersions       string
-	Description         string
-	Priority            string
-	AssigneeAccountID   string
-	Estimate            string
-	DueOn               string
-	StateEnteredAt      string
-	CompletedAt         string
-	Status              string
-	ArchivedAt          string
-	DeletionRequestedAt string
-	PurgeAfter          string
-	ParentIssueID       string
-	Depth               string
-	CycleID             string
-	ProjectID           string
+	ID                       string
+	WorkspaceID              string
+	TeamID                   string
+	Number                   string
+	Title                    string
+	CreatedByAccountID       string
+	CreatedAt                string
+	UpdatedAt                string
+	StateID                  string
+	ReferenceKey             string
+	Version                  string
+	FieldVersions            string
+	Description              string
+	Priority                 string
+	AssigneeAccountID        string
+	Estimate                 string
+	DueOn                    string
+	StateEnteredAt           string
+	CompletedAt              string
+	Status                   string
+	ArchivedAt               string
+	DeletionRequestedAt      string
+	PurgeAfter               string
+	ParentIssueID            string
+	Depth                    string
+	CycleID                  string
+	ProjectID                string
+	TriageState              string
+	TriageSource             string
+	TriageDecidedByAccountID string
+	TriageDecidedAt          string
 }{
-	ID:                  "workspace_issues.id",
-	WorkspaceID:         "workspace_issues.workspace_id",
-	TeamID:              "workspace_issues.team_id",
-	Number:              "workspace_issues.number",
-	Title:               "workspace_issues.title",
-	CreatedByAccountID:  "workspace_issues.created_by_account_id",
-	CreatedAt:           "workspace_issues.created_at",
-	UpdatedAt:           "workspace_issues.updated_at",
-	StateID:             "workspace_issues.state_id",
-	ReferenceKey:        "workspace_issues.reference_key",
-	Version:             "workspace_issues.version",
-	FieldVersions:       "workspace_issues.field_versions",
-	Description:         "workspace_issues.description",
-	Priority:            "workspace_issues.priority",
-	AssigneeAccountID:   "workspace_issues.assignee_account_id",
-	Estimate:            "workspace_issues.estimate",
-	DueOn:               "workspace_issues.due_on",
-	StateEnteredAt:      "workspace_issues.state_entered_at",
-	CompletedAt:         "workspace_issues.completed_at",
-	Status:              "workspace_issues.status",
-	ArchivedAt:          "workspace_issues.archived_at",
-	DeletionRequestedAt: "workspace_issues.deletion_requested_at",
-	PurgeAfter:          "workspace_issues.purge_after",
-	ParentIssueID:       "workspace_issues.parent_issue_id",
-	Depth:               "workspace_issues.depth",
-	CycleID:             "workspace_issues.cycle_id",
-	ProjectID:           "workspace_issues.project_id",
+	ID:                       "workspace_issues.id",
+	WorkspaceID:              "workspace_issues.workspace_id",
+	TeamID:                   "workspace_issues.team_id",
+	Number:                   "workspace_issues.number",
+	Title:                    "workspace_issues.title",
+	CreatedByAccountID:       "workspace_issues.created_by_account_id",
+	CreatedAt:                "workspace_issues.created_at",
+	UpdatedAt:                "workspace_issues.updated_at",
+	StateID:                  "workspace_issues.state_id",
+	ReferenceKey:             "workspace_issues.reference_key",
+	Version:                  "workspace_issues.version",
+	FieldVersions:            "workspace_issues.field_versions",
+	Description:              "workspace_issues.description",
+	Priority:                 "workspace_issues.priority",
+	AssigneeAccountID:        "workspace_issues.assignee_account_id",
+	Estimate:                 "workspace_issues.estimate",
+	DueOn:                    "workspace_issues.due_on",
+	StateEnteredAt:           "workspace_issues.state_entered_at",
+	CompletedAt:              "workspace_issues.completed_at",
+	Status:                   "workspace_issues.status",
+	ArchivedAt:               "workspace_issues.archived_at",
+	DeletionRequestedAt:      "workspace_issues.deletion_requested_at",
+	PurgeAfter:               "workspace_issues.purge_after",
+	ParentIssueID:            "workspace_issues.parent_issue_id",
+	Depth:                    "workspace_issues.depth",
+	CycleID:                  "workspace_issues.cycle_id",
+	ProjectID:                "workspace_issues.project_id",
+	TriageState:              "workspace_issues.triage_state",
+	TriageSource:             "workspace_issues.triage_source",
+	TriageDecidedByAccountID: "workspace_issues.triage_decided_by_account_id",
+	TriageDecidedAt:          "workspace_issues.triage_decided_at",
 }
 
 // Generated where
 
 var WorkspaceIssueWhere = struct {
-	ID                  whereHelperstring
-	WorkspaceID         whereHelperstring
-	TeamID              whereHelperstring
-	Number              whereHelperint
-	Title               whereHelperstring
-	CreatedByAccountID  whereHelpernull_String
-	CreatedAt           whereHelpertime_Time
-	UpdatedAt           whereHelpertime_Time
-	StateID             whereHelperstring
-	ReferenceKey        whereHelperstring
-	Version             whereHelperint
-	FieldVersions       whereHelpertypes_JSON
-	Description         whereHelperstring
-	Priority            whereHelperstring
-	AssigneeAccountID   whereHelpernull_String
-	Estimate            whereHelpernull_Int
-	DueOn               whereHelpernull_Time
-	StateEnteredAt      whereHelpertime_Time
-	CompletedAt         whereHelpernull_Time
-	Status              whereHelperstring
-	ArchivedAt          whereHelpernull_Time
-	DeletionRequestedAt whereHelpernull_Time
-	PurgeAfter          whereHelpernull_Time
-	ParentIssueID       whereHelpernull_String
-	Depth               whereHelperint
-	CycleID             whereHelpernull_String
-	ProjectID           whereHelpernull_String
+	ID                       whereHelperstring
+	WorkspaceID              whereHelperstring
+	TeamID                   whereHelperstring
+	Number                   whereHelperint
+	Title                    whereHelperstring
+	CreatedByAccountID       whereHelpernull_String
+	CreatedAt                whereHelpertime_Time
+	UpdatedAt                whereHelpertime_Time
+	StateID                  whereHelperstring
+	ReferenceKey             whereHelperstring
+	Version                  whereHelperint
+	FieldVersions            whereHelpertypes_JSON
+	Description              whereHelperstring
+	Priority                 whereHelperstring
+	AssigneeAccountID        whereHelpernull_String
+	Estimate                 whereHelpernull_Int
+	DueOn                    whereHelpernull_Time
+	StateEnteredAt           whereHelpertime_Time
+	CompletedAt              whereHelpernull_Time
+	Status                   whereHelperstring
+	ArchivedAt               whereHelpernull_Time
+	DeletionRequestedAt      whereHelpernull_Time
+	PurgeAfter               whereHelpernull_Time
+	ParentIssueID            whereHelpernull_String
+	Depth                    whereHelperint
+	CycleID                  whereHelpernull_String
+	ProjectID                whereHelpernull_String
+	TriageState              whereHelpernull_String
+	TriageSource             whereHelpernull_String
+	TriageDecidedByAccountID whereHelpernull_String
+	TriageDecidedAt          whereHelpernull_Time
 }{
-	ID:                  whereHelperstring{field: "\"workspace_issues\".\"id\""},
-	WorkspaceID:         whereHelperstring{field: "\"workspace_issues\".\"workspace_id\""},
-	TeamID:              whereHelperstring{field: "\"workspace_issues\".\"team_id\""},
-	Number:              whereHelperint{field: "\"workspace_issues\".\"number\""},
-	Title:               whereHelperstring{field: "\"workspace_issues\".\"title\""},
-	CreatedByAccountID:  whereHelpernull_String{field: "\"workspace_issues\".\"created_by_account_id\""},
-	CreatedAt:           whereHelpertime_Time{field: "\"workspace_issues\".\"created_at\""},
-	UpdatedAt:           whereHelpertime_Time{field: "\"workspace_issues\".\"updated_at\""},
-	StateID:             whereHelperstring{field: "\"workspace_issues\".\"state_id\""},
-	ReferenceKey:        whereHelperstring{field: "\"workspace_issues\".\"reference_key\""},
-	Version:             whereHelperint{field: "\"workspace_issues\".\"version\""},
-	FieldVersions:       whereHelpertypes_JSON{field: "\"workspace_issues\".\"field_versions\""},
-	Description:         whereHelperstring{field: "\"workspace_issues\".\"description\""},
-	Priority:            whereHelperstring{field: "\"workspace_issues\".\"priority\""},
-	AssigneeAccountID:   whereHelpernull_String{field: "\"workspace_issues\".\"assignee_account_id\""},
-	Estimate:            whereHelpernull_Int{field: "\"workspace_issues\".\"estimate\""},
-	DueOn:               whereHelpernull_Time{field: "\"workspace_issues\".\"due_on\""},
-	StateEnteredAt:      whereHelpertime_Time{field: "\"workspace_issues\".\"state_entered_at\""},
-	CompletedAt:         whereHelpernull_Time{field: "\"workspace_issues\".\"completed_at\""},
-	Status:              whereHelperstring{field: "\"workspace_issues\".\"status\""},
-	ArchivedAt:          whereHelpernull_Time{field: "\"workspace_issues\".\"archived_at\""},
-	DeletionRequestedAt: whereHelpernull_Time{field: "\"workspace_issues\".\"deletion_requested_at\""},
-	PurgeAfter:          whereHelpernull_Time{field: "\"workspace_issues\".\"purge_after\""},
-	ParentIssueID:       whereHelpernull_String{field: "\"workspace_issues\".\"parent_issue_id\""},
-	Depth:               whereHelperint{field: "\"workspace_issues\".\"depth\""},
-	CycleID:             whereHelpernull_String{field: "\"workspace_issues\".\"cycle_id\""},
-	ProjectID:           whereHelpernull_String{field: "\"workspace_issues\".\"project_id\""},
+	ID:                       whereHelperstring{field: "\"workspace_issues\".\"id\""},
+	WorkspaceID:              whereHelperstring{field: "\"workspace_issues\".\"workspace_id\""},
+	TeamID:                   whereHelperstring{field: "\"workspace_issues\".\"team_id\""},
+	Number:                   whereHelperint{field: "\"workspace_issues\".\"number\""},
+	Title:                    whereHelperstring{field: "\"workspace_issues\".\"title\""},
+	CreatedByAccountID:       whereHelpernull_String{field: "\"workspace_issues\".\"created_by_account_id\""},
+	CreatedAt:                whereHelpertime_Time{field: "\"workspace_issues\".\"created_at\""},
+	UpdatedAt:                whereHelpertime_Time{field: "\"workspace_issues\".\"updated_at\""},
+	StateID:                  whereHelperstring{field: "\"workspace_issues\".\"state_id\""},
+	ReferenceKey:             whereHelperstring{field: "\"workspace_issues\".\"reference_key\""},
+	Version:                  whereHelperint{field: "\"workspace_issues\".\"version\""},
+	FieldVersions:            whereHelpertypes_JSON{field: "\"workspace_issues\".\"field_versions\""},
+	Description:              whereHelperstring{field: "\"workspace_issues\".\"description\""},
+	Priority:                 whereHelperstring{field: "\"workspace_issues\".\"priority\""},
+	AssigneeAccountID:        whereHelpernull_String{field: "\"workspace_issues\".\"assignee_account_id\""},
+	Estimate:                 whereHelpernull_Int{field: "\"workspace_issues\".\"estimate\""},
+	DueOn:                    whereHelpernull_Time{field: "\"workspace_issues\".\"due_on\""},
+	StateEnteredAt:           whereHelpertime_Time{field: "\"workspace_issues\".\"state_entered_at\""},
+	CompletedAt:              whereHelpernull_Time{field: "\"workspace_issues\".\"completed_at\""},
+	Status:                   whereHelperstring{field: "\"workspace_issues\".\"status\""},
+	ArchivedAt:               whereHelpernull_Time{field: "\"workspace_issues\".\"archived_at\""},
+	DeletionRequestedAt:      whereHelpernull_Time{field: "\"workspace_issues\".\"deletion_requested_at\""},
+	PurgeAfter:               whereHelpernull_Time{field: "\"workspace_issues\".\"purge_after\""},
+	ParentIssueID:            whereHelpernull_String{field: "\"workspace_issues\".\"parent_issue_id\""},
+	Depth:                    whereHelperint{field: "\"workspace_issues\".\"depth\""},
+	CycleID:                  whereHelpernull_String{field: "\"workspace_issues\".\"cycle_id\""},
+	ProjectID:                whereHelpernull_String{field: "\"workspace_issues\".\"project_id\""},
+	TriageState:              whereHelpernull_String{field: "\"workspace_issues\".\"triage_state\""},
+	TriageSource:             whereHelpernull_String{field: "\"workspace_issues\".\"triage_source\""},
+	TriageDecidedByAccountID: whereHelpernull_String{field: "\"workspace_issues\".\"triage_decided_by_account_id\""},
+	TriageDecidedAt:          whereHelpernull_Time{field: "\"workspace_issues\".\"triage_decided_at\""},
 }
 
 // WorkspaceIssueRels is where relationship names are stored.
 var WorkspaceIssueRels = struct {
 	AssigneeAccount                 string
 	CreatedByAccount                string
+	TriageDecidedByAccount          string
 	IssueWorkspaceCycleScopeChanges string
 	IssueWorkspaceIssueActivities   string
 }{
 	AssigneeAccount:                 "AssigneeAccount",
 	CreatedByAccount:                "CreatedByAccount",
+	TriageDecidedByAccount:          "TriageDecidedByAccount",
 	IssueWorkspaceCycleScopeChanges: "IssueWorkspaceCycleScopeChanges",
 	IssueWorkspaceIssueActivities:   "IssueWorkspaceIssueActivities",
 }
@@ -250,6 +280,7 @@ var WorkspaceIssueRels = struct {
 type workspaceIssueR struct {
 	AssigneeAccount                 *Account                       `boil:"AssigneeAccount" json:"AssigneeAccount" toml:"AssigneeAccount" yaml:"AssigneeAccount"`
 	CreatedByAccount                *Account                       `boil:"CreatedByAccount" json:"CreatedByAccount" toml:"CreatedByAccount" yaml:"CreatedByAccount"`
+	TriageDecidedByAccount          *Account                       `boil:"TriageDecidedByAccount" json:"TriageDecidedByAccount" toml:"TriageDecidedByAccount" yaml:"TriageDecidedByAccount"`
 	IssueWorkspaceCycleScopeChanges WorkspaceCycleScopeChangeSlice `boil:"IssueWorkspaceCycleScopeChanges" json:"IssueWorkspaceCycleScopeChanges" toml:"IssueWorkspaceCycleScopeChanges" yaml:"IssueWorkspaceCycleScopeChanges"`
 	IssueWorkspaceIssueActivities   WorkspaceIssueActivitySlice    `boil:"IssueWorkspaceIssueActivities" json:"IssueWorkspaceIssueActivities" toml:"IssueWorkspaceIssueActivities" yaml:"IssueWorkspaceIssueActivities"`
 }
@@ -291,6 +322,22 @@ func (r *workspaceIssueR) GetCreatedByAccount() *Account {
 	return r.CreatedByAccount
 }
 
+func (o *WorkspaceIssue) GetTriageDecidedByAccount() *Account {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetTriageDecidedByAccount()
+}
+
+func (r *workspaceIssueR) GetTriageDecidedByAccount() *Account {
+	if r == nil {
+		return nil
+	}
+
+	return r.TriageDecidedByAccount
+}
+
 func (o *WorkspaceIssue) GetIssueWorkspaceCycleScopeChanges() WorkspaceCycleScopeChangeSlice {
 	if o == nil {
 		return nil
@@ -327,9 +374,9 @@ func (r *workspaceIssueR) GetIssueWorkspaceIssueActivities() WorkspaceIssueActiv
 type workspaceIssueL struct{}
 
 var (
-	workspaceIssueAllColumns            = []string{"id", "workspace_id", "team_id", "number", "title", "created_by_account_id", "created_at", "updated_at", "state_id", "reference_key", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id"}
+	workspaceIssueAllColumns            = []string{"id", "workspace_id", "team_id", "number", "title", "created_by_account_id", "created_at", "updated_at", "state_id", "reference_key", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at"}
 	workspaceIssueColumnsWithoutDefault = []string{"workspace_id", "team_id", "number", "title", "state_id", "reference_key"}
-	workspaceIssueColumnsWithDefault    = []string{"id", "created_by_account_id", "created_at", "updated_at", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id"}
+	workspaceIssueColumnsWithDefault    = []string{"id", "created_by_account_id", "created_at", "updated_at", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at"}
 	workspaceIssuePrimaryKeyColumns     = []string{"id"}
 	workspaceIssueGeneratedColumns      = []string{}
 )
@@ -661,6 +708,17 @@ func (o *WorkspaceIssue) CreatedByAccount(mods ...qm.QueryMod) accountQuery {
 	return Accounts(queryMods...)
 }
 
+// TriageDecidedByAccount pointed to by the foreign key.
+func (o *WorkspaceIssue) TriageDecidedByAccount(mods ...qm.QueryMod) accountQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.TriageDecidedByAccountID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Accounts(queryMods...)
+}
+
 // IssueWorkspaceCycleScopeChanges retrieves all the workspace_cycle_scope_change's WorkspaceCycleScopeChanges with an executor via issue_id column.
 func (o *WorkspaceIssue) IssueWorkspaceCycleScopeChanges(mods ...qm.QueryMod) workspaceCycleScopeChangeQuery {
 	var queryMods []qm.QueryMod
@@ -929,6 +987,130 @@ func (workspaceIssueL) LoadCreatedByAccount(ctx context.Context, e boil.ContextE
 					foreign.R = &accountR{}
 				}
 				foreign.R.CreatedByAccountWorkspaceIssues = append(foreign.R.CreatedByAccountWorkspaceIssues, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTriageDecidedByAccount allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceIssueL) LoadTriageDecidedByAccount(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssue any, mods queries.Applicator) error {
+	var slice []*WorkspaceIssue
+	var object *WorkspaceIssue
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceIssue.(*WorkspaceIssue)
+		if !ok {
+			object = new(WorkspaceIssue)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssue)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssue))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceIssue.(*[]*WorkspaceIssue)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssue)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssue))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceIssueR{}
+		}
+		if !queries.IsNil(object.TriageDecidedByAccountID) {
+			args[object.TriageDecidedByAccountID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceIssueR{}
+			}
+
+			if !queries.IsNil(obj.TriageDecidedByAccountID) {
+				args[obj.TriageDecidedByAccountID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`accounts`),
+		qm.WhereIn(`accounts.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Account")
+	}
+
+	var resultSlice []*Account
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Account")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for accounts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for accounts")
+	}
+
+	if len(accountAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.TriageDecidedByAccount = foreign
+		if foreign.R == nil {
+			foreign.R = &accountR{}
+		}
+		foreign.R.TriageDecidedByAccountWorkspaceIssues = append(foreign.R.TriageDecidedByAccountWorkspaceIssues, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.TriageDecidedByAccountID, foreign.ID) {
+				local.R.TriageDecidedByAccount = foreign
+				if foreign.R == nil {
+					foreign.R = &accountR{}
+				}
+				foreign.R.TriageDecidedByAccountWorkspaceIssues = append(foreign.R.TriageDecidedByAccountWorkspaceIssues, local)
 				break
 			}
 		}
@@ -1318,6 +1500,86 @@ func (o *WorkspaceIssue) RemoveCreatedByAccount(ctx context.Context, exec boil.C
 			related.R.CreatedByAccountWorkspaceIssues[i] = related.R.CreatedByAccountWorkspaceIssues[ln-1]
 		}
 		related.R.CreatedByAccountWorkspaceIssues = related.R.CreatedByAccountWorkspaceIssues[:ln-1]
+		break
+	}
+	return nil
+}
+
+// SetTriageDecidedByAccount of the workspaceIssue to the related item.
+// Sets o.R.TriageDecidedByAccount to related.
+// Adds o to related.R.TriageDecidedByAccountWorkspaceIssues.
+func (o *WorkspaceIssue) SetTriageDecidedByAccount(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Account) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_issues\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"triage_decided_by_account_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceIssuePrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.TriageDecidedByAccountID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceIssueR{
+			TriageDecidedByAccount: related,
+		}
+	} else {
+		o.R.TriageDecidedByAccount = related
+	}
+
+	if related.R == nil {
+		related.R = &accountR{
+			TriageDecidedByAccountWorkspaceIssues: WorkspaceIssueSlice{o},
+		}
+	} else {
+		related.R.TriageDecidedByAccountWorkspaceIssues = append(related.R.TriageDecidedByAccountWorkspaceIssues, o)
+	}
+
+	return nil
+}
+
+// RemoveTriageDecidedByAccount relationship.
+// Sets o.R.TriageDecidedByAccount to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceIssue) RemoveTriageDecidedByAccount(ctx context.Context, exec boil.ContextExecutor, related *Account) error {
+	var err error
+
+	queries.SetScanner(&o.TriageDecidedByAccountID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("triage_decided_by_account_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.TriageDecidedByAccount = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.TriageDecidedByAccountWorkspaceIssues {
+		if queries.Equal(o.TriageDecidedByAccountID, ri.TriageDecidedByAccountID) {
+			continue
+		}
+
+		ln := len(related.R.TriageDecidedByAccountWorkspaceIssues)
+		if ln > 1 && i < ln-1 {
+			related.R.TriageDecidedByAccountWorkspaceIssues[i] = related.R.TriageDecidedByAccountWorkspaceIssues[ln-1]
+		}
+		related.R.TriageDecidedByAccountWorkspaceIssues = related.R.TriageDecidedByAccountWorkspaceIssues[:ln-1]
 		break
 	}
 	return nil

@@ -86,11 +86,33 @@ func (h *handler) CreateWorkspaceIssue(
 	ctx context.Context,
 	request api.CreateWorkspaceIssueRequestObject,
 ) (api.CreateWorkspaceIssueResponseObject, error) {
-	issue, err := h.issues.Create(ctx, service.CreateIssueInput{
+	input := service.CreateIssueInput{
 		WorkspaceID: request.WorkspaceId,
 		TeamID:      request.Body.TeamId,
 		Title:       request.Body.Title,
-	})
+	}
+
+	if request.Body.Description != nil {
+		input.Description = *request.Body.Description
+	}
+
+	if request.Body.Priority != nil {
+		input.Priority = entity.IssuePriority(*request.Body.Priority)
+	}
+
+	if request.Body.AssigneeId != nil {
+		input.AssigneeAccountID = *request.Body.AssigneeId
+	}
+
+	if request.Body.Estimate != nil {
+		input.Estimate = int(*request.Body.Estimate)
+	}
+
+	if request.Body.DueOn != nil {
+		input.DueOn = request.Body.DueOn.Format(time.DateOnly)
+	}
+
+	issue, err := h.issues.Create(ctx, input)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil

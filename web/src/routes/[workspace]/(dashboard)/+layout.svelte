@@ -49,7 +49,7 @@
 	const search = $derived(page.url.searchParams);
 	const current = $derived((href: string) => isCurrent(pathname, search, href));
 
-	const nav = $derived(primaryNav(slug));
+	const nav = $derived(primaryNav(slug, data.waiting));
 	const views = $derived(viewEntries(slug, data.views ?? []));
 	const tabs = $derived(mobileNav(slug));
 

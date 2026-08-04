@@ -20,7 +20,9 @@ import (
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
+	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
+	triagerepo "github.com/usenorn/norn/internal/repository/triage"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -36,6 +38,8 @@ type harness struct {
 	cycles      *cyclerepo.MockCycle
 	scope       *cyclerepo.MockCycleScopeChange
 	projects    *projectrepo.MockProject
+	teams       *teamrepo.MockTeam
+	triage      *triagerepo.MockTriage
 	jobs        *jobqueuerepo.MockJobProducer
 	transactor  *transactorrepo.MockTransactor
 	authorizer  *authorizersvc.MockAuthorizer
@@ -56,6 +60,8 @@ func newHarness(t *testing.T) *harness {
 		cycles:      cyclerepo.NewMockCycle(ctrl),
 		scope:       cyclerepo.NewMockCycleScopeChange(ctrl),
 		projects:    projectrepo.NewMockProject(ctrl),
+		teams:       teamrepo.NewMockTeam(ctrl),
+		triage:      triagerepo.NewMockTriage(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
@@ -70,8 +76,13 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = issuesvc.New(
 		h.issues, h.states, h.activity, h.labels, h.memberships,
-		h.cycles, h.scope, h.projects, h.jobs, h.authorizer, h.transactor,
+		h.cycles, h.scope, h.projects, h.teams, h.triage, h.jobs, h.authorizer, h.transactor,
 	)
+
+	h.triage.EXPECT().
+		Settings(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(entity.TriageSettings{}, entity.ErrTriageDisabled).
+		AnyTimes()
 
 	return h
 }

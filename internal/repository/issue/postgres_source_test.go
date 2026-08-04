@@ -80,3 +80,13 @@ func topLevelCommas(columns string) int {
 
 	return commas
 }
+
+func TestProgressLeavesOutWorkNobodyHasDecidedOn(t *testing.T) {
+	if !strings.Contains(progressQuery, "i.triage_state IS DISTINCT FROM 'waiting'") {
+		t.Fatal(
+			"the progress tally counts issues still waiting in triage. A team watching its " +
+				"progress bar move because an integration filed four things overnight is exactly " +
+				"the untrustworthy count triage exists to remove.",
+		)
+	}
+}

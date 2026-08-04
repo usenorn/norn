@@ -57,6 +57,7 @@ import (
 	ssoidentityrepo "github.com/usenorn/norn/internal/repository/ssoidentity"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
+	triagerepo "github.com/usenorn/norn/internal/repository/triage"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	workspaceauthpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
@@ -75,6 +76,7 @@ import (
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
+	triagesvc "github.com/usenorn/norn/internal/service/triage"
 	workflowstatesvc "github.com/usenorn/norn/internal/service/workflowstate"
 	workspacesvc "github.com/usenorn/norn/internal/service/workspace"
 )
@@ -116,6 +118,7 @@ var baseSet = wire.NewSet(
 	cyclerepo.Set,
 	projectrepo.Set,
 	savedviewrepo.Set,
+	triagerepo.Set,
 	issuefilterreferencerepo.Set,
 	labelrepo.Set,
 	labelgrouprepo.Set,
@@ -145,6 +148,7 @@ var baseSet = wire.NewSet(
 	cyclesvc.Set,
 	projectsvc.Set,
 	savedviewsvc.Set,
+	triagesvc.Set,
 	labelsvc.Set,
 	workflowstatesvc.Set,
 	apitokensvc.Set,

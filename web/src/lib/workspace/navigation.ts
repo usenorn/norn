@@ -18,19 +18,18 @@ export function workspacePath(workspace: string, path = ""): string {
 	return `/${workspace}${path}`;
 }
 
-export function primaryNav(workspace: string): NavEntry[] {
+export function primaryNav(workspace: string, waiting = 0): NavEntry[] {
 	const at = (path: string) => workspacePath(workspace, path);
 	return [
-		{ label: "Inbox", href: at("/inbox"), icon: Inbox, count: 4 },
-		{ label: "My tasks", href: at("/my-tasks"), icon: CircleDot, count: 10 },
+		{ label: "Inbox", href: at("/inbox"), icon: Inbox },
+		{ label: "My tasks", href: at("/my-tasks"), icon: CircleDot },
 		{
 			label: "Reviews",
 			href: at("/reviews"),
 			icon: CircleDot,
 			iconClass: "text-status-active",
-			count: 3,
 		},
-		{ label: "Triage", href: at("/triage"), icon: Zap, count: 12 },
+		{ label: "Triage", href: at("/triage"), icon: Zap, count: waiting || undefined },
 		{ label: "Issues", href: at("/issues"), icon: List },
 	];
 }

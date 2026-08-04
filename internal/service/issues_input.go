@@ -7,9 +7,14 @@ import (
 )
 
 type CreateIssueInput struct {
-	WorkspaceID uuid.UUID
-	TeamID      uuid.UUID
-	Title       string
+	WorkspaceID       uuid.UUID
+	TeamID            uuid.UUID
+	Title             string
+	Description       string
+	Priority          entity.IssuePriority
+	AssigneeAccountID uuid.UUID
+	Estimate          int
+	DueOn             string
 }
 
 type ListIssuesInput struct {

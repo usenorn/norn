@@ -490,6 +490,7 @@ const (
 	IssueActivityKindRestored        IssueActivityKind = "restored"
 	IssueActivityKindStateChanged    IssueActivityKind = "state_changed"
 	IssueActivityKindTeamMoved       IssueActivityKind = "team_moved"
+	IssueActivityKindTriaged         IssueActivityKind = "triaged"
 	IssueActivityKindUnarchived      IssueActivityKind = "unarchived"
 )
 
@@ -518,6 +519,8 @@ func (e IssueActivityKind) Valid() bool {
 		return true
 	case IssueActivityKindTeamMoved:
 		return true
+	case IssueActivityKindTriaged:
+		return true
 	case IssueActivityKindUnarchived:
 		return true
 	default:
@@ -533,6 +536,7 @@ const (
 	IssueConflictProblemCodeIssueChildrenOpen         IssueConflictProblemCode = "issue_children_open"
 	IssueConflictProblemCodeIssueDestinationIncapable IssueConflictProblemCode = "issue_destination_incapable"
 	IssueConflictProblemCodeIssueLabelsOutOfScope     IssueConflictProblemCode = "issue_labels_out_of_scope"
+	IssueConflictProblemCodeIssueNotWaiting           IssueConflictProblemCode = "issue_not_waiting"
 	IssueConflictProblemCodeIssueParentCycle          IssueConflictProblemCode = "issue_parent_cycle"
 	IssueConflictProblemCodeIssueParentNotActive      IssueConflictProblemCode = "issue_parent_not_active"
 	IssueConflictProblemCodeIssueParentTooDeep        IssueConflictProblemCode = "issue_parent_too_deep"
@@ -559,6 +563,8 @@ func (e IssueConflictProblemCode) Valid() bool {
 	case IssueConflictProblemCodeIssueDestinationIncapable:
 		return true
 	case IssueConflictProblemCodeIssueLabelsOutOfScope:
+		return true
+	case IssueConflictProblemCodeIssueNotWaiting:
 		return true
 	case IssueConflictProblemCodeIssueParentCycle:
 		return true
@@ -1443,6 +1449,51 @@ func (e TeamVisibility) Valid() bool {
 	}
 }
 
+// Defines values for TriageSource.
+const (
+	Agent TriageSource = "agent"
+	Token TriageSource = "token"
+	User  TriageSource = "user"
+)
+
+// Valid indicates whether the value is a known member of the TriageSource enum.
+func (e TriageSource) Valid() bool {
+	switch e {
+	case Agent:
+		return true
+	case Token:
+		return true
+	case User:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TriageState.
+const (
+	TriageStateAccepted TriageState = "accepted"
+	TriageStateDeclined TriageState = "declined"
+	TriageStateMerged   TriageState = "merged"
+	TriageStateWaiting  TriageState = "waiting"
+)
+
+// Valid indicates whether the value is a known member of the TriageState enum.
+func (e TriageState) Valid() bool {
+	switch e {
+	case TriageStateAccepted:
+		return true
+	case TriageStateDeclined:
+		return true
+	case TriageStateMerged:
+		return true
+	case TriageStateWaiting:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for UpdateIssueRequestClear.
 const (
 	UpdateIssueRequestClearAssignee UpdateIssueRequestClear = "assignee"
@@ -2083,37 +2134,46 @@ type InvitationWorkspace struct {
 
 // Issue defines model for Issue.
 type Issue struct {
-	ArchivedAt         *time.Time          `json:"archivedAt,omitempty"`
-	AssigneeAccountId  *openapi_types.UUID `json:"assigneeAccountId,omitempty"`
-	Blocked            *bool               `json:"blocked,omitempty"`
-	ChildProgress      *IssueProgress      `json:"childProgress,omitempty"`
-	CompletedAt        *time.Time          `json:"completedAt,omitempty"`
-	CreatedAt          time.Time           `json:"createdAt"`
-	CreatedByAccountId *openapi_types.UUID `json:"createdByAccountId,omitempty"`
-	CycleId            *openapi_types.UUID `json:"cycleId,omitempty"`
-	CycleNumber        *int32              `json:"cycleNumber,omitempty"`
-	Depth              *int32              `json:"depth,omitempty"`
-	Description        string              `json:"description"`
-	DueOn              *openapi_types.Date `json:"dueOn,omitempty"`
-	Estimate           *int32              `json:"estimate,omitempty"`
-	Id                 openapi_types.UUID  `json:"id"`
-	Labels             []Label             `json:"labels"`
-	Number             int32               `json:"number"`
-	ParentId           *openapi_types.UUID `json:"parentId,omitempty"`
-	ParentReference    *string             `json:"parentReference,omitempty"`
-	Priority           IssuePriority       `json:"priority"`
-	ProjectId          *openapi_types.UUID `json:"projectId,omitempty"`
-	ProjectName        *string             `json:"projectName,omitempty"`
-	Reference          string              `json:"reference"`
-	ReferenceKey       string              `json:"referenceKey"`
-	State              IssueState          `json:"state"`
-	StateEnteredAt     time.Time           `json:"stateEnteredAt"`
-	Status             IssueStatus         `json:"status"`
-	TeamId             openapi_types.UUID  `json:"teamId"`
-	TeamKey            string              `json:"teamKey"`
-	Title              string              `json:"title"`
-	Version            int32               `json:"version"`
-	WorkspaceId        openapi_types.UUID  `json:"workspaceId"`
+	ArchivedAt               *time.Time          `json:"archivedAt,omitempty"`
+	AssigneeAccountId        *openapi_types.UUID `json:"assigneeAccountId,omitempty"`
+	Blocked                  *bool               `json:"blocked,omitempty"`
+	ChildProgress            *IssueProgress      `json:"childProgress,omitempty"`
+	CompletedAt              *time.Time          `json:"completedAt,omitempty"`
+	CreatedAt                time.Time           `json:"createdAt"`
+	CreatedByAccountId       *openapi_types.UUID `json:"createdByAccountId,omitempty"`
+	CycleId                  *openapi_types.UUID `json:"cycleId,omitempty"`
+	CycleNumber              *int32              `json:"cycleNumber,omitempty"`
+	Depth                    *int32              `json:"depth,omitempty"`
+	Description              string              `json:"description"`
+	DueOn                    *openapi_types.Date `json:"dueOn,omitempty"`
+	Estimate                 *int32              `json:"estimate,omitempty"`
+	Id                       openapi_types.UUID  `json:"id"`
+	Labels                   []Label             `json:"labels"`
+	Number                   int32               `json:"number"`
+	ParentId                 *openapi_types.UUID `json:"parentId,omitempty"`
+	ParentReference          *string             `json:"parentReference,omitempty"`
+	Priority                 IssuePriority       `json:"priority"`
+	ProjectId                *openapi_types.UUID `json:"projectId,omitempty"`
+	ProjectName              *string             `json:"projectName,omitempty"`
+	Reference                string              `json:"reference"`
+	ReferenceKey             string              `json:"referenceKey"`
+	State                    IssueState          `json:"state"`
+	StateEnteredAt           time.Time           `json:"stateEnteredAt"`
+	Status                   IssueStatus         `json:"status"`
+	TeamId                   openapi_types.UUID  `json:"teamId"`
+	TeamKey                  string              `json:"teamKey"`
+	Title                    string              `json:"title"`
+	TriageDecidedAt          *time.Time          `json:"triageDecidedAt,omitempty"`
+	TriageDecidedByAccountId *openapi_types.UUID `json:"triageDecidedByAccountId,omitempty"`
+	TriageDecidedByName      *string             `json:"triageDecidedByName,omitempty"`
+
+	// TriageSource Who filed it, as the routing rules see them.
+	TriageSource *TriageSource `json:"triageSource,omitempty"`
+
+	// TriageState Absent when the issue never went through triage.
+	TriageState *TriageState       `json:"triageState,omitempty"`
+	Version     int32              `json:"version"`
+	WorkspaceId openapi_types.UUID `json:"workspaceId"`
 }
 
 // IssueActivity defines model for IssueActivity.
@@ -2411,6 +2471,12 @@ type MergeLabelRequest struct {
 	IntoLabelId openapi_types.UUID `json:"intoLabelId"`
 }
 
+// MergeTriageIssueRequest defines model for MergeTriageIssueRequest.
+type MergeTriageIssueRequest struct {
+	// DuplicateOfId The issue that survives; this one is recorded as duplicating it
+	DuplicateOfId openapi_types.UUID `json:"duplicateOfId"`
+}
+
 // MintAPITokenRequest defines model for MintAPITokenRequest.
 type MintAPITokenRequest struct {
 	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
@@ -2549,6 +2615,13 @@ type RateLimitedProblemCode string
 type ReadSamlMetadataRequest struct {
 	Metadata    *string `json:"metadata,omitempty"`
 	MetadataUrl *string `json:"metadataUrl,omitempty"`
+}
+
+// ReassignTriageIssueRequest defines model for ReassignTriageIssueRequest.
+type ReassignTriageIssueRequest struct {
+	AcknowledgeLabelLoss *bool              `json:"acknowledgeLabelLoss,omitempty"`
+	ExpectedVersion      int32              `json:"expectedVersion"`
+	TeamId               openapi_types.UUID `json:"teamId"`
 }
 
 // RedeemRecoveryCodeRequest defines model for RedeemRecoveryCodeRequest.
@@ -2734,6 +2807,13 @@ type SetPasswordRequest struct {
 	Password string `json:"password"`
 }
 
+// SetTriageSettingsRequest defines model for SetTriageSettingsRequest.
+type SetTriageSettingsRequest struct {
+	RouteAgents       bool `json:"routeAgents"`
+	RouteIntegrations bool `json:"routeIntegrations"`
+	RouteNonMembers   bool `json:"routeNonMembers"`
+}
+
 // SetWorkspaceAuthPolicyRequest defines model for SetWorkspaceAuthPolicyRequest.
 type SetWorkspaceAuthPolicyRequest struct {
 	Enforcement AuthEnforcement `json:"enforcement"`
@@ -2898,6 +2978,31 @@ type TeamStatus string
 
 // TeamVisibility defines model for TeamVisibility.
 type TeamVisibility string
+
+// TriageQueue defines model for TriageQueue.
+type TriageQueue struct {
+	Issues     []Issue `json:"issues"`
+	NextCursor *string `json:"nextCursor,omitempty"`
+
+	// Teams How many are waiting on each team, within the caller's own visibility
+	Teams []IssueGroupTally `json:"teams"`
+}
+
+// TriageSettings defines model for TriageSettings.
+type TriageSettings struct {
+	RouteAgents       bool `json:"routeAgents"`
+	RouteIntegrations bool `json:"routeIntegrations"`
+
+	// RouteNonMembers Hold issues filed by someone who is not on this team
+	RouteNonMembers bool               `json:"routeNonMembers"`
+	TeamId          openapi_types.UUID `json:"teamId"`
+}
+
+// TriageSource Who filed it, as the routing rules see them.
+type TriageSource string
+
+// TriageState Absent when the issue never went through triage.
+type TriageState string
 
 // UpdateIssueRequest defines model for UpdateIssueRequest.
 type UpdateIssueRequest struct {
@@ -3286,6 +3391,12 @@ type RemoveWorkflowStateParams struct {
 	ReplacementStateId openapi_types.UUID `form:"replacementStateId" json:"replacementStateId"`
 }
 
+// ListWorkspaceTriageParams defines parameters for ListWorkspaceTriage.
+type ListWorkspaceTriageParams struct {
+	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // ConfirmEmailChangeJSONRequestBody defines body for ConfirmEmailChange for application/json ContentType.
 type ConfirmEmailChangeJSONRequestBody = ConfirmEmailChangeRequest
 
@@ -3451,8 +3562,17 @@ type ReorderWorkflowStatesJSONRequestBody = ReorderWorkflowStatesRequest
 // UpdateWorkflowStateJSONRequestBody defines body for UpdateWorkflowState for application/json ContentType.
 type UpdateWorkflowStateJSONRequestBody = UpdateWorkflowStateRequest
 
+// SetTeamTriageSettingsJSONRequestBody defines body for SetTeamTriageSettings for application/json ContentType.
+type SetTeamTriageSettingsJSONRequestBody = SetTriageSettingsRequest
+
 // MintWorkspaceAPITokenJSONRequestBody defines body for MintWorkspaceAPIToken for application/json ContentType.
 type MintWorkspaceAPITokenJSONRequestBody = MintAPITokenRequest
+
+// MergeWorkspaceTriageIssueJSONRequestBody defines body for MergeWorkspaceTriageIssue for application/json ContentType.
+type MergeWorkspaceTriageIssueJSONRequestBody = MergeTriageIssueRequest
+
+// ReassignWorkspaceTriageIssueJSONRequestBody defines body for ReassignWorkspaceTriageIssue for application/json ContentType.
+type ReassignWorkspaceTriageIssueJSONRequestBody = ReassignTriageIssueRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -3834,6 +3954,15 @@ type ServerInterface interface {
 	// SetDefaultWorkflowState Make this the state new issues start in
 	// (POST /workspaces/{workspaceId}/teams/{teamId}/states/{stateId}/default)
 	SetDefaultWorkflowState(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId, stateId StateId)
+	// DeleteTeamTriageSettings Stop holding anything back, sending everything to the backlog
+	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/triage)
+	DeleteTeamTriageSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// GetTeamTriageSettings Read what a team holds back for review
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/triage)
+	GetTeamTriageSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// SetTeamTriageSettings Start holding incoming issues for review, or change what is held
+	// (PUT /workspaces/{workspaceId}/teams/{teamId}/triage)
+	SetTeamTriageSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
 	// UnarchiveWorkspaceTeam Return an archived team to active use
 	// (POST /workspaces/{workspaceId}/teams/{teamId}/unarchive)
 	UnarchiveWorkspaceTeam(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
@@ -3846,6 +3975,21 @@ type ServerInterface interface {
 	// RevokeWorkspaceAPIToken Revoke one of the caller's tokens
 	// (DELETE /workspaces/{workspaceId}/tokens/{tokenId})
 	RevokeWorkspaceAPIToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, tokenId TokenId)
+	// ListWorkspaceTriage What has arrived and nobody has decided about yet
+	// (GET /workspaces/{workspaceId}/triage)
+	ListWorkspaceTriage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceTriageParams)
+	// AcceptWorkspaceTriageIssue Let an issue through into the team's backlog
+	// (POST /workspaces/{workspaceId}/triage/{issueId}/accept)
+	AcceptWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// DeclineWorkspaceTriageIssue Turn an issue down, keeping it and who decided
+	// (POST /workspaces/{workspaceId}/triage/{issueId}/decline)
+	DeclineWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// MergeWorkspaceTriageIssue Fold an issue into one that already says the same thing
+	// (POST /workspaces/{workspaceId}/triage/{issueId}/merge)
+	MergeWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// ReassignWorkspaceTriageIssue Hand an issue to another team to decide about
+	// (POST /workspaces/{workspaceId}/triage/{issueId}/reassign)
+	ReassignWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -4608,6 +4752,24 @@ func (_ Unimplemented) SetDefaultWorkflowState(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// DeleteTeamTriageSettings Stop holding anything back, sending everything to the backlog
+// (DELETE /workspaces/{workspaceId}/teams/{teamId}/triage)
+func (_ Unimplemented) DeleteTeamTriageSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetTeamTriageSettings Read what a team holds back for review
+// (GET /workspaces/{workspaceId}/teams/{teamId}/triage)
+func (_ Unimplemented) GetTeamTriageSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetTeamTriageSettings Start holding incoming issues for review, or change what is held
+// (PUT /workspaces/{workspaceId}/teams/{teamId}/triage)
+func (_ Unimplemented) SetTeamTriageSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // UnarchiveWorkspaceTeam Return an archived team to active use
 // (POST /workspaces/{workspaceId}/teams/{teamId}/unarchive)
 func (_ Unimplemented) UnarchiveWorkspaceTeam(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
@@ -4629,6 +4791,36 @@ func (_ Unimplemented) MintWorkspaceAPIToken(w http.ResponseWriter, r *http.Requ
 // RevokeWorkspaceAPIToken Revoke one of the caller's tokens
 // (DELETE /workspaces/{workspaceId}/tokens/{tokenId})
 func (_ Unimplemented) RevokeWorkspaceAPIToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, tokenId TokenId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceTriage What has arrived and nobody has decided about yet
+// (GET /workspaces/{workspaceId}/triage)
+func (_ Unimplemented) ListWorkspaceTriage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceTriageParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AcceptWorkspaceTriageIssue Let an issue through into the team's backlog
+// (POST /workspaces/{workspaceId}/triage/{issueId}/accept)
+func (_ Unimplemented) AcceptWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeclineWorkspaceTriageIssue Turn an issue down, keeping it and who decided
+// (POST /workspaces/{workspaceId}/triage/{issueId}/decline)
+func (_ Unimplemented) DeclineWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MergeWorkspaceTriageIssue Fold an issue into one that already says the same thing
+// (POST /workspaces/{workspaceId}/triage/{issueId}/merge)
+func (_ Unimplemented) MergeWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReassignWorkspaceTriageIssue Hand an issue to another team to decide about
+// (POST /workspaces/{workspaceId}/triage/{issueId}/reassign)
+func (_ Unimplemented) ReassignWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8518,6 +8710,111 @@ func (siw *ServerInterfaceWrapper) SetDefaultWorkflowState(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteTeamTriageSettings operation middleware
+func (siw *ServerInterfaceWrapper) DeleteTeamTriageSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteTeamTriageSettings(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetTeamTriageSettings operation middleware
+func (siw *ServerInterfaceWrapper) GetTeamTriageSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetTeamTriageSettings(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetTeamTriageSettings operation middleware
+func (siw *ServerInterfaceWrapper) SetTeamTriageSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetTeamTriageSettings(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // UnarchiveWorkspaceTeam operation middleware
 func (siw *ServerInterfaceWrapper) UnarchiveWorkspaceTeam(w http.ResponseWriter, r *http.Request) {
 
@@ -8631,6 +8928,201 @@ func (siw *ServerInterfaceWrapper) RevokeWorkspaceAPIToken(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RevokeWorkspaceAPIToken(w, r, workspaceId, tokenId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceTriage operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceTriageParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceTriage(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AcceptWorkspaceTriageIssue operation middleware
+func (siw *ServerInterfaceWrapper) AcceptWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AcceptWorkspaceTriageIssue(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeclineWorkspaceTriageIssue operation middleware
+func (siw *ServerInterfaceWrapper) DeclineWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeclineWorkspaceTriageIssue(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MergeWorkspaceTriageIssue operation middleware
+func (siw *ServerInterfaceWrapper) MergeWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MergeWorkspaceTriageIssue(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReassignWorkspaceTriageIssue operation middleware
+func (siw *ServerInterfaceWrapper) ReassignWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReassignWorkspaceTriageIssue(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -8971,6 +9463,30 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues", wrapper.CreateWorkspaceIssue)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/triage", wrapper.ListWorkspaceTriage)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/triage/{issueId}/accept", wrapper.AcceptWorkspaceTriageIssue)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/triage/{issueId}/decline", wrapper.DeclineWorkspaceTriageIssue)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/triage/{issueId}/merge", wrapper.MergeWorkspaceTriageIssue)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/triage/{issueId}/reassign", wrapper.ReassignWorkspaceTriageIssue)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/triage", wrapper.DeleteTeamTriageSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/triage", wrapper.GetTeamTriageSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/triage", wrapper.SetTeamTriageSettings)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/saved-views", wrapper.ListWorkspaceSavedViews)
@@ -20339,6 +20855,258 @@ func (response SetDefaultWorkflowState500ApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type DeleteTeamTriageSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type DeleteTeamTriageSettingsResponseObject interface {
+	VisitDeleteTeamTriageSettingsResponse(w http.ResponseWriter) error
+}
+
+type DeleteTeamTriageSettings204Response struct {
+}
+
+func (response DeleteTeamTriageSettings204Response) VisitDeleteTeamTriageSettingsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteTeamTriageSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteTeamTriageSettings401ApplicationProblemPlusJSONResponse) VisitDeleteTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTeamTriageSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteTeamTriageSettings403ApplicationProblemPlusJSONResponse) VisitDeleteTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTeamTriageSettings404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteTeamTriageSettings404ApplicationProblemPlusJSONResponse) VisitDeleteTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTeamTriageSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteTeamTriageSettings500ApplicationProblemPlusJSONResponse) VisitDeleteTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamTriageSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type GetTeamTriageSettingsResponseObject interface {
+	VisitGetTeamTriageSettingsResponse(w http.ResponseWriter) error
+}
+
+type GetTeamTriageSettings200JSONResponse TriageSettings
+
+func (response GetTeamTriageSettings200JSONResponse) VisitGetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamTriageSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetTeamTriageSettings401ApplicationProblemPlusJSONResponse) VisitGetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamTriageSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetTeamTriageSettings403ApplicationProblemPlusJSONResponse) VisitGetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamTriageSettings404Response struct {
+}
+
+func (response GetTeamTriageSettings404Response) VisitGetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type GetTeamTriageSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetTeamTriageSettings500ApplicationProblemPlusJSONResponse) VisitGetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamTriageSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+	Body        *SetTeamTriageSettingsJSONRequestBody
+}
+
+type SetTeamTriageSettingsResponseObject interface {
+	VisitSetTeamTriageSettingsResponse(w http.ResponseWriter) error
+}
+
+type SetTeamTriageSettings200JSONResponse TriageSettings
+
+func (response SetTeamTriageSettings200JSONResponse) VisitSetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamTriageSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetTeamTriageSettings401ApplicationProblemPlusJSONResponse) VisitSetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamTriageSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetTeamTriageSettings403ApplicationProblemPlusJSONResponse) VisitSetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamTriageSettings404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamTriageSettings404ApplicationProblemPlusJSONResponse) VisitSetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamTriageSettings422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamTriageSettings422ApplicationProblemPlusJSONResponse) VisitSetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamTriageSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamTriageSettings500ApplicationProblemPlusJSONResponse) VisitSetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type UnarchiveWorkspaceTeamRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	TeamId      TeamId      `json:"teamId"`
@@ -20671,6 +21439,515 @@ func (response RevokeWorkspaceAPIToken404ApplicationProblemPlusJSONResponse) Vis
 type RevokeWorkspaceAPIToken500ApplicationProblemPlusJSONResponse Problem
 
 func (response RevokeWorkspaceAPIToken500ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceTriageRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceTriageParams
+}
+
+type ListWorkspaceTriageResponseObject interface {
+	VisitListWorkspaceTriageResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceTriage200JSONResponse TriageQueue
+
+func (response ListWorkspaceTriage200JSONResponse) VisitListWorkspaceTriageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceTriage401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceTriage401ApplicationProblemPlusJSONResponse) VisitListWorkspaceTriageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceTriage403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceTriage403ApplicationProblemPlusJSONResponse) VisitListWorkspaceTriageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceTriage422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceTriage422ApplicationProblemPlusJSONResponse) VisitListWorkspaceTriageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceTriage500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceTriage500ApplicationProblemPlusJSONResponse) VisitListWorkspaceTriageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptWorkspaceTriageIssueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type AcceptWorkspaceTriageIssueResponseObject interface {
+	VisitAcceptWorkspaceTriageIssueResponse(w http.ResponseWriter) error
+}
+
+type AcceptWorkspaceTriageIssue200JSONResponse Issue
+
+func (response AcceptWorkspaceTriageIssue200JSONResponse) VisitAcceptWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptWorkspaceTriageIssue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AcceptWorkspaceTriageIssue401ApplicationProblemPlusJSONResponse) VisitAcceptWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptWorkspaceTriageIssue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AcceptWorkspaceTriageIssue403ApplicationProblemPlusJSONResponse) VisitAcceptWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptWorkspaceTriageIssue404ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptWorkspaceTriageIssue404ApplicationProblemPlusJSONResponse) VisitAcceptWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptWorkspaceTriageIssue409ApplicationProblemPlusJSONResponse struct {
+	IssueConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AcceptWorkspaceTriageIssue409ApplicationProblemPlusJSONResponse) VisitAcceptWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptWorkspaceTriageIssue500ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptWorkspaceTriageIssue500ApplicationProblemPlusJSONResponse) VisitAcceptWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclineWorkspaceTriageIssueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type DeclineWorkspaceTriageIssueResponseObject interface {
+	VisitDeclineWorkspaceTriageIssueResponse(w http.ResponseWriter) error
+}
+
+type DeclineWorkspaceTriageIssue200JSONResponse Issue
+
+func (response DeclineWorkspaceTriageIssue200JSONResponse) VisitDeclineWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclineWorkspaceTriageIssue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeclineWorkspaceTriageIssue401ApplicationProblemPlusJSONResponse) VisitDeclineWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclineWorkspaceTriageIssue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeclineWorkspaceTriageIssue403ApplicationProblemPlusJSONResponse) VisitDeclineWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclineWorkspaceTriageIssue404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeclineWorkspaceTriageIssue404ApplicationProblemPlusJSONResponse) VisitDeclineWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclineWorkspaceTriageIssue409ApplicationProblemPlusJSONResponse struct {
+	IssueConflictApplicationProblemPlusJSONResponse
+}
+
+func (response DeclineWorkspaceTriageIssue409ApplicationProblemPlusJSONResponse) VisitDeclineWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclineWorkspaceTriageIssue500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeclineWorkspaceTriageIssue500ApplicationProblemPlusJSONResponse) VisitDeclineWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeWorkspaceTriageIssueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *MergeWorkspaceTriageIssueJSONRequestBody
+}
+
+type MergeWorkspaceTriageIssueResponseObject interface {
+	VisitMergeWorkspaceTriageIssueResponse(w http.ResponseWriter) error
+}
+
+type MergeWorkspaceTriageIssue200JSONResponse Issue
+
+func (response MergeWorkspaceTriageIssue200JSONResponse) VisitMergeWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeWorkspaceTriageIssue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MergeWorkspaceTriageIssue401ApplicationProblemPlusJSONResponse) VisitMergeWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeWorkspaceTriageIssue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response MergeWorkspaceTriageIssue403ApplicationProblemPlusJSONResponse) VisitMergeWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeWorkspaceTriageIssue404ApplicationProblemPlusJSONResponse Problem
+
+func (response MergeWorkspaceTriageIssue404ApplicationProblemPlusJSONResponse) VisitMergeWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeWorkspaceTriageIssue409ApplicationProblemPlusJSONResponse struct {
+	IssueConflictApplicationProblemPlusJSONResponse
+}
+
+func (response MergeWorkspaceTriageIssue409ApplicationProblemPlusJSONResponse) VisitMergeWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeWorkspaceTriageIssue422ApplicationProblemPlusJSONResponse Problem
+
+func (response MergeWorkspaceTriageIssue422ApplicationProblemPlusJSONResponse) VisitMergeWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeWorkspaceTriageIssue500ApplicationProblemPlusJSONResponse Problem
+
+func (response MergeWorkspaceTriageIssue500ApplicationProblemPlusJSONResponse) VisitMergeWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReassignWorkspaceTriageIssueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *ReassignWorkspaceTriageIssueJSONRequestBody
+}
+
+type ReassignWorkspaceTriageIssueResponseObject interface {
+	VisitReassignWorkspaceTriageIssueResponse(w http.ResponseWriter) error
+}
+
+type ReassignWorkspaceTriageIssue200JSONResponse Issue
+
+func (response ReassignWorkspaceTriageIssue200JSONResponse) VisitReassignWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReassignWorkspaceTriageIssue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReassignWorkspaceTriageIssue401ApplicationProblemPlusJSONResponse) VisitReassignWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReassignWorkspaceTriageIssue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ReassignWorkspaceTriageIssue403ApplicationProblemPlusJSONResponse) VisitReassignWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReassignWorkspaceTriageIssue404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReassignWorkspaceTriageIssue404ApplicationProblemPlusJSONResponse) VisitReassignWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReassignWorkspaceTriageIssue409ApplicationProblemPlusJSONResponse struct {
+	IssueConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ReassignWorkspaceTriageIssue409ApplicationProblemPlusJSONResponse) VisitReassignWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReassignWorkspaceTriageIssue422ApplicationProblemPlusJSONResponse Problem
+
+func (response ReassignWorkspaceTriageIssue422ApplicationProblemPlusJSONResponse) VisitReassignWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReassignWorkspaceTriageIssue500ApplicationProblemPlusJSONResponse Problem
+
+func (response ReassignWorkspaceTriageIssue500ApplicationProblemPlusJSONResponse) VisitReassignWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -21062,6 +22339,15 @@ type StrictServerInterface interface {
 	// SetDefaultWorkflowState Make this the state new issues start in
 	// (POST /workspaces/{workspaceId}/teams/{teamId}/states/{stateId}/default)
 	SetDefaultWorkflowState(ctx context.Context, request SetDefaultWorkflowStateRequestObject) (SetDefaultWorkflowStateResponseObject, error)
+	// DeleteTeamTriageSettings Stop holding anything back, sending everything to the backlog
+	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/triage)
+	DeleteTeamTriageSettings(ctx context.Context, request DeleteTeamTriageSettingsRequestObject) (DeleteTeamTriageSettingsResponseObject, error)
+	// GetTeamTriageSettings Read what a team holds back for review
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/triage)
+	GetTeamTriageSettings(ctx context.Context, request GetTeamTriageSettingsRequestObject) (GetTeamTriageSettingsResponseObject, error)
+	// SetTeamTriageSettings Start holding incoming issues for review, or change what is held
+	// (PUT /workspaces/{workspaceId}/teams/{teamId}/triage)
+	SetTeamTriageSettings(ctx context.Context, request SetTeamTriageSettingsRequestObject) (SetTeamTriageSettingsResponseObject, error)
 	// UnarchiveWorkspaceTeam Return an archived team to active use
 	// (POST /workspaces/{workspaceId}/teams/{teamId}/unarchive)
 	UnarchiveWorkspaceTeam(ctx context.Context, request UnarchiveWorkspaceTeamRequestObject) (UnarchiveWorkspaceTeamResponseObject, error)
@@ -21074,6 +22360,21 @@ type StrictServerInterface interface {
 	// RevokeWorkspaceAPIToken Revoke one of the caller's tokens
 	// (DELETE /workspaces/{workspaceId}/tokens/{tokenId})
 	RevokeWorkspaceAPIToken(ctx context.Context, request RevokeWorkspaceAPITokenRequestObject) (RevokeWorkspaceAPITokenResponseObject, error)
+	// ListWorkspaceTriage What has arrived and nobody has decided about yet
+	// (GET /workspaces/{workspaceId}/triage)
+	ListWorkspaceTriage(ctx context.Context, request ListWorkspaceTriageRequestObject) (ListWorkspaceTriageResponseObject, error)
+	// AcceptWorkspaceTriageIssue Let an issue through into the team's backlog
+	// (POST /workspaces/{workspaceId}/triage/{issueId}/accept)
+	AcceptWorkspaceTriageIssue(ctx context.Context, request AcceptWorkspaceTriageIssueRequestObject) (AcceptWorkspaceTriageIssueResponseObject, error)
+	// DeclineWorkspaceTriageIssue Turn an issue down, keeping it and who decided
+	// (POST /workspaces/{workspaceId}/triage/{issueId}/decline)
+	DeclineWorkspaceTriageIssue(ctx context.Context, request DeclineWorkspaceTriageIssueRequestObject) (DeclineWorkspaceTriageIssueResponseObject, error)
+	// MergeWorkspaceTriageIssue Fold an issue into one that already says the same thing
+	// (POST /workspaces/{workspaceId}/triage/{issueId}/merge)
+	MergeWorkspaceTriageIssue(ctx context.Context, request MergeWorkspaceTriageIssueRequestObject) (MergeWorkspaceTriageIssueResponseObject, error)
+	// ReassignWorkspaceTriageIssue Hand an issue to another team to decide about
+	// (POST /workspaces/{workspaceId}/triage/{issueId}/reassign)
+	ReassignWorkspaceTriageIssue(ctx context.Context, request ReassignWorkspaceTriageIssueRequestObject) (ReassignWorkspaceTriageIssueResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -24796,6 +26097,94 @@ func (sh *strictHandler) SetDefaultWorkflowState(w http.ResponseWriter, r *http.
 	}
 }
 
+// DeleteTeamTriageSettings operation middleware
+func (sh *strictHandler) DeleteTeamTriageSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request DeleteTeamTriageSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteTeamTriageSettings(ctx, request.(DeleteTeamTriageSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteTeamTriageSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteTeamTriageSettingsResponseObject); ok {
+		if err := validResponse.VisitDeleteTeamTriageSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetTeamTriageSettings operation middleware
+func (sh *strictHandler) GetTeamTriageSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request GetTeamTriageSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTeamTriageSettings(ctx, request.(GetTeamTriageSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTeamTriageSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetTeamTriageSettingsResponseObject); ok {
+		if err := validResponse.VisitGetTeamTriageSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetTeamTriageSettings operation middleware
+func (sh *strictHandler) SetTeamTriageSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request SetTeamTriageSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	var body SetTeamTriageSettingsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetTeamTriageSettings(ctx, request.(SetTeamTriageSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetTeamTriageSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetTeamTriageSettingsResponseObject); ok {
+		if err := validResponse.VisitSetTeamTriageSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // UnarchiveWorkspaceTeam operation middleware
 func (sh *strictHandler) UnarchiveWorkspaceTeam(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
 	var request UnarchiveWorkspaceTeamRequestObject
@@ -24902,6 +26291,155 @@ func (sh *strictHandler) RevokeWorkspaceAPIToken(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RevokeWorkspaceAPITokenResponseObject); ok {
 		if err := validResponse.VisitRevokeWorkspaceAPITokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceTriage operation middleware
+func (sh *strictHandler) ListWorkspaceTriage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceTriageParams) {
+	var request ListWorkspaceTriageRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceTriage(ctx, request.(ListWorkspaceTriageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceTriage")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceTriageResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceTriageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AcceptWorkspaceTriageIssue operation middleware
+func (sh *strictHandler) AcceptWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request AcceptWorkspaceTriageIssueRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AcceptWorkspaceTriageIssue(ctx, request.(AcceptWorkspaceTriageIssueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AcceptWorkspaceTriageIssue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AcceptWorkspaceTriageIssueResponseObject); ok {
+		if err := validResponse.VisitAcceptWorkspaceTriageIssueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeclineWorkspaceTriageIssue operation middleware
+func (sh *strictHandler) DeclineWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request DeclineWorkspaceTriageIssueRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeclineWorkspaceTriageIssue(ctx, request.(DeclineWorkspaceTriageIssueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeclineWorkspaceTriageIssue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeclineWorkspaceTriageIssueResponseObject); ok {
+		if err := validResponse.VisitDeclineWorkspaceTriageIssueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MergeWorkspaceTriageIssue operation middleware
+func (sh *strictHandler) MergeWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request MergeWorkspaceTriageIssueRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body MergeWorkspaceTriageIssueJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MergeWorkspaceTriageIssue(ctx, request.(MergeWorkspaceTriageIssueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MergeWorkspaceTriageIssue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MergeWorkspaceTriageIssueResponseObject); ok {
+		if err := validResponse.VisitMergeWorkspaceTriageIssueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReassignWorkspaceTriageIssue operation middleware
+func (sh *strictHandler) ReassignWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ReassignWorkspaceTriageIssueRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body ReassignWorkspaceTriageIssueJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReassignWorkspaceTriageIssue(ctx, request.(ReassignWorkspaceTriageIssueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReassignWorkspaceTriageIssue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReassignWorkspaceTriageIssueResponseObject); ok {
+		if err := validResponse.VisitReassignWorkspaceTriageIssueResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
