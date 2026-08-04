@@ -42,6 +42,20 @@ func (m *MockJobProducer) EXPECT() *MockJobProducerMockRecorder {
 	return m.recorder
 }
 
+// EnqueueBulkApply mocks base method.
+func (m *MockJobProducer) EnqueueBulkApply(ctx context.Context, payload entity.BulkApplyPayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueBulkApply", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueBulkApply indicates an expected call of EnqueueBulkApply.
+func (mr *MockJobProducerMockRecorder) EnqueueBulkApply(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueBulkApply", reflect.TypeOf((*MockJobProducer)(nil).EnqueueBulkApply), ctx, payload)
+}
+
 // EnqueueEmailChangeConfirmation mocks base method.
 func (m *MockJobProducer) EnqueueEmailChangeConfirmation(ctx context.Context, payload entity.EmailChangeConfirmationPayload) error {
 	m.ctrl.T.Helper()

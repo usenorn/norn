@@ -15,6 +15,7 @@ const (
 	TaskTypeInvitation              = "workspace:invitation"
 	TaskTypeWorkspacePurge          = "workspace:purge"
 	TaskTypeIssuePurge              = "issue:purge"
+	TaskTypeBulkApply               = "issue:bulk_apply"
 
 	QueueDefault = "default"
 	QueueMail    = "mail"
@@ -52,6 +53,13 @@ type WorkspacePurgePayload struct {
 
 type IssuePurgePayload struct {
 	IssueID uuid.UUID
+}
+
+type BulkApplyPayload struct {
+	BulkActionID uuid.UUID
+	WorkspaceID  uuid.UUID
+	IssueIDs     []uuid.UUID
+	Filter       *BulkFilter
 }
 
 type TaskState string

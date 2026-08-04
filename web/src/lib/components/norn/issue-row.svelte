@@ -18,6 +18,7 @@
 		timezone = "UTC",
 		cursor = false,
 		selected = false,
+		onselect,
 		draggable = false,
 		dragging = false,
 		ondragstart,
@@ -31,6 +32,7 @@
 		timezone?: string;
 		cursor?: boolean;
 		selected?: boolean;
+		onselect?: (extend: boolean) => void;
 		draggable?: boolean;
 		dragging?: boolean;
 		ondragstart?: (event: DragEvent) => void;
@@ -60,6 +62,12 @@
 <a
 	{href}
 	{draggable}
+	onclick={(event) => {
+		if (!onselect || !(event.metaKey || event.ctrlKey || event.shiftKey)) return;
+
+		event.preventDefault();
+		onselect(event.shiftKey);
+	}}
 	{ondragstart}
 	{ondragend}
 	data-cursor={cursor}

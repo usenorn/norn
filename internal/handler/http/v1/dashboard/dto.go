@@ -406,6 +406,35 @@ func issueRelationGroupDTOs(groups []entity.IssueRelationGroup) []api.IssueRelat
 	return dtos
 }
 
+func bulkResultDTO(
+	action entity.BulkAction,
+	outcomes []entity.BulkActionOutcome,
+) api.BulkActionResult {
+	dtos := make([]api.BulkActionOutcome, 0, len(outcomes))
+
+	for _, outcome := range outcomes {
+		dtos = append(dtos, api.BulkActionOutcome{
+			IssueId:   outcome.IssueID,
+			Reference: outcome.Reference,
+			Outcome:   api.BulkOutcome(outcome.Outcome),
+		})
+	}
+
+	dto := api.BulkActionResult{
+		Id:        action.ID,
+		Status:    api.BulkActionStatus(action.Status),
+		Processed: int32(action.Processed),
+		Outcomes:  dtos,
+	}
+
+	if action.Expected != nil {
+		expected := int32(*action.Expected)
+		dto.Expected = &expected
+	}
+
+	return dto
+}
+
 func issueDTOs(issues []entity.Issue) []api.Issue {
 	dtos := make([]api.Issue, 0, len(issues))
 
@@ -557,6 +586,11 @@ func issueActivityDTO(activity entity.IssueActivity) api.IssueActivity {
 	dto.Field = nilIfEmpty(activity.Field)
 	dto.FromValue = nilIfEmpty(activity.FromValue)
 	dto.ToValue = nilIfEmpty(activity.ToValue)
+
+	if activity.BulkActionID != uuid.Nil {
+		bulk := activity.BulkActionID
+		dto.BulkActionId = &bulk
+	}
 
 	if activity.Version > 0 {
 		version := int32(activity.Version)

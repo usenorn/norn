@@ -111,6 +111,60 @@ func (e BreachCheckUnavailableProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for BulkActionStatus.
+const (
+	BulkActionStatusComplete BulkActionStatus = "complete"
+	BulkActionStatusFailed   BulkActionStatus = "failed"
+	BulkActionStatusQueued   BulkActionStatus = "queued"
+	BulkActionStatusRunning  BulkActionStatus = "running"
+)
+
+// Valid indicates whether the value is a known member of the BulkActionStatus enum.
+func (e BulkActionStatus) Valid() bool {
+	switch e {
+	case BulkActionStatusComplete:
+		return true
+	case BulkActionStatusFailed:
+		return true
+	case BulkActionStatusQueued:
+		return true
+	case BulkActionStatusRunning:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BulkOutcome.
+const (
+	BulkOutcomeApplied   BulkOutcome = "applied"
+	BulkOutcomeConflict  BulkOutcome = "conflict"
+	BulkOutcomeForbidden BulkOutcome = "forbidden"
+	BulkOutcomeInvalid   BulkOutcome = "invalid"
+	BulkOutcomeNotFound  BulkOutcome = "not_found"
+	BulkOutcomeUnchanged BulkOutcome = "unchanged"
+)
+
+// Valid indicates whether the value is a known member of the BulkOutcome enum.
+func (e BulkOutcome) Valid() bool {
+	switch e {
+	case BulkOutcomeApplied:
+		return true
+	case BulkOutcomeConflict:
+		return true
+	case BulkOutcomeForbidden:
+		return true
+	case BulkOutcomeInvalid:
+		return true
+	case BulkOutcomeNotFound:
+		return true
+	case BulkOutcomeUnchanged:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ForbiddenProblemCode.
 const (
 	ForbiddenProblemCodeForbidden ForbiddenProblemCode = "forbidden"
@@ -1015,6 +1069,55 @@ type BreachCheckUnavailableProblem struct {
 // BreachCheckUnavailableProblemCode defines model for BreachCheckUnavailableProblem.Code.
 type BreachCheckUnavailableProblemCode string
 
+// BulkActionOutcome defines model for BulkActionOutcome.
+type BulkActionOutcome struct {
+	IssueId   openapi_types.UUID `json:"issueId"`
+	Outcome   BulkOutcome        `json:"outcome"`
+	Reference string             `json:"reference"`
+}
+
+// BulkActionResult defines model for BulkActionResult.
+type BulkActionResult struct {
+	// Expected Absent for a filter-defined set, whose size is not known in advance
+	Expected  *int32              `json:"expected,omitempty"`
+	Id        openapi_types.UUID  `json:"id"`
+	Outcomes  []BulkActionOutcome `json:"outcomes"`
+	Processed int32               `json:"processed"`
+	Status    BulkActionStatus    `json:"status"`
+}
+
+// BulkActionStatus defines model for BulkActionStatus.
+type BulkActionStatus string
+
+// BulkChange Exactly one lifecycle change, or any combination of property changes
+type BulkChange struct {
+	AddLabelId    *openapi_types.UUID `json:"addLabelId,omitempty"`
+	AssigneeId    *openapi_types.UUID `json:"assigneeId,omitempty"`
+	ClearAssignee *bool               `json:"clearAssignee,omitempty"`
+	Priority      *IssuePriority      `json:"priority,omitempty"`
+	StateId       *openapi_types.UUID `json:"stateId,omitempty"`
+	Status        *IssueStatus        `json:"status,omitempty"`
+}
+
+// BulkChangeRequest defines model for BulkChangeRequest.
+type BulkChangeRequest struct {
+	// Change Exactly one lifecycle change, or any combination of property changes
+	Change BulkChange `json:"change"`
+
+	// Filter The set is resolved when the action runs, with the caller's own visibility
+	Filter   *BulkFilter           `json:"filter,omitempty"`
+	IssueIds *[]openapi_types.UUID `json:"issueIds,omitempty"`
+}
+
+// BulkFilter The set is resolved when the action runs, with the caller's own visibility
+type BulkFilter struct {
+	Status *[]IssueStatus      `json:"status,omitempty"`
+	TeamId *openapi_types.UUID `json:"teamId,omitempty"`
+}
+
+// BulkOutcome defines model for BulkOutcome.
+type BulkOutcome string
+
 // ChangeMemberRoleRequest defines model for ChangeMemberRoleRequest.
 type ChangeMemberRoleRequest struct {
 	Role MembershipRole `json:"role"`
@@ -1286,6 +1389,7 @@ type Issue struct {
 type IssueActivity struct {
 	ActorAccountId *openapi_types.UUID `json:"actorAccountId,omitempty"`
 	ActorName      *string             `json:"actorName,omitempty"`
+	BulkActionId   *openapi_types.UUID `json:"bulkActionId,omitempty"`
 	CreatedAt      time.Time           `json:"createdAt"`
 	Field          *string             `json:"field,omitempty"`
 	FromState      *string             `json:"fromState,omitempty"`
@@ -2084,6 +2188,9 @@ type CreateWorkspaceInvitationsJSONRequestBody = CreateInvitationsRequest
 // CreateWorkspaceIssueJSONRequestBody defines body for CreateWorkspaceIssue for application/json ContentType.
 type CreateWorkspaceIssueJSONRequestBody = CreateIssueRequest
 
+// ApplyWorkspaceIssueBulkChangeJSONRequestBody defines body for ApplyWorkspaceIssueBulkChange for application/json ContentType.
+type ApplyWorkspaceIssueBulkChangeJSONRequestBody = BulkChangeRequest
+
 // UpdateWorkspaceIssueJSONRequestBody defines body for UpdateWorkspaceIssue for application/json ContentType.
 type UpdateWorkspaceIssueJSONRequestBody = UpdateIssueRequest
 
@@ -2239,6 +2346,9 @@ type ServerInterface interface {
 	// SetWorkspaceAuthPolicy Set which authentication methods the workspace accepts
 	// (PUT /workspaces/{workspaceId}/auth-policy)
 	SetWorkspaceAuthPolicy(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceBulkAction Report how far a bulk action has got and what happened to each issue
+	// (GET /workspaces/{workspaceId}/bulk-actions/{bulkActionId})
+	GetWorkspaceBulkAction(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, bulkActionId openapi_types.UUID)
 	// ListWorkspaceInvitations List the workspace invitations administrators see beside members
 	// (GET /workspaces/{workspaceId}/invitations)
 	ListWorkspaceInvitations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceInvitationsParams)
@@ -2257,6 +2367,9 @@ type ServerInterface interface {
 	// CreateWorkspaceIssue Raise an issue in a team the caller can see
 	// (POST /workspaces/{workspaceId}/issues)
 	CreateWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ApplyWorkspaceIssueBulkChange Change many issues at once, reporting an outcome for each
+	// (POST /workspaces/{workspaceId}/issues/bulk)
+	ApplyWorkspaceIssueBulkChange(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// GetWorkspaceIssueByReference Read one issue by the reference people quote, such as MOB-14
 	// (GET /workspaces/{workspaceId}/issues/by-reference/{reference})
 	GetWorkspaceIssueByReference(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, reference string)
@@ -2593,6 +2706,12 @@ func (_ Unimplemented) SetWorkspaceAuthPolicy(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetWorkspaceBulkAction Report how far a bulk action has got and what happened to each issue
+// (GET /workspaces/{workspaceId}/bulk-actions/{bulkActionId})
+func (_ Unimplemented) GetWorkspaceBulkAction(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, bulkActionId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceInvitations List the workspace invitations administrators see beside members
 // (GET /workspaces/{workspaceId}/invitations)
 func (_ Unimplemented) ListWorkspaceInvitations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceInvitationsParams) {
@@ -2626,6 +2745,12 @@ func (_ Unimplemented) ListWorkspaceIssues(w http.ResponseWriter, r *http.Reques
 // CreateWorkspaceIssue Raise an issue in a team the caller can see
 // (POST /workspaces/{workspaceId}/issues)
 func (_ Unimplemented) CreateWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ApplyWorkspaceIssueBulkChange Change many issues at once, reporting an outcome for each
+// (POST /workspaces/{workspaceId}/issues/bulk)
+func (_ Unimplemented) ApplyWorkspaceIssueBulkChange(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3432,6 +3557,41 @@ func (siw *ServerInterfaceWrapper) SetWorkspaceAuthPolicy(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// GetWorkspaceBulkAction operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceBulkAction(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "bulkActionId" -------------
+	var bulkActionId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "bulkActionId", chi.URLParam(r, "bulkActionId"), &bulkActionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "bulkActionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceBulkAction(w, r, workspaceId, bulkActionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceInvitations operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceInvitations(w http.ResponseWriter, r *http.Request) {
 
@@ -3668,6 +3828,32 @@ func (siw *ServerInterfaceWrapper) CreateWorkspaceIssue(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateWorkspaceIssue(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ApplyWorkspaceIssueBulkChange operation middleware
+func (siw *ServerInterfaceWrapper) ApplyWorkspaceIssueBulkChange(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApplyWorkspaceIssueBulkChange(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5740,6 +5926,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/by-reference/{reference}", wrapper.GetWorkspaceIssueByReference)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/bulk", wrapper.ApplyWorkspaceIssueBulkChange)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/bulk-actions/{bulkActionId}", wrapper.GetWorkspaceBulkAction)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/activity", wrapper.ListWorkspaceIssueActivity)
@@ -8263,6 +8455,89 @@ func (response SetWorkspaceAuthPolicy500ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type GetWorkspaceBulkActionRequestObject struct {
+	WorkspaceId  WorkspaceId        `json:"workspaceId"`
+	BulkActionId openapi_types.UUID `json:"bulkActionId"`
+}
+
+type GetWorkspaceBulkActionResponseObject interface {
+	VisitGetWorkspaceBulkActionResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceBulkAction200JSONResponse BulkActionResult
+
+func (response GetWorkspaceBulkAction200JSONResponse) VisitGetWorkspaceBulkActionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceBulkAction401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceBulkAction401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceBulkActionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceBulkAction403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceBulkAction403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceBulkActionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceBulkAction404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceBulkAction404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceBulkActionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceBulkAction500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceBulkAction500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceBulkActionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceInvitationsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	Params      ListWorkspaceInvitationsParams
@@ -8786,6 +9061,103 @@ func (response CreateWorkspaceIssue422ApplicationProblemPlusJSONResponse) VisitC
 type CreateWorkspaceIssue500ApplicationProblemPlusJSONResponse Problem
 
 func (response CreateWorkspaceIssue500ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyWorkspaceIssueBulkChangeRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *ApplyWorkspaceIssueBulkChangeJSONRequestBody
+}
+
+type ApplyWorkspaceIssueBulkChangeResponseObject interface {
+	VisitApplyWorkspaceIssueBulkChangeResponse(w http.ResponseWriter) error
+}
+
+type ApplyWorkspaceIssueBulkChange200JSONResponse BulkActionResult
+
+func (response ApplyWorkspaceIssueBulkChange200JSONResponse) VisitApplyWorkspaceIssueBulkChangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyWorkspaceIssueBulkChange202JSONResponse BulkActionResult
+
+func (response ApplyWorkspaceIssueBulkChange202JSONResponse) VisitApplyWorkspaceIssueBulkChangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyWorkspaceIssueBulkChange401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ApplyWorkspaceIssueBulkChange401ApplicationProblemPlusJSONResponse) VisitApplyWorkspaceIssueBulkChangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyWorkspaceIssueBulkChange403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ApplyWorkspaceIssueBulkChange403ApplicationProblemPlusJSONResponse) VisitApplyWorkspaceIssueBulkChangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyWorkspaceIssueBulkChange422ApplicationProblemPlusJSONResponse Problem
+
+func (response ApplyWorkspaceIssueBulkChange422ApplicationProblemPlusJSONResponse) VisitApplyWorkspaceIssueBulkChangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyWorkspaceIssueBulkChange500ApplicationProblemPlusJSONResponse Problem
+
+func (response ApplyWorkspaceIssueBulkChange500ApplicationProblemPlusJSONResponse) VisitApplyWorkspaceIssueBulkChangeResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -13575,6 +13947,9 @@ type StrictServerInterface interface {
 	// SetWorkspaceAuthPolicy Set which authentication methods the workspace accepts
 	// (PUT /workspaces/{workspaceId}/auth-policy)
 	SetWorkspaceAuthPolicy(ctx context.Context, request SetWorkspaceAuthPolicyRequestObject) (SetWorkspaceAuthPolicyResponseObject, error)
+	// GetWorkspaceBulkAction Report how far a bulk action has got and what happened to each issue
+	// (GET /workspaces/{workspaceId}/bulk-actions/{bulkActionId})
+	GetWorkspaceBulkAction(ctx context.Context, request GetWorkspaceBulkActionRequestObject) (GetWorkspaceBulkActionResponseObject, error)
 	// ListWorkspaceInvitations List the workspace invitations administrators see beside members
 	// (GET /workspaces/{workspaceId}/invitations)
 	ListWorkspaceInvitations(ctx context.Context, request ListWorkspaceInvitationsRequestObject) (ListWorkspaceInvitationsResponseObject, error)
@@ -13593,6 +13968,9 @@ type StrictServerInterface interface {
 	// CreateWorkspaceIssue Raise an issue in a team the caller can see
 	// (POST /workspaces/{workspaceId}/issues)
 	CreateWorkspaceIssue(ctx context.Context, request CreateWorkspaceIssueRequestObject) (CreateWorkspaceIssueResponseObject, error)
+	// ApplyWorkspaceIssueBulkChange Change many issues at once, reporting an outcome for each
+	// (POST /workspaces/{workspaceId}/issues/bulk)
+	ApplyWorkspaceIssueBulkChange(ctx context.Context, request ApplyWorkspaceIssueBulkChangeRequestObject) (ApplyWorkspaceIssueBulkChangeResponseObject, error)
 	// GetWorkspaceIssueByReference Read one issue by the reference people quote, such as MOB-14
 	// (GET /workspaces/{workspaceId}/issues/by-reference/{reference})
 	GetWorkspaceIssueByReference(ctx context.Context, request GetWorkspaceIssueByReferenceRequestObject) (GetWorkspaceIssueByReferenceResponseObject, error)
@@ -14646,6 +15024,33 @@ func (sh *strictHandler) SetWorkspaceAuthPolicy(w http.ResponseWriter, r *http.R
 	}
 }
 
+// GetWorkspaceBulkAction operation middleware
+func (sh *strictHandler) GetWorkspaceBulkAction(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, bulkActionId openapi_types.UUID) {
+	var request GetWorkspaceBulkActionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.BulkActionId = bulkActionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceBulkAction(ctx, request.(GetWorkspaceBulkActionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceBulkAction")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceBulkActionResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceBulkActionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListWorkspaceInvitations operation middleware
 func (sh *strictHandler) ListWorkspaceInvitations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceInvitationsParams) {
 	var request ListWorkspaceInvitationsRequestObject
@@ -14813,6 +15218,39 @@ func (sh *strictHandler) CreateWorkspaceIssue(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateWorkspaceIssueResponseObject); ok {
 		if err := validResponse.VisitCreateWorkspaceIssueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ApplyWorkspaceIssueBulkChange operation middleware
+func (sh *strictHandler) ApplyWorkspaceIssueBulkChange(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ApplyWorkspaceIssueBulkChangeRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body ApplyWorkspaceIssueBulkChangeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApplyWorkspaceIssueBulkChange(ctx, request.(ApplyWorkspaceIssueBulkChangeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApplyWorkspaceIssueBulkChange")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApplyWorkspaceIssueBulkChangeResponseObject); ok {
+		if err := validResponse.VisitApplyWorkspaceIssueBulkChangeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

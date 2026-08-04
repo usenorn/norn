@@ -10,6 +10,10 @@
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import IssueRow from "$lib/components/norn/issue-row.svelte";
+	import BulkBar from "$lib/issues/bulk-bar.svelte";
+	import BulkResult from "$lib/issues/bulk-result.svelte";
+	import { rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
+	import { SvelteSet } from "svelte/reactivity";
 	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
@@ -183,6 +187,91 @@
 	}
 
 	let cursor = $state(0);
+	let selected = $state(new SvelteSet<string>());
+	let anchor = $state<string | null>(null);
+	let liveBulk = $state<BulkActionResult | null>(null);
+	let applying = $state(false);
+	let polling = $state<ReturnType<typeof setTimeout> | null>(null);
+
+	const bulk = $derived(preview?.bulk ?? liveBulk);
+	const orderedIDs = $derived(flat.map((issue) => issue.id));
+
+	function toggle(id: string, extend = false) {
+		if (extend && anchor) {
+			for (const between of rangeBetween(orderedIDs, anchor, id)) selected.add(between);
+		} else if (selected.has(id)) {
+			selected.delete(id);
+			anchor = id;
+		} else {
+			selected.add(id);
+			anchor = id;
+		}
+	}
+
+	function clearSelection() {
+		selected.clear();
+		anchor = null;
+		liveBulk = null;
+	}
+
+	async function poll(actionId: string) {
+		const { data: latest } = await api.GET(
+			"/workspaces/{workspaceId}/bulk-actions/{bulkActionId}",
+			{ params: { path: { workspaceId: data.workspace.id, bulkActionId: actionId } } }
+		);
+
+		if (!latest) return;
+
+		liveBulk = latest;
+
+		if (settled(latest.status)) {
+			await invalidateAll();
+
+			return;
+		}
+
+		polling = setTimeout(() => poll(actionId), 700);
+	}
+
+	async function applyBulk(change: Record<string, unknown>) {
+		if (selected.size === 0) return;
+
+		applying = true;
+		liveBulk = null;
+
+		if (polling) clearTimeout(polling);
+
+		try {
+			const { data: result, error } = await api.POST("/workspaces/{workspaceId}/issues/bulk", {
+				params: { path: { workspaceId: data.workspace.id } },
+				body: { change, issueIds: [...selected] },
+			});
+
+			if (error || !result) {
+				failed = true;
+
+				return;
+			}
+
+			liveBulk = result;
+
+			if (settled(result.status)) {
+				clearSelectionKeepingResult();
+				await invalidateAll();
+			} else {
+				polling = setTimeout(() => poll(result.id), 700);
+			}
+		} catch {
+			failed = true;
+		} finally {
+			applying = false;
+		}
+	}
+
+	function clearSelectionKeepingResult() {
+		selected.clear();
+		anchor = null;
+	}
 
 	function onkeydown(event: KeyboardEvent) {
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -191,6 +280,24 @@
 
 		if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)))
 			return;
+
+		if (event.key === "x" || event.key === " ") {
+			const issue = flat[cursor];
+
+			if (issue) {
+				event.preventDefault();
+				toggle(issue.id);
+			}
+
+			return;
+		}
+
+		if (event.key === "Escape" && selected.size > 0) {
+			event.preventDefault();
+			clearSelection();
+
+			return;
+		}
 
 		if (event.key === "j" || event.key === "ArrowDown") {
 			event.preventDefault();
@@ -405,6 +512,8 @@
 								now={data.now}
 								timezone={data.workspace.timezone}
 								cursor={offset + index === cursor}
+								selected={selected.has(issue.id)}
+								onselect={(extend) => toggle(issue.id, extend)}
 								draggable
 								dragging={dragging === issue.id}
 								ondragstart={(event) => onDragStart(event, issue.id)}
@@ -463,6 +572,27 @@
 		{/if}
 	</div>
 
+	{#if bulk}
+		<div class="flex-none border-t border-line-default px-4 py-2">
+			<BulkResult result={bulk} />
+		</div>
+	{/if}
+
+	{#if selected.size > 0}
+		<BulkBar
+			count={selected.size}
+			states={data.states ?? []}
+			members={data.members ?? []}
+			working={applying}
+			onpriority={(priority) => applyBulk({ priority })}
+			onstate={(stateId) => applyBulk({ stateId })}
+			onassignee={(accountId) =>
+				applyBulk(accountId === "" ? { clearAssignee: true } : { assigneeId: accountId })}
+			onstatus={(status) => applyBulk({ status })}
+			onclear={clearSelection}
+		/>
+	{/if}
+
 	<div
 		class="hidden h-7.5 flex-none items-center justify-end gap-4 border-t border-line-subtle bg-card px-3.5 md:flex"
 	>
@@ -471,6 +601,9 @@
 		</span>
 		<span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
 			<Kbd keys="↑ ↓" />move
+		</span>
+		<span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+			<Kbd keys="x" />select
 		</span>
 	</div>
 </div>

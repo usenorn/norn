@@ -16,9 +16,9 @@ const recordActivityQuery = `
 INSERT INTO workspace_issue_activity (
     id, workspace_id, issue_id, actor_account_id, kind,
     from_state_id, to_state_id, from_state_name, to_state_name,
-    field, from_value, to_value, version, created_at
+    field, from_value, to_value, version, bulk_action_id, created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
 
 const activityPageQuery = `
 SELECT a.id,
@@ -33,6 +33,7 @@ SELECT a.id,
        coalesce(a.from_value, ''),
        coalesce(a.to_value, ''),
        coalesce(a.version, 0),
+       coalesce(a.bulk_action_id::text, ''),
        a.created_at
 FROM workspace_issue_activity a
 LEFT JOIN accounts acct ON acct.id = a.actor_account_id
@@ -91,6 +92,7 @@ func (r *issueActivityRepository) Record(ctx context.Context, activity entity.Is
 		nullIfEmpty(activity.FromValue),
 		nullIfEmpty(activity.ToValue),
 		activity.Version,
+		optionalID(activity.BulkActionID),
 		activity.CreatedAt,
 	); err != nil {
 		return fmt.Errorf("record issue activity: %w", err)
@@ -131,12 +133,13 @@ func (r *issueActivityRepository) ListByIssueID(
 
 	for rows.Next() {
 		var (
-			activity  entity.IssueActivity
-			id        string
-			workspace string
-			issue     string
-			actor     string
-			kind      string
+			activity   entity.IssueActivity
+			id         string
+			workspace  string
+			issue      string
+			actor      string
+			kind       string
+			bulkAction string
 		)
 
 		if err := rows.Scan(
@@ -152,12 +155,19 @@ func (r *issueActivityRepository) ListByIssueID(
 			&activity.FromValue,
 			&activity.ToValue,
 			&activity.Version,
+			&bulkAction,
 			&activity.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan issue activity: %w", err)
 		}
 
 		activity.Kind = entity.IssueActivityKind(kind)
+
+		if bulkAction != "" {
+			if activity.BulkActionID, err = uuid.Parse(bulkAction); err != nil {
+				return nil, fmt.Errorf("parse activity bulk action id: %w", err)
+			}
+		}
 
 		if activity.ID, err = uuid.Parse(id); err != nil {
 			return nil, fmt.Errorf("parse issue activity id: %w", err)

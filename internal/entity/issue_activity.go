@@ -70,6 +70,7 @@ type IssueActivity struct {
 	FromValue      string
 	ToValue        string
 	Version        int
+	BulkActionID   uuid.UUID
 	CreatedAt      time.Time
 }
 
