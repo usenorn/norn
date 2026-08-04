@@ -930,6 +930,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a filter expression over the issues the caller may see
+         * @description A read expressed as POST because a filter expression cannot survive a query string. The page and the group tallies are both evaluated inside the caller's own team visibility, so a count never describes work they cannot open.
+         */
+        post: operations["queryWorkspaceIssues"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/by-reference/{reference}": {
         parameters: {
             query?: never;
@@ -1667,6 +1687,7 @@ export interface components {
             /** Format: uuid */
             teamId?: string;
             status?: components["schemas"]["IssueStatus"][];
+            filter?: components["schemas"]["IssueFilter"];
         };
         BulkChangeRequest: {
             change: components["schemas"]["BulkChange"];
@@ -2090,6 +2111,47 @@ export interface components {
             category: components["schemas"]["StateCategory"];
             /** Format: int32 */
             position: number;
+        };
+        /** @description A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at. */
+        IssueFilter: {
+            all?: components["schemas"]["IssueFilter"][];
+            any?: components["schemas"]["IssueFilter"][];
+            not?: components["schemas"]["IssueFilter"];
+            field?: components["schemas"]["IssueFilterField"];
+            op?: components["schemas"]["IssueFilterOp"];
+            values?: string[];
+        };
+        /** @enum {string} */
+        IssueFilterField: "team" | "state" | "stateCategory" | "priority" | "status" | "assignee" | "creator" | "label" | "project" | "cycle" | "createdAt" | "updatedAt" | "dueOn" | "completedAt" | "estimate" | "blocked" | "hasChildren" | "isChild";
+        /** @enum {string} */
+        IssueFilterOp: "is" | "is_not" | "in" | "not_in" | "is_set" | "is_not_set" | "has_any" | "has_all" | "has_none" | "before" | "after" | "on" | "eq" | "lt" | "gt" | "is_true" | "is_false";
+        /** @enum {string} */
+        IssueSortField: "createdAt" | "updatedAt" | "priority" | "dueOn" | "state" | "estimate";
+        IssueSort: {
+            field: components["schemas"]["IssueSortField"];
+            descending?: boolean;
+        };
+        /** @enum {string} */
+        IssueGroupBy: "state" | "stateCategory" | "priority" | "assignee" | "team" | "project" | "cycle" | "label";
+        IssueGroupTally: {
+            /** @description The id or enum value the group is keyed on; empty when the property is unset */
+            key: string;
+            /** Format: int32 */
+            issues: number;
+        };
+        IssueQueryRequest: {
+            filter?: components["schemas"]["IssueFilter"];
+            sort?: components["schemas"]["IssueSort"][];
+            groupBy?: components["schemas"]["IssueGroupBy"];
+            /** Format: int32 */
+            limit?: number;
+            cursor?: string;
+        };
+        IssueQueryResult: {
+            issues: components["schemas"]["Issue"][];
+            nextCursor?: string;
+            /** @description Present when a grouping was asked for. Grouping by label counts an issue once per label it carries, so those tallies sum to more than the issues returned. */
+            groups?: components["schemas"]["IssueGroupTally"][];
         };
         IssuePage: {
             issues: components["schemas"]["Issue"][];
@@ -4867,6 +4929,36 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    queryWorkspaceIssues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueQueryRequest"];
+            };
+        };
+        responses: {
+            /** @description A page of matching issues, and the group tallies when one was asked for */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueQueryResult"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
             422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };

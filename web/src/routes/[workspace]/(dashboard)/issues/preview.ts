@@ -3,12 +3,16 @@ import type { WorkflowState } from "$lib/team/states";
 import type { Team } from "$lib/team/teams";
 import type { Member } from "./+page";
 import type { BulkActionResult } from "$lib/issues/bulk";
+import type { IssueGroupTally } from "$lib/issues/filter";
 
 export type IssuesPreview = {
 	team: Team | null;
 	bulk?: BulkActionResult;
 	states?: WorkflowState[];
 	issues?: Issue[];
+	nextCursor?: string;
+	groups?: IssueGroupTally[];
+	paging?: { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
 	progress?: IssueProgress;
 	members?: Member[];
 };
@@ -256,6 +260,173 @@ export const issuesPreviewStates: Record<string, IssuesPreview> = import.meta.en
 				],
 				members: [],
 				progress: { notStarted: 1, active: 2, complete: 1, abandoned: 0 },
+			},
+			paged: {
+				team: {
+					id: "00000000-0000-4000-8000-000000000102",
+					workspaceId: "00000000-0000-4000-8000-000000000000",
+					key: "DSG",
+					name: "Design",
+					visibility: "public",
+					status: "active",
+					createdAt: "2026-02-11T09:00:00Z",
+				},
+				states: [
+					{
+						id: "00000000-0000-4000-8000-000000000402",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Ready",
+						category: "not_started",
+						position: 2,
+						isDefault: true,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000403",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Sketching",
+						category: "active",
+						position: 3,
+						isDefault: false,
+						isCompletion: false,
+					},
+				],
+				issues: [
+					{
+						id: "00000000-0000-4000-8000-000000000521",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "none",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000403",
+							name: "Sketching",
+							category: "active",
+							position: 3,
+						},
+						labels: [],
+						number: 31,
+						reference: "DSG-31",
+						title: "Sweep the settings copy for tone",
+						createdAt: "2026-07-30T09:00:00Z",
+					},
+				],
+				nextCursor: "eyJrIjpbIjIwMjYtMDctMzBUMDk6MDA6MDBaIl19",
+				groups: [
+					{ key: "00000000-0000-4000-8000-000000000403", issues: 137 },
+					{ key: "00000000-0000-4000-8000-000000000402", issues: 42 },
+				],
+				members: [],
+				progress: { notStarted: 42, active: 137, complete: 8, abandoned: 1 },
+			},
+			paging: {
+				team: {
+					id: "00000000-0000-4000-8000-000000000102",
+					workspaceId: "00000000-0000-4000-8000-000000000000",
+					key: "DSG",
+					name: "Design",
+					visibility: "public",
+					status: "active",
+					createdAt: "2026-02-11T09:00:00Z",
+				},
+				states: [
+					{
+						id: "00000000-0000-4000-8000-000000000403",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Sketching",
+						category: "active",
+						position: 3,
+						isDefault: false,
+						isCompletion: false,
+					},
+				],
+				issues: [
+					{
+						id: "00000000-0000-4000-8000-000000000522",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "none",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000403",
+							name: "Sketching",
+							category: "active",
+							position: 3,
+						},
+						labels: [],
+						number: 32,
+						reference: "DSG-32",
+						title: "Board column collapse state",
+						createdAt: "2026-07-29T09:00:00Z",
+					},
+				],
+				nextCursor: "eyJrIjpbIjIwMjYtMDctMjlUMDk6MDA6MDBaIl19",
+				groups: [{ key: "00000000-0000-4000-8000-000000000403", issues: 137 }],
+				paging: { kind: "loading" as const },
+				members: [],
+				progress: { notStarted: 0, active: 137, complete: 0, abandoned: 0 },
+			},
+			paging_unavailable: {
+				team: {
+					id: "00000000-0000-4000-8000-000000000102",
+					workspaceId: "00000000-0000-4000-8000-000000000000",
+					key: "DSG",
+					name: "Design",
+					visibility: "public",
+					status: "active",
+					createdAt: "2026-02-11T09:00:00Z",
+				},
+				states: [
+					{
+						id: "00000000-0000-4000-8000-000000000403",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Sketching",
+						category: "active",
+						position: 3,
+						isDefault: false,
+						isCompletion: false,
+					},
+				],
+				issues: [
+					{
+						id: "00000000-0000-4000-8000-000000000523",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "none",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000403",
+							name: "Sketching",
+							category: "active",
+							position: 3,
+						},
+						labels: [],
+						number: 33,
+						reference: "DSG-33",
+						title: "Audit contrast on the dusk theme",
+						createdAt: "2026-07-28T09:00:00Z",
+					},
+				],
+				nextCursor: "eyJrIjpbIjIwMjYtMDctMjhUMDk6MDA6MDBaIl19",
+				groups: [{ key: "00000000-0000-4000-8000-000000000403", issues: 137 }],
+				paging: { kind: "unavailable" as const },
+				members: [],
+				progress: { notStarted: 0, active: 137, complete: 0, abandoned: 0 },
 			},
 			bulk_running: {
 				team: null,

@@ -26,6 +26,20 @@ type IssuePage struct {
 	NextCursor string
 }
 
+type QueryIssuesInput struct {
+	Filter  *entity.IssueFilter
+	Sort    []entity.IssueSort
+	GroupBy entity.IssueGroupBy
+	Cursor  string
+	Limit   int
+}
+
+type IssueQueryResult struct {
+	Issues     []entity.Issue
+	NextCursor string
+	Groups     []entity.IssueGroupTally
+}
+
 type ProgressInput struct {
 	TeamID    *uuid.UUID
 	CycleID   *uuid.UUID

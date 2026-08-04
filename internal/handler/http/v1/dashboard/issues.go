@@ -46,6 +46,42 @@ func (h *handler) ListWorkspaceIssues(
 	return api.ListWorkspaceIssues200JSONResponse(issuePageDTO(page)), nil
 }
 
+func (h *handler) QueryWorkspaceIssues(
+	ctx context.Context,
+	request api.QueryWorkspaceIssuesRequestObject,
+) (api.QueryWorkspaceIssuesResponseObject, error) {
+	input := service.QueryIssuesInput{Filter: issueFilterFrom(request.Body.Filter)}
+
+	if request.Body.Sort != nil {
+		input.Sort = issueSortFrom(*request.Body.Sort)
+	}
+
+	if request.Body.GroupBy != nil {
+		input.GroupBy = entity.IssueGroupBy(*request.Body.GroupBy)
+	}
+
+	if request.Body.Limit != nil {
+		input.Limit = int(*request.Body.Limit)
+	}
+
+	if request.Body.Cursor != nil {
+		input.Cursor = *request.Body.Cursor
+	}
+
+	result, err := h.issues.Query(ctx, request.WorkspaceId, input)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.QueryWorkspaceIssues200JSONResponse(
+		issueQueryResultDTO(result, input.GroupBy != ""),
+	), nil
+}
+
 func (h *handler) CreateWorkspaceIssue(
 	ctx context.Context,
 	request api.CreateWorkspaceIssueRequestObject,

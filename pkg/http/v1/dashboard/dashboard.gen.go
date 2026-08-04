@@ -585,6 +585,171 @@ func (e IssueConflictProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for IssueFilterField.
+const (
+	IssueFilterFieldAssignee      IssueFilterField = "assignee"
+	IssueFilterFieldBlocked       IssueFilterField = "blocked"
+	IssueFilterFieldCompletedAt   IssueFilterField = "completedAt"
+	IssueFilterFieldCreatedAt     IssueFilterField = "createdAt"
+	IssueFilterFieldCreator       IssueFilterField = "creator"
+	IssueFilterFieldCycle         IssueFilterField = "cycle"
+	IssueFilterFieldDueOn         IssueFilterField = "dueOn"
+	IssueFilterFieldEstimate      IssueFilterField = "estimate"
+	IssueFilterFieldHasChildren   IssueFilterField = "hasChildren"
+	IssueFilterFieldIsChild       IssueFilterField = "isChild"
+	IssueFilterFieldLabel         IssueFilterField = "label"
+	IssueFilterFieldPriority      IssueFilterField = "priority"
+	IssueFilterFieldProject       IssueFilterField = "project"
+	IssueFilterFieldState         IssueFilterField = "state"
+	IssueFilterFieldStateCategory IssueFilterField = "stateCategory"
+	IssueFilterFieldStatus        IssueFilterField = "status"
+	IssueFilterFieldTeam          IssueFilterField = "team"
+	IssueFilterFieldUpdatedAt     IssueFilterField = "updatedAt"
+)
+
+// Valid indicates whether the value is a known member of the IssueFilterField enum.
+func (e IssueFilterField) Valid() bool {
+	switch e {
+	case IssueFilterFieldAssignee:
+		return true
+	case IssueFilterFieldBlocked:
+		return true
+	case IssueFilterFieldCompletedAt:
+		return true
+	case IssueFilterFieldCreatedAt:
+		return true
+	case IssueFilterFieldCreator:
+		return true
+	case IssueFilterFieldCycle:
+		return true
+	case IssueFilterFieldDueOn:
+		return true
+	case IssueFilterFieldEstimate:
+		return true
+	case IssueFilterFieldHasChildren:
+		return true
+	case IssueFilterFieldIsChild:
+		return true
+	case IssueFilterFieldLabel:
+		return true
+	case IssueFilterFieldPriority:
+		return true
+	case IssueFilterFieldProject:
+		return true
+	case IssueFilterFieldState:
+		return true
+	case IssueFilterFieldStateCategory:
+		return true
+	case IssueFilterFieldStatus:
+		return true
+	case IssueFilterFieldTeam:
+		return true
+	case IssueFilterFieldUpdatedAt:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for IssueFilterOp.
+const (
+	After    IssueFilterOp = "after"
+	Before   IssueFilterOp = "before"
+	Eq       IssueFilterOp = "eq"
+	Gt       IssueFilterOp = "gt"
+	HasAll   IssueFilterOp = "has_all"
+	HasAny   IssueFilterOp = "has_any"
+	HasNone  IssueFilterOp = "has_none"
+	In       IssueFilterOp = "in"
+	Is       IssueFilterOp = "is"
+	IsFalse  IssueFilterOp = "is_false"
+	IsNot    IssueFilterOp = "is_not"
+	IsNotSet IssueFilterOp = "is_not_set"
+	IsSet    IssueFilterOp = "is_set"
+	IsTrue   IssueFilterOp = "is_true"
+	Lt       IssueFilterOp = "lt"
+	NotIn    IssueFilterOp = "not_in"
+	On       IssueFilterOp = "on"
+)
+
+// Valid indicates whether the value is a known member of the IssueFilterOp enum.
+func (e IssueFilterOp) Valid() bool {
+	switch e {
+	case After:
+		return true
+	case Before:
+		return true
+	case Eq:
+		return true
+	case Gt:
+		return true
+	case HasAll:
+		return true
+	case HasAny:
+		return true
+	case HasNone:
+		return true
+	case In:
+		return true
+	case Is:
+		return true
+	case IsFalse:
+		return true
+	case IsNot:
+		return true
+	case IsNotSet:
+		return true
+	case IsSet:
+		return true
+	case IsTrue:
+		return true
+	case Lt:
+		return true
+	case NotIn:
+		return true
+	case On:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for IssueGroupBy.
+const (
+	IssueGroupByAssignee      IssueGroupBy = "assignee"
+	IssueGroupByCycle         IssueGroupBy = "cycle"
+	IssueGroupByLabel         IssueGroupBy = "label"
+	IssueGroupByPriority      IssueGroupBy = "priority"
+	IssueGroupByProject       IssueGroupBy = "project"
+	IssueGroupByState         IssueGroupBy = "state"
+	IssueGroupByStateCategory IssueGroupBy = "stateCategory"
+	IssueGroupByTeam          IssueGroupBy = "team"
+)
+
+// Valid indicates whether the value is a known member of the IssueGroupBy enum.
+func (e IssueGroupBy) Valid() bool {
+	switch e {
+	case IssueGroupByAssignee:
+		return true
+	case IssueGroupByCycle:
+		return true
+	case IssueGroupByLabel:
+		return true
+	case IssueGroupByPriority:
+		return true
+	case IssueGroupByProject:
+		return true
+	case IssueGroupByState:
+		return true
+	case IssueGroupByStateCategory:
+		return true
+	case IssueGroupByTeam:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IssuePriority.
 const (
 	High   IssuePriority = "high"
@@ -633,6 +798,36 @@ func (e IssueRelationKind) Valid() bool {
 	case Duplicates:
 		return true
 	case RelatesTo:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for IssueSortField.
+const (
+	IssueSortFieldCreatedAt IssueSortField = "createdAt"
+	IssueSortFieldDueOn     IssueSortField = "dueOn"
+	IssueSortFieldEstimate  IssueSortField = "estimate"
+	IssueSortFieldPriority  IssueSortField = "priority"
+	IssueSortFieldState     IssueSortField = "state"
+	IssueSortFieldUpdatedAt IssueSortField = "updatedAt"
+)
+
+// Valid indicates whether the value is a known member of the IssueSortField enum.
+func (e IssueSortField) Valid() bool {
+	switch e {
+	case IssueSortFieldCreatedAt:
+		return true
+	case IssueSortFieldDueOn:
+		return true
+	case IssueSortFieldEstimate:
+		return true
+	case IssueSortFieldPriority:
+		return true
+	case IssueSortFieldState:
+		return true
+	case IssueSortFieldUpdatedAt:
 		return true
 	default:
 		return false
@@ -1458,6 +1653,8 @@ type BulkChangeRequest struct {
 
 // BulkFilter The set is resolved when the action runs, with the caller's own visibility
 type BulkFilter struct {
+	// Filter A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
+	Filter *IssueFilter        `json:"filter,omitempty"`
 	Status *[]IssueStatus      `json:"status,omitempty"`
 	TeamId *openapi_types.UUID `json:"teamId,omitempty"`
 }
@@ -1902,6 +2099,35 @@ type IssueConflictProblem struct {
 // IssueConflictProblemCode defines model for IssueConflictProblem.Code.
 type IssueConflictProblemCode string
 
+// IssueFilter A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
+type IssueFilter struct {
+	All   *[]IssueFilter    `json:"all,omitempty"`
+	Any   *[]IssueFilter    `json:"any,omitempty"`
+	Field *IssueFilterField `json:"field,omitempty"`
+
+	// Not A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
+	Not    *IssueFilter   `json:"not,omitempty"`
+	Op     *IssueFilterOp `json:"op,omitempty"`
+	Values *[]string      `json:"values,omitempty"`
+}
+
+// IssueFilterField defines model for IssueFilterField.
+type IssueFilterField string
+
+// IssueFilterOp defines model for IssueFilterOp.
+type IssueFilterOp string
+
+// IssueGroupBy defines model for IssueGroupBy.
+type IssueGroupBy string
+
+// IssueGroupTally defines model for IssueGroupTally.
+type IssueGroupTally struct {
+	Issues int32 `json:"issues"`
+
+	// Key The id or enum value the group is keyed on; empty when the property is unset
+	Key string `json:"key"`
+}
+
 // IssuePage defines model for IssuePage.
 type IssuePage struct {
 	Issues     []Issue `json:"issues"`
@@ -1917,6 +2143,25 @@ type IssueProgress struct {
 	Active     int32 `json:"active"`
 	Complete   int32 `json:"complete"`
 	NotStarted int32 `json:"notStarted"`
+}
+
+// IssueQueryRequest defines model for IssueQueryRequest.
+type IssueQueryRequest struct {
+	Cursor *string `json:"cursor,omitempty"`
+
+	// Filter A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
+	Filter  *IssueFilter  `json:"filter,omitempty"`
+	GroupBy *IssueGroupBy `json:"groupBy,omitempty"`
+	Limit   *int32        `json:"limit,omitempty"`
+	Sort    *[]IssueSort  `json:"sort,omitempty"`
+}
+
+// IssueQueryResult defines model for IssueQueryResult.
+type IssueQueryResult struct {
+	// Groups Present when a grouping was asked for. Grouping by label counts an issue once per label it carries, so those tallies sum to more than the issues returned.
+	Groups     *[]IssueGroupTally `json:"groups,omitempty"`
+	Issues     []Issue            `json:"issues"`
+	NextCursor *string            `json:"nextCursor,omitempty"`
 }
 
 // IssueRelation defines model for IssueRelation.
@@ -1943,6 +2188,15 @@ type IssueRelationGroups struct {
 
 // IssueRelationKind A relation as seen from the issue you are looking at
 type IssueRelationKind string
+
+// IssueSort defines model for IssueSort.
+type IssueSort struct {
+	Descending *bool          `json:"descending,omitempty"`
+	Field      IssueSortField `json:"field"`
+}
+
+// IssueSortField defines model for IssueSortField.
+type IssueSortField string
 
 // IssueState defines model for IssueState.
 type IssueState struct {
@@ -2943,6 +3197,9 @@ type CreateWorkspaceIssueJSONRequestBody = CreateIssueRequest
 // ApplyWorkspaceIssueBulkChangeJSONRequestBody defines body for ApplyWorkspaceIssueBulkChange for application/json ContentType.
 type ApplyWorkspaceIssueBulkChangeJSONRequestBody = BulkChangeRequest
 
+// QueryWorkspaceIssuesJSONRequestBody defines body for QueryWorkspaceIssues for application/json ContentType.
+type QueryWorkspaceIssuesJSONRequestBody = IssueQueryRequest
+
 // UpdateWorkspaceIssueJSONRequestBody defines body for UpdateWorkspaceIssue for application/json ContentType.
 type UpdateWorkspaceIssueJSONRequestBody = UpdateIssueRequest
 
@@ -3179,6 +3436,9 @@ type ServerInterface interface {
 	// GetWorkspaceIssueProgress Report per-category tallies over the issues the caller may see
 	// (GET /workspaces/{workspaceId}/issues/progress)
 	GetWorkspaceIssueProgress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params GetWorkspaceIssueProgressParams)
+	// QueryWorkspaceIssues Run a filter expression over the issues the caller may see
+	// (POST /workspaces/{workspaceId}/issues/query)
+	QueryWorkspaceIssues(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// GetWorkspaceIssue Read one issue, or report it missing when the caller may not see it
 	// (GET /workspaces/{workspaceId}/issues/{issueId})
 	GetWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -3698,6 +3958,12 @@ func (_ Unimplemented) GetWorkspaceIssueByReference(w http.ResponseWriter, r *ht
 // GetWorkspaceIssueProgress Report per-category tallies over the issues the caller may see
 // (GET /workspaces/{workspaceId}/issues/progress)
 func (_ Unimplemented) GetWorkspaceIssueProgress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params GetWorkspaceIssueProgressParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// QueryWorkspaceIssues Run a filter expression over the issues the caller may see
+// (POST /workspaces/{workspaceId}/issues/query)
+func (_ Unimplemented) QueryWorkspaceIssues(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -5314,6 +5580,32 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceIssueProgress(w http.ResponseWrit
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWorkspaceIssueProgress(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// QueryWorkspaceIssues operation middleware
+func (siw *ServerInterfaceWrapper) QueryWorkspaceIssues(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.QueryWorkspaceIssues(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -8259,6 +8551,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues", wrapper.CreateWorkspaceIssue)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/query", wrapper.QueryWorkspaceIssues)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/by-reference/{reference}", wrapper.GetWorkspaceIssueByReference)
@@ -12376,6 +12671,89 @@ func (response GetWorkspaceIssueProgress403ApplicationProblemPlusJSONResponse) V
 type GetWorkspaceIssueProgress500ApplicationProblemPlusJSONResponse Problem
 
 func (response GetWorkspaceIssueProgress500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueProgressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type QueryWorkspaceIssuesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *QueryWorkspaceIssuesJSONRequestBody
+}
+
+type QueryWorkspaceIssuesResponseObject interface {
+	VisitQueryWorkspaceIssuesResponse(w http.ResponseWriter) error
+}
+
+type QueryWorkspaceIssues200JSONResponse IssueQueryResult
+
+func (response QueryWorkspaceIssues200JSONResponse) VisitQueryWorkspaceIssuesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type QueryWorkspaceIssues401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response QueryWorkspaceIssues401ApplicationProblemPlusJSONResponse) VisitQueryWorkspaceIssuesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type QueryWorkspaceIssues403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response QueryWorkspaceIssues403ApplicationProblemPlusJSONResponse) VisitQueryWorkspaceIssuesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type QueryWorkspaceIssues422ApplicationProblemPlusJSONResponse Problem
+
+func (response QueryWorkspaceIssues422ApplicationProblemPlusJSONResponse) VisitQueryWorkspaceIssuesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type QueryWorkspaceIssues500ApplicationProblemPlusJSONResponse Problem
+
+func (response QueryWorkspaceIssues500ApplicationProblemPlusJSONResponse) VisitQueryWorkspaceIssuesResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -19504,6 +19882,9 @@ type StrictServerInterface interface {
 	// GetWorkspaceIssueProgress Report per-category tallies over the issues the caller may see
 	// (GET /workspaces/{workspaceId}/issues/progress)
 	GetWorkspaceIssueProgress(ctx context.Context, request GetWorkspaceIssueProgressRequestObject) (GetWorkspaceIssueProgressResponseObject, error)
+	// QueryWorkspaceIssues Run a filter expression over the issues the caller may see
+	// (POST /workspaces/{workspaceId}/issues/query)
+	QueryWorkspaceIssues(ctx context.Context, request QueryWorkspaceIssuesRequestObject) (QueryWorkspaceIssuesResponseObject, error)
 	// GetWorkspaceIssue Read one issue, or report it missing when the caller may not see it
 	// (GET /workspaces/{workspaceId}/issues/{issueId})
 	GetWorkspaceIssue(ctx context.Context, request GetWorkspaceIssueRequestObject) (GetWorkspaceIssueResponseObject, error)
@@ -21150,6 +21531,39 @@ func (sh *strictHandler) GetWorkspaceIssueProgress(w http.ResponseWriter, r *htt
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceIssueProgressResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceIssueProgressResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// QueryWorkspaceIssues operation middleware
+func (sh *strictHandler) QueryWorkspaceIssues(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request QueryWorkspaceIssuesRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body QueryWorkspaceIssuesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.QueryWorkspaceIssues(ctx, request.(QueryWorkspaceIssuesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "QueryWorkspaceIssues")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(QueryWorkspaceIssuesResponseObject); ok {
+		if err := validResponse.VisitQueryWorkspaceIssuesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -288,6 +288,11 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrIssueParentNotActive):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueParentNotActive, err), true
 
+	case errors.Is(err, entity.ErrIssueFilterTooComplex),
+		errors.Is(err, entity.ErrIssueFilterAmbiguous),
+		errors.Is(err, entity.ErrIssueGroupUnknown):
+		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
+
 	case errors.Is(err, entity.ErrBulkChangeEmpty),
 		errors.Is(err, entity.ErrBulkChangeConflicting),
 		errors.Is(err, entity.ErrBulkSetEmpty),
@@ -875,6 +880,10 @@ func (r problemResponse) VisitGetWorkspaceIssueProgressResponse(w http.ResponseW
 }
 
 func (r problemResponse) VisitListWorkspaceIssuesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitQueryWorkspaceIssuesResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

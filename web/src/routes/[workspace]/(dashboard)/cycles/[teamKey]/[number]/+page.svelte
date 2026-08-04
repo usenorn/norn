@@ -46,7 +46,7 @@
 	const movedOn = $derived(
 		scope ? [...scopeChangesOf(scope, "rolled_over"), ...scopeChangesOf(scope, "returned")] : []
 	);
-	const groups = $derived(states ? groupByState(inScope, states) : []);
+	const groups = $derived(states ? groupByState(inScope, states, undefined) : []);
 	const unfinished = $derived(openIssues(inScope));
 
 	const closing = $derived(page.url.searchParams.has("close"));

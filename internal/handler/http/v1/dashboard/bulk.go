@@ -24,7 +24,10 @@ func (h *handler) ApplyWorkspaceIssueBulkChange(
 	}
 
 	if request.Body.Filter != nil {
-		filter := entity.BulkFilter{TeamID: request.Body.Filter.TeamId}
+		filter := entity.BulkFilter{
+			TeamID:     request.Body.Filter.TeamId,
+			Expression: issueFilterFrom(request.Body.Filter.Filter),
+		}
 
 		if request.Body.Filter.Status != nil {
 			for _, status := range *request.Body.Filter.Status {

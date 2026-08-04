@@ -1,6 +1,7 @@
 import { apiFor } from "$lib/api";
 import { issueLayouts, issueTabs, type IssueLayout, type IssueTab } from "$lib/issues/board";
 import type { Issue, IssueProgress } from "$lib/issues/board";
+import { boardQuery, type IssueGroupTally } from "$lib/issues/filter";
 import type { Team } from "$lib/team/teams";
 import type { WorkflowState } from "$lib/team/states";
 import type { components } from "$lib/api/dashboard.gen";
@@ -12,6 +13,8 @@ export type IssuesPageData = {
 	team: Team | null;
 	teams: Team[];
 	issues: Issue[] | undefined;
+	nextCursor: string | undefined;
+	groups: IssueGroupTally[] | undefined;
 	states: WorkflowState[] | undefined;
 	progress: IssueProgress | undefined;
 	members: Member[];
@@ -47,6 +50,8 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<IssuesPage
 			team: null,
 			teams: available,
 			issues: undefined,
+			nextCursor: undefined,
+			groups: undefined,
 			states: undefined,
 			progress: undefined,
 			members: [],
@@ -56,9 +61,10 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<IssuesPage
 	const path = { workspaceId: workspace.id };
 
 	const [issues, states, progress, members] = await Promise.all([
-		api.GET("/workspaces/{workspaceId}/issues", {
+		api.POST("/workspaces/{workspaceId}/issues/query", {
 			fetch,
-			params: { path, query: { teamId: team.id, limit: 200 } },
+			params: { path },
+			body: boardQuery(team.id, view.tab),
 		}),
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			fetch,
@@ -76,6 +82,8 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<IssuesPage
 		team,
 		teams: available,
 		issues: issues.data?.issues,
+		nextCursor: issues.data?.nextCursor,
+		groups: issues.data?.groups,
 		states: states.data,
 		progress: progress.data,
 		members: members.data?.members ?? [],

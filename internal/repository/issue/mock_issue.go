@@ -321,6 +321,21 @@ func (mr *MockIssueMockRecorder) SubtreeHeight(ctx, issueID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubtreeHeight", reflect.TypeOf((*MockIssue)(nil).SubtreeHeight), ctx, issueID)
 }
 
+// TallyByGroup mocks base method.
+func (m *MockIssue) TallyByGroup(ctx context.Context, scope entity.TeamScope, page entity.IssuePage, groupBy entity.IssueGroupBy) ([]entity.IssueGroupTally, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TallyByGroup", ctx, scope, page, groupBy)
+	ret0, _ := ret[0].([]entity.IssueGroupTally)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TallyByGroup indicates an expected call of TallyByGroup.
+func (mr *MockIssueMockRecorder) TallyByGroup(ctx, scope, page, groupBy any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TallyByGroup", reflect.TypeOf((*MockIssue)(nil).TallyByGroup), ctx, scope, page, groupBy)
+}
+
 // Update mocks base method.
 func (m *MockIssue) Update(ctx context.Context, issueID uuid.UUID, expectedVersion int, change entity.IssueChange, timestamps *entity.StateTimestamps, changedAt time.Time) error {
 	m.ctrl.T.Helper()

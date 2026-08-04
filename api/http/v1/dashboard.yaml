@@ -1472,6 +1472,33 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/query:
+    post:
+      tags: [issues]
+      operationId: queryWorkspaceIssues
+      summary: Run a filter expression over the issues the caller may see
+      description: >-
+        A read expressed as POST because a filter expression cannot survive a query string.
+        The page and the group tallies are both evaluated inside the caller's own team
+        visibility, so a count never describes work they cannot open.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IssueQueryRequest' }
+      responses:
+        '200':
+          description: A page of matching issues, and the group tallies when one was asked for
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueQueryResult' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/by-reference/{reference}:
     get:
       tags: [issues]
@@ -2928,6 +2955,7 @@ components:
         status:
           type: array
           items: { $ref: '#/components/schemas/IssueStatus' }
+        filter: { $ref: '#/components/schemas/IssueFilter' }
 
     BulkChangeRequest:
       type: object
@@ -3522,6 +3550,118 @@ components:
         name: { type: string }
         category: { $ref: '#/components/schemas/StateCategory' }
         position: { type: integer, format: int32 }
+
+    IssueFilter:
+      type: object
+      description: >-
+        A tree of conditions. A node is exactly one of all, any, not, or a leaf condition;
+        a node that combines two forms is refused rather than guessed at.
+      properties:
+        all:
+          type: array
+          items: { $ref: '#/components/schemas/IssueFilter' }
+        any:
+          type: array
+          items: { $ref: '#/components/schemas/IssueFilter' }
+        not: { $ref: '#/components/schemas/IssueFilter' }
+        field: { $ref: '#/components/schemas/IssueFilterField' }
+        op: { $ref: '#/components/schemas/IssueFilterOp' }
+        values:
+          type: array
+          items: { type: string }
+
+    IssueFilterField:
+      type: string
+      enum:
+        - team
+        - state
+        - stateCategory
+        - priority
+        - status
+        - assignee
+        - creator
+        - label
+        - project
+        - cycle
+        - createdAt
+        - updatedAt
+        - dueOn
+        - completedAt
+        - estimate
+        - blocked
+        - hasChildren
+        - isChild
+
+    IssueFilterOp:
+      type: string
+      enum:
+        - is
+        - is_not
+        - in
+        - not_in
+        - is_set
+        - is_not_set
+        - has_any
+        - has_all
+        - has_none
+        - before
+        - after
+        - on
+        - eq
+        - lt
+        - gt
+        - is_true
+        - is_false
+
+    IssueSortField:
+      type: string
+      enum: [createdAt, updatedAt, priority, dueOn, state, estimate]
+
+    IssueSort:
+      type: object
+      required: [field]
+      properties:
+        field: { $ref: '#/components/schemas/IssueSortField' }
+        descending: { type: boolean }
+
+    IssueGroupBy:
+      type: string
+      enum: [state, stateCategory, priority, assignee, team, project, cycle, label]
+
+    IssueGroupTally:
+      type: object
+      required: [key, issues]
+      properties:
+        key:
+          type: string
+          description: The id or enum value the group is keyed on; empty when the property is unset
+        issues: { type: integer, format: int32 }
+
+    IssueQueryRequest:
+      type: object
+      properties:
+        filter: { $ref: '#/components/schemas/IssueFilter' }
+        sort:
+          type: array
+          items: { $ref: '#/components/schemas/IssueSort' }
+        groupBy: { $ref: '#/components/schemas/IssueGroupBy' }
+        limit: { type: integer, format: int32, minimum: 1, maximum: 200 }
+        cursor: { type: string }
+
+    IssueQueryResult:
+      type: object
+      required: [issues]
+      properties:
+        issues:
+          type: array
+          items: { $ref: '#/components/schemas/Issue' }
+        nextCursor: { type: string }
+        groups:
+          type: array
+          description: >-
+            Present when a grouping was asked for. Grouping by label counts an issue once per
+            label it carries, so those tallies sum to more than the issues returned.
+          items: { $ref: '#/components/schemas/IssueGroupTally' }
 
     IssuePage:
       type: object

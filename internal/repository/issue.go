@@ -31,5 +31,6 @@ type Issue interface {
 	ProgressByCategory(ctx context.Context, scope entity.TeamScope, teamID *uuid.UUID) (entity.IssueProgress, error)
 	ProgressByCycle(ctx context.Context, scope entity.TeamScope, cycleID uuid.UUID) (entity.IssueProgress, error)
 	ProgressByProject(ctx context.Context, scope entity.TeamScope, projectID uuid.UUID) (entity.IssueProgress, error)
+	TallyByGroup(ctx context.Context, scope entity.TeamScope, page entity.IssuePage, groupBy entity.IssueGroupBy) ([]entity.IssueGroupTally, error)
 	MoveIssuesToCycle(ctx context.Context, issueIDs []uuid.UUID, cycleID *uuid.UUID, changedAt time.Time) error
 }
