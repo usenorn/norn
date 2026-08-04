@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -44,6 +45,30 @@ WHERE held.account_id = $1
   )
 ORDER BY held.workspace_id`
 
+const membershipPageQuery = `
+SELECT m.id,
+       m.workspace_id,
+       m.account_id,
+       m.role,
+       m.source,
+       m.last_active_at,
+       m.last_auth_method,
+       m.created_at,
+       m.updated_at,
+       coalesce(a.display_name, '') AS display_name,
+       coalesce(a.email, '') AS email,
+       lower(coalesce(a.display_name, '')) AS sort_name
+FROM workspace_memberships m
+JOIN accounts a ON a.id = m.account_id
+WHERE m.workspace_id = $1
+  AND ($2 = ''
+       OR position(lower($2) IN lower(coalesce(a.display_name, ''))) > 0
+       OR position(lower($2) IN lower(coalesce(a.email, ''))) > 0)
+  AND ($3::boolean IS NOT TRUE
+       OR (lower(coalesce(a.display_name, '')), m.account_id) > ($4, $5::uuid))
+ORDER BY lower(coalesce(a.display_name, '')), m.account_id
+LIMIT $6`
+
 func toEntity(model *dbpostgres.WorkspaceMembership) (entity.Membership, error) {
 	id, err := uuid.Parse(model.ID)
 	if err != nil {
@@ -60,25 +85,48 @@ func toEntity(model *dbpostgres.WorkspaceMembership) (entity.Membership, error) 
 		return entity.Membership{}, fmt.Errorf("parse membership account id: %w", err)
 	}
 
-	return entity.Membership{
+	membership := entity.Membership{
 		ID:          id,
 		WorkspaceID: workspaceID,
 		AccountID:   accountID,
 		Role:        entity.MembershipRole(model.Role),
+		Source:      entity.MembershipSource(model.Source),
 		CreatedAt:   model.CreatedAt,
 		UpdatedAt:   model.UpdatedAt,
-	}, nil
+	}
+
+	if model.LastActiveAt.Valid {
+		lastActiveAt := model.LastActiveAt.Time
+		membership.LastActiveAt = &lastActiveAt
+	}
+
+	if model.LastAuthMethod.Valid {
+		membership.LastAuthMethod = entity.SessionAuthMethod(model.LastAuthMethod.String)
+	}
+
+	return membership, nil
 }
 
 func toModel(membership entity.Membership) *dbpostgres.WorkspaceMembership {
-	return &dbpostgres.WorkspaceMembership{
+	model := &dbpostgres.WorkspaceMembership{
 		ID:          membership.ID.String(),
 		WorkspaceID: membership.WorkspaceID.String(),
 		AccountID:   membership.AccountID.String(),
 		Role:        string(membership.Role),
+		Source:      string(membership.Source),
 		CreatedAt:   membership.CreatedAt,
 		UpdatedAt:   membership.UpdatedAt,
 	}
+
+	if membership.LastActiveAt != nil {
+		model.LastActiveAt = null.TimeFrom(*membership.LastActiveAt)
+	}
+
+	if membership.LastAuthMethod != "" {
+		model.LastAuthMethod = null.StringFrom(string(membership.LastAuthMethod))
+	}
+
+	return model
 }
 
 type membershipRepository struct {
@@ -128,26 +176,143 @@ func (r *membershipRepository) Get(ctx context.Context, workspaceID, accountID u
 	return toEntity(model)
 }
 
-func (r *membershipRepository) ListByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]entity.Membership, error) {
-	models, err := dbpostgres.WorkspaceMemberships(
-		dbpostgres.WorkspaceMembershipWhere.WorkspaceID.EQ(workspaceID.String()),
-	).All(ctx, r.db.Querier(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("list memberships by workspace: %w", err)
+func (r *membershipRepository) ListPageByWorkspaceID(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	page entity.MembershipPage,
+) ([]entity.WorkspaceMember, error) {
+	cursorName := ""
+	cursorAccountID := uuid.Nil.String()
+
+	if page.Cursor != nil {
+		cursorName = page.Cursor.Name
+		cursorAccountID = page.Cursor.AccountID.String()
 	}
 
-	memberships := make([]entity.Membership, 0, len(models))
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx,
+		membershipPageQuery,
+		workspaceID.String(),
+		page.Query,
+		page.Cursor != nil,
+		cursorName,
+		cursorAccountID,
+		page.Limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list workspace members: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
 
-	for _, model := range models {
-		membership, err := toEntity(model)
+	members := make([]entity.WorkspaceMember, 0, page.Limit)
+
+	for rows.Next() {
+		member, err := scanWorkspaceMember(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		memberships = append(memberships, membership)
+		members = append(members, member)
 	}
 
-	return memberships, nil
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scan workspace members: %w", err)
+	}
+
+	return members, nil
+}
+
+func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
+	var (
+		rawID          string
+		rawWorkspaceID string
+		rawAccountID   string
+		role           string
+		source         string
+		lastActiveAt   sql.NullTime
+		lastAuthMethod sql.NullString
+		createdAt      time.Time
+		updatedAt      time.Time
+		displayName    string
+		email          string
+		sortName       string
+	)
+
+	if err := rows.Scan(
+		&rawID,
+		&rawWorkspaceID,
+		&rawAccountID,
+		&role,
+		&source,
+		&lastActiveAt,
+		&lastAuthMethod,
+		&createdAt,
+		&updatedAt,
+		&displayName,
+		&email,
+		&sortName,
+	); err != nil {
+		return entity.WorkspaceMember{}, fmt.Errorf("scan workspace member: %w", err)
+	}
+
+	id, err := uuid.Parse(rawID)
+	if err != nil {
+		return entity.WorkspaceMember{}, fmt.Errorf("parse membership id: %w", err)
+	}
+
+	workspaceID, err := uuid.Parse(rawWorkspaceID)
+	if err != nil {
+		return entity.WorkspaceMember{}, fmt.Errorf("parse membership workspace id: %w", err)
+	}
+
+	accountID, err := uuid.Parse(rawAccountID)
+	if err != nil {
+		return entity.WorkspaceMember{}, fmt.Errorf("parse membership account id: %w", err)
+	}
+
+	membership := entity.Membership{
+		ID:          id,
+		WorkspaceID: workspaceID,
+		AccountID:   accountID,
+		Role:        entity.MembershipRole(role),
+		Source:      entity.MembershipSource(source),
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
+	}
+
+	if lastActiveAt.Valid {
+		activeAt := lastActiveAt.Time
+		membership.LastActiveAt = &activeAt
+	}
+
+	if lastAuthMethod.Valid {
+		membership.LastAuthMethod = entity.SessionAuthMethod(lastAuthMethod.String)
+	}
+
+	return entity.WorkspaceMember{
+		Membership:  membership,
+		DisplayName: displayName,
+		Email:       email,
+		SortName:    sortName,
+	}, nil
+}
+
+func (r *membershipRepository) RecordActivity(
+	ctx context.Context,
+	accountID uuid.UUID,
+	activeAt time.Time,
+	method entity.SessionAuthMethod,
+) error {
+	if _, err := dbpostgres.WorkspaceMemberships(
+		dbpostgres.WorkspaceMembershipWhere.AccountID.EQ(accountID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceMembershipColumns.LastActiveAt:   null.TimeFrom(activeAt),
+		dbpostgres.WorkspaceMembershipColumns.LastAuthMethod: null.StringFrom(string(method)),
+	}); err != nil {
+		return fmt.Errorf("record membership activity: %w", err)
+	}
+
+	return nil
 }
 
 func (r *membershipRepository) UpdateRole(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.Membership, error) {

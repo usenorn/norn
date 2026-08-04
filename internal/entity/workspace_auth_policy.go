@@ -39,6 +39,18 @@ func (e AuthEnforcement) Permits(method SessionAuthMethod) bool {
 	}
 }
 
+func (e AuthEnforcement) PermitsActor(actor Actor) bool {
+	if actor.Kind != ActorKindUser {
+		return true
+	}
+
+	if actor.Anonymous() {
+		return e == AuthEnforcementAny
+	}
+
+	return e.Permits(actor.AuthMethod)
+}
+
 type WorkspaceAuthPolicy struct {
 	WorkspaceID uuid.UUID
 	Enforcement AuthEnforcement

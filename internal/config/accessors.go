@@ -2,6 +2,8 @@ package config
 
 func NewApp(cfg Config) App { return cfg.App }
 
+func NewInstance(cfg Config) Instance { return cfg.Instance }
+
 func NewHTTP(cfg Config) HTTP { return cfg.HTTP }
 
 func NewPostgres(cfg Config) Postgres { return cfg.Postgres }
@@ -21,3 +23,5 @@ func NewCasbin(cfg Config) Casbin { return cfg.Casbin }
 func NewGeoIP(cfg Config) GeoIP { return cfg.GeoIP }
 
 func NewPassword(cfg Config) Password { return cfg.Password }
+
+func NewWorkspace(cfg Config) Workspace { return cfg.Workspace }

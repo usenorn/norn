@@ -12,6 +12,7 @@ import (
 
 type Sessions interface {
 	SignIn(ctx context.Context, input SignInInput) (IssuedSession, error)
+	Start(ctx context.Context, input StartSessionInput) (IssuedSession, error)
 	Validate(ctx context.Context, token string) (entity.Session, error)
 	SignOut(ctx context.Context, sessionID uuid.UUID) error
 	List(ctx context.Context, accountID uuid.UUID) ([]entity.Session, error)

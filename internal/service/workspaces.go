@@ -12,11 +12,17 @@ import (
 
 type Workspaces interface {
 	Create(ctx context.Context, input CreateWorkspaceInput) (entity.Workspace, error)
+	Get(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error)
+	Update(ctx context.Context, workspaceID uuid.UUID, input UpdateWorkspaceInput) (entity.Workspace, error)
+	Delete(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error)
+	Restore(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error)
+	Purge(ctx context.Context, workspaceID uuid.UUID) error
 	ListForAccount(ctx context.Context, accountID uuid.UUID) ([]entity.Workspace, error)
-	ListMembers(ctx context.Context, workspaceID uuid.UUID) ([]entity.Membership, error)
-	AddMember(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.Membership, error)
-	ChangeMemberRole(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.Membership, error)
-	RemoveMember(ctx context.Context, workspaceID, accountID uuid.UUID) error
+	ListMembers(ctx context.Context, workspaceID uuid.UUID, input ListMembersInput) (MemberPage, error)
+	AddMember(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.WorkspaceMember, error)
+	ChangeMemberRole(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.WorkspaceMember, error)
+	PreviewMemberRemoval(ctx context.Context, workspaceID, accountID uuid.UUID) (MemberRemoval, error)
+	RemoveMember(ctx context.Context, workspaceID, accountID uuid.UUID, reassignTo *uuid.UUID) error
 	AuthPolicy(ctx context.Context, workspaceID uuid.UUID) (entity.WorkspaceAuthPolicy, error)
 	SetAuthPolicy(ctx context.Context, workspaceID uuid.UUID, enforcement entity.AuthEnforcement) (entity.WorkspaceAuthPolicy, error)
 }

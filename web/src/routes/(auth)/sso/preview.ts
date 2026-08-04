@@ -1,7 +1,8 @@
-import type { AuthConfig, SsoExchange } from "$lib/auth/types";
+import type { Instance } from "$lib/auth/instance";
+import type { SsoExchange } from "$lib/auth/types";
 
 export type SsoPreview = {
-	auth?: Partial<AuthConfig>;
+	auth?: Partial<Instance>;
 	exchange: SsoExchange;
 };
 

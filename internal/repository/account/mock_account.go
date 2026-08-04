@@ -87,6 +87,21 @@ func (mr *MockAccountMockRecorder) GetByID(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockAccount)(nil).GetByID), ctx, id)
 }
 
+// ListByIDs mocks base method.
+func (m *MockAccount) ListByIDs(ctx context.Context, ids []uuid.UUID) ([]entity.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByIDs", ctx, ids)
+	ret0, _ := ret[0].([]entity.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByIDs indicates an expected call of ListByIDs.
+func (mr *MockAccountMockRecorder) ListByIDs(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByIDs", reflect.TypeOf((*MockAccount)(nil).ListByIDs), ctx, ids)
+}
+
 // Update mocks base method.
 func (m *MockAccount) Update(ctx context.Context, account entity.Account) (entity.Account, error) {
 	m.ctrl.T.Helper()

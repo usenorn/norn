@@ -23,23 +23,39 @@ import (
 	"github.com/usenorn/norn/internal/pkg/valkey"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/repository/account"
+	"github.com/usenorn/norn/internal/repository/apitoken"
 	"github.com/usenorn/norn/internal/repository/blob"
 	"github.com/usenorn/norn/internal/repository/breachcheck"
 	"github.com/usenorn/norn/internal/repository/emailchange"
 	"github.com/usenorn/norn/internal/repository/geolocation"
+	"github.com/usenorn/norn/internal/repository/invitation"
+	"github.com/usenorn/norn/internal/repository/issue"
+	"github.com/usenorn/norn/internal/repository/issueactivity"
 	"github.com/usenorn/norn/internal/repository/jobqueue"
+	"github.com/usenorn/norn/internal/repository/label"
+	"github.com/usenorn/norn/internal/repository/labelgroup"
 	"github.com/usenorn/norn/internal/repository/mailer"
 	"github.com/usenorn/norn/internal/repository/membership"
 	"github.com/usenorn/norn/internal/repository/passwordhistory"
 	"github.com/usenorn/norn/internal/repository/passwordreset"
 	"github.com/usenorn/norn/internal/repository/session"
 	"github.com/usenorn/norn/internal/repository/signinthrottle"
+	"github.com/usenorn/norn/internal/repository/signup"
+	"github.com/usenorn/norn/internal/repository/team"
+	"github.com/usenorn/norn/internal/repository/teammember"
+	"github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/repository/workspace"
 	"github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	account2 "github.com/usenorn/norn/internal/service/account"
+	apitoken2 "github.com/usenorn/norn/internal/service/apitoken"
 	"github.com/usenorn/norn/internal/service/authorizer"
+	invitation2 "github.com/usenorn/norn/internal/service/invitation"
+	issue2 "github.com/usenorn/norn/internal/service/issue"
 	"github.com/usenorn/norn/internal/service/jobs"
+	label2 "github.com/usenorn/norn/internal/service/label"
 	session2 "github.com/usenorn/norn/internal/service/session"
+	team2 "github.com/usenorn/norn/internal/service/team"
+	workflowstate2 "github.com/usenorn/norn/internal/service/workflowstate"
 	workspace2 "github.com/usenorn/norn/internal/service/workspace"
 )
 
@@ -65,6 +81,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 		return nil, nil, err
 	}
 	repositoryAccount := account.New(postgresClient)
+	repositoryMembership := membership.New(postgresClient)
 	geoIP := config.NewGeoIP(configConfig)
 	geoipClient, cleanup3, err := geoip.New(geoIP)
 	if err != nil {
@@ -74,36 +91,30 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	}
 	geoLocator := geolocation.New(geoipClient)
 	signInThrottle := signinthrottle.New(client)
-	sessions := session2.New(repositorySession, repositoryAccount, geoLocator, signInThrottle, configSession)
+	casbin := config.NewCasbin(configConfig)
+	enforcer, cleanup4, err := authz.New(casbin, postgresClient, client)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	workspaceAuthPolicy := workspaceauthpolicy.New(postgresClient)
+	repositoryWorkspace := workspace.New(postgresClient)
+	repositoryTeam := team.New(postgresClient)
+	serviceAuthorizer := authorizer.New(enforcer, repositoryMembership, workspaceAuthPolicy, repositoryWorkspace, repositoryTeam, repositoryAccount)
+	sessions := session2.New(repositorySession, repositoryAccount, repositoryMembership, geoLocator, signInThrottle, configSession, serviceAuthorizer)
+	apiToken := apitoken.New(postgresClient)
+	apiTokens := apitoken2.New(apiToken, repositoryMembership, repositoryAccount, serviceAuthorizer)
 	emailChange := emailchange.New(postgresClient)
 	passwordReset := passwordreset.New(postgresClient)
+	signUp := signup.New(postgresClient)
 	passwordHistory := passwordhistory.New(postgresClient)
-	repositoryMembership := membership.New(postgresClient)
-	repositoryWorkspace := workspace.New(postgresClient)
-	workspaceAuthPolicy := workspaceauthpolicy.New(postgresClient)
 	password := config.NewPassword(configConfig)
 	pwnedClient := pwned.New(password)
 	breachCheck := breachcheck.New(pwnedClient)
 	storage := config.NewStorage(configConfig)
 	objectstoreClient, err := objectstore.New(storage)
-	if err != nil {
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	repositoryBlob := blob.New(objectstoreClient)
-	configSMTP := config.NewSMTP(configConfig)
-	smtpClient, cleanup4, err := smtp.New(configSMTP)
-	if err != nil {
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	repositoryMailer := mailer.New(smtpClient)
-	asynq := config.NewAsynq(configConfig)
-	taskqueueClient, cleanup5, err := taskqueue.NewClient(asynq)
 	if err != nil {
 		cleanup4()
 		cleanup3()
@@ -111,8 +122,30 @@ func InitApp(cfgFile string) (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	inspector, cleanup6, err := taskqueue.NewInspector(asynq)
+	repositoryBlob := blob.New(objectstoreClient)
+	configSMTP := config.NewSMTP(configConfig)
+	smtpClient, cleanup5, err := smtp.New(configSMTP)
 	if err != nil {
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	repositoryMailer := mailer.New(smtpClient)
+	asynq := config.NewAsynq(configConfig)
+	taskqueueClient, cleanup6, err := taskqueue.NewClient(asynq)
+	if err != nil {
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	inspector, cleanup7, err := taskqueue.NewInspector(asynq)
+	if err != nil {
+		cleanup6()
 		cleanup5()
 		cleanup4()
 		cleanup3()
@@ -123,22 +156,24 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	jobqueueClient := jobqueue.NewClient(taskqueueClient, inspector, asynq)
 	jobProducer := jobqueue.AsProducer(jobqueueClient)
 	app := config.NewApp(configConfig)
-	accounts := account2.New(repositoryAccount, emailChange, passwordReset, passwordHistory, repositoryMembership, repositoryWorkspace, workspaceAuthPolicy, breachCheck, signInThrottle, repositoryBlob, repositoryMailer, jobProducer, postgresClient, sessions, app, configSMTP)
-	casbin := config.NewCasbin(configConfig)
-	enforcer, cleanup7, err := authz.New(casbin, postgresClient, client)
-	if err != nil {
-		cleanup6()
-		cleanup5()
-		cleanup4()
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	serviceAuthorizer := authorizer.New(enforcer)
-	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, workspaceAuthPolicy, serviceAuthorizer, postgresClient)
-	strictServerInterface := dashboard.New(accounts, workspaces, sessions, repositoryBlob, app, configSession)
-	handler := router.New(http, configSession, sessions, strictServerInterface)
+	instance := config.NewInstance(configConfig)
+	accounts := account2.New(repositoryAccount, emailChange, passwordReset, signUp, passwordHistory, repositoryMembership, repositoryWorkspace, workspaceAuthPolicy, breachCheck, signInThrottle, repositoryBlob, repositoryMailer, jobProducer, postgresClient, sessions, serviceAuthorizer, app, configSMTP, instance)
+	teamMember := teammember.New(postgresClient)
+	workflowState := workflowstate.New(postgresClient)
+	configWorkspace := config.NewWorkspace(configConfig)
+	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, workspaceAuthPolicy, jobProducer, serviceAuthorizer, postgresClient, configWorkspace)
+	teams := team2.New(repositoryTeam, teamMember, repositoryWorkspace, repositoryMembership, repositoryAccount, workspaceAuthPolicy, workflowState, serviceAuthorizer, postgresClient)
+	repositoryInvitation := invitation.New(postgresClient)
+	invitations := invitation2.New(repositoryInvitation, repositoryMembership, repositoryWorkspace, repositoryAccount, repositoryTeam, teamMember, workspaceAuthPolicy, jobProducer, repositoryMailer, postgresClient, serviceAuthorizer, accounts, sessions, app, configSMTP)
+	repositoryIssue := issue.New(postgresClient)
+	issueActivity := issueactivity.New(postgresClient)
+	repositoryLabel := label.New(postgresClient)
+	issues := issue2.New(repositoryIssue, workflowState, issueActivity, repositoryLabel, repositoryMembership, jobProducer, serviceAuthorizer, postgresClient)
+	workflowStates := workflowstate2.New(workflowState, repositoryIssue, repositoryTeam, serviceAuthorizer, postgresClient)
+	labelGroup := labelgroup.New(postgresClient)
+	labels := label2.New(repositoryLabel, labelGroup, repositoryTeam, serviceAuthorizer, postgresClient)
+	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, workflowStates, labels, apiTokens, sessions, repositoryBlob, app, instance, configSession)
+	handler := router.New(http, configSession, sessions, apiTokens, strictServerInterface)
 	logger, err := logging.New(app)
 	if err != nil {
 		cleanup7()
@@ -182,6 +217,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	repositoryAccount := account.New(client)
 	emailChange := emailchange.New(client)
 	passwordReset := passwordreset.New(client)
+	signUp := signup.New(client)
 	passwordHistory := passwordhistory.New(client)
 	repositoryMembership := membership.New(client)
 	repositoryWorkspace := workspace.New(client)
@@ -242,14 +278,43 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 		return nil, nil, err
 	}
 	geoLocator := geolocation.New(geoipClient)
-	sessions := session2.New(repositorySession, repositoryAccount, geoLocator, signInThrottle, configSession)
-	accounts := account2.New(repositoryAccount, emailChange, passwordReset, passwordHistory, repositoryMembership, repositoryWorkspace, workspaceAuthPolicy, breachCheck, signInThrottle, repositoryBlob, repositoryMailer, jobProducer, client, sessions, app, configSMTP)
+	casbin := config.NewCasbin(configConfig)
+	enforcer, cleanup7, err := authz.New(casbin, client, valkeyClient)
+	if err != nil {
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	repositoryTeam := team.New(client)
+	serviceAuthorizer := authorizer.New(enforcer, repositoryMembership, workspaceAuthPolicy, repositoryWorkspace, repositoryTeam, repositoryAccount)
+	sessions := session2.New(repositorySession, repositoryAccount, repositoryMembership, geoLocator, signInThrottle, configSession, serviceAuthorizer)
+	instance := config.NewInstance(configConfig)
+	accounts := account2.New(repositoryAccount, emailChange, passwordReset, signUp, passwordHistory, repositoryMembership, repositoryWorkspace, workspaceAuthPolicy, breachCheck, signInThrottle, repositoryBlob, repositoryMailer, jobProducer, client, sessions, serviceAuthorizer, app, configSMTP, instance)
+	signUpVerificationHandler := job.NewSignUpVerificationHandler(accounts)
 	emailChangeConfirmationHandler := job.NewEmailChangeConfirmationHandler(accounts)
 	passwordResetHandler := job.NewPasswordResetHandler(accounts)
 	passwordResetSSONoticeHandler := job.NewPasswordResetSSONoticeHandler(accounts)
-	serveMux := NewServeMux(emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler)
+	repositoryInvitation := invitation.New(client)
+	teamMember := teammember.New(client)
+	invitations := invitation2.New(repositoryInvitation, repositoryMembership, repositoryWorkspace, repositoryAccount, repositoryTeam, teamMember, workspaceAuthPolicy, jobProducer, repositoryMailer, client, serviceAuthorizer, accounts, sessions, app, configSMTP)
+	invitationHandler := job.NewInvitationHandler(invitations)
+	workflowState := workflowstate.New(client)
+	configWorkspace := config.NewWorkspace(configConfig)
+	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, workspaceAuthPolicy, jobProducer, serviceAuthorizer, client, configWorkspace)
+	workspacePurgeHandler := job.NewWorkspacePurgeHandler(workspaces)
+	repositoryIssue := issue.New(client)
+	issueActivity := issueactivity.New(client)
+	repositoryLabel := label.New(client)
+	issues := issue2.New(repositoryIssue, workflowState, issueActivity, repositoryLabel, repositoryMembership, jobProducer, serviceAuthorizer, client)
+	issuePurgeHandler := job.NewIssuePurgeHandler(issues)
+	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler)
 	worker := NewWorker(server, serveMux, logger)
 	return worker, func() {
+		cleanup7()
 		cleanup6()
 		cleanup5()
 		cleanup4()
@@ -308,7 +373,12 @@ func InitSeeder(cfgFile string) (*Seeder, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	serviceAuthorizer := authorizer.New(enforcer)
+	repositoryMembership := membership.New(client)
+	workspaceAuthPolicy := workspaceauthpolicy.New(client)
+	repositoryWorkspace := workspace.New(client)
+	repositoryTeam := team.New(client)
+	repositoryAccount := account.New(client)
+	serviceAuthorizer := authorizer.New(enforcer, repositoryMembership, workspaceAuthPolicy, repositoryWorkspace, repositoryTeam, repositoryAccount)
 	app := config.NewApp(configConfig)
 	logger, err := logging.New(app)
 	if err != nil {
@@ -352,7 +422,7 @@ func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, objectstore.Set, authz.Set, geoip.Set, pwned.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, account2.Set, workspace2.Set, session2.Set, authorizer.Set, jobs.Set, dashboard.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, objectstore.Set, authz.Set, geoip.Set, pwned.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, issueactivity.Set, label.Set, labelgroup.Set, workflowstate.Set, apitoken.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, label2.Set, workflowstate2.Set, apitoken2.Set, session2.Set, authorizer.Set, jobs.Set, dashboard.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

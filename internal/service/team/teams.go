@@ -1,0 +1,386 @@
+package team
+
+import (
+	"context"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/repository"
+	"github.com/usenorn/norn/internal/service"
+)
+
+type teamsService struct {
+	teams        repository.Team
+	teamMembers  repository.TeamMember
+	workspaces   repository.Workspace
+	memberships  repository.Membership
+	accounts     repository.Account
+	authPolicies repository.WorkspaceAuthPolicy
+	states       repository.WorkflowState
+	authorizer   service.Authorizer
+	transactor   repository.Transactor
+}
+
+func New(
+	teams repository.Team,
+	teamMembers repository.TeamMember,
+	workspaces repository.Workspace,
+	memberships repository.Membership,
+	accounts repository.Account,
+	authPolicies repository.WorkspaceAuthPolicy,
+	states repository.WorkflowState,
+	authorizer service.Authorizer,
+	transactor repository.Transactor,
+) service.Teams {
+	return &teamsService{
+		teams:        teams,
+		teamMembers:  teamMembers,
+		workspaces:   workspaces,
+		memberships:  memberships,
+		accounts:     accounts,
+		authPolicies: authPolicies,
+		states:       states,
+		authorizer:   authorizer,
+		transactor:   transactor,
+	}
+}
+
+func (s *teamsService) Create(ctx context.Context, input service.CreateTeamInput) (entity.Team, error) {
+	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceTeam,
+		Action:      entity.ActionManage,
+		WorkspaceID: input.WorkspaceID,
+	}); err != nil {
+		return entity.Team{}, err
+	}
+
+	key := entity.NormalizeTeamKey(input.Key)
+
+	if err := entity.NewValidationError(
+		entity.ValidateTeamKey("key", key),
+		entity.ValidateTeamName("name", input.Name),
+	); err != nil {
+		return entity.Team{}, err
+	}
+
+	visibility := input.Visibility
+	if visibility == "" {
+		visibility = entity.DefaultTeamVisibility
+	}
+
+	if !visibility.Valid() {
+		return entity.Team{}, entity.NewValidationError(entity.FieldError{
+			Field: "visibility",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
+	var created entity.Team
+
+	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		team, err := s.teams.Create(ctx, entity.Team{
+			WorkspaceID: input.WorkspaceID,
+			Key:         key,
+			Name:        input.Name,
+			Status:      entity.TeamStatusActive,
+			Visibility:  visibility,
+		})
+		if err != nil {
+			return err
+		}
+
+		if _, err := s.states.CreateMany(ctx, entity.DefaultWorkflowStates(input.WorkspaceID, team.ID)); err != nil {
+			return err
+		}
+
+		created = team
+
+		return nil
+	})
+	if err != nil {
+		return entity.Team{}, err
+	}
+
+	return created, nil
+}
+
+func (s *teamsService) Get(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.Team, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceTeam,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return entity.Team{}, err
+	}
+
+	return s.scopedTeam(ctx, workspaceID, teamID, decision)
+}
+
+func (s *teamsService) List(ctx context.Context, workspaceID uuid.UUID, status entity.TeamStatus) ([]entity.Team, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceTeam,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if status != "" && !status.Valid() {
+		return nil, entity.NewValidationError(entity.FieldError{
+			Field: "status",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
+	return s.teams.ListVisibleTo(
+		ctx,
+		workspaceID,
+		decision.Actor.AccountID,
+		status,
+		decision.Scope.AllTeams,
+	)
+}
+
+func (s *teamsService) Update(ctx context.Context, workspaceID, teamID uuid.UUID, input service.UpdateTeamInput) (entity.Team, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceTeam,
+		Action:      entity.ActionManage,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return entity.Team{}, err
+	}
+
+	current, err := s.liveTeam(ctx, workspaceID, teamID, decision)
+	if err != nil {
+		return entity.Team{}, err
+	}
+
+	name := current.Name
+	if input.Name != nil {
+		name = *input.Name
+	}
+
+	visibility := current.Visibility
+	if input.Visibility != nil {
+		visibility = *input.Visibility
+	}
+
+	if err := entity.NewValidationError(entity.ValidateTeamName("name", name)); err != nil {
+		return entity.Team{}, err
+	}
+
+	if !visibility.Valid() {
+		return entity.Team{}, entity.NewValidationError(entity.FieldError{
+			Field: "visibility",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
+	return s.teams.UpdateSettings(ctx, teamID, name, visibility)
+}
+
+func (s *teamsService) Archive(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.Team, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceTeam,
+		Action:      entity.ActionManage,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return entity.Team{}, err
+	}
+
+	if _, err := s.scopedTeam(ctx, workspaceID, teamID, decision); err != nil {
+		return entity.Team{}, err
+	}
+
+	return s.teams.Archive(ctx, teamID, time.Now().UTC())
+}
+
+func (s *teamsService) Unarchive(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.Team, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceTeam,
+		Action:      entity.ActionManage,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return entity.Team{}, err
+	}
+
+	if _, err := s.scopedTeam(ctx, workspaceID, teamID, decision); err != nil {
+		return entity.Team{}, err
+	}
+
+	return s.teams.Unarchive(ctx, teamID)
+}
+
+func (s *teamsService) ListMembers(ctx context.Context, workspaceID, teamID uuid.UUID) ([]service.TeamMemberView, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceTeamMembership,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := s.scopedTeam(ctx, workspaceID, teamID, decision); err != nil {
+		return nil, err
+	}
+
+	memberships, err := s.teamMembers.ListByTeamID(ctx, teamID)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.describe(ctx, memberships)
+}
+
+func (s *teamsService) AddMember(ctx context.Context, workspaceID, teamID, accountID uuid.UUID) (service.TeamMemberView, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceTeamMembership,
+		Action:      entity.ActionManage,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return service.TeamMemberView{}, err
+	}
+
+	if _, err := s.liveTeam(ctx, workspaceID, teamID, decision); err != nil {
+		return service.TeamMemberView{}, err
+	}
+
+	account, err := s.accounts.GetByID(ctx, accountID)
+	if err != nil {
+		return service.TeamMemberView{}, err
+	}
+
+	if account.Status != entity.AccountStatusActive {
+		return service.TeamMemberView{}, entity.ErrAccountDeactivated
+	}
+
+	created, err := s.teamMembers.Create(ctx, entity.TeamMembership{
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		AccountID:   accountID,
+	})
+	if err != nil {
+		return service.TeamMemberView{}, err
+	}
+
+	return service.TeamMemberView{
+		Membership:  created,
+		DisplayName: account.DisplayName,
+		Email:       account.Email,
+	}, nil
+}
+
+func (s *teamsService) RemoveMember(ctx context.Context, workspaceID, teamID, accountID uuid.UUID) error {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceTeamMembership,
+		Action:      entity.ActionManage,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return err
+	}
+
+	if _, err := s.liveTeam(ctx, workspaceID, teamID, decision); err != nil {
+		return err
+	}
+
+	return s.teamMembers.Delete(ctx, teamID, accountID)
+}
+
+func (s *teamsService) describe(ctx context.Context, memberships []entity.TeamMembership) ([]service.TeamMemberView, error) {
+	if len(memberships) == 0 {
+		return []service.TeamMemberView{}, nil
+	}
+
+	ids := make([]uuid.UUID, len(memberships))
+	for i, membership := range memberships {
+		ids[i] = membership.AccountID
+	}
+
+	accounts, err := s.accounts.ListByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	byID := make(map[uuid.UUID]entity.Account, len(accounts))
+	for _, account := range accounts {
+		byID[account.ID] = account
+	}
+
+	views := make([]service.TeamMemberView, 0, len(memberships))
+
+	for _, membership := range memberships {
+		account := byID[membership.AccountID]
+
+		views = append(views, service.TeamMemberView{
+			Membership:  membership,
+			DisplayName: account.DisplayName,
+			Email:       account.Email,
+		})
+	}
+
+	return views, nil
+}
+
+func (s *teamsService) scopedTeam(
+	ctx context.Context,
+	workspaceID, teamID uuid.UUID,
+	decision entity.Decision,
+) (entity.Team, error) {
+	team, err := s.teams.GetByID(ctx, teamID)
+	if err != nil {
+		return entity.Team{}, err
+	}
+
+	if team.WorkspaceID != workspaceID {
+		return entity.Team{}, entity.ErrTeamNotFound
+	}
+
+	if err := s.visible(decision, team); err != nil {
+		return entity.Team{}, err
+	}
+
+	return team, nil
+}
+
+func (s *teamsService) liveTeam(
+	ctx context.Context,
+	workspaceID, teamID uuid.UUID,
+	decision entity.Decision,
+) (entity.Team, error) {
+	team, err := s.scopedTeam(ctx, workspaceID, teamID, decision)
+	if err != nil {
+		return entity.Team{}, err
+	}
+
+	if team.Archived() {
+		return entity.Team{}, entity.ErrTeamArchived
+	}
+
+	return team, nil
+}
+
+func (s *teamsService) visible(decision entity.Decision, team entity.Team) error {
+	if !decision.Scope.Covers(team.ID) {
+		return entity.ErrTeamNotFound
+	}
+
+	return nil
+}

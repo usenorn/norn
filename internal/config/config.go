@@ -1,19 +1,28 @@
 package config
 
-import "time"
+import (
+	"net/url"
+	"time"
+)
 
 type Config struct {
-	App      App      `mapstructure:"app"`
-	HTTP     HTTP     `mapstructure:"http"`
-	Postgres Postgres `mapstructure:"postgres"`
-	Valkey   Valkey   `mapstructure:"valkey"`
-	Asynq    Asynq    `mapstructure:"asynq"`
-	SMTP     SMTP     `mapstructure:"smtp"`
-	Storage  Storage  `mapstructure:"storage"`
-	Session  Session  `mapstructure:"session"`
-	Casbin   Casbin   `mapstructure:"casbin"`
-	GeoIP    GeoIP    `mapstructure:"geoip"`
-	Password Password `mapstructure:"password"`
+	App       App       `mapstructure:"app"`
+	Instance  Instance  `mapstructure:"instance"`
+	HTTP      HTTP      `mapstructure:"http"`
+	Postgres  Postgres  `mapstructure:"postgres"`
+	Valkey    Valkey    `mapstructure:"valkey"`
+	Asynq     Asynq     `mapstructure:"asynq"`
+	SMTP      SMTP      `mapstructure:"smtp"`
+	Storage   Storage   `mapstructure:"storage"`
+	Session   Session   `mapstructure:"session"`
+	Casbin    Casbin    `mapstructure:"casbin"`
+	GeoIP     GeoIP     `mapstructure:"geoip"`
+	Password  Password  `mapstructure:"password"`
+	Workspace Workspace `mapstructure:"workspace"`
+}
+
+type Workspace struct {
+	DeletionGracePeriod time.Duration `mapstructure:"deletion_grace_period"`
 }
 
 type App struct {
@@ -22,6 +31,21 @@ type App struct {
 	Version  string `mapstructure:"version"`
 	BaseURL  string `mapstructure:"base_url"`
 	LogLevel string `mapstructure:"log_level"`
+}
+
+func (c App) Host() string {
+	parsed, err := url.Parse(c.BaseURL)
+	if err != nil {
+		return ""
+	}
+
+	return parsed.Host
+}
+
+type Instance struct {
+	SignupsOpen  bool `mapstructure:"signups_open"`
+	PasswordAuth bool `mapstructure:"password_auth"`
+	SelfHosted   bool `mapstructure:"self_hosted"`
 }
 
 type HTTP struct {

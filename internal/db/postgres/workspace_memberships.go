@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
@@ -23,65 +24,86 @@ import (
 
 // WorkspaceMembership is an object representing the database table.
 type WorkspaceMembership struct {
-	ID          string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	AccountID   string    `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
-	Role        string    `boil:"role" json:"role" toml:"role" yaml:"role"`
-	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID             string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID    string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	AccountID      string      `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
+	Role           string      `boil:"role" json:"role" toml:"role" yaml:"role"`
+	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Source         string      `boil:"source" json:"source" toml:"source" yaml:"source"`
+	LastActiveAt   null.Time   `boil:"last_active_at" json:"last_active_at,omitempty" toml:"last_active_at" yaml:"last_active_at,omitempty"`
+	LastAuthMethod null.String `boil:"last_auth_method" json:"last_auth_method,omitempty" toml:"last_auth_method" yaml:"last_auth_method,omitempty"`
 
 	R *workspaceMembershipR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceMembershipL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceMembershipColumns = struct {
-	ID          string
-	WorkspaceID string
-	AccountID   string
-	Role        string
-	CreatedAt   string
-	UpdatedAt   string
+	ID             string
+	WorkspaceID    string
+	AccountID      string
+	Role           string
+	CreatedAt      string
+	UpdatedAt      string
+	Source         string
+	LastActiveAt   string
+	LastAuthMethod string
 }{
-	ID:          "id",
-	WorkspaceID: "workspace_id",
-	AccountID:   "account_id",
-	Role:        "role",
-	CreatedAt:   "created_at",
-	UpdatedAt:   "updated_at",
+	ID:             "id",
+	WorkspaceID:    "workspace_id",
+	AccountID:      "account_id",
+	Role:           "role",
+	CreatedAt:      "created_at",
+	UpdatedAt:      "updated_at",
+	Source:         "source",
+	LastActiveAt:   "last_active_at",
+	LastAuthMethod: "last_auth_method",
 }
 
 var WorkspaceMembershipTableColumns = struct {
-	ID          string
-	WorkspaceID string
-	AccountID   string
-	Role        string
-	CreatedAt   string
-	UpdatedAt   string
+	ID             string
+	WorkspaceID    string
+	AccountID      string
+	Role           string
+	CreatedAt      string
+	UpdatedAt      string
+	Source         string
+	LastActiveAt   string
+	LastAuthMethod string
 }{
-	ID:          "workspace_memberships.id",
-	WorkspaceID: "workspace_memberships.workspace_id",
-	AccountID:   "workspace_memberships.account_id",
-	Role:        "workspace_memberships.role",
-	CreatedAt:   "workspace_memberships.created_at",
-	UpdatedAt:   "workspace_memberships.updated_at",
+	ID:             "workspace_memberships.id",
+	WorkspaceID:    "workspace_memberships.workspace_id",
+	AccountID:      "workspace_memberships.account_id",
+	Role:           "workspace_memberships.role",
+	CreatedAt:      "workspace_memberships.created_at",
+	UpdatedAt:      "workspace_memberships.updated_at",
+	Source:         "workspace_memberships.source",
+	LastActiveAt:   "workspace_memberships.last_active_at",
+	LastAuthMethod: "workspace_memberships.last_auth_method",
 }
 
 // Generated where
 
 var WorkspaceMembershipWhere = struct {
-	ID          whereHelperstring
-	WorkspaceID whereHelperstring
-	AccountID   whereHelperstring
-	Role        whereHelperstring
-	CreatedAt   whereHelpertime_Time
-	UpdatedAt   whereHelpertime_Time
+	ID             whereHelperstring
+	WorkspaceID    whereHelperstring
+	AccountID      whereHelperstring
+	Role           whereHelperstring
+	CreatedAt      whereHelpertime_Time
+	UpdatedAt      whereHelpertime_Time
+	Source         whereHelperstring
+	LastActiveAt   whereHelpernull_Time
+	LastAuthMethod whereHelpernull_String
 }{
-	ID:          whereHelperstring{field: "\"workspace_memberships\".\"id\""},
-	WorkspaceID: whereHelperstring{field: "\"workspace_memberships\".\"workspace_id\""},
-	AccountID:   whereHelperstring{field: "\"workspace_memberships\".\"account_id\""},
-	Role:        whereHelperstring{field: "\"workspace_memberships\".\"role\""},
-	CreatedAt:   whereHelpertime_Time{field: "\"workspace_memberships\".\"created_at\""},
-	UpdatedAt:   whereHelpertime_Time{field: "\"workspace_memberships\".\"updated_at\""},
+	ID:             whereHelperstring{field: "\"workspace_memberships\".\"id\""},
+	WorkspaceID:    whereHelperstring{field: "\"workspace_memberships\".\"workspace_id\""},
+	AccountID:      whereHelperstring{field: "\"workspace_memberships\".\"account_id\""},
+	Role:           whereHelperstring{field: "\"workspace_memberships\".\"role\""},
+	CreatedAt:      whereHelpertime_Time{field: "\"workspace_memberships\".\"created_at\""},
+	UpdatedAt:      whereHelpertime_Time{field: "\"workspace_memberships\".\"updated_at\""},
+	Source:         whereHelperstring{field: "\"workspace_memberships\".\"source\""},
+	LastActiveAt:   whereHelpernull_Time{field: "\"workspace_memberships\".\"last_active_at\""},
+	LastAuthMethod: whereHelpernull_String{field: "\"workspace_memberships\".\"last_auth_method\""},
 }
 
 // WorkspaceMembershipRels is where relationship names are stored.
@@ -140,9 +162,9 @@ func (r *workspaceMembershipR) GetWorkspace() *Workspace {
 type workspaceMembershipL struct{}
 
 var (
-	workspaceMembershipAllColumns            = []string{"id", "workspace_id", "account_id", "role", "created_at", "updated_at"}
+	workspaceMembershipAllColumns            = []string{"id", "workspace_id", "account_id", "role", "created_at", "updated_at", "source", "last_active_at", "last_auth_method"}
 	workspaceMembershipColumnsWithoutDefault = []string{"workspace_id", "account_id", "role"}
-	workspaceMembershipColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	workspaceMembershipColumnsWithDefault    = []string{"id", "created_at", "updated_at", "source", "last_active_at", "last_auth_method"}
 	workspaceMembershipPrimaryKeyColumns     = []string{"id"}
 	workspaceMembershipGeneratedColumns      = []string{}
 )

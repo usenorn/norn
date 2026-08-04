@@ -1,17 +1,5 @@
 export type Diagnostic = { key: string; value: string };
 
-export type SsoProvider = { name: string };
-
-export type AuthConfig = {
-	workspace: string;
-	password: boolean;
-	sso: SsoProvider | null;
-	signupsOpen: boolean;
-	selfHosted: boolean;
-	host: string;
-	instance: string | null;
-};
-
 export type SignInFailure =
 	| { kind: "invalid_credentials"; attemptsLeft: number }
 	| { kind: "account_locked"; unlocksAt: string }
@@ -32,15 +20,26 @@ export type SsoFailure =
 	  };
 
 export type SignUpOutcome =
+	| { kind: "verification_sent"; email: string; expiresAt: string }
+	| { kind: "link_only"; email: string; expiresAt: string; url: string }
 	| { kind: "email_taken" }
 	| { kind: "domain_uses_sso"; organization: string; provider: string }
-	| { kind: "delivery_failed" }
-	| {
-			kind: "verification_sent";
-			email: string;
-			sentAt: string | null;
-			expiresAt: string | null;
-	  };
+	| { kind: "closed" }
+	| { kind: "rate_limited" }
+	| { kind: "breach_check_unavailable" }
+	| { kind: "unavailable" };
+
+export type SignUpResend = "idle" | "limited" | "unavailable";
+
+export type SignUpConfirmation =
+	| { kind: "confirming" }
+	| { kind: "confirmed"; email: string }
+	| { kind: "no_token" }
+	| { kind: "expired" }
+	| { kind: "invalid" }
+	| { kind: "used" }
+	| { kind: "email_taken" }
+	| { kind: "unavailable" };
 
 export type PasswordReset =
 	| { kind: "request" }

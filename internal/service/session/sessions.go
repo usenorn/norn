@@ -9,42 +9,50 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 )
 
 type sessionsService struct {
-	sessions   repository.Session
-	accounts   repository.Account
-	geoLocator repository.GeoLocator
-	throttle   repository.SignInThrottle
-	cfg        config.Session
+	sessions    repository.Session
+	accounts    repository.Account
+	memberships repository.Membership
+	geoLocator  repository.GeoLocator
+	throttle    repository.SignInThrottle
+	cfg         config.Session
+	authorizer  service.Authorizer
 }
 
 func New(
 	sessions repository.Session,
 	accounts repository.Account,
+	memberships repository.Membership,
 	geoLocator repository.GeoLocator,
 	throttle repository.SignInThrottle,
 	cfg config.Session,
+	authorizer service.Authorizer,
 ) service.Sessions {
 	return &sessionsService{
-		sessions:   sessions,
-		accounts:   accounts,
-		geoLocator: geoLocator,
-		throttle:   throttle,
-		cfg:        cfg,
+		sessions:    sessions,
+		accounts:    accounts,
+		memberships: memberships,
+		geoLocator:  geoLocator,
+		throttle:    throttle,
+		cfg:         cfg,
+		authorizer:  authorizer,
 	}
 }
 
-func authorizeSelf(ctx context.Context, accountID uuid.UUID) error {
-	actor, ok := identity.From(ctx)
-	if !ok || actor != accountID {
-		return entity.ErrAccountForbidden
-	}
+func (s *sessionsService) authorizeSelf(ctx context.Context, action entity.Action, accountID uuid.UUID) error {
+	_, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource: entity.ResourceSession,
+		Action:   action,
+		Subject:  accountID,
+	})
 
-	return nil
+	return err
 }
 
 func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput) (service.IssuedSession, error) {
@@ -100,6 +108,10 @@ func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput)
 	}
 
 	return s.issue(ctx, account.ID, entity.SessionAuthMethodPassword, input.Client)
+}
+
+func (s *sessionsService) Start(ctx context.Context, input service.StartSessionInput) (service.IssuedSession, error) {
+	return s.issue(ctx, input.AccountID, entity.SessionAuthMethodPassword, input.Client)
 }
 
 func (s *sessionsService) recordFailure(ctx context.Context, subject string) error {
@@ -168,6 +180,8 @@ func (s *sessionsService) issue(
 		return service.IssuedSession{}, err
 	}
 
+	s.recordMembershipActivity(ctx, session)
+
 	return service.IssuedSession{Session: session, Token: token}, nil
 }
 
@@ -206,7 +220,20 @@ func (s *sessionsService) Validate(ctx context.Context, token string) (entity.Se
 		return entity.Session{}, err
 	}
 
+	s.recordMembershipActivity(ctx, refreshed)
+
 	return refreshed, nil
+}
+
+func (s *sessionsService) recordMembershipActivity(ctx context.Context, session entity.Session) {
+	if err := s.memberships.RecordActivity(ctx, session.AccountID, session.LastUsedAt, session.AuthMethod); err != nil {
+		logging.From(ctx).WarnContext(
+			ctx,
+			"recording membership activity failed",
+			"account_id", session.AccountID.String(),
+			"error", err.Error(),
+		)
+	}
 }
 
 func (s *sessionsService) SignOut(ctx context.Context, sessionID uuid.UUID) error {
@@ -219,7 +246,7 @@ func (s *sessionsService) SignOut(ctx context.Context, sessionID uuid.UUID) erro
 }
 
 func (s *sessionsService) List(ctx context.Context, accountID uuid.UUID) ([]entity.Session, error) {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionRead, accountID); err != nil {
 		return nil, err
 	}
 
@@ -227,7 +254,7 @@ func (s *sessionsService) List(ctx context.Context, accountID uuid.UUID) ([]enti
 }
 
 func (s *sessionsService) Revoke(ctx context.Context, accountID, sessionID uuid.UUID) error {
-	if err := authorizeSelf(ctx, accountID); err != nil {
+	if err := s.authorizeSelf(ctx, entity.ActionDelete, accountID); err != nil {
 		return err
 	}
 
@@ -235,6 +262,10 @@ func (s *sessionsService) Revoke(ctx context.Context, accountID, sessionID uuid.
 }
 
 func (s *sessionsService) RevokeAllByAccountID(ctx context.Context, accountID uuid.UUID) error {
+	if err := s.authorizeSelf(ctx, entity.ActionDelete, accountID); err != nil {
+		return err
+	}
+
 	if err := s.sessions.MarkRevoked(ctx, accountID, time.Now().UTC()); err != nil {
 		return err
 	}

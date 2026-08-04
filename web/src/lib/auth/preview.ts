@@ -1,15 +1,15 @@
-import type { AuthConfig } from "./types";
+import type { Instance } from "./instance";
 
-export const authPreviewDeployments: Record<string, Partial<AuthConfig>> = {
-	cloud: { selfHosted: false, host: "norn.app", instance: null },
+export const authPreviewDeployments: Record<string, Partial<Instance>> = {
+	cloud: { selfHosted: false, host: "norn.app", version: "" },
 	"self-hosted": {
 		selfHosted: true,
 		host: "norn.northwind.internal",
-		instance: "norn.northwind.internal · v1.4.2",
+		version: "1.4.2",
 	},
 };
 
-export function deploymentPreview(url: URL): Partial<AuthConfig> | undefined {
+export function deploymentPreview(url: URL): Partial<Instance> | undefined {
 	if (!import.meta.env.DEV) return undefined;
 	return authPreviewDeployments[url.searchParams.get("deployment") ?? ""];
 }

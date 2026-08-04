@@ -13,32 +13,6 @@ import (
 
 const avatarFormField = "file"
 
-func (h *handler) RegisterAccount(ctx context.Context, request api.RegisterAccountRequestObject) (api.RegisterAccountResponseObject, error) {
-	input := service.RegisterAccountInput{
-		Email:       request.Body.Email,
-		DisplayName: request.Body.DisplayName,
-	}
-
-	if request.Body.Timezone != nil {
-		input.Timezone = *request.Body.Timezone
-	}
-
-	if request.Body.Password != nil {
-		input.Password = *request.Body.Password
-	}
-
-	account, err := h.accounts.Register(ctx, input)
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	return api.RegisterAccount201JSONResponse(accountDTO(account, "")), nil
-}
-
 func (h *handler) GetCurrentAccount(ctx context.Context, _ api.GetCurrentAccountRequestObject) (api.GetCurrentAccountResponseObject, error) {
 	accountID, ok := h.currentAccountID(ctx)
 	if !ok {

@@ -20,9 +20,11 @@
 				destructive:
 					"keycap bg-destructive text-primary-foreground [--keycap-lip:var(--danger-active)] hover:bg-danger-hover active:shadow-none",
 				link: "text-link underline-offset-2 hover:text-link-hover hover:underline",
+				chip: "border-line-default bg-paper-2 font-mono text-ink-600 hover:bg-accent hover:text-ink-900",
 			},
 			size: {
 				default: "h-control-md px-3 text-md",
+				chip: "h-5 gap-1 rounded-xs px-1.5 text-xs",
 				xs: "h-control-xs gap-1 rounded-sm px-1.5 text-2xs [&_svg:not([class*='size-'])]:size-3",
 				sm: "h-control-sm gap-1 px-2 text-sm",
 				lg: "h-control-lg px-4 text-base",

@@ -1,33 +1,23 @@
-export const taskStatuses = ["backlog", "todo", "started", "review", "done", "canceled"] as const;
-export type TaskStatus = (typeof taskStatuses)[number];
+import type { LabelColor } from "$lib/labels/labels";
+import type { StateCategory } from "$lib/team/states";
 
 export const taskPriorities = ["urgent", "high", "medium", "low", "none"] as const;
 export type TaskPriority = (typeof taskPriorities)[number];
 
-export const labelColors = ["neutral", "cyan", "blue", "violet", "orchid", "magenta"] as const;
-export type LabelColor = (typeof labelColors)[number];
-
 export type TaskLabel = { name: string; color: LabelColor };
+
+export type TaskState = { name: string; category: StateCategory };
 
 export type Task = {
 	id: string;
 	title: string;
-	status: TaskStatus;
+	state: TaskState;
 	priority: TaskPriority;
 	assignee: string | null;
 	date: string | null;
 	labels: TaskLabel[];
 	project: string;
 	cycle: string | null;
-};
-
-export const statusLabels: Record<TaskStatus, string> = {
-	backlog: "Backlog",
-	todo: "Todo",
-	started: "In progress",
-	review: "In review",
-	done: "Done",
-	canceled: "Canceled",
 };
 
 export const priorityLabels: Record<TaskPriority, string> = {

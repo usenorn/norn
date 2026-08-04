@@ -15,9 +15,11 @@ import (
 	"github.com/usenorn/norn/internal/pkg/identity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
+	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	"github.com/usenorn/norn/internal/service"
+	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 )
 
@@ -28,12 +30,22 @@ const (
 	refreshInterval = time.Minute
 )
 
+type recordedActivity struct {
+	accountID uuid.UUID
+	activeAt  time.Time
+	method    entity.SessionAuthMethod
+}
+
 type harness struct {
-	sessions   *sessionrepo.MockSession
-	accounts   *accountrepo.MockAccount
-	geoLocator *geolocationrepo.MockGeoLocator
-	throttle   *signinthrottlerepo.MockSignInThrottle
-	service    service.Sessions
+	sessions    *sessionrepo.MockSession
+	accounts    *accountrepo.MockAccount
+	memberships *membershiprepo.MockMembership
+	geoLocator  *geolocationrepo.MockGeoLocator
+	throttle    *signinthrottlerepo.MockSignInThrottle
+	authorizer  *authorizersvc.MockAuthorizer
+	activity    *[]recordedActivity
+	activityErr error
+	service     service.Sessions
 }
 
 func newHarness(t *testing.T) *harness {
@@ -42,11 +54,28 @@ func newHarness(t *testing.T) *harness {
 	ctrl := gomock.NewController(t)
 
 	h := &harness{
-		sessions:   sessionrepo.NewMockSession(ctrl),
-		accounts:   accountrepo.NewMockAccount(ctrl),
-		geoLocator: geolocationrepo.NewMockGeoLocator(ctrl),
-		throttle:   signinthrottlerepo.NewMockSignInThrottle(ctrl),
+		sessions:    sessionrepo.NewMockSession(ctrl),
+		accounts:    accountrepo.NewMockAccount(ctrl),
+		memberships: membershiprepo.NewMockMembership(ctrl),
+		geoLocator:  geolocationrepo.NewMockGeoLocator(ctrl),
+		throttle:    signinthrottlerepo.NewMockSignInThrottle(ctrl),
+		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 	}
+
+	h.activity = &[]recordedActivity{}
+
+	h.memberships.EXPECT().
+		RecordActivity(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, accountID uuid.UUID, activeAt time.Time, method entity.SessionAuthMethod) error {
+			*h.activity = append(*h.activity, recordedActivity{
+				accountID: accountID,
+				activeAt:  activeAt,
+				method:    method,
+			})
+
+			return h.activityErr
+		}).
+		AnyTimes()
 
 	h.throttle.EXPECT().RecordAddressAttempt(gomock.Any(), gomock.Any()).Return(1, nil).AnyTimes()
 	h.throttle.EXPECT().Get(gomock.Any(), gomock.Any()).Return(entity.SignInThrottle{}, nil).AnyTimes()
@@ -56,11 +85,27 @@ func newHarness(t *testing.T) *harness {
 		Return(entity.SignInThrottle{Failures: 1}, nil).
 		AnyTimes()
 
-	h.service = sessionsvc.New(h.sessions, h.accounts, h.geoLocator, h.throttle, config.Session{
+	h.authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, request entity.AccessRequest) (entity.Decision, error) {
+			actor, ok := identity.Actor(ctx)
+			if !ok {
+				return entity.Decision{}, entity.ErrAccountForbidden
+			}
+
+			if request.Subject != uuid.Nil && actor.AccountID != request.Subject {
+				return entity.Decision{}, entity.ErrAccountForbidden
+			}
+
+			return entity.Decision{Actor: actor}, nil
+		}).
+		AnyTimes()
+
+	h.service = sessionsvc.New(h.sessions, h.accounts, h.memberships, h.geoLocator, h.throttle, config.Session{
 		IdleTimeout:      idleTimeout,
 		AbsoluteLifetime: absoluteTime,
 		RefreshInterval:  refreshInterval,
-	})
+	}, h.authorizer)
 
 	return h
 }
@@ -346,6 +391,9 @@ func TestListAndRevokeRefuseAnotherAccountsSessions(t *testing.T) {
 		"Revoke": func(h *harness, ctx context.Context) error {
 			return h.service.Revoke(ctx, accountID, uuid.New())
 		},
+		"RevokeAllByAccountID": func(h *harness, ctx context.Context) error {
+			return h.service.RevokeAllByAccountID(ctx, accountID)
+		},
 	}
 
 	for name, operation := range operations {
@@ -371,7 +419,7 @@ func TestRevokingEveryStoredSessionAlsoRecordsTheRevocationInstant(t *testing.T)
 	marked := h.sessions.EXPECT().MarkRevoked(gomock.Any(), accountID, gomock.Any()).Return(nil)
 	h.sessions.EXPECT().DeleteByAccountID(gomock.Any(), accountID).Return(nil).After(marked)
 
-	if err := h.service.RevokeAllByAccountID(context.Background(), accountID); err != nil {
+	if err := h.service.RevokeAllByAccountID(identity.Into(context.Background(), accountID), accountID); err != nil {
 		t.Fatalf("RevokeAllByAccountID: %v", err)
 	}
 }
@@ -415,5 +463,99 @@ func TestRotatingAfterACredentialChangeRevokesEverythingThenIssuesAFreshSession(
 
 	if captured.Client.UserAgent != current.Client.UserAgent {
 		t.Fatalf("rotated client = %+v, want the current session's client", captured.Client)
+	}
+}
+
+func TestRefreshingASessionRecordsMembershipActivity(t *testing.T) {
+	h := newHarness(t)
+
+	accountID := uuid.New()
+	session := liveSession(accountID, time.Now().UTC().Add(-10*time.Minute))
+
+	h.sessions.EXPECT().Get(gomock.Any(), gomock.Any()).Return(session, nil)
+	h.sessions.EXPECT().RevokedAt(gomock.Any(), accountID).Return(time.Time{}, nil)
+	h.sessions.EXPECT().Touch(gomock.Any(), gomock.Any()).Return(nil)
+
+	refreshed, err := h.service.Validate(context.Background(), "a-session-token")
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+
+	if len(*h.activity) != 1 {
+		t.Fatalf("recorded %d activity writes, want exactly one", len(*h.activity))
+	}
+
+	recorded := (*h.activity)[0]
+
+	if recorded.accountID != accountID {
+		t.Fatalf("recorded account = %v, want %v", recorded.accountID, accountID)
+	}
+
+	if !recorded.activeAt.Equal(refreshed.LastUsedAt) {
+		t.Fatalf("recorded activity at %v, want the refreshed last-used time %v", recorded.activeAt, refreshed.LastUsedAt)
+	}
+
+	if recorded.method != session.AuthMethod {
+		t.Fatalf("recorded auth method = %q, want %q", recorded.method, session.AuthMethod)
+	}
+}
+
+func TestASessionBelowTheRefreshIntervalRecordsNoActivity(t *testing.T) {
+	h := newHarness(t)
+
+	accountID := uuid.New()
+	session := liveSession(accountID, time.Now().UTC())
+
+	h.sessions.EXPECT().Get(gomock.Any(), gomock.Any()).Return(session, nil)
+	h.sessions.EXPECT().RevokedAt(gomock.Any(), accountID).Return(time.Time{}, nil)
+
+	if _, err := h.service.Validate(context.Background(), "a-session-token"); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+
+	if len(*h.activity) != 0 {
+		t.Fatalf("recorded %d activity writes, want none; the refresh throttle is what bounds the write rate", len(*h.activity))
+	}
+}
+
+func TestAFailedActivityWriteStillAuthenticates(t *testing.T) {
+	h := newHarness(t)
+	h.activityErr = errors.New("record membership activity: connection refused")
+
+	accountID := uuid.New()
+	session := liveSession(accountID, time.Now().UTC().Add(-10*time.Minute))
+
+	h.sessions.EXPECT().Get(gomock.Any(), gomock.Any()).Return(session, nil)
+	h.sessions.EXPECT().RevokedAt(gomock.Any(), accountID).Return(time.Time{}, nil)
+	h.sessions.EXPECT().Touch(gomock.Any(), gomock.Any()).Return(nil)
+
+	refreshed, err := h.service.Validate(context.Background(), "a-session-token")
+	if err != nil {
+		t.Fatalf("a bookkeeping failure must not break authentication, got %v", err)
+	}
+
+	if refreshed.AccountID != accountID {
+		t.Fatalf("Validate returned account %v, want %v", refreshed.AccountID, accountID)
+	}
+}
+
+func TestSigningInRecordsMembershipActivityImmediately(t *testing.T) {
+	h := newHarness(t)
+	accountID := uuid.New()
+
+	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(accountWithPassword(t, accountID), nil)
+	h.geoLocator.EXPECT().Locate(gomock.Any(), gomock.Any()).Return(entity.Location{}, nil)
+	h.sessions.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
+
+	if _, err := signIn(h, password); err != nil {
+		t.Fatalf("SignIn: %v", err)
+	}
+
+	if len(*h.activity) != 1 {
+		t.Fatalf("recorded %d activity writes, want one; a member who just signed in must not read as never active", len(*h.activity))
+	}
+
+	if (*h.activity)[0].method != entity.SessionAuthMethodPassword {
+		t.Fatalf("recorded auth method = %q, want password", (*h.activity)[0].method)
 	}
 }

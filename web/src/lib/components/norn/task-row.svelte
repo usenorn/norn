@@ -30,7 +30,9 @@
 
 	const shown = $derived(task.labels.slice(0, 2));
 	const hidden = $derived(task.labels.length - shown.length);
-	const done = $derived(task.status === "done" || task.status === "canceled");
+	const settled = $derived(
+		task.state.category === "complete" || task.state.category === "abandoned"
+	);
 
 	const initials = $derived(
 		(task.assignee ?? "")
@@ -57,7 +59,7 @@
 	)}
 >
 	<PriorityIcon priority={task.priority} class="size-icon-row" />
-	<StatusIcon status={task.status} />
+	<StatusIcon category={task.state.category} name={task.state.name} />
 	<span
 		class="w-15 flex-none font-mono text-xs text-muted-foreground data-[strong=true]:text-ink-900"
 		data-strong={cursor || selected}
@@ -65,7 +67,7 @@
 		{task.id}
 	</span>
 	<span
-		class="min-w-0 flex-1 truncate text-md tracking-snug {done
+		class="min-w-0 flex-1 truncate text-md tracking-snug {settled
 			? 'text-muted-foreground'
 			: 'text-ink-900'}"
 	>

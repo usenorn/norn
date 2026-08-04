@@ -5,6 +5,7 @@ import "github.com/goforj/wire"
 var Set = wire.NewSet(
 	New,
 	NewApp,
+	NewInstance,
 	NewHTTP,
 	NewPostgres,
 	NewValkey,
@@ -15,4 +16,5 @@ var Set = wire.NewSet(
 	NewCasbin,
 	NewGeoIP,
 	NewPassword,
+	NewWorkspace,
 )

@@ -10,6 +10,7 @@
 	import * as Form from "$lib/components/ui/form/index.js";
 	import Diagnostics from "$lib/components/norn/diagnostics.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import InstanceLine from "$lib/components/norn/instance-line.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { goto } from "$app/navigation";
@@ -59,9 +60,9 @@
 	});
 	const { form: formData, enhance, submitting } = form;
 
-	const ssoOnly = $derived(auth.sso !== null && !auth.password);
+	const ssoOnly = $derived(Boolean(auth.sso) && !auth.password);
 	const showPassword = $derived(auth.password);
-	const showSso = $derived(auth.sso !== null);
+	const showSso = $derived(Boolean(auth.sso));
 	const showDivider = $derived(showPassword && showSso);
 
 	const locked = $derived(failure?.kind === "account_locked" || failure?.kind === "rate_limited");
@@ -71,7 +72,7 @@
 
 	const lede = $derived(
 		ssoOnly
-			? `${auth.workspace} signs in through ${auth.sso?.name}. Password sign-in is off for this workspace.`
+			? `This instance signs in through ${auth.sso?.name}. Password sign-in is off.`
 			: showSso
 				? "Use your work email, or your identity provider."
 				: "Use your work email."
@@ -107,7 +108,7 @@
 				variant: "destructive" as const,
 				icon: CircleX,
 				title: "Single sign-on isn't answering",
-				body: `${auth.sso?.name} is configured for this workspace but its metadata URL returns 404. Password sign-in still works while you fix it.`,
+				body: `${auth.sso?.name} is configured but its metadata URL returns 404. Password sign-in still works while you fix it.`,
 			};
 		}
 		if (!auth.signupsOpen) {
@@ -268,10 +269,6 @@
 				Have an invitation? Open it
 			</a>
 		{/if}
-		{#if auth.selfHosted && auth.instance}
-			<p class="text-center font-mono text-xs break-all text-muted-foreground">
-				{auth.instance}
-			</p>
-		{/if}
+		<InstanceLine instance={auth} />
 	</div>
 </div>

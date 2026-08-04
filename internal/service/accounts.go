@@ -13,6 +13,9 @@ import (
 
 type Accounts interface {
 	Register(ctx context.Context, input RegisterAccountInput) (entity.Account, error)
+	RequestSignUp(ctx context.Context, input RequestSignUpInput) (RequestedSignUp, error)
+	ConfirmSignUp(ctx context.Context, input ConfirmSignUpInput) (ConfirmedSignUp, error)
+	SendSignUpVerification(ctx context.Context, signUpID uuid.UUID, token string) error
 	Get(ctx context.Context, accountID uuid.UUID) (entity.Account, error)
 	UpdateProfile(ctx context.Context, accountID uuid.UUID, input UpdateProfileInput) (entity.Account, error)
 	PendingEmailChange(ctx context.Context, accountID uuid.UUID) (entity.EmailChange, error)

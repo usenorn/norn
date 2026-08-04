@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { cn } from "$lib/utils.js";
-	import type { LabelColor } from "$lib/tasks/types";
+	import type { LabelColor } from "$lib/labels/labels";
 
 	let {
 		name,

@@ -14,7 +14,13 @@ import (
 
 const apiBasePath = "/v1"
 
-func New(cfg config.HTTP, sessionCfg config.Session, sessions service.Sessions, dashboard api.StrictServerInterface) http.Handler {
+func New(
+	cfg config.HTTP,
+	sessionCfg config.Session,
+	sessions service.Sessions,
+	tokens service.APITokens,
+	dashboard api.StrictServerInterface,
+) http.Handler {
 	base := chi.NewRouter()
 	base.Use(
 		middleware.Recovery,
@@ -35,9 +41,12 @@ func New(cfg config.HTTP, sessionCfg config.Session, sessions service.Sessions, 
 	})
 
 	return api.HandlerWithOptions(strict, api.ChiServerOptions{
-		BaseURL:     apiBasePath,
-		BaseRouter:  base,
-		Middlewares: []api.MiddlewareFunc{middleware.Session(sessions, sessionCfg)},
+		BaseURL:    apiBasePath,
+		BaseRouter: base,
+		Middlewares: []api.MiddlewareFunc{
+			middleware.BearerToken(tokens),
+			middleware.Session(sessions, sessionCfg),
+		},
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			middleware.WriteProblem(w, r, http.StatusBadRequest, err.Error())
 		},

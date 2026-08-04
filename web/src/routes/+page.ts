@@ -1,8 +1,10 @@
 import { redirect } from "@sveltejs/kit";
-import { api } from "$lib/api";
+import { apiFor } from "$lib/api";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = async ({ fetch }) => {
+export const load: PageLoad = async ({ fetch, url}) => {
+	const api = apiFor(url);
+
 	const { data, error } = await api.GET("/workspaces", { fetch });
 
 	if (error || !data) redirect(307, "/sign-in");

@@ -1,0 +1,11 @@
+Hello,
+
+You have been invited to join {{ .WorkspaceName }} on Norn as {{ .Role }}.
+
+Open this link to accept:
+
+{{ .AcceptURL }}
+
+The link works once and lasts {{ .ExpiresInDays }} days. If you do not already have an account, you create one as you accept.
+
+If you were not expecting this, ignore this message.

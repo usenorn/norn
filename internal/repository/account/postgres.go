@@ -33,11 +33,13 @@ func toEntity(model *dbpostgres.Account) (entity.Account, error) {
 	account := entity.Account{
 		ID:              id,
 		Status:          entity.AccountStatus(model.Status),
+		Kind:            entity.AccountKind(model.Kind),
 		Email:           model.Email.String,
 		DisplayName:     model.DisplayName.String,
 		AvatarObjectKey: model.AvatarObjectKey.String,
 		Timezone:        model.Timezone.String,
 		PasswordHash:    model.PasswordHash.String,
+		InstanceAdmin:   model.InstanceAdmin,
 		CreatedAt:       model.CreatedAt,
 		UpdatedAt:       model.UpdatedAt,
 	}
@@ -55,15 +57,25 @@ func toEntity(model *dbpostgres.Account) (entity.Account, error) {
 	return account, nil
 }
 
+func kindOrPerson(kind entity.AccountKind) string {
+	if kind == "" {
+		return string(entity.AccountKindPerson)
+	}
+
+	return string(kind)
+}
+
 func toModel(account entity.Account) *dbpostgres.Account {
 	model := &dbpostgres.Account{
 		ID:              account.ID.String(),
 		Status:          string(account.Status),
+		Kind:            kindOrPerson(account.Kind),
 		Email:           null.NewString(account.Email, account.Email != ""),
 		DisplayName:     null.NewString(account.DisplayName, account.DisplayName != ""),
 		AvatarObjectKey: null.NewString(account.AvatarObjectKey, account.AvatarObjectKey != ""),
 		Timezone:        null.NewString(account.Timezone, account.Timezone != ""),
 		PasswordHash:    null.NewString(account.PasswordHash, account.PasswordHash != ""),
+		InstanceAdmin:   account.InstanceAdmin,
 		CreatedAt:       account.CreatedAt,
 		UpdatedAt:       account.UpdatedAt,
 	}
@@ -144,6 +156,37 @@ func (r *accountRepository) GetByEmail(ctx context.Context, email string) (entit
 	}
 
 	return toEntity(model)
+}
+
+func (r *accountRepository) ListByIDs(ctx context.Context, ids []uuid.UUID) ([]entity.Account, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = id.String()
+	}
+
+	models, err := dbpostgres.Accounts(
+		dbpostgres.AccountWhere.ID.IN(keys),
+	).All(ctx, r.db.Querier(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("list accounts by ids: %w", err)
+	}
+
+	accounts := make([]entity.Account, 0, len(models))
+
+	for _, model := range models {
+		account, err := toEntity(model)
+		if err != nil {
+			return nil, err
+		}
+
+		accounts = append(accounts, account)
+	}
+
+	return accounts, nil
 }
 
 func (r *accountRepository) Update(ctx context.Context, account entity.Account) (entity.Account, error) {

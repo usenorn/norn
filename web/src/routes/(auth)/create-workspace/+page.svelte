@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
-	import { defaults, superForm } from "sveltekit-superforms";
+	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import * as Form from "$lib/components/ui/form/index.js";
@@ -9,7 +10,14 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Progress } from "$lib/components/ui/progress/index.js";
-	import { createWorkspaceSchema } from "$lib/workspace/create-workspace-schema";
+	import { api } from "$lib/api";
+	import {
+		createWorkspaceSchema,
+		slugMessage,
+		slugSuggestions,
+		slugFromName,
+	} from "$lib/workspace/create-workspace-schema";
+	import { teamKeyFromName, teamKeyMessage, teamKeySuggestions } from "$lib/team/teams";
 	import type { WorkspaceCreationFailure } from "$lib/workspace/types";
 	import { createWorkspacePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -23,6 +31,8 @@
 	);
 
 	let submitFailure = $state<WorkspaceCreationFailure | null>(null);
+	let slugEdited = $state(false);
+	let keyEdited = $state(false);
 
 	const auth = $derived(data.auth);
 	const workspace = $derived({ ...data.workspace, ...preview?.workspace });
@@ -32,6 +42,55 @@
 		SPA: true,
 		validators: zod4Client(createWorkspaceSchema),
 		resetForm: false,
+		onUpdate: async ({ form: submitted }) => {
+			if (!submitted.valid) return;
+
+			submitFailure = null;
+
+			try {
+				const { data: created, error } = await api.POST("/workspaces", {
+					body: {
+						slug: submitted.data.slug,
+						name: submitted.data.name,
+						team: { key: submitted.data.teamKey, name: submitted.data.teamName },
+					},
+				});
+
+				if (created) {
+					await goto(`/invite-teammates?workspace=${created.slug}`);
+
+					return;
+				}
+
+				if (error && "code" in error && error.code === "team_key_taken") {
+					submitFailure = {
+						kind: "team_key_taken",
+						key: submitted.data.teamKey,
+						suggestions: teamKeySuggestions(submitted.data.teamName, submitted.data.teamKey, []),
+					};
+
+					return;
+				}
+
+				if (error?.status === 409) {
+					submitFailure = {
+						kind: "slug_taken",
+						slug: submitted.data.slug,
+						suggestions: slugSuggestions(submitted.data.slug),
+					};
+
+					return;
+				}
+
+				for (const field of error?.errors ?? []) {
+					if (field.field === "slug") setError(submitted, "slug", slugMessage(field.code));
+					if (field.field === "name") setError(submitted, "name", "Enter a workspace name.");
+					if (field.field === "key") setError(submitted, "teamKey", teamKeyMessage(field.code));
+				}
+			} catch {
+				setError(submitted, "name", "We could not reach the server. Try again in a moment.");
+			}
+		},
 	});
 	const { form: formData, enhance, submitting } = form;
 
@@ -43,8 +102,11 @@
 	const busy = $derived(preview?.busy || $submitting);
 	const additional = $derived(workspace.existingWorkspace !== null);
 	const slugTaken = $derived(failure?.kind === "slug_taken" && failure.slug === $formData.slug);
+	const keyTaken = $derived(
+		failure?.kind === "team_key_taken" && failure.key === $formData.teamKey.toUpperCase()
+	);
 
-	const eyebrow = $derived(additional ? "Second workspace" : "Step 1 of 3");
+	const eyebrow = $derived(additional ? "Second workspace" : "Step 3 of 4");
 	const title = $derived(additional ? "Create another workspace" : "Create a workspace");
 	const lede = $derived(
 		additional
@@ -66,12 +128,41 @@
 	const footer = $derived(
 		additional
 			? "Switch workspaces from the sidebar, or with ⌘⇧O."
-			: "The name and the address can both change later without breaking links."
+			: "The names can change later. The address and the team key are permanent, because they appear in every issue reference."
 	);
 
 	function pickSuggestion(slug: string) {
+		slugEdited = true;
 		formData.update((current) => ({ ...current, slug }));
 		submitFailure = null;
+	}
+
+	function pickKey(teamKey: string) {
+		keyEdited = true;
+		formData.update((current) => ({ ...current, teamKey }));
+		submitFailure = null;
+	}
+
+	function fieldValue(event: Event) {
+		return (event.currentTarget as HTMLInputElement).value;
+	}
+
+	function deriveSlug(event: Event) {
+		if (slugEdited) return;
+		$formData.slug = slugFromName(fieldValue(event));
+	}
+
+	function deriveTeamKey(event: Event) {
+		if (keyEdited) return;
+		$formData.teamKey = teamKeyFromName(fieldValue(event));
+	}
+
+	function claimSlug(event: Event) {
+		slugEdited = fieldValue(event).trim() !== "";
+	}
+
+	function claimKey(event: Event) {
+		keyEdited = fieldValue(event).trim() !== "";
 	}
 </script>
 
@@ -97,7 +188,12 @@
 						<Form.Control>
 							{#snippet children({ props })}
 								<Form.Label>Workspace name</Form.Label>
-								<Input {...props} autocomplete="organization" bind:value={$formData.name} />
+								<Input
+									{...props}
+									autocomplete="organization"
+									oninput={deriveSlug}
+									bind:value={$formData.name}
+								/>
 							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
@@ -118,15 +214,16 @@
 										autocapitalize="none"
 										spellcheck="false"
 										aria-invalid={slugTaken ? "true" : undefined}
+										oninput={claimSlug}
 										bind:value={$formData.slug}
 									/>
 								</div>
 							{/snippet}
 						</Form.Control>
-						{#if slugTaken}
+						{#if slugTaken && failure?.kind === "slug_taken"}
 							<p class="flex items-center gap-1.5 text-sm text-destructive" role="alert">
 								<CircleAlert class="size-icon-row shrink-0" aria-hidden="true" />
-								{failure?.slug} is taken on this instance.
+								{failure.slug} is taken on this instance.
 							</p>
 						{:else}
 							<Form.Description class="text-sm text-muted-foreground">
@@ -140,13 +237,9 @@
 						<div class="flex flex-wrap items-center gap-1.5">
 							<span class="text-sm text-muted-foreground">Free:</span>
 							{#each failure.suggestions as suggestion (suggestion)}
-								<button
-									type="button"
-									onclick={() => pickSuggestion(suggestion)}
-									class="rounded-xs border border-line-default bg-paper-2 px-1.5 py-0.5 font-mono text-xs text-ink-600 transition-colors duration-70 ease-out hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-								>
+								<Button variant="chip" size="chip" onclick={() => pickSuggestion(suggestion)}>
 									{suggestion}
-								</button>
+								</Button>
 							{/each}
 						</div>
 					{/if}
@@ -159,7 +252,12 @@
 								<Form.Control>
 									{#snippet children({ props })}
 										<Form.Label>First team</Form.Label>
-										<Input {...props} bind:value={$formData.teamName} />
+										<Input
+											{...props}
+											disabled={busy}
+											oninput={deriveTeamKey}
+											bind:value={$formData.teamName}
+										/>
 									{/snippet}
 								</Form.Control>
 								<Form.FieldErrors />
@@ -175,7 +273,10 @@
 											maxlength={5}
 											autocapitalize="characters"
 											spellcheck="false"
+											disabled={busy}
+											aria-invalid={keyTaken ? "true" : undefined}
 											class="uppercase"
+											oninput={claimKey}
 											bind:value={$formData.teamKey}
 										/>
 									{/snippet}
@@ -185,12 +286,35 @@
 						</div>
 					</div>
 
-					<p class="text-sm leading-normal text-muted-foreground">
-						Tasks in this team will be numbered
-						<span class="font-mono text-ink-600">{$formData.teamKey || "MOB"}-1</span>,
-						<span class="font-mono text-ink-600">{$formData.teamKey || "MOB"}-2</span>, and so on.
-						Add more teams whenever you need them.
-					</p>
+					{#if keyTaken && failure?.kind === "team_key_taken"}
+						<div class="flex flex-col gap-1.5">
+							<p class="flex items-center gap-1.5 text-sm text-destructive" role="alert">
+								<CircleAlert class="size-icon-row shrink-0" aria-hidden="true" />
+								{failure.key} is already used in this workspace.
+							</p>
+							{#if failure.suggestions.length > 0}
+								<div class="flex flex-wrap items-center gap-1.5">
+									<span class="text-sm text-muted-foreground">Free:</span>
+									{#each failure.suggestions as suggestion (suggestion)}
+										<Button
+											variant="chip"
+											size="chip"
+											onclick={() => pickKey(suggestion)}
+										>
+											{suggestion}
+										</Button>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{:else}
+						<p class="text-sm leading-normal text-muted-foreground">
+							Issues in this team are numbered
+							<span class="font-mono text-ink-600">{$formData.teamKey || "MOB"}-1</span>,
+							<span class="font-mono text-ink-600">{$formData.teamKey || "MOB"}-2</span>, and so on.
+							The key is permanent.
+						</p>
+					{/if}
 				</form>
 			{:else}
 				<div class="flex flex-col gap-2" aria-live="polite">

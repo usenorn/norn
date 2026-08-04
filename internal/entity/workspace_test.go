@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/usenorn/norn/internal/entity"
@@ -65,5 +66,132 @@ func TestLastWorkspaceAdminErrorIsDetectableBySentinelAndCarriesTheWorkspaces(t 
 
 	if len(detail.WorkspaceIDs) != 1 || detail.WorkspaceIDs[0] != workspaceID {
 		t.Fatalf("WorkspaceIDs = %v, want [%v]", detail.WorkspaceIDs, workspaceID)
+	}
+}
+
+func TestWorkspaceStatusAcceptsOnlyKnownValues(t *testing.T) {
+	cases := map[entity.WorkspaceStatus]bool{
+		entity.WorkspaceStatusActive:          true,
+		entity.WorkspaceStatusPendingDeletion: true,
+		"":                                    false,
+		"purged":                              false,
+		"deleted":                             false,
+	}
+
+	for status, want := range cases {
+		if got := status.Valid(); got != want {
+			t.Errorf("WorkspaceStatus(%q).Valid() = %t, want %t", status, got, want)
+		}
+	}
+}
+
+func TestWorkspaceDeletionIsReversibleButNotRepeatable(t *testing.T) {
+	cases := []struct {
+		name   string
+		from   entity.WorkspaceStatus
+		to     entity.WorkspaceStatus
+		want   bool
+		reason string
+	}{
+		{
+			name:   "active workspace can be deleted",
+			from:   entity.WorkspaceStatusActive,
+			to:     entity.WorkspaceStatusPendingDeletion,
+			want:   true,
+			reason: "deletion must be possible",
+		},
+		{
+			name:   "pending deletion can be restored",
+			from:   entity.WorkspaceStatusPendingDeletion,
+			to:     entity.WorkspaceStatusActive,
+			want:   true,
+			reason: "deletion must be reversible for a period",
+		},
+		{
+			name:   "deleting twice is refused",
+			from:   entity.WorkspaceStatusPendingDeletion,
+			to:     entity.WorkspaceStatusPendingDeletion,
+			want:   false,
+			reason: "a second delete must not extend the recovery window",
+		},
+		{
+			name:   "restoring a live workspace is refused",
+			from:   entity.WorkspaceStatusActive,
+			to:     entity.WorkspaceStatusActive,
+			want:   false,
+			reason: "restore only applies to a deleted workspace",
+		},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if got := testCase.from.CanTransitionTo(testCase.to); got != testCase.want {
+				t.Fatalf("%s -> %s = %t, want %t (%s)", testCase.from, testCase.to, got, testCase.want, testCase.reason)
+			}
+		})
+	}
+}
+
+func TestWorkspacePurgeIsDueOnlyOnceTheWindowHasElapsed(t *testing.T) {
+	now := time.Date(2026, time.August, 2, 12, 0, 0, 0, time.UTC)
+	inside := now.Add(time.Second)
+	elapsed := now.Add(-time.Second)
+
+	cases := []struct {
+		name      string
+		workspace entity.Workspace
+		want      bool
+	}{
+		{
+			name:      "active workspace is never due",
+			workspace: entity.Workspace{Status: entity.WorkspaceStatusActive, PurgeAfter: &elapsed},
+			want:      false,
+		},
+		{
+			name:      "pending deletion inside the window is not due",
+			workspace: entity.Workspace{Status: entity.WorkspaceStatusPendingDeletion, PurgeAfter: &inside},
+			want:      false,
+		},
+		{
+			name:      "pending deletion exactly at the boundary is due",
+			workspace: entity.Workspace{Status: entity.WorkspaceStatusPendingDeletion, PurgeAfter: &now},
+			want:      true,
+		},
+		{
+			name:      "pending deletion past the window is due",
+			workspace: entity.Workspace{Status: entity.WorkspaceStatusPendingDeletion, PurgeAfter: &elapsed},
+			want:      true,
+		},
+		{
+			name:      "pending deletion with no purge date is never due",
+			workspace: entity.Workspace{Status: entity.WorkspaceStatusPendingDeletion},
+			want:      false,
+		},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if got := testCase.workspace.PurgeDueAt(now); got != testCase.want {
+				t.Fatalf("PurgeDueAt = %t, want %t", got, testCase.want)
+			}
+		})
+	}
+}
+
+func TestWorkspaceDeletedErrorCarriesThePurgeDateAndUnwraps(t *testing.T) {
+	purgeAfter := time.Date(2026, time.September, 1, 12, 0, 0, 0, time.UTC)
+	err := entity.WorkspaceDeletedError{PurgeAfter: &purgeAfter}
+
+	if !errors.Is(err, entity.ErrWorkspaceDeleted) {
+		t.Fatal("WorkspaceDeletedError must unwrap to ErrWorkspaceDeleted so callers detect it by identity")
+	}
+
+	if !strings.Contains(err.Error(), "2026-09-01") {
+		t.Fatalf("error = %q, want it to name the date recovery ends", err.Error())
+	}
+
+	bare := entity.WorkspaceDeletedError{}
+	if bare.Error() != entity.ErrWorkspaceDeleted.Error() {
+		t.Fatalf("bare error = %q, want the plain sentinel message", bare.Error())
 	}
 }

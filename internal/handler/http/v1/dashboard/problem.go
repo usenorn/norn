@@ -67,9 +67,90 @@ func problemFor(err error) (problemResponse, bool) {
 		return problemResponse{status: http.StatusUnprocessableEntity, body: problem}, true
 	}
 
+	var stale entity.IssueStaleError
+	if errors.As(err, &stale) {
+		base := baseProblem(http.StatusConflict, stale.Error())
+		version := int32(stale.Version)
+		conflicts := stale.Conflicts
+
+		return problemResponse{
+			status: http.StatusConflict,
+			body: api.IssueConflictProblem{
+				Code:      api.IssueStale,
+				Conflicts: &conflicts,
+				Version:   &version,
+				Detail:    base.Detail,
+				Instance:  base.Instance,
+				Status:    base.Status,
+				Title:     base.Title,
+				Type:      base.Type,
+			},
+		}, true
+	}
+
+	var stranded entity.IssueLabelsOutOfScopeError
+	if errors.As(err, &stranded) {
+		base := baseProblem(http.StatusConflict, stranded.Error())
+		labels := labelDTOs(stranded.Labels)
+
+		return problemResponse{
+			status: http.StatusConflict,
+			body: api.IssueConflictProblem{
+				Code:     api.IssueLabelsOutOfScope,
+				Labels:   &labels,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+	}
+
+	var usageChanged entity.LabelUsageChangedError
+	if errors.As(err, &usageChanged) {
+		problem := labelConflictProblem(api.LabelUsageChanged, err)
+
+		body, ok := problem.body.(api.LabelConflictProblem)
+		if ok {
+			issues := int32(usageChanged.Issues)
+			body.Issues = &issues
+			problem.body = body
+		}
+
+		return problem, true
+	}
+
 	var lastAdmin entity.LastWorkspaceAdminError
 	if errors.As(err, &lastAdmin) {
-		return newProblem(http.StatusConflict, lastAdmin.Error()), true
+		problem := membershipConflictProblem(api.MembershipConflictProblemCodeLastAdmin, lastAdmin)
+
+		body, ok := problem.body.(api.MembershipConflictProblem)
+		if ok {
+			workspaceIDs := lastAdmin.WorkspaceIDs
+			body.WorkspaceIds = &workspaceIDs
+			problem.body = body
+		}
+
+		return problem, true
+	}
+
+	var workspaceDeleted entity.WorkspaceDeletedError
+	if errors.As(err, &workspaceDeleted) {
+		base := baseProblem(http.StatusConflict, workspaceDeleted.Error())
+
+		return problemResponse{
+			status: http.StatusConflict,
+			body: api.WorkspaceDeletedProblem{
+				Code:       api.WorkspaceDeletedProblemCodeWorkspaceDeleted,
+				Detail:     base.Detail,
+				Instance:   base.Instance,
+				PurgeAfter: workspaceDeleted.PurgeAfter,
+				Status:     base.Status,
+				Title:      base.Title,
+				Type:       base.Type,
+			},
+		}, true
 	}
 
 	var locked entity.AccountLockedError
@@ -108,11 +189,49 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	var denied entity.AccessDeniedError
+	if errors.As(err, &denied) && denied.Reason == entity.DenyReasonNoActor {
+		return unauthorized(), true
+	}
+
+	if errors.As(err, &denied) && denied.Reason.Disclosed() {
+		base := baseProblem(http.StatusForbidden, denied.Error())
+		reason := api.ForbiddenProblemReason(denied.Reason)
+
+		return problemResponse{
+			status: http.StatusForbidden,
+			body: api.ForbiddenProblem{
+				Code:     api.ForbiddenProblemCodeForbidden,
+				Reason:   &reason,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+	}
+
+	switch {
+	case errors.Is(err, entity.ErrIssueAlreadyOnTeam):
+		return issueConflictProblem(api.IssueAlreadyOnTeam, err), true
+
+	case errors.Is(err, entity.ErrIssueDestinationIncapable):
+		return issueConflictProblem(api.IssueDestinationIncapable, err), true
+
+	case errors.Is(err, entity.ErrIssueStatusTransition):
+		return issueConflictProblem(api.IssueStatusTransition, err), true
+	}
+
 	switch {
 	case errors.Is(err, entity.ErrAccountNotFound),
 		errors.Is(err, entity.ErrEmailChangeNotFound),
 		errors.Is(err, entity.ErrWorkspaceNotFound),
 		errors.Is(err, entity.ErrMembershipNotFound),
+		errors.Is(err, entity.ErrTeamNotFound),
+		errors.Is(err, entity.ErrTeamMembershipNotFound),
+		errors.Is(err, entity.ErrIssueNotFound),
+		errors.Is(err, entity.ErrWorkflowStateNotFound),
 		errors.Is(err, entity.ErrAvatarMissing):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
@@ -228,11 +347,267 @@ func problemFor(err error) (problemResponse, bool) {
 			},
 		}, true
 
-	case errors.Is(err, entity.ErrWorkspacePasswordAuthDisabled):
+	case errors.Is(err, entity.ErrWorkspacePasswordAuthDisabled),
+		errors.Is(err, entity.ErrWorkspaceNotDeleted):
 		return newProblem(http.StatusConflict, err.Error()), true
+
+	case errors.Is(err, entity.ErrMembershipSelfRoleChange):
+		return membershipConflictProblem(api.MembershipConflictProblemCodeSelfRoleChange, err), true
+
+	case errors.Is(err, entity.ErrMembershipDirectoryManaged):
+		return membershipConflictProblem(api.MembershipConflictProblemCodeDirectoryManaged, err), true
+
+	case errors.Is(err, entity.ErrTeamKeyTaken):
+		return teamConflictProblem(api.TeamConflictProblemCodeTeamKeyTaken, err), true
+
+	case errors.Is(err, entity.ErrTeamArchived):
+		return teamConflictProblem(api.TeamConflictProblemCodeTeamArchived, err), true
+
+	case errors.Is(err, entity.ErrTeamNotArchived):
+		return teamConflictProblem(api.TeamConflictProblemCodeTeamNotArchived, err), true
+
+	case errors.Is(err, entity.ErrTeamMembershipExists):
+		return teamConflictProblem(api.TeamConflictProblemCodeTeamMemberExists, err), true
+
+	case errors.Is(err, entity.ErrAPITokenNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrAPITokenNameTaken):
+		return apiTokenUnusableProblem(api.TokenNameTaken, err), true
+
+	case errors.Is(err, entity.ErrAPITokenScopeInvalid):
+		return apiTokenUnusableProblem(api.TokenScopeInvalid, err), true
+
+	case errors.Is(err, entity.ErrAPITokenScopeExceeds):
+		return apiTokenUnusableProblem(api.TokenScopeExceeds, err), true
+
+	case errors.Is(err, entity.ErrAPITokenMintForbidden):
+		return apiTokenUnusableProblem(api.TokenMayNotMint, err), true
+
+	case errors.Is(err, entity.ErrLabelNameTaken):
+		return labelConflictProblem(api.LabelNameTaken, err), true
+
+	case errors.Is(err, entity.ErrLabelGroupNameTaken):
+		return labelConflictProblem(api.LabelGroupNameTaken, err), true
+
+	case errors.Is(err, entity.ErrLabelGroupExclusive):
+		return labelConflictProblem(api.LabelGroupExclusive, err), true
+
+	case errors.Is(err, entity.ErrLabelOutOfScope):
+		return issueConflictProblem(api.LabelOutOfScope, err), true
+
+	case errors.Is(err, entity.ErrLabelGroupInUse):
+		return labelConflictProblem(api.LabelGroupInUse, err), true
+
+	case errors.Is(err, entity.ErrLabelMergeScopeNarrows):
+		return labelConflictProblem(api.LabelMergeScopeNarrows, err), true
+
+	case errors.Is(err, entity.ErrLabelMergeGroupMismatch):
+		return labelConflictProblem(api.LabelMergeGroupMismatch, err), true
+
+	case errors.Is(err, entity.ErrLabelNotFound),
+		errors.Is(err, entity.ErrLabelGroupNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrWorkflowStateNameTaken):
+		return workflowStateConflictProblem(api.StateNameTaken, err), true
+
+	case errors.Is(err, entity.ErrWorkflowStateLastInCategory):
+		return workflowStateConflictProblem(api.StateLastInCategory, err), true
+
+	case errors.Is(err, entity.ErrWorkflowStateIsDefault):
+		return workflowStateConflictProblem(api.StateIsDefault, err), true
+
+	case errors.Is(err, entity.ErrWorkflowStateIsCompletion):
+		return workflowStateConflictProblem(api.StateIsCompletion, err), true
+
+	case errors.Is(err, entity.ErrSignUpsClosed):
+		base := baseProblem(http.StatusForbidden, err.Error())
+
+		return problemResponse{
+			status: http.StatusForbidden,
+			body: api.SignUpClosedProblem{
+				Code:     api.SignUpClosed,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
+	case errors.Is(err, entity.ErrSignUpExpired):
+		return signUpExpiredProblem(api.SignUpExpired, err), true
+
+	case errors.Is(err, entity.ErrSignUpTokenInvalid),
+		errors.Is(err, entity.ErrSignUpNotFound):
+		return signUpExpiredProblem(api.SignUpInvalid, err), true
+
+	case errors.Is(err, entity.ErrSignUpAlreadyConfirmed):
+		return signUpUnusableProblem(api.SignUpUsed, err), true
+
+	case errors.Is(err, entity.ErrInvitationExpired):
+		return invitationExpiredProblem(api.InvitationExpired, err), true
+
+	case errors.Is(err, entity.ErrInvitationTokenInvalid),
+		errors.Is(err, entity.ErrInvitationNotFound):
+		return invitationExpiredProblem(api.InvitationInvalid, err), true
+
+	case errors.Is(err, entity.ErrInvitationRevoked):
+		return invitationUnusableProblem(api.InvitationRevoked, err), true
+
+	case errors.Is(err, entity.ErrInvitationAccepted):
+		return invitationUnusableProblem(api.InvitationAccepted, err), true
+
+	case errors.Is(err, entity.ErrInvitationAddressMismatch):
+		return invitationUnusableProblem(api.InvitationAddressMismatch, err), true
 
 	default:
 		return problemResponse{}, false
+	}
+}
+
+func membershipConflictProblem(code api.MembershipConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.MembershipConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func teamConflictProblem(code api.TeamConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.TeamConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func apiTokenUnusableProblem(code api.APITokenUnusableProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.APITokenUnusableProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func labelConflictProblem(code api.LabelConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.LabelConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func workflowStateConflictProblem(code api.WorkflowStateConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.WorkflowStateConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func signUpExpiredProblem(code api.SignUpExpiredProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusBadRequest, err.Error())
+
+	return problemResponse{
+		status: http.StatusBadRequest,
+		body: api.SignUpExpiredProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func signUpUnusableProblem(code api.SignUpUnusableProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.SignUpUnusableProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func invitationExpiredProblem(code api.InvitationExpiredProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusBadRequest, err.Error())
+
+	return problemResponse{
+		status: http.StatusBadRequest,
+		body: api.InvitationExpiredProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func invitationUnusableProblem(code api.InvitationUnusableProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.InvitationUnusableProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
 	}
 }
 
@@ -240,7 +615,133 @@ func unauthorized() problemResponse {
 	return newProblem(http.StatusUnauthorized, "a valid session is required")
 }
 
-func (r problemResponse) VisitRegisterAccountResponse(w http.ResponseWriter) error { return r.write(w) }
+func (r problemResponse) VisitListWorkspaceAPITokensResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitMintWorkspaceAPITokenResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRevokeWorkspaceAPITokenResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkflowStatesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkspaceIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitMoveWorkspaceIssueToTeamResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceIssueStatusResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceIssueByReferenceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceLabelsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceLabelResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkspaceLabelResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceLabelResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceLabelUsageResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitMergeWorkspaceLabelResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceLabelGroupsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceLabelGroupResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRenameWorkspaceLabelGroupResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceLabelGroupResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceIssueLabelsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkflowStateResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkflowStateResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitReorderWorkflowStatesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetDefaultWorkflowStateResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetCompletionWorkflowStateResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkflowStateResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitMoveWorkspaceIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueActivityResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceIssueProgressResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssuesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRequestSignUpResponse(w http.ResponseWriter) error { return r.write(w) }
+
+func (r problemResponse) VisitConfirmSignUpResponse(w http.ResponseWriter) error { return r.write(w) }
 
 func (r problemResponse) VisitSignInResponse(w http.ResponseWriter) error { return r.write(w) }
 
@@ -320,10 +821,104 @@ func (r problemResponse) VisitRevokeAllSessionsResponse(w http.ResponseWriter) e
 	return r.write(w)
 }
 
+func (r problemResponse) VisitGetWorkspaceResponse(w http.ResponseWriter) error { return r.write(w) }
+
+func (r problemResponse) VisitUpdateWorkspaceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDeleteWorkspaceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRestoreWorkspaceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceInvitationsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceInvitationsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRevokeWorkspaceInvitationResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitResendWorkspaceInvitationResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitPreviewInvitationResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAcceptInvitationResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitGetWorkspaceAuthPolicyResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitPreviewWorkspaceMemberRemovalResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceTeamsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceTeamResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceTeamResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkspaceTeamResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitArchiveWorkspaceTeamResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUnarchiveWorkspaceTeamResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceTeamMembersResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAddWorkspaceTeamMemberResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceTeamMemberResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 
 func (r problemResponse) VisitSetWorkspaceAuthPolicyResponse(w http.ResponseWriter) error {
 	return r.write(w)
+}
+
+func issueConflictProblem(code api.IssueConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.IssueConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
 }

@@ -5,7 +5,7 @@ MIGRATIONS_DIR := db/migrations/postgres
 .DEFAULT_GOAL := infra
 
 .PHONY: env infra infra-up infra-down infra-reset infra-ps infra-logs \
-	psql valkey-cli garage migration db-gen gen build test test-race lint vuln fmt
+	psql valkey-cli garage migration db-gen gen wire build test test-race lint vuln fmt
 
 env:
 	@test -f .env || cp .env.example .env
@@ -45,6 +45,9 @@ db-gen:
 gen:
 	go generate ./...
 	cd web && corepack pnpm gen:api
+
+wire:
+	go tool wire gen ./internal
 
 build:
 	go build ./...

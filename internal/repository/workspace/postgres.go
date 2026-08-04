@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/google/uuid"
@@ -29,23 +30,62 @@ func toEntity(model *dbpostgres.Workspace) (entity.Workspace, error) {
 		return entity.Workspace{}, fmt.Errorf("parse workspace id: %w", err)
 	}
 
-	return entity.Workspace{
+	workspace := entity.Workspace{
 		ID:        id,
 		Slug:      model.Slug,
 		Name:      model.Name,
+		Status:    entity.WorkspaceStatus(model.Status),
+		Timezone:  model.Timezone,
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
-	}, nil
+	}
+
+	if model.DeletionRequestedAt.Valid {
+		requestedAt := model.DeletionRequestedAt.Time
+		workspace.DeletionRequestedAt = &requestedAt
+	}
+
+	if model.PurgeAfter.Valid {
+		purgeAfter := model.PurgeAfter.Time
+		workspace.PurgeAfter = &purgeAfter
+	}
+
+	if model.DefaultTeamID.Valid {
+		defaultTeamID, err := uuid.Parse(model.DefaultTeamID.String)
+		if err != nil {
+			return entity.Workspace{}, fmt.Errorf("parse workspace default team id: %w", err)
+		}
+
+		workspace.DefaultTeamID = &defaultTeamID
+	}
+
+	return workspace, nil
 }
 
 func toModel(workspace entity.Workspace) *dbpostgres.Workspace {
-	return &dbpostgres.Workspace{
+	model := &dbpostgres.Workspace{
 		ID:        workspace.ID.String(),
 		Slug:      workspace.Slug,
 		Name:      workspace.Name,
+		Status:    string(workspace.Status),
+		Timezone:  workspace.Timezone,
 		CreatedAt: workspace.CreatedAt,
 		UpdatedAt: workspace.UpdatedAt,
 	}
+
+	if workspace.DeletionRequestedAt != nil {
+		model.DeletionRequestedAt = null.TimeFrom(*workspace.DeletionRequestedAt)
+	}
+
+	if workspace.PurgeAfter != nil {
+		model.PurgeAfter = null.TimeFrom(*workspace.PurgeAfter)
+	}
+
+	if workspace.DefaultTeamID != nil {
+		model.DefaultTeamID = null.StringFrom(workspace.DefaultTeamID.String())
+	}
+
+	return model
 }
 
 type workspaceRepository struct {
@@ -90,6 +130,107 @@ func (r *workspaceRepository) GetByID(ctx context.Context, id uuid.UUID) (entity
 	}
 
 	return toEntity(model)
+}
+
+func (r *workspaceRepository) GetBySlug(ctx context.Context, slug string) (entity.Workspace, error) {
+	model, err := dbpostgres.Workspaces(
+		dbpostgres.WorkspaceWhere.Slug.EQ(slug),
+	).One(ctx, r.db.Querier(ctx))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Workspace{}, entity.ErrWorkspaceNotFound
+		}
+
+		return entity.Workspace{}, fmt.Errorf("find workspace by slug: %w", err)
+	}
+
+	return toEntity(model)
+}
+
+func (r *workspaceRepository) UpdateSettings(
+	ctx context.Context,
+	id uuid.UUID,
+	name, timezone string,
+	defaultTeamID *uuid.UUID,
+) (entity.Workspace, error) {
+	defaultTeam := null.NewString("", false)
+	if defaultTeamID != nil {
+		defaultTeam = null.StringFrom(defaultTeamID.String())
+	}
+
+	updated, err := dbpostgres.Workspaces(
+		dbpostgres.WorkspaceWhere.ID.EQ(id.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceColumns.Name:          name,
+		dbpostgres.WorkspaceColumns.Timezone:      timezone,
+		dbpostgres.WorkspaceColumns.DefaultTeamID: defaultTeam,
+		dbpostgres.WorkspaceColumns.UpdatedAt:     time.Now().UTC(),
+	})
+	if err != nil {
+		return entity.Workspace{}, fmt.Errorf("update workspace settings: %w", err)
+	}
+
+	if updated == 0 {
+		return entity.Workspace{}, entity.ErrWorkspaceNotFound
+	}
+
+	return r.GetByID(ctx, id)
+}
+
+func (r *workspaceRepository) MarkPendingDeletion(
+	ctx context.Context,
+	id uuid.UUID,
+	requestedAt, purgeAfter time.Time,
+) (entity.Workspace, error) {
+	updated, err := dbpostgres.Workspaces(
+		dbpostgres.WorkspaceWhere.ID.EQ(id.String()),
+		dbpostgres.WorkspaceWhere.Status.EQ(string(entity.WorkspaceStatusActive)),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceColumns.Status:              string(entity.WorkspaceStatusPendingDeletion),
+		dbpostgres.WorkspaceColumns.DeletionRequestedAt: null.TimeFrom(requestedAt),
+		dbpostgres.WorkspaceColumns.PurgeAfter:          null.TimeFrom(purgeAfter),
+		dbpostgres.WorkspaceColumns.UpdatedAt:           time.Now().UTC(),
+	})
+	if err != nil {
+		return entity.Workspace{}, fmt.Errorf("mark workspace pending deletion: %w", err)
+	}
+
+	if updated == 0 {
+		return entity.Workspace{}, entity.ErrWorkspaceDeleted
+	}
+
+	return r.GetByID(ctx, id)
+}
+
+func (r *workspaceRepository) Restore(ctx context.Context, id uuid.UUID) (entity.Workspace, error) {
+	updated, err := dbpostgres.Workspaces(
+		dbpostgres.WorkspaceWhere.ID.EQ(id.String()),
+		dbpostgres.WorkspaceWhere.Status.EQ(string(entity.WorkspaceStatusPendingDeletion)),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceColumns.Status:              string(entity.WorkspaceStatusActive),
+		dbpostgres.WorkspaceColumns.DeletionRequestedAt: null.NewTime(time.Time{}, false),
+		dbpostgres.WorkspaceColumns.PurgeAfter:          null.NewTime(time.Time{}, false),
+		dbpostgres.WorkspaceColumns.UpdatedAt:           time.Now().UTC(),
+	})
+	if err != nil {
+		return entity.Workspace{}, fmt.Errorf("restore workspace: %w", err)
+	}
+
+	if updated == 0 {
+		return entity.Workspace{}, entity.ErrWorkspaceNotDeleted
+	}
+
+	return r.GetByID(ctx, id)
+}
+
+func (r *workspaceRepository) Purge(ctx context.Context, id uuid.UUID) error {
+	if _, err := dbpostgres.Workspaces(
+		dbpostgres.WorkspaceWhere.ID.EQ(id.String()),
+	).DeleteAll(ctx, r.db.Querier(ctx)); err != nil {
+		return fmt.Errorf("purge workspace: %w", err)
+	}
+
+	return nil
 }
 
 func (r *workspaceRepository) ListByAccountID(ctx context.Context, accountID uuid.UUID) ([]entity.Workspace, error) {

@@ -1,47 +1,50 @@
 <script lang="ts">
-	import Circle from "@lucide/svelte/icons/circle";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleDot from "@lucide/svelte/icons/circle-dot";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import { cn } from "$lib/utils.js";
-	import { statusLabels, type TaskStatus } from "$lib/tasks/types";
+	import { categoryLabels, type StateCategory } from "$lib/team/states";
 
 	let {
-		status,
+		category,
+		name,
 		withLabel = false,
+		decorative = false,
 		class: className,
-	}: { status: TaskStatus; withLabel?: boolean; class?: string } = $props();
+	}: {
+		category: StateCategory;
+		name?: string;
+		withLabel?: boolean;
+		decorative?: boolean;
+		class?: string;
+	} = $props();
 
 	const glyph = {
-		backlog: CircleDashed,
-		todo: Circle,
-		started: CircleDot,
-		review: CircleDot,
-		done: CircleCheck,
-		canceled: CircleX,
+		not_started: CircleDashed,
+		active: CircleDot,
+		complete: CircleCheck,
+		abandoned: CircleX,
 	};
 
 	const tone = {
-		backlog: "text-status-backlog",
-		todo: "text-status-todo",
-		started: "text-status-started",
-		review: "text-status-review",
-		done: "text-status-done",
-		canceled: "text-status-canceled",
+		not_started: "text-status-not-started",
+		active: "text-status-active",
+		complete: "text-status-complete",
+		abandoned: "text-status-abandoned",
 	};
 
-	const Glyph = $derived(glyph[status]);
+	const Glyph = $derived(glyph[category]);
+	const label = $derived(name ?? categoryLabels[category]);
 </script>
 
 {#if withLabel}
 	<span class={cn("inline-flex items-center gap-1.5 text-md text-foreground", className)}>
-		<Glyph class="size-icon-row shrink-0 {tone[status]}" aria-hidden="true" />
-		{statusLabels[status]}
+		<Glyph class="size-icon-row shrink-0 {tone[category]}" aria-hidden="true" />
+		{label}
 	</span>
+{:else if decorative}
+	<Glyph class={cn("size-icon-row shrink-0", tone[category], className)} aria-hidden="true" />
 {:else}
-	<Glyph
-		class={cn("size-icon-row shrink-0", tone[status], className)}
-		aria-label={statusLabels[status]}
-	/>
+	<Glyph class={cn("size-icon-row shrink-0", tone[category], className)} aria-label={label} />
 {/if}
