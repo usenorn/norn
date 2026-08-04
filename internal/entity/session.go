@@ -20,9 +20,10 @@ const (
 )
 
 var (
-	ErrSessionNotFound = errors.New("session not found")
-	ErrSessionRevoked  = errors.New("session was revoked")
-	ErrSessionExpired  = errors.New("session expired")
+	ErrSessionNotFound          = errors.New("session not found")
+	ErrSessionRevoked           = errors.New("session was revoked")
+	ErrSessionExpired           = errors.New("session expired")
+	ErrSessionAuthMethodUnknown = errors.New("session auth method is not one Norn issues")
 )
 
 type SessionAuthMethod string

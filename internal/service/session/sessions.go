@@ -111,7 +111,11 @@ func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput)
 }
 
 func (s *sessionsService) Start(ctx context.Context, input service.StartSessionInput) (service.IssuedSession, error) {
-	return s.issue(ctx, input.AccountID, entity.SessionAuthMethodPassword, input.Client)
+	if !input.AuthMethod.Valid() {
+		return service.IssuedSession{}, entity.ErrSessionAuthMethodUnknown
+	}
+
+	return s.issue(ctx, input.AccountID, input.AuthMethod, input.Client)
 }
 
 func (s *sessionsService) recordFailure(ctx context.Context, subject string) error {

@@ -168,8 +168,9 @@ func (s *accountsService) ConfirmSignUp(ctx context.Context, input service.Confi
 	}
 
 	issued, err := s.sessions.Start(ctx, service.StartSessionInput{
-		AccountID: account.ID,
-		Client:    input.Client,
+		AccountID:  account.ID,
+		AuthMethod: entity.SessionAuthMethodPassword,
+		Client:     input.Client,
 	})
 	if err != nil {
 		return service.ConfirmedSignUp{}, err

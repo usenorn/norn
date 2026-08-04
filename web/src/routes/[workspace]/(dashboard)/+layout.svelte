@@ -7,6 +7,7 @@
 	import Search from "@lucide/svelte/icons/search";
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import Settings from "@lucide/svelte/icons/settings";
+	import KeyRound from "@lucide/svelte/icons/key-round";
 	import Tags from "@lucide/svelte/icons/tags";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Users from "@lucide/svelte/icons/users";
@@ -102,6 +103,14 @@
 						<a href={workspacePath(slug, "/settings/labels")} {...props}>
 							<Tags aria-hidden="true" />
 							Labels
+						</a>
+					{/snippet}
+				</DropdownMenu.Item>
+				<DropdownMenu.Item>
+					{#snippet child({ props })}
+						<a href={workspacePath(slug, "/settings/authentication")} {...props}>
+							<KeyRound aria-hidden="true" />
+							Authentication
 						</a>
 					{/snippet}
 				</DropdownMenu.Item>

@@ -9,6 +9,7 @@
 	import StepList, { type Step } from "$lib/components/norn/step-list.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Progress } from "$lib/components/ui/progress/index.js";
+	import { referenceLine, stageFixes, stageTitle } from "$lib/auth/sso";
 	import type { SsoExchange } from "$lib/auth/types";
 	import { ssoPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -19,10 +20,8 @@
 		import.meta.env.DEV ? ssoPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	const startedExchange: SsoExchange = { status: "pending", phase: "redirecting" };
-
 	const auth = $derived({ ...data.auth, ...preview?.auth });
-	const exchange = $derived<SsoExchange>(preview?.exchange ?? startedExchange);
+	const exchange = $derived<SsoExchange>(preview?.exchange ?? data.exchange);
 	const provider = $derived(auth.sso?.name ?? "your identity provider");
 
 	let elapsedMs = $state(0);
@@ -30,8 +29,15 @@
 	onMount(() => {
 		const startedAt = performance.now();
 		const tick = setInterval(() => (elapsedMs = performance.now() - startedAt), 100);
+
+		if (exchange.status === "pending" && exchange.authorizationUrl) {
+			window.location.assign(exchange.authorizationUrl);
+		}
+
 		return () => clearInterval(tick);
 	});
+
+	const retry = $derived(data.workspace ? `/sso?workspace=${data.workspace}` : "/sign-in");
 
 	const elapsed = $derived(`${(elapsedMs / 1000).toFixed(1)}s`);
 
@@ -77,7 +83,21 @@
 				primary: "Try again",
 				secondary: "Sign in with password",
 				diagnostics: failure.diagnostics,
-				reference: failure.reference,
+				reference: referenceLine(failure.reference),
+			};
+		}
+		if (failure.kind === "stage") {
+			return {
+				icon: TriangleAlert,
+				tone: "text-destructive",
+				title: stageTitle(failure.stage),
+				body: failure.message,
+				fixTitle: "What to check",
+				fixes: stageFixes(failure.stage),
+				primary: "Try again",
+				secondary: "Sign in with password",
+				diagnostics: failure.diagnostics,
+				reference: referenceLine(failure.reference),
 			};
 		}
 		if (failure.kind === "no_account") {
@@ -95,7 +115,7 @@
 				primary: "Request access",
 				secondary: "Use another account",
 				diagnostics: failure.diagnostics,
-				reference: failure.reference,
+				reference: referenceLine(failure.reference),
 			};
 		}
 		return {
@@ -112,7 +132,7 @@
 			primary: "Try again",
 			secondary: "Sign in with password",
 			diagnostics: failure.diagnostics,
-			reference: failure.reference,
+			reference: referenceLine(failure.reference),
 		};
 	});
 </script>
@@ -166,7 +186,7 @@
 					</div>
 
 					<div class="flex flex-wrap gap-2">
-						<Button href="/sso">{report.primary}</Button>
+						<Button href={retry}>{report.primary}</Button>
 						<Button href="/sign-in" variant="secondary">{report.secondary}</Button>
 					</div>
 				</div>

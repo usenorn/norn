@@ -5,6 +5,8 @@ import "github.com/goforj/wire"
 var Set = wire.NewSet(
 	New,
 	NewApp,
+	NewSecurity,
+	NewOIDC,
 	NewInstance,
 	NewHTTP,
 	NewPostgres,

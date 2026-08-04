@@ -13,8 +13,9 @@ type SignInInput struct {
 }
 
 type StartSessionInput struct {
-	AccountID uuid.UUID
-	Client    entity.SessionClient
+	AccountID  uuid.UUID
+	AuthMethod entity.SessionAuthMethod
+	Client     entity.SessionClient
 }
 
 type IssuedSession struct {

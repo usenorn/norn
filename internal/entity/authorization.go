@@ -19,13 +19,14 @@ const (
 	ResourceLabel          Resource = "label"
 	ResourceAPIToken       Resource = "api_token"
 	ResourceAuthPolicy     Resource = "auth_policy"
+	ResourceSSOConnection  Resource = "sso_connection"
 	ResourceAccount        Resource = "account"
 	ResourceSession        Resource = "session"
 	ResourceInstance       Resource = "instance"
 )
 
 func (r Resource) GatedByAuthMethod() bool {
-	return r != ResourceAuthPolicy
+	return r != ResourceAuthPolicy && r != ResourceSSOConnection
 }
 
 func (r Resource) Conceals() bool {
@@ -44,7 +45,7 @@ func (r Resource) NotFound() error {
 }
 
 func (r Resource) PolicyName() string {
-	if r == ResourceAuthPolicy {
+	if r == ResourceAuthPolicy || r == ResourceSSOConnection {
 		return string(ResourceWorkspace)
 	}
 

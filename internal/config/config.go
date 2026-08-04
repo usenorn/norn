@@ -19,6 +19,18 @@ type Config struct {
 	GeoIP     GeoIP     `mapstructure:"geoip"`
 	Password  Password  `mapstructure:"password"`
 	Workspace Workspace `mapstructure:"workspace"`
+	Security  Security  `mapstructure:"security"`
+	OIDC      OIDC      `mapstructure:"oidc"`
+}
+
+type Security struct {
+	EncryptionKey string `mapstructure:"encryption_key"`
+}
+
+type OIDC struct {
+	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
+	MaxResponseSize int64         `mapstructure:"max_response_size"`
+	StateTTL        time.Duration `mapstructure:"state_ttl"`
 }
 
 type Workspace struct {

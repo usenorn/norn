@@ -218,6 +218,28 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	if failure, ok := entity.AsOIDCError(err); ok {
+		base := baseProblem(http.StatusUnprocessableEntity, failure.Message)
+		stage := api.OidcStage(failure.Stage)
+
+		problem := api.OidcProblem{
+			Code:     api.OidcProblemCodeOidcFailed,
+			Stage:    stage,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		}
+
+		if failure.Detail != "" {
+			message := failure.Detail
+			problem.ProviderMessage = &message
+		}
+
+		return problemResponse{status: http.StatusUnprocessableEntity, body: problem}, true
+	}
+
 	var denied entity.AccessDeniedError
 	if errors.As(err, &denied) && denied.Reason == entity.DenyReasonNoActor {
 		return unauthorized(), true
@@ -281,7 +303,9 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrIssueRelationNotFound),
 		errors.Is(err, entity.ErrBulkActionNotFound),
 		errors.Is(err, entity.ErrWorkflowStateNotFound),
-		errors.Is(err, entity.ErrAvatarMissing):
+		errors.Is(err, entity.ErrAvatarMissing),
+		errors.Is(err, entity.ErrOIDCConnectionNotFound),
+		errors.Is(err, entity.ErrOIDCStateNotFound):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
 	case errors.Is(err, entity.ErrAccountForbidden),

@@ -76,7 +76,10 @@ func (h *harness) expectSessionStarted(accountID uuid.UUID) service.IssuedSessio
 	}
 
 	h.sessions.EXPECT().
-		Start(gomock.Any(), service.StartSessionInput{AccountID: accountID}).
+		Start(gomock.Any(), service.StartSessionInput{
+			AccountID:  accountID,
+			AuthMethod: entity.SessionAuthMethodPassword,
+		}).
 		Return(issued, nil)
 
 	return issued

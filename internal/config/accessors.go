@@ -2,6 +2,10 @@ package config
 
 func NewApp(cfg Config) App { return cfg.App }
 
+func NewSecurity(cfg Config) Security { return cfg.Security }
+
+func NewOIDC(cfg Config) OIDC { return cfg.OIDC }
+
 func NewInstance(cfg Config) Instance { return cfg.Instance }
 
 func NewHTTP(cfg Config) HTTP { return cfg.HTTP }

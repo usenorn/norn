@@ -19,6 +19,7 @@ tags:
   - name: issues
   - name: states
   - name: tokens
+  - name: sso
 
 paths:
   /health:
@@ -176,6 +177,27 @@ paths:
             Set-Cookie:
               schema: { type: string }
         '401': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /sso/oidc/login:
+    post:
+      tags: [sso]
+      operationId: beginOidcLogin
+      summary: Start a single sign-on exchange for a workspace
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BeginOidcLoginRequest' }
+      responses:
+        '200':
+          description: Send the browser to this address to authenticate
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OidcAuthorization' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/OidcFailed' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /accounts/me:
@@ -451,6 +473,96 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/oidc:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [sso]
+      operationId: getWorkspaceOidcConnection
+      summary: Read the workspace single sign-on provider
+      responses:
+        '200':
+          description: The configured provider
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceOidcConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [sso]
+      operationId: setWorkspaceOidcConnection
+      summary: Configure the workspace single sign-on provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetWorkspaceOidcConnectionRequest' }
+      responses:
+        '200':
+          description: The saved provider, always unverified until it is tested again
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceOidcConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/OidcFailed' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [sso]
+      operationId: removeWorkspaceOidcConnection
+      summary: Remove the workspace single sign-on provider
+      responses:
+        '204':
+          description: The provider was removed
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/oidc/discover:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [sso]
+      operationId: discoverOidcEndpoints
+      summary: Read the endpoints a provider advertises, without saving anything
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DiscoverOidcRequest' }
+      responses:
+        '200':
+          description: The endpoints the issuer advertises
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OidcEndpoints' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/OidcFailed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/oidc/test:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [sso]
+      operationId: testWorkspaceOidcConnection
+      summary: Start a real round trip to the provider that records verification
+      responses:
+        '200':
+          description: Send the browser to this address to complete the test
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OidcAuthorization' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/OidcFailed' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces:
@@ -1969,6 +2081,12 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/LabelConflictProblem' }
 
+    OidcFailed:
+      description: The exchange with the provider broke at a named stage
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/OidcProblem' }
+
     Forbidden:
       description: The actor may not perform this action
       content:
@@ -2911,6 +3029,81 @@ components:
       required: [accountId]
       properties:
         accountId: { type: string, format: uuid }
+
+    OidcStage:
+      type: string
+      enum: [discovery, endpoints, jwks, authorization, token_exchange, id_token, claims, matching, provisioning]
+
+    OidcEndpoints:
+      type: object
+      required: [issuer, authorizationEndpoint, tokenEndpoint, jwksUri]
+      properties:
+        issuer: { type: string }
+        authorizationEndpoint: { type: string }
+        tokenEndpoint: { type: string }
+        jwksUri: { type: string }
+        userinfoEndpoint: { type: string }
+
+    WorkspaceOidcConnection:
+      type: object
+      required: [workspaceId, endpoints, discovered, clientId, secretSet, scopes, provisioning, redirectUri, updatedAt]
+      properties:
+        workspaceId: { type: string, format: uuid }
+        endpoints: { $ref: '#/components/schemas/OidcEndpoints' }
+        discovered: { type: boolean }
+        clientId: { type: string }
+        secretSet: { type: boolean }
+        scopes:
+          type: array
+          items: { type: string }
+        groupsClaim: { type: string }
+        provisioning: { type: boolean }
+        redirectUri: { type: string }
+        verifiedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    SetWorkspaceOidcConnectionRequest:
+      type: object
+      required: [issuer, clientId]
+      properties:
+        issuer: { type: string }
+        endpoints: { $ref: '#/components/schemas/OidcEndpoints' }
+        clientId: { type: string }
+        clientSecret: { type: string }
+        scopes:
+          type: array
+          items: { type: string }
+        groupsClaim: { type: string }
+        provisioning: { type: boolean }
+
+    DiscoverOidcRequest:
+      type: object
+      required: [issuer]
+      properties:
+        issuer: { type: string }
+
+    BeginOidcLoginRequest:
+      type: object
+      required: [workspace]
+      properties:
+        workspace: { type: string }
+        returnTo: { type: string }
+
+    OidcAuthorization:
+      type: object
+      required: [authorizationUrl]
+      properties:
+        authorizationUrl: { type: string }
+
+    OidcProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code, stage]
+          properties:
+            code: { type: string, enum: [oidc_failed] }
+            stage: { $ref: '#/components/schemas/OidcStage' }
+            providerMessage: { type: string }
 
     Instance:
       type: object
