@@ -28,6 +28,7 @@ import (
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issueactivityrepo "github.com/usenorn/norn/internal/repository/issueactivity"
+	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	labelgrouprepo "github.com/usenorn/norn/internal/repository/labelgroup"
@@ -48,6 +49,7 @@ import (
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
+	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
@@ -85,6 +87,7 @@ var baseSet = wire.NewSet(
 	signuprepo.Set,
 	issuerepo.Set,
 	issueactivityrepo.Set,
+	issuerelationrepo.Set,
 	labelrepo.Set,
 	labelgrouprepo.Set,
 	workflowstaterepo.Set,
@@ -101,6 +104,7 @@ var baseSet = wire.NewSet(
 	invitationsvc.Set,
 	teamsvc.Set,
 	issuesvc.Set,
+	issuerelationsvc.Set,
 	labelsvc.Set,
 	workflowstatesvc.Set,
 	apitokensvc.Set,

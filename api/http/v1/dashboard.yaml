@@ -1624,6 +1624,69 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/relations:
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueRelations
+      summary: List an issue's relations, grouped by what each one means
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      responses:
+        '200':
+          description: The relations the caller may see, grouped by kind
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueRelationGroups' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [issues]
+      operationId: addWorkspaceIssueRelation
+      summary: Link two issues, recording the inverse on the other one automatically
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddIssueRelationRequest' }
+      responses:
+        '201':
+          description: The relation as seen from this issue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueRelation' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/relations/{relationId}:
+    delete:
+      tags: [issues]
+      operationId: removeWorkspaceIssueRelation
+      summary: Unlink two issues, from either side, removing both directions
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+        - name: relationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: The relation was removed from both issues
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/team:
     post:
       tags: [issues]
@@ -2022,6 +2085,50 @@ components:
         status: { $ref: '#/components/schemas/IssueStatus' }
         expectedVersion: { type: integer, format: int32 }
 
+    IssueRelationKind:
+      type: string
+      description: A relation as seen from the issue you are looking at
+      enum: [blocks, blocked_by, duplicates, duplicated_by, relates_to]
+
+    IssueRelation:
+      type: object
+      required: [id, kind, issue]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/IssueRelationKind' }
+        issue: { $ref: '#/components/schemas/Issue' }
+        createdAt: { type: string, format: date-time }
+
+    IssueRelationGroup:
+      type: object
+      required: [kind, relations]
+      properties:
+        kind: { $ref: '#/components/schemas/IssueRelationKind' }
+        relations:
+          type: array
+          items: { $ref: '#/components/schemas/IssueRelation' }
+
+    IssueRelationGroups:
+      type: object
+      required: [groups]
+      properties:
+        groups:
+          type: array
+          items: { $ref: '#/components/schemas/IssueRelationGroup' }
+
+    AddIssueRelationRequest:
+      type: object
+      required: [kind, issueId]
+      properties:
+        kind: { $ref: '#/components/schemas/IssueRelationKind' }
+        issueId:
+          type: string
+          format: uuid
+          description: The issue at the other end, as seen from this one
+        closeDuplicate:
+          type: boolean
+          description: Also move the duplicate to its team's abandoned state
+
     SetIssueParentRequest:
       type: object
       required: [expectedVersion, parentId]
@@ -2195,6 +2302,8 @@ components:
                 - issue_parent_too_deep
                 - issue_parent_not_active
                 - issue_children_open
+                - issue_relation_exists
+                - issue_relation_self
                 - label_out_of_scope
             version: { type: integer, format: int32 }
             conflicts:
@@ -2206,6 +2315,7 @@ components:
             children:
               type: array
               items: { $ref: '#/components/schemas/Issue' }
+            relation: { $ref: '#/components/schemas/IssueRelation' }
 
     IssueProgress:
       type: object
@@ -2237,6 +2347,8 @@ components:
             - restored
             - child_added
             - child_removed
+            - relation_added
+            - relation_removed
         fromState: { type: string }
         toState: { type: string }
         field: { type: string }
@@ -2277,6 +2389,7 @@ components:
         parentReference: { type: string }
         depth: { type: integer, format: int32 }
         childProgress: { $ref: '#/components/schemas/IssueProgress' }
+        blocked: { type: boolean }
         state: { $ref: '#/components/schemas/IssueState' }
         labels:
           type: array

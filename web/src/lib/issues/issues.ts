@@ -4,6 +4,29 @@ export type Issue = components["schemas"]["Issue"];
 export type IssuePriority = components["schemas"]["IssuePriority"];
 export type IssueStatus = components["schemas"]["IssueStatus"];
 export type IssueActivity = components["schemas"]["IssueActivity"];
+export type IssueRelationKind = components["schemas"]["IssueRelationKind"];
+export type IssueRelation = components["schemas"]["IssueRelation"];
+export type IssueRelationGroup = components["schemas"]["IssueRelationGroup"];
+
+export const relationKinds: { value: IssueRelationKind; label: string }[] = [
+	{ value: "blocks", label: "blocks" },
+	{ value: "blocked_by", label: "is blocked by" },
+	{ value: "duplicates", label: "duplicates" },
+	{ value: "duplicated_by", label: "is duplicated by" },
+	{ value: "relates_to", label: "relates to" },
+];
+
+const relationHeadings: Record<IssueRelationKind, string> = {
+	blocks: "Blocks",
+	blocked_by: "Blocked by",
+	duplicates: "Duplicates",
+	duplicated_by: "Duplicated by",
+	relates_to: "Related",
+};
+
+export function relationHeading(kind: IssueRelationKind): string {
+	return relationHeadings[kind] ?? "Related";
+}
 
 export type IssueFailure =
 	| { kind: "stale"; fields: string[] }
@@ -15,6 +38,8 @@ export type IssueFailure =
 	| { kind: "parent_cycle" }
 	| { kind: "parent_too_deep" }
 	| { kind: "parent_not_active" }
+	| { kind: "relation_exists"; held: string }
+	| { kind: "relation_self" }
 	| { kind: "invalid"; fields: string[] }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
@@ -86,6 +111,10 @@ export function issueFailureMessage(failure: IssueFailure): string {
 			return "That would nest the work more than five levels deep. Move it somewhere shallower, or detach part of the sub-tree first.";
 		case "parent_not_active":
 			return "That issue is archived or deleted, so nothing new can be filed under it.";
+		case "relation_exists":
+			return `These two issues already hold a relation${failure.held ? ` — this one ${failure.held}` : ""}. Remove it before recording a different one.`;
+		case "relation_self":
+			return "An issue cannot be linked to itself.";
 		case "invalid":
 			return `Check ${nameFields(failure.fields)}.`;
 		case "forbidden":
@@ -103,6 +132,7 @@ export function readIssueFailure(error: unknown): IssueFailure {
 		conflicts?: string[];
 		labels?: { name: string }[];
 		children?: { reference: string }[];
+		relation?: { kind: IssueRelationKind; issue: { reference: string } };
 		errors?: { field?: string }[];
 		status?: number;
 	};
@@ -129,6 +159,15 @@ export function readIssueFailure(error: unknown): IssueFailure {
 			return { kind: "parent_too_deep" };
 		case "issue_parent_not_active":
 			return { kind: "parent_not_active" };
+		case "issue_relation_exists":
+			return {
+				kind: "relation_exists",
+				held: problem.relation
+					? `${relationHeading(problem.relation.kind).toLowerCase()} ${problem.relation.issue.reference}`
+					: "",
+			};
+		case "issue_relation_self":
+			return { kind: "relation_self" };
 	}
 
 	if (problem.errors) {
@@ -152,6 +191,10 @@ export function activityLine(entry: IssueActivity): string {
 			return `${entry.toValue} was filed under this`;
 		case "child_removed":
 			return `${entry.fromValue} is no longer filed under this`;
+		case "relation_added":
+			return `Now ${relationHeading((entry.field ?? "relates_to") as IssueRelationKind).toLowerCase()} ${entry.toValue}`;
+		case "relation_removed":
+			return `No longer linked to ${entry.fromValue}`;
 		case "archived":
 			return "Archived";
 		case "unarchived":

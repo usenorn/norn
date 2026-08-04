@@ -22,6 +22,7 @@ const (
 	IssueFieldStatus      = "status"
 	IssueFieldParent      = "parent"
 	IssueFieldChildren    = "children"
+	IssueFieldRelations   = "relations"
 )
 
 var ErrIssueStale = errors.New("issue changed since it was read")
@@ -53,6 +54,7 @@ func IssueFields() []string {
 		IssueFieldStatus,
 		IssueFieldParent,
 		IssueFieldChildren,
+		IssueFieldRelations,
 	}
 }
 

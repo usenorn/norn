@@ -302,6 +302,7 @@ func signUpRequestedDTO(requested service.RequestedSignUp) api.SignUpRequested {
 
 func issueDTO(issue entity.Issue) api.Issue {
 	depth := int32(issue.Depth)
+	blocked := issue.Blocked
 	children := issueProgressDTO(issue.Children)
 
 	dto := api.Issue{
@@ -325,6 +326,7 @@ func issueDTO(issue entity.Issue) api.Issue {
 		Priority:       api.IssuePriority(issue.Priority),
 		Status:         api.IssueStatus(issue.Status),
 		Depth:          &depth,
+		Blocked:        &blocked,
 		ChildProgress:  &children,
 		StateEnteredAt: issue.StateEnteredAt,
 		CreatedAt:      issue.CreatedAt,
@@ -368,6 +370,40 @@ func issueDTO(issue entity.Issue) api.Issue {
 	}
 
 	return dto
+}
+
+func issueRelationDTO(relation entity.IssueRelation) api.IssueRelation {
+	dto := api.IssueRelation{
+		Id:    relation.ID,
+		Kind:  api.IssueRelationKind(relation.Kind),
+		Issue: issueDTO(relation.Issue),
+	}
+
+	if !relation.CreatedAt.IsZero() {
+		created := relation.CreatedAt
+		dto.CreatedAt = &created
+	}
+
+	return dto
+}
+
+func issueRelationGroupDTOs(groups []entity.IssueRelationGroup) []api.IssueRelationGroup {
+	dtos := make([]api.IssueRelationGroup, 0, len(groups))
+
+	for _, group := range groups {
+		relations := make([]api.IssueRelation, 0, len(group.Relations))
+
+		for _, relation := range group.Relations {
+			relations = append(relations, issueRelationDTO(relation))
+		}
+
+		dtos = append(dtos, api.IssueRelationGroup{
+			Kind:      api.IssueRelationKind(group.Kind),
+			Relations: relations,
+		})
+	}
+
+	return dtos
 }
 
 func issueDTOs(issues []entity.Issue) []api.Issue {

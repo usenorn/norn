@@ -2,6 +2,7 @@
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
+	import Link2 from "@lucide/svelte/icons/link-2";
 	import ProgressBar from "./progress-bar.svelte";
 	import Tag from "./tag.svelte";
 	import { cn } from "$lib/utils.js";
@@ -86,6 +87,9 @@
 		{issue.title}
 	</span>
 	<span class="flex flex-none items-center justify-end gap-2.5 text-xs text-muted-foreground">
+		{#if issue.blocked}
+			<Link2 class="size-icon-row shrink-0 text-priority-urgent" aria-label="Blocked" />
+		{/if}
 		{#if hasChildren && children}
 			<ProgressBar progress={children} label={false} class="hidden md:inline-flex" />
 		{/if}

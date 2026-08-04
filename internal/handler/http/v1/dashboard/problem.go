@@ -112,6 +112,11 @@ func problemFor(err error) (problemResponse, bool) {
 		return issueConflictProblem(api.IssueParentTooDeep, tooDeep), true
 	}
 
+	var relationHeld entity.IssueRelationExistsError
+	if errors.As(err, &relationHeld) {
+		return issueConflictProblem(api.IssueRelationExists, relationHeld), true
+	}
+
 	var stranded entity.IssueLabelsOutOfScopeError
 	if errors.As(err, &stranded) {
 		base := baseProblem(http.StatusConflict, stranded.Error())
@@ -251,6 +256,12 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrIssueParentNotActive):
 		return issueConflictProblem(api.IssueParentNotActive, err), true
+
+	case errors.Is(err, entity.ErrIssueRelationSelf):
+		return issueConflictProblem(api.IssueRelationSelf, err), true
+
+	case errors.Is(err, entity.ErrIssueRelationExists):
+		return issueConflictProblem(api.IssueRelationExists, err), true
 	}
 
 	switch {
@@ -261,6 +272,7 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrTeamNotFound),
 		errors.Is(err, entity.ErrTeamMembershipNotFound),
 		errors.Is(err, entity.ErrIssueNotFound),
+		errors.Is(err, entity.ErrIssueRelationNotFound),
 		errors.Is(err, entity.ErrWorkflowStateNotFound),
 		errors.Is(err, entity.ErrAvatarMissing):
 		return newProblem(http.StatusNotFound, err.Error()), true
@@ -682,6 +694,18 @@ func (r problemResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWri
 }
 
 func (r problemResponse) VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueRelationsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAddWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

@@ -4,6 +4,7 @@
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Archive from "@lucide/svelte/icons/archive";
+	import Link2 from "@lucide/svelte/icons/link-2";
 	import ArchiveRestore from "@lucide/svelte/icons/archive-restore";
 	import Pencil from "@lucide/svelte/icons/pencil";
 	import Trash2 from "@lucide/svelte/icons/trash-2";
@@ -28,6 +29,7 @@
 		statusLabel,
 		type IssueFailure,
 		type IssuePriority,
+		type IssueRelationKind,
 	} from "$lib/issues/issues";
 	import { issueEditSchema } from "$lib/issues/issue-schema";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
@@ -38,6 +40,7 @@
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import IssueParent from "$lib/issues/issue-parent.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
+	import IssueRelations from "$lib/issues/issue-relations.svelte";
 	import {
 		conflictFailure,
 		labelFailureMessage,
@@ -256,6 +259,58 @@
 		await patch(accountId === "" ? { clear: ["assignee"] } : { assigneeId: accountId });
 	}
 
+	async function addRelation(
+		kind: IssueRelationKind,
+		counterpartId: string,
+		closeDuplicate: boolean
+	) {
+		if (!issue) return;
+
+		working = true;
+		failure = null;
+
+		try {
+			const { error } = await api.POST("/workspaces/{workspaceId}/issues/{issueId}/relations", {
+				params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+				body: { kind, issueId: counterpartId, closeDuplicate },
+			});
+
+			if (error) failure = readIssueFailure(error);
+
+			await invalidateAll();
+		} catch {
+			failure = { kind: "unavailable" };
+		} finally {
+			working = false;
+		}
+	}
+
+	async function removeRelation(relationId: string) {
+		if (!issue) return;
+
+		working = true;
+		failure = null;
+
+		try {
+			const { error } = await api.DELETE(
+				"/workspaces/{workspaceId}/issues/{issueId}/relations/{relationId}",
+				{
+					params: {
+						path: { workspaceId: data.workspace.id, issueId: issue.id, relationId },
+					},
+				}
+			);
+
+			if (error) failure = readIssueFailure(error);
+
+			await invalidateAll();
+		} catch {
+			failure = { kind: "unavailable" };
+		} finally {
+			working = false;
+		}
+	}
+
 	async function setParent(parentId: string | null) {
 		if (!issue) return;
 
@@ -440,6 +495,17 @@
 									</Button>
 								</span>
 							{/if}
+						</Alert.Description>
+					</Alert.Root>
+				{/if}
+
+				{#if issue.blocked}
+					<Alert.Root>
+						<Link2 aria-hidden="true" />
+						<Alert.Title>Blocked</Alert.Title>
+						<Alert.Description>
+							Something this issue is blocked by is still open. It cannot be started until that
+							clears.
 						</Alert.Description>
 					</Alert.Root>
 				{/if}
@@ -724,6 +790,16 @@
 				/>
 
 				<IssueChildren children={ready.children} progress={ready.childProgress} {at} />
+
+				<IssueRelations
+					{issue}
+					groups={ready.relations}
+					candidates={ready.candidates}
+					{at}
+					{working}
+					onadd={addRelation}
+					onremove={removeRelation}
+				/>
 
 				<section class="flex flex-col gap-2">
 					<h2 class="text-sm font-medium text-ink-900">Labels</h2>

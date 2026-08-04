@@ -30,6 +30,8 @@ const (
 	IssueActivityKindRestored        IssueActivityKind = "restored"
 	IssueActivityKindChildAdded      IssueActivityKind = "child_added"
 	IssueActivityKindChildRemoved    IssueActivityKind = "child_removed"
+	IssueActivityKindRelationAdded   IssueActivityKind = "relation_added"
+	IssueActivityKindRelationRemoved IssueActivityKind = "relation_removed"
 )
 
 func IssueActivityKinds() []IssueActivityKind {
@@ -44,6 +46,8 @@ func IssueActivityKinds() []IssueActivityKind {
 		IssueActivityKindRestored,
 		IssueActivityKindChildAdded,
 		IssueActivityKindChildRemoved,
+		IssueActivityKindRelationAdded,
+		IssueActivityKindRelationRemoved,
 	}
 }
 

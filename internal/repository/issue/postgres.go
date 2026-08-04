@@ -262,6 +262,16 @@ WHERE i.parent_issue_id = $1
   AND ($3::boolean IS TRUE OR i.team_id = ANY($4::uuid[]))
 ORDER BY i.created_at, i.id`
 
+const blockedQuery = `
+SELECT DISTINCT r.target_issue_id
+FROM workspace_issue_relations r
+JOIN workspace_issues b ON b.id = r.source_issue_id
+JOIN workspace_workflow_states bs ON bs.id = b.state_id AND bs.team_id = b.team_id
+WHERE r.kind = 'blocks'
+  AND r.target_issue_id = ANY($1::uuid[])
+  AND b.status = 'active'
+  AND bs.category IN ('not_started', 'active')`
+
 const progressQuery = `
 SELECT coalesce(i.parent_issue_id::text, ''), s.category, count(*)
 FROM workspace_issues i
@@ -608,7 +618,56 @@ func (r *issueRepository) hydrate(
 		return err
 	}
 
+	if err := r.hydrateBlocked(ctx, issues); err != nil {
+		return err
+	}
+
 	return r.hydrateChildProgress(ctx, scope, issues)
+}
+
+func (r *issueRepository) hydrateBlocked(ctx context.Context, issues []entity.Issue) error {
+	if len(issues) == 0 {
+		return nil
+	}
+
+	ids := make([]string, 0, len(issues))
+	for _, issue := range issues {
+		ids = append(ids, issue.ID.String())
+	}
+
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, blockedQuery, ids)
+	if err != nil {
+		return fmt.Errorf("find blocked issues: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	blocked := map[uuid.UUID]bool{}
+
+	for rows.Next() {
+		var raw string
+
+		if err := rows.Scan(&raw); err != nil {
+			return fmt.Errorf("scan blocked issue id: %w", err)
+		}
+
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			return fmt.Errorf("parse blocked issue id: %w", err)
+		}
+
+		blocked[id] = true
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("iterate blocked issues: %w", err)
+	}
+
+	for i := range issues {
+		issues[i].Blocked = blocked[issues[i].ID]
+	}
+
+	return nil
 }
 
 func (r *issueRepository) hydrateLabels(ctx context.Context, issues []entity.Issue) error {

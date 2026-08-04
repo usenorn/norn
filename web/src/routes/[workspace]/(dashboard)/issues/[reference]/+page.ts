@@ -24,6 +24,7 @@ export type IssueDetail =
 			activity: IssueActivity[];
 			members: Member[];
 			children: Issue[];
+			relations: components["schemas"]["IssueRelationGroup"][];
 			childProgress: components["schemas"]["IssueProgress"];
 			candidates: Issue[];
 	  }
@@ -57,7 +58,8 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 
 	const path = { workspaceId: workspace.id, issueId: issue.data.id };
 
-	const [states, labels, groups, activity, members, children, candidates] = await Promise.all([
+	const [states, labels, groups, activity, members, children, candidates, relations] =
+		await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			fetch,
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -83,6 +85,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			fetch,
 			params: { path: { workspaceId: workspace.id }, query: { limit: 200 } },
 		}),
+		api.GET("/workspaces/{workspaceId}/issues/{issueId}/relations", { fetch, params: { path } }),
 	]);
 
 	if (
@@ -91,7 +94,8 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 		!groups.data ||
 		!activity.data ||
 		!members.data ||
-		!children.data
+		!children.data ||
+		!relations.data
 	) {
 		return { detail: { kind: "unavailable" } };
 	}
@@ -108,6 +112,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			children: children.data.issues,
 			childProgress: children.data.progress,
 			candidates: candidates.data?.issues ?? [],
+			relations: relations.data.groups,
 		},
 	};
 };
