@@ -1,0 +1,55 @@
+import type { components } from "$lib/api/dashboard.gen";
+import type { StateCategory } from "$lib/team/states";
+import type { IssueTab } from "./board";
+
+export type IssueFilter = components["schemas"]["IssueFilter"];
+export type IssueSort = components["schemas"]["IssueSort"];
+export type IssueGroupBy = components["schemas"]["IssueGroupBy"];
+export type IssueGroupTally = components["schemas"]["IssueGroupTally"];
+
+export const issuePageSize = 50;
+
+const tabCategories: Record<IssueTab, StateCategory[] | null> = {
+	open: ["not_started", "active"],
+	closed: ["complete", "abandoned"],
+	all: null,
+};
+
+export function tabFilter(tab: IssueTab): IssueFilter | undefined {
+	const categories = tabCategories[tab];
+	if (!categories) return undefined;
+
+	return { field: "stateCategory", op: "in", values: categories };
+}
+
+export function teamFilter(teamId: string): IssueFilter {
+	return { field: "team", op: "is", values: [teamId] };
+}
+
+export function allOf(...parts: (IssueFilter | undefined)[]): IssueFilter | undefined {
+	const present = parts.filter((part): part is IssueFilter => part !== undefined);
+
+	if (present.length === 0) return undefined;
+	if (present.length === 1) return present[0];
+
+	return { all: present };
+}
+
+export type IssueQueryBody = components["schemas"]["IssueQueryRequest"];
+
+export function boardQuery(teamId: string, tab: IssueTab, cursor?: string): IssueQueryBody {
+	return {
+		filter: allOf(teamFilter(teamId), tabFilter(tab)),
+		groupBy: "state",
+		limit: issuePageSize,
+		cursor,
+	};
+}
+
+export function tallyOf(groups: IssueGroupTally[] | undefined, key: string): number | undefined {
+	return groups?.find((group) => group.key === key)?.issues;
+}
+
+export function tallyTotal(groups: IssueGroupTally[] | undefined): number | undefined {
+	return groups?.reduce((sum, group) => sum + group.issues, 0);
+}

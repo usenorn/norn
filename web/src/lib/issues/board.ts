@@ -2,7 +2,8 @@ import type { components } from "$lib/api/dashboard.gen";
 import type { Issue } from "./issues";
 
 export type { Issue };
-import type { StateCategory, WorkflowState } from "$lib/team/states";
+import type { WorkflowState } from "$lib/team/states";
+import { tallyOf, type IssueGroupTally } from "./filter";
 
 export type IssueProgress = components["schemas"]["IssueProgress"];
 
@@ -18,12 +19,6 @@ export const tabLabels: Record<IssueTab, string> = {
 	all: "All",
 };
 
-const tabCategories: Record<IssueTab, StateCategory[] | null> = {
-	open: ["not_started", "active"],
-	closed: ["complete", "abandoned"],
-	all: null,
-};
-
 export type IssueBoard =
 	| { kind: "loading" }
 	| { kind: "no_teams" }
@@ -34,24 +29,39 @@ export type IssueBoard =
 export type IssueGroup = {
 	state: WorkflowState;
 	issues: Issue[];
+	total: number;
 };
-
-export function selectIssues(issues: Issue[], tab: IssueTab): Issue[] {
-	const categories = tabCategories[tab];
-	if (!categories) return issues;
-
-	return issues.filter((issue) => categories.includes(issue.state.category));
-}
 
 export function groupByState(
 	issues: Issue[],
 	states: WorkflowState[],
+	tallies: IssueGroupTally[] | undefined,
 	options: { showEmpty?: boolean } = {}
 ): IssueGroup[] {
-	const groups = states.map((state) => ({
-		state,
-		issues: issues.filter((issue) => issue.state.id === state.id),
-	}));
+	const known = new Set(states.map((state) => state.id));
+	const loose = issues.filter((issue) => !known.has(issue.state.id));
+
+	const groups = states.map((state) => {
+		const held = issues.filter((issue) => issue.state.id === state.id);
+
+		return { state, issues: held, total: tallyOf(tallies, state.id) ?? held.length };
+	});
+
+	for (const issue of loose) {
+		const existing = groups.find((group) => group.state.id === issue.state.id);
+
+		if (existing) {
+			existing.issues.push(issue);
+
+			continue;
+		}
+
+		groups.push({
+			state: { ...issue.state, teamId: issue.teamId, isDefault: false, isCompletion: false },
+			issues: [issue],
+			total: tallyOf(tallies, issue.state.id) ?? 1,
+		});
+	}
 
 	return options.showEmpty ? groups : groups.filter((group) => group.issues.length > 0);
 }
@@ -59,20 +69,26 @@ export function groupByState(
 export function boardFor(
 	issues: Issue[] | undefined,
 	states: WorkflowState[] | undefined,
-	tab: IssueTab,
+	tallies: IssueGroupTally[] | undefined,
 	teamName: string,
 	options: { showEmpty?: boolean } = {}
 ): IssueBoard {
 	if (!issues || !states) return { kind: "unavailable" };
 
-	const selected = selectIssues(issues, tab);
-	if (selected.length === 0) return { kind: "empty", team: teamName };
+	if (issues.length === 0) return { kind: "empty", team: teamName };
 
-	return { kind: "ready", groups: groupByState(selected, states, options) };
+	return { kind: "ready", groups: groupByState(issues, states, tallies, options) };
 }
 
-export function countForTab(issues: Issue[], tab: IssueTab): number {
-	return selectIssues(issues, tab).length;
+export function countForTab(progress: IssueProgress, tab: IssueTab): number {
+	switch (tab) {
+		case "open":
+			return progress.notStarted + progress.active;
+		case "closed":
+			return progress.complete + progress.abandoned;
+		default:
+			return totalIssues(progress);
+	}
 }
 
 export function totalIssues(progress: IssueProgress): number {

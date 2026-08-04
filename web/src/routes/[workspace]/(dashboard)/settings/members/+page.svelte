@@ -54,7 +54,7 @@
 		import.meta.env.DEV ? membersPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	let accumulated = $state<Accumulated | null>(null);
+	let accumulated = $state.raw<Accumulated | null>(null);
 	let localPaging = $state<MemberPaging>({ kind: "idle" });
 	let localRemoval = $state<MemberRemoval>({ kind: "closed" });
 	let localAction = $state<MemberAction>({ kind: "idle" });

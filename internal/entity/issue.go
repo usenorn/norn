@@ -175,6 +175,10 @@ type IssuePage struct {
 	Statuses  []IssueStatus
 	CycleID   *uuid.UUID
 	ProjectID *uuid.UUID
+
+	Filter      *IssueFilter
+	Sort        []IssueSort
+	QueryCursor *IssueQueryCursor
 }
 
 func (p IssuePage) Normalized() IssuePage {

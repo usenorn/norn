@@ -11,17 +11,31 @@ import (
 func issueRepositorySource(t *testing.T) string {
 	t.Helper()
 
-	dir, err := os.Getwd()
+	names, err := filepath.Glob("*.go")
 	if err != nil {
-		t.Fatalf("working directory: %v", err)
+		t.Fatalf("list issue repository sources: %v", err)
 	}
 
-	source, err := os.ReadFile(filepath.Join(dir, "postgres.go"))
-	if err != nil {
-		t.Fatalf("read issue repository: %v", err)
+	var source strings.Builder
+
+	for _, name := range names {
+		if strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+
+		contents, err := os.ReadFile(name)
+		if err != nil {
+			t.Fatalf("read %s: %v", name, err)
+		}
+
+		source.Write(contents)
 	}
 
-	return string(source)
+	if source.Len() == 0 {
+		t.Fatal("found no issue repository sources to guard")
+	}
+
+	return source.String()
 }
 
 func TestEveryWriteToAnIssueStampsTheFieldItChanged(t *testing.T) {
@@ -48,28 +62,55 @@ func TestEveryWriteToAnIssueStampsTheFieldItChanged(t *testing.T) {
 	}
 }
 
-func TestNoIssueQueryCountsIssuesOutsideTheProgressTally(t *testing.T) {
+func TestEveryTallyIsTakenInsideTheCallersScope(t *testing.T) {
 	source := issueRepositorySource(t)
 
 	counting := regexp.MustCompile(`(?i)\b(count|sum)\s*\(`)
+	scoped := regexp.MustCompile(`i\.team_id = ANY\(`)
 
-	for block := range strings.SplitSeq(source, "const ") {
-		name, _, found := strings.Cut(block, " =")
-		if !found {
+	for _, line := range strings.Split(source, "\n") {
+		if !counting.MatchString(line) {
 			continue
 		}
 
-		if strings.TrimSpace(name) == "progressQuery" {
-			continue
-		}
-
-		if counting.MatchString(block) {
-			t.Errorf(
-				"%s counts rows. The only tally this product may compute is the per-category "+
-					"progress breakdown; anything else becomes an issue count that could be "+
-					"metered or capped.",
-				strings.TrimSpace(name),
-			)
+		if strings.Contains(line, "// unscoped:") {
+			t.Errorf("a tally is marked unscoped: %s", strings.TrimSpace(line))
 		}
 	}
+
+	if !counting.MatchString(source) {
+		return
+	}
+
+	for _, statement := range countingStatements(source) {
+		if scoped.MatchString(statement) {
+			continue
+		}
+
+		t.Errorf(
+			"a query counts rows without the caller's team scope:\n%s\n"+
+				"Counting is allowed here, but only inside the scope the caller can already "+
+				"enumerate by paging. A tally that reaches past it discloses, by subtraction, "+
+				"the contents of a team the guard conceals.",
+			strings.TrimSpace(statement),
+		)
+	}
+}
+
+// countingStatements returns the handwritten SQL literals that tally rows. SQL assembled at
+// runtime is not visible here and is covered by TestEveryTallyIsBuiltInsideTheCallersScope,
+// which inspects what the builder actually emits.
+func countingStatements(source string) []string {
+	counting := regexp.MustCompile(`(?i)\b(count|sum)\s*\(`)
+
+	statements := []string{}
+	literals := strings.Split(source, "`")
+
+	for i := 1; i < len(literals); i += 2 {
+		if counting.MatchString(literals[i]) {
+			statements = append(statements, literals[i])
+		}
+	}
+
+	return statements
 }

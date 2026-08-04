@@ -178,6 +178,21 @@ func (mr *MockIssuesMockRecorder) Purge(ctx, issueID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Purge", reflect.TypeOf((*MockIssues)(nil).Purge), ctx, issueID)
 }
 
+// Query mocks base method.
+func (m *MockIssues) Query(ctx context.Context, workspaceID uuid.UUID, input service.QueryIssuesInput) (service.IssueQueryResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Query", ctx, workspaceID, input)
+	ret0, _ := ret[0].(service.IssueQueryResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Query indicates an expected call of Query.
+func (mr *MockIssuesMockRecorder) Query(ctx, workspaceID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockIssues)(nil).Query), ctx, workspaceID, input)
+}
+
 // SetLabels mocks base method.
 func (m *MockIssues) SetLabels(ctx context.Context, workspaceID, issueID uuid.UUID, input service.SetIssueLabelsInput) ([]entity.Label, error) {
 	m.ctrl.T.Helper()

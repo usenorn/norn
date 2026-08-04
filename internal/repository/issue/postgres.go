@@ -58,18 +58,6 @@ LEFT JOIN workspace_issues p ON p.id = i.parent_issue_id
 LEFT JOIN workspace_cycles c ON c.id = i.cycle_id
 LEFT JOIN workspace_projects pr ON pr.id = i.project_id`
 
-const issuePageQuery = `
-SELECT` + issueColumns + issueJoins + `
-WHERE i.workspace_id = $1
-  AND ($2::boolean IS TRUE OR i.team_id = ANY($3::uuid[]))
-  AND ($4::boolean IS NOT TRUE
-       OR (i.created_at, i.id) < ($5::timestamptz, $6::uuid))
-  AND ($8::boolean IS TRUE OR i.status = ANY($9::text[]))
-  AND ($10::boolean IS NOT TRUE OR i.cycle_id = $11::uuid)
-  AND ($12::boolean IS NOT TRUE OR i.project_id = $13::uuid)
-ORDER BY i.created_at DESC, i.id DESC
-LIMIT $7`
-
 const visibleIssueQuery = `
 SELECT` + issueColumns + issueJoins + `
 WHERE i.id = $1
@@ -603,41 +591,9 @@ func (r *issueRepository) ListVisible(
 	scope entity.TeamScope,
 	page entity.IssuePage,
 ) ([]entity.Issue, error) {
-	cursorCreatedAt := time.Time{}
-	cursorID := uuid.Nil.String()
+	statement, args := r.pageStatement(scope, page)
 
-	if page.Cursor != nil {
-		cursorCreatedAt = page.Cursor.CreatedAt
-		cursorID = page.Cursor.IssueID.String()
-	}
-
-	cycleID := uuid.Nil
-	if page.CycleID != nil {
-		cycleID = *page.CycleID
-	}
-
-	projectID := uuid.Nil
-	if page.ProjectID != nil {
-		projectID = *page.ProjectID
-	}
-
-	rows, err := r.db.Querier(ctx).QueryContext(
-		ctx,
-		issuePageQuery,
-		scope.WorkspaceID.String(),
-		scope.AllTeams,
-		teamIDs(scope),
-		page.Cursor != nil,
-		cursorCreatedAt,
-		cursorID,
-		page.Limit,
-		len(page.Statuses) == 0,
-		statusNames(page.Statuses),
-		page.CycleID != nil,
-		cycleID.String(),
-		page.ProjectID != nil,
-		projectID.String(),
-	)
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, statement, args...)
 	if err != nil {
 		return nil, fmt.Errorf("list visible issues: %w", err)
 	}

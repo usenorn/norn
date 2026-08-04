@@ -654,6 +654,82 @@ func issuePageDTO(page service.IssuePage) api.IssuePage {
 	return dto
 }
 
+func issueQueryResultDTO(result service.IssueQueryResult, grouped bool) api.IssueQueryResult {
+	dto := api.IssueQueryResult{Issues: issueDTOs(result.Issues)}
+
+	if result.NextCursor != "" {
+		cursor := result.NextCursor
+		dto.NextCursor = &cursor
+	}
+
+	if grouped {
+		groups := make([]api.IssueGroupTally, len(result.Groups))
+		for i, group := range result.Groups {
+			groups[i] = api.IssueGroupTally{Key: group.Key, Issues: int32(group.Issues)}
+		}
+
+		dto.Groups = &groups
+	}
+
+	return dto
+}
+
+func issueFilterFrom(dto *api.IssueFilter) *entity.IssueFilter {
+	if dto == nil {
+		return nil
+	}
+
+	filter := entity.IssueFilter{Not: issueFilterFrom(dto.Not)}
+
+	if dto.All != nil {
+		filter.All = issueFiltersFrom(*dto.All)
+	}
+
+	if dto.Any != nil {
+		filter.Any = issueFiltersFrom(*dto.Any)
+	}
+
+	if dto.Field != nil {
+		filter.Field = entity.IssueFilterField(*dto.Field)
+	}
+
+	if dto.Op != nil {
+		filter.Op = entity.IssueFilterOp(*dto.Op)
+	}
+
+	if dto.Values != nil {
+		filter.Values = *dto.Values
+	}
+
+	return &filter
+}
+
+func issueFiltersFrom(dtos []api.IssueFilter) []entity.IssueFilter {
+	filters := make([]entity.IssueFilter, 0, len(dtos))
+
+	for _, dto := range dtos {
+		filters = append(filters, *issueFilterFrom(&dto))
+	}
+
+	return filters
+}
+
+func issueSortFrom(dtos []api.IssueSort) []entity.IssueSort {
+	sort := make([]entity.IssueSort, 0, len(dtos))
+
+	for _, dto := range dtos {
+		key := entity.IssueSort{Field: entity.IssueSortField(dto.Field)}
+
+		if dto.Descending != nil {
+			key.Descending = *dto.Descending
+		}
+
+		sort = append(sort, key)
+	}
+
+	return sort
+}
+
 func apiTokenDTO(token entity.APIToken) api.APIToken {
 	dto := api.APIToken{
 		Id:          token.ID,

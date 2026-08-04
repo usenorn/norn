@@ -187,7 +187,11 @@ func (s *operationsService) walk(
 		}
 	}
 
-	page := entity.IssuePage{Limit: entity.BulkChunkSize, Statuses: filter.Statuses}.Normalized()
+	page := entity.IssuePage{
+		Limit:    entity.BulkChunkSize,
+		Statuses: filter.Statuses,
+		Filter:   filter.Expression,
+	}.Normalized()
 	page.Limit = entity.BulkChunkSize
 
 	for {
@@ -209,8 +213,11 @@ func (s *operationsService) walk(
 			return err
 		}
 
-		cursor := issues[len(issues)-1].Cursor()
-		page.Cursor = &cursor
+		last := issues[len(issues)-1]
+		page.QueryCursor = &entity.IssueQueryCursor{
+			Keys:    entity.IssueSortKeys(last, entity.DefaultIssueSort()),
+			IssueID: last.ID,
+		}
 	}
 }
 

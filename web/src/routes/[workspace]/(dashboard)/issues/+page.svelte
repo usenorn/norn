@@ -29,6 +29,7 @@
 		tabLabels,
 		type Issue,
 	} from "$lib/issues/board";
+	import { boardQuery, type IssueGroupTally } from "$lib/issues/filter";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { issuesPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -44,6 +45,12 @@
 	const slug = $derived(data.workspace.slug);
 	const at = $derived((path: string) => workspacePath(slug, path));
 
+	type Loaded = { source: Issue[] | undefined; issues: Issue[]; nextCursor?: string };
+	type Paging = { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
+
+	let accumulated = $state.raw<Loaded | null>(null);
+	let localPaging = $state<Paging>({ kind: "idle" });
+
 	let moved = $state<Record<string, Issue["state"]>>({});
 	let dragging = $state<string | null>(null);
 	let dropTarget = $state<string | null>(null);
@@ -55,14 +62,27 @@
 	const states = $derived(preview?.states ?? data.states);
 	const progress = $derived(preview?.progress ?? data.progress);
 
-	const issues = $derived(
-		(preview?.issues ?? data.issues)?.map((issue) =>
-			moved[issue.id] ? { ...issue, state: moved[issue.id] } : issue
-		)
+	const base = $derived(preview?.issues ?? data.issues);
+
+	const loaded = $derived(
+		accumulated && accumulated.source === base ? accumulated.issues : base
 	);
 
+	const nextCursor = $derived(
+		accumulated && accumulated.source === base
+			? accumulated.nextCursor
+			: (preview?.nextCursor ?? data.nextCursor)
+	);
+
+	const issues = $derived(
+		loaded?.map((issue) => (moved[issue.id] ? { ...issue, state: moved[issue.id] } : issue))
+	);
+
+	const tallies = $derived<IssueGroupTally[] | undefined>(preview?.groups ?? data.groups);
+	const paging = $derived<Paging>(preview?.paging ?? localPaging);
+
 	const board = $derived(
-		boardFor(issues, states, data.tab, team?.name ?? "", { showEmpty: data.showEmpty })
+		boardFor(issues, states, tallies, team?.name ?? "", { showEmpty: data.showEmpty })
 	);
 	const groups = $derived(board.kind === "ready" ? board.groups : []);
 	const assigneeNames = $derived(
@@ -155,6 +175,36 @@
 			failed = true;
 		} finally {
 			creating = false;
+		}
+	}
+
+	async function loadMore() {
+		if (!team || !nextCursor || !loaded) return;
+
+
+		const source = base;
+		localPaging = { kind: "loading" };
+
+		try {
+			const { data: next, error } = await api.POST("/workspaces/{workspaceId}/issues/query", {
+				params: { path: { workspaceId: data.workspace.id } },
+				body: boardQuery(team.id, data.tab, nextCursor),
+			});
+
+			if (error || !next) {
+				localPaging = { kind: "unavailable" };
+
+				return;
+			}
+
+			accumulated = {
+				source,
+				issues: [...loaded, ...next.issues],
+				nextCursor: next.nextCursor,
+			};
+			localPaging = { kind: "idle" };
+		} catch {
+			localPaging = { kind: "unavailable" };
 		}
 	}
 
@@ -350,7 +400,7 @@
 					<span class="shrink-0 text-md text-muted-foreground">{team.name}</span>
 				{/if}
 
-				{#if issues}
+				{#if issues && progress}
 					<div role="tablist" class="ml-1 hidden shrink-0 items-center gap-3 sm:flex">
 						{#each issueTabs as tab (tab)}
 							<a
@@ -362,7 +412,7 @@
 							>
 								{tabLabels[tab]}
 								<span class="font-mono text-2xs text-muted-foreground tabular-nums">
-									{countForTab(issues, tab)}
+									{progress ? countForTab(progress, tab) : ""}
 								</span>
 							</a>
 						{/each}
@@ -499,7 +549,7 @@
 									{group.state.name}
 								</span>
 								<span class="font-mono text-2xs text-muted-foreground tabular-nums">
-									{group.issues.length}
+									{group.total}
 								</span>
 							</span>
 							<span class="h-px flex-1 bg-line-default" aria-hidden="true"></span>
@@ -522,6 +572,26 @@
 						{/each}
 					</section>
 				{/each}
+
+					{#if nextCursor || paging.kind === "unavailable"}
+						<div class="flex flex-col items-center gap-2 border-t border-line-subtle px-4 py-4">
+							{#if paging.kind === "unavailable"}
+								<p class="text-sm text-muted-foreground">
+									We could not load any more. Nothing changed &mdash; try again.
+								</p>
+							{/if}
+							{#if nextCursor}
+								<Button
+									variant="secondary"
+									size="sm"
+									onclick={loadMore}
+									disabled={paging.kind === "loading"}
+								>
+									{paging.kind === "loading" ? "Loading" : "Load more"}
+								</Button>
+							{/if}
+						</div>
+					{/if}
 			</div>
 		{:else}
 			<div class="flex-1 overflow-auto bg-background p-4">
@@ -541,7 +611,7 @@
 									{group.state.name}
 								</span>
 								<span class="font-mono text-2xs text-muted-foreground tabular-nums">
-									{group.issues.length}
+									{group.total}
 								</span>
 								<span class="h-px flex-1 bg-line-default" aria-hidden="true"></span>
 							</div>
@@ -568,6 +638,26 @@
 						</div>
 					{/each}
 				</div>
+
+				{#if nextCursor || paging.kind === "unavailable"}
+					<div class="flex flex-col items-center gap-2 border-t border-line-subtle px-4 py-4">
+						{#if paging.kind === "unavailable"}
+							<p class="text-sm text-muted-foreground">
+								We could not load any more. Nothing changed &mdash; try again.
+							</p>
+						{/if}
+						{#if nextCursor}
+							<Button
+								variant="secondary"
+								size="sm"
+								onclick={loadMore}
+								disabled={paging.kind === "loading"}
+							>
+								{paging.kind === "loading" ? "Loading" : "Load more"}
+							</Button>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>

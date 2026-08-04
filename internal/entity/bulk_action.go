@@ -181,8 +181,9 @@ func (c BulkChange) Validate() error {
 }
 
 type BulkFilter struct {
-	TeamID   *uuid.UUID
-	Statuses []IssueStatus
+	TeamID     *uuid.UUID
+	Statuses   []IssueStatus
+	Expression *IssueFilter
 }
 
 type BulkSet struct {
@@ -196,6 +197,8 @@ func (s BulkSet) Validate() error {
 		return ErrBulkSetEmpty
 	case len(s.IssueIDs) > 0 && s.Filter != nil:
 		return ErrBulkSetAmbiguous
+	case s.Filter != nil && s.Filter.Expression != nil:
+		return s.Filter.Expression.Validate()
 	default:
 		return nil
 	}

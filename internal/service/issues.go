@@ -15,6 +15,7 @@ type Issues interface {
 	Get(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.Issue, error)
 	GetByReference(ctx context.Context, workspaceID uuid.UUID, reference string) (entity.Issue, error)
 	List(ctx context.Context, workspaceID uuid.UUID, input ListIssuesInput) (IssuePage, error)
+	Query(ctx context.Context, workspaceID uuid.UUID, input QueryIssuesInput) (IssueQueryResult, error)
 	Update(ctx context.Context, workspaceID, issueID uuid.UUID, input UpdateIssueInput) (entity.Issue, error)
 	SetParent(ctx context.Context, workspaceID, issueID uuid.UUID, input SetIssueParentInput) (entity.Issue, error)
 	Children(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Issue, entity.IssueProgress, error)
