@@ -87,14 +87,17 @@ var WorkspaceSsoConnectionWhere = struct {
 
 // WorkspaceSsoConnectionRels is where relationship names are stored.
 var WorkspaceSsoConnectionRels = struct {
-	Workspace string
+	Workspace                       string
+	WorkspaceWorkspaceSsoIdentities string
 }{
-	Workspace: "Workspace",
+	Workspace:                       "Workspace",
+	WorkspaceWorkspaceSsoIdentities: "WorkspaceWorkspaceSsoIdentities",
 }
 
 // workspaceSsoConnectionR is where relationships are stored.
 type workspaceSsoConnectionR struct {
-	Workspace *Workspace `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	Workspace                       *Workspace                `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	WorkspaceWorkspaceSsoIdentities WorkspaceSsoIdentitySlice `boil:"WorkspaceWorkspaceSsoIdentities" json:"WorkspaceWorkspaceSsoIdentities" toml:"WorkspaceWorkspaceSsoIdentities" yaml:"WorkspaceWorkspaceSsoIdentities"`
 }
 
 // NewStruct creates a new relationship struct
@@ -116,6 +119,22 @@ func (r *workspaceSsoConnectionR) GetWorkspace() *Workspace {
 	}
 
 	return r.Workspace
+}
+
+func (o *WorkspaceSsoConnection) GetWorkspaceWorkspaceSsoIdentities() WorkspaceSsoIdentitySlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceWorkspaceSsoIdentities()
+}
+
+func (r *workspaceSsoConnectionR) GetWorkspaceWorkspaceSsoIdentities() WorkspaceSsoIdentitySlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceWorkspaceSsoIdentities
 }
 
 // workspaceSsoConnectionL is where Load methods for each relationship are stored.
@@ -445,6 +464,20 @@ func (o *WorkspaceSsoConnection) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	return Workspaces(queryMods...)
 }
 
+// WorkspaceWorkspaceSsoIdentities retrieves all the workspace_sso_identity's WorkspaceSsoIdentities with an executor via workspace_id column.
+func (o *WorkspaceSsoConnection) WorkspaceWorkspaceSsoIdentities(mods ...qm.QueryMod) workspaceSsoIdentityQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_sso_identities\".\"workspace_id\"=?", o.WorkspaceID),
+	)
+
+	return WorkspaceSsoIdentities(queryMods...)
+}
+
 // LoadWorkspace allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (workspaceSsoConnectionL) LoadWorkspace(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSsoConnection any, mods queries.Applicator) error {
@@ -565,6 +598,119 @@ func (workspaceSsoConnectionL) LoadWorkspace(ctx context.Context, e boil.Context
 	return nil
 }
 
+// LoadWorkspaceWorkspaceSsoIdentities allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceSsoConnectionL) LoadWorkspaceWorkspaceSsoIdentities(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSsoConnection any, mods queries.Applicator) error {
+	var slice []*WorkspaceSsoConnection
+	var object *WorkspaceSsoConnection
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceSsoConnection.(*WorkspaceSsoConnection)
+		if !ok {
+			object = new(WorkspaceSsoConnection)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceSsoConnection)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceSsoConnection))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceSsoConnection.(*[]*WorkspaceSsoConnection)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceSsoConnection)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceSsoConnection))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceSsoConnectionR{}
+		}
+		args[object.WorkspaceID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceSsoConnectionR{}
+			}
+			args[obj.WorkspaceID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_sso_identities`),
+		qm.WhereIn(`workspace_sso_identities.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_sso_identities")
+	}
+
+	var resultSlice []*WorkspaceSsoIdentity
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_sso_identities")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_sso_identities")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_sso_identities")
+	}
+
+	if len(workspaceSsoIdentityAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceWorkspaceSsoIdentities = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceSsoIdentityR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.WorkspaceID == foreign.WorkspaceID {
+				local.R.WorkspaceWorkspaceSsoIdentities = append(local.R.WorkspaceWorkspaceSsoIdentities, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceSsoIdentityR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetWorkspace of the workspaceSsoConnection to the related item.
 // Sets o.R.Workspace to related.
 // Adds o to related.R.WorkspaceSsoConnection.
@@ -609,6 +755,59 @@ func (o *WorkspaceSsoConnection) SetWorkspace(ctx context.Context, exec boil.Con
 		related.R.WorkspaceSsoConnection = o
 	}
 
+	return nil
+}
+
+// AddWorkspaceWorkspaceSsoIdentities adds the given related objects to the existing relationships
+// of the workspace_sso_connection, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceWorkspaceSsoIdentities.
+// Sets related.R.Workspace appropriately.
+func (o *WorkspaceSsoConnection) AddWorkspaceWorkspaceSsoIdentities(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceSsoIdentity) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.WorkspaceID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_sso_identities\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceSsoIdentityPrimaryKeyColumns),
+			)
+			values := []any{o.WorkspaceID, rel.WorkspaceID, rel.AccountID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.WorkspaceID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceSsoConnectionR{
+			WorkspaceWorkspaceSsoIdentities: related,
+		}
+	} else {
+		o.R.WorkspaceWorkspaceSsoIdentities = append(o.R.WorkspaceWorkspaceSsoIdentities, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceSsoIdentityR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
 	return nil
 }
 

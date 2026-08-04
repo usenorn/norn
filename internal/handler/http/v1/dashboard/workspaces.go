@@ -257,7 +257,7 @@ func (h *handler) SetWorkspaceAuthPolicy(ctx context.Context, request api.SetWor
 		return unauthorized(), nil
 	}
 
-	policy, err := h.workspaces.SetAuthPolicy(ctx, request.WorkspaceId, entity.AuthEnforcement(request.Body.Enforcement))
+	outcome, err := h.workspaces.SetAuthPolicy(ctx, request.WorkspaceId, entity.AuthEnforcement(request.Body.Enforcement))
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -266,5 +266,12 @@ func (h *handler) SetWorkspaceAuthPolicy(ctx context.Context, request api.SetWor
 		return nil, err
 	}
 
-	return api.SetWorkspaceAuthPolicy200JSONResponse(workspaceAuthPolicyDTO(policy)), nil
+	response := api.SetWorkspaceAuthPolicy200JSONResponse{Policy: workspaceAuthPolicyDTO(outcome.Policy)}
+
+	if len(outcome.RecoveryCodes) > 0 {
+		codes := outcome.RecoveryCodes
+		response.RecoveryCodes = &codes
+	}
+
+	return response, nil
 }

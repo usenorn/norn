@@ -11,6 +11,7 @@ var TableNames = struct {
 	Accounts                    string
 	APITokens                   string
 	WorkspaceAuthPolicies       string
+	WorkspaceBreakGlassCodes    string
 	WorkspaceBulkActionOutcomes string
 	WorkspaceBulkActions        string
 	WorkspaceInvitationTeams    string
@@ -26,6 +27,7 @@ var TableNames = struct {
 	WorkspaceOidcConnections    string
 	WorkspaceSamlConnections    string
 	WorkspaceSsoConnections     string
+	WorkspaceSsoIdentities      string
 	WorkspaceTeamMembers        string
 	WorkspaceTeams              string
 	WorkspaceWorkflowStates     string
@@ -38,6 +40,7 @@ var TableNames = struct {
 	Accounts:                    "accounts",
 	APITokens:                   "api_tokens",
 	WorkspaceAuthPolicies:       "workspace_auth_policies",
+	WorkspaceBreakGlassCodes:    "workspace_break_glass_codes",
 	WorkspaceBulkActionOutcomes: "workspace_bulk_action_outcomes",
 	WorkspaceBulkActions:        "workspace_bulk_actions",
 	WorkspaceInvitationTeams:    "workspace_invitation_teams",
@@ -53,6 +56,7 @@ var TableNames = struct {
 	WorkspaceOidcConnections:    "workspace_oidc_connections",
 	WorkspaceSamlConnections:    "workspace_saml_connections",
 	WorkspaceSsoConnections:     "workspace_sso_connections",
+	WorkspaceSsoIdentities:      "workspace_sso_identities",
 	WorkspaceTeamMembers:        "workspace_team_members",
 	WorkspaceTeams:              "workspace_teams",
 	WorkspaceWorkflowStates:     "workspace_workflow_states",

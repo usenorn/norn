@@ -118,6 +118,21 @@ func (mr *MockWorkspacesMockRecorder) Delete(ctx, workspaceID any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockWorkspaces)(nil).Delete), ctx, workspaceID)
 }
 
+// EnforcementReadiness mocks base method.
+func (m *MockWorkspaces) EnforcementReadiness(ctx context.Context, workspaceID uuid.UUID) (entity.EnforcementBlocker, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnforcementReadiness", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.EnforcementBlocker)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EnforcementReadiness indicates an expected call of EnforcementReadiness.
+func (mr *MockWorkspacesMockRecorder) EnforcementReadiness(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnforcementReadiness", reflect.TypeOf((*MockWorkspaces)(nil).EnforcementReadiness), ctx, workspaceID)
+}
+
 // Get mocks base method.
 func (m *MockWorkspaces) Get(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error) {
 	m.ctrl.T.Helper()
@@ -163,6 +178,21 @@ func (mr *MockWorkspacesMockRecorder) ListMembers(ctx, workspaceID, input any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembers", reflect.TypeOf((*MockWorkspaces)(nil).ListMembers), ctx, workspaceID, input)
 }
 
+// ListSSOIdentities mocks base method.
+func (m *MockWorkspaces) ListSSOIdentities(ctx context.Context, workspaceID uuid.UUID) ([]entity.SSOIdentity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSSOIdentities", ctx, workspaceID)
+	ret0, _ := ret[0].([]entity.SSOIdentity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSSOIdentities indicates an expected call of ListSSOIdentities.
+func (mr *MockWorkspacesMockRecorder) ListSSOIdentities(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSSOIdentities", reflect.TypeOf((*MockWorkspaces)(nil).ListSSOIdentities), ctx, workspaceID)
+}
+
 // PreviewMemberRemoval mocks base method.
 func (m *MockWorkspaces) PreviewMemberRemoval(ctx context.Context, workspaceID, accountID uuid.UUID) (service.MemberRemoval, error) {
 	m.ctrl.T.Helper()
@@ -190,6 +220,20 @@ func (m *MockWorkspaces) Purge(ctx context.Context, workspaceID uuid.UUID) error
 func (mr *MockWorkspacesMockRecorder) Purge(ctx, workspaceID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Purge", reflect.TypeOf((*MockWorkspaces)(nil).Purge), ctx, workspaceID)
+}
+
+// RedeemRecoveryCode mocks base method.
+func (m *MockWorkspaces) RedeemRecoveryCode(ctx context.Context, input service.RedeemRecoveryCodeInput) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RedeemRecoveryCode", ctx, input)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RedeemRecoveryCode indicates an expected call of RedeemRecoveryCode.
+func (mr *MockWorkspacesMockRecorder) RedeemRecoveryCode(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RedeemRecoveryCode", reflect.TypeOf((*MockWorkspaces)(nil).RedeemRecoveryCode), ctx, input)
 }
 
 // RemoveMember mocks base method.
@@ -222,10 +266,10 @@ func (mr *MockWorkspacesMockRecorder) Restore(ctx, workspaceID any) *gomock.Call
 }
 
 // SetAuthPolicy mocks base method.
-func (m *MockWorkspaces) SetAuthPolicy(ctx context.Context, workspaceID uuid.UUID, enforcement entity.AuthEnforcement) (entity.WorkspaceAuthPolicy, error) {
+func (m *MockWorkspaces) SetAuthPolicy(ctx context.Context, workspaceID uuid.UUID, enforcement entity.AuthEnforcement) (service.AuthPolicyOutcome, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetAuthPolicy", ctx, workspaceID, enforcement)
-	ret0, _ := ret[0].(entity.WorkspaceAuthPolicy)
+	ret0, _ := ret[0].(service.AuthPolicyOutcome)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -234,6 +278,20 @@ func (m *MockWorkspaces) SetAuthPolicy(ctx context.Context, workspaceID uuid.UUI
 func (mr *MockWorkspacesMockRecorder) SetAuthPolicy(ctx, workspaceID, enforcement any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAuthPolicy", reflect.TypeOf((*MockWorkspaces)(nil).SetAuthPolicy), ctx, workspaceID, enforcement)
+}
+
+// UnlinkSSOIdentity mocks base method.
+func (m *MockWorkspaces) UnlinkSSOIdentity(ctx context.Context, workspaceID, accountID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnlinkSSOIdentity", ctx, workspaceID, accountID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnlinkSSOIdentity indicates an expected call of UnlinkSSOIdentity.
+func (mr *MockWorkspacesMockRecorder) UnlinkSSOIdentity(ctx, workspaceID, accountID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkSSOIdentity", reflect.TypeOf((*MockWorkspaces)(nil).UnlinkSSOIdentity), ctx, workspaceID, accountID)
 }
 
 // Update mocks base method.

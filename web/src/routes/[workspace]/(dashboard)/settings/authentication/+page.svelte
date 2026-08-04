@@ -17,6 +17,7 @@
 	import { api } from "$lib/api";
 	import { onDate } from "$lib/time";
 	import { ssoConnectionSchema } from "$lib/workspace/sso-schema";
+	import EnforcementPanel from "$lib/workspace/enforcement-panel.svelte";
 	import SamlPanel from "$lib/workspace/saml-panel.svelte";
 	import {
 		failureMessage,
@@ -29,6 +30,8 @@
 		type SamlConnection,
 		type SsoFailure,
 		type SsoOutcome,
+		type Enforcement,
+		type RecoveryCodes,
 		type SsoProtocol,
 		type SsoProviderConfiguration,
 	} from "$lib/workspace/sso";
@@ -48,6 +51,7 @@
 	let saved = $state<SsoProviderConfiguration | null>(null);
 	let chosen = $state<SsoProtocol | null>(null);
 	let samlBusy = $state(false);
+	let policyBusy = $state(false);
 	let liveOutcome = $state<SsoOutcome>(
 		page.url.searchParams.get("tested") === "1" ? { kind: "verified" } : { kind: "idle" }
 	);
@@ -142,7 +146,7 @@
 	const { form: formData, errors, enhance, submitting } = form;
 
 	const busy = $derived(
-		discovering || testing || removing || samlBusy || (preview?.discovering ?? false) || $submitting
+		discovering || testing || removing || samlBusy || policyBusy || (preview?.discovering ?? false) || $submitting
 	);
 
 	$effect(() => {
@@ -698,6 +702,16 @@
 							</p>
 						{/if}
 					</div>
+				{/if}
+
+				{#if anyConnection}
+					<EnforcementPanel
+						{workspace}
+						enforcement={preview?.enforcement ?? data.enforcement}
+						codes={preview?.codes ?? { kind: "none" }}
+						{busy}
+						onbusy={(working) => (policyBusy = working)}
+					/>
 				{/if}
 
 				{#if anyConnection}

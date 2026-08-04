@@ -199,6 +199,8 @@ func (e AccessDeniedError) surface() error {
 		return WorkspaceDeletedError{PurgeAfter: e.PurgeAfter}
 	case e.Reason.Conceals() && e.Resource.Conceals():
 		return e.Resource.NotFound()
+	case e.Reason == DenyReasonAuthMethodNotPermitted:
+		return ErrWorkspaceAuthMethodNotPermitted
 	default:
 		return ErrAccountForbidden
 	}

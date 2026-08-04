@@ -23,6 +23,9 @@ type workspacesService struct {
 	teamMembers  repository.TeamMember
 	states       repository.WorkflowState
 	authPolicies repository.WorkspaceAuthPolicy
+	connections  repository.SSOConnection
+	identities   repository.SSOIdentity
+	breakGlass   repository.BreakGlass
 	producer     repository.JobProducer
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
@@ -37,6 +40,9 @@ func New(
 	teamMembers repository.TeamMember,
 	states repository.WorkflowState,
 	authPolicies repository.WorkspaceAuthPolicy,
+	connections repository.SSOConnection,
+	identities repository.SSOIdentity,
+	breakGlass repository.BreakGlass,
 	producer repository.JobProducer,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
@@ -50,6 +56,9 @@ func New(
 		teamMembers:  teamMembers,
 		states:       states,
 		authPolicies: authPolicies,
+		connections:  connections,
+		identities:   identities,
+		breakGlass:   breakGlass,
 		producer:     producer,
 		authorizer:   authorizer,
 		transactor:   transactor,
@@ -569,26 +578,4 @@ func (s *workspacesService) AuthPolicy(ctx context.Context, workspaceID uuid.UUI
 	}
 
 	return s.authPolicies.Get(ctx, workspaceID)
-}
-
-func (s *workspacesService) SetAuthPolicy(ctx context.Context, workspaceID uuid.UUID, enforcement entity.AuthEnforcement) (entity.WorkspaceAuthPolicy, error) {
-	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{
-		Resource:    entity.ResourceAuthPolicy,
-		Action:      entity.ActionUpdate,
-		WorkspaceID: workspaceID,
-	}); err != nil {
-		return entity.WorkspaceAuthPolicy{}, err
-	}
-
-	if !enforcement.Valid() {
-		return entity.WorkspaceAuthPolicy{}, entity.NewValidationError(entity.FieldError{
-			Field: "enforcement",
-			Code:  entity.ValidationCodeUnsupportedValue,
-		})
-	}
-
-	return s.authPolicies.Upsert(ctx, entity.WorkspaceAuthPolicy{
-		WorkspaceID: workspaceID,
-		Enforcement: enforcement,
-	})
 }

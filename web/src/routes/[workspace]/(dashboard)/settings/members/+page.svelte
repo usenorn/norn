@@ -48,6 +48,8 @@
 
 	let { data }: PageProps = $props();
 
+	const linked = $derived(new Set(data.linked ?? []));
+
 	const preview = $derived(
 		import.meta.env.DEV ? membersPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
@@ -564,7 +566,10 @@
 											</span>
 											<span aria-hidden="true">·</span>
 											<span>{lastActive(member.lastActiveAt, data.now, data.workspace.timezone)}</span>
-											{#if authMethodLabel(member.lastAuthMethod)}
+											{#if linked.has(member.accountId)}
+												<span aria-hidden="true">·</span>
+												<span>Linked to your provider</span>
+											{:else if authMethodLabel(member.lastAuthMethod)}
 												<span aria-hidden="true">·</span>
 												<span>{authMethodLabel(member.lastAuthMethod)}</span>
 											{/if}

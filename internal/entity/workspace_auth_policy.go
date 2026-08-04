@@ -9,6 +9,7 @@ import (
 
 var (
 	ErrWorkspaceAuthMethodNotPermitted = errors.New("workspace does not accept this authentication method")
+	ErrEnforcementRefused              = errors.New("single sign-on cannot be required for this workspace yet")
 	ErrWorkspacePasswordAuthDisabled   = errors.New("workspace policy disables password authentication")
 )
 
@@ -40,7 +41,7 @@ func (e AuthEnforcement) Permits(method SessionAuthMethod) bool {
 }
 
 func (e AuthEnforcement) PermitsActor(actor Actor) bool {
-	if actor.Kind != ActorKindUser {
+	if actor.Kind == ActorKindToken || actor.Kind == ActorKindAgent {
 		return true
 	}
 
@@ -75,3 +76,31 @@ func SSOEnforcedEverywhere(enforcements []AuthEnforcement) bool {
 
 	return true
 }
+
+type EnforcementBlocker string
+
+const (
+	EnforcementBlockerNoConnection  EnforcementBlocker = "no_connection"
+	EnforcementBlockerNotVerified   EnforcementBlocker = "not_verified"
+	EnforcementBlockerNoLinkedAdmin EnforcementBlocker = "no_linked_admin"
+)
+
+type EnforcementRefusedError struct {
+	Blocker EnforcementBlocker
+}
+
+func (e EnforcementRefusedError) Error() string {
+	switch e.Blocker {
+	case EnforcementBlockerNoConnection:
+		return "this workspace has no single sign-on provider to require"
+	case EnforcementBlockerNotVerified:
+		return "test the provider before requiring it, so a broken one cannot lock everyone out"
+	case EnforcementBlockerNoLinkedAdmin:
+		return "no administrator has signed in through the provider yet, so requiring it would " +
+			"leave nobody able to administer this workspace"
+	default:
+		return "single sign-on cannot be required for this workspace yet"
+	}
+}
+
+func (e EnforcementRefusedError) Unwrap() error { return ErrEnforcementRefused }

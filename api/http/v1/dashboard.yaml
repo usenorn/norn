@@ -487,13 +487,13 @@ paths:
             schema: { $ref: '#/components/schemas/SetWorkspaceAuthPolicyRequest' }
       responses:
         '200':
-          description: The updated workspace authentication policy
+          description: The updated policy, with recovery codes when single sign-on was required
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/WorkspaceAuthPolicy' }
+              schema: { $ref: '#/components/schemas/WorkspaceAuthPolicyOutcome' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
-        '422': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/EnforcementRefused' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/sso/oidc:
@@ -692,6 +692,63 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/SsoFailed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/identities:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [sso]
+      operationId: listWorkspaceSsoIdentities
+      summary: List the accounts linked to this workspace's provider
+      responses:
+        '200':
+          description: The linked accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SsoIdentity' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/identities/{accountId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - name: accountId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [sso]
+      operationId: unlinkWorkspaceSsoIdentity
+      summary: Unlink an account from its provider identity
+      responses:
+        '204':
+          description: The account was unlinked
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /sso/recovery:
+    post:
+      tags: [sso]
+      operationId: redeemRecoveryCode
+      summary: Lift a workspace's single sign-on requirement with a recovery code
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RedeemRecoveryCodeRequest' }
+      responses:
+        '204':
+          description: The requirement was lifted and password sign-in works again
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/TooManyAttempts' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces:
@@ -2216,6 +2273,12 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/SsoProblem' }
 
+    EnforcementRefused:
+      description: Single sign-on cannot be required for this workspace yet
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/EnforcementRefusedProblem' }
+
     Forbidden:
       description: The actor may not perform this action
       content:
@@ -3302,6 +3365,43 @@ components:
       properties:
         metadataUrl: { type: string }
         metadata: { type: string }
+
+    EnforcementBlocker:
+      type: string
+      enum: [no_connection, not_verified, no_linked_admin]
+
+    EnforcementRefusedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code, blocker]
+          properties:
+            code: { type: string, enum: [enforcement_refused] }
+            blocker: { $ref: '#/components/schemas/EnforcementBlocker' }
+
+    WorkspaceAuthPolicyOutcome:
+      type: object
+      required: [policy]
+      properties:
+        policy: { $ref: '#/components/schemas/WorkspaceAuthPolicy' }
+        recoveryCodes:
+          type: array
+          items: { type: string }
+
+    SsoIdentity:
+      type: object
+      required: [workspaceId, accountId, linkedAt]
+      properties:
+        workspaceId: { type: string, format: uuid }
+        accountId: { type: string, format: uuid }
+        linkedAt: { type: string, format: date-time }
+
+    RedeemRecoveryCodeRequest:
+      type: object
+      required: [workspace, code]
+      properties:
+        workspace: { type: string }
+        code: { type: string }
 
     Instance:
       type: object

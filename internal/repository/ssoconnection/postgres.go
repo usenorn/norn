@@ -27,6 +27,11 @@ ON CONFLICT (workspace_id) DO UPDATE SET
     verified_at  = NULL,
     updated_at   = excluded.updated_at`
 
+const verifiedQuery = `
+SELECT verified_at IS NOT NULL
+FROM workspace_sso_connections
+WHERE workspace_id = $1`
+
 const deleteParentQuery = `DELETE FROM workspace_sso_connections WHERE workspace_id = $1`
 
 const markVerifiedQuery = `
@@ -512,4 +517,24 @@ func (r *connectionRepository) RecordExpiryNotice(
 	}
 
 	return nil
+}
+
+func (r *connectionRepository) Verified(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+) (bool, error) {
+	var verified bool
+
+	err := r.db.Querier(ctx).
+		QueryRowContext(ctx, verifiedQuery, workspaceID.String()).
+		Scan(&verified)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, entity.ErrSSOConnectionNotFound
+		}
+
+		return false, fmt.Errorf("read sso verification: %w", err)
+	}
+
+	return verified, nil
 }
