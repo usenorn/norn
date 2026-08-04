@@ -16,12 +16,18 @@ type ListIssuesInput struct {
 	Cursor   string
 	Limit    int
 	TeamID   *uuid.UUID
+	CycleID  *uuid.UUID
 	Statuses []entity.IssueStatus
 }
 
 type IssuePage struct {
 	Issues     []entity.Issue
 	NextCursor string
+}
+
+type ProgressInput struct {
+	TeamID  *uuid.UUID
+	CycleID *uuid.UUID
 }
 
 type ListIssueActivityInput struct {
@@ -49,6 +55,7 @@ type UpdateIssueInput struct {
 	AssigneeID              *uuid.UUID
 	Estimate                *int
 	DueOn                   *string
+	CycleID                 *uuid.UUID
 	Clear                   []string
 }
 

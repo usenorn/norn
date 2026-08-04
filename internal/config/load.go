@@ -130,6 +130,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("oidc.state_ttl", 10*time.Minute)
 
 	v.SetDefault("saml.certificate_sweep_schedule", "0 8 * * *")
+
+	v.SetDefault("cycles.generation_schedule", "5 0 * * *")
 	v.SetDefault("saml.request_timeout", 10*time.Second)
 	v.SetDefault("saml.max_response_size", 1<<20)
 	v.SetDefault("saml.state_ttl", 10*time.Minute)

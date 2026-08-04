@@ -12,6 +12,7 @@ const (
 	ValidationCodeMalformed        = "malformed"
 	ValidationCodeUnknownTimezone  = "unknown_timezone"
 	ValidationCodeUnsupportedValue = "unsupported_value"
+	ValidationCodeOutOfRange       = "out_of_range"
 	ValidationCodeBreached         = "breached"
 	ValidationCodeReused           = "reused"
 )

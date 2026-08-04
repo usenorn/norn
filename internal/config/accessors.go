@@ -8,6 +8,8 @@ func NewOIDC(cfg Config) OIDC { return cfg.OIDC }
 
 func NewSAML(cfg Config) SAML { return cfg.SAML }
 
+func NewCycles(cfg Config) Cycles { return cfg.Cycles }
+
 func NewInstance(cfg Config) Instance { return cfg.Instance }
 
 func NewHTTP(cfg Config) HTTP { return cfg.HTTP }

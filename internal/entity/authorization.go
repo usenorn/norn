@@ -16,6 +16,7 @@ const (
 	ResourceTeam           Resource = "team"
 	ResourceTeamMembership Resource = "team_membership"
 	ResourceIssue          Resource = "issue"
+	ResourceCycle          Resource = "cycle"
 	ResourceLabel          Resource = "label"
 	ResourceAPIToken       Resource = "api_token"
 	ResourceAuthPolicy     Resource = "auth_policy"
@@ -30,7 +31,7 @@ func (r Resource) GatedByAuthMethod() bool {
 }
 
 func (r Resource) Conceals() bool {
-	return r == ResourceIssue || r == ResourceTeam
+	return r == ResourceIssue || r == ResourceTeam || r == ResourceCycle
 }
 
 func (r Resource) NotFound() error {
@@ -39,6 +40,8 @@ func (r Resource) NotFound() error {
 		return ErrIssueNotFound
 	case ResourceTeam:
 		return ErrTeamNotFound
+	case ResourceCycle:
+		return ErrCycleNotFound
 	default:
 		return ErrAccountForbidden
 	}

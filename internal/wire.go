@@ -29,6 +29,7 @@ import (
 	breachcheckrepo "github.com/usenorn/norn/internal/repository/breachcheck"
 	breakglassrepo "github.com/usenorn/norn/internal/repository/breakglass"
 	bulkactionrepo "github.com/usenorn/norn/internal/repository/bulkaction"
+	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	emailchangerepo "github.com/usenorn/norn/internal/repository/emailchange"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
@@ -60,6 +61,7 @@ import (
 	apitokensvc "github.com/usenorn/norn/internal/service/apitoken"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	bulkoperationsvc "github.com/usenorn/norn/internal/service/bulkoperation"
+	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
@@ -106,6 +108,7 @@ var baseSet = wire.NewSet(
 	issueactivityrepo.Set,
 	issuerelationrepo.Set,
 	bulkactionrepo.Set,
+	cyclerepo.Set,
 	labelrepo.Set,
 	labelgrouprepo.Set,
 	workflowstaterepo.Set,
@@ -131,6 +134,7 @@ var baseSet = wire.NewSet(
 	issuesvc.Set,
 	issuerelationsvc.Set,
 	bulkoperationsvc.Set,
+	cyclesvc.Set,
 	labelsvc.Set,
 	workflowstatesvc.Set,
 	apitokensvc.Set,

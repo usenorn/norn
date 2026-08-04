@@ -76,7 +76,7 @@ func problemFor(err error) (problemResponse, bool) {
 		return problemResponse{
 			status: http.StatusConflict,
 			body: api.IssueConflictProblem{
-				Code:      api.IssueStale,
+				Code:      api.IssueConflictProblemCodeIssueStale,
 				Conflicts: &conflicts,
 				Version:   &version,
 				Detail:    base.Detail,
@@ -96,7 +96,7 @@ func problemFor(err error) (problemResponse, bool) {
 		return problemResponse{
 			status: http.StatusConflict,
 			body: api.IssueConflictProblem{
-				Code:     api.IssueChildrenOpen,
+				Code:     api.IssueConflictProblemCodeIssueChildrenOpen,
 				Children: &children,
 				Detail:   base.Detail,
 				Instance: base.Instance,
@@ -109,12 +109,12 @@ func problemFor(err error) (problemResponse, bool) {
 
 	var tooDeep entity.IssueTooDeepError
 	if errors.As(err, &tooDeep) {
-		return issueConflictProblem(api.IssueParentTooDeep, tooDeep), true
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueParentTooDeep, tooDeep), true
 	}
 
 	var relationHeld entity.IssueRelationExistsError
 	if errors.As(err, &relationHeld) {
-		return issueConflictProblem(api.IssueRelationExists, relationHeld), true
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueRelationExists, relationHeld), true
 	}
 
 	var stranded entity.IssueLabelsOutOfScopeError
@@ -125,7 +125,7 @@ func problemFor(err error) (problemResponse, bool) {
 		return problemResponse{
 			status: http.StatusConflict,
 			body: api.IssueConflictProblem{
-				Code:     api.IssueLabelsOutOfScope,
+				Code:     api.IssueConflictProblemCodeIssueLabelsOutOfScope,
 				Labels:   &labels,
 				Detail:   base.Detail,
 				Instance: base.Instance,
@@ -274,19 +274,19 @@ func problemFor(err error) (problemResponse, bool) {
 
 	switch {
 	case errors.Is(err, entity.ErrIssueAlreadyOnTeam):
-		return issueConflictProblem(api.IssueAlreadyOnTeam, err), true
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueAlreadyOnTeam, err), true
 
 	case errors.Is(err, entity.ErrIssueDestinationIncapable):
-		return issueConflictProblem(api.IssueDestinationIncapable, err), true
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueDestinationIncapable, err), true
 
 	case errors.Is(err, entity.ErrIssueStatusTransition):
-		return issueConflictProblem(api.IssueStatusTransition, err), true
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueStatusTransition, err), true
 
 	case errors.Is(err, entity.ErrIssueParentCycle):
-		return issueConflictProblem(api.IssueParentCycle, err), true
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueParentCycle, err), true
 
 	case errors.Is(err, entity.ErrIssueParentNotActive):
-		return issueConflictProblem(api.IssueParentNotActive, err), true
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueParentNotActive, err), true
 
 	case errors.Is(err, entity.ErrBulkChangeEmpty),
 		errors.Is(err, entity.ErrBulkChangeConflicting),
@@ -295,10 +295,10 @@ func problemFor(err error) (problemResponse, bool) {
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
 	case errors.Is(err, entity.ErrIssueRelationSelf):
-		return issueConflictProblem(api.IssueRelationSelf, err), true
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueRelationSelf, err), true
 
 	case errors.Is(err, entity.ErrIssueRelationExists):
-		return issueConflictProblem(api.IssueRelationExists, err), true
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueRelationExists, err), true
 	}
 
 	switch {
@@ -316,8 +316,28 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrSSOConnectionNotFound),
 		errors.Is(err, entity.ErrSSOStateNotFound),
 		errors.Is(err, entity.ErrSSOIdentityNotFound),
+		errors.Is(err, entity.ErrCycleNotFound),
+		errors.Is(err, entity.ErrCycleCadenceNotFound),
 		errors.Is(err, entity.ErrBreakGlassCodeInvalid):
 		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrCycleClosed):
+		return cycleConflictProblem(api.CycleConflictProblemCodeCycleClosed, err), true
+
+	case errors.Is(err, entity.ErrCycleOverlaps):
+		return cycleConflictProblem(api.CycleConflictProblemCodeCycleOverlaps, err), true
+
+	case errors.Is(err, entity.ErrCycleTeamMismatch):
+		return cycleConflictProblem(api.CycleConflictProblemCodeCycleTeamMismatch, err), true
+
+	case errors.Is(err, entity.ErrCycleRolloverRequired):
+		return cycleConflictProblem(api.CycleConflictProblemCodeCycleRolloverRequired, err), true
+
+	case errors.Is(err, entity.ErrCycleNotEnded):
+		return cycleConflictProblem(api.CycleConflictProblemCodeCycleNotEnded, err), true
+
+	case errors.Is(err, entity.ErrCycleNoNextCycle):
+		return cycleConflictProblem(api.CycleConflictProblemCodeCycleNoNextCycle, err), true
 
 	case errors.Is(err, entity.ErrBreakGlassNotEnforcing):
 		return newProblem(http.StatusConflict, err.Error()), true
@@ -481,7 +501,7 @@ func problemFor(err error) (problemResponse, bool) {
 		return labelConflictProblem(api.LabelGroupExclusive, err), true
 
 	case errors.Is(err, entity.ErrLabelOutOfScope):
-		return issueConflictProblem(api.LabelOutOfScope, err), true
+		return issueConflictProblem(api.IssueConflictProblemCodeLabelOutOfScope, err), true
 
 	case errors.Is(err, entity.ErrLabelGroupInUse):
 		return labelConflictProblem(api.LabelGroupInUse, err), true
@@ -846,6 +866,38 @@ func (r problemResponse) VisitGetWorkspaceIssueResponse(w http.ResponseWriter) e
 	return r.write(w)
 }
 
+func (r problemResponse) VisitListWorkspaceCyclesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListCurrentWorkspaceCyclesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceCycleResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceCycleScopeResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCloseWorkspaceCycleResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDeleteTeamCycleCadenceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitRequestSignUpResponse(w http.ResponseWriter) error { return r.write(w) }
 
 func (r problemResponse) VisitConfirmSignUpResponse(w http.ResponseWriter) error { return r.write(w) }
@@ -1012,6 +1064,22 @@ func (r problemResponse) VisitRemoveWorkspaceTeamMemberResponse(w http.ResponseW
 
 func (r problemResponse) VisitSetWorkspaceAuthPolicyResponse(w http.ResponseWriter) error {
 	return r.write(w)
+}
+
+func cycleConflictProblem(code api.CycleConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.CycleConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
 }
 
 func issueConflictProblem(code api.IssueConflictProblemCode, err error) problemResponse {

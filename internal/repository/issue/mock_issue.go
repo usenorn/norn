@@ -148,6 +148,20 @@ func (mr *MockIssueMockRecorder) LockByID(ctx, workspaceID, issueID, scope any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByID", reflect.TypeOf((*MockIssue)(nil).LockByID), ctx, workspaceID, issueID, scope)
 }
 
+// MoveIssuesToCycle mocks base method.
+func (m *MockIssue) MoveIssuesToCycle(ctx context.Context, issueIDs []uuid.UUID, cycleID *uuid.UUID, changedAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MoveIssuesToCycle", ctx, issueIDs, cycleID, changedAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MoveIssuesToCycle indicates an expected call of MoveIssuesToCycle.
+func (mr *MockIssueMockRecorder) MoveIssuesToCycle(ctx, issueIDs, cycleID, changedAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveIssuesToCycle", reflect.TypeOf((*MockIssue)(nil).MoveIssuesToCycle), ctx, issueIDs, cycleID, changedAt)
+}
+
 // MoveToTeam mocks base method.
 func (m *MockIssue) MoveToTeam(ctx context.Context, issueID uuid.UUID, expectedVersion int, teamID, stateID uuid.UUID, timestamps entity.StateTimestamps, changedAt time.Time) error {
 	m.ctrl.T.Helper()
@@ -175,6 +189,21 @@ func (m *MockIssue) ProgressByCategory(ctx context.Context, scope entity.TeamSco
 func (mr *MockIssueMockRecorder) ProgressByCategory(ctx, scope, teamID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProgressByCategory", reflect.TypeOf((*MockIssue)(nil).ProgressByCategory), ctx, scope, teamID)
+}
+
+// ProgressByCycle mocks base method.
+func (m *MockIssue) ProgressByCycle(ctx context.Context, scope entity.TeamScope, cycleID uuid.UUID) (entity.IssueProgress, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProgressByCycle", ctx, scope, cycleID)
+	ret0, _ := ret[0].(entity.IssueProgress)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProgressByCycle indicates an expected call of ProgressByCycle.
+func (mr *MockIssueMockRecorder) ProgressByCycle(ctx, scope, cycleID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProgressByCycle", reflect.TypeOf((*MockIssue)(nil).ProgressByCycle), ctx, scope, cycleID)
 }
 
 // ProgressByParent mocks base method.

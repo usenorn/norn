@@ -22,6 +22,7 @@ type Config struct {
 	Security  Security  `mapstructure:"security"`
 	OIDC      OIDC      `mapstructure:"oidc"`
 	SAML      SAML      `mapstructure:"saml"`
+	Cycles    Cycles    `mapstructure:"cycles"`
 }
 
 type Security struct {
@@ -42,6 +43,10 @@ type SAML struct {
 	ReplayTTL                time.Duration `mapstructure:"replay_ttl"`
 	MaxClockSkew             time.Duration `mapstructure:"max_clock_skew"`
 	MaxIssueDelay            time.Duration `mapstructure:"max_issue_delay"`
+}
+
+type Cycles struct {
+	GenerationSchedule string `mapstructure:"generation_schedule"`
 }
 
 type Workspace struct {

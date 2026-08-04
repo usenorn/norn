@@ -19,6 +19,7 @@ const (
 	IssueFieldAssignee    = "assignee"
 	IssueFieldEstimate    = "estimate"
 	IssueFieldDueOn       = "dueOn"
+	IssueFieldCycle       = "cycle"
 	IssueFieldStatus      = "status"
 	IssueFieldParent      = "parent"
 	IssueFieldChildren    = "children"
@@ -51,6 +52,7 @@ func IssueFields() []string {
 		IssueFieldAssignee,
 		IssueFieldEstimate,
 		IssueFieldDueOn,
+		IssueFieldCycle,
 		IssueFieldStatus,
 		IssueFieldParent,
 		IssueFieldChildren,
@@ -118,14 +120,16 @@ type IssueChange struct {
 	Assignee    *uuid.UUID
 	Estimate    *int
 	DueOn       *string
+	CycleID     *uuid.UUID
 
 	ClearAssignee bool
 	ClearEstimate bool
 	ClearDueOn    bool
+	ClearCycle    bool
 }
 
 func (c IssueChange) Touched() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, len(IssueFields()))
 
 	if c.Title != nil {
 		fields = append(fields, IssueFieldTitle)
@@ -153,6 +157,10 @@ func (c IssueChange) Touched() []string {
 
 	if c.DueOn != nil || c.ClearDueOn {
 		fields = append(fields, IssueFieldDueOn)
+	}
+
+	if c.CycleID != nil || c.ClearCycle {
+		fields = append(fields, IssueFieldCycle)
 	}
 
 	return fields

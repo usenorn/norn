@@ -16,6 +16,7 @@ import (
 
 type Worker struct {
 	saml      config.SAML
+	cycles    config.Cycles
 	server    *taskqueue.Server
 	scheduler *taskqueue.Scheduler
 	mux       *asynq.ServeMux
@@ -32,6 +33,7 @@ func NewServeMux(
 	issuePurge *job.IssuePurgeHandler,
 	bulkApply *job.BulkApplyHandler,
 	certificateSweep *job.SSOCertificateSweepHandler,
+	cycleGeneration *job.CycleGenerationHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -43,18 +45,27 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeIssuePurge, issuePurge)
 	mux.Handle(entity.TaskTypeBulkApply, bulkApply)
 	mux.Handle(entity.TaskTypeSSOCertificateSweep, certificateSweep)
+	mux.Handle(entity.TaskTypeCycleGeneration, cycleGeneration)
 
 	return mux
 }
 
 func NewWorker(
 	saml config.SAML,
+	cycles config.Cycles,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	mux *asynq.ServeMux,
 	logger *slog.Logger,
 ) *Worker {
-	return &Worker{saml: saml, server: server, scheduler: scheduler, mux: mux, logger: logger}
+	return &Worker{
+		saml:      saml,
+		cycles:    cycles,
+		server:    server,
+		scheduler: scheduler,
+		mux:       mux,
+		logger:    logger,
+	}
 }
 
 func (w *Worker) Run(ctx context.Context) error {
@@ -66,6 +77,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueDefault),
 	); err != nil {
 		return fmt.Errorf("register certificate sweep: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.cycles.GenerationSchedule,
+		asynq.NewTask(entity.TaskTypeCycleGeneration, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register cycle generation: %w", err)
 	}
 
 	if err := w.server.Start(w.mux); err != nil {

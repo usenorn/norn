@@ -165,6 +165,102 @@ func (e BulkOutcome) Valid() bool {
 	}
 }
 
+// Defines values for CycleConflictProblemCode.
+const (
+	CycleConflictProblemCodeCycleClosed           CycleConflictProblemCode = "cycle_closed"
+	CycleConflictProblemCodeCycleNoNextCycle      CycleConflictProblemCode = "cycle_no_next_cycle"
+	CycleConflictProblemCodeCycleNotEnded         CycleConflictProblemCode = "cycle_not_ended"
+	CycleConflictProblemCodeCycleOverlaps         CycleConflictProblemCode = "cycle_overlaps"
+	CycleConflictProblemCodeCycleRolloverRequired CycleConflictProblemCode = "cycle_rollover_required"
+	CycleConflictProblemCodeCycleTeamMismatch     CycleConflictProblemCode = "cycle_team_mismatch"
+)
+
+// Valid indicates whether the value is a known member of the CycleConflictProblemCode enum.
+func (e CycleConflictProblemCode) Valid() bool {
+	switch e {
+	case CycleConflictProblemCodeCycleClosed:
+		return true
+	case CycleConflictProblemCodeCycleNoNextCycle:
+		return true
+	case CycleConflictProblemCodeCycleNotEnded:
+		return true
+	case CycleConflictProblemCodeCycleOverlaps:
+		return true
+	case CycleConflictProblemCodeCycleRolloverRequired:
+		return true
+	case CycleConflictProblemCodeCycleTeamMismatch:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CyclePhase.
+const (
+	Closed   CyclePhase = "closed"
+	Current  CyclePhase = "current"
+	Ended    CyclePhase = "ended"
+	Upcoming CyclePhase = "upcoming"
+)
+
+// Valid indicates whether the value is a known member of the CyclePhase enum.
+func (e CyclePhase) Valid() bool {
+	switch e {
+	case Closed:
+		return true
+	case Current:
+		return true
+	case Ended:
+		return true
+	case Upcoming:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CycleRollover.
+const (
+	Backlog CycleRollover = "backlog"
+	Next    CycleRollover = "next"
+)
+
+// Valid indicates whether the value is a known member of the CycleRollover enum.
+func (e CycleRollover) Valid() bool {
+	switch e {
+	case Backlog:
+		return true
+	case Next:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CycleScopeChangeKind.
+const (
+	Added      CycleScopeChangeKind = "added"
+	Removed    CycleScopeChangeKind = "removed"
+	Returned   CycleScopeChangeKind = "returned"
+	RolledOver CycleScopeChangeKind = "rolled_over"
+)
+
+// Valid indicates whether the value is a known member of the CycleScopeChangeKind enum.
+func (e CycleScopeChangeKind) Valid() bool {
+	switch e {
+	case Added:
+		return true
+	case Removed:
+		return true
+	case Returned:
+		return true
+	case RolledOver:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for EnforcementBlocker.
 const (
 	NoConnection  EnforcementBlocker = "no_connection"
@@ -431,49 +527,55 @@ func (e IssueActivityKind) Valid() bool {
 
 // Defines values for IssueConflictProblemCode.
 const (
-	IssueAlreadyOnTeam        IssueConflictProblemCode = "issue_already_on_team"
-	IssueChildrenOpen         IssueConflictProblemCode = "issue_children_open"
-	IssueDestinationIncapable IssueConflictProblemCode = "issue_destination_incapable"
-	IssueLabelsOutOfScope     IssueConflictProblemCode = "issue_labels_out_of_scope"
-	IssueParentCycle          IssueConflictProblemCode = "issue_parent_cycle"
-	IssueParentNotActive      IssueConflictProblemCode = "issue_parent_not_active"
-	IssueParentTooDeep        IssueConflictProblemCode = "issue_parent_too_deep"
-	IssueReferenceTaken       IssueConflictProblemCode = "issue_reference_taken"
-	IssueRelationExists       IssueConflictProblemCode = "issue_relation_exists"
-	IssueRelationSelf         IssueConflictProblemCode = "issue_relation_self"
-	IssueStale                IssueConflictProblemCode = "issue_stale"
-	IssueStatusTransition     IssueConflictProblemCode = "issue_status_transition"
-	LabelOutOfScope           IssueConflictProblemCode = "label_out_of_scope"
+	IssueConflictProblemCodeCycleClosed               IssueConflictProblemCode = "cycle_closed"
+	IssueConflictProblemCodeCycleTeamMismatch         IssueConflictProblemCode = "cycle_team_mismatch"
+	IssueConflictProblemCodeIssueAlreadyOnTeam        IssueConflictProblemCode = "issue_already_on_team"
+	IssueConflictProblemCodeIssueChildrenOpen         IssueConflictProblemCode = "issue_children_open"
+	IssueConflictProblemCodeIssueDestinationIncapable IssueConflictProblemCode = "issue_destination_incapable"
+	IssueConflictProblemCodeIssueLabelsOutOfScope     IssueConflictProblemCode = "issue_labels_out_of_scope"
+	IssueConflictProblemCodeIssueParentCycle          IssueConflictProblemCode = "issue_parent_cycle"
+	IssueConflictProblemCodeIssueParentNotActive      IssueConflictProblemCode = "issue_parent_not_active"
+	IssueConflictProblemCodeIssueParentTooDeep        IssueConflictProblemCode = "issue_parent_too_deep"
+	IssueConflictProblemCodeIssueReferenceTaken       IssueConflictProblemCode = "issue_reference_taken"
+	IssueConflictProblemCodeIssueRelationExists       IssueConflictProblemCode = "issue_relation_exists"
+	IssueConflictProblemCodeIssueRelationSelf         IssueConflictProblemCode = "issue_relation_self"
+	IssueConflictProblemCodeIssueStale                IssueConflictProblemCode = "issue_stale"
+	IssueConflictProblemCodeIssueStatusTransition     IssueConflictProblemCode = "issue_status_transition"
+	IssueConflictProblemCodeLabelOutOfScope           IssueConflictProblemCode = "label_out_of_scope"
 )
 
 // Valid indicates whether the value is a known member of the IssueConflictProblemCode enum.
 func (e IssueConflictProblemCode) Valid() bool {
 	switch e {
-	case IssueAlreadyOnTeam:
+	case IssueConflictProblemCodeCycleClosed:
 		return true
-	case IssueChildrenOpen:
+	case IssueConflictProblemCodeCycleTeamMismatch:
 		return true
-	case IssueDestinationIncapable:
+	case IssueConflictProblemCodeIssueAlreadyOnTeam:
 		return true
-	case IssueLabelsOutOfScope:
+	case IssueConflictProblemCodeIssueChildrenOpen:
 		return true
-	case IssueParentCycle:
+	case IssueConflictProblemCodeIssueDestinationIncapable:
 		return true
-	case IssueParentNotActive:
+	case IssueConflictProblemCodeIssueLabelsOutOfScope:
 		return true
-	case IssueParentTooDeep:
+	case IssueConflictProblemCodeIssueParentCycle:
 		return true
-	case IssueReferenceTaken:
+	case IssueConflictProblemCodeIssueParentNotActive:
 		return true
-	case IssueRelationExists:
+	case IssueConflictProblemCodeIssueParentTooDeep:
 		return true
-	case IssueRelationSelf:
+	case IssueConflictProblemCodeIssueReferenceTaken:
 		return true
-	case IssueStale:
+	case IssueConflictProblemCodeIssueRelationExists:
 		return true
-	case IssueStatusTransition:
+	case IssueConflictProblemCodeIssueRelationSelf:
 		return true
-	case LabelOutOfScope:
+	case IssueConflictProblemCodeIssueStale:
+		return true
+	case IssueConflictProblemCodeIssueStatusTransition:
+		return true
+	case IssueConflictProblemCodeLabelOutOfScope:
 		return true
 	default:
 		return false
@@ -1013,19 +1115,22 @@ func (e TeamVisibility) Valid() bool {
 
 // Defines values for UpdateIssueRequestClear.
 const (
-	Assignee UpdateIssueRequestClear = "assignee"
-	DueOn    UpdateIssueRequestClear = "dueOn"
-	Estimate UpdateIssueRequestClear = "estimate"
+	UpdateIssueRequestClearAssignee UpdateIssueRequestClear = "assignee"
+	UpdateIssueRequestClearCycle    UpdateIssueRequestClear = "cycle"
+	UpdateIssueRequestClearDueOn    UpdateIssueRequestClear = "dueOn"
+	UpdateIssueRequestClearEstimate UpdateIssueRequestClear = "estimate"
 )
 
 // Valid indicates whether the value is a known member of the UpdateIssueRequestClear enum.
 func (e UpdateIssueRequestClear) Valid() bool {
 	switch e {
-	case Assignee:
+	case UpdateIssueRequestClearAssignee:
 		return true
-	case DueOn:
+	case UpdateIssueRequestClearCycle:
 		return true
-	case Estimate:
+	case UpdateIssueRequestClearDueOn:
+		return true
+	case UpdateIssueRequestClearEstimate:
 		return true
 	default:
 		return false
@@ -1267,6 +1372,13 @@ type ChangePasswordRequest struct {
 	NewPassword     string `json:"newPassword"`
 }
 
+// CloseCycleRequest defines model for CloseCycleRequest.
+type CloseCycleRequest struct {
+	// Overrides Issues that go somewhere other than the rollover chosen for the rest
+	Overrides *[]CycleRolloverOverride `json:"overrides,omitempty"`
+	Rollover  *CycleRollover           `json:"rollover,omitempty"`
+}
+
 // ConfirmEmailChangeRequest defines model for ConfirmEmailChangeRequest.
 type ConfirmEmailChangeRequest struct {
 	Token string `json:"token"`
@@ -1332,6 +1444,82 @@ type CreateWorkspaceTeam struct {
 	Key  string `json:"key"`
 	Name string `json:"name"`
 }
+
+// Cycle defines model for Cycle.
+type Cycle struct {
+	ClosedAt          *time.Time          `json:"closedAt,omitempty"`
+	ClosedByAccountId *openapi_types.UUID `json:"closedByAccountId,omitempty"`
+	EndsOn            openapi_types.Date  `json:"endsOn"`
+	Id                openapi_types.UUID  `json:"id"`
+	Name              string              `json:"name"`
+	Number            int32               `json:"number"`
+	Phase             CyclePhase          `json:"phase"`
+	Rollover          *CycleRollover      `json:"rollover,omitempty"`
+	StartsOn          openapi_types.Date  `json:"startsOn"`
+	TeamId            openapi_types.UUID  `json:"teamId"`
+	TeamKey           string              `json:"teamKey"`
+	WorkspaceId       openapi_types.UUID  `json:"workspaceId"`
+}
+
+// CycleCadence defines model for CycleCadence.
+type CycleCadence struct {
+	LengthWeeks int32 `json:"lengthWeeks"`
+
+	// StartsOn Weekday cycles begin on, Sunday being 0
+	StartsOn int32              `json:"startsOn"`
+	TeamId   openapi_types.UUID `json:"teamId"`
+	Upcoming []Cycle            `json:"upcoming"`
+}
+
+// CycleConflictProblem defines model for CycleConflictProblem.
+type CycleConflictProblem struct {
+	Code     CycleConflictProblemCode `json:"code"`
+	Detail   *string                  `json:"detail,omitempty"`
+	Errors   *[]FieldError            `json:"errors,omitempty"`
+	Instance *string                  `json:"instance,omitempty"`
+
+	// Open The unfinished issues that still need a destination
+	Open   *[]Issue `json:"open,omitempty"`
+	Status int32    `json:"status"`
+	Title  string   `json:"title"`
+	Type   string   `json:"type"`
+}
+
+// CycleConflictProblemCode defines model for CycleConflictProblem.Code.
+type CycleConflictProblemCode string
+
+// CyclePhase defines model for CyclePhase.
+type CyclePhase string
+
+// CycleRollover defines model for CycleRollover.
+type CycleRollover string
+
+// CycleRolloverOverride defines model for CycleRolloverOverride.
+type CycleRolloverOverride struct {
+	Destination CycleRollover      `json:"destination"`
+	IssueId     openapi_types.UUID `json:"issueId"`
+}
+
+// CycleScope defines model for CycleScope.
+type CycleScope struct {
+	Added    []Issue            `json:"added"`
+	Changes  []CycleScopeChange `json:"changes"`
+	Original []Issue            `json:"original"`
+}
+
+// CycleScopeChange defines model for CycleScopeChange.
+type CycleScopeChange struct {
+	ActorAccountId *openapi_types.UUID  `json:"actorAccountId,omitempty"`
+	Change         CycleScopeChangeKind `json:"change"`
+	ChangedAt      time.Time            `json:"changedAt"`
+	Id             openapi_types.UUID   `json:"id"`
+	IssueId        openapi_types.UUID   `json:"issueId"`
+	IssueReference string               `json:"issueReference"`
+	IssueTitle     string               `json:"issueTitle"`
+}
+
+// CycleScopeChangeKind defines model for CycleScopeChangeKind.
+type CycleScopeChangeKind string
 
 // DiscoverOidcRequest defines model for DiscoverOidcRequest.
 type DiscoverOidcRequest struct {
@@ -1524,6 +1712,8 @@ type Issue struct {
 	CompletedAt        *time.Time          `json:"completedAt,omitempty"`
 	CreatedAt          time.Time           `json:"createdAt"`
 	CreatedByAccountId *openapi_types.UUID `json:"createdByAccountId,omitempty"`
+	CycleId            *openapi_types.UUID `json:"cycleId,omitempty"`
+	CycleNumber        *int32              `json:"cycleNumber,omitempty"`
 	Depth              *int32              `json:"depth,omitempty"`
 	Description        string              `json:"description"`
 	DueOn              *openapi_types.Date `json:"dueOn,omitempty"`
@@ -1943,6 +2133,12 @@ type SessionLocation struct {
 	CountryCode *string `json:"countryCode,omitempty"`
 }
 
+// SetCycleCadenceRequest defines model for SetCycleCadenceRequest.
+type SetCycleCadenceRequest struct {
+	LengthWeeks int32 `json:"lengthWeeks"`
+	StartsOn    int32 `json:"startsOn"`
+}
+
 // SetIssueLabelsRequest defines model for SetIssueLabelsRequest.
 type SetIssueLabelsRequest struct {
 	ExpectedVersion int32                `json:"expectedVersion"`
@@ -2112,6 +2308,12 @@ type TeamConflictProblem struct {
 // TeamConflictProblemCode defines model for TeamConflictProblem.Code.
 type TeamConflictProblemCode string
 
+// TeamCycle defines model for TeamCycle.
+type TeamCycle struct {
+	Cycle  Cycle              `json:"cycle"`
+	TeamId openapi_types.UUID `json:"teamId"`
+}
+
 // TeamMember defines model for TeamMember.
 type TeamMember struct {
 	AccountId   openapi_types.UUID `json:"accountId"`
@@ -2135,6 +2337,7 @@ type UpdateIssueRequest struct {
 
 	// Clear Properties to reset; absent means unchanged, which a nullable field cannot express
 	Clear           *[]UpdateIssueRequestClear `json:"clear,omitempty"`
+	CycleId         *openapi_types.UUID        `json:"cycleId,omitempty"`
 	Description     *string                    `json:"description,omitempty"`
 	DueOn           *openapi_types.Date        `json:"dueOn,omitempty"`
 	Estimate        *int32                     `json:"estimate,omitempty"`
@@ -2290,6 +2493,9 @@ type WorkspaceStatus string
 // AccountId defines model for AccountId.
 type AccountId = openapi_types.UUID
 
+// CycleId defines model for CycleId.
+type CycleId = openapi_types.UUID
+
 // GroupId defines model for GroupId.
 type GroupId = openapi_types.UUID
 
@@ -2322,6 +2528,9 @@ type AccountLocked = AccountLockedProblem
 
 // BreachCheckUnavailable defines model for BreachCheckUnavailable.
 type BreachCheckUnavailable = BreachCheckUnavailableProblem
+
+// CycleConflict defines model for CycleConflict.
+type CycleConflict = CycleConflictProblem
 
 // EnforcementRefused defines model for EnforcementRefused.
 type EnforcementRefused = EnforcementRefusedProblem
@@ -2385,6 +2594,12 @@ type UploadAvatarMultipartBody struct {
 	File openapi_types.File `json:"file"`
 }
 
+// ListWorkspaceCyclesParams defines parameters for ListWorkspaceCycles.
+type ListWorkspaceCyclesParams struct {
+	TeamId *openapi_types.UUID `form:"teamId,omitempty" json:"teamId,omitempty"`
+	Phase  *CyclePhase         `form:"phase,omitempty" json:"phase,omitempty"`
+}
+
 // ListWorkspaceInvitationsParams defines parameters for ListWorkspaceInvitations.
 type ListWorkspaceInvitationsParams struct {
 	Status *InvitationStatus `form:"status,omitempty" json:"status,omitempty"`
@@ -2392,7 +2607,8 @@ type ListWorkspaceInvitationsParams struct {
 
 // ListWorkspaceIssuesParams defines parameters for ListWorkspaceIssues.
 type ListWorkspaceIssuesParams struct {
-	TeamId *openapi_types.UUID `form:"teamId,omitempty" json:"teamId,omitempty"`
+	TeamId  *openapi_types.UUID `form:"teamId,omitempty" json:"teamId,omitempty"`
+	CycleId *openapi_types.UUID `form:"cycleId,omitempty" json:"cycleId,omitempty"`
 
 	// Status Repeat to include more than one; defaults to active issues only
 	Status *[]IssueStatus `form:"status,omitempty" json:"status,omitempty"`
@@ -2403,6 +2619,9 @@ type ListWorkspaceIssuesParams struct {
 // GetWorkspaceIssueProgressParams defines parameters for GetWorkspaceIssueProgress.
 type GetWorkspaceIssueProgressParams struct {
 	TeamId *openapi_types.UUID `form:"teamId,omitempty" json:"teamId,omitempty"`
+
+	// CycleId Tally one cycle instead of a team; takes precedence over teamId
+	CycleId *openapi_types.UUID `form:"cycleId,omitempty" json:"cycleId,omitempty"`
 }
 
 // ListWorkspaceIssueActivityParams defines parameters for ListWorkspaceIssueActivity.
@@ -2496,6 +2715,9 @@ type UpdateWorkspaceJSONRequestBody = UpdateWorkspaceRequest
 // SetWorkspaceAuthPolicyJSONRequestBody defines body for SetWorkspaceAuthPolicy for application/json ContentType.
 type SetWorkspaceAuthPolicyJSONRequestBody = SetWorkspaceAuthPolicyRequest
 
+// CloseWorkspaceCycleJSONRequestBody defines body for CloseWorkspaceCycle for application/json ContentType.
+type CloseWorkspaceCycleJSONRequestBody = CloseCycleRequest
+
 // CreateWorkspaceInvitationsJSONRequestBody defines body for CreateWorkspaceInvitations for application/json ContentType.
 type CreateWorkspaceInvitationsJSONRequestBody = CreateInvitationsRequest
 
@@ -2561,6 +2783,9 @@ type CreateWorkspaceTeamJSONRequestBody = CreateTeamRequest
 
 // UpdateWorkspaceTeamJSONRequestBody defines body for UpdateWorkspaceTeam for application/json ContentType.
 type UpdateWorkspaceTeamJSONRequestBody = UpdateTeamRequest
+
+// SetTeamCycleCadenceJSONRequestBody defines body for SetTeamCycleCadence for application/json ContentType.
+type SetTeamCycleCadenceJSONRequestBody = SetCycleCadenceRequest
 
 // AddWorkspaceTeamMemberJSONRequestBody defines body for AddWorkspaceTeamMember for application/json ContentType.
 type AddWorkspaceTeamMemberJSONRequestBody = AddTeamMemberRequest
@@ -2684,6 +2909,21 @@ type ServerInterface interface {
 	// GetWorkspaceBulkAction Report how far a bulk action has got and what happened to each issue
 	// (GET /workspaces/{workspaceId}/bulk-actions/{bulkActionId})
 	GetWorkspaceBulkAction(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, bulkActionId openapi_types.UUID)
+	// ListWorkspaceCycles List the cycles of the teams the caller may see
+	// (GET /workspaces/{workspaceId}/cycles)
+	ListWorkspaceCycles(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceCyclesParams)
+	// ListCurrentWorkspaceCycles Report the cycle each visible team is on, or the one it starts next
+	// (GET /workspaces/{workspaceId}/cycles/current)
+	ListCurrentWorkspaceCycles(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceCycle Read one cycle
+	// (GET /workspaces/{workspaceId}/cycles/{cycleId})
+	GetWorkspaceCycle(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId)
+	// CloseWorkspaceCycle Close an ended cycle, deciding where unfinished issues go
+	// (POST /workspaces/{workspaceId}/cycles/{cycleId}/close)
+	CloseWorkspaceCycle(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId)
+	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
+	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
+	GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId)
 	// ListWorkspaceInvitations List the workspace invitations administrators see beside members
 	// (GET /workspaces/{workspaceId}/invitations)
 	ListWorkspaceInvitations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceInvitationsParams)
@@ -2846,6 +3086,15 @@ type ServerInterface interface {
 	// ArchiveWorkspaceTeam Archive a team, keeping its issues readable and its key reserved
 	// (POST /workspaces/{workspaceId}/teams/{teamId}/archive)
 	ArchiveWorkspaceTeam(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// DeleteTeamCycleCadence Stop the team using cycles, keeping the ones it has already run
+	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
+	DeleteTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// GetTeamCycleCadence Read how often a team runs cycles
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
+	GetTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// SetTeamCycleCadence Start the team on cycles, or change how long they run
+	// (PUT /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
+	SetTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
 	// ListWorkspaceTeamMembers List the accounts on the team
 	// (GET /workspaces/{workspaceId}/teams/{teamId}/members)
 	ListWorkspaceTeamMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
@@ -3101,6 +3350,36 @@ func (_ Unimplemented) SetWorkspaceAuthPolicy(w http.ResponseWriter, r *http.Req
 // GetWorkspaceBulkAction Report how far a bulk action has got and what happened to each issue
 // (GET /workspaces/{workspaceId}/bulk-actions/{bulkActionId})
 func (_ Unimplemented) GetWorkspaceBulkAction(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, bulkActionId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceCycles List the cycles of the teams the caller may see
+// (GET /workspaces/{workspaceId}/cycles)
+func (_ Unimplemented) ListWorkspaceCycles(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceCyclesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListCurrentWorkspaceCycles Report the cycle each visible team is on, or the one it starts next
+// (GET /workspaces/{workspaceId}/cycles/current)
+func (_ Unimplemented) ListCurrentWorkspaceCycles(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceCycle Read one cycle
+// (GET /workspaces/{workspaceId}/cycles/{cycleId})
+func (_ Unimplemented) GetWorkspaceCycle(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CloseWorkspaceCycle Close an ended cycle, deciding where unfinished issues go
+// (POST /workspaces/{workspaceId}/cycles/{cycleId}/close)
+func (_ Unimplemented) CloseWorkspaceCycle(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
+// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
+func (_ Unimplemented) GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3425,6 +3704,24 @@ func (_ Unimplemented) UpdateWorkspaceTeam(w http.ResponseWriter, r *http.Reques
 // ArchiveWorkspaceTeam Archive a team, keeping its issues readable and its key reserved
 // (POST /workspaces/{workspaceId}/teams/{teamId}/archive)
 func (_ Unimplemented) ArchiveWorkspaceTeam(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteTeamCycleCadence Stop the team using cycles, keeping the ones it has already run
+// (DELETE /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
+func (_ Unimplemented) DeleteTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetTeamCycleCadence Read how often a team runs cycles
+// (GET /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
+func (_ Unimplemented) GetTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetTeamCycleCadence Start the team on cycles, or change how long they run
+// (PUT /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
+func (_ Unimplemented) SetTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4104,6 +4401,192 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceBulkAction(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceCycles operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceCycles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceCyclesParams
+
+	// ------------- Optional query parameter "teamId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "teamId", r.URL.Query(), &params.TeamId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "teamId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "phase" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "phase", r.URL.Query(), &params.Phase, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "phase"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "phase", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceCycles(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCurrentWorkspaceCycles operation middleware
+func (siw *ServerInterfaceWrapper) ListCurrentWorkspaceCycles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCurrentWorkspaceCycles(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceCycle operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceCycle(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "cycleId" -------------
+	var cycleId CycleId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "cycleId", chi.URLParam(r, "cycleId"), &cycleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cycleId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceCycle(w, r, workspaceId, cycleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CloseWorkspaceCycle operation middleware
+func (siw *ServerInterfaceWrapper) CloseWorkspaceCycle(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "cycleId" -------------
+	var cycleId CycleId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "cycleId", chi.URLParam(r, "cycleId"), &cycleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cycleId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CloseWorkspaceCycle(w, r, workspaceId, cycleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceCycleScope operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "cycleId" -------------
+	var cycleId CycleId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "cycleId", chi.URLParam(r, "cycleId"), &cycleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cycleId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceCycleScope(w, r, workspaceId, cycleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceInvitations operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceInvitations(w http.ResponseWriter, r *http.Request) {
 
@@ -4273,6 +4756,19 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceIssues(w http.ResponseWriter, r 
 		return
 	}
 
+	// ------------- Optional query parameter "cycleId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cycleId", r.URL.Query(), &params.CycleId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cycleId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cycleId", Err: err})
+		}
+		return
+	}
+
 	// ------------- Optional query parameter "status" -------------
 
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
@@ -4437,6 +4933,19 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceIssueProgress(w http.ResponseWrit
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "teamId"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cycleId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cycleId", r.URL.Query(), &params.CycleId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cycleId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cycleId", Err: err})
 		}
 		return
 	}
@@ -5966,6 +6475,111 @@ func (siw *ServerInterfaceWrapper) ArchiveWorkspaceTeam(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteTeamCycleCadence operation middleware
+func (siw *ServerInterfaceWrapper) DeleteTeamCycleCadence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteTeamCycleCadence(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetTeamCycleCadence operation middleware
+func (siw *ServerInterfaceWrapper) GetTeamCycleCadence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetTeamCycleCadence(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetTeamCycleCadence operation middleware
+func (siw *ServerInterfaceWrapper) SetTeamCycleCadence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetTeamCycleCadence(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceTeamMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceTeamMembers(w http.ResponseWriter, r *http.Request) {
 
@@ -6921,6 +7535,30 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/labels", wrapper.SetWorkspaceIssueLabels)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/cycles", wrapper.ListWorkspaceCycles)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/cycles/current", wrapper.ListCurrentWorkspaceCycles)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/cycles/{cycleId}", wrapper.GetWorkspaceCycle)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/cycles/{cycleId}/scope", wrapper.GetWorkspaceCycleScope)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/cycles/{cycleId}/close", wrapper.CloseWorkspaceCycle)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/cycle-cadence", wrapper.DeleteTeamCycleCadence)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/cycle-cadence", wrapper.GetTeamCycleCadence)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/cycle-cadence", wrapper.SetTeamCycleCadence)
+	})
 
 	return r
 }
@@ -6930,6 +7568,8 @@ type APITokenUnusableApplicationProblemPlusJSONResponse APITokenUnusableProblem
 type AccountLockedApplicationProblemPlusJSONResponse AccountLockedProblem
 
 type BreachCheckUnavailableApplicationProblemPlusJSONResponse BreachCheckUnavailableProblem
+
+type CycleConflictApplicationProblemPlusJSONResponse CycleConflictProblem
 
 type EnforcementRefusedApplicationProblemPlusJSONResponse EnforcementRefusedProblem
 
@@ -9655,6 +10295,437 @@ func (response GetWorkspaceBulkAction404ApplicationProblemPlusJSONResponse) Visi
 type GetWorkspaceBulkAction500ApplicationProblemPlusJSONResponse Problem
 
 func (response GetWorkspaceBulkAction500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceBulkActionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceCyclesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceCyclesParams
+}
+
+type ListWorkspaceCyclesResponseObject interface {
+	VisitListWorkspaceCyclesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceCycles200JSONResponse []Cycle
+
+func (response ListWorkspaceCycles200JSONResponse) VisitListWorkspaceCyclesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceCycles401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceCycles401ApplicationProblemPlusJSONResponse) VisitListWorkspaceCyclesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceCycles403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceCycles403ApplicationProblemPlusJSONResponse) VisitListWorkspaceCyclesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceCycles404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceCycles404ApplicationProblemPlusJSONResponse) VisitListWorkspaceCyclesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceCycles500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceCycles500ApplicationProblemPlusJSONResponse) VisitListWorkspaceCyclesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCurrentWorkspaceCyclesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListCurrentWorkspaceCyclesResponseObject interface {
+	VisitListCurrentWorkspaceCyclesResponse(w http.ResponseWriter) error
+}
+
+type ListCurrentWorkspaceCycles200JSONResponse []TeamCycle
+
+func (response ListCurrentWorkspaceCycles200JSONResponse) VisitListCurrentWorkspaceCyclesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCurrentWorkspaceCycles401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListCurrentWorkspaceCycles401ApplicationProblemPlusJSONResponse) VisitListCurrentWorkspaceCyclesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCurrentWorkspaceCycles403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListCurrentWorkspaceCycles403ApplicationProblemPlusJSONResponse) VisitListCurrentWorkspaceCyclesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCurrentWorkspaceCycles500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListCurrentWorkspaceCycles500ApplicationProblemPlusJSONResponse) VisitListCurrentWorkspaceCyclesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	CycleId     CycleId     `json:"cycleId"`
+}
+
+type GetWorkspaceCycleResponseObject interface {
+	VisitGetWorkspaceCycleResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceCycle200JSONResponse Cycle
+
+func (response GetWorkspaceCycle200JSONResponse) VisitGetWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycle401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceCycle401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycle403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceCycle403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycle404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceCycle404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycle500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceCycle500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CloseWorkspaceCycleRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	CycleId     CycleId     `json:"cycleId"`
+	Body        *CloseWorkspaceCycleJSONRequestBody
+}
+
+type CloseWorkspaceCycleResponseObject interface {
+	VisitCloseWorkspaceCycleResponse(w http.ResponseWriter) error
+}
+
+type CloseWorkspaceCycle200JSONResponse Cycle
+
+func (response CloseWorkspaceCycle200JSONResponse) VisitCloseWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CloseWorkspaceCycle401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CloseWorkspaceCycle401ApplicationProblemPlusJSONResponse) VisitCloseWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CloseWorkspaceCycle403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CloseWorkspaceCycle403ApplicationProblemPlusJSONResponse) VisitCloseWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CloseWorkspaceCycle404ApplicationProblemPlusJSONResponse Problem
+
+func (response CloseWorkspaceCycle404ApplicationProblemPlusJSONResponse) VisitCloseWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CloseWorkspaceCycle409ApplicationProblemPlusJSONResponse struct {
+	CycleConflictApplicationProblemPlusJSONResponse
+}
+
+func (response CloseWorkspaceCycle409ApplicationProblemPlusJSONResponse) VisitCloseWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CloseWorkspaceCycle422ApplicationProblemPlusJSONResponse Problem
+
+func (response CloseWorkspaceCycle422ApplicationProblemPlusJSONResponse) VisitCloseWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CloseWorkspaceCycle500ApplicationProblemPlusJSONResponse Problem
+
+func (response CloseWorkspaceCycle500ApplicationProblemPlusJSONResponse) VisitCloseWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleScopeRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	CycleId     CycleId     `json:"cycleId"`
+}
+
+type GetWorkspaceCycleScopeResponseObject interface {
+	VisitGetWorkspaceCycleScopeResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceCycleScope200JSONResponse CycleScope
+
+func (response GetWorkspaceCycleScope200JSONResponse) VisitGetWorkspaceCycleScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleScope401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceCycleScope401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleScope403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceCycleScope403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleScope404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceCycleScope404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleScope500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceCycleScope500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleScopeResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -14724,6 +15795,264 @@ func (response ArchiveWorkspaceTeam500ApplicationProblemPlusJSONResponse) VisitA
 	return err
 }
 
+type DeleteTeamCycleCadenceRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type DeleteTeamCycleCadenceResponseObject interface {
+	VisitDeleteTeamCycleCadenceResponse(w http.ResponseWriter) error
+}
+
+type DeleteTeamCycleCadence204Response struct {
+}
+
+func (response DeleteTeamCycleCadence204Response) VisitDeleteTeamCycleCadenceResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteTeamCycleCadence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteTeamCycleCadence401ApplicationProblemPlusJSONResponse) VisitDeleteTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTeamCycleCadence403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteTeamCycleCadence403ApplicationProblemPlusJSONResponse) VisitDeleteTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTeamCycleCadence404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteTeamCycleCadence404ApplicationProblemPlusJSONResponse) VisitDeleteTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTeamCycleCadence500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteTeamCycleCadence500ApplicationProblemPlusJSONResponse) VisitDeleteTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamCycleCadenceRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type GetTeamCycleCadenceResponseObject interface {
+	VisitGetTeamCycleCadenceResponse(w http.ResponseWriter) error
+}
+
+type GetTeamCycleCadence200JSONResponse CycleCadence
+
+func (response GetTeamCycleCadence200JSONResponse) VisitGetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamCycleCadence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetTeamCycleCadence401ApplicationProblemPlusJSONResponse) VisitGetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamCycleCadence403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetTeamCycleCadence403ApplicationProblemPlusJSONResponse) VisitGetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamCycleCadence404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetTeamCycleCadence404ApplicationProblemPlusJSONResponse) VisitGetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamCycleCadence500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetTeamCycleCadence500ApplicationProblemPlusJSONResponse) VisitGetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamCycleCadenceRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+	Body        *SetTeamCycleCadenceJSONRequestBody
+}
+
+type SetTeamCycleCadenceResponseObject interface {
+	VisitSetTeamCycleCadenceResponse(w http.ResponseWriter) error
+}
+
+type SetTeamCycleCadence200JSONResponse CycleCadence
+
+func (response SetTeamCycleCadence200JSONResponse) VisitSetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamCycleCadence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetTeamCycleCadence401ApplicationProblemPlusJSONResponse) VisitSetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamCycleCadence403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetTeamCycleCadence403ApplicationProblemPlusJSONResponse) VisitSetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamCycleCadence404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamCycleCadence404ApplicationProblemPlusJSONResponse) VisitSetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamCycleCadence422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamCycleCadence422ApplicationProblemPlusJSONResponse) VisitSetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamCycleCadence500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamCycleCadence500ApplicationProblemPlusJSONResponse) VisitSetTeamCycleCadenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceTeamMembersRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	TeamId      TeamId      `json:"teamId"`
@@ -16166,6 +17495,21 @@ type StrictServerInterface interface {
 	// GetWorkspaceBulkAction Report how far a bulk action has got and what happened to each issue
 	// (GET /workspaces/{workspaceId}/bulk-actions/{bulkActionId})
 	GetWorkspaceBulkAction(ctx context.Context, request GetWorkspaceBulkActionRequestObject) (GetWorkspaceBulkActionResponseObject, error)
+	// ListWorkspaceCycles List the cycles of the teams the caller may see
+	// (GET /workspaces/{workspaceId}/cycles)
+	ListWorkspaceCycles(ctx context.Context, request ListWorkspaceCyclesRequestObject) (ListWorkspaceCyclesResponseObject, error)
+	// ListCurrentWorkspaceCycles Report the cycle each visible team is on, or the one it starts next
+	// (GET /workspaces/{workspaceId}/cycles/current)
+	ListCurrentWorkspaceCycles(ctx context.Context, request ListCurrentWorkspaceCyclesRequestObject) (ListCurrentWorkspaceCyclesResponseObject, error)
+	// GetWorkspaceCycle Read one cycle
+	// (GET /workspaces/{workspaceId}/cycles/{cycleId})
+	GetWorkspaceCycle(ctx context.Context, request GetWorkspaceCycleRequestObject) (GetWorkspaceCycleResponseObject, error)
+	// CloseWorkspaceCycle Close an ended cycle, deciding where unfinished issues go
+	// (POST /workspaces/{workspaceId}/cycles/{cycleId}/close)
+	CloseWorkspaceCycle(ctx context.Context, request CloseWorkspaceCycleRequestObject) (CloseWorkspaceCycleResponseObject, error)
+	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
+	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
+	GetWorkspaceCycleScope(ctx context.Context, request GetWorkspaceCycleScopeRequestObject) (GetWorkspaceCycleScopeResponseObject, error)
 	// ListWorkspaceInvitations List the workspace invitations administrators see beside members
 	// (GET /workspaces/{workspaceId}/invitations)
 	ListWorkspaceInvitations(ctx context.Context, request ListWorkspaceInvitationsRequestObject) (ListWorkspaceInvitationsResponseObject, error)
@@ -16328,6 +17672,15 @@ type StrictServerInterface interface {
 	// ArchiveWorkspaceTeam Archive a team, keeping its issues readable and its key reserved
 	// (POST /workspaces/{workspaceId}/teams/{teamId}/archive)
 	ArchiveWorkspaceTeam(ctx context.Context, request ArchiveWorkspaceTeamRequestObject) (ArchiveWorkspaceTeamResponseObject, error)
+	// DeleteTeamCycleCadence Stop the team using cycles, keeping the ones it has already run
+	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
+	DeleteTeamCycleCadence(ctx context.Context, request DeleteTeamCycleCadenceRequestObject) (DeleteTeamCycleCadenceResponseObject, error)
+	// GetTeamCycleCadence Read how often a team runs cycles
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
+	GetTeamCycleCadence(ctx context.Context, request GetTeamCycleCadenceRequestObject) (GetTeamCycleCadenceResponseObject, error)
+	// SetTeamCycleCadence Start the team on cycles, or change how long they run
+	// (PUT /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
+	SetTeamCycleCadence(ctx context.Context, request SetTeamCycleCadenceRequestObject) (SetTeamCycleCadenceResponseObject, error)
 	// ListWorkspaceTeamMembers List the accounts on the team
 	// (GET /workspaces/{workspaceId}/teams/{teamId}/members)
 	ListWorkspaceTeamMembers(ctx context.Context, request ListWorkspaceTeamMembersRequestObject) (ListWorkspaceTeamMembersResponseObject, error)
@@ -17392,6 +18745,147 @@ func (sh *strictHandler) GetWorkspaceBulkAction(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceBulkActionResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceBulkActionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceCycles operation middleware
+func (sh *strictHandler) ListWorkspaceCycles(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceCyclesParams) {
+	var request ListWorkspaceCyclesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceCycles(ctx, request.(ListWorkspaceCyclesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceCycles")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceCyclesResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceCyclesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCurrentWorkspaceCycles operation middleware
+func (sh *strictHandler) ListCurrentWorkspaceCycles(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListCurrentWorkspaceCyclesRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCurrentWorkspaceCycles(ctx, request.(ListCurrentWorkspaceCyclesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCurrentWorkspaceCycles")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCurrentWorkspaceCyclesResponseObject); ok {
+		if err := validResponse.VisitListCurrentWorkspaceCyclesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceCycle operation middleware
+func (sh *strictHandler) GetWorkspaceCycle(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	var request GetWorkspaceCycleRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.CycleId = cycleId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceCycle(ctx, request.(GetWorkspaceCycleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceCycle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceCycleResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceCycleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CloseWorkspaceCycle operation middleware
+func (sh *strictHandler) CloseWorkspaceCycle(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	var request CloseWorkspaceCycleRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.CycleId = cycleId
+
+	var body CloseWorkspaceCycleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CloseWorkspaceCycle(ctx, request.(CloseWorkspaceCycleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CloseWorkspaceCycle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CloseWorkspaceCycleResponseObject); ok {
+		if err := validResponse.VisitCloseWorkspaceCycleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceCycleScope operation middleware
+func (sh *strictHandler) GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	var request GetWorkspaceCycleScopeRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.CycleId = cycleId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceCycleScope(ctx, request.(GetWorkspaceCycleScopeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceCycleScope")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceCycleScopeResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceCycleScopeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -18986,6 +20480,94 @@ func (sh *strictHandler) ArchiveWorkspaceTeam(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ArchiveWorkspaceTeamResponseObject); ok {
 		if err := validResponse.VisitArchiveWorkspaceTeamResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteTeamCycleCadence operation middleware
+func (sh *strictHandler) DeleteTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request DeleteTeamCycleCadenceRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteTeamCycleCadence(ctx, request.(DeleteTeamCycleCadenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteTeamCycleCadence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteTeamCycleCadenceResponseObject); ok {
+		if err := validResponse.VisitDeleteTeamCycleCadenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetTeamCycleCadence operation middleware
+func (sh *strictHandler) GetTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request GetTeamCycleCadenceRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTeamCycleCadence(ctx, request.(GetTeamCycleCadenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTeamCycleCadence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetTeamCycleCadenceResponseObject); ok {
+		if err := validResponse.VisitGetTeamCycleCadenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetTeamCycleCadence operation middleware
+func (sh *strictHandler) SetTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request SetTeamCycleCadenceRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	var body SetTeamCycleCadenceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetTeamCycleCadence(ctx, request.(SetTeamCycleCadenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetTeamCycleCadence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetTeamCycleCadenceResponseObject); ok {
+		if err := validResponse.VisitSetTeamCycleCadenceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

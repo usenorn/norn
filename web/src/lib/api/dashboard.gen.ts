@@ -1336,6 +1336,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/cycles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the cycles of the teams the caller may see */
+        get: operations["listWorkspaceCycles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/cycles/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report the cycle each visible team is on, or the one it starts next */
+        get: operations["listCurrentWorkspaceCycles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/cycles/{cycleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one cycle */
+        get: operations["getWorkspaceCycle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/cycles/{cycleId}/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Separate the cycle's original scope from what changed after it started */
+        get: operations["getWorkspaceCycleScope"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/cycles/{cycleId}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close an ended cycle, deciding where unfinished issues go */
+        post: operations["closeWorkspaceCycle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/cycle-cadence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read how often a team runs cycles */
+        get: operations["getTeamCycleCadence"];
+        /** Start the team on cycles, or change how long they run */
+        put: operations["setTeamCycleCadence"];
+        post?: never;
+        /** Stop the team using cycles, keeping the ones it has already run */
+        delete: operations["deleteTeamCycleCadence"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1585,18 +1689,26 @@ export interface components {
             estimate?: number;
             /** Format: date */
             dueOn?: string;
+            /** Format: uuid */
+            cycleId?: string;
             /** @description Properties to reset; absent means unchanged, which a nullable field cannot express */
-            clear?: ("assignee" | "estimate" | "dueOn")[];
+            clear?: ("assignee" | "estimate" | "dueOn" | "cycle")[];
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
             labels?: components["schemas"]["Label"][];
             children?: components["schemas"]["Issue"][];
             relation?: components["schemas"]["IssueRelation"];
+        };
+        CycleConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "cycle_closed" | "cycle_overlaps" | "cycle_team_mismatch" | "cycle_rollover_required" | "cycle_not_ended" | "cycle_no_next_cycle";
+            /** @description The unfinished issues that still need a destination */
+            open?: components["schemas"]["Issue"][];
         };
         IssueProgress: {
             /** Format: int32 */
@@ -1607,6 +1719,85 @@ export interface components {
             complete: number;
             /** Format: int32 */
             abandoned: number;
+        };
+        /** @enum {string} */
+        CyclePhase: "upcoming" | "current" | "ended" | "closed";
+        /** @enum {string} */
+        CycleRollover: "next" | "backlog";
+        Cycle: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            teamId: string;
+            teamKey: string;
+            /** Format: int32 */
+            number: number;
+            name: string;
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsOn: string;
+            phase: components["schemas"]["CyclePhase"];
+            /** Format: date-time */
+            closedAt?: string;
+            /** Format: uuid */
+            closedByAccountId?: string;
+            rollover?: components["schemas"]["CycleRollover"];
+        };
+        TeamCycle: {
+            /** Format: uuid */
+            teamId: string;
+            cycle: components["schemas"]["Cycle"];
+        };
+        CycleCadence: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: int32 */
+            lengthWeeks: number;
+            /**
+             * Format: int32
+             * @description Weekday cycles begin on, Sunday being 0
+             */
+            startsOn: number;
+            upcoming: components["schemas"]["Cycle"][];
+        };
+        SetCycleCadenceRequest: {
+            /** Format: int32 */
+            lengthWeeks: number;
+            /** Format: int32 */
+            startsOn: number;
+        };
+        /** @enum {string} */
+        CycleScopeChangeKind: "added" | "removed" | "rolled_over" | "returned";
+        CycleScopeChange: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            issueId: string;
+            issueReference: string;
+            issueTitle: string;
+            change: components["schemas"]["CycleScopeChangeKind"];
+            /** Format: uuid */
+            actorAccountId?: string;
+            /** Format: date-time */
+            changedAt: string;
+        };
+        CycleScope: {
+            original: components["schemas"]["Issue"][];
+            added: components["schemas"]["Issue"][];
+            changes: components["schemas"]["CycleScopeChange"][];
+        };
+        CloseCycleRequest: {
+            rollover?: components["schemas"]["CycleRollover"];
+            /** @description Issues that go somewhere other than the rollover chosen for the rest */
+            overrides?: components["schemas"]["CycleRolloverOverride"][];
+        };
+        CycleRolloverOverride: {
+            /** Format: uuid */
+            issueId: string;
+            destination: components["schemas"]["CycleRollover"];
         };
         IssueActivity: {
             /** Format: uuid */
@@ -1665,6 +1856,10 @@ export interface components {
             parentReference?: string;
             /** Format: int32 */
             depth?: number;
+            /** Format: uuid */
+            cycleId?: string;
+            /** Format: int32 */
+            cycleNumber?: number;
             childProgress?: components["schemas"]["IssueProgress"];
             blocked?: boolean;
             state: components["schemas"]["IssueState"];
@@ -2319,6 +2514,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["IssueConflictProblem"];
             };
         };
+        /** @description The cycle refuses the change, or needs a decision first */
+        CycleConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["CycleConflictProblem"];
+            };
+        };
         /** @description The label cannot change without losing or duplicating work */
         LabelConflict: {
             headers: {
@@ -2435,6 +2639,7 @@ export interface components {
         TokenId: string;
         StateId: string;
         IssueId: string;
+        CycleId: string;
         LabelId: string;
         GroupId: string;
         TeamId: string;
@@ -4354,6 +4559,8 @@ export interface operations {
         parameters: {
             query?: {
                 teamId?: string;
+                /** @description Tally one cycle instead of a team; takes precedence over teamId */
+                cycleId?: string;
             };
             header?: never;
             path: {
@@ -4381,6 +4588,7 @@ export interface operations {
         parameters: {
             query?: {
                 teamId?: string;
+                cycleId?: string;
                 /** @description Repeat to include more than one; defaults to active issues only */
                 status?: components["schemas"]["IssueStatus"][];
                 limit?: number;
@@ -5337,6 +5545,231 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["IssueConflict"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceCycles: {
+        parameters: {
+            query?: {
+                teamId?: string;
+                phase?: components["schemas"]["CyclePhase"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cycles ordered by their start date */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cycle"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listCurrentWorkspaceCycles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One entry per visible team that uses cycles */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamCycle"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceCycle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                cycleId: components["parameters"]["CycleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cycle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cycle"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceCycleScope: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                cycleId: components["parameters"]["CycleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cycle's scope and its changes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CycleScope"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    closeWorkspaceCycle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                cycleId: components["parameters"]["CycleId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseCycleRequest"];
+            };
+        };
+        responses: {
+            /** @description The closed cycle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cycle"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["CycleConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getTeamCycleCadence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team's cadence and the cycles it has queued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CycleCadence"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setTeamCycleCadence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCycleCadenceRequest"];
+            };
+        };
+        responses: {
+            /** @description The cadence now in force */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CycleCadence"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteTeamCycleCadence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team no longer uses cycles */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

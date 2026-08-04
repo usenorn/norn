@@ -14,6 +14,8 @@ var TableNames = struct {
 	WorkspaceBreakGlassCodes    string
 	WorkspaceBulkActionOutcomes string
 	WorkspaceBulkActions        string
+	WorkspaceCycleScopeChanges  string
+	WorkspaceCycles             string
 	WorkspaceInvitationTeams    string
 	WorkspaceInvitations        string
 	WorkspaceIssueActivity      string
@@ -28,6 +30,7 @@ var TableNames = struct {
 	WorkspaceSamlConnections    string
 	WorkspaceSsoConnections     string
 	WorkspaceSsoIdentities      string
+	WorkspaceTeamCycleCadences  string
 	WorkspaceTeamMembers        string
 	WorkspaceTeams              string
 	WorkspaceWorkflowStates     string
@@ -43,6 +46,8 @@ var TableNames = struct {
 	WorkspaceBreakGlassCodes:    "workspace_break_glass_codes",
 	WorkspaceBulkActionOutcomes: "workspace_bulk_action_outcomes",
 	WorkspaceBulkActions:        "workspace_bulk_actions",
+	WorkspaceCycleScopeChanges:  "workspace_cycle_scope_changes",
+	WorkspaceCycles:             "workspace_cycles",
 	WorkspaceInvitationTeams:    "workspace_invitation_teams",
 	WorkspaceInvitations:        "workspace_invitations",
 	WorkspaceIssueActivity:      "workspace_issue_activity",
@@ -57,6 +62,7 @@ var TableNames = struct {
 	WorkspaceSamlConnections:    "workspace_saml_connections",
 	WorkspaceSsoConnections:     "workspace_sso_connections",
 	WorkspaceSsoIdentities:      "workspace_sso_identities",
+	WorkspaceTeamCycleCadences:  "workspace_team_cycle_cadences",
 	WorkspaceTeamMembers:        "workspace_team_members",
 	WorkspaceTeams:              "workspace_teams",
 	WorkspaceWorkflowStates:     "workspace_workflow_states",
