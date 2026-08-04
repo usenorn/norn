@@ -299,6 +299,8 @@ const (
 	IssueActivityKindCreated         IssueActivityKind = "created"
 	IssueActivityKindDeleted         IssueActivityKind = "deleted"
 	IssueActivityKindPropertyChanged IssueActivityKind = "property_changed"
+	IssueActivityKindRelationAdded   IssueActivityKind = "relation_added"
+	IssueActivityKindRelationRemoved IssueActivityKind = "relation_removed"
 	IssueActivityKindRestored        IssueActivityKind = "restored"
 	IssueActivityKindStateChanged    IssueActivityKind = "state_changed"
 	IssueActivityKindTeamMoved       IssueActivityKind = "team_moved"
@@ -319,6 +321,10 @@ func (e IssueActivityKind) Valid() bool {
 	case IssueActivityKindDeleted:
 		return true
 	case IssueActivityKindPropertyChanged:
+		return true
+	case IssueActivityKindRelationAdded:
+		return true
+	case IssueActivityKindRelationRemoved:
 		return true
 	case IssueActivityKindRestored:
 		return true
@@ -343,6 +349,8 @@ const (
 	IssueParentNotActive      IssueConflictProblemCode = "issue_parent_not_active"
 	IssueParentTooDeep        IssueConflictProblemCode = "issue_parent_too_deep"
 	IssueReferenceTaken       IssueConflictProblemCode = "issue_reference_taken"
+	IssueRelationExists       IssueConflictProblemCode = "issue_relation_exists"
+	IssueRelationSelf         IssueConflictProblemCode = "issue_relation_self"
 	IssueStale                IssueConflictProblemCode = "issue_stale"
 	IssueStatusTransition     IssueConflictProblemCode = "issue_status_transition"
 	LabelOutOfScope           IssueConflictProblemCode = "label_out_of_scope"
@@ -366,6 +374,10 @@ func (e IssueConflictProblemCode) Valid() bool {
 	case IssueParentTooDeep:
 		return true
 	case IssueReferenceTaken:
+		return true
+	case IssueRelationExists:
+		return true
+	case IssueRelationSelf:
 		return true
 	case IssueStale:
 		return true
@@ -399,6 +411,33 @@ func (e IssuePriority) Valid() bool {
 	case None:
 		return true
 	case Urgent:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for IssueRelationKind.
+const (
+	BlockedBy    IssueRelationKind = "blocked_by"
+	Blocks       IssueRelationKind = "blocks"
+	DuplicatedBy IssueRelationKind = "duplicated_by"
+	Duplicates   IssueRelationKind = "duplicates"
+	RelatesTo    IssueRelationKind = "relates_to"
+)
+
+// Valid indicates whether the value is a known member of the IssueRelationKind enum.
+func (e IssueRelationKind) Valid() bool {
+	switch e {
+	case BlockedBy:
+		return true
+	case Blocks:
+		return true
+	case DuplicatedBy:
+		return true
+	case Duplicates:
+		return true
+	case RelatesTo:
 		return true
 	default:
 		return false
@@ -936,6 +975,18 @@ type AccountLockedProblemCode string
 // AccountStatus defines model for AccountStatus.
 type AccountStatus string
 
+// AddIssueRelationRequest defines model for AddIssueRelationRequest.
+type AddIssueRelationRequest struct {
+	// CloseDuplicate Also move the duplicate to its team's abandoned state
+	CloseDuplicate *bool `json:"closeDuplicate,omitempty"`
+
+	// IssueId The issue at the other end, as seen from this one
+	IssueId openapi_types.UUID `json:"issueId"`
+
+	// Kind A relation as seen from the issue you are looking at
+	Kind IssueRelationKind `json:"kind"`
+}
+
 // AddMemberRequest defines model for AddMemberRequest.
 type AddMemberRequest struct {
 	AccountId openapi_types.UUID `json:"accountId"`
@@ -1204,6 +1255,7 @@ type InvitationWorkspace struct {
 type Issue struct {
 	ArchivedAt         *time.Time          `json:"archivedAt,omitempty"`
 	AssigneeAccountId  *openapi_types.UUID `json:"assigneeAccountId,omitempty"`
+	Blocked            *bool               `json:"blocked,omitempty"`
 	ChildProgress      *IssueProgress      `json:"childProgress,omitempty"`
 	CompletedAt        *time.Time          `json:"completedAt,omitempty"`
 	CreatedAt          time.Time           `json:"createdAt"`
@@ -1270,6 +1322,7 @@ type IssueConflictProblem struct {
 	Errors    *[]FieldError            `json:"errors,omitempty"`
 	Instance  *string                  `json:"instance,omitempty"`
 	Labels    *[]Label                 `json:"labels,omitempty"`
+	Relation  *IssueRelation           `json:"relation,omitempty"`
 	Status    int32                    `json:"status"`
 	Title     string                   `json:"title"`
 	Type      string                   `json:"type"`
@@ -1295,6 +1348,31 @@ type IssueProgress struct {
 	Complete   int32 `json:"complete"`
 	NotStarted int32 `json:"notStarted"`
 }
+
+// IssueRelation defines model for IssueRelation.
+type IssueRelation struct {
+	CreatedAt *time.Time         `json:"createdAt,omitempty"`
+	Id        openapi_types.UUID `json:"id"`
+	Issue     Issue              `json:"issue"`
+
+	// Kind A relation as seen from the issue you are looking at
+	Kind IssueRelationKind `json:"kind"`
+}
+
+// IssueRelationGroup defines model for IssueRelationGroup.
+type IssueRelationGroup struct {
+	// Kind A relation as seen from the issue you are looking at
+	Kind      IssueRelationKind `json:"kind"`
+	Relations []IssueRelation   `json:"relations"`
+}
+
+// IssueRelationGroups defines model for IssueRelationGroups.
+type IssueRelationGroups struct {
+	Groups []IssueRelationGroup `json:"groups"`
+}
+
+// IssueRelationKind A relation as seen from the issue you are looking at
+type IssueRelationKind string
 
 // IssueState defines model for IssueState.
 type IssueState struct {
@@ -2015,6 +2093,9 @@ type SetWorkspaceIssueLabelsJSONRequestBody = SetIssueLabelsRequest
 // SetWorkspaceIssueParentJSONRequestBody defines body for SetWorkspaceIssueParent for application/json ContentType.
 type SetWorkspaceIssueParentJSONRequestBody = SetIssueParentRequest
 
+// AddWorkspaceIssueRelationJSONRequestBody defines body for AddWorkspaceIssueRelation for application/json ContentType.
+type AddWorkspaceIssueRelationJSONRequestBody = AddIssueRelationRequest
+
 // SetWorkspaceIssueStatusJSONRequestBody defines body for SetWorkspaceIssueStatus for application/json ContentType.
 type SetWorkspaceIssueStatusJSONRequestBody = SetIssueStatusRequest
 
@@ -2200,6 +2281,15 @@ type ServerInterface interface {
 	// SetWorkspaceIssueParent File an issue under another, or detach it, moving its sub-tree with it
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/parent)
 	SetWorkspaceIssueParent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// ListWorkspaceIssueRelations List an issue's relations, grouped by what each one means
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/relations)
+	ListWorkspaceIssueRelations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// AddWorkspaceIssueRelation Link two issues, recording the inverse on the other one automatically
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/relations)
+	AddWorkspaceIssueRelation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// RemoveWorkspaceIssueRelation Unlink two issues, from either side, removing both directions
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/relations/{relationId})
+	RemoveWorkspaceIssueRelation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, relationId openapi_types.UUID)
 	// SetWorkspaceIssueStatus Archive, delete or restore an issue without losing its reference
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/status)
 	SetWorkspaceIssueStatus(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -2584,6 +2674,24 @@ func (_ Unimplemented) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Re
 // SetWorkspaceIssueParent File an issue under another, or detach it, moving its sub-tree with it
 // (POST /workspaces/{workspaceId}/issues/{issueId}/parent)
 func (_ Unimplemented) SetWorkspaceIssueParent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueRelations List an issue's relations, grouped by what each one means
+// (GET /workspaces/{workspaceId}/issues/{issueId}/relations)
+func (_ Unimplemented) ListWorkspaceIssueRelations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddWorkspaceIssueRelation Link two issues, recording the inverse on the other one automatically
+// (POST /workspaces/{workspaceId}/issues/{issueId}/relations)
+func (_ Unimplemented) AddWorkspaceIssueRelation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveWorkspaceIssueRelation Unlink two issues, from either side, removing both directions
+// (DELETE /workspaces/{workspaceId}/issues/{issueId}/relations/{relationId})
+func (_ Unimplemented) RemoveWorkspaceIssueRelation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, relationId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3876,6 +3984,120 @@ func (siw *ServerInterfaceWrapper) SetWorkspaceIssueParent(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetWorkspaceIssueParent(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueRelations operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueRelations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueRelations(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddWorkspaceIssueRelation operation middleware
+func (siw *ServerInterfaceWrapper) AddWorkspaceIssueRelation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddWorkspaceIssueRelation(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveWorkspaceIssueRelation operation middleware
+func (siw *ServerInterfaceWrapper) RemoveWorkspaceIssueRelation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "relationId" -------------
+	var relationId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "relationId", chi.URLParam(r, "relationId"), &relationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "relationId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveWorkspaceIssueRelation(w, r, workspaceId, issueId, relationId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5578,6 +5800,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/status", wrapper.SetWorkspaceIssueStatus)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/relations", wrapper.ListWorkspaceIssueRelations)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/relations", wrapper.AddWorkspaceIssueRelation)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/relations/{relationId}", wrapper.RemoveWorkspaceIssueRelation)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/team", wrapper.MoveWorkspaceIssueToTeam)
@@ -9327,6 +9558,281 @@ func (response SetWorkspaceIssueParent422ApplicationProblemPlusJSONResponse) Vis
 type SetWorkspaceIssueParent500ApplicationProblemPlusJSONResponse Problem
 
 func (response SetWorkspaceIssueParent500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueRelationsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueRelationsResponseObject interface {
+	VisitListWorkspaceIssueRelationsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueRelations200JSONResponse IssueRelationGroups
+
+func (response ListWorkspaceIssueRelations200JSONResponse) VisitListWorkspaceIssueRelationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueRelations401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueRelations401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueRelationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueRelations403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueRelations403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueRelationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueRelations404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueRelations404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueRelationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueRelations500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueRelations500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueRelationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueRelationRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *AddWorkspaceIssueRelationJSONRequestBody
+}
+
+type AddWorkspaceIssueRelationResponseObject interface {
+	VisitAddWorkspaceIssueRelationResponse(w http.ResponseWriter) error
+}
+
+type AddWorkspaceIssueRelation201JSONResponse IssueRelation
+
+func (response AddWorkspaceIssueRelation201JSONResponse) VisitAddWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueRelation401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceIssueRelation401ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueRelation403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceIssueRelation403ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueRelation404ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceIssueRelation404ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueRelation409ApplicationProblemPlusJSONResponse struct {
+	IssueConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceIssueRelation409ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueRelation422ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceIssueRelation422ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueRelation500ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceIssueRelation500ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueRelationRequestObject struct {
+	WorkspaceId WorkspaceId        `json:"workspaceId"`
+	IssueId     IssueId            `json:"issueId"`
+	RelationId  openapi_types.UUID `json:"relationId"`
+}
+
+type RemoveWorkspaceIssueRelationResponseObject interface {
+	VisitRemoveWorkspaceIssueRelationResponse(w http.ResponseWriter) error
+}
+
+type RemoveWorkspaceIssueRelation204Response struct {
+}
+
+func (response RemoveWorkspaceIssueRelation204Response) VisitRemoveWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveWorkspaceIssueRelation401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceIssueRelation401ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueRelation403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceIssueRelation403ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueRelation404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceIssueRelation404ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueRelation500ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceIssueRelation500ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -13111,6 +13617,15 @@ type StrictServerInterface interface {
 	// SetWorkspaceIssueParent File an issue under another, or detach it, moving its sub-tree with it
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/parent)
 	SetWorkspaceIssueParent(ctx context.Context, request SetWorkspaceIssueParentRequestObject) (SetWorkspaceIssueParentResponseObject, error)
+	// ListWorkspaceIssueRelations List an issue's relations, grouped by what each one means
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/relations)
+	ListWorkspaceIssueRelations(ctx context.Context, request ListWorkspaceIssueRelationsRequestObject) (ListWorkspaceIssueRelationsResponseObject, error)
+	// AddWorkspaceIssueRelation Link two issues, recording the inverse on the other one automatically
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/relations)
+	AddWorkspaceIssueRelation(ctx context.Context, request AddWorkspaceIssueRelationRequestObject) (AddWorkspaceIssueRelationResponseObject, error)
+	// RemoveWorkspaceIssueRelation Unlink two issues, from either side, removing both directions
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/relations/{relationId})
+	RemoveWorkspaceIssueRelation(ctx context.Context, request RemoveWorkspaceIssueRelationRequestObject) (RemoveWorkspaceIssueRelationResponseObject, error)
 	// SetWorkspaceIssueStatus Archive, delete or restore an issue without losing its reference
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/status)
 	SetWorkspaceIssueStatus(ctx context.Context, request SetWorkspaceIssueStatusRequestObject) (SetWorkspaceIssueStatusResponseObject, error)
@@ -14536,6 +15051,95 @@ func (sh *strictHandler) SetWorkspaceIssueParent(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetWorkspaceIssueParentResponseObject); ok {
 		if err := validResponse.VisitSetWorkspaceIssueParentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueRelations operation middleware
+func (sh *strictHandler) ListWorkspaceIssueRelations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueRelationsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueRelations(ctx, request.(ListWorkspaceIssueRelationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueRelations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueRelationsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueRelationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddWorkspaceIssueRelation operation middleware
+func (sh *strictHandler) AddWorkspaceIssueRelation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request AddWorkspaceIssueRelationRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body AddWorkspaceIssueRelationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddWorkspaceIssueRelation(ctx, request.(AddWorkspaceIssueRelationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddWorkspaceIssueRelation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddWorkspaceIssueRelationResponseObject); ok {
+		if err := validResponse.VisitAddWorkspaceIssueRelationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveWorkspaceIssueRelation operation middleware
+func (sh *strictHandler) RemoveWorkspaceIssueRelation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, relationId openapi_types.UUID) {
+	var request RemoveWorkspaceIssueRelationRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.RelationId = relationId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveWorkspaceIssueRelation(ctx, request.(RemoveWorkspaceIssueRelationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveWorkspaceIssueRelation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveWorkspaceIssueRelationResponseObject); ok {
+		if err := validResponse.VisitRemoveWorkspaceIssueRelationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

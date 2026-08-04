@@ -81,6 +81,7 @@ type Issue struct {
 	ParentReference    string
 	Depth              int
 	Children           IssueProgress
+	Blocked            bool
 	CreatedByAccountID uuid.UUID
 	CreatedAt          time.Time
 	UpdatedAt          time.Time

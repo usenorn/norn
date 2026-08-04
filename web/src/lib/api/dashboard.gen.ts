@@ -972,6 +972,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/relations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List an issue's relations, grouped by what each one means */
+        get: operations["listWorkspaceIssueRelations"];
+        put?: never;
+        /** Link two issues, recording the inverse on the other one automatically */
+        post: operations["addWorkspaceIssueRelation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/relations/{relationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unlink two issues, from either side, removing both directions */
+        delete: operations["removeWorkspaceIssueRelation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/team": {
         parameters: {
             query?: never;
@@ -1122,6 +1157,36 @@ export interface components {
             /** Format: int32 */
             expectedVersion: number;
         };
+        /**
+         * @description A relation as seen from the issue you are looking at
+         * @enum {string}
+         */
+        IssueRelationKind: "blocks" | "blocked_by" | "duplicates" | "duplicated_by" | "relates_to";
+        IssueRelation: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["IssueRelationKind"];
+            issue: components["schemas"]["Issue"];
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        IssueRelationGroup: {
+            kind: components["schemas"]["IssueRelationKind"];
+            relations: components["schemas"]["IssueRelation"][];
+        };
+        IssueRelationGroups: {
+            groups: components["schemas"]["IssueRelationGroup"][];
+        };
+        AddIssueRelationRequest: {
+            kind: components["schemas"]["IssueRelationKind"];
+            /**
+             * Format: uuid
+             * @description The issue at the other end, as seen from this one
+             */
+            issueId: string;
+            /** @description Also move the duplicate to its team's abandoned state */
+            closeDuplicate?: boolean;
+        };
         SetIssueParentRequest: {
             /** Format: int32 */
             expectedVersion: number;
@@ -1218,12 +1283,13 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "label_out_of_scope";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
             labels?: components["schemas"]["Label"][];
             children?: components["schemas"]["Issue"][];
+            relation?: components["schemas"]["IssueRelation"];
         };
         IssueProgress: {
             /** Format: int32 */
@@ -1244,7 +1310,7 @@ export interface components {
             actorAccountId?: string;
             actorName?: string;
             /** @enum {string} */
-            kind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed";
+            kind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed";
             fromState?: string;
             toState?: string;
             field?: string;
@@ -1291,6 +1357,7 @@ export interface components {
             /** Format: int32 */
             depth?: number;
             childProgress?: components["schemas"]["IssueProgress"];
+            blocked?: boolean;
             state: components["schemas"]["IssueState"];
             labels: components["schemas"]["Label"][];
             /** Format: int32 */
@@ -4108,6 +4175,92 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["IssueConflict"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueRelations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The relations the caller may see, grouped by kind */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueRelationGroups"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    addWorkspaceIssueRelation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddIssueRelationRequest"];
+            };
+        };
+        responses: {
+            /** @description The relation as seen from this issue */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueRelation"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceIssueRelation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                relationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The relation was removed from both issues */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };
