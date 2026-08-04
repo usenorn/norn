@@ -714,6 +714,27 @@ func (e IssueFilterOp) Valid() bool {
 	}
 }
 
+// Defines values for IssueFilterReferenceState.
+const (
+	Missing    IssueFilterReferenceState = "missing"
+	Resolved   IssueFilterReferenceState = "resolved"
+	Restricted IssueFilterReferenceState = "restricted"
+)
+
+// Valid indicates whether the value is a known member of the IssueFilterReferenceState enum.
+func (e IssueFilterReferenceState) Valid() bool {
+	switch e {
+	case Missing:
+		return true
+	case Resolved:
+		return true
+	case Restricted:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IssueGroupBy.
 const (
 	IssueGroupByAssignee      IssueGroupBy = "assignee"
@@ -1110,6 +1131,42 @@ const (
 func (e ResetLinkUsedProblemCode) Valid() bool {
 	switch e {
 	case ResetLinkUsed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SavedViewConflictProblemCode.
+const (
+	SavedViewShared SavedViewConflictProblemCode = "saved_view_shared"
+)
+
+// Valid indicates whether the value is a known member of the SavedViewConflictProblemCode enum.
+func (e SavedViewConflictProblemCode) Valid() bool {
+	switch e {
+	case SavedViewShared:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SavedViewSharing.
+const (
+	SavedViewSharingPersonal  SavedViewSharing = "personal"
+	SavedViewSharingTeam      SavedViewSharing = "team"
+	SavedViewSharingWorkspace SavedViewSharing = "workspace"
+)
+
+// Valid indicates whether the value is a known member of the SavedViewSharing enum.
+func (e SavedViewSharing) Valid() bool {
+	switch e {
+	case SavedViewSharingPersonal:
+		return true
+	case SavedViewSharingTeam:
+		return true
+	case SavedViewSharingWorkspace:
 		return true
 	default:
 		return false
@@ -1729,6 +1786,17 @@ type CreateProjectRequest struct {
 	TargetOn      *openapi_types.Date `json:"targetOn,omitempty"`
 }
 
+// CreateSavedViewRequest defines model for CreateSavedViewRequest.
+type CreateSavedViewRequest struct {
+	// Filter A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
+	Filter  *IssueFilter        `json:"filter,omitempty"`
+	GroupBy *IssueGroupBy       `json:"groupBy,omitempty"`
+	Name    string              `json:"name"`
+	Sharing *SavedViewSharing   `json:"sharing,omitempty"`
+	Sort    *[]IssueSort        `json:"sort,omitempty"`
+	TeamId  *openapi_types.UUID `json:"teamId,omitempty"`
+}
+
 // CreateTeamRequest defines model for CreateTeamRequest.
 type CreateTeamRequest struct {
 	Key        string          `json:"key"`
@@ -2117,6 +2185,21 @@ type IssueFilterField string
 // IssueFilterOp defines model for IssueFilterOp.
 type IssueFilterOp string
 
+// IssueFilterReference defines model for IssueFilterReference.
+type IssueFilterReference struct {
+	Field IssueFilterField `json:"field"`
+
+	// Name Present only when the state is resolved.
+	Name *string `json:"name,omitempty"`
+
+	// State resolved - it exists and the caller may see it. restricted - it exists but sits on a team the caller cannot see, so it is named to nobody. missing - nothing in this workspace has that id any more.
+	State IssueFilterReferenceState `json:"state"`
+	Value string                    `json:"value"`
+}
+
+// IssueFilterReferenceState resolved - it exists and the caller may see it. restricted - it exists but sits on a team the caller cannot see, so it is named to nobody. missing - nothing in this workspace has that id any more.
+type IssueFilterReferenceState string
+
 // IssueGroupBy defines model for IssueGroupBy.
 type IssueGroupBy string
 
@@ -2474,6 +2557,11 @@ type RedeemRecoveryCodeRequest struct {
 	Workspace string `json:"workspace"`
 }
 
+// ReorderSavedViewsRequest defines model for ReorderSavedViewsRequest.
+type ReorderSavedViewsRequest struct {
+	SavedViewIds []openapi_types.UUID `json:"savedViewIds"`
+}
+
 // ReorderWorkflowStatesRequest defines model for ReorderWorkflowStatesRequest.
 type ReorderWorkflowStatesRequest struct {
 	StateIds []openapi_types.UUID `json:"stateIds"`
@@ -2540,6 +2628,53 @@ type SamlDescriptor struct {
 	SloUrl       *string   `json:"sloUrl,omitempty"`
 	SsoUrl       string    `json:"ssoUrl"`
 }
+
+// SavedView defines model for SavedView.
+type SavedView struct {
+	CreatedAt          time.Time           `json:"createdAt"`
+	CreatedByAccountId *openapi_types.UUID `json:"createdByAccountId,omitempty"`
+	CreatedByName      *string             `json:"createdByName,omitempty"`
+
+	// Editable Whether this caller may change this view. A shared view is evaluated with the permissions of whoever opens it, so two people may legitimately be shown different results, and different rights, for one view.
+	Editable bool `json:"editable"`
+
+	// Filter A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
+	Filter      IssueFilter         `json:"filter"`
+	GroupBy     *IssueGroupBy       `json:"groupBy,omitempty"`
+	Id          openapi_types.UUID  `json:"id"`
+	Name        string              `json:"name"`
+	Sharing     SavedViewSharing    `json:"sharing"`
+	Sort        []IssueSort         `json:"sort"`
+	TeamId      *openapi_types.UUID `json:"teamId,omitempty"`
+	TeamName    *string             `json:"teamName,omitempty"`
+	UpdatedAt   time.Time           `json:"updatedAt"`
+	WorkspaceId openapi_types.UUID  `json:"workspaceId"`
+}
+
+// SavedViewConflictProblem defines model for SavedViewConflictProblem.
+type SavedViewConflictProblem struct {
+	Code     SavedViewConflictProblemCode `json:"code"`
+	Detail   *string                      `json:"detail,omitempty"`
+	Errors   *[]FieldError                `json:"errors,omitempty"`
+	Instance *string                      `json:"instance,omitempty"`
+	Sharing  *SavedViewSharing            `json:"sharing,omitempty"`
+	Status   int32                        `json:"status"`
+	TeamName *string                      `json:"teamName,omitempty"`
+	Title    string                       `json:"title"`
+	Type     string                       `json:"type"`
+}
+
+// SavedViewConflictProblemCode defines model for SavedViewConflictProblem.Code.
+type SavedViewConflictProblemCode string
+
+// SavedViewDetail defines model for SavedViewDetail.
+type SavedViewDetail struct {
+	References []IssueFilterReference `json:"references"`
+	View       SavedView              `json:"view"`
+}
+
+// SavedViewSharing defines model for SavedViewSharing.
+type SavedViewSharing string
 
 // Session defines model for Session.
 type Session struct {
@@ -2812,6 +2947,17 @@ type UpdateProjectRequest struct {
 // UpdateProjectRequestClear defines model for UpdateProjectRequest.Clear.
 type UpdateProjectRequestClear string
 
+// UpdateSavedViewRequest defines model for UpdateSavedViewRequest.
+type UpdateSavedViewRequest struct {
+	// Filter A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
+	Filter  *IssueFilter        `json:"filter,omitempty"`
+	GroupBy *IssueGroupBy       `json:"groupBy,omitempty"`
+	Name    *string             `json:"name,omitempty"`
+	Sharing *SavedViewSharing   `json:"sharing,omitempty"`
+	Sort    *[]IssueSort        `json:"sort,omitempty"`
+	TeamId  *openapi_types.UUID `json:"teamId,omitempty"`
+}
+
 // UpdateTeamRequest defines model for UpdateTeamRequest.
 type UpdateTeamRequest struct {
 	Name       *string         `json:"name,omitempty"`
@@ -2960,6 +3106,9 @@ type LabelId = openapi_types.UUID
 // ProjectId defines model for ProjectId.
 type ProjectId = openapi_types.UUID
 
+// SavedViewId defines model for SavedViewId.
+type SavedViewId = openapi_types.UUID
+
 // StateId defines model for StateId.
 type StateId = openapi_types.UUID
 
@@ -3016,6 +3165,9 @@ type PasswordResetLinkUsed = ResetLinkUsedProblem
 
 // ProjectConflict defines model for ProjectConflict.
 type ProjectConflict = ProjectConflictProblem
+
+// SavedViewConflict defines model for SavedViewConflict.
+type SavedViewConflict = SavedViewConflictProblem
 
 // SignInRejected defines model for SignInRejected.
 type SignInRejected = InvalidCredentialsProblem
@@ -3116,6 +3268,12 @@ type ListWorkspaceProjectsParams struct {
 
 	// Mine Only projects the caller leads or belongs to
 	Mine *bool `form:"mine,omitempty" json:"mine,omitempty"`
+}
+
+// RemoveWorkspaceSavedViewParams defines parameters for RemoveWorkspaceSavedView.
+type RemoveWorkspaceSavedViewParams struct {
+	// AcknowledgedSharing The sharing the caller was shown. If someone widened the view while the dialog was open, the removal is refused and names the sharing it actually has now.
+	AcknowledgedSharing SavedViewSharing `form:"acknowledgedSharing" json:"acknowledgedSharing"`
 }
 
 // ListWorkspaceTeamsParams defines parameters for ListWorkspaceTeams.
@@ -3250,6 +3408,15 @@ type AddWorkspaceProjectMemberJSONRequestBody = AddProjectMemberRequest
 
 // PostWorkspaceProjectStatusJSONRequestBody defines body for PostWorkspaceProjectStatus for application/json ContentType.
 type PostWorkspaceProjectStatusJSONRequestBody = PostProjectStatusRequest
+
+// CreateWorkspaceSavedViewJSONRequestBody defines body for CreateWorkspaceSavedView for application/json ContentType.
+type CreateWorkspaceSavedViewJSONRequestBody = CreateSavedViewRequest
+
+// ReorderWorkspaceSavedViewsJSONRequestBody defines body for ReorderWorkspaceSavedViews for application/json ContentType.
+type ReorderWorkspaceSavedViewsJSONRequestBody = ReorderSavedViewsRequest
+
+// UpdateWorkspaceSavedViewJSONRequestBody defines body for UpdateWorkspaceSavedView for application/json ContentType.
+type UpdateWorkspaceSavedViewJSONRequestBody = UpdateSavedViewRequest
 
 // SetWorkspaceOidcConnectionJSONRequestBody defines body for SetWorkspaceOidcConnection for application/json ContentType.
 type SetWorkspaceOidcConnectionJSONRequestBody = SetWorkspaceOidcConnectionRequest
@@ -3556,6 +3723,24 @@ type ServerInterface interface {
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListWorkspaceSavedViews The saved views this caller can see, in the order they arranged them
+	// (GET /workspaces/{workspaceId}/saved-views)
+	ListWorkspaceSavedViews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// CreateWorkspaceSavedView Save the current filter, grouping and sort under a name
+	// (POST /workspaces/{workspaceId}/saved-views)
+	CreateWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ReorderWorkspaceSavedViews Arrange saved views for the caller alone
+	// (PUT /workspaces/{workspaceId}/saved-views/order)
+	ReorderWorkspaceSavedViews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// RemoveWorkspaceSavedView Remove a view, acknowledging who else was holding it
+	// (DELETE /workspaces/{workspaceId}/saved-views/{savedViewId})
+	RemoveWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId, params RemoveWorkspaceSavedViewParams)
+	// GetWorkspaceSavedView One saved view, with everything it points at resolved for this caller
+	// (GET /workspaces/{workspaceId}/saved-views/{savedViewId})
+	GetWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId)
+	// UpdateWorkspaceSavedView Rename a view, re-scope who it is shared with, or replace what it asks for
+	// (PATCH /workspaces/{workspaceId}/saved-views/{savedViewId})
+	UpdateWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId)
 	// RemoveWorkspaceSsoConnection Remove the workspace single sign-on provider, whichever protocol it uses
 	// (DELETE /workspaces/{workspaceId}/sso)
 	RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -4198,6 +4383,42 @@ func (_ Unimplemented) UnarchiveWorkspaceProject(w http.ResponseWriter, r *http.
 // RestoreWorkspace Recover a workspace before its purge date passes
 // (POST /workspaces/{workspaceId}/restore)
 func (_ Unimplemented) RestoreWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceSavedViews The saved views this caller can see, in the order they arranged them
+// (GET /workspaces/{workspaceId}/saved-views)
+func (_ Unimplemented) ListWorkspaceSavedViews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateWorkspaceSavedView Save the current filter, grouping and sort under a name
+// (POST /workspaces/{workspaceId}/saved-views)
+func (_ Unimplemented) CreateWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReorderWorkspaceSavedViews Arrange saved views for the caller alone
+// (PUT /workspaces/{workspaceId}/saved-views/order)
+func (_ Unimplemented) ReorderWorkspaceSavedViews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveWorkspaceSavedView Remove a view, acknowledging who else was holding it
+// (DELETE /workspaces/{workspaceId}/saved-views/{savedViewId})
+func (_ Unimplemented) RemoveWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId, params RemoveWorkspaceSavedViewParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceSavedView One saved view, with everything it points at resolved for this caller
+// (GET /workspaces/{workspaceId}/saved-views/{savedViewId})
+func (_ Unimplemented) GetWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateWorkspaceSavedView Rename a view, re-scope who it is shared with, or replace what it asks for
+// (PATCH /workspaces/{workspaceId}/saved-views/{savedViewId})
+func (_ Unimplemented) UpdateWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -7062,6 +7283,205 @@ func (siw *ServerInterfaceWrapper) RestoreWorkspace(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceSavedViews operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceSavedViews(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceSavedViews(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateWorkspaceSavedView operation middleware
+func (siw *ServerInterfaceWrapper) CreateWorkspaceSavedView(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWorkspaceSavedView(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReorderWorkspaceSavedViews operation middleware
+func (siw *ServerInterfaceWrapper) ReorderWorkspaceSavedViews(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReorderWorkspaceSavedViews(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveWorkspaceSavedView operation middleware
+func (siw *ServerInterfaceWrapper) RemoveWorkspaceSavedView(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "savedViewId" -------------
+	var savedViewId SavedViewId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "savedViewId", chi.URLParam(r, "savedViewId"), &savedViewId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "savedViewId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveWorkspaceSavedViewParams
+
+	// ------------- Required query parameter "acknowledgedSharing" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "acknowledgedSharing", r.URL.Query(), &params.AcknowledgedSharing, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "acknowledgedSharing"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "acknowledgedSharing", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveWorkspaceSavedView(w, r, workspaceId, savedViewId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceSavedView operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceSavedView(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "savedViewId" -------------
+	var savedViewId SavedViewId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "savedViewId", chi.URLParam(r, "savedViewId"), &savedViewId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "savedViewId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceSavedView(w, r, workspaceId, savedViewId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateWorkspaceSavedView operation middleware
+func (siw *ServerInterfaceWrapper) UpdateWorkspaceSavedView(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "savedViewId" -------------
+	var savedViewId SavedViewId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "savedViewId", chi.URLParam(r, "savedViewId"), &savedViewId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "savedViewId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateWorkspaceSavedView(w, r, workspaceId, savedViewId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RemoveWorkspaceSsoConnection operation middleware
 func (siw *ServerInterfaceWrapper) RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request) {
 
@@ -8553,6 +8973,24 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues", wrapper.CreateWorkspaceIssue)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/saved-views", wrapper.ListWorkspaceSavedViews)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/saved-views", wrapper.CreateWorkspaceSavedView)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/saved-views/order", wrapper.ReorderWorkspaceSavedViews)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/saved-views/{savedViewId}", wrapper.RemoveWorkspaceSavedView)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/saved-views/{savedViewId}", wrapper.GetWorkspaceSavedView)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/workspaces/{workspaceId}/saved-views/{savedViewId}", wrapper.UpdateWorkspaceSavedView)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/query", wrapper.QueryWorkspaceIssues)
 	})
 	r.Group(func(r chi.Router) {
@@ -8740,6 +9178,8 @@ type PasswordResetLinkUsedApplicationProblemPlusJSONResponse ResetLinkUsedProble
 type ProblemApplicationProblemPlusJSONResponse Problem
 
 type ProjectConflictApplicationProblemPlusJSONResponse ProjectConflictProblem
+
+type SavedViewConflictApplicationProblemPlusJSONResponse SavedViewConflictProblem
 
 type SignInRejectedApplicationProblemPlusJSONResponse InvalidCredentialsProblem
 
@@ -16569,6 +17009,515 @@ func (response RestoreWorkspace500ApplicationProblemPlusJSONResponse) VisitResto
 	return err
 }
 
+type ListWorkspaceSavedViewsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceSavedViewsResponseObject interface {
+	VisitListWorkspaceSavedViewsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceSavedViews200JSONResponse []SavedView
+
+func (response ListWorkspaceSavedViews200JSONResponse) VisitListWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSavedViews401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSavedViews401ApplicationProblemPlusJSONResponse) VisitListWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSavedViews403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSavedViews403ApplicationProblemPlusJSONResponse) VisitListWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSavedViews500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceSavedViews500ApplicationProblemPlusJSONResponse) VisitListWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceSavedViewRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *CreateWorkspaceSavedViewJSONRequestBody
+}
+
+type CreateWorkspaceSavedViewResponseObject interface {
+	VisitCreateWorkspaceSavedViewResponse(w http.ResponseWriter) error
+}
+
+type CreateWorkspaceSavedView201JSONResponse SavedView
+
+func (response CreateWorkspaceSavedView201JSONResponse) VisitCreateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceSavedView401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceSavedView401ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceSavedView403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceSavedView403ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceSavedView422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceSavedView422ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceSavedView500ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceSavedView500ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReorderWorkspaceSavedViewsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *ReorderWorkspaceSavedViewsJSONRequestBody
+}
+
+type ReorderWorkspaceSavedViewsResponseObject interface {
+	VisitReorderWorkspaceSavedViewsResponse(w http.ResponseWriter) error
+}
+
+type ReorderWorkspaceSavedViews200JSONResponse []SavedView
+
+func (response ReorderWorkspaceSavedViews200JSONResponse) VisitReorderWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReorderWorkspaceSavedViews401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReorderWorkspaceSavedViews401ApplicationProblemPlusJSONResponse) VisitReorderWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReorderWorkspaceSavedViews403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ReorderWorkspaceSavedViews403ApplicationProblemPlusJSONResponse) VisitReorderWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReorderWorkspaceSavedViews422ApplicationProblemPlusJSONResponse Problem
+
+func (response ReorderWorkspaceSavedViews422ApplicationProblemPlusJSONResponse) VisitReorderWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReorderWorkspaceSavedViews500ApplicationProblemPlusJSONResponse Problem
+
+func (response ReorderWorkspaceSavedViews500ApplicationProblemPlusJSONResponse) VisitReorderWorkspaceSavedViewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceSavedViewRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	SavedViewId SavedViewId `json:"savedViewId"`
+	Params      RemoveWorkspaceSavedViewParams
+}
+
+type RemoveWorkspaceSavedViewResponseObject interface {
+	VisitRemoveWorkspaceSavedViewResponse(w http.ResponseWriter) error
+}
+
+type RemoveWorkspaceSavedView204Response struct {
+}
+
+func (response RemoveWorkspaceSavedView204Response) VisitRemoveWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveWorkspaceSavedView401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceSavedView401ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceSavedView403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceSavedView403ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceSavedView404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceSavedView404ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceSavedView409ApplicationProblemPlusJSONResponse struct {
+	SavedViewConflictApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceSavedView409ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceSavedView500ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceSavedView500ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSavedViewRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	SavedViewId SavedViewId `json:"savedViewId"`
+}
+
+type GetWorkspaceSavedViewResponseObject interface {
+	VisitGetWorkspaceSavedViewResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceSavedView200JSONResponse SavedViewDetail
+
+func (response GetWorkspaceSavedView200JSONResponse) VisitGetWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSavedView401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSavedView401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSavedView403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSavedView403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSavedView404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceSavedView404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSavedView500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceSavedView500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSavedViewRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	SavedViewId SavedViewId `json:"savedViewId"`
+	Body        *UpdateWorkspaceSavedViewJSONRequestBody
+}
+
+type UpdateWorkspaceSavedViewResponseObject interface {
+	VisitUpdateWorkspaceSavedViewResponse(w http.ResponseWriter) error
+}
+
+type UpdateWorkspaceSavedView200JSONResponse SavedView
+
+func (response UpdateWorkspaceSavedView200JSONResponse) VisitUpdateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSavedView401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceSavedView401ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSavedView403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceSavedView403ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSavedView404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceSavedView404ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSavedView422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceSavedView422ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSavedView500ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceSavedView500ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RemoveWorkspaceSsoConnectionRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -20002,6 +20951,24 @@ type StrictServerInterface interface {
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(ctx context.Context, request RestoreWorkspaceRequestObject) (RestoreWorkspaceResponseObject, error)
+	// ListWorkspaceSavedViews The saved views this caller can see, in the order they arranged them
+	// (GET /workspaces/{workspaceId}/saved-views)
+	ListWorkspaceSavedViews(ctx context.Context, request ListWorkspaceSavedViewsRequestObject) (ListWorkspaceSavedViewsResponseObject, error)
+	// CreateWorkspaceSavedView Save the current filter, grouping and sort under a name
+	// (POST /workspaces/{workspaceId}/saved-views)
+	CreateWorkspaceSavedView(ctx context.Context, request CreateWorkspaceSavedViewRequestObject) (CreateWorkspaceSavedViewResponseObject, error)
+	// ReorderWorkspaceSavedViews Arrange saved views for the caller alone
+	// (PUT /workspaces/{workspaceId}/saved-views/order)
+	ReorderWorkspaceSavedViews(ctx context.Context, request ReorderWorkspaceSavedViewsRequestObject) (ReorderWorkspaceSavedViewsResponseObject, error)
+	// RemoveWorkspaceSavedView Remove a view, acknowledging who else was holding it
+	// (DELETE /workspaces/{workspaceId}/saved-views/{savedViewId})
+	RemoveWorkspaceSavedView(ctx context.Context, request RemoveWorkspaceSavedViewRequestObject) (RemoveWorkspaceSavedViewResponseObject, error)
+	// GetWorkspaceSavedView One saved view, with everything it points at resolved for this caller
+	// (GET /workspaces/{workspaceId}/saved-views/{savedViewId})
+	GetWorkspaceSavedView(ctx context.Context, request GetWorkspaceSavedViewRequestObject) (GetWorkspaceSavedViewResponseObject, error)
+	// UpdateWorkspaceSavedView Rename a view, re-scope who it is shared with, or replace what it asks for
+	// (PATCH /workspaces/{workspaceId}/saved-views/{savedViewId})
+	UpdateWorkspaceSavedView(ctx context.Context, request UpdateWorkspaceSavedViewRequestObject) (UpdateWorkspaceSavedViewResponseObject, error)
 	// RemoveWorkspaceSsoConnection Remove the workspace single sign-on provider, whichever protocol it uses
 	// (DELETE /workspaces/{workspaceId}/sso)
 	RemoveWorkspaceSsoConnection(ctx context.Context, request RemoveWorkspaceSsoConnectionRequestObject) (RemoveWorkspaceSsoConnectionResponseObject, error)
@@ -22734,6 +23701,187 @@ func (sh *strictHandler) RestoreWorkspace(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RestoreWorkspaceResponseObject); ok {
 		if err := validResponse.VisitRestoreWorkspaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceSavedViews operation middleware
+func (sh *strictHandler) ListWorkspaceSavedViews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceSavedViewsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceSavedViews(ctx, request.(ListWorkspaceSavedViewsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceSavedViews")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceSavedViewsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceSavedViewsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateWorkspaceSavedView operation middleware
+func (sh *strictHandler) CreateWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request CreateWorkspaceSavedViewRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body CreateWorkspaceSavedViewJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateWorkspaceSavedView(ctx, request.(CreateWorkspaceSavedViewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateWorkspaceSavedView")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateWorkspaceSavedViewResponseObject); ok {
+		if err := validResponse.VisitCreateWorkspaceSavedViewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReorderWorkspaceSavedViews operation middleware
+func (sh *strictHandler) ReorderWorkspaceSavedViews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ReorderWorkspaceSavedViewsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body ReorderWorkspaceSavedViewsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReorderWorkspaceSavedViews(ctx, request.(ReorderWorkspaceSavedViewsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReorderWorkspaceSavedViews")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReorderWorkspaceSavedViewsResponseObject); ok {
+		if err := validResponse.VisitReorderWorkspaceSavedViewsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveWorkspaceSavedView operation middleware
+func (sh *strictHandler) RemoveWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId, params RemoveWorkspaceSavedViewParams) {
+	var request RemoveWorkspaceSavedViewRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.SavedViewId = savedViewId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveWorkspaceSavedView(ctx, request.(RemoveWorkspaceSavedViewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveWorkspaceSavedView")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveWorkspaceSavedViewResponseObject); ok {
+		if err := validResponse.VisitRemoveWorkspaceSavedViewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceSavedView operation middleware
+func (sh *strictHandler) GetWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId) {
+	var request GetWorkspaceSavedViewRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.SavedViewId = savedViewId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceSavedView(ctx, request.(GetWorkspaceSavedViewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceSavedView")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceSavedViewResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceSavedViewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateWorkspaceSavedView operation middleware
+func (sh *strictHandler) UpdateWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId) {
+	var request UpdateWorkspaceSavedViewRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.SavedViewId = savedViewId
+
+	var body UpdateWorkspaceSavedViewJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateWorkspaceSavedView(ctx, request.(UpdateWorkspaceSavedViewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateWorkspaceSavedView")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateWorkspaceSavedViewResponseObject); ok {
+		if err := validResponse.VisitUpdateWorkspaceSavedViewResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

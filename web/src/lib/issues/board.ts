@@ -66,18 +66,40 @@ export function groupByState(
 	return options.showEmpty ? groups : groups.filter((group) => group.issues.length > 0);
 }
 
+export function statesInPlay(issues: Issue[]): WorkflowState[] {
+	const seen = new Map<string, WorkflowState>();
+
+	for (const issue of issues) {
+		if (seen.has(issue.state.id)) continue;
+
+		seen.set(issue.state.id, {
+			...issue.state,
+			teamId: issue.teamId,
+			isDefault: false,
+			isCompletion: false,
+		});
+	}
+
+	return [...seen.values()].sort(
+		(a, b) => a.position - b.position || a.name.localeCompare(b.name)
+	);
+}
+
 export function boardFor(
 	issues: Issue[] | undefined,
 	states: WorkflowState[] | undefined,
 	tallies: IssueGroupTally[] | undefined,
-	teamName: string,
+	scopeName: string,
 	options: { showEmpty?: boolean } = {}
 ): IssueBoard {
-	if (!issues || !states) return { kind: "unavailable" };
+	if (!issues) return { kind: "unavailable" };
 
-	if (issues.length === 0) return { kind: "empty", team: teamName };
+	if (issues.length === 0) return { kind: "empty", team: scopeName };
 
-	return { kind: "ready", groups: groupByState(issues, states, tallies, options) };
+	return {
+		kind: "ready",
+		groups: groupByState(issues, states ?? statesInPlay(issues), tallies, options),
+	};
 }
 
 export function countForTab(progress: IssueProgress, tab: IssueTab): number {

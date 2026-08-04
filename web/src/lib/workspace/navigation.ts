@@ -1,9 +1,7 @@
-import Clock from "@lucide/svelte/icons/clock";
 import CircleDot from "@lucide/svelte/icons/circle-dot";
 import Inbox from "@lucide/svelte/icons/inbox";
 import List from "@lucide/svelte/icons/list";
 import Menu from "@lucide/svelte/icons/menu";
-import Target from "@lucide/svelte/icons/target";
 import Zap from "@lucide/svelte/icons/zap";
 import type { IconComponent } from "$lib/utils.js";
 
@@ -34,14 +32,6 @@ export function primaryNav(workspace: string): NavEntry[] {
 		},
 		{ label: "Triage", href: at("/triage"), icon: Zap, count: 12 },
 		{ label: "Issues", href: at("/issues"), icon: List },
-	];
-}
-
-export function savedViews(workspace: string): NavEntry[] {
-	const at = (path: string) => workspacePath(workspace, path);
-	return [
-		{ label: "Urgent & unassigned", href: at("/issues?view=urgent-unassigned"), icon: Target },
-		{ label: "Due this week", href: at("/issues?view=due-this-week"), icon: Clock },
 	];
 }
 

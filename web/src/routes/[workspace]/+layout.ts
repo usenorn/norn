@@ -3,6 +3,7 @@ import { apiFor } from "$lib/api";
 import type { components } from "$lib/api/dashboard.gen";
 import type { TeamCycle } from "$lib/cycles/cycles";
 import type { Project } from "$lib/projects/projects";
+import type { SavedView } from "$lib/views/views";
 import type { Team } from "$lib/team/teams";
 import type { LayoutLoad } from "./$types";
 
@@ -16,6 +17,7 @@ export type WorkspaceScope = {
 	teams: Team[] | null;
 	cycles: TeamCycle[];
 	projects: Project[];
+	views: SavedView[] | null;
 	narrowed: boolean;
 };
 
@@ -33,7 +35,7 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 
 	if (!workspace) error(404, "That workspace does not exist, or you are not a member of it.");
 
-	const [teams, cycles, projects] = await Promise.all([
+	const [teams, cycles, projects, views] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams", {
 			fetch,
 			params: { path: { workspaceId: workspace.id } },
@@ -46,6 +48,10 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 			fetch,
 			params: { path: { workspaceId: workspace.id }, query: { mine: true } },
 		}),
+		api.GET("/workspaces/{workspaceId}/saved-views", {
+			fetch,
+			params: { path: { workspaceId: workspace.id } },
+		}),
 	]);
 
 	return {
@@ -57,6 +63,7 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 		teams: teams.data ?? null,
 		cycles: cycles.data ?? [],
 		projects: projects.data ?? [],
+		views: views.data ?? null,
 	};
 };
 

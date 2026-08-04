@@ -17,6 +17,7 @@ tags:
   - name: teams
   - name: invitations
   - name: issues
+  - name: saved-views
   - name: states
   - name: tokens
   - name: sso
@@ -1472,6 +1473,138 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/saved-views:
+    get:
+      tags: [saved-views]
+      operationId: listWorkspaceSavedViews
+      summary: The saved views this caller can see, in the order they arranged them
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Saved views in the caller's own order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SavedView' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [saved-views]
+      operationId: createWorkspaceSavedView
+      summary: Save the current filter, grouping and sort under a name
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSavedViewRequest' }
+      responses:
+        '201':
+          description: The view that was saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SavedView' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/saved-views/order:
+    put:
+      tags: [saved-views]
+      operationId: reorderWorkspaceSavedViews
+      summary: Arrange saved views for the caller alone
+      description: >-
+        The order belongs to whoever set it. Naming a subset is allowed, so a colleague sharing
+        a new view mid-flight cannot make this fail; anything unnamed keeps its place at the end.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReorderSavedViewsRequest' }
+      responses:
+        '200':
+          description: The saved views in their new order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SavedView' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/saved-views/{savedViewId}:
+    get:
+      tags: [saved-views]
+      operationId: getWorkspaceSavedView
+      summary: One saved view, with everything it points at resolved for this caller
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/SavedViewId'
+      responses:
+        '200':
+          description: The view and the current state of each thing it filters on
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SavedViewDetail' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [saved-views]
+      operationId: updateWorkspaceSavedView
+      summary: Rename a view, re-scope who it is shared with, or replace what it asks for
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/SavedViewId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateSavedViewRequest' }
+      responses:
+        '200':
+          description: The view as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SavedView' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [saved-views]
+      operationId: removeWorkspaceSavedView
+      summary: Remove a view, acknowledging who else was holding it
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/SavedViewId'
+        - name: acknowledgedSharing
+          in: query
+          required: true
+          description: >-
+            The sharing the caller was shown. If someone widened the view while the dialog was
+            open, the removal is refused and names the sharing it actually has now.
+          schema: { $ref: '#/components/schemas/SavedViewSharing' }
+      responses:
+        '204':
+          description: The view is gone, and gone from the sidebar of everyone who held it
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/SavedViewConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/query:
     post:
       tags: [issues]
@@ -2646,6 +2779,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    SavedViewId:
+      name: savedViewId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     LabelId:
       name: labelId
       in: path
@@ -2743,6 +2881,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/ProjectConflictProblem' }
+
+    SavedViewConflict:
+      description: The view refuses the change
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/SavedViewConflictProblem' }
 
     LabelConflict:
       description: The label cannot change without losing or duplicating work
@@ -3550,6 +3694,109 @@ components:
         name: { type: string }
         category: { $ref: '#/components/schemas/StateCategory' }
         position: { type: integer, format: int32 }
+
+    SavedViewSharing:
+      type: string
+      enum: [personal, team, workspace]
+
+    SavedView:
+      type: object
+      required: [id, workspaceId, name, sharing, filter, sort, editable, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        name: { type: string }
+        sharing: { $ref: '#/components/schemas/SavedViewSharing' }
+        teamId: { type: string, format: uuid }
+        teamName: { type: string }
+        createdByAccountId: { type: string, format: uuid }
+        createdByName: { type: string }
+        filter: { $ref: '#/components/schemas/IssueFilter' }
+        sort:
+          type: array
+          items: { $ref: '#/components/schemas/IssueSort' }
+        groupBy: { $ref: '#/components/schemas/IssueGroupBy' }
+        editable:
+          type: boolean
+          description: >-
+            Whether this caller may change this view. A shared view is evaluated with the
+            permissions of whoever opens it, so two people may legitimately be shown different
+            results, and different rights, for one view.
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    IssueFilterReferenceState:
+      type: string
+      description: >-
+        resolved - it exists and the caller may see it. restricted - it exists but sits on a team
+        the caller cannot see, so it is named to nobody. missing - nothing in this workspace has
+        that id any more.
+      enum: [resolved, restricted, missing]
+
+    IssueFilterReference:
+      type: object
+      required: [field, value, state]
+      properties:
+        field: { $ref: '#/components/schemas/IssueFilterField' }
+        value: { type: string }
+        state: { $ref: '#/components/schemas/IssueFilterReferenceState' }
+        name:
+          type: string
+          description: Present only when the state is resolved.
+
+    SavedViewDetail:
+      type: object
+      required: [view, references]
+      properties:
+        view: { $ref: '#/components/schemas/SavedView' }
+        references:
+          type: array
+          items: { $ref: '#/components/schemas/IssueFilterReference' }
+
+    CreateSavedViewRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        sharing: { $ref: '#/components/schemas/SavedViewSharing' }
+        teamId: { type: string, format: uuid }
+        filter: { $ref: '#/components/schemas/IssueFilter' }
+        sort:
+          type: array
+          items: { $ref: '#/components/schemas/IssueSort' }
+        groupBy: { $ref: '#/components/schemas/IssueGroupBy' }
+
+    UpdateSavedViewRequest:
+      type: object
+      properties:
+        name: { type: string }
+        sharing: { $ref: '#/components/schemas/SavedViewSharing' }
+        teamId: { type: string, format: uuid }
+        filter: { $ref: '#/components/schemas/IssueFilter' }
+        sort:
+          type: array
+          items: { $ref: '#/components/schemas/IssueSort' }
+        groupBy: { $ref: '#/components/schemas/IssueGroupBy' }
+
+    ReorderSavedViewsRequest:
+      type: object
+      required: [savedViewIds]
+      properties:
+        savedViewIds:
+          type: array
+          items: { type: string, format: uuid }
+
+    SavedViewConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [saved_view_shared]
+            sharing: { $ref: '#/components/schemas/SavedViewSharing' }
+            teamName: { type: string }
 
     IssueFilter:
       type: object

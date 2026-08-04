@@ -29,7 +29,9 @@
 		tabLabels,
 		type Issue,
 	} from "$lib/issues/board";
-	import { boardQuery, type IssueGroupTally } from "$lib/issues/filter";
+	import type { IssueGroupTally } from "$lib/issues/filter";
+	import { brokenIn } from "$lib/views/applied";
+	import { referenceLabel, scopeOf, viewsPath } from "$lib/views/views";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { issuesPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -79,10 +81,14 @@
 	);
 
 	const tallies = $derived<IssueGroupTally[] | undefined>(preview?.groups ?? data.groups);
+
+	const applied = $derived(data.applied);
+	const broken = $derived(brokenIn(applied));
+	const scopeName = $derived(applied.kind === "applied" ? applied.view.name : (team?.name ?? ""));
 	const paging = $derived<Paging>(preview?.paging ?? localPaging);
 
 	const board = $derived(
-		boardFor(issues, states, tallies, team?.name ?? "", { showEmpty: data.showEmpty })
+		boardFor(issues, states, tallies, scopeName, { showEmpty: data.showEmpty })
 	);
 	const groups = $derived(board.kind === "ready" ? board.groups : []);
 	const assigneeNames = $derived(
@@ -90,9 +96,51 @@
 	);
 	const flat = $derived(groups.flatMap((group) => group.issues));
 
+	let saving = $state(false);
+	let viewName = $state("");
+	let savingView = $state(false);
+
+	async function saveView(event: SubmitEvent) {
+		event.preventDefault();
+
+		if (!viewName.trim()) return;
+
+		savingView = true;
+		failed = false;
+
+		try {
+			const { error } = await api.POST("/workspaces/{workspaceId}/saved-views", {
+				params: { path: { workspaceId: data.workspace.id } },
+				body: {
+					name: viewName.trim(),
+					sharing: "personal",
+					filter: data.query.filter,
+					sort: data.query.sort,
+					groupBy: data.query.groupBy,
+				},
+			});
+
+			if (error) {
+				failed = true;
+
+				return;
+			}
+
+			viewName = "";
+			saving = false;
+			await invalidateAll();
+		} catch {
+			failed = true;
+		} finally {
+			savingView = false;
+		}
+	}
+
 	const params = $derived.by(() => {
 		const q = new URLSearchParams();
-		if (team) q.set("team", team.key);
+		if (applied.kind === "applied") q.set("view", applied.view.id);
+		else if (applied.kind === "gone") q.set("view", applied.id);
+		else if (team) q.set("team", team.key);
 		if (data.tab !== "open") q.set("tab", data.tab);
 		if (data.layout !== "list") q.set("layout", data.layout);
 		if (data.showEmpty) q.set("empty", "1");
@@ -179,8 +227,7 @@
 	}
 
 	async function loadMore() {
-		if (!team || !nextCursor || !loaded) return;
-
+		if (!nextCursor || !loaded) return;
 
 		const source = base;
 		localPaging = { kind: "loading" };
@@ -188,7 +235,7 @@
 		try {
 			const { data: next, error } = await api.POST("/workspaces/{workspaceId}/issues/query", {
 				params: { path: { workspaceId: data.workspace.id } },
-				body: boardQuery(team.id, data.tab, nextCursor),
+				body: { ...data.query, cursor: nextCursor },
 			});
 
 			if (error || !next) {
@@ -369,7 +416,14 @@
 				<List class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 				<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Issues</h1>
 
-				{#if data.teams.length > 1 && team}
+				{#if applied.kind === "applied"}
+					<span class="flex min-w-0 shrink items-center gap-1.5">
+						<span class="truncate text-md text-ink-900">{applied.view.name}</span>
+						<span class="shrink-0 font-mono text-2xs tracking-eyebrow text-ink-600 uppercase">
+							{scopeOf(applied.view)}
+						</span>
+					</span>
+				{:else if data.teams.length > 1 && team}
 					<DropdownMenu.Root>
 						<DropdownMenu.Trigger>
 							{#snippet child({ props })}
@@ -400,7 +454,7 @@
 					<span class="shrink-0 text-md text-muted-foreground">{team.name}</span>
 				{/if}
 
-				{#if issues && progress}
+				{#if issues}
 					<div role="tablist" class="ml-1 hidden shrink-0 items-center gap-3 sm:flex">
 						{#each issueTabs as tab (tab)}
 							<a
@@ -411,9 +465,11 @@
 								class="relative inline-flex h-7.5 items-center gap-1.5 text-md font-medium whitespace-nowrap text-muted-foreground transition-colors duration-110 ease-out after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-transparent after:transition-colors after:duration-110 after:ease-out hover:text-ink-900 hover:after:bg-line-strong data-[active=true]:text-ink-900 data-[active=true]:after:bg-primary"
 							>
 								{tabLabels[tab]}
-								<span class="font-mono text-2xs text-muted-foreground tabular-nums">
-									{progress ? countForTab(progress, tab) : ""}
-								</span>
+								{#if progress && applied.kind !== "applied"}
+									<span class="font-mono text-2xs text-muted-foreground tabular-nums">
+										{countForTab(progress, tab)}
+									</span>
+								{/if}
 							</a>
 						{/each}
 					</div>
@@ -471,7 +527,7 @@
 			</form>
 		{/if}
 
-		<div class="flex h-8.5 items-center gap-3 overflow-hidden border-t border-line-subtle pr-3 pl-3.5">
+		<div class="flex min-h-8.5 flex-wrap items-center gap-x-3 gap-y-1 border-t border-line-subtle py-1 pr-3 pl-3.5">
 			<span class="text-sm whitespace-nowrap text-muted-foreground">
 				Grouped by {team ? `${team.name} states` : "state"}
 			</span>
@@ -482,18 +538,110 @@
 			>
 				{data.showEmpty ? "Hide empty states" : "Show empty states"}
 			</a>
-			{#if team}
+			{#if applied.kind === "applied"}
+				{#each applied.references as reference (reference.field + reference.value)}
+					<span
+						data-missing={reference.state !== "resolved"}
+						class="shrink-0 rounded-sm border border-line-default px-1.5 py-0.5 text-sm whitespace-nowrap text-muted-foreground data-[missing=true]:border-warning data-[missing=true]:text-warning"
+					>
+						{referenceLabel(reference)}
+					</span>
+				{/each}
 				<a
-					href={at(`/settings/teams/${team.key.toLowerCase()}`)}
+					href={linkWith({ view: null })}
 					class="text-sm whitespace-nowrap text-link underline-offset-2 hover:text-link-hover hover:underline"
 				>
-					Edit states
+					Clear view
 				</a>
+				<a
+					href={viewsPath(slug)}
+					class="text-sm whitespace-nowrap text-link underline-offset-2 hover:text-link-hover hover:underline"
+				>
+					Manage views
+				</a>
+			{:else}
+				<button
+					type="button"
+					onclick={() => (saving = true)}
+					class="text-sm whitespace-nowrap text-link underline-offset-2 hover:text-link-hover hover:underline"
+				>
+					Save as view
+				</button>
+				{#if team}
+					<a
+						href={at(`/settings/teams/${team.key.toLowerCase()}`)}
+						class="text-sm whitespace-nowrap text-link underline-offset-2 hover:text-link-hover hover:underline"
+					>
+						Edit states
+					</a>
+				{/if}
 			{/if}
 		</div>
 	</div>
 
 	<div class="relative flex min-h-0 flex-1 flex-col">
+		{#if saving}
+			<div class="px-4 pt-3">
+				<form onsubmit={saveView} class="flex flex-wrap items-end gap-2">
+					<div class="flex min-w-0 flex-[1_1_200px] flex-col gap-1">
+						<label for="save-view-name" class="text-sm text-muted-foreground">
+							Save what you are looking at, for yourself
+						</label>
+						<Input
+							id="save-view-name"
+							bind:value={viewName}
+							disabled={savingView}
+							placeholder="Urgent and unassigned"
+							class="h-7.5"
+						/>
+					</div>
+					<Button type="submit" size="sm" disabled={savingView || !viewName.trim()}>
+						{savingView ? "Saving" : "Save view"}
+					</Button>
+					<Button
+						type="button"
+						variant="secondary"
+						size="sm"
+						disabled={savingView}
+						onclick={() => (saving = false)}
+					>
+						Cancel
+					</Button>
+				</form>
+			</div>
+		{/if}
+
+		{#if applied.kind === "gone"}
+			<div class="px-4 pt-3">
+				<Alert.Root>
+					<CircleX aria-hidden="true" />
+					<Alert.Title>That view is gone</Alert.Title>
+					<Alert.Description>
+						Someone removed it, or stopped sharing it with you.
+						<a href={linkWith({ view: null })} class="text-link underline-offset-2 hover:underline">
+							Show all issues instead
+						</a>.
+					</Alert.Description>
+				</Alert.Root>
+			</div>
+		{/if}
+
+		{#if broken.length > 0}
+			<div class="px-4 pt-3">
+				<Alert.Root>
+					<CircleX aria-hidden="true" />
+					<Alert.Title>This view points at something that is gone</Alert.Title>
+					<Alert.Description>
+						{broken.length === 1 ? "One thing" : `${broken.length} things`} this view filters on no
+						longer exists, so it may return less than it used to.
+						<a href={viewsPath(slug)} class="text-link underline-offset-2 hover:underline">
+							Manage views
+						</a>.
+					</Alert.Description>
+				</Alert.Root>
+			</div>
+		{/if}
+
 		{#if failed}
 			<div class="px-4 pt-3">
 				<Alert.Root variant="destructive">
@@ -511,7 +659,7 @@
 					Nothing changed. Wait a moment and try again.
 				</p>
 			</div>
-		{:else if board.kind === "no_teams" || !team}
+		{:else if board.kind === "no_teams"}
 			<div class="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
 				<p class="text-md font-medium tracking-snug text-ink-900">No teams yet</p>
 				<p class="max-w-75 text-md leading-normal text-muted-foreground">
@@ -525,7 +673,13 @@
 					Nothing {data.tab === "all" ? "" : `${tabLabels[data.tab].toLowerCase()} `}in {board.team}
 				</p>
 				<p class="max-w-75 text-md leading-normal text-muted-foreground">
-					Raise the first one above, and it starts in whichever state this team files new work into.
+					{#if applied.kind === "applied"}
+						Nothing you can see matches this view right now. Someone else opening it may well see
+						something &mdash; it is evaluated against whichever teams each person can see.
+					{:else}
+						Raise the first one above, and it starts in whichever state this team files new work
+						into.
+					{/if}
 				</p>
 			</div>
 		{:else if data.layout === "list"}

@@ -930,6 +930,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/saved-views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The saved views this caller can see, in the order they arranged them */
+        get: operations["listWorkspaceSavedViews"];
+        put?: never;
+        /** Save the current filter, grouping and sort under a name */
+        post: operations["createWorkspaceSavedView"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/saved-views/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Arrange saved views for the caller alone
+         * @description The order belongs to whoever set it. Naming a subset is allowed, so a colleague sharing a new view mid-flight cannot make this fail; anything unnamed keeps its place at the end.
+         */
+        put: operations["reorderWorkspaceSavedViews"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/saved-views/{savedViewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One saved view, with everything it points at resolved for this caller */
+        get: operations["getWorkspaceSavedView"];
+        put?: never;
+        post?: never;
+        /** Remove a view, acknowledging who else was holding it */
+        delete: operations["removeWorkspaceSavedView"];
+        options?: never;
+        head?: never;
+        /** Rename a view, re-scope who it is shared with, or replace what it asks for */
+        patch: operations["updateWorkspaceSavedView"];
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/query": {
         parameters: {
             query?: never;
@@ -2112,6 +2169,74 @@ export interface components {
             /** Format: int32 */
             position: number;
         };
+        /** @enum {string} */
+        SavedViewSharing: "personal" | "team" | "workspace";
+        SavedView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+            sharing: components["schemas"]["SavedViewSharing"];
+            /** Format: uuid */
+            teamId?: string;
+            teamName?: string;
+            /** Format: uuid */
+            createdByAccountId?: string;
+            createdByName?: string;
+            filter: components["schemas"]["IssueFilter"];
+            sort: components["schemas"]["IssueSort"][];
+            groupBy?: components["schemas"]["IssueGroupBy"];
+            /** @description Whether this caller may change this view. A shared view is evaluated with the permissions of whoever opens it, so two people may legitimately be shown different results, and different rights, for one view. */
+            editable: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /**
+         * @description resolved - it exists and the caller may see it. restricted - it exists but sits on a team the caller cannot see, so it is named to nobody. missing - nothing in this workspace has that id any more.
+         * @enum {string}
+         */
+        IssueFilterReferenceState: "resolved" | "restricted" | "missing";
+        IssueFilterReference: {
+            field: components["schemas"]["IssueFilterField"];
+            value: string;
+            state: components["schemas"]["IssueFilterReferenceState"];
+            /** @description Present only when the state is resolved. */
+            name?: string;
+        };
+        SavedViewDetail: {
+            view: components["schemas"]["SavedView"];
+            references: components["schemas"]["IssueFilterReference"][];
+        };
+        CreateSavedViewRequest: {
+            name: string;
+            sharing?: components["schemas"]["SavedViewSharing"];
+            /** Format: uuid */
+            teamId?: string;
+            filter?: components["schemas"]["IssueFilter"];
+            sort?: components["schemas"]["IssueSort"][];
+            groupBy?: components["schemas"]["IssueGroupBy"];
+        };
+        UpdateSavedViewRequest: {
+            name?: string;
+            sharing?: components["schemas"]["SavedViewSharing"];
+            /** Format: uuid */
+            teamId?: string;
+            filter?: components["schemas"]["IssueFilter"];
+            sort?: components["schemas"]["IssueSort"][];
+            groupBy?: components["schemas"]["IssueGroupBy"];
+        };
+        ReorderSavedViewsRequest: {
+            savedViewIds: string[];
+        };
+        SavedViewConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "saved_view_shared";
+            sharing?: components["schemas"]["SavedViewSharing"];
+            teamName?: string;
+        };
         /** @description A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at. */
         IssueFilter: {
             all?: components["schemas"]["IssueFilter"][];
@@ -2804,6 +2929,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["ProjectConflictProblem"];
             };
         };
+        /** @description The view refuses the change */
+        SavedViewConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["SavedViewConflictProblem"];
+            };
+        };
         /** @description The label cannot change without losing or duplicating work */
         LabelConflict: {
             headers: {
@@ -2922,6 +3056,7 @@ export interface components {
         IssueId: string;
         CycleId: string;
         ProjectId: string;
+        SavedViewId: string;
         LabelId: string;
         GroupId: string;
         TeamId: string;
@@ -4924,6 +5059,179 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceSavedViews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved views in the caller's own order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedView"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceSavedView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSavedViewRequest"];
+            };
+        };
+        responses: {
+            /** @description The view that was saved */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedView"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    reorderWorkspaceSavedViews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderSavedViewsRequest"];
+            };
+        };
+        responses: {
+            /** @description The saved views in their new order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedView"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceSavedView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                savedViewId: components["parameters"]["SavedViewId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The view and the current state of each thing it filters on */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedViewDetail"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceSavedView: {
+        parameters: {
+            query: {
+                /** @description The sharing the caller was shown. If someone widened the view while the dialog was open, the removal is refused and names the sharing it actually has now. */
+                acknowledgedSharing: components["schemas"]["SavedViewSharing"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                savedViewId: components["parameters"]["SavedViewId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The view is gone, and gone from the sidebar of everyone who held it */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["SavedViewConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceSavedView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                savedViewId: components["parameters"]["SavedViewId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSavedViewRequest"];
+            };
+        };
+        responses: {
+            /** @description The view as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedView"];
                 };
             };
             401: components["responses"]["Problem"];

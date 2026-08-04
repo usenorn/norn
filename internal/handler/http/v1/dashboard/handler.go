@@ -29,6 +29,7 @@ type handler struct {
 	ssoConnections service.SSOConnections
 	cycles         service.Cycles
 	projects       service.Projects
+	savedViews     service.SavedViews
 	blobs          repository.Blob
 	app            config.App
 	instance       config.Instance
@@ -50,6 +51,7 @@ func New(
 	ssoConnections service.SSOConnections,
 	cycles service.Cycles,
 	projects service.Projects,
+	savedViews service.SavedViews,
 	blobs repository.Blob,
 	app config.App,
 	instance config.Instance,
@@ -70,6 +72,7 @@ func New(
 		ssoConnections: ssoConnections,
 		cycles:         cycles,
 		projects:       projects,
+		savedViews:     savedViews,
 		blobs:          blobs,
 		app:            app,
 		instance:       instance,
