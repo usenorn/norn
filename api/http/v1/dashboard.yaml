@@ -1888,22 +1888,42 @@ paths:
     get:
       tags: [issues]
       operationId: listWorkspaceIssueActivity
-      summary: List what has happened to an issue, newest first
+      summary: Read what has happened to an issue, one event per operation
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
         - $ref: '#/components/parameters/IssueId'
-        - name: limit
-          in: query
-          schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
-        - name: cursor
-          in: query
-          schema: { type: string }
+        - $ref: '#/components/parameters/ActivityLimit'
+        - $ref: '#/components/parameters/ActivityCursor'
+        - $ref: '#/components/parameters/ActivityOrder'
       responses:
         '200':
-          description: A page of activity
+          description: A page of events
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/IssueActivityPage' }
+              schema: { $ref: '#/components/schemas/ActivityPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/projects/{projectId}/activity:
+    get:
+      tags: [projects]
+      operationId: listWorkspaceProjectActivity
+      summary: Read what has happened to a project, one event per operation
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/ActivityLimit'
+        - $ref: '#/components/parameters/ActivityCursor'
+        - $ref: '#/components/parameters/ActivityOrder'
+      responses:
+        '200':
+          description: A page of events
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActivityPage' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -3251,6 +3271,19 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    ActivityLimit:
+      name: limit
+      in: query
+      schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+    ActivityCursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    ActivityOrder:
+      name: order
+      in: query
+      description: Oldest first tells the story forward; newest first shows what just happened.
+      schema: { type: string, enum: [oldest, newest] }
     AttachmentId:
       name: attachmentId
       in: path
@@ -4296,48 +4329,76 @@ components:
         issueId: { type: string, format: uuid }
         destination: { $ref: '#/components/schemas/CycleRollover' }
 
-    IssueActivity:
+    ActivityEvent:
       type: object
-      required: [id, issueId, kind, createdAt]
+      description: Everything one operation changed about one subject, read as a single event.
+      required: [id, subjectKind, actorKind, changes, createdAt]
       properties:
         id: { type: string, format: uuid }
+        subjectKind: { $ref: '#/components/schemas/ActivitySubjectKind' }
         issueId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
         actorAccountId: { type: string, format: uuid }
         actorName: { type: string }
-        kind:
-          type: string
-          enum:
-            - created
-            - state_changed
-            - property_changed
-            - team_moved
-            - archived
-            - unarchived
-            - deleted
-            - restored
-            - child_added
-            - child_removed
-            - relation_added
-            - relation_removed
-            - triaged
-            - commented
-            - comment_deleted
-        fromState: { type: string }
-        toState: { type: string }
+        actorKind: { $ref: '#/components/schemas/ActivityActorKind' }
+        bulkActionId: { type: string, format: uuid }
+        changes:
+          type: array
+          items: { $ref: '#/components/schemas/ActivityChange' }
+        createdAt: { type: string, format: date-time }
+
+    ActivitySubjectKind:
+      type: string
+      enum: [issue, project]
+
+    ActivityActorKind:
+      type: string
+      description: Who made the change — a person signed in, an integration, an agent, or Norn itself.
+      enum: [user, token, agent, system]
+
+    ActivityChange:
+      type: object
+      required: [id, kind]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/ActivityKind' }
         field: { type: string }
         fromValue: { type: string }
         toValue: { type: string }
+        fromState: { type: string }
+        toState: { type: string }
         version: { type: integer, format: int32 }
-        bulkActionId: { type: string, format: uuid }
-        createdAt: { type: string, format: date-time }
 
-    IssueActivityPage:
+    ActivityKind:
+      type: string
+      enum:
+        - created
+        - state_changed
+        - property_changed
+        - team_moved
+        - archived
+        - unarchived
+        - deleted
+        - restored
+        - child_added
+        - child_removed
+        - relation_added
+        - relation_removed
+        - triaged
+        - commented
+        - comment_deleted
+        - member_added
+        - member_removed
+        - attachment_added
+        - attachment_removed
+
+    ActivityPage:
       type: object
-      required: [entries]
+      required: [events]
       properties:
-        entries:
+        events:
           type: array
-          items: { $ref: '#/components/schemas/IssueActivity' }
+          items: { $ref: '#/components/schemas/ActivityEvent' }
         nextCursor: { type: string }
 
     Issue:

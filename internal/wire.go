@@ -24,6 +24,7 @@ import (
 	"github.com/usenorn/norn/internal/pkg/valkey"
 	"github.com/usenorn/norn/internal/repository"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
+	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	apitokenrepo "github.com/usenorn/norn/internal/repository/apitoken"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	blobrepo "github.com/usenorn/norn/internal/repository/blob"
@@ -36,7 +37,6 @@ import (
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
-	issueactivityrepo "github.com/usenorn/norn/internal/repository/issueactivity"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
 	issuefilterreferencerepo "github.com/usenorn/norn/internal/repository/issuefilterreference"
 	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
@@ -116,7 +116,7 @@ var baseSet = wire.NewSet(
 	passwordresetrepo.Set,
 	signuprepo.Set,
 	issuerepo.Set,
-	issueactivityrepo.Set,
+	activityrepo.Set,
 	issuerelationrepo.Set,
 	bulkactionrepo.Set,
 	cyclerepo.Set,

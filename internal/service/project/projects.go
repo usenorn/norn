@@ -17,6 +17,7 @@ type projectsService struct {
 	projects    repository.Project
 	members     repository.ProjectMember
 	statuses    repository.ProjectStatusUpdate
+	activity    repository.Activity
 	accounts    repository.Account
 	memberships repository.Membership
 	authorizer  service.Authorizer
@@ -27,6 +28,7 @@ func New(
 	projects repository.Project,
 	members repository.ProjectMember,
 	statuses repository.ProjectStatusUpdate,
+	activity repository.Activity,
 	accounts repository.Account,
 	memberships repository.Membership,
 	authorizer service.Authorizer,
@@ -36,6 +38,7 @@ func New(
 		projects:    projects,
 		members:     members,
 		statuses:    statuses,
+		activity:    activity,
 		accounts:    accounts,
 		memberships: memberships,
 		authorizer:  authorizer,
@@ -112,8 +115,19 @@ func (s *projectsService) Create(
 		project.LeadAccountID = *input.LeadAccountID
 	}
 
-	created, err := s.projects.Create(ctx, project)
-	if err != nil {
+	var created entity.Project
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		created, err = s.projects.Create(ctx, project)
+		if err != nil {
+			return err
+		}
+
+		return s.record(ctx, created, decision, entity.Activity{
+			Kind:    entity.ActivityKindCreated,
+			ToValue: created.Name,
+		})
+	}); err != nil {
 		return service.ProjectView{}, err
 	}
 
@@ -240,7 +254,8 @@ func (s *projectsService) Update(
 		return service.ProjectView{}, err
 	}
 
-	if _, err := s.writable(ctx, workspaceID, projectID, decision); err != nil {
+	before, err := s.writable(ctx, workspaceID, projectID, decision)
+	if err != nil {
 		return service.ProjectView{}, err
 	}
 
@@ -293,8 +308,16 @@ func (s *projectsService) Update(
 		settings.TargetOn = *input.TargetOn
 	}
 
-	updated, err := s.projects.UpdateSettings(ctx, projectID, settings)
-	if err != nil {
+	var updated entity.Project
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		updated, err = s.projects.UpdateSettings(ctx, projectID, settings)
+		if err != nil {
+			return err
+		}
+
+		return s.recordSettings(ctx, before, updated, decision)
+	}); err != nil {
 		return service.ProjectView{}, err
 	}
 
@@ -325,16 +348,86 @@ func (s *projectsService) SetState(
 		})
 	}
 
-	if _, err := s.writable(ctx, workspaceID, projectID, decision); err != nil {
-		return service.ProjectView{}, err
-	}
-
-	updated, err := s.projects.SetState(ctx, projectID, state)
+	before, err := s.writable(ctx, workspaceID, projectID, decision)
 	if err != nil {
 		return service.ProjectView{}, err
 	}
 
+	var updated entity.Project
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		updated, err = s.projects.SetState(ctx, projectID, state)
+		if err != nil {
+			return err
+		}
+
+		if before.State == updated.State {
+			return nil
+		}
+
+		return s.record(ctx, updated, decision, entity.Activity{
+			Kind:      entity.ActivityKindStateChanged,
+			FromState: string(before.State),
+			ToState:   string(updated.State),
+		})
+	}); err != nil {
+		return service.ProjectView{}, err
+	}
+
 	return s.view(ctx, updated, decision.Scope)
+}
+
+func (s *projectsService) record(
+	ctx context.Context,
+	project entity.Project,
+	decision entity.Decision,
+	entry entity.Activity,
+) error {
+	entry.WorkspaceID = project.WorkspaceID
+	entry.Subject = entity.ProjectSubject(project.ID)
+	entry.ActorAccountID = decision.Actor.AccountID
+	entry.ActorKind = decision.Actor.Kind
+
+	return s.activity.Record(ctx, entry)
+}
+
+func (s *projectsService) recordSettings(
+	ctx context.Context,
+	before, after entity.Project,
+	decision entity.Decision,
+) error {
+	changes := []struct {
+		field string
+		from  string
+		to    string
+	}{
+		{entity.ActivityFieldName, before.Name, after.Name},
+		{entity.IssueFieldDescription, "", ""},
+		{entity.ActivityFieldLead, before.LeadName, after.LeadName},
+		{entity.ActivityFieldTarget, before.TargetOn, after.TargetOn},
+	}
+
+	for index, entry := range changes {
+		unchanged := entry.from == entry.to
+		if index == 1 {
+			unchanged = before.Description == after.Description
+		}
+
+		if unchanged {
+			continue
+		}
+
+		if err := s.record(ctx, after, decision, entity.Activity{
+			Kind:      entity.ActivityKindPropertyChanged,
+			Field:     entry.field,
+			FromValue: entry.from,
+			ToValue:   entry.to,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *projectsService) Archive(
@@ -359,8 +452,16 @@ func (s *projectsService) Archive(
 		return service.ProjectView{}, entity.ErrProjectNotFinished
 	}
 
-	archived, err := s.projects.Archive(ctx, projectID, time.Now().UTC())
-	if err != nil {
+	var archived entity.Project
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		archived, err = s.projects.Archive(ctx, projectID, time.Now().UTC())
+		if err != nil {
+			return err
+		}
+
+		return s.record(ctx, archived, decision, entity.Activity{Kind: entity.ActivityKindArchived})
+	}); err != nil {
 		return service.ProjectView{}, err
 	}
 
@@ -385,8 +486,16 @@ func (s *projectsService) Unarchive(
 		return service.ProjectView{}, err
 	}
 
-	restored, err := s.projects.Unarchive(ctx, projectID)
-	if err != nil {
+	var restored entity.Project
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		restored, err = s.projects.Unarchive(ctx, projectID)
+		if err != nil {
+			return err
+		}
+
+		return s.record(ctx, restored, decision, entity.Activity{Kind: entity.ActivityKindUnarchived})
+	}); err != nil {
 		return service.ProjectView{}, err
 	}
 
@@ -476,7 +585,8 @@ func (s *projectsService) AddMember(
 		return service.ProjectMemberView{}, err
 	}
 
-	if _, err := s.writable(ctx, workspaceID, projectID, decision); err != nil {
+	project, err := s.writable(ctx, workspaceID, projectID, decision)
+	if err != nil {
 		return service.ProjectMemberView{}, err
 	}
 
@@ -489,12 +599,24 @@ func (s *projectsService) AddMember(
 		return service.ProjectMemberView{}, entity.ErrAccountDeactivated
 	}
 
-	created, err := s.members.Create(ctx, entity.ProjectMembership{
-		WorkspaceID: workspaceID,
-		ProjectID:   projectID,
-		AccountID:   accountID,
-	})
-	if err != nil {
+	var created entity.ProjectMembership
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		created, err = s.members.Create(ctx, entity.ProjectMembership{
+			WorkspaceID: workspaceID,
+			ProjectID:   projectID,
+			AccountID:   accountID,
+		})
+		if err != nil {
+			return err
+		}
+
+		return s.record(ctx, project, decision, entity.Activity{
+			Kind:    entity.ActivityKindMemberAdded,
+			Field:   entity.ActivityFieldMember,
+			ToValue: account.DisplayName,
+		})
+	}); err != nil {
 		return service.ProjectMemberView{}, err
 	}
 
@@ -514,11 +636,27 @@ func (s *projectsService) RemoveMember(
 		return err
 	}
 
-	if _, err := s.writable(ctx, workspaceID, projectID, decision); err != nil {
+	project, err := s.writable(ctx, workspaceID, projectID, decision)
+	if err != nil {
 		return err
 	}
 
-	return s.members.Delete(ctx, projectID, accountID)
+	account, err := s.accounts.GetByID(ctx, accountID)
+	if err != nil {
+		return err
+	}
+
+	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if err := s.members.Delete(ctx, projectID, accountID); err != nil {
+			return err
+		}
+
+		return s.record(ctx, project, decision, entity.Activity{
+			Kind:      entity.ActivityKindMemberRemoved,
+			Field:     entity.ActivityFieldMember,
+			FromValue: account.DisplayName,
+		})
+	})
 }
 
 func (s *projectsService) PostStatus(
@@ -569,4 +707,49 @@ func (s *projectsService) ListStatus(
 	}
 
 	return s.statuses.ListByProjectID(ctx, projectID)
+}
+
+func (s *projectsService) Activity(
+	ctx context.Context,
+	workspaceID, projectID uuid.UUID,
+	input service.ListActivityInput,
+) (service.ActivityPage, error) {
+	if _, err := s.decide(ctx, workspaceID, entity.ActionRead); err != nil {
+		return service.ActivityPage{}, err
+	}
+
+	project, err := s.projects.GetByID(ctx, workspaceID, projectID)
+	if err != nil {
+		return service.ActivityPage{}, err
+	}
+
+	page := entity.ActivityPage{Limit: input.Limit, Order: input.Order}.Normalized()
+
+	if input.Cursor != "" {
+		cursor, err := entity.DecodeActivityCursor(input.Cursor)
+		if err != nil {
+			return service.ActivityPage{}, entity.NewValidationError(entity.FieldError{
+				Field: "cursor",
+				Code:  entity.ValidationCodeUnsupportedValue,
+			})
+		}
+
+		page.Cursor = &cursor
+	}
+
+	events, err := s.activity.ListBySubject(ctx, entity.ProjectSubject(project.ID), page.Lookahead())
+	if err != nil {
+		return service.ActivityPage{}, err
+	}
+
+	if len(events) <= page.Limit {
+		return service.ActivityPage{Events: events}, nil
+	}
+
+	events = events[:page.Limit]
+
+	return service.ActivityPage{
+		Events:     events,
+		NextCursor: events[len(events)-1].Cursor().Encode(),
+	}, nil
 }

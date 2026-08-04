@@ -21,7 +21,6 @@
 	import { cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import {
-		activityLine,
 		issueFailureMessage,
 		priorities,
 		priorityLabel,
@@ -44,6 +43,8 @@
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import IssueRelations from "$lib/issues/issue-relations.svelte";
 	import CommentThreadView from "$lib/comments/comment-thread.svelte";
+	import ActivityFeedView from "$lib/activity/activity-feed.svelte";
+	import type { ActivityFeed } from "$lib/activity/activity";
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
@@ -73,7 +74,12 @@
 		type LabelFailure,
 	} from "$lib/labels/labels";
 	import { workspacePath } from "$lib/workspace/navigation";
-	import { attachmentPreviewStates, commentPreviewStates, issueDetailPreviewStates } from "./preview";
+	import {
+		activityPreviewStates,
+		attachmentPreviewStates,
+		commentPreviewStates,
+		issueDetailPreviewStates,
+	} from "./preview";
 	import type { IssueDetail } from "./+page";
 	import type { PageProps } from "./$types";
 
@@ -87,6 +93,11 @@
 	const attachmentPreview = $derived(
 		import.meta.env.DEV
 			? attachmentPreviewStates[page.url.searchParams.get("attachments") ?? ""]
+			: undefined
+	);
+	const activityPreview = $derived(
+		import.meta.env.DEV
+			? activityPreviewStates[page.url.searchParams.get("activity") ?? ""]
 			: undefined
 	);
 	const commentPreview = $derived(
@@ -103,6 +114,7 @@
 	let commentFailure = $state<CommentFailure | null>(null);
 	let unreachable = $state.raw<CommentMention[]>([]);
 	let loadedComments = $state.raw<CommentThread | null>(null);
+	let loadedActivity = $state.raw<ActivityFeed | null>(null);
 	let commentUploads = $state.raw<UploadTask[]>([]);
 	let bodyUploads = $state.raw<UploadTask[]>([]);
 	let attachmentFailure = $state<AttachmentFailure | null>(null);
@@ -131,6 +143,9 @@
 	const attachments = $derived<AttachmentPanel>(
 		attachmentPreview?.panel ??
 			(ready ? ready.attachments : ({ kind: "loading" } as AttachmentPanel))
+	);
+	const activity = $derived<ActivityFeed>(
+		activityPreview?.feed ?? loadedActivity ?? ready?.activity ?? { kind: "loading" }
 	);
 	const shownCommentUploads = $derived(attachmentPreview?.uploads ?? commentUploads);
 
@@ -585,6 +600,36 @@
 			loadedComments = {
 				kind: "ready",
 				comments: [...base.comments, ...page.comments],
+				nextCursor: page.nextCursor,
+			};
+		});
+	}
+
+	async function moreActivity(): Promise<void> {
+		const base = activity;
+
+		if (!issue || base.kind !== "ready" || !base.nextCursor) return;
+
+		await act(async () => {
+			const { data: page, error } = await api.GET(
+				"/workspaces/{workspaceId}/issues/{issueId}/activity",
+				{
+					params: {
+						path: { workspaceId: data.workspace.id, issueId: issue.id },
+						query: { cursor: base.nextCursor },
+					},
+				}
+			);
+
+			if (error || !page) {
+				commentFailure = readCommentFailure(error);
+
+				return;
+			}
+
+			loadedActivity = {
+				kind: "ready",
+				events: [...base.events, ...page.events],
 				nextCursor: page.nextCursor,
 			};
 		});
@@ -1379,26 +1424,15 @@
 					onmore={moreComments}
 				/>
 
-				<section class="flex flex-col gap-2">
+				<section class="flex flex-col gap-3">
 					<h2 class="text-sm font-medium text-ink-900">Activity</h2>
-
-					{#if ready.activity.length === 0}
-						<p class="text-sm text-muted-foreground">Nothing has happened yet.</p>
-					{:else}
-						<ol class="flex flex-col gap-2">
-							{#each ready.activity as entry (entry.id)}
-								<li class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
-									<span class="text-ink-900">{activityLine(entry)}</span>
-									{#if entry.actorName}
-										<span class="text-muted-foreground">by {entry.actorName}</span>
-									{/if}
-									<span class="font-mono text-xs text-muted-foreground">
-										<time datetime={entry.createdAt}>{when(entry.createdAt)}</time>
-									</span>
-								</li>
-							{/each}
-						</ol>
-					{/if}
+					<ActivityFeedView
+						feed={activity}
+						{when}
+						{working}
+						hideComments
+						onmore={moreActivity}
+					/>
 				</section>
 			{/if}
 		</div>

@@ -9,9 +9,9 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/usenorn/norn/internal/entity"
+	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	bulkrepo "github.com/usenorn/norn/internal/repository/bulkaction"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
-	activityrepo "github.com/usenorn/norn/internal/repository/issueactivity"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
@@ -27,7 +27,7 @@ type harness struct {
 	issues     *issuerepo.MockIssue
 	states     *workflowstaterepo.MockWorkflowState
 	labels     *labelrepo.MockLabel
-	activity   *activityrepo.MockIssueActivity
+	activity   *activityrepo.MockActivity
 	members    *membershiprepo.MockMembership
 	jobs       *jobqueuerepo.MockJobProducer
 	authorizer *authorizersvc.MockAuthorizer
@@ -50,7 +50,7 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 		issues:     issuerepo.NewMockIssue(ctrl),
 		states:     workflowstaterepo.NewMockWorkflowState(ctrl),
 		labels:     labelrepo.NewMockLabel(ctrl),
-		activity:   activityrepo.NewMockIssueActivity(ctrl),
+		activity:   activityrepo.NewMockActivity(ctrl),
 		members:    membershiprepo.NewMockMembership(ctrl),
 		jobs:       jobqueuerepo.NewMockJobProducer(ctrl),
 		authorizer: authorizersvc.NewMockAuthorizer(ctrl),
@@ -312,8 +312,8 @@ func TestEveryChangeAnIssueReceivesIsAttributedToTheOneBulkAction(t *testing.T) 
 
 	h.activity.EXPECT().
 		Record(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, entry entity.IssueActivity) error {
-			attributed[entry.IssueID] = entry.BulkActionID
+		DoAndReturn(func(_ context.Context, entry entity.Activity) error {
+			attributed[entry.Subject.ID] = entry.BulkActionID
 
 			return nil
 		}).

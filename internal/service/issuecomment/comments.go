@@ -18,7 +18,7 @@ type issueCommentsService struct {
 	attachments repository.Attachment
 	issues      repository.Issue
 	teams       repository.Team
-	activity    repository.IssueActivity
+	activity    repository.Activity
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
 }
@@ -28,7 +28,7 @@ func New(
 	attachments repository.Attachment,
 	issues repository.Issue,
 	teams repository.Team,
-	activity repository.IssueActivity,
+	activity repository.Activity,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.IssueComments {
@@ -181,11 +181,12 @@ func (s *issueCommentsService) Post(
 			return err
 		}
 
-		return s.activity.Record(ctx, entity.IssueActivity{
+		return s.activity.Record(ctx, entity.Activity{
 			WorkspaceID:    workspaceID,
-			IssueID:        issueID,
+			Subject:        entity.IssueSubject(issueID),
 			ActorAccountID: decision.Actor.AccountID,
-			Kind:           entity.IssueActivityKindCommented,
+			ActorKind:      decision.Actor.Kind,
+			Kind:           entity.ActivityKindCommented,
 		})
 	}); err != nil {
 		return service.CommentPosted{}, err
@@ -373,11 +374,12 @@ func (s *issueCommentsService) Remove(
 			return err
 		}
 
-		return s.activity.Record(ctx, entity.IssueActivity{
+		return s.activity.Record(ctx, entity.Activity{
 			WorkspaceID:    workspaceID,
-			IssueID:        comment.IssueID,
+			Subject:        entity.IssueSubject(comment.IssueID),
 			ActorAccountID: decision.Actor.AccountID,
-			Kind:           entity.IssueActivityKindCommentDeleted,
+			ActorKind:      decision.Actor.Kind,
+			Kind:           entity.ActivityKindCommentDeleted,
 		})
 	})
 }

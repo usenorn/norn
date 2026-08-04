@@ -18,8 +18,9 @@ import (
 type issuesService struct {
 	issues       repository.Issue
 	states       repository.WorkflowState
-	activity     repository.IssueActivity
+	activity     repository.Activity
 	labels       repository.Label
+	accounts     repository.Account
 	memberships  repository.Membership
 	cycles       repository.Cycle
 	scopeChanges repository.CycleScopeChange
@@ -34,8 +35,9 @@ type issuesService struct {
 func New(
 	issues repository.Issue,
 	states repository.WorkflowState,
-	activity repository.IssueActivity,
+	activity repository.Activity,
 	labels repository.Label,
+	accounts repository.Account,
 	memberships repository.Membership,
 	cycles repository.Cycle,
 	scopeChanges repository.CycleScopeChange,
@@ -51,6 +53,7 @@ func New(
 		states:       states,
 		activity:     activity,
 		labels:       labels,
+		accounts:     accounts,
 		memberships:  memberships,
 		cycles:       cycles,
 		scopeChanges: scopeChanges,
@@ -116,12 +119,12 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 			return err
 		}
 
-		return s.activity.Record(ctx, entity.IssueActivity{
+		return s.activity.Record(ctx, entity.Activity{
 			WorkspaceID:    created.WorkspaceID,
-			IssueID:        created.ID,
+			Subject:        entity.IssueSubject(created.ID),
 			ActorAccountID: decision.Actor.AccountID,
-			Kind:           entity.IssueActivityKindCreated,
-			ToStateID:      created.State.ID,
+			ActorKind:      decision.Actor.Kind,
+			Kind:           entity.ActivityKindCreated,
 			ToState:        created.State.Name,
 		})
 	})
@@ -359,13 +362,12 @@ func (s *issuesService) Update(
 		}
 
 		if target.ID != uuid.Nil && target.ID != issue.State.ID {
-			if err := s.activity.Record(ctx, entity.IssueActivity{
+			if err := s.activity.Record(ctx, entity.Activity{
 				WorkspaceID:    workspaceID,
-				IssueID:        issueID,
+				Subject:        entity.IssueSubject(issueID),
 				ActorAccountID: decision.Actor.AccountID,
-				Kind:           entity.IssueActivityKindStateChanged,
-				FromStateID:    issue.State.ID,
-				ToStateID:      target.ID,
+				ActorKind:      decision.Actor.Kind,
+				Kind:           entity.ActivityKindStateChanged,
 				FromState:      issue.State.Name,
 				ToState:        target.Name,
 				Version:        issue.Version + 1,
@@ -396,11 +398,12 @@ func (s *issuesService) recordProperty(
 	decision entity.Decision,
 	field, from, to string,
 ) error {
-	return s.activity.Record(ctx, entity.IssueActivity{
+	return s.activity.Record(ctx, entity.Activity{
 		WorkspaceID:    issue.WorkspaceID,
-		IssueID:        issue.ID,
+		Subject:        entity.IssueSubject(issue.ID),
 		ActorAccountID: decision.Actor.AccountID,
-		Kind:           entity.IssueActivityKindPropertyChanged,
+		ActorKind:      decision.Actor.Kind,
+		Kind:           entity.ActivityKindPropertyChanged,
 		Field:          field,
 		FromValue:      from,
 		ToValue:        to,
@@ -550,8 +553,8 @@ func (s *issuesService) Progress(
 func (s *issuesService) Activity(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
-	input service.ListIssueActivityInput,
-) (service.IssueActivityPage, error) {
+	input service.ListActivityInput,
+) (service.ActivityPage, error) {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceIssue,
 		Action:      entity.ActionRead,
@@ -559,19 +562,19 @@ func (s *issuesService) Activity(
 		Scoped:      true,
 	})
 	if err != nil {
-		return service.IssueActivityPage{}, err
+		return service.ActivityPage{}, err
 	}
 
 	if _, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope); err != nil {
-		return service.IssueActivityPage{}, err
+		return service.ActivityPage{}, err
 	}
 
-	page := entity.IssueActivityPage{Limit: input.Limit}.Normalized()
+	page := entity.ActivityPage{Limit: input.Limit, Order: input.Order}.Normalized()
 
 	if input.Cursor != "" {
-		cursor, err := entity.DecodeIssueActivityCursor(input.Cursor)
+		cursor, err := entity.DecodeActivityCursor(input.Cursor)
 		if err != nil {
-			return service.IssueActivityPage{}, entity.NewValidationError(entity.FieldError{
+			return service.ActivityPage{}, entity.NewValidationError(entity.FieldError{
 				Field: "cursor",
 				Code:  entity.ValidationCodeUnsupportedValue,
 			})
@@ -580,20 +583,20 @@ func (s *issuesService) Activity(
 		page.Cursor = &cursor
 	}
 
-	entries, err := s.activity.ListByIssueID(ctx, issueID, page.Lookahead())
+	events, err := s.activity.ListBySubject(ctx, entity.IssueSubject(issueID), page.Lookahead())
 	if err != nil {
-		return service.IssueActivityPage{}, err
+		return service.ActivityPage{}, err
 	}
 
-	if len(entries) <= page.Limit {
-		return service.IssueActivityPage{Entries: entries}, nil
+	if len(events) <= page.Limit {
+		return service.ActivityPage{Events: events}, nil
 	}
 
-	entries = entries[:page.Limit]
+	events = events[:page.Limit]
 
-	return service.IssueActivityPage{
-		Entries:    entries,
-		NextCursor: entries[len(entries)-1].Cursor().Encode(),
+	return service.ActivityPage{
+		Events:     events,
+		NextCursor: events[len(events)-1].Cursor().Encode(),
 	}, nil
 }
 
@@ -877,13 +880,13 @@ func (s *issuesService) SetParent(
 		}
 
 		if err := s.recordHierarchy(
-			ctx, workspaceID, issue, decision, entity.IssueActivityKindChildRemoved, issue.ParentIssueID,
+			ctx, workspaceID, issue, decision, entity.ActivityKindChildRemoved, issue.ParentIssueID,
 		); err != nil {
 			return err
 		}
 
 		if err := s.recordHierarchy(
-			ctx, workspaceID, issue, decision, entity.IssueActivityKindChildAdded, parent.ID,
+			ctx, workspaceID, issue, decision, entity.ActivityKindChildAdded, parent.ID,
 		); err != nil {
 			return err
 		}
@@ -909,22 +912,23 @@ func (s *issuesService) recordHierarchy(
 	workspaceID uuid.UUID,
 	child entity.Issue,
 	decision entity.Decision,
-	kind entity.IssueActivityKind,
+	kind entity.ActivityKind,
 	onIssueID uuid.UUID,
 ) error {
 	if onIssueID == uuid.Nil {
 		return nil
 	}
 
-	entry := entity.IssueActivity{
+	entry := entity.Activity{
 		WorkspaceID:    workspaceID,
-		IssueID:        onIssueID,
+		Subject:        entity.IssueSubject(onIssueID),
 		ActorAccountID: decision.Actor.AccountID,
+		ActorKind:      decision.Actor.Kind,
 		Kind:           kind,
 		Field:          entity.IssueFieldChildren,
 	}
 
-	if kind == entity.IssueActivityKindChildAdded {
+	if kind == entity.ActivityKindChildAdded {
 		entry.ToValue = child.Reference()
 	} else {
 		entry.FromValue = child.Reference()
@@ -1013,10 +1017,11 @@ func (s *issuesService) SetStatus(
 			return err
 		}
 
-		if err := s.activity.Record(ctx, entity.IssueActivity{
+		if err := s.activity.Record(ctx, entity.Activity{
 			WorkspaceID:    workspaceID,
-			IssueID:        issueID,
+			Subject:        entity.IssueSubject(issueID),
 			ActorAccountID: decision.Actor.AccountID,
+			ActorKind:      decision.Actor.Kind,
 			Kind:           statusActivityKind(issue.Status, lifecycle.Status),
 			Field:          entity.IssueFieldStatus,
 			FromValue:      string(issue.Status),
@@ -1056,16 +1061,16 @@ func (s *issuesService) Purge(ctx context.Context, issueID uuid.UUID) error {
 	})
 }
 
-func statusActivityKind(from, to entity.IssueStatus) entity.IssueActivityKind {
+func statusActivityKind(from, to entity.IssueStatus) entity.ActivityKind {
 	switch {
 	case to == entity.IssueStatusArchived && from == entity.IssueStatusActive:
-		return entity.IssueActivityKindArchived
+		return entity.ActivityKindArchived
 	case to == entity.IssueStatusPendingDeletion:
-		return entity.IssueActivityKindDeleted
+		return entity.ActivityKindDeleted
 	case from == entity.IssueStatusPendingDeletion:
-		return entity.IssueActivityKindRestored
+		return entity.ActivityKindRestored
 	default:
-		return entity.IssueActivityKindUnarchived
+		return entity.ActivityKindUnarchived
 	}
 }
 
@@ -1156,11 +1161,12 @@ func (s *issuesService) MoveToTeam(
 			return err
 		}
 
-		if err := s.activity.Record(ctx, entity.IssueActivity{
+		if err := s.activity.Record(ctx, entity.Activity{
 			WorkspaceID:    workspaceID,
-			IssueID:        issueID,
+			Subject:        entity.IssueSubject(issueID),
 			ActorAccountID: decision.Actor.AccountID,
-			Kind:           entity.IssueActivityKindTeamMoved,
+			ActorKind:      decision.Actor.Kind,
+			Kind:           entity.ActivityKindTeamMoved,
 			Field:          entity.IssueFieldTeam,
 			FromValue:      issue.TeamKey,
 			ToValue:        refreshed.TeamKey,
@@ -1169,13 +1175,12 @@ func (s *issuesService) MoveToTeam(
 			return err
 		}
 
-		if err := s.activity.Record(ctx, entity.IssueActivity{
+		if err := s.activity.Record(ctx, entity.Activity{
 			WorkspaceID:    workspaceID,
-			IssueID:        issueID,
+			Subject:        entity.IssueSubject(issueID),
 			ActorAccountID: decision.Actor.AccountID,
-			Kind:           entity.IssueActivityKindStateChanged,
-			FromStateID:    issue.State.ID,
-			ToStateID:      target.ID,
+			ActorKind:      decision.Actor.Kind,
+			Kind:           entity.ActivityKindStateChanged,
 			FromState:      issue.State.Name,
 			ToState:        target.Name,
 			Version:        issue.Version + 1,
@@ -1201,6 +1206,16 @@ func (s *issuesService) recordChanges(
 	change entity.IssueChange,
 	joining entity.Cycle,
 ) error {
+	assignee, err := s.assigneeNames(ctx, issue, change)
+	if err != nil {
+		return err
+	}
+
+	project, err := s.projectNames(ctx, issue, change)
+	if err != nil {
+		return err
+	}
+
 	changes := []struct {
 		field string
 		from  string
@@ -1212,8 +1227,9 @@ func (s *issuesService) recordChanges(
 		{entity.IssueFieldPriority, string(issue.Priority), priorityOf(change.Priority), change.Priority != nil && *change.Priority != issue.Priority},
 		{entity.IssueFieldEstimate, estimateOf(issue.Estimate), estimateChange(change), change.Estimate != nil || change.ClearEstimate},
 		{entity.IssueFieldDueOn, issue.DueOn, dueChange(change), change.DueOn != nil || change.ClearDueOn},
-		{entity.IssueFieldAssignee, "", "", change.Assignee != nil || change.ClearAssignee},
+		{entity.IssueFieldAssignee, assignee.from, assignee.to, change.Assignee != nil || change.ClearAssignee},
 		{entity.IssueFieldCycle, cycleName(issue.CycleNumber), cycleChange(change, joining), change.CycleID != nil || change.ClearCycle},
+		{entity.IssueFieldProject, project.from, project.to, change.ProjectID != nil || change.ClearProject},
 	}
 
 	for _, entry := range changes {
@@ -1227,6 +1243,83 @@ func (s *issuesService) recordChanges(
 	}
 
 	return nil
+}
+
+type namePair struct {
+	from string
+	to   string
+}
+
+func (s *issuesService) assigneeNames(
+	ctx context.Context,
+	issue entity.Issue,
+	change entity.IssueChange,
+) (namePair, error) {
+	if change.Assignee == nil && !change.ClearAssignee {
+		return namePair{}, nil
+	}
+
+	from, err := s.memberName(ctx, issue.WorkspaceID, issue.AssigneeAccountID)
+	if err != nil {
+		return namePair{}, err
+	}
+
+	if change.ClearAssignee {
+		return namePair{from: from}, nil
+	}
+
+	to, err := s.memberName(ctx, issue.WorkspaceID, *change.Assignee)
+	if err != nil {
+		return namePair{}, err
+	}
+
+	return namePair{from: from, to: to}, nil
+}
+
+func (s *issuesService) memberName(
+	ctx context.Context,
+	_ uuid.UUID,
+	accountID uuid.UUID,
+) (string, error) {
+	if accountID == uuid.Nil {
+		return "", nil
+	}
+
+	account, err := s.accounts.GetByID(ctx, accountID)
+	if err != nil {
+		if errors.Is(err, entity.ErrAccountNotFound) {
+			return "", nil
+		}
+
+		return "", err
+	}
+
+	return account.DisplayName, nil
+}
+
+func (s *issuesService) projectNames(
+	ctx context.Context,
+	issue entity.Issue,
+	change entity.IssueChange,
+) (namePair, error) {
+	if change.ProjectID == nil && !change.ClearProject {
+		return namePair{}, nil
+	}
+
+	pair := namePair{from: issue.ProjectName}
+
+	if change.ClearProject {
+		return pair, nil
+	}
+
+	project, err := s.projects.GetByID(ctx, issue.WorkspaceID, *change.ProjectID)
+	if err != nil {
+		return namePair{}, err
+	}
+
+	pair.to = project.Name
+
+	return pair, nil
 }
 
 func deref(value *string) string {

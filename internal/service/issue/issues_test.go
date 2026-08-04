@@ -13,9 +13,10 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
+	accountrepo "github.com/usenorn/norn/internal/repository/account"
+	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
-	issueactivityrepo "github.com/usenorn/norn/internal/repository/issueactivity"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
@@ -32,8 +33,9 @@ import (
 type harness struct {
 	issues      *issuerepo.MockIssue
 	states      *workflowstaterepo.MockWorkflowState
-	activity    *issueactivityrepo.MockIssueActivity
+	activity    *activityrepo.MockActivity
 	labels      *labelrepo.MockLabel
+	accounts    *accountrepo.MockAccount
 	memberships *membershiprepo.MockMembership
 	cycles      *cyclerepo.MockCycle
 	scope       *cyclerepo.MockCycleScopeChange
@@ -54,8 +56,9 @@ func newHarness(t *testing.T) *harness {
 	h := &harness{
 		issues:      issuerepo.NewMockIssue(ctrl),
 		states:      workflowstaterepo.NewMockWorkflowState(ctrl),
-		activity:    issueactivityrepo.NewMockIssueActivity(ctrl),
+		activity:    activityrepo.NewMockActivity(ctrl),
 		labels:      labelrepo.NewMockLabel(ctrl),
+		accounts:    accountrepo.NewMockAccount(ctrl),
 		memberships: membershiprepo.NewMockMembership(ctrl),
 		cycles:      cyclerepo.NewMockCycle(ctrl),
 		scope:       cyclerepo.NewMockCycleScopeChange(ctrl),
@@ -75,7 +78,7 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = issuesvc.New(
-		h.issues, h.states, h.activity, h.labels, h.memberships,
+		h.issues, h.states, h.activity, h.labels, h.accounts, h.memberships,
 		h.cycles, h.scope, h.projects, h.teams, h.triage, h.jobs, h.authorizer, h.transactor,
 	)
 
@@ -377,8 +380,8 @@ func TestNoLayerExposesAnIssueCountingOperation(t *testing.T) {
 	}
 
 	pages := map[string]reflect.Type{
-		"service.IssuePage":         reflect.TypeOf(service.IssuePage{}),
-		"service.IssueActivityPage": reflect.TypeOf(service.IssueActivityPage{}),
+		"service.IssuePage":    reflect.TypeOf(service.IssuePage{}),
+		"service.ActivityPage": reflect.TypeOf(service.ActivityPage{}),
 	}
 
 	for name, page := range pages {

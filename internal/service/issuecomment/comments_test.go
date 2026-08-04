@@ -11,9 +11,9 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
+	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
-	issueactivityrepo "github.com/usenorn/norn/internal/repository/issueactivity"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
@@ -27,7 +27,7 @@ type harness struct {
 	attachments *attachmentrepo.MockAttachment
 	issues      *issuerepo.MockIssue
 	teams       *teamrepo.MockTeam
-	activity    *issueactivityrepo.MockIssueActivity
+	activity    *activityrepo.MockActivity
 	authorizer  *authorizersvc.MockAuthorizer
 	service     service.IssueComments
 
@@ -49,7 +49,7 @@ func newHarness(t *testing.T) *harness {
 		attachments: attachmentrepo.NewMockAttachment(ctrl),
 		issues:      issuerepo.NewMockIssue(ctrl),
 		teams:       teamrepo.NewMockTeam(ctrl),
-		activity:    issueactivityrepo.NewMockIssueActivity(ctrl),
+		activity:    activityrepo.NewMockActivity(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID: uuid.New(),
 		issueID:     uuid.New(),
@@ -481,13 +481,13 @@ func TestDeletionAdmitsTheAuthorAndAnAdminAndNobodyElse(t *testing.T) {
 			h.seesTheIssue()
 			h.holds(h.comment())
 
-			var recorded entity.IssueActivity
+			var recorded entity.Activity
 
 			if actor.allowed {
 				h.comments.EXPECT().Tombstone(gomock.Any(), h.commentID, gomock.Any()).Return(nil)
 				h.activity.EXPECT().
 					Record(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ context.Context, activity entity.IssueActivity) error {
+					DoAndReturn(func(_ context.Context, activity entity.Activity) error {
 						recorded = activity
 
 						return nil
@@ -501,7 +501,7 @@ func TestDeletionAdmitsTheAuthorAndAnAdminAndNobodyElse(t *testing.T) {
 					t.Fatalf("%s could not delete the comment: %v", name, err)
 				}
 
-				if recorded.Kind != entity.IssueActivityKindCommentDeleted {
+				if recorded.Kind != entity.ActivityKindCommentDeleted {
 					t.Fatalf(
 						"deleting recorded %q in the activity feed. A comment appearing and then "+
 							"vanishing is a change to the issue that the feed has to show.",

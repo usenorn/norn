@@ -3,11 +3,16 @@ import type {
 	CommentMention,
 	CommentThread,
 } from "$lib/comments/comments";
+import type { ActivityFeed } from "$lib/activity/activity";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type { UploadTask } from "$lib/attachments/upload";
 import type { IssueDetail } from "./+page";
 
 export type IssueDetailPreview = { detail: IssueDetail };
+
+export type ActivityPreview = {
+	feed: ActivityFeed;
+};
 
 export type AttachmentPreview = {
 	panel: AttachmentPanel;
@@ -157,25 +162,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 							email: "jun@northwind.co",
 						},
 					],
-				activity: [
-						{
-							id: "00000000-0000-4000-8000-000000000901",
-							issueId: "00000000-0000-4000-8000-000000000501",
-							actorName: "Rae Okafor",
-							kind: "state_changed",
-							fromState: "Ready",
-							toState: "Sketching",
-							createdAt: "2026-07-31T14:12:00Z",
-						},
-						{
-							id: "00000000-0000-4000-8000-000000000902",
-							issueId: "00000000-0000-4000-8000-000000000501",
-							actorName: "Rae Okafor",
-							kind: "created",
-							toState: "Ready",
-							createdAt: "2026-07-30T09:00:00Z",
-						},
-					],
+				activity: { kind: "empty" },
 				},
 			},
 			no_labels_yet: {
@@ -226,16 +213,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					members: [],
-					activity: [
-						{
-							id: "00000000-0000-4000-8000-000000000903",
-							issueId: "00000000-0000-4000-8000-000000000505",
-							actorName: "Jun Park",
-							kind: "created",
-							toState: "Ready",
-							createdAt: "2026-08-02T09:00:00Z",
-						},
-					],
+					activity: { kind: "empty" },
 				},
 			},
 			archived: {
@@ -277,19 +255,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					members: [],
-					activity: [
-						{
-							id: "00000000-0000-4000-8000-000000000907",
-							issueId: "00000000-0000-4000-8000-000000000507",
-							actorName: "Rae Okafor",
-							kind: "archived",
-							field: "status",
-							fromValue: "active",
-							toValue: "archived",
-							version: 6,
-							createdAt: "2026-08-02T11:00:00Z",
-						},
-					],
+					activity: { kind: "empty" },
 				},
 			},
 			deleted: {
@@ -330,19 +296,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					members: [],
-					activity: [
-						{
-							id: "00000000-0000-4000-8000-000000000908",
-							issueId: "00000000-0000-4000-8000-000000000508",
-							actorName: "Jun Park",
-							kind: "deleted",
-							field: "status",
-							fromValue: "active",
-							toValue: "pending_deletion",
-							version: 3,
-							createdAt: "2026-08-03T16:40:00Z",
-						},
-					],
+					activity: { kind: "empty" },
 				},
 			},
 			with_children: {
@@ -436,18 +390,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 							createdAt: "2026-08-01T09:00:00Z",
 						},
 					],
-					activity: [
-						{
-							id: "00000000-0000-4000-8000-000000000910",
-							issueId: "00000000-0000-4000-8000-000000000510",
-							actorName: "Rae Okafor",
-							kind: "child_added" as const,
-							field: "children",
-							toValue: "PLT-8",
-							version: 2,
-							createdAt: "2026-08-01T10:00:00Z",
-						},
-					],
+					activity: { kind: "empty" },
 				},
 			},
 			with_relations: {
@@ -588,18 +531,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 							],
 						},
 					],
-					activity: [
-						{
-							id: "00000000-0000-4000-8000-000000000920",
-							issueId: "00000000-0000-4000-8000-000000000520",
-							actorName: "Rae Okafor",
-							kind: "relation_added" as const,
-							field: "blocked_by",
-							toValue: "PLT-12",
-							version: 3,
-							createdAt: "2026-08-02T10:00:00Z",
-						},
-					],
+					activity: { kind: "empty" },
 					cycles: [
 						{
 							id: "00000000-0000-4000-8000-000000000531",
@@ -1095,6 +1027,246 @@ export const attachmentPreviewStates: Record<string, AttachmentPreview> = import
 						state: "done" as const,
 					},
 				],
+			},
+		}
+	: {};
+
+export const activityPreviewStates: Record<string, ActivityPreview> = import.meta.env.DEV
+	? {
+			loading: { feed: { kind: "loading" } },
+			unavailable: { feed: { kind: "unavailable" } },
+			empty: { feed: { kind: "empty" } },
+			single: {
+				feed: {
+					kind: "ready",
+					events: [
+						{
+							id: "00000000-0000-4000-8000-0000000000e1",
+							subjectKind: "issue" as const,
+							actorKind: "user" as const,
+							actorName: "Rae Whitfield",
+							createdAt: "2026-08-01T09:00:00Z",
+							changes: [
+								{
+									id: "00000000-0000-4000-8000-0000000000c1",
+									kind: "created" as const,
+									toState: "Ready",
+								},
+							],
+						},
+					],
+				},
+			},
+			grouped_edit: {
+				feed: {
+					kind: "ready",
+					events: [
+						{
+							id: "00000000-0000-4000-8000-0000000000e2",
+							subjectKind: "issue" as const,
+							actorKind: "user" as const,
+							actorName: "Rae Whitfield",
+							createdAt: "2026-08-02T11:15:00Z",
+							changes: [
+								{
+									id: "00000000-0000-4000-8000-0000000000c2",
+									kind: "property_changed" as const,
+									field: "title",
+									fromValue: "Uploads fail",
+									toValue: "Avatar upload fails over 3G",
+								},
+								{
+									id: "00000000-0000-4000-8000-0000000000c3",
+									kind: "property_changed" as const,
+									field: "priority",
+									fromValue: "low",
+									toValue: "high",
+								},
+								{
+									id: "00000000-0000-4000-8000-0000000000c4",
+									kind: "property_changed" as const,
+									field: "assignee",
+									toValue: "Milo Fenwick",
+								},
+								{
+									id: "00000000-0000-4000-8000-0000000000c5",
+									kind: "state_changed" as const,
+									fromState: "Ready",
+									toState: "In progress",
+								},
+							],
+						},
+					],
+				},
+			},
+			bulk: {
+				feed: {
+					kind: "ready",
+					events: [
+						{
+							id: "00000000-0000-4000-8000-0000000000e3",
+							subjectKind: "issue" as const,
+							actorKind: "user" as const,
+							actorName: "Ada Lovelace",
+							bulkActionId: "00000000-0000-4000-8000-0000000000b1",
+							createdAt: "2026-08-02T16:00:00Z",
+							changes: [
+								{
+									id: "00000000-0000-4000-8000-0000000000c6",
+									kind: "property_changed" as const,
+									field: "priority",
+									fromValue: "none",
+									toValue: "medium",
+								},
+							],
+						},
+					],
+				},
+			},
+			agent: {
+				feed: {
+					kind: "ready",
+					events: [
+						{
+							id: "00000000-0000-4000-8000-0000000000e4",
+							subjectKind: "issue" as const,
+							actorKind: "agent" as const,
+							actorName: "Release bot",
+							createdAt: "2026-08-03T08:30:00Z",
+							changes: [
+								{
+									id: "00000000-0000-4000-8000-0000000000c7",
+									kind: "state_changed" as const,
+									fromState: "In review",
+									toState: "Done",
+								},
+							],
+						},
+					],
+				},
+			},
+			integration: {
+				feed: {
+					kind: "ready",
+					events: [
+						{
+							id: "00000000-0000-4000-8000-0000000000e5",
+							subjectKind: "issue" as const,
+							actorKind: "token" as const,
+							actorName: "Ada Lovelace",
+							createdAt: "2026-08-03T09:00:00Z",
+							changes: [
+								{
+									id: "00000000-0000-4000-8000-0000000000c8",
+									kind: "attachment_added" as const,
+									field: "attachment",
+									toValue: "ci-log.txt",
+								},
+							],
+						},
+					],
+				},
+			},
+			system: {
+				feed: {
+					kind: "ready",
+					events: [
+						{
+							id: "00000000-0000-4000-8000-0000000000e6",
+							subjectKind: "issue" as const,
+							actorKind: "system" as const,
+							createdAt: "2026-08-03T00:05:00Z",
+							changes: [
+								{
+									id: "00000000-0000-4000-8000-0000000000c9",
+									kind: "property_changed" as const,
+									field: "cycle",
+									fromValue: "Cycle 7",
+									toValue: "Cycle 8",
+								},
+							],
+						},
+					],
+				},
+			},
+			deleted_actor: {
+				feed: {
+					kind: "ready",
+					events: [
+						{
+							id: "00000000-0000-4000-8000-0000000000e7",
+							subjectKind: "issue" as const,
+							actorKind: "user" as const,
+							createdAt: "2026-07-20T10:00:00Z",
+							changes: [
+								{
+									id: "00000000-0000-4000-8000-0000000000ca",
+									kind: "property_changed" as const,
+									field: "description",
+								},
+							],
+						},
+					],
+				},
+			},
+			triaged: {
+				feed: {
+					kind: "ready",
+					events: [
+						{
+							id: "00000000-0000-4000-8000-0000000000e8",
+							subjectKind: "issue" as const,
+							actorKind: "user" as const,
+							actorName: "Ada Lovelace",
+							createdAt: "2026-08-04T12:00:00Z",
+							changes: [
+								{
+									id: "00000000-0000-4000-8000-0000000000cb",
+									kind: "triaged" as const,
+									field: "accepted",
+									fromValue: "waiting",
+								},
+							],
+						},
+					],
+				},
+			},
+			long: {
+				feed: {
+					kind: "ready",
+					nextCursor: "preview-cursor",
+					events: [
+						{
+							id: "00000000-0000-4000-8000-0000000000e9",
+							subjectKind: "issue" as const,
+							actorKind: "user" as const,
+							actorName: "Rae Whitfield",
+							createdAt: "2026-07-30T09:00:00Z",
+							changes: [
+								{
+									id: "00000000-0000-4000-8000-0000000000cc",
+									kind: "created" as const,
+									toState: "Ready",
+								},
+							],
+						},
+						{
+							id: "00000000-0000-4000-8000-0000000000ea",
+							subjectKind: "issue" as const,
+							actorKind: "user" as const,
+							actorName: "Milo Fenwick",
+							createdAt: "2026-07-31T14:12:00Z",
+							changes: [
+								{
+									id: "00000000-0000-4000-8000-0000000000cd",
+									kind: "relation_added" as const,
+									field: "blocked_by",
+									toValue: "PLT-12",
+								},
+							],
+						},
+					],
+				},
 			},
 		}
 	: {};

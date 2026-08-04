@@ -1175,8 +1175,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List what has happened to an issue, newest first */
+        /** Read what has happened to an issue, one event per operation */
         get: operations["listWorkspaceIssueActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/projects/{projectId}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read what has happened to a project, one event per operation */
+        get: operations["listWorkspaceProjectActivity"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2512,30 +2529,48 @@ export interface components {
             issueId: string;
             destination: components["schemas"]["CycleRollover"];
         };
-        IssueActivity: {
+        /** @description Everything one operation changed about one subject, read as a single event. */
+        ActivityEvent: {
             /** Format: uuid */
             id: string;
+            subjectKind: components["schemas"]["ActivitySubjectKind"];
             /** Format: uuid */
-            issueId: string;
+            issueId?: string;
+            /** Format: uuid */
+            projectId?: string;
             /** Format: uuid */
             actorAccountId?: string;
             actorName?: string;
-            /** @enum {string} */
-            kind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted";
-            fromState?: string;
-            toState?: string;
-            field?: string;
-            fromValue?: string;
-            toValue?: string;
-            /** Format: int32 */
-            version?: number;
+            actorKind: components["schemas"]["ActivityActorKind"];
             /** Format: uuid */
             bulkActionId?: string;
+            changes: components["schemas"]["ActivityChange"][];
             /** Format: date-time */
             createdAt: string;
         };
-        IssueActivityPage: {
-            entries: components["schemas"]["IssueActivity"][];
+        /** @enum {string} */
+        ActivitySubjectKind: "issue" | "project";
+        /**
+         * @description Who made the change — a person signed in, an integration, an agent, or Norn itself.
+         * @enum {string}
+         */
+        ActivityActorKind: "user" | "token" | "agent" | "system";
+        ActivityChange: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ActivityKind"];
+            field?: string;
+            fromValue?: string;
+            toValue?: string;
+            fromState?: string;
+            toState?: string;
+            /** Format: int32 */
+            version?: number;
+        };
+        /** @enum {string} */
+        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed";
+        ActivityPage: {
+            events: components["schemas"]["ActivityEvent"][];
             nextCursor?: string;
         };
         Issue: {
@@ -3555,6 +3590,10 @@ export interface components {
         SavedViewId: string;
         LabelId: string;
         GroupId: string;
+        ActivityLimit: number;
+        ActivityCursor: string;
+        /** @description Oldest first tells the story forward; newest first shows what just happened. */
+        ActivityOrder: "oldest" | "newest";
         AttachmentId: string;
         CommentId: string;
         Reaction: components["schemas"]["CommentReaction"];
@@ -6108,8 +6147,10 @@ export interface operations {
     listWorkspaceIssueActivity: {
         parameters: {
             query?: {
-                limit?: number;
-                cursor?: string;
+                limit?: components["parameters"]["ActivityLimit"];
+                cursor?: components["parameters"]["ActivityCursor"];
+                /** @description Oldest first tells the story forward; newest first shows what just happened. */
+                order?: components["parameters"]["ActivityOrder"];
             };
             header?: never;
             path: {
@@ -6120,13 +6161,46 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A page of activity */
+            /** @description A page of events */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IssueActivityPage"];
+                    "application/json": components["schemas"]["ActivityPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceProjectActivity: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["ActivityLimit"];
+                cursor?: components["parameters"]["ActivityCursor"];
+                /** @description Oldest first tells the story forward; newest first shows what just happened. */
+                order?: components["parameters"]["ActivityOrder"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityPage"];
                 };
             };
             401: components["responses"]["Problem"];

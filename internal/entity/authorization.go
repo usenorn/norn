@@ -83,9 +83,10 @@ func NewPermission(resource Resource, action Action) Permission {
 type ActorKind string
 
 const (
-	ActorKindUser  ActorKind = "user"
-	ActorKindToken ActorKind = "token"
-	ActorKindAgent ActorKind = "agent"
+	ActorKindUser   ActorKind = "user"
+	ActorKindToken  ActorKind = "token"
+	ActorKindAgent  ActorKind = "agent"
+	ActorKindSystem ActorKind = "system"
 )
 
 type Actor struct {
@@ -146,6 +147,19 @@ type Decision struct {
 	Role      MembershipRole
 	Workspace Workspace
 	Scope     TeamScope
+}
+
+func (d Decision) ActivityActor() (uuid.UUID, ActorKind) {
+	if d.Actor.Anonymous() {
+		return uuid.Nil, ActorKindSystem
+	}
+
+	kind := d.Actor.Kind
+	if kind == "" {
+		kind = ActorKindUser
+	}
+
+	return d.Actor.AccountID, kind
 }
 
 type DenyReason string

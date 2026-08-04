@@ -1,4 +1,5 @@
 import type { components } from "$lib/api/dashboard.gen";
+import type { ActivityFeed } from "$lib/activity/activity";
 import type { Issue } from "$lib/issues/issues";
 import type { StateCategory } from "$lib/team/states";
 
@@ -76,6 +77,7 @@ export type ProjectDetail =
 			members: ProjectMember[];
 			updates: ProjectStatusUpdate[];
 			issues: Issue[];
+			activity: ActivityFeed;
 	  };
 
 export type ProjectFailure =

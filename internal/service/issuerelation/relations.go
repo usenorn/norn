@@ -16,7 +16,7 @@ type relationsService struct {
 	relations  repository.IssueRelation
 	issues     repository.Issue
 	states     repository.WorkflowState
-	activity   repository.IssueActivity
+	activity   repository.Activity
 	authorizer service.Authorizer
 	transactor repository.Transactor
 }
@@ -25,7 +25,7 @@ func New(
 	relations repository.IssueRelation,
 	issues repository.Issue,
 	states repository.WorkflowState,
-	activity repository.IssueActivity,
+	activity repository.Activity,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.IssueRelations {
@@ -122,7 +122,7 @@ func (s *relationsService) Add(
 		}
 
 		if err := s.record(
-			ctx, workspaceID, decision, entity.IssueActivityKindRelationAdded,
+			ctx, workspaceID, decision, entity.ActivityKindRelationAdded,
 			subject, counterpart, kind.As(subjectIsSource), kind.As(!subjectIsSource),
 		); err != nil {
 			return err
@@ -203,13 +203,12 @@ func (s *relationsService) close(
 		return err
 	}
 
-	return s.activity.Record(ctx, entity.IssueActivity{
+	return s.activity.Record(ctx, entity.Activity{
 		WorkspaceID:    workspaceID,
-		IssueID:        duplicate.ID,
+		Subject:        entity.IssueSubject(duplicate.ID),
 		ActorAccountID: decision.Actor.AccountID,
-		Kind:           entity.IssueActivityKindStateChanged,
-		FromStateID:    duplicate.State.ID,
-		ToStateID:      target.ID,
+		ActorKind:      decision.Actor.Kind,
+		Kind:           entity.ActivityKindStateChanged,
 		FromState:      duplicate.State.Name,
 		ToState:        target.Name,
 		Version:        duplicate.Version + 1,
@@ -220,22 +219,23 @@ func (s *relationsService) record(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	decision entity.Decision,
-	kind entity.IssueActivityKind,
+	kind entity.ActivityKind,
 	subject, counterpart entity.Issue,
 	subjectView, counterpartView entity.IssueRelationView,
 ) error {
-	entries := []entity.IssueActivity{
-		{IssueID: subject.ID, Field: string(subjectView), ToValue: counterpart.Reference()},
-		{IssueID: counterpart.ID, Field: string(counterpartView), ToValue: subject.Reference()},
+	entries := []entity.Activity{
+		{Subject: entity.IssueSubject(subject.ID), Field: string(subjectView), ToValue: counterpart.Reference()},
+		{Subject: entity.IssueSubject(counterpart.ID), Field: string(counterpartView), ToValue: subject.Reference()},
 	}
 
 	for _, entry := range entries {
-		if kind == entity.IssueActivityKindRelationRemoved {
+		if kind == entity.ActivityKindRelationRemoved {
 			entry.FromValue, entry.ToValue = entry.ToValue, ""
 		}
 
 		entry.WorkspaceID = workspaceID
 		entry.ActorAccountID = decision.Actor.AccountID
+		entry.ActorKind = decision.Actor.Kind
 		entry.Kind = kind
 
 		if err := s.activity.Record(ctx, entry); err != nil {
@@ -279,7 +279,7 @@ func (s *relationsService) Remove(ctx context.Context, workspaceID, issueID, rel
 		}
 
 		return s.record(
-			ctx, workspaceID, decision, entity.IssueActivityKindRelationRemoved,
+			ctx, workspaceID, decision, entity.ActivityKindRelationRemoved,
 			subject, counterpart,
 			stored.Kind.As(subjectIsSource), stored.Kind.As(!subjectIsSource),
 		)

@@ -1,4 +1,4 @@
-package issueactivity
+package activity
 
 import "github.com/goforj/wire"
 

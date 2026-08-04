@@ -16,7 +16,7 @@ type triagesService struct {
 	triage     repository.Triage
 	issues     repository.Issue
 	states     repository.WorkflowState
-	activity   repository.IssueActivity
+	activity   repository.Activity
 	teams      repository.Team
 	relations  service.IssueRelations
 	issueMoves service.Issues
@@ -28,7 +28,7 @@ func New(
 	triage repository.Triage,
 	issues repository.Issue,
 	states repository.WorkflowState,
-	activity repository.IssueActivity,
+	activity repository.Activity,
 	teams repository.Team,
 	relations service.IssueRelations,
 	issueMoves service.Issues,
@@ -147,11 +147,12 @@ func (s *triagesService) record(
 		return err
 	}
 
-	return s.activity.Record(ctx, entity.IssueActivity{
+	return s.activity.Record(ctx, entity.Activity{
 		WorkspaceID:    issue.WorkspaceID,
-		IssueID:        issue.ID,
+		Subject:        entity.IssueSubject(issue.ID),
 		ActorAccountID: decision.Actor.AccountID,
-		Kind:           entity.IssueActivityKindTriaged,
+		ActorKind:      decision.Actor.Kind,
+		Kind:           entity.ActivityKindTriaged,
 		Field:          string(state),
 		FromValue:      string(entity.TriageStateWaiting),
 		ToValue:        object,
@@ -264,13 +265,12 @@ func (s *triagesService) close(
 		return err
 	}
 
-	return s.activity.Record(ctx, entity.IssueActivity{
+	return s.activity.Record(ctx, entity.Activity{
 		WorkspaceID:    issue.WorkspaceID,
-		IssueID:        issue.ID,
+		Subject:        entity.IssueSubject(issue.ID),
 		ActorAccountID: decision.Actor.AccountID,
-		Kind:           entity.IssueActivityKindStateChanged,
-		FromStateID:    issue.State.ID,
-		ToStateID:      target.ID,
+		ActorKind:      decision.Actor.Kind,
+		Kind:           entity.ActivityKindStateChanged,
 		FromState:      issue.State.Name,
 		ToState:        target.Name,
 		Version:        issue.Version + 1,
@@ -383,11 +383,12 @@ func (s *triagesService) Reassign(
 			return err
 		}
 
-		if err := s.activity.Record(ctx, entity.IssueActivity{
+		if err := s.activity.Record(ctx, entity.Activity{
 			WorkspaceID:    workspaceID,
-			IssueID:        issueID,
+			Subject:        entity.IssueSubject(issueID),
 			ActorAccountID: decision.Actor.AccountID,
-			Kind:           entity.IssueActivityKindTriaged,
+			ActorKind:      decision.Actor.Kind,
+			Kind:           entity.ActivityKindTriaged,
 			Field:          triageDecisionReassigned,
 			FromValue:      string(entity.TriageStateWaiting),
 			ToValue:        team.Name,

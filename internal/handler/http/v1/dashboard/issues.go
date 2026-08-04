@@ -214,17 +214,10 @@ func (h *handler) ListWorkspaceIssueActivity(
 	ctx context.Context,
 	request api.ListWorkspaceIssueActivityRequestObject,
 ) (api.ListWorkspaceIssueActivityResponseObject, error) {
-	input := service.ListIssueActivityInput{}
-
-	if request.Params.Limit != nil {
-		input.Limit = int(*request.Params.Limit)
-	}
-
-	if request.Params.Cursor != nil {
-		input.Cursor = *request.Params.Cursor
-	}
-
-	page, err := h.issues.Activity(ctx, request.WorkspaceId, request.IssueId, input)
+	page, err := h.issues.Activity(
+		ctx, request.WorkspaceId, request.IssueId,
+		activityInput(request.Params.Limit, request.Params.Cursor, request.Params.Order),
+	)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -233,7 +226,25 @@ func (h *handler) ListWorkspaceIssueActivity(
 		return nil, err
 	}
 
-	return api.ListWorkspaceIssueActivity200JSONResponse(issueActivityPageDTO(page)), nil
+	return api.ListWorkspaceIssueActivity200JSONResponse(activityPageDTO(page)), nil
+}
+
+func activityInput(limit *int32, cursor *string, order *api.ListWorkspaceIssueActivityParamsOrder) service.ListActivityInput {
+	input := service.ListActivityInput{}
+
+	if limit != nil {
+		input.Limit = int(*limit)
+	}
+
+	if cursor != nil {
+		input.Cursor = *cursor
+	}
+
+	if order != nil {
+		input.Order = entity.ActivityOrder(*order)
+	}
+
+	return input
 }
 
 func (h *handler) MoveWorkspaceIssueToTeam(

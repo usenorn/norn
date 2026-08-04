@@ -225,9 +225,9 @@ func TestTheMentionCapIsEnforcedAtTheBoundaryNotBeyondIt(t *testing.T) {
 }
 
 func TestBothCommentActivityKindsAreRecognised(t *testing.T) {
-	for _, kind := range []entity.IssueActivityKind{
-		entity.IssueActivityKindCommented,
-		entity.IssueActivityKindCommentDeleted,
+	for _, kind := range []entity.ActivityKind{
+		entity.ActivityKindCommented,
+		entity.ActivityKindCommentDeleted,
 	} {
 		if !kind.Valid() {
 			t.Fatalf(

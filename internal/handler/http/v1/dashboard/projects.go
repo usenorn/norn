@@ -275,3 +275,26 @@ func (h *handler) PostWorkspaceProjectStatus(
 
 	return api.PostWorkspaceProjectStatus201JSONResponse(projectStatusDTO(update)), nil
 }
+
+func (h *handler) ListWorkspaceProjectActivity(
+	ctx context.Context,
+	request api.ListWorkspaceProjectActivityRequestObject,
+) (api.ListWorkspaceProjectActivityResponseObject, error) {
+	page, err := h.projects.Activity(
+		ctx, request.WorkspaceId, request.ProjectId,
+		activityInput(
+			request.Params.Limit,
+			request.Params.Cursor,
+			(*api.ListWorkspaceIssueActivityParamsOrder)(request.Params.Order),
+		),
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceProjectActivity200JSONResponse(activityPageDTO(page)), nil
+}
