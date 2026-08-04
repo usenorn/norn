@@ -58,6 +58,36 @@ func (mr *MockSSOConnectionsMockRecorder) BeginLogin(ctx, input any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginLogin", reflect.TypeOf((*MockSSOConnections)(nil).BeginLogin), ctx, input)
 }
 
+// BeginSAMLLogin mocks base method.
+func (m *MockSSOConnections) BeginSAMLLogin(ctx context.Context, input service.BeginOIDCLoginInput) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BeginSAMLLogin", ctx, input)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BeginSAMLLogin indicates an expected call of BeginSAMLLogin.
+func (mr *MockSSOConnectionsMockRecorder) BeginSAMLLogin(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginSAMLLogin", reflect.TypeOf((*MockSSOConnections)(nil).BeginSAMLLogin), ctx, input)
+}
+
+// BeginSAMLTest mocks base method.
+func (m *MockSSOConnections) BeginSAMLTest(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BeginSAMLTest", ctx, workspaceID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BeginSAMLTest indicates an expected call of BeginSAMLTest.
+func (mr *MockSSOConnectionsMockRecorder) BeginSAMLTest(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginSAMLTest", reflect.TypeOf((*MockSSOConnections)(nil).BeginSAMLTest), ctx, workspaceID)
+}
+
 // BeginTest mocks base method.
 func (m *MockSSOConnections) BeginTest(ctx context.Context, workspaceID uuid.UUID) (string, error) {
 	m.ctrl.T.Helper()
@@ -74,10 +104,10 @@ func (mr *MockSSOConnectionsMockRecorder) BeginTest(ctx, workspaceID any) *gomoc
 }
 
 // Complete mocks base method.
-func (m *MockSSOConnections) Complete(ctx context.Context, input service.CompleteOIDCInput) (entity.OIDCExchange, error) {
+func (m *MockSSOConnections) Complete(ctx context.Context, input service.CompleteOIDCInput) (entity.SSOExchange, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Complete", ctx, input)
-	ret0, _ := ret[0].(entity.OIDCExchange)
+	ret0, _ := ret[0].(entity.SSOExchange)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,6 +116,21 @@ func (m *MockSSOConnections) Complete(ctx context.Context, input service.Complet
 func (mr *MockSSOConnectionsMockRecorder) Complete(ctx, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Complete", reflect.TypeOf((*MockSSOConnections)(nil).Complete), ctx, input)
+}
+
+// CompleteSAML mocks base method.
+func (m *MockSSOConnections) CompleteSAML(ctx context.Context, input service.CompleteSAMLInput) (entity.SSOExchange, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CompleteSAML", ctx, input)
+	ret0, _ := ret[0].(entity.SSOExchange)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CompleteSAML indicates an expected call of CompleteSAML.
+func (mr *MockSSOConnectionsMockRecorder) CompleteSAML(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompleteSAML", reflect.TypeOf((*MockSSOConnections)(nil).CompleteSAML), ctx, input)
 }
 
 // Discover mocks base method.
@@ -118,6 +163,66 @@ func (mr *MockSSOConnectionsMockRecorder) Get(ctx, workspaceID any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSSOConnections)(nil).Get), ctx, workspaceID)
 }
 
+// GetSAML mocks base method.
+func (m *MockSSOConnections) GetSAML(ctx context.Context, workspaceID uuid.UUID) (entity.SAMLConnection, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSAML", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.SAMLConnection)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSAML indicates an expected call of GetSAML.
+func (mr *MockSSOConnectionsMockRecorder) GetSAML(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSAML", reflect.TypeOf((*MockSSOConnections)(nil).GetSAML), ctx, workspaceID)
+}
+
+// Protocol mocks base method.
+func (m *MockSSOConnections) Protocol(ctx context.Context, workspaceID uuid.UUID) (entity.SSOProtocol, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Protocol", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.SSOProtocol)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Protocol indicates an expected call of Protocol.
+func (mr *MockSSOConnectionsMockRecorder) Protocol(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Protocol", reflect.TypeOf((*MockSSOConnections)(nil).Protocol), ctx, workspaceID)
+}
+
+// PublishSAMLMetadata mocks base method.
+func (m *MockSSOConnections) PublishSAMLMetadata(ctx context.Context, workspaceSlug string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PublishSAMLMetadata", ctx, workspaceSlug)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PublishSAMLMetadata indicates an expected call of PublishSAMLMetadata.
+func (mr *MockSSOConnectionsMockRecorder) PublishSAMLMetadata(ctx, workspaceSlug any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishSAMLMetadata", reflect.TypeOf((*MockSSOConnections)(nil).PublishSAMLMetadata), ctx, workspaceSlug)
+}
+
+// ReadSAMLMetadata mocks base method.
+func (m *MockSSOConnections) ReadSAMLMetadata(ctx context.Context, input service.ReadSAMLMetadataInput) (entity.SAMLDescriptor, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadSAMLMetadata", ctx, input)
+	ret0, _ := ret[0].(entity.SAMLDescriptor)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReadSAMLMetadata indicates an expected call of ReadSAMLMetadata.
+func (mr *MockSSOConnectionsMockRecorder) ReadSAMLMetadata(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadSAMLMetadata", reflect.TypeOf((*MockSSOConnections)(nil).ReadSAMLMetadata), ctx, input)
+}
+
 // Remove mocks base method.
 func (m *MockSSOConnections) Remove(ctx context.Context, workspaceID uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -145,4 +250,33 @@ func (m *MockSSOConnections) Save(ctx context.Context, input service.SaveOIDCCon
 func (mr *MockSSOConnectionsMockRecorder) Save(ctx, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockSSOConnections)(nil).Save), ctx, input)
+}
+
+// SaveSAML mocks base method.
+func (m *MockSSOConnections) SaveSAML(ctx context.Context, input service.SaveSAMLConnectionInput) (entity.SAMLConnection, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveSAML", ctx, input)
+	ret0, _ := ret[0].(entity.SAMLConnection)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SaveSAML indicates an expected call of SaveSAML.
+func (mr *MockSSOConnectionsMockRecorder) SaveSAML(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSAML", reflect.TypeOf((*MockSSOConnections)(nil).SaveSAML), ctx, input)
+}
+
+// SweepCertificates mocks base method.
+func (m *MockSSOConnections) SweepCertificates(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SweepCertificates", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SweepCertificates indicates an expected call of SweepCertificates.
+func (mr *MockSSOConnectionsMockRecorder) SweepCertificates(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SweepCertificates", reflect.TypeOf((*MockSSOConnections)(nil).SweepCertificates), ctx)
 }

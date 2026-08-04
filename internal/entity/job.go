@@ -15,6 +15,7 @@ const (
 	TaskTypeInvitation              = "workspace:invitation"
 	TaskTypeWorkspacePurge          = "workspace:purge"
 	TaskTypeIssuePurge              = "issue:purge"
+	TaskTypeSSOCertificateSweep     = "sso:certificate_sweep"
 	TaskTypeBulkApply               = "issue:bulk_apply"
 
 	QueueDefault = "default"

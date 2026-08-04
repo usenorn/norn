@@ -22,6 +22,7 @@ func New(
 	tokens service.APITokens,
 	dashboard api.StrictServerInterface,
 	callback *sso.Callback,
+	samlEdge *sso.SAML,
 ) http.Handler {
 	base := chi.NewRouter()
 	base.Use(
@@ -34,6 +35,8 @@ func New(
 	)
 
 	base.Get(sso.CallbackPath, callback.Handle)
+	base.Get(sso.MetadataPath, samlEdge.Metadata)
+	base.Post(sso.ACSPath, samlEdge.Consume)
 
 	strict := api.NewStrictHandlerWithOptions(dashboard, nil, api.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {

@@ -3,16 +3,22 @@ package ssoconnection_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/samlprovider"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
+	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
-	connectionrepo "github.com/usenorn/norn/internal/repository/oidcconnection"
 	providerrepo "github.com/usenorn/norn/internal/repository/oidcprovider"
 	staterepo "github.com/usenorn/norn/internal/repository/oidcstate"
+	samlreplayrepo "github.com/usenorn/norn/internal/repository/samlreplay"
+	samlrequestrepo "github.com/usenorn/norn/internal/repository/samlrequest"
+	connectionrepo "github.com/usenorn/norn/internal/repository/ssoconnection"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	"github.com/usenorn/norn/internal/service"
@@ -22,7 +28,10 @@ import (
 )
 
 type harness struct {
-	connections *connectionrepo.MockOIDCConnection
+	connections *connectionrepo.MockSSOConnection
+	requests    *samlrequestrepo.MockSAMLRequest
+	replays     *samlreplayrepo.MockSAMLReplay
+	mailer      *mailerrepo.MockMailer
 	states      *staterepo.MockOIDCState
 	workspaces  *workspacerepo.MockWorkspace
 	accounts    *accountrepo.MockAccount
@@ -40,7 +49,10 @@ func newHarness(t *testing.T) *harness {
 	ctrl := gomock.NewController(t)
 
 	h := &harness{
-		connections: connectionrepo.NewMockOIDCConnection(ctrl),
+		connections: connectionrepo.NewMockSSOConnection(ctrl),
+		requests:    samlrequestrepo.NewMockSAMLRequest(ctrl),
+		replays:     samlreplayrepo.NewMockSAMLReplay(ctrl),
+		mailer:      mailerrepo.NewMockMailer(ctrl),
 		states:      staterepo.NewMockOIDCState(ctrl),
 		workspaces:  workspacerepo.NewMockWorkspace(ctrl),
 		accounts:    accountrepo.NewMockAccount(ctrl),
@@ -61,11 +73,21 @@ func newHarness(t *testing.T) *harness {
 	h.service = ssosvc.New(
 		h.connections,
 		h.states,
+		h.requests,
+		h.replays,
 		h.workspaces,
 		h.accounts,
 		h.memberships,
 		h.provider,
+		samlprovider.New(config.SAML{
+			RequestTimeout:  time.Second,
+			MaxResponseSize: 1 << 20,
+			MaxClockSkew:    3 * time.Minute,
+			MaxIssueDelay:   90 * time.Second,
+		}),
+		h.mailer,
 		h.sessions,
+		config.App{BaseURL: "https://norn.example.com"},
 		h.authorizer,
 		h.transactor,
 	)

@@ -7,6 +7,7 @@ var Set = wire.NewSet(
 	NewApp,
 	NewSecurity,
 	NewOIDC,
+	NewSAML,
 	NewInstance,
 	NewHTTP,
 	NewPostgres,

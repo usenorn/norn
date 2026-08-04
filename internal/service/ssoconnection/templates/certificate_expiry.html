@@ -1,0 +1,13 @@
+<p>
+  {{if .Expired}}
+    The signing certificate from {{.Provider}} expired on {{.ExpiresAt}}. Until it is
+    replaced, nobody can sign in to {{.Workspace}} through your identity provider.
+  {{else}}
+    {{.Provider}} signs with a certificate that expires on {{.ExpiresAt}}, in
+    {{.DaysLeft}} day{{if ne .DaysLeft 1}}s{{end}}. When it does, nobody will be able to
+    sign in to {{.Workspace}} through your identity provider.
+  {{end}}
+</p>
+<p>Copy the current certificate from your provider and save it here:</p>
+<p><a href="{{.SettingsURL}}">{{.SettingsURL}}</a></p>
+<p>If anyone still has a Norn password they can sign in with that in the meantime.</p>

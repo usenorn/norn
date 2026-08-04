@@ -7,13 +7,20 @@ import (
 	"testing"
 )
 
-var oidcPackages = []string{
+var ssoPackages = []string{
+	"../../entity/sso.go",
 	"../../entity/oidc.go",
+	"../../entity/saml.go",
 	"../../pkg/crypter",
 	"../../pkg/oidcprovider",
-	"../../repository/oidcconnection",
+	"../../pkg/samlkey",
+	"../../pkg/samlprovider",
 	"../../repository/oidcprovider",
 	"../../repository/oidcstate",
+	"../../repository/samlreplay",
+	"../../repository/samlrequest",
+	"../../repository/ssoconnection",
+	"../../handler/http/sso",
 	"../../handler/http/v1/dashboard/sso.go",
 	".",
 }
@@ -24,7 +31,7 @@ var commercialWords = []string{
 }
 
 func TestSingleSignOnIsNotGatedBehindAnythingCommercial(t *testing.T) {
-	for _, target := range oidcPackages {
+	for _, target := range ssoPackages {
 		for _, path := range goFilesUnder(t, target) {
 			body, err := os.ReadFile(path)
 			if err != nil {

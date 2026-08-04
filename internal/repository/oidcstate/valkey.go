@@ -62,7 +62,7 @@ func (r *stateRepository) Take(ctx context.Context, state string) (entity.OIDCSt
 	payload, err := r.client.GetDel(ctx, key(state)).Bytes()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return entity.OIDCState{}, entity.ErrOIDCStateNotFound
+			return entity.OIDCState{}, entity.ErrSSOStateNotFound
 		}
 
 		return entity.OIDCState{}, fmt.Errorf("take oidc state: %w", err)
@@ -74,7 +74,7 @@ func (r *stateRepository) Take(ctx context.Context, state string) (entity.OIDCSt
 	}
 
 	return entity.OIDCState{
-		Purpose:     entity.OIDCPurpose(stored.Purpose),
+		Purpose:     entity.SSOPurpose(stored.Purpose),
 		WorkspaceID: stored.WorkspaceID,
 		Nonce:       stored.Nonce,
 		Verifier:    stored.Verifier,

@@ -163,6 +163,19 @@ func (h *handler) avatarURL(key string) string {
 	return h.blobs.URL(key)
 }
 
+func (h *handler) oidcRedirectBase() string {
+	return strings.TrimRight(h.app.BaseURL, "/")
+}
+
 func (h *handler) oidcRedirectURI() string {
-	return strings.TrimRight(h.app.BaseURL, "/") + oidcCallbackPath
+	return h.oidcRedirectBase() + oidcCallbackPath
+}
+
+func (h *handler) workspaceSlug(ctx context.Context, workspaceID uuid.UUID) string {
+	workspace, err := h.workspaces.Get(ctx, workspaceID)
+	if err != nil {
+		return workspaceID.String()
+	}
+
+	return workspace.Slug
 }

@@ -1,7 +1,7 @@
-import type { SsoConfiguration, SsoOutcome } from "$lib/workspace/sso";
+import type { SsoOutcome, SsoProviderConfiguration } from "$lib/workspace/sso";
 
 export type AuthenticationPreview = {
-	configuration?: SsoConfiguration;
+	configuration?: SsoProviderConfiguration;
 	outcome?: SsoOutcome;
 	discovering?: boolean;
 };
@@ -16,7 +16,7 @@ export const authenticationPreviewStates: Record<string, AuthenticationPreview> 
 			unavailable: { configuration: { kind: "unavailable" } },
 			unverified: {
 				configuration: {
-					kind: "configured",
+					kind: "oidc",
 					connection: {
 						workspaceId: "00000000-0000-4000-8000-000000000000",
 						endpoints: {
@@ -41,7 +41,7 @@ export const authenticationPreviewStates: Record<string, AuthenticationPreview> 
 			},
 			verified: {
 				configuration: {
-					kind: "configured",
+					kind: "oidc",
 					connection: {
 						workspaceId: "00000000-0000-4000-8000-000000000000",
 						endpoints: {
@@ -67,7 +67,7 @@ export const authenticationPreviewStates: Record<string, AuthenticationPreview> 
 			},
 			manual: {
 				configuration: {
-					kind: "configured",
+					kind: "oidc",
 					connection: {
 						workspaceId: "00000000-0000-4000-8000-000000000000",
 						endpoints: {
@@ -88,6 +88,166 @@ export const authenticationPreviewStates: Record<string, AuthenticationPreview> 
 			},
 			saved: { configuration: { kind: "unconfigured" }, outcome: { kind: "saved" } },
 			removed: { configuration: { kind: "unconfigured" }, outcome: { kind: "removed" } },
+			saml_unverified: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							sloUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2027-08-04T00:00:00Z",
+						},
+						providerMetadataUrl:
+							"https://login.northwind.co/realms/staff/protocol/saml/descriptor",
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						signInUrl: "https://norn.northwind.co/sso?workspace=northwind",
+						allowIdpInitiated: false,
+						mapping: {},
+						provisioning: false,
+						certificateExpiresAt: "2027-08-04T00:00:00Z",
+						certificateDaysLeft: 365,
+						updatedAt: "2026-08-04T10:15:00Z",
+					},
+				},
+			},
+			saml_verified: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2027-08-04T00:00:00Z",
+						},
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						allowIdpInitiated: true,
+						mapping: { email: "urn:oid:0.9.2342.19200300.100.1.3" },
+						provisioning: true,
+						certificateExpiresAt: "2027-08-04T00:00:00Z",
+						certificateDaysLeft: 365,
+						verifiedAt: "2026-08-04T10:22:00Z",
+						updatedAt: "2026-08-04T10:15:00Z",
+					},
+				},
+				outcome: { kind: "verified" },
+			},
+			saml_certificate_expiring: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2026-08-11T00:00:00Z",
+						},
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						allowIdpInitiated: false,
+						mapping: {},
+						provisioning: true,
+						certificateExpiresAt: "2026-08-11T00:00:00Z",
+						certificateDaysLeft: 7,
+						verifiedAt: "2026-08-04T10:22:00Z",
+						updatedAt: "2026-08-04T10:15:00Z",
+					},
+				},
+			},
+			saml_certificate_expired: {
+				configuration: {
+					kind: "saml",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						descriptor: {
+							entityId: "https://login.northwind.co/realms/staff",
+							ssoUrl: "https://login.northwind.co/realms/staff/protocol/saml",
+							certificates: ["MIIClzCCAX8CBgGfyvWDgDANBgkqhkiG9w0BAQsFADAP"],
+							expiresAt: "2026-07-28T00:00:00Z",
+						},
+						spEntityId: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						spCertificate: "MIIDazCCAlOgAwIBAgIUNorthwindServiceProviderCert",
+						acsUrl: "https://norn.northwind.co/v1/sso/saml/northwind/acs",
+						metadataUrl: "https://norn.northwind.co/v1/sso/saml/northwind/metadata",
+						allowIdpInitiated: false,
+						mapping: {},
+						provisioning: true,
+						certificateExpiresAt: "2026-07-28T00:00:00Z",
+						certificateDaysLeft: -7,
+						verifiedAt: "2026-07-01T10:22:00Z",
+						updatedAt: "2026-07-01T10:15:00Z",
+					},
+				},
+			},
+			failed_metadata: {
+				configuration: { kind: "unconfigured" },
+				outcome: {
+					kind: "failed",
+					failure: { kind: "stage", stage: "metadata", message: "Something went wrong at the metadata stage." },
+				},
+			},
+			failed_certificate: {
+				configuration: { kind: "unconfigured" },
+				outcome: {
+					kind: "failed",
+					failure: { kind: "stage", stage: "certificate", message: "Something went wrong at the certificate stage." },
+				},
+			},
+			failed_request: {
+				configuration: { kind: "unconfigured" },
+				outcome: {
+					kind: "failed",
+					failure: { kind: "stage", stage: "request", message: "Something went wrong at the request stage." },
+				},
+			},
+			failed_response: {
+				configuration: { kind: "unconfigured" },
+				outcome: {
+					kind: "failed",
+					failure: { kind: "stage", stage: "response", message: "Something went wrong at the response stage." },
+				},
+			},
+			failed_signature: {
+				configuration: { kind: "unconfigured" },
+				outcome: {
+					kind: "failed",
+					failure: { kind: "stage", stage: "signature", message: "Something went wrong at the signature stage." },
+				},
+			},
+			failed_conditions: {
+				configuration: { kind: "unconfigured" },
+				outcome: {
+					kind: "failed",
+					failure: { kind: "stage", stage: "conditions", message: "Something went wrong at the conditions stage." },
+				},
+			},
+			failed_replay: {
+				configuration: { kind: "unconfigured" },
+				outcome: {
+					kind: "failed",
+					failure: { kind: "stage", stage: "replay", message: "Something went wrong at the replay stage." },
+				},
+			},
+			failed_attributes: {
+				configuration: { kind: "unconfigured" },
+				outcome: {
+					kind: "failed",
+					failure: { kind: "stage", stage: "attributes", message: "Something went wrong at the attributes stage." },
+				},
+			},
 			failed_discovery: {
 				configuration: { kind: "unconfigured" },
 				outcome: {

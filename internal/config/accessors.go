@@ -6,6 +6,8 @@ func NewSecurity(cfg Config) Security { return cfg.Security }
 
 func NewOIDC(cfg Config) OIDC { return cfg.OIDC }
 
+func NewSAML(cfg Config) SAML { return cfg.SAML }
+
 func NewInstance(cfg Config) Instance { return cfg.Instance }
 
 func NewHTTP(cfg Config) HTTP { return cfg.HTTP }

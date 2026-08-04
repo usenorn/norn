@@ -10,6 +10,14 @@ const stages: SsoStage[] = [
 	"claims",
 	"matching",
 	"provisioning",
+	"metadata",
+	"certificate",
+	"request",
+	"response",
+	"signature",
+	"conditions",
+	"replay",
+	"attributes",
 ];
 
 const stageTitles: Record<SsoStage, string> = {
@@ -22,6 +30,14 @@ const stageTitles: Record<SsoStage, string> = {
 	claims: "Your provider left something out",
 	matching: "Signed in, but there's no account here",
 	provisioning: "Signed in, but there's no account here",
+	metadata: "Your provider's details could not be read",
+	certificate: "Your provider's certificate is not usable",
+	request: "The sign-in request could not be built",
+	response: "Your provider's response could not be read",
+	signature: "Your provider's response could not be trusted",
+	conditions: "This sign-in arrived outside the window it is valid for",
+	replay: "This sign-in has already been used",
+	attributes: "Your provider left something out",
 };
 
 const stageAdvice: Record<SsoStage, string[]> = {
@@ -61,6 +77,38 @@ const stageAdvice: Record<SsoStage, string[]> = {
 		"An admin invites you and you sign in again.",
 		"Or an admin turns on just-in-time provisioning in Settings → Authentication.",
 		"Nothing was created. You can close this tab safely.",
+	],
+	metadata: [
+		"An administrator should re-import the provider metadata in Settings → Authentication.",
+		"Confirm this instance can reach your provider over the network.",
+	],
+	certificate: [
+		"The signing certificate has expired or was not readable.",
+		"An administrator should copy the current certificate from your provider.",
+	],
+	request: [
+		"An administrator should check the sign-in URL in Settings → Authentication.",
+		"Norn could not build a request your provider would accept.",
+	],
+	response: [
+		"Your provider sent something Norn could not parse.",
+		"An administrator should confirm Norn is registered as a SAML application, not another kind.",
+	],
+	signature: [
+		"An administrator should confirm the certificate in Norn is the one your provider signs with.",
+		"Your provider has to sign its assertions; Norn will not accept unsigned ones.",
+	],
+	conditions: [
+		"This usually means the clock on this instance and the clock at your provider disagree.",
+		"An administrator should check that both machines synchronise their time.",
+	],
+	replay: [
+		"Start the sign-in again rather than reloading or going back.",
+		"Each sign-in from your provider can only be used once.",
+	],
+	attributes: [
+		"Your provider has to release an email address to Norn.",
+		"An administrator should check the attribute mapping in Settings → Authentication.",
 	],
 };
 
