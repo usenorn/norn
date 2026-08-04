@@ -2,6 +2,7 @@ import { redirect } from "@sveltejs/kit";
 import { apiFor } from "$lib/api";
 import type { components } from "$lib/api/dashboard.gen";
 import type { Cycle } from "$lib/cycles/cycles";
+import type { Project } from "$lib/projects/projects";
 import type { Issue } from "$lib/issues/issues";
 import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { WorkflowState } from "$lib/team/states";
@@ -29,6 +30,7 @@ export type IssueDetail =
 			childProgress: components["schemas"]["IssueProgress"];
 			candidates: Issue[];
 			cycles: Cycle[];
+			projects: Project[];
 	  }
 	| { kind: "unavailable" };
 
@@ -60,7 +62,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 
 	const path = { workspaceId: workspace.id, issueId: issue.data.id };
 
-	const [states, labels, groups, activity, members, children, candidates, relations, cycles] =
+	const [states, labels, groups, activity, members, children, candidates, relations, cycles, projects] =
 		await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			fetch,
@@ -92,6 +94,10 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			fetch,
 			params: { path: { workspaceId: workspace.id }, query: { teamId: issue.data.teamId } },
 		}),
+		api.GET("/workspaces/{workspaceId}/projects", {
+			fetch,
+			params: { path: { workspaceId: workspace.id } },
+		}),
 	]);
 
 	if (
@@ -120,6 +126,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			candidates: candidates.data?.issues ?? [],
 			relations: relations.data.groups,
 			cycles: (cycles.data ?? []).filter((cycle) => cycle.phase !== "closed"),
+			projects: (projects.data ?? []).filter((project) => !project.archived),
 		},
 	};
 };

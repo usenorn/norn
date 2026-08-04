@@ -1440,6 +1440,130 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the projects in a workspace */
+        get: operations["listWorkspaceProjects"];
+        put?: never;
+        /** Start a project */
+        post: operations["createWorkspaceProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/projects/{projectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one project */
+        get: operations["getWorkspaceProject"];
+        put?: never;
+        post?: never;
+        /** Delete a project, leaving its issues in place */
+        delete: operations["deleteWorkspaceProject"];
+        options?: never;
+        head?: never;
+        /** Change a project's name, description, lead, target date or state */
+        patch: operations["updateWorkspaceProject"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/projects/{projectId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive a completed or cancelled project, keeping it retrievable */
+        post: operations["archiveWorkspaceProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/projects/{projectId}/unarchive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bring an archived project back onto the list */
+        post: operations["unarchiveWorkspaceProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/projects/{projectId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List who is on a project */
+        get: operations["listWorkspaceProjectMembers"];
+        put?: never;
+        /** Put someone on a project */
+        post: operations["addWorkspaceProjectMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/projects/{projectId}/members/{accountId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take someone off a project */
+        delete: operations["removeWorkspaceProjectMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/projects/{projectId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the project's status updates, newest first */
+        get: operations["listWorkspaceProjectStatus"];
+        put?: never;
+        /** Say how the project is going */
+        post: operations["postWorkspaceProjectStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1691,12 +1815,14 @@ export interface components {
             dueOn?: string;
             /** Format: uuid */
             cycleId?: string;
+            /** Format: uuid */
+            projectId?: string;
             /** @description Properties to reset; absent means unchanged, which a nullable field cannot express */
-            clear?: ("assignee" | "estimate" | "dueOn" | "cycle")[];
+            clear?: ("assignee" | "estimate" | "dueOn" | "cycle" | "project")[];
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
@@ -1719,6 +1845,87 @@ export interface components {
             complete: number;
             /** Format: int32 */
             abandoned: number;
+        };
+        /** @enum {string} */
+        ProjectState: "planned" | "active" | "paused" | "completed" | "cancelled";
+        /** @enum {string} */
+        ProjectHealth: "on_track" | "at_risk" | "off_track";
+        Project: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            slug: string;
+            name: string;
+            description: string;
+            state: components["schemas"]["ProjectState"];
+            /** Format: uuid */
+            leadAccountId?: string;
+            leadName?: string;
+            /** Format: date */
+            targetOn?: string;
+            archived: boolean;
+            /** Format: date-time */
+            archivedAt?: string;
+            health?: components["schemas"]["ProjectHealth"];
+            /** @description True when the project holds issues on teams the caller cannot see. The figures they are given cover only their own teams; no count of the concealed work is disclosed. */
+            concealedWork: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CreateProjectRequest: {
+            slug: string;
+            name: string;
+            description?: string;
+            /** Format: uuid */
+            leadAccountId?: string;
+            /** Format: date */
+            targetOn?: string;
+        };
+        UpdateProjectRequest: {
+            name?: string;
+            description?: string;
+            /** Format: uuid */
+            leadAccountId?: string;
+            /** Format: date */
+            targetOn?: string;
+            state?: components["schemas"]["ProjectState"];
+            clear?: ("lead" | "targetOn")[];
+        };
+        ProjectMember: {
+            /** Format: uuid */
+            projectId: string;
+            /** Format: uuid */
+            accountId: string;
+            displayName: string;
+            email: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AddProjectMemberRequest: {
+            /** Format: uuid */
+            accountId: string;
+        };
+        ProjectStatusUpdate: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            projectId: string;
+            /** Format: uuid */
+            authorAccountId?: string;
+            authorName?: string;
+            health: components["schemas"]["ProjectHealth"];
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PostProjectStatusRequest: {
+            health: components["schemas"]["ProjectHealth"];
+            body: string;
+        };
+        ProjectConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists";
         };
         /** @enum {string} */
         CyclePhase: "upcoming" | "current" | "ended" | "closed";
@@ -1860,6 +2067,9 @@ export interface components {
             cycleId?: string;
             /** Format: int32 */
             cycleNumber?: number;
+            /** Format: uuid */
+            projectId?: string;
+            projectName?: string;
             childProgress?: components["schemas"]["IssueProgress"];
             blocked?: boolean;
             state: components["schemas"]["IssueState"];
@@ -2523,6 +2733,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["CycleConflictProblem"];
             };
         };
+        /** @description The project refuses the change */
+        ProjectConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProjectConflictProblem"];
+            };
+        };
         /** @description The label cannot change without losing or duplicating work */
         LabelConflict: {
             headers: {
@@ -2640,6 +2859,7 @@ export interface components {
         StateId: string;
         IssueId: string;
         CycleId: string;
+        ProjectId: string;
         LabelId: string;
         GroupId: string;
         TeamId: string;
@@ -4561,6 +4781,8 @@ export interface operations {
                 teamId?: string;
                 /** @description Tally one cycle instead of a team; takes precedence over teamId */
                 cycleId?: string;
+                /** @description Tally one project instead of a team. Counted through the caller's own team scope, so a project drawing on a team they cannot see reports only their share of it. */
+                projectId?: string;
             };
             header?: never;
             path: {
@@ -4589,6 +4811,7 @@ export interface operations {
             query?: {
                 teamId?: string;
                 cycleId?: string;
+                projectId?: string;
                 /** @description Repeat to include more than one; defaults to active issues only */
                 status?: components["schemas"]["IssueStatus"][];
                 limit?: number;
@@ -5770,6 +5993,355 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceProjects: {
+        parameters: {
+            query?: {
+                state?: components["schemas"]["ProjectState"];
+                /** @description Include archived projects; they are left out by default */
+                archived?: boolean;
+                /** @description Only projects the caller leads or belongs to */
+                mine?: boolean;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Projects ordered by name */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProjectRequest"];
+            };
+        };
+        responses: {
+            /** @description The project that was started */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["ProjectConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The project */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The project is gone and its issues carry on without it */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProjectRequest"];
+            };
+        };
+        responses: {
+            /** @description The project as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ProjectConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    archiveWorkspaceProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The archived project */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ProjectConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unarchiveWorkspaceProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The project, no longer archived */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ProjectConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceProjectMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The project's members */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectMember"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    addWorkspaceProjectMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddProjectMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description The member that was added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectMember"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ProjectConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceProjectMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+                accountId: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description They are no longer on the project */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ProjectConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceProjectStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The status updates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectStatusUpdate"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    postWorkspaceProjectStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostProjectStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description The status update that was recorded */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectStatusUpdate"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ProjectConflict"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

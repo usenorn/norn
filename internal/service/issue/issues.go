@@ -23,6 +23,7 @@ type issuesService struct {
 	memberships  repository.Membership
 	cycles       repository.Cycle
 	scopeChanges repository.CycleScopeChange
+	projects     repository.Project
 	jobs         repository.JobProducer
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
@@ -36,6 +37,7 @@ func New(
 	memberships repository.Membership,
 	cycles repository.Cycle,
 	scopeChanges repository.CycleScopeChange,
+	projects repository.Project,
 	jobs repository.JobProducer,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
@@ -48,6 +50,7 @@ func New(
 		memberships:  memberships,
 		cycles:       cycles,
 		scopeChanges: scopeChanges,
+		projects:     projects,
 		jobs:         jobs,
 		authorizer:   authorizer,
 		transactor:   transactor,
@@ -164,9 +167,10 @@ func (s *issuesService) List(
 	}
 
 	page := entity.IssuePage{
-		Limit:    input.Limit,
-		Statuses: entity.RequestedIssueStatuses(input.Statuses),
-		CycleID:  input.CycleID,
+		Limit:     input.Limit,
+		Statuses:  entity.RequestedIssueStatuses(input.Statuses),
+		CycleID:   input.CycleID,
+		ProjectID: input.ProjectID,
 	}.Normalized()
 
 	if input.Cursor != "" {
@@ -226,10 +230,12 @@ func (s *issuesService) Update(
 		Estimate:      input.Estimate,
 		DueOn:         input.DueOn,
 		CycleID:       input.CycleID,
+		ProjectID:     input.ProjectID,
 		ClearAssignee: slices.Contains(input.Clear, entity.IssueFieldAssignee),
 		ClearEstimate: slices.Contains(input.Clear, entity.IssueFieldEstimate),
 		ClearDueOn:    slices.Contains(input.Clear, entity.IssueFieldDueOn),
 		ClearCycle:    slices.Contains(input.Clear, entity.IssueFieldCycle),
+		ClearProject:  slices.Contains(input.Clear, entity.IssueFieldProject),
 	}
 
 	touched := change.Touched()
@@ -285,6 +291,12 @@ func (s *issuesService) Update(
 		if change.CycleID != nil {
 			joining, err = s.joinable(ctx, issue, *change.CycleID, decision)
 			if err != nil {
+				return err
+			}
+		}
+
+		if change.ProjectID != nil {
+			if err := s.projectOpen(ctx, issue, *change.ProjectID); err != nil {
 				return err
 			}
 		}
@@ -507,6 +519,10 @@ func (s *issuesService) Progress(
 		return s.issues.ProgressByCycle(ctx, decision.Scope, *input.CycleID)
 	}
 
+	if input.ProjectID != nil {
+		return s.issues.ProgressByProject(ctx, decision.Scope, *input.ProjectID)
+	}
+
 	return s.issues.ProgressByCategory(ctx, decision.Scope, input.TeamID)
 }
 
@@ -617,6 +633,7 @@ var clearable = []string{
 	entity.IssueFieldEstimate,
 	entity.IssueFieldDueOn,
 	entity.IssueFieldCycle,
+	entity.IssueFieldProject,
 }
 
 func (s *issuesService) assignable(
@@ -663,6 +680,23 @@ func (s *issuesService) joinable(
 	}
 
 	return cycle, nil
+}
+
+func (s *issuesService) projectOpen(
+	ctx context.Context,
+	issue entity.Issue,
+	projectID uuid.UUID,
+) error {
+	project, err := s.projects.GetByID(ctx, issue.WorkspaceID, projectID)
+	if err != nil {
+		return err
+	}
+
+	if project.Archived() {
+		return entity.ErrProjectArchived
+	}
+
+	return nil
 }
 
 func (s *issuesService) recordScope(

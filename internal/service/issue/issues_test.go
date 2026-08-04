@@ -19,6 +19,7 @@ import (
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
@@ -34,6 +35,7 @@ type harness struct {
 	memberships *membershiprepo.MockMembership
 	cycles      *cyclerepo.MockCycle
 	scope       *cyclerepo.MockCycleScopeChange
+	projects    *projectrepo.MockProject
 	jobs        *jobqueuerepo.MockJobProducer
 	transactor  *transactorrepo.MockTransactor
 	authorizer  *authorizersvc.MockAuthorizer
@@ -53,6 +55,7 @@ func newHarness(t *testing.T) *harness {
 		memberships: membershiprepo.NewMockMembership(ctrl),
 		cycles:      cyclerepo.NewMockCycle(ctrl),
 		scope:       cyclerepo.NewMockCycleScopeChange(ctrl),
+		projects:    projectrepo.NewMockProject(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
@@ -67,7 +70,7 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = issuesvc.New(
 		h.issues, h.states, h.activity, h.labels, h.memberships,
-		h.cycles, h.scope, h.jobs, h.authorizer, h.transactor,
+		h.cycles, h.scope, h.projects, h.jobs, h.authorizer, h.transactor,
 	)
 
 	return h

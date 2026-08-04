@@ -82,6 +82,8 @@ type Issue struct {
 	Depth              int
 	CycleID            uuid.UUID
 	CycleNumber        int
+	ProjectID          uuid.UUID
+	ProjectName        string
 	Children           IssueProgress
 	Blocked            bool
 	CreatedByAccountID uuid.UUID
@@ -168,10 +170,11 @@ func DecodeIssueCursor(raw string) (IssueCursor, error) {
 }
 
 type IssuePage struct {
-	Cursor   *IssueCursor
-	Limit    int
-	Statuses []IssueStatus
-	CycleID  *uuid.UUID
+	Cursor    *IssueCursor
+	Limit     int
+	Statuses  []IssueStatus
+	CycleID   *uuid.UUID
+	ProjectID *uuid.UUID
 }
 
 func (p IssuePage) Normalized() IssuePage {

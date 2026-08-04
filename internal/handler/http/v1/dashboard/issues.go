@@ -26,6 +26,7 @@ func (h *handler) ListWorkspaceIssues(
 
 	input.TeamID = request.Params.TeamId
 	input.CycleID = request.Params.CycleId
+	input.ProjectID = request.Params.ProjectId
 
 	if request.Params.Status != nil {
 		for _, status := range *request.Params.Status {
@@ -111,6 +112,7 @@ func (h *handler) UpdateWorkspaceIssue(
 	}
 
 	input.CycleID = request.Body.CycleId
+	input.ProjectID = request.Body.ProjectId
 
 	if request.Body.Clear != nil {
 		for _, field := range *request.Body.Clear {
@@ -135,8 +137,9 @@ func (h *handler) GetWorkspaceIssueProgress(
 	request api.GetWorkspaceIssueProgressRequestObject,
 ) (api.GetWorkspaceIssueProgressResponseObject, error) {
 	progress, err := h.issues.Progress(ctx, request.WorkspaceId, service.ProgressInput{
-		TeamID:  request.Params.TeamId,
-		CycleID: request.Params.CycleId,
+		TeamID:    request.Params.TeamId,
+		CycleID:   request.Params.CycleId,
+		ProjectID: request.Params.ProjectId,
 	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

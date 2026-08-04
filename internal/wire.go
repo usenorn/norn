@@ -45,6 +45,7 @@ import (
 	oidcstaterepo "github.com/usenorn/norn/internal/repository/oidcstate"
 	passwordhistoryrepo "github.com/usenorn/norn/internal/repository/passwordhistory"
 	passwordresetrepo "github.com/usenorn/norn/internal/repository/passwordreset"
+	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	samlreplayrepo "github.com/usenorn/norn/internal/repository/samlreplay"
 	samlrequestrepo "github.com/usenorn/norn/internal/repository/samlrequest"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
@@ -67,6 +68,7 @@ import (
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
+	projectsvc "github.com/usenorn/norn/internal/service/project"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
@@ -109,6 +111,7 @@ var baseSet = wire.NewSet(
 	issuerelationrepo.Set,
 	bulkactionrepo.Set,
 	cyclerepo.Set,
+	projectrepo.Set,
 	labelrepo.Set,
 	labelgrouprepo.Set,
 	workflowstaterepo.Set,
@@ -135,6 +138,7 @@ var baseSet = wire.NewSet(
 	issuerelationsvc.Set,
 	bulkoperationsvc.Set,
 	cyclesvc.Set,
+	projectsvc.Set,
 	labelsvc.Set,
 	workflowstatesvc.Set,
 	apitokensvc.Set,

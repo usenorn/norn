@@ -42,6 +42,7 @@ export type IssueFailure =
 	| { kind: "relation_self" }
 	| { kind: "cycle_closed" }
 	| { kind: "cycle_team_mismatch" }
+	| { kind: "project_archived" }
 	| { kind: "invalid"; fields: string[] }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
@@ -82,6 +83,7 @@ const fieldNames: Record<string, string> = {
 	status: "whether it is archived",
 	parent: "the parent",
 	children: "the children",
+	project: "the project",
 };
 
 export function nameFields(fields: string[]): string {
@@ -121,6 +123,8 @@ export function issueFailureMessage(failure: IssueFailure): string {
 			return "A closed cycle cannot take on work or give it up. What it contained is history.";
 		case "cycle_team_mismatch":
 			return "That cycle belongs to a different team.";
+		case "project_archived":
+			return "That project is archived. Bring it back before moving work into it.";
 		case "invalid":
 			return `Check ${nameFields(failure.fields)}.`;
 		case "forbidden":
@@ -178,6 +182,8 @@ export function readIssueFailure(error: unknown): IssueFailure {
 			return { kind: "cycle_closed" };
 		case "cycle_team_mismatch":
 			return { kind: "cycle_team_mismatch" };
+		case "project_archived":
+			return { kind: "project_archived" };
 	}
 
 	if (problem.errors) {
