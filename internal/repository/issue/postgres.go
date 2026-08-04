@@ -38,6 +38,8 @@ const issueColumns = `
        i.depth,
        coalesce(i.cycle_id::text, ''),
        coalesce(c.number, 0),
+       coalesce(i.project_id::text, ''),
+       coalesce(pr.name, ''),
        coalesce(i.created_by_account_id::text, ''),
        i.created_at,
        i.updated_at,
@@ -53,7 +55,8 @@ FROM workspace_issues i
 JOIN workspace_teams t ON t.id = i.team_id
 JOIN workspace_workflow_states s ON s.id = i.state_id AND s.team_id = i.team_id
 LEFT JOIN workspace_issues p ON p.id = i.parent_issue_id
-LEFT JOIN workspace_cycles c ON c.id = i.cycle_id`
+LEFT JOIN workspace_cycles c ON c.id = i.cycle_id
+LEFT JOIN workspace_projects pr ON pr.id = i.project_id`
 
 const issuePageQuery = `
 SELECT` + issueColumns + issueJoins + `
@@ -63,6 +66,7 @@ WHERE i.workspace_id = $1
        OR (i.created_at, i.id) < ($5::timestamptz, $6::uuid))
   AND ($8::boolean IS TRUE OR i.status = ANY($9::text[]))
   AND ($10::boolean IS NOT TRUE OR i.cycle_id = $11::uuid)
+  AND ($12::boolean IS NOT TRUE OR i.project_id = $13::uuid)
 ORDER BY i.created_at DESC, i.id DESC
 LIMIT $7`
 
@@ -98,7 +102,7 @@ WITH allocated AS (
               version, field_versions, description, priority, assignee_account_id,
               estimate, due_on, state_entered_at, completed_at,
               status, archived_at,
-              parent_issue_id, depth, cycle_id,
+              parent_issue_id, depth, cycle_id, project_id,
               created_by_account_id, created_at, updated_at
 )
 SELECT` + issueColumns + `
@@ -106,7 +110,8 @@ FROM inserted i
 JOIN workspace_teams t ON t.id = i.team_id
 JOIN workspace_workflow_states s ON s.id = i.state_id AND s.team_id = i.team_id
 LEFT JOIN workspace_issues p ON p.id = i.parent_issue_id
-LEFT JOIN workspace_cycles c ON c.id = i.cycle_id`
+LEFT JOIN workspace_cycles c ON c.id = i.cycle_id
+LEFT JOIN workspace_projects pr ON pr.id = i.project_id`
 
 const lockIssueQuery = `
 SELECT` + issueColumns + issueJoins + `
@@ -129,6 +134,8 @@ SET title               = coalesce($3, title),
                                ELSE coalesce($12::date, due_on) END,
     cycle_id            = CASE WHEN $18::boolean THEN NULL
                                ELSE coalesce($19::uuid, cycle_id) END,
+    project_id          = CASE WHEN $20::boolean THEN NULL
+                               ELSE coalesce($21::uuid, project_id) END,
     state_entered_at    = coalesce($13::timestamptz, state_entered_at),
     completed_at        = CASE WHEN $14::boolean THEN $15::timestamptz ELSE completed_at END,
     version             = version + 1,
@@ -297,6 +304,7 @@ WHERE i.workspace_id = $1
   AND ($4::boolean IS NOT TRUE OR i.team_id = $5::uuid)
   AND ($6::boolean IS NOT TRUE OR i.parent_issue_id = ANY($7::uuid[]))
   AND ($8::boolean IS NOT TRUE OR i.cycle_id = $9::uuid)
+  AND ($10::boolean IS NOT TRUE OR i.project_id = $11::uuid)
   AND i.status = 'active'
 GROUP BY i.parent_issue_id, s.category`
 
@@ -356,6 +364,7 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		status        string
 		parent        string
 		cycle         string
+		project       string
 		completedAt   sql.NullTime
 		archivedAt    sql.NullTime
 		fieldVersions []byte
@@ -383,6 +392,8 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		&issue.Depth,
 		&cycle,
 		&issue.CycleNumber,
+		&project,
+		&issue.ProjectName,
 		&createdBy,
 		&issue.CreatedAt,
 		&issue.UpdatedAt,
@@ -460,6 +471,12 @@ func scanIssue(row scanner) (entity.Issue, error) {
 	if cycle != "" {
 		if issue.CycleID, err = uuid.Parse(cycle); err != nil {
 			return entity.Issue{}, fmt.Errorf("parse issue cycle id: %w", err)
+		}
+	}
+
+	if project != "" {
+		if issue.ProjectID, err = uuid.Parse(project); err != nil {
+			return entity.Issue{}, fmt.Errorf("parse issue project id: %w", err)
 		}
 	}
 
@@ -599,6 +616,11 @@ func (r *issueRepository) ListVisible(
 		cycleID = *page.CycleID
 	}
 
+	projectID := uuid.Nil
+	if page.ProjectID != nil {
+		projectID = *page.ProjectID
+	}
+
 	rows, err := r.db.Querier(ctx).QueryContext(
 		ctx,
 		issuePageQuery,
@@ -613,6 +635,8 @@ func (r *issueRepository) ListVisible(
 		statusNames(page.Statuses),
 		page.CycleID != nil,
 		cycleID.String(),
+		page.ProjectID != nil,
+		projectID.String(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("list visible issues: %w", err)
@@ -851,6 +875,12 @@ func (r *issueRepository) Update(
 		cycleID = change.CycleID.String()
 	}
 
+	var projectID any
+
+	if change.ProjectID != nil {
+		projectID = change.ProjectID.String()
+	}
+
 	if timestamps != nil {
 		stateEnteredAt = timestamps.StateEnteredAt
 		touchCompleted = true
@@ -882,6 +912,8 @@ func (r *issueRepository) Update(
 		changedAt,
 		change.ClearCycle,
 		cycleID,
+		change.ClearProject,
+		projectID,
 	)
 	if err != nil {
 		return fmt.Errorf("update issue: %w", err)
@@ -1285,7 +1317,7 @@ func (r *issueRepository) ProgressByCategory(
 	scope entity.TeamScope,
 	teamID *uuid.UUID,
 ) (entity.IssueProgress, error) {
-	return r.summed(ctx, scope, teamID, nil)
+	return r.summed(ctx, scope, teamID, nil, nil)
 }
 
 func (r *issueRepository) ProgressByCycle(
@@ -1293,15 +1325,23 @@ func (r *issueRepository) ProgressByCycle(
 	scope entity.TeamScope,
 	cycleID uuid.UUID,
 ) (entity.IssueProgress, error) {
-	return r.summed(ctx, scope, nil, &cycleID)
+	return r.summed(ctx, scope, nil, &cycleID, nil)
+}
+
+func (r *issueRepository) ProgressByProject(
+	ctx context.Context,
+	scope entity.TeamScope,
+	projectID uuid.UUID,
+) (entity.IssueProgress, error) {
+	return r.summed(ctx, scope, nil, nil, &projectID)
 }
 
 func (r *issueRepository) summed(
 	ctx context.Context,
 	scope entity.TeamScope,
-	teamID, cycleID *uuid.UUID,
+	teamID, cycleID, projectID *uuid.UUID,
 ) (entity.IssueProgress, error) {
-	byParent, err := r.tally(ctx, scope, teamID, cycleID, nil)
+	byParent, err := r.tally(ctx, scope, teamID, cycleID, projectID, nil)
 	if err != nil {
 		return entity.IssueProgress{}, err
 	}
@@ -1327,13 +1367,13 @@ func (r *issueRepository) ProgressByParent(
 		return map[uuid.UUID]entity.IssueProgress{}, nil
 	}
 
-	return r.tally(ctx, scope, nil, nil, parentIDs)
+	return r.tally(ctx, scope, nil, nil, nil, parentIDs)
 }
 
 func (r *issueRepository) tally(
 	ctx context.Context,
 	scope entity.TeamScope,
-	teamID, cycleID *uuid.UUID,
+	teamID, cycleID, projectID *uuid.UUID,
 	parentIDs []uuid.UUID,
 ) (map[uuid.UUID]entity.IssueProgress, error) {
 	team := uuid.Nil.String()
@@ -1346,6 +1386,12 @@ func (r *issueRepository) tally(
 
 	if cycleID != nil {
 		cycle = cycleID.String()
+	}
+
+	project := uuid.Nil.String()
+
+	if projectID != nil {
+		project = projectID.String()
 	}
 
 	parents := make([]string, 0, len(parentIDs))
@@ -1365,6 +1411,8 @@ func (r *issueRepository) tally(
 		parents,
 		cycleID != nil,
 		cycle,
+		projectID != nil,
+		project,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("tally issue progress: %w", err)

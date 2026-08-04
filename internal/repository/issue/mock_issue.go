@@ -221,6 +221,21 @@ func (mr *MockIssueMockRecorder) ProgressByParent(ctx, scope, parentIDs any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProgressByParent", reflect.TypeOf((*MockIssue)(nil).ProgressByParent), ctx, scope, parentIDs)
 }
 
+// ProgressByProject mocks base method.
+func (m *MockIssue) ProgressByProject(ctx context.Context, scope entity.TeamScope, projectID uuid.UUID) (entity.IssueProgress, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProgressByProject", ctx, scope, projectID)
+	ret0, _ := ret[0].(entity.IssueProgress)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProgressByProject indicates an expected call of ProgressByProject.
+func (mr *MockIssueMockRecorder) ProgressByProject(ctx, scope, projectID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProgressByProject", reflect.TypeOf((*MockIssue)(nil).ProgressByProject), ctx, scope, projectID)
+}
+
 // Purge mocks base method.
 func (m *MockIssue) Purge(ctx context.Context, issueID uuid.UUID, due time.Time) error {
 	m.ctrl.T.Helper()

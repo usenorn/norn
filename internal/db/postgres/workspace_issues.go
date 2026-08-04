@@ -51,6 +51,7 @@ type WorkspaceIssue struct {
 	ParentIssueID       null.String `boil:"parent_issue_id" json:"parent_issue_id,omitempty" toml:"parent_issue_id" yaml:"parent_issue_id,omitempty"`
 	Depth               int         `boil:"depth" json:"depth" toml:"depth" yaml:"depth"`
 	CycleID             null.String `boil:"cycle_id" json:"cycle_id,omitempty" toml:"cycle_id" yaml:"cycle_id,omitempty"`
+	ProjectID           null.String `boil:"project_id" json:"project_id,omitempty" toml:"project_id" yaml:"project_id,omitempty"`
 
 	R *workspaceIssueR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -83,6 +84,7 @@ var WorkspaceIssueColumns = struct {
 	ParentIssueID       string
 	Depth               string
 	CycleID             string
+	ProjectID           string
 }{
 	ID:                  "id",
 	WorkspaceID:         "workspace_id",
@@ -110,6 +112,7 @@ var WorkspaceIssueColumns = struct {
 	ParentIssueID:       "parent_issue_id",
 	Depth:               "depth",
 	CycleID:             "cycle_id",
+	ProjectID:           "project_id",
 }
 
 var WorkspaceIssueTableColumns = struct {
@@ -139,6 +142,7 @@ var WorkspaceIssueTableColumns = struct {
 	ParentIssueID       string
 	Depth               string
 	CycleID             string
+	ProjectID           string
 }{
 	ID:                  "workspace_issues.id",
 	WorkspaceID:         "workspace_issues.workspace_id",
@@ -166,6 +170,7 @@ var WorkspaceIssueTableColumns = struct {
 	ParentIssueID:       "workspace_issues.parent_issue_id",
 	Depth:               "workspace_issues.depth",
 	CycleID:             "workspace_issues.cycle_id",
+	ProjectID:           "workspace_issues.project_id",
 }
 
 // Generated where
@@ -197,6 +202,7 @@ var WorkspaceIssueWhere = struct {
 	ParentIssueID       whereHelpernull_String
 	Depth               whereHelperint
 	CycleID             whereHelpernull_String
+	ProjectID           whereHelpernull_String
 }{
 	ID:                  whereHelperstring{field: "\"workspace_issues\".\"id\""},
 	WorkspaceID:         whereHelperstring{field: "\"workspace_issues\".\"workspace_id\""},
@@ -224,6 +230,7 @@ var WorkspaceIssueWhere = struct {
 	ParentIssueID:       whereHelpernull_String{field: "\"workspace_issues\".\"parent_issue_id\""},
 	Depth:               whereHelperint{field: "\"workspace_issues\".\"depth\""},
 	CycleID:             whereHelpernull_String{field: "\"workspace_issues\".\"cycle_id\""},
+	ProjectID:           whereHelpernull_String{field: "\"workspace_issues\".\"project_id\""},
 }
 
 // WorkspaceIssueRels is where relationship names are stored.
@@ -320,9 +327,9 @@ func (r *workspaceIssueR) GetIssueWorkspaceIssueActivities() WorkspaceIssueActiv
 type workspaceIssueL struct{}
 
 var (
-	workspaceIssueAllColumns            = []string{"id", "workspace_id", "team_id", "number", "title", "created_by_account_id", "created_at", "updated_at", "state_id", "reference_key", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id"}
+	workspaceIssueAllColumns            = []string{"id", "workspace_id", "team_id", "number", "title", "created_by_account_id", "created_at", "updated_at", "state_id", "reference_key", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id"}
 	workspaceIssueColumnsWithoutDefault = []string{"workspace_id", "team_id", "number", "title", "state_id", "reference_key"}
-	workspaceIssueColumnsWithDefault    = []string{"id", "created_by_account_id", "created_at", "updated_at", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id"}
+	workspaceIssueColumnsWithDefault    = []string{"id", "created_by_account_id", "created_at", "updated_at", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id"}
 	workspaceIssuePrimaryKeyColumns     = []string{"id"}
 	workspaceIssueGeneratedColumns      = []string{}
 )

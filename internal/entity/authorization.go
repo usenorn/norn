@@ -17,6 +17,7 @@ const (
 	ResourceTeamMembership Resource = "team_membership"
 	ResourceIssue          Resource = "issue"
 	ResourceCycle          Resource = "cycle"
+	ResourceProject        Resource = "project"
 	ResourceLabel          Resource = "label"
 	ResourceAPIToken       Resource = "api_token"
 	ResourceAuthPolicy     Resource = "auth_policy"

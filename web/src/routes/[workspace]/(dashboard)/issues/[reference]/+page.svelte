@@ -38,6 +38,7 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import Layers from "@lucide/svelte/icons/layers";
+	import Target from "@lucide/svelte/icons/target";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import IssueParent from "$lib/issues/issue-parent.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
@@ -264,6 +265,12 @@
 		if (!issue || (issue.cycleId ?? "") === cycleId) return;
 
 		await patch(cycleId === "" ? { clear: ["cycle"] } : { cycleId });
+	}
+
+	async function setProject(projectId: string) {
+		if (!issue || (issue.projectId ?? "") === projectId) return;
+
+		await patch(projectId === "" ? { clear: ["project"] } : { projectId });
 	}
 
 	async function addRelation(
@@ -760,6 +767,43 @@
 										{#each ready.cycles as cycle (cycle.id)}
 											<DropdownMenu.RadioItem value={cycle.id}>
 												{cycle.name} · {cycleWindow(cycle.startsOn, cycle.endsOn)}
+											</DropdownMenu.RadioItem>
+										{/each}
+									</DropdownMenu.RadioGroup>
+								</DropdownMenu.Content>
+							</DropdownMenu.Root>
+						{/if}
+					</div>
+				</section>
+
+				<section class="flex flex-col gap-2">
+					<h2 class="text-sm font-medium text-ink-900">Project</h2>
+					<div>
+						{#if ready.projects.length === 0}
+							<p class="text-sm leading-normal text-muted-foreground text-pretty">
+								{data.workspace.name} has no projects yet.
+							</p>
+						{:else}
+							<DropdownMenu.Root>
+								<DropdownMenu.Trigger>
+									{#snippet child({ props })}
+										<Button {...props} variant="outline" size="sm" disabled={working}>
+											<Target aria-hidden="true" />
+											{issue.projectName || "No project"}
+											<ChevronDown aria-hidden="true" />
+										</Button>
+									{/snippet}
+								</DropdownMenu.Trigger>
+								<DropdownMenu.Content align="start" class="max-h-80 overflow-auto">
+									<DropdownMenu.RadioGroup
+										value={issue.projectId ?? ""}
+										onValueChange={(value) => setProject(value)}
+									>
+										<DropdownMenu.RadioItem value="">No project</DropdownMenu.RadioItem>
+										<DropdownMenu.Separator />
+										{#each ready.projects as project (project.id)}
+											<DropdownMenu.RadioItem value={project.id}>
+												{project.name}
 											</DropdownMenu.RadioItem>
 										{/each}
 									</DropdownMenu.RadioGroup>

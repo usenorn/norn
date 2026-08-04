@@ -1395,6 +1395,12 @@ paths:
           in: query
           description: Tally one cycle instead of a team; takes precedence over teamId
           schema: { type: string, format: uuid }
+        - name: projectId
+          in: query
+          description: >-
+            Tally one project instead of a team. Counted through the caller's own team scope, so a
+            project drawing on a team they cannot see reports only their share of it.
+          schema: { type: string, format: uuid }
       responses:
         '200':
           description: Per-category tallies
@@ -1416,6 +1422,9 @@ paths:
           in: query
           schema: { type: string, format: uuid }
         - name: cycleId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: projectId
           in: query
           schema: { type: string, format: uuid }
         - name: status
@@ -2305,6 +2314,260 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/projects:
+    get:
+      tags: [projects]
+      operationId: listWorkspaceProjects
+      summary: List the projects in a workspace
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: state
+          in: query
+          schema: { $ref: '#/components/schemas/ProjectState' }
+        - name: archived
+          in: query
+          description: Include archived projects; they are left out by default
+          schema: { type: boolean }
+        - name: mine
+          in: query
+          description: Only projects the caller leads or belongs to
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Projects ordered by name
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [projects]
+      operationId: createWorkspaceProject
+      summary: Start a project
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateProjectRequest' }
+      responses:
+        '201':
+          description: The project that was started
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/ProjectConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/projects/{projectId}:
+    get:
+      tags: [projects]
+      operationId: getWorkspaceProject
+      summary: Read one project
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: The project
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [projects]
+      operationId: updateWorkspaceProject
+      summary: Change a project's name, description, lead, target date or state
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProjectRequest' }
+      responses:
+        '200':
+          description: The project as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ProjectConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [projects]
+      operationId: deleteWorkspaceProject
+      summary: Delete a project, leaving its issues in place
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '204': { description: The project is gone and its issues carry on without it }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/projects/{projectId}/archive:
+    post:
+      tags: [projects]
+      operationId: archiveWorkspaceProject
+      summary: Archive a completed or cancelled project, keeping it retrievable
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: The archived project
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ProjectConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/projects/{projectId}/unarchive:
+    post:
+      tags: [projects]
+      operationId: unarchiveWorkspaceProject
+      summary: Bring an archived project back onto the list
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: The project, no longer archived
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ProjectConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/projects/{projectId}/members:
+    get:
+      tags: [projects]
+      operationId: listWorkspaceProjectMembers
+      summary: List who is on a project
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: The project's members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProjectMember' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [projects]
+      operationId: addWorkspaceProjectMember
+      summary: Put someone on a project
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddProjectMemberRequest' }
+      responses:
+        '201':
+          description: The member that was added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProjectMember' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ProjectConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/projects/{projectId}/members/{accountId}:
+    delete:
+      tags: [projects]
+      operationId: removeWorkspaceProjectMember
+      summary: Take someone off a project
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '204': { description: They are no longer on the project }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ProjectConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/projects/{projectId}/status:
+    get:
+      tags: [projects]
+      operationId: listWorkspaceProjectStatus
+      summary: Read the project's status updates, newest first
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: The status updates
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProjectStatusUpdate' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [projects]
+      operationId: postWorkspaceProjectStatus
+      summary: Say how the project is going
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostProjectStatusRequest' }
+      responses:
+        '201':
+          description: The status update that was recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProjectStatusUpdate' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ProjectConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
     bearerToken:
@@ -2348,6 +2611,11 @@ components:
       schema: { type: string, format: uuid }
     CycleId:
       name: cycleId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ProjectId:
+      name: projectId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -2442,6 +2710,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/CycleConflictProblem' }
+
+    ProjectConflict:
+      description: The project refuses the change
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProjectConflictProblem' }
 
     LabelConflict:
       description: The label cannot change without losing or duplicating work
@@ -2881,12 +3155,13 @@ components:
         estimate: { type: integer, format: int32 }
         dueOn: { type: string, format: date }
         cycleId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
         clear:
           type: array
           description: Properties to reset; absent means unchanged, which a nullable field cannot express
           items:
             type: string
-            enum: [assignee, estimate, dueOn, cycle]
+            enum: [assignee, estimate, dueOn, cycle, project]
 
     IssueConflictProblem:
       allOf:
@@ -2912,6 +3187,7 @@ components:
                 - label_out_of_scope
                 - cycle_closed
                 - cycle_team_mismatch
+                - project_archived
             version: { type: integer, format: int32 }
             conflicts:
               type: array
@@ -2952,6 +3228,111 @@ components:
         active: { type: integer, format: int32 }
         complete: { type: integer, format: int32 }
         abandoned: { type: integer, format: int32 }
+
+    ProjectState:
+      type: string
+      enum: [planned, active, paused, completed, cancelled]
+
+    ProjectHealth:
+      type: string
+      enum: [on_track, at_risk, off_track]
+
+    Project:
+      type: object
+      required: [id, workspaceId, slug, name, description, state, archived, concealedWork, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+        description: { type: string }
+        state: { $ref: '#/components/schemas/ProjectState' }
+        leadAccountId: { type: string, format: uuid }
+        leadName: { type: string }
+        targetOn: { type: string, format: date }
+        archived: { type: boolean }
+        archivedAt: { type: string, format: date-time }
+        health: { $ref: '#/components/schemas/ProjectHealth' }
+        concealedWork:
+          type: boolean
+          description: >-
+            True when the project holds issues on teams the caller cannot see. The figures they are
+            given cover only their own teams; no count of the concealed work is disclosed.
+        createdAt: { type: string, format: date-time }
+
+    CreateProjectRequest:
+      type: object
+      required: [slug, name]
+      properties:
+        slug: { type: string }
+        name: { type: string }
+        description: { type: string }
+        leadAccountId: { type: string, format: uuid }
+        targetOn: { type: string, format: date }
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        leadAccountId: { type: string, format: uuid }
+        targetOn: { type: string, format: date }
+        state: { $ref: '#/components/schemas/ProjectState' }
+        clear:
+          type: array
+          items:
+            type: string
+            enum: [lead, targetOn]
+
+    ProjectMember:
+      type: object
+      required: [projectId, accountId, displayName, email, createdAt]
+      properties:
+        projectId: { type: string, format: uuid }
+        accountId: { type: string, format: uuid }
+        displayName: { type: string }
+        email: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    AddProjectMemberRequest:
+      type: object
+      required: [accountId]
+      properties:
+        accountId: { type: string, format: uuid }
+
+    ProjectStatusUpdate:
+      type: object
+      required: [id, projectId, health, body, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        authorAccountId: { type: string, format: uuid }
+        authorName: { type: string }
+        health: { $ref: '#/components/schemas/ProjectHealth' }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    PostProjectStatusRequest:
+      type: object
+      required: [health, body]
+      properties:
+        health: { $ref: '#/components/schemas/ProjectHealth' }
+        body: { type: string }
+
+    ProjectConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - project_slug_taken
+                - project_archived
+                - project_not_archived
+                - project_not_finished
+                - project_member_exists
 
     CyclePhase:
       type: string
@@ -3119,6 +3500,8 @@ components:
         depth: { type: integer, format: int32 }
         cycleId: { type: string, format: uuid }
         cycleNumber: { type: integer, format: int32 }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
         childProgress: { $ref: '#/components/schemas/IssueProgress' }
         blocked: { type: boolean }
         state: { $ref: '#/components/schemas/IssueState' }

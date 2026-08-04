@@ -16,8 +16,6 @@ export type NavEntry = {
 	count?: number;
 };
 
-export type NavProject = { name: string; slug: string; color: string };
-
 export function workspacePath(workspace: string, path = ""): string {
 	return `/${workspace}${path}`;
 }

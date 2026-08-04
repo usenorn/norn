@@ -345,6 +345,12 @@ func issueDTO(issue entity.Issue) api.Issue {
 		dto.CycleNumber = &number
 	}
 
+	if issue.ProjectID != uuid.Nil {
+		project := issue.ProjectID
+		dto.ProjectId = &project
+		dto.ProjectName = nilIfEmpty(issue.ProjectName)
+	}
+
 	dto.ParentReference = nilIfEmpty(issue.ParentReference)
 
 	if issue.ArchivedAt != nil {
@@ -441,6 +447,103 @@ func bulkResultDTO(
 	}
 
 	return dto
+}
+
+func projectDTO(view service.ProjectView) api.Project {
+	project := view.Project
+
+	dto := api.Project{
+		Id:            project.ID,
+		WorkspaceId:   project.WorkspaceID,
+		Slug:          project.Slug,
+		Name:          project.Name,
+		Description:   project.Description,
+		State:         api.ProjectState(project.State),
+		Archived:      project.Archived(),
+		ConcealedWork: view.ConcealedWork,
+		CreatedAt:     project.CreatedAt,
+	}
+
+	if project.LeadAccountID != uuid.Nil {
+		lead := project.LeadAccountID
+		dto.LeadAccountId = &lead
+		dto.LeadName = nilIfEmpty(project.LeadName)
+	}
+
+	if project.TargetOn != "" {
+		target := calendarDate(project.TargetOn)
+		dto.TargetOn = &target
+	}
+
+	if project.ArchivedAt != nil {
+		shelved := *project.ArchivedAt
+		dto.ArchivedAt = &shelved
+	}
+
+	if project.Health != "" {
+		health := api.ProjectHealth(project.Health)
+		dto.Health = &health
+	}
+
+	return dto
+}
+
+func projectDTOs(views []service.ProjectView) []api.Project {
+	dtos := make([]api.Project, 0, len(views))
+
+	for _, view := range views {
+		dtos = append(dtos, projectDTO(view))
+	}
+
+	return dtos
+}
+
+func projectMemberDTO(view service.ProjectMemberView) api.ProjectMember {
+	return api.ProjectMember{
+		ProjectId:   view.Membership.ProjectID,
+		AccountId:   view.Membership.AccountID,
+		DisplayName: view.DisplayName,
+		Email:       view.Email,
+		CreatedAt:   view.Membership.CreatedAt,
+	}
+}
+
+func projectMemberDTOs(views []service.ProjectMemberView) []api.ProjectMember {
+	dtos := make([]api.ProjectMember, 0, len(views))
+
+	for _, view := range views {
+		dtos = append(dtos, projectMemberDTO(view))
+	}
+
+	return dtos
+}
+
+func projectStatusDTO(update entity.ProjectStatusUpdate) api.ProjectStatusUpdate {
+	dto := api.ProjectStatusUpdate{
+		Id:        update.ID,
+		ProjectId: update.ProjectID,
+		Health:    api.ProjectHealth(update.Health),
+		Body:      update.Body,
+		CreatedAt: update.CreatedAt,
+	}
+
+	if update.AuthorAccountID != uuid.Nil {
+		author := update.AuthorAccountID
+		dto.AuthorAccountId = &author
+		dto.AuthorName = nilIfEmpty(update.AuthorName)
+	}
+
+	return dto
+}
+
+func projectStatusDTOs(updates []entity.ProjectStatusUpdate) []api.ProjectStatusUpdate {
+	dtos := make([]api.ProjectStatusUpdate, 0, len(updates))
+
+	for _, update := range updates {
+		dtos = append(dtos, projectStatusDTO(update))
+	}
+
+	return dtos
 }
 
 func cycleDTO(view service.CycleView) api.Cycle {

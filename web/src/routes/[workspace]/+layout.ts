@@ -2,8 +2,8 @@ import { error, redirect } from "@sveltejs/kit";
 import { apiFor } from "$lib/api";
 import type { components } from "$lib/api/dashboard.gen";
 import type { TeamCycle } from "$lib/cycles/cycles";
+import type { Project } from "$lib/projects/projects";
 import type { Team } from "$lib/team/teams";
-import type { NavProject } from "$lib/workspace/navigation";
 import type { LayoutLoad } from "./$types";
 
 export type WorkspaceSummary = components["schemas"]["Workspace"];
@@ -15,7 +15,7 @@ export type WorkspaceScope = {
 	member: { id: string; name: string };
 	teams: Team[] | null;
 	cycles: TeamCycle[];
-	projects: NavProject[];
+	projects: Project[];
 	narrowed: boolean;
 };
 
@@ -33,7 +33,7 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 
 	if (!workspace) error(404, "That workspace does not exist, or you are not a member of it.");
 
-	const [teams, cycles] = await Promise.all([
+	const [teams, cycles, projects] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams", {
 			fetch,
 			params: { path: { workspaceId: workspace.id } },
@@ -41,6 +41,10 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 		api.GET("/workspaces/{workspaceId}/cycles/current", {
 			fetch,
 			params: { path: { workspaceId: workspace.id } },
+		}),
+		api.GET("/workspaces/{workspaceId}/projects", {
+			fetch,
+			params: { path: { workspaceId: workspace.id }, query: { mine: true } },
 		}),
 	]);
 
@@ -52,11 +56,7 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 		member: { id: account.data?.id ?? "", name: account.data?.displayName ?? "" },
 		teams: teams.data ?? null,
 		cycles: cycles.data ?? [],
-		projects: [
-			{ name: "Mobile", slug: "mobile", color: "var(--label-blue)" },
-			{ name: "Billing", slug: "billing", color: "var(--label-cyan)" },
-			{ name: "Growth", slug: "growth", color: "var(--label-violet)" },
-		],
+		projects: projects.data ?? [],
 	};
 };
 

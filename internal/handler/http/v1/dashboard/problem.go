@@ -318,8 +318,28 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrSSOIdentityNotFound),
 		errors.Is(err, entity.ErrCycleNotFound),
 		errors.Is(err, entity.ErrCycleCadenceNotFound),
+		errors.Is(err, entity.ErrProjectNotFound),
+		errors.Is(err, entity.ErrProjectMembershipNotFound),
 		errors.Is(err, entity.ErrBreakGlassCodeInvalid):
 		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrProjectNotLead):
+		return newProblem(http.StatusForbidden, err.Error()), true
+
+	case errors.Is(err, entity.ErrProjectSlugTaken):
+		return projectConflictProblem(api.ProjectConflictProblemCodeProjectSlugTaken, err), true
+
+	case errors.Is(err, entity.ErrProjectArchived):
+		return projectConflictProblem(api.ProjectConflictProblemCodeProjectArchived, err), true
+
+	case errors.Is(err, entity.ErrProjectNotArchived):
+		return projectConflictProblem(api.ProjectConflictProblemCodeProjectNotArchived, err), true
+
+	case errors.Is(err, entity.ErrProjectNotFinished):
+		return projectConflictProblem(api.ProjectConflictProblemCodeProjectNotFinished, err), true
+
+	case errors.Is(err, entity.ErrProjectMemberExists):
+		return projectConflictProblem(api.ProjectConflictProblemCodeProjectMemberExists, err), true
 
 	case errors.Is(err, entity.ErrCycleClosed):
 		return cycleConflictProblem(api.CycleConflictProblemCodeCycleClosed, err), true
@@ -866,6 +886,54 @@ func (r problemResponse) VisitGetWorkspaceIssueResponse(w http.ResponseWriter) e
 	return r.write(w)
 }
 
+func (r problemResponse) VisitListWorkspaceProjectsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceProjectResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceProjectResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDeleteWorkspaceProjectResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitArchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUnarchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceProjectMembersResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAddWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitPostWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitListWorkspaceCyclesResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
@@ -1064,6 +1132,22 @@ func (r problemResponse) VisitRemoveWorkspaceTeamMemberResponse(w http.ResponseW
 
 func (r problemResponse) VisitSetWorkspaceAuthPolicyResponse(w http.ResponseWriter) error {
 	return r.write(w)
+}
+
+func projectConflictProblem(code api.ProjectConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.ProjectConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
 }
 
 func cycleConflictProblem(code api.CycleConflictProblemCode, err error) problemResponse {

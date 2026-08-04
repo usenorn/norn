@@ -23,6 +23,7 @@ var policyResources = []entity.Resource{
 	entity.ResourceTeamMembership,
 	entity.ResourceIssue,
 	entity.ResourceCycle,
+	entity.ResourceProject,
 	entity.ResourceLabel,
 	entity.ResourceAPIToken,
 }
@@ -73,6 +74,10 @@ func grants(role entity.MembershipRole, resource entity.Resource, action entity.
 
 	if action == entity.ActionDelete {
 		return false
+	}
+
+	if resource == entity.ResourceProject && action == entity.ActionManage {
+		return role != entity.MembershipRoleViewer
 	}
 
 	return entity.RolePermits(role, resource, action)

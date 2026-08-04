@@ -542,6 +542,7 @@ const (
 	IssueConflictProblemCodeIssueStale                IssueConflictProblemCode = "issue_stale"
 	IssueConflictProblemCodeIssueStatusTransition     IssueConflictProblemCode = "issue_status_transition"
 	IssueConflictProblemCodeLabelOutOfScope           IssueConflictProblemCode = "label_out_of_scope"
+	IssueConflictProblemCodeProjectArchived           IssueConflictProblemCode = "project_archived"
 )
 
 // Valid indicates whether the value is a known member of the IssueConflictProblemCode enum.
@@ -576,6 +577,8 @@ func (e IssueConflictProblemCode) Valid() bool {
 	case IssueConflictProblemCodeIssueStatusTransition:
 		return true
 	case IssueConflictProblemCodeLabelOutOfScope:
+		return true
+	case IssueConflictProblemCodeProjectArchived:
 		return true
 	default:
 		return false
@@ -792,6 +795,81 @@ func (e MembershipSource) Valid() bool {
 	case Directory:
 		return true
 	case Manual:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProjectConflictProblemCode.
+const (
+	ProjectConflictProblemCodeProjectArchived     ProjectConflictProblemCode = "project_archived"
+	ProjectConflictProblemCodeProjectMemberExists ProjectConflictProblemCode = "project_member_exists"
+	ProjectConflictProblemCodeProjectNotArchived  ProjectConflictProblemCode = "project_not_archived"
+	ProjectConflictProblemCodeProjectNotFinished  ProjectConflictProblemCode = "project_not_finished"
+	ProjectConflictProblemCodeProjectSlugTaken    ProjectConflictProblemCode = "project_slug_taken"
+)
+
+// Valid indicates whether the value is a known member of the ProjectConflictProblemCode enum.
+func (e ProjectConflictProblemCode) Valid() bool {
+	switch e {
+	case ProjectConflictProblemCodeProjectArchived:
+		return true
+	case ProjectConflictProblemCodeProjectMemberExists:
+		return true
+	case ProjectConflictProblemCodeProjectNotArchived:
+		return true
+	case ProjectConflictProblemCodeProjectNotFinished:
+		return true
+	case ProjectConflictProblemCodeProjectSlugTaken:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProjectHealth.
+const (
+	AtRisk   ProjectHealth = "at_risk"
+	OffTrack ProjectHealth = "off_track"
+	OnTrack  ProjectHealth = "on_track"
+)
+
+// Valid indicates whether the value is a known member of the ProjectHealth enum.
+func (e ProjectHealth) Valid() bool {
+	switch e {
+	case AtRisk:
+		return true
+	case OffTrack:
+		return true
+	case OnTrack:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProjectState.
+const (
+	ProjectStateActive    ProjectState = "active"
+	ProjectStateCancelled ProjectState = "cancelled"
+	ProjectStateCompleted ProjectState = "completed"
+	ProjectStatePaused    ProjectState = "paused"
+	ProjectStatePlanned   ProjectState = "planned"
+)
+
+// Valid indicates whether the value is a known member of the ProjectState enum.
+func (e ProjectState) Valid() bool {
+	switch e {
+	case ProjectStateActive:
+		return true
+	case ProjectStateCancelled:
+		return true
+	case ProjectStateCompleted:
+		return true
+	case ProjectStatePaused:
+		return true
+	case ProjectStatePlanned:
 		return true
 	default:
 		return false
@@ -1119,6 +1197,7 @@ const (
 	UpdateIssueRequestClearCycle    UpdateIssueRequestClear = "cycle"
 	UpdateIssueRequestClearDueOn    UpdateIssueRequestClear = "dueOn"
 	UpdateIssueRequestClearEstimate UpdateIssueRequestClear = "estimate"
+	UpdateIssueRequestClearProject  UpdateIssueRequestClear = "project"
 )
 
 // Valid indicates whether the value is a known member of the UpdateIssueRequestClear enum.
@@ -1131,6 +1210,26 @@ func (e UpdateIssueRequestClear) Valid() bool {
 	case UpdateIssueRequestClearDueOn:
 		return true
 	case UpdateIssueRequestClearEstimate:
+		return true
+	case UpdateIssueRequestClearProject:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateProjectRequestClear.
+const (
+	Lead     UpdateProjectRequestClear = "lead"
+	TargetOn UpdateProjectRequestClear = "targetOn"
+)
+
+// Valid indicates whether the value is a known member of the UpdateProjectRequestClear enum.
+func (e UpdateProjectRequestClear) Valid() bool {
+	switch e {
+	case Lead:
+		return true
+	case TargetOn:
 		return true
 	default:
 		return false
@@ -1284,6 +1383,11 @@ type AddMemberRequest struct {
 	Role      MembershipRole     `json:"role"`
 }
 
+// AddProjectMemberRequest defines model for AddProjectMemberRequest.
+type AddProjectMemberRequest struct {
+	AccountId openapi_types.UUID `json:"accountId"`
+}
+
 // AddTeamMemberRequest defines model for AddTeamMemberRequest.
 type AddTeamMemberRequest struct {
 	AccountId openapi_types.UUID `json:"accountId"`
@@ -1417,6 +1521,15 @@ type CreateLabelRequest struct {
 	GroupId *openapi_types.UUID `json:"groupId,omitempty"`
 	Name    string              `json:"name"`
 	TeamId  *openapi_types.UUID `json:"teamId,omitempty"`
+}
+
+// CreateProjectRequest defines model for CreateProjectRequest.
+type CreateProjectRequest struct {
+	Description   *string             `json:"description,omitempty"`
+	LeadAccountId *openapi_types.UUID `json:"leadAccountId,omitempty"`
+	Name          string              `json:"name"`
+	Slug          string              `json:"slug"`
+	TargetOn      *openapi_types.Date `json:"targetOn,omitempty"`
 }
 
 // CreateTeamRequest defines model for CreateTeamRequest.
@@ -1724,6 +1837,8 @@ type Issue struct {
 	ParentId           *openapi_types.UUID `json:"parentId,omitempty"`
 	ParentReference    *string             `json:"parentReference,omitempty"`
 	Priority           IssuePriority       `json:"priority"`
+	ProjectId          *openapi_types.UUID `json:"projectId,omitempty"`
+	ProjectName        *string             `json:"projectName,omitempty"`
 	Reference          string              `json:"reference"`
 	ReferenceKey       string              `json:"referenceKey"`
 	State              IssueState          `json:"state"`
@@ -1998,6 +2113,12 @@ type PasswordResetRequested struct {
 	ExpiresAt time.Time `json:"expiresAt"`
 }
 
+// PostProjectStatusRequest defines model for PostProjectStatusRequest.
+type PostProjectStatusRequest struct {
+	Body   string        `json:"body"`
+	Health ProjectHealth `json:"health"`
+}
+
 // PreviewInvitationRequest defines model for PreviewInvitationRequest.
 type PreviewInvitationRequest struct {
 	Token string `json:"token"`
@@ -2011,6 +2132,66 @@ type Problem struct {
 	Status   int32         `json:"status"`
 	Title    string        `json:"title"`
 	Type     string        `json:"type"`
+}
+
+// Project defines model for Project.
+type Project struct {
+	Archived   bool       `json:"archived"`
+	ArchivedAt *time.Time `json:"archivedAt,omitempty"`
+
+	// ConcealedWork True when the project holds issues on teams the caller cannot see. The figures they are given cover only their own teams; no count of the concealed work is disclosed.
+	ConcealedWork bool                `json:"concealedWork"`
+	CreatedAt     time.Time           `json:"createdAt"`
+	Description   string              `json:"description"`
+	Health        *ProjectHealth      `json:"health,omitempty"`
+	Id            openapi_types.UUID  `json:"id"`
+	LeadAccountId *openapi_types.UUID `json:"leadAccountId,omitempty"`
+	LeadName      *string             `json:"leadName,omitempty"`
+	Name          string              `json:"name"`
+	Slug          string              `json:"slug"`
+	State         ProjectState        `json:"state"`
+	TargetOn      *openapi_types.Date `json:"targetOn,omitempty"`
+	WorkspaceId   openapi_types.UUID  `json:"workspaceId"`
+}
+
+// ProjectConflictProblem defines model for ProjectConflictProblem.
+type ProjectConflictProblem struct {
+	Code     ProjectConflictProblemCode `json:"code"`
+	Detail   *string                    `json:"detail,omitempty"`
+	Errors   *[]FieldError              `json:"errors,omitempty"`
+	Instance *string                    `json:"instance,omitempty"`
+	Status   int32                      `json:"status"`
+	Title    string                     `json:"title"`
+	Type     string                     `json:"type"`
+}
+
+// ProjectConflictProblemCode defines model for ProjectConflictProblem.Code.
+type ProjectConflictProblemCode string
+
+// ProjectHealth defines model for ProjectHealth.
+type ProjectHealth string
+
+// ProjectMember defines model for ProjectMember.
+type ProjectMember struct {
+	AccountId   openapi_types.UUID `json:"accountId"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	DisplayName string             `json:"displayName"`
+	Email       string             `json:"email"`
+	ProjectId   openapi_types.UUID `json:"projectId"`
+}
+
+// ProjectState defines model for ProjectState.
+type ProjectState string
+
+// ProjectStatusUpdate defines model for ProjectStatusUpdate.
+type ProjectStatusUpdate struct {
+	AuthorAccountId *openapi_types.UUID `json:"authorAccountId,omitempty"`
+	AuthorName      *string             `json:"authorName,omitempty"`
+	Body            string              `json:"body"`
+	CreatedAt       time.Time           `json:"createdAt"`
+	Health          ProjectHealth       `json:"health"`
+	Id              openapi_types.UUID  `json:"id"`
+	ProjectId       openapi_types.UUID  `json:"projectId"`
 }
 
 // RateLimitedProblem defines model for RateLimitedProblem.
@@ -2343,6 +2524,7 @@ type UpdateIssueRequest struct {
 	Estimate        *int32                     `json:"estimate,omitempty"`
 	ExpectedVersion int32                      `json:"expectedVersion"`
 	Priority        *IssuePriority             `json:"priority,omitempty"`
+	ProjectId       *openapi_types.UUID        `json:"projectId,omitempty"`
 	StateId         *openapi_types.UUID        `json:"stateId,omitempty"`
 	Title           *string                    `json:"title,omitempty"`
 }
@@ -2362,6 +2544,19 @@ type UpdateProfileRequest struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	Timezone    *string `json:"timezone,omitempty"`
 }
+
+// UpdateProjectRequest defines model for UpdateProjectRequest.
+type UpdateProjectRequest struct {
+	Clear         *[]UpdateProjectRequestClear `json:"clear,omitempty"`
+	Description   *string                      `json:"description,omitempty"`
+	LeadAccountId *openapi_types.UUID          `json:"leadAccountId,omitempty"`
+	Name          *string                      `json:"name,omitempty"`
+	State         *ProjectState                `json:"state,omitempty"`
+	TargetOn      *openapi_types.Date          `json:"targetOn,omitempty"`
+}
+
+// UpdateProjectRequestClear defines model for UpdateProjectRequest.Clear.
+type UpdateProjectRequestClear string
 
 // UpdateTeamRequest defines model for UpdateTeamRequest.
 type UpdateTeamRequest struct {
@@ -2508,6 +2703,9 @@ type IssueId = openapi_types.UUID
 // LabelId defines model for LabelId.
 type LabelId = openapi_types.UUID
 
+// ProjectId defines model for ProjectId.
+type ProjectId = openapi_types.UUID
+
 // StateId defines model for StateId.
 type StateId = openapi_types.UUID
 
@@ -2562,6 +2760,9 @@ type PasswordResetLinkExpired = ResetLinkExpiredProblem
 // PasswordResetLinkUsed defines model for PasswordResetLinkUsed.
 type PasswordResetLinkUsed = ResetLinkUsedProblem
 
+// ProjectConflict defines model for ProjectConflict.
+type ProjectConflict = ProjectConflictProblem
+
 // SignInRejected defines model for SignInRejected.
 type SignInRejected = InvalidCredentialsProblem
 
@@ -2607,8 +2808,9 @@ type ListWorkspaceInvitationsParams struct {
 
 // ListWorkspaceIssuesParams defines parameters for ListWorkspaceIssues.
 type ListWorkspaceIssuesParams struct {
-	TeamId  *openapi_types.UUID `form:"teamId,omitempty" json:"teamId,omitempty"`
-	CycleId *openapi_types.UUID `form:"cycleId,omitempty" json:"cycleId,omitempty"`
+	TeamId    *openapi_types.UUID `form:"teamId,omitempty" json:"teamId,omitempty"`
+	CycleId   *openapi_types.UUID `form:"cycleId,omitempty" json:"cycleId,omitempty"`
+	ProjectId *openapi_types.UUID `form:"projectId,omitempty" json:"projectId,omitempty"`
 
 	// Status Repeat to include more than one; defaults to active issues only
 	Status *[]IssueStatus `form:"status,omitempty" json:"status,omitempty"`
@@ -2622,6 +2824,9 @@ type GetWorkspaceIssueProgressParams struct {
 
 	// CycleId Tally one cycle instead of a team; takes precedence over teamId
 	CycleId *openapi_types.UUID `form:"cycleId,omitempty" json:"cycleId,omitempty"`
+
+	// ProjectId Tally one project instead of a team. Counted through the caller's own team scope, so a project drawing on a team they cannot see reports only their share of it.
+	ProjectId *openapi_types.UUID `form:"projectId,omitempty" json:"projectId,omitempty"`
 }
 
 // ListWorkspaceIssueActivityParams defines parameters for ListWorkspaceIssueActivity.
@@ -2646,6 +2851,17 @@ type ListWorkspaceMembersParams struct {
 // RemoveWorkspaceMemberParams defines parameters for RemoveWorkspaceMember.
 type RemoveWorkspaceMemberParams struct {
 	ReassignTo *openapi_types.UUID `form:"reassignTo,omitempty" json:"reassignTo,omitempty"`
+}
+
+// ListWorkspaceProjectsParams defines parameters for ListWorkspaceProjects.
+type ListWorkspaceProjectsParams struct {
+	State *ProjectState `form:"state,omitempty" json:"state,omitempty"`
+
+	// Archived Include archived projects; they are left out by default
+	Archived *bool `form:"archived,omitempty" json:"archived,omitempty"`
+
+	// Mine Only projects the caller leads or belongs to
+	Mine *bool `form:"mine,omitempty" json:"mine,omitempty"`
 }
 
 // ListWorkspaceTeamsParams defines parameters for ListWorkspaceTeams.
@@ -2765,6 +2981,18 @@ type AddWorkspaceMemberJSONRequestBody = AddMemberRequest
 
 // ChangeWorkspaceMemberRoleJSONRequestBody defines body for ChangeWorkspaceMemberRole for application/json ContentType.
 type ChangeWorkspaceMemberRoleJSONRequestBody = ChangeMemberRoleRequest
+
+// CreateWorkspaceProjectJSONRequestBody defines body for CreateWorkspaceProject for application/json ContentType.
+type CreateWorkspaceProjectJSONRequestBody = CreateProjectRequest
+
+// UpdateWorkspaceProjectJSONRequestBody defines body for UpdateWorkspaceProject for application/json ContentType.
+type UpdateWorkspaceProjectJSONRequestBody = UpdateProjectRequest
+
+// AddWorkspaceProjectMemberJSONRequestBody defines body for AddWorkspaceProjectMember for application/json ContentType.
+type AddWorkspaceProjectMemberJSONRequestBody = AddProjectMemberRequest
+
+// PostWorkspaceProjectStatusJSONRequestBody defines body for PostWorkspaceProjectStatus for application/json ContentType.
+type PostWorkspaceProjectStatusJSONRequestBody = PostProjectStatusRequest
 
 // SetWorkspaceOidcConnectionJSONRequestBody defines body for SetWorkspaceOidcConnection for application/json ContentType.
 type SetWorkspaceOidcConnectionJSONRequestBody = SetWorkspaceOidcConnectionRequest
@@ -3029,6 +3257,42 @@ type ServerInterface interface {
 	// PreviewWorkspaceMemberRemoval Report what removing this member would affect
 	// (GET /workspaces/{workspaceId}/members/{accountId}/removal)
 	PreviewWorkspaceMemberRemoval(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId)
+	// ListWorkspaceProjects List the projects in a workspace
+	// (GET /workspaces/{workspaceId}/projects)
+	ListWorkspaceProjects(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceProjectsParams)
+	// CreateWorkspaceProject Start a project
+	// (POST /workspaces/{workspaceId}/projects)
+	CreateWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// DeleteWorkspaceProject Delete a project, leaving its issues in place
+	// (DELETE /workspaces/{workspaceId}/projects/{projectId})
+	DeleteWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
+	// GetWorkspaceProject Read one project
+	// (GET /workspaces/{workspaceId}/projects/{projectId})
+	GetWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
+	// UpdateWorkspaceProject Change a project's name, description, lead, target date or state
+	// (PATCH /workspaces/{workspaceId}/projects/{projectId})
+	UpdateWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
+	// ArchiveWorkspaceProject Archive a completed or cancelled project, keeping it retrievable
+	// (POST /workspaces/{workspaceId}/projects/{projectId}/archive)
+	ArchiveWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
+	// ListWorkspaceProjectMembers List who is on a project
+	// (GET /workspaces/{workspaceId}/projects/{projectId}/members)
+	ListWorkspaceProjectMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
+	// AddWorkspaceProjectMember Put someone on a project
+	// (POST /workspaces/{workspaceId}/projects/{projectId}/members)
+	AddWorkspaceProjectMember(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
+	// RemoveWorkspaceProjectMember Take someone off a project
+	// (DELETE /workspaces/{workspaceId}/projects/{projectId}/members/{accountId})
+	RemoveWorkspaceProjectMember(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId, accountId AccountId)
+	// ListWorkspaceProjectStatus Read the project's status updates, newest first
+	// (GET /workspaces/{workspaceId}/projects/{projectId}/status)
+	ListWorkspaceProjectStatus(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
+	// PostWorkspaceProjectStatus Say how the project is going
+	// (POST /workspaces/{workspaceId}/projects/{projectId}/status)
+	PostWorkspaceProjectStatus(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
+	// UnarchiveWorkspaceProject Bring an archived project back onto the list
+	// (POST /workspaces/{workspaceId}/projects/{projectId}/unarchive)
+	UnarchiveWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -3590,6 +3854,78 @@ func (_ Unimplemented) ChangeWorkspaceMemberRole(w http.ResponseWriter, r *http.
 // PreviewWorkspaceMemberRemoval Report what removing this member would affect
 // (GET /workspaces/{workspaceId}/members/{accountId}/removal)
 func (_ Unimplemented) PreviewWorkspaceMemberRemoval(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceProjects List the projects in a workspace
+// (GET /workspaces/{workspaceId}/projects)
+func (_ Unimplemented) ListWorkspaceProjects(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceProjectsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateWorkspaceProject Start a project
+// (POST /workspaces/{workspaceId}/projects)
+func (_ Unimplemented) CreateWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteWorkspaceProject Delete a project, leaving its issues in place
+// (DELETE /workspaces/{workspaceId}/projects/{projectId})
+func (_ Unimplemented) DeleteWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceProject Read one project
+// (GET /workspaces/{workspaceId}/projects/{projectId})
+func (_ Unimplemented) GetWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateWorkspaceProject Change a project's name, description, lead, target date or state
+// (PATCH /workspaces/{workspaceId}/projects/{projectId})
+func (_ Unimplemented) UpdateWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ArchiveWorkspaceProject Archive a completed or cancelled project, keeping it retrievable
+// (POST /workspaces/{workspaceId}/projects/{projectId}/archive)
+func (_ Unimplemented) ArchiveWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceProjectMembers List who is on a project
+// (GET /workspaces/{workspaceId}/projects/{projectId}/members)
+func (_ Unimplemented) ListWorkspaceProjectMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddWorkspaceProjectMember Put someone on a project
+// (POST /workspaces/{workspaceId}/projects/{projectId}/members)
+func (_ Unimplemented) AddWorkspaceProjectMember(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveWorkspaceProjectMember Take someone off a project
+// (DELETE /workspaces/{workspaceId}/projects/{projectId}/members/{accountId})
+func (_ Unimplemented) RemoveWorkspaceProjectMember(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId, accountId AccountId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceProjectStatus Read the project's status updates, newest first
+// (GET /workspaces/{workspaceId}/projects/{projectId}/status)
+func (_ Unimplemented) ListWorkspaceProjectStatus(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PostWorkspaceProjectStatus Say how the project is going
+// (POST /workspaces/{workspaceId}/projects/{projectId}/status)
+func (_ Unimplemented) PostWorkspaceProjectStatus(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UnarchiveWorkspaceProject Bring an archived project back onto the list
+// (POST /workspaces/{workspaceId}/projects/{projectId}/unarchive)
+func (_ Unimplemented) UnarchiveWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4769,6 +5105,19 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceIssues(w http.ResponseWriter, r 
 		return
 	}
 
+	// ------------- Optional query parameter "projectId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "projectId", r.URL.Query(), &params.ProjectId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "projectId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		}
+		return
+	}
+
 	// ------------- Optional query parameter "status" -------------
 
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
@@ -4946,6 +5295,19 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceIssueProgress(w http.ResponseWrit
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cycleId"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cycleId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "projectId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "projectId", r.URL.Query(), &params.ProjectId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "projectId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
 		}
 		return
 	}
@@ -5920,6 +6282,459 @@ func (siw *ServerInterfaceWrapper) PreviewWorkspaceMemberRemoval(w http.Response
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PreviewWorkspaceMemberRemoval(w, r, workspaceId, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceProjects operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceProjects(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceProjectsParams
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "archived" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "archived", r.URL.Query(), &params.Archived, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "archived"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "archived", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "mine" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "mine", r.URL.Query(), &params.Mine, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "mine"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "mine", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceProjects(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateWorkspaceProject operation middleware
+func (siw *ServerInterfaceWrapper) CreateWorkspaceProject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWorkspaceProject(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWorkspaceProject operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorkspaceProject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWorkspaceProject(w, r, workspaceId, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceProject operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceProject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceProject(w, r, workspaceId, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateWorkspaceProject operation middleware
+func (siw *ServerInterfaceWrapper) UpdateWorkspaceProject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateWorkspaceProject(w, r, workspaceId, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ArchiveWorkspaceProject operation middleware
+func (siw *ServerInterfaceWrapper) ArchiveWorkspaceProject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ArchiveWorkspaceProject(w, r, workspaceId, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceProjectMembers operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceProjectMembers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceProjectMembers(w, r, workspaceId, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddWorkspaceProjectMember operation middleware
+func (siw *ServerInterfaceWrapper) AddWorkspaceProjectMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddWorkspaceProjectMember(w, r, workspaceId, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveWorkspaceProjectMember operation middleware
+func (siw *ServerInterfaceWrapper) RemoveWorkspaceProjectMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "accountId" -------------
+	var accountId AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "accountId", chi.URLParam(r, "accountId"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accountId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveWorkspaceProjectMember(w, r, workspaceId, projectId, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceProjectStatus operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceProjectStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceProjectStatus(w, r, workspaceId, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostWorkspaceProjectStatus operation middleware
+func (siw *ServerInterfaceWrapper) PostWorkspaceProjectStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostWorkspaceProjectStatus(w, r, workspaceId, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnarchiveWorkspaceProject operation middleware
+func (siw *ServerInterfaceWrapper) UnarchiveWorkspaceProject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnarchiveWorkspaceProject(w, r, workspaceId, projectId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7559,6 +8374,42 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/cycle-cadence", wrapper.SetTeamCycleCadence)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/projects", wrapper.ListWorkspaceProjects)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/projects", wrapper.CreateWorkspaceProject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}", wrapper.DeleteWorkspaceProject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}", wrapper.GetWorkspaceProject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}", wrapper.UpdateWorkspaceProject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/archive", wrapper.ArchiveWorkspaceProject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/unarchive", wrapper.UnarchiveWorkspaceProject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/members", wrapper.ListWorkspaceProjectMembers)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/members", wrapper.AddWorkspaceProjectMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/members/{accountId}", wrapper.RemoveWorkspaceProjectMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/status", wrapper.ListWorkspaceProjectStatus)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/status", wrapper.PostWorkspaceProjectStatus)
+	})
 
 	return r
 }
@@ -7592,6 +8443,8 @@ type PasswordResetLinkExpiredApplicationProblemPlusJSONResponse ResetLinkExpired
 type PasswordResetLinkUsedApplicationProblemPlusJSONResponse ResetLinkUsedProblem
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type ProjectConflictApplicationProblemPlusJSONResponse ProjectConflictProblem
 
 type SignInRejectedApplicationProblemPlusJSONResponse InvalidCredentialsProblem
 
@@ -14128,6 +14981,1120 @@ func (response PreviewWorkspaceMemberRemoval500ApplicationProblemPlusJSONRespons
 	return err
 }
 
+type ListWorkspaceProjectsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceProjectsParams
+}
+
+type ListWorkspaceProjectsResponseObject interface {
+	VisitListWorkspaceProjectsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceProjects200JSONResponse []Project
+
+func (response ListWorkspaceProjects200JSONResponse) VisitListWorkspaceProjectsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjects401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceProjects401ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjects403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceProjects403ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjects500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceProjects500ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceProjectRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *CreateWorkspaceProjectJSONRequestBody
+}
+
+type CreateWorkspaceProjectResponseObject interface {
+	VisitCreateWorkspaceProjectResponse(w http.ResponseWriter) error
+}
+
+type CreateWorkspaceProject201JSONResponse Project
+
+func (response CreateWorkspaceProject201JSONResponse) VisitCreateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceProject401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceProject401ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceProject403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceProject403ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceProject409ApplicationProblemPlusJSONResponse struct {
+	ProjectConflictApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceProject409ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceProject422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceProject422ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceProject500ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceProject500ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceProjectRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+}
+
+type DeleteWorkspaceProjectResponseObject interface {
+	VisitDeleteWorkspaceProjectResponse(w http.ResponseWriter) error
+}
+
+type DeleteWorkspaceProject204Response struct {
+}
+
+func (response DeleteWorkspaceProject204Response) VisitDeleteWorkspaceProjectResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteWorkspaceProject401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceProject401ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceProject403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceProject403ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceProject404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceProject404ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceProject500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceProject500ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceProjectRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+}
+
+type GetWorkspaceProjectResponseObject interface {
+	VisitGetWorkspaceProjectResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceProject200JSONResponse Project
+
+func (response GetWorkspaceProject200JSONResponse) VisitGetWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceProject401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceProject401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceProject403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceProject403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceProject404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceProject404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceProject500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceProject500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceProjectRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+	Body        *UpdateWorkspaceProjectJSONRequestBody
+}
+
+type UpdateWorkspaceProjectResponseObject interface {
+	VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error
+}
+
+type UpdateWorkspaceProject200JSONResponse Project
+
+func (response UpdateWorkspaceProject200JSONResponse) VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceProject401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceProject401ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceProject403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceProject403ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceProject404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceProject404ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceProject409ApplicationProblemPlusJSONResponse struct {
+	ProjectConflictApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceProject409ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceProject422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceProject422ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceProject500ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceProject500ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ArchiveWorkspaceProjectRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+}
+
+type ArchiveWorkspaceProjectResponseObject interface {
+	VisitArchiveWorkspaceProjectResponse(w http.ResponseWriter) error
+}
+
+type ArchiveWorkspaceProject200JSONResponse Project
+
+func (response ArchiveWorkspaceProject200JSONResponse) VisitArchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ArchiveWorkspaceProject401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ArchiveWorkspaceProject401ApplicationProblemPlusJSONResponse) VisitArchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ArchiveWorkspaceProject403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ArchiveWorkspaceProject403ApplicationProblemPlusJSONResponse) VisitArchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ArchiveWorkspaceProject404ApplicationProblemPlusJSONResponse Problem
+
+func (response ArchiveWorkspaceProject404ApplicationProblemPlusJSONResponse) VisitArchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ArchiveWorkspaceProject409ApplicationProblemPlusJSONResponse struct {
+	ProjectConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ArchiveWorkspaceProject409ApplicationProblemPlusJSONResponse) VisitArchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ArchiveWorkspaceProject500ApplicationProblemPlusJSONResponse Problem
+
+func (response ArchiveWorkspaceProject500ApplicationProblemPlusJSONResponse) VisitArchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectMembersRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+}
+
+type ListWorkspaceProjectMembersResponseObject interface {
+	VisitListWorkspaceProjectMembersResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceProjectMembers200JSONResponse []ProjectMember
+
+func (response ListWorkspaceProjectMembers200JSONResponse) VisitListWorkspaceProjectMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectMembers401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceProjectMembers401ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectMembers403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceProjectMembers403ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectMembers404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceProjectMembers404ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectMembers500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceProjectMembers500ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceProjectMemberRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+	Body        *AddWorkspaceProjectMemberJSONRequestBody
+}
+
+type AddWorkspaceProjectMemberResponseObject interface {
+	VisitAddWorkspaceProjectMemberResponse(w http.ResponseWriter) error
+}
+
+type AddWorkspaceProjectMember201JSONResponse ProjectMember
+
+func (response AddWorkspaceProjectMember201JSONResponse) VisitAddWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceProjectMember401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceProjectMember401ApplicationProblemPlusJSONResponse) VisitAddWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceProjectMember403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceProjectMember403ApplicationProblemPlusJSONResponse) VisitAddWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceProjectMember404ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceProjectMember404ApplicationProblemPlusJSONResponse) VisitAddWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceProjectMember409ApplicationProblemPlusJSONResponse struct {
+	ProjectConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceProjectMember409ApplicationProblemPlusJSONResponse) VisitAddWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceProjectMember500ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceProjectMember500ApplicationProblemPlusJSONResponse) VisitAddWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceProjectMemberRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+	AccountId   AccountId   `json:"accountId"`
+}
+
+type RemoveWorkspaceProjectMemberResponseObject interface {
+	VisitRemoveWorkspaceProjectMemberResponse(w http.ResponseWriter) error
+}
+
+type RemoveWorkspaceProjectMember204Response struct {
+}
+
+func (response RemoveWorkspaceProjectMember204Response) VisitRemoveWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveWorkspaceProjectMember401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceProjectMember401ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceProjectMember403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceProjectMember403ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceProjectMember404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceProjectMember404ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceProjectMember409ApplicationProblemPlusJSONResponse struct {
+	ProjectConflictApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceProjectMember409ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceProjectMember500ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceProjectMember500ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceProjectMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectStatusRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+}
+
+type ListWorkspaceProjectStatusResponseObject interface {
+	VisitListWorkspaceProjectStatusResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceProjectStatus200JSONResponse []ProjectStatusUpdate
+
+func (response ListWorkspaceProjectStatus200JSONResponse) VisitListWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectStatus401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceProjectStatus401ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectStatus403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceProjectStatus403ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectStatus404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceProjectStatus404ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectStatus500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceProjectStatus500ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostWorkspaceProjectStatusRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+	Body        *PostWorkspaceProjectStatusJSONRequestBody
+}
+
+type PostWorkspaceProjectStatusResponseObject interface {
+	VisitPostWorkspaceProjectStatusResponse(w http.ResponseWriter) error
+}
+
+type PostWorkspaceProjectStatus201JSONResponse ProjectStatusUpdate
+
+func (response PostWorkspaceProjectStatus201JSONResponse) VisitPostWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostWorkspaceProjectStatus401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PostWorkspaceProjectStatus401ApplicationProblemPlusJSONResponse) VisitPostWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostWorkspaceProjectStatus403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response PostWorkspaceProjectStatus403ApplicationProblemPlusJSONResponse) VisitPostWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostWorkspaceProjectStatus404ApplicationProblemPlusJSONResponse Problem
+
+func (response PostWorkspaceProjectStatus404ApplicationProblemPlusJSONResponse) VisitPostWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostWorkspaceProjectStatus409ApplicationProblemPlusJSONResponse struct {
+	ProjectConflictApplicationProblemPlusJSONResponse
+}
+
+func (response PostWorkspaceProjectStatus409ApplicationProblemPlusJSONResponse) VisitPostWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostWorkspaceProjectStatus422ApplicationProblemPlusJSONResponse Problem
+
+func (response PostWorkspaceProjectStatus422ApplicationProblemPlusJSONResponse) VisitPostWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostWorkspaceProjectStatus500ApplicationProblemPlusJSONResponse Problem
+
+func (response PostWorkspaceProjectStatus500ApplicationProblemPlusJSONResponse) VisitPostWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnarchiveWorkspaceProjectRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+}
+
+type UnarchiveWorkspaceProjectResponseObject interface {
+	VisitUnarchiveWorkspaceProjectResponse(w http.ResponseWriter) error
+}
+
+type UnarchiveWorkspaceProject200JSONResponse Project
+
+func (response UnarchiveWorkspaceProject200JSONResponse) VisitUnarchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnarchiveWorkspaceProject401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UnarchiveWorkspaceProject401ApplicationProblemPlusJSONResponse) VisitUnarchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnarchiveWorkspaceProject403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UnarchiveWorkspaceProject403ApplicationProblemPlusJSONResponse) VisitUnarchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnarchiveWorkspaceProject404ApplicationProblemPlusJSONResponse Problem
+
+func (response UnarchiveWorkspaceProject404ApplicationProblemPlusJSONResponse) VisitUnarchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnarchiveWorkspaceProject409ApplicationProblemPlusJSONResponse struct {
+	ProjectConflictApplicationProblemPlusJSONResponse
+}
+
+func (response UnarchiveWorkspaceProject409ApplicationProblemPlusJSONResponse) VisitUnarchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnarchiveWorkspaceProject500ApplicationProblemPlusJSONResponse Problem
+
+func (response UnarchiveWorkspaceProject500ApplicationProblemPlusJSONResponse) VisitUnarchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RestoreWorkspaceRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -17615,6 +19582,42 @@ type StrictServerInterface interface {
 	// PreviewWorkspaceMemberRemoval Report what removing this member would affect
 	// (GET /workspaces/{workspaceId}/members/{accountId}/removal)
 	PreviewWorkspaceMemberRemoval(ctx context.Context, request PreviewWorkspaceMemberRemovalRequestObject) (PreviewWorkspaceMemberRemovalResponseObject, error)
+	// ListWorkspaceProjects List the projects in a workspace
+	// (GET /workspaces/{workspaceId}/projects)
+	ListWorkspaceProjects(ctx context.Context, request ListWorkspaceProjectsRequestObject) (ListWorkspaceProjectsResponseObject, error)
+	// CreateWorkspaceProject Start a project
+	// (POST /workspaces/{workspaceId}/projects)
+	CreateWorkspaceProject(ctx context.Context, request CreateWorkspaceProjectRequestObject) (CreateWorkspaceProjectResponseObject, error)
+	// DeleteWorkspaceProject Delete a project, leaving its issues in place
+	// (DELETE /workspaces/{workspaceId}/projects/{projectId})
+	DeleteWorkspaceProject(ctx context.Context, request DeleteWorkspaceProjectRequestObject) (DeleteWorkspaceProjectResponseObject, error)
+	// GetWorkspaceProject Read one project
+	// (GET /workspaces/{workspaceId}/projects/{projectId})
+	GetWorkspaceProject(ctx context.Context, request GetWorkspaceProjectRequestObject) (GetWorkspaceProjectResponseObject, error)
+	// UpdateWorkspaceProject Change a project's name, description, lead, target date or state
+	// (PATCH /workspaces/{workspaceId}/projects/{projectId})
+	UpdateWorkspaceProject(ctx context.Context, request UpdateWorkspaceProjectRequestObject) (UpdateWorkspaceProjectResponseObject, error)
+	// ArchiveWorkspaceProject Archive a completed or cancelled project, keeping it retrievable
+	// (POST /workspaces/{workspaceId}/projects/{projectId}/archive)
+	ArchiveWorkspaceProject(ctx context.Context, request ArchiveWorkspaceProjectRequestObject) (ArchiveWorkspaceProjectResponseObject, error)
+	// ListWorkspaceProjectMembers List who is on a project
+	// (GET /workspaces/{workspaceId}/projects/{projectId}/members)
+	ListWorkspaceProjectMembers(ctx context.Context, request ListWorkspaceProjectMembersRequestObject) (ListWorkspaceProjectMembersResponseObject, error)
+	// AddWorkspaceProjectMember Put someone on a project
+	// (POST /workspaces/{workspaceId}/projects/{projectId}/members)
+	AddWorkspaceProjectMember(ctx context.Context, request AddWorkspaceProjectMemberRequestObject) (AddWorkspaceProjectMemberResponseObject, error)
+	// RemoveWorkspaceProjectMember Take someone off a project
+	// (DELETE /workspaces/{workspaceId}/projects/{projectId}/members/{accountId})
+	RemoveWorkspaceProjectMember(ctx context.Context, request RemoveWorkspaceProjectMemberRequestObject) (RemoveWorkspaceProjectMemberResponseObject, error)
+	// ListWorkspaceProjectStatus Read the project's status updates, newest first
+	// (GET /workspaces/{workspaceId}/projects/{projectId}/status)
+	ListWorkspaceProjectStatus(ctx context.Context, request ListWorkspaceProjectStatusRequestObject) (ListWorkspaceProjectStatusResponseObject, error)
+	// PostWorkspaceProjectStatus Say how the project is going
+	// (POST /workspaces/{workspaceId}/projects/{projectId}/status)
+	PostWorkspaceProjectStatus(ctx context.Context, request PostWorkspaceProjectStatusRequestObject) (PostWorkspaceProjectStatusResponseObject, error)
+	// UnarchiveWorkspaceProject Bring an archived project back onto the list
+	// (POST /workspaces/{workspaceId}/projects/{projectId}/unarchive)
+	UnarchiveWorkspaceProject(ctx context.Context, request UnarchiveWorkspaceProjectRequestObject) (UnarchiveWorkspaceProjectResponseObject, error)
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(ctx context.Context, request RestoreWorkspaceRequestObject) (RestoreWorkspaceResponseObject, error)
@@ -19939,6 +21942,358 @@ func (sh *strictHandler) PreviewWorkspaceMemberRemoval(w http.ResponseWriter, r 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PreviewWorkspaceMemberRemovalResponseObject); ok {
 		if err := validResponse.VisitPreviewWorkspaceMemberRemovalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceProjects operation middleware
+func (sh *strictHandler) ListWorkspaceProjects(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceProjectsParams) {
+	var request ListWorkspaceProjectsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceProjects(ctx, request.(ListWorkspaceProjectsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceProjects")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceProjectsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceProjectsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateWorkspaceProject operation middleware
+func (sh *strictHandler) CreateWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request CreateWorkspaceProjectRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body CreateWorkspaceProjectJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateWorkspaceProject(ctx, request.(CreateWorkspaceProjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateWorkspaceProject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateWorkspaceProjectResponseObject); ok {
+		if err := validResponse.VisitCreateWorkspaceProjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWorkspaceProject operation middleware
+func (sh *strictHandler) DeleteWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	var request DeleteWorkspaceProjectRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWorkspaceProject(ctx, request.(DeleteWorkspaceProjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWorkspaceProject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWorkspaceProjectResponseObject); ok {
+		if err := validResponse.VisitDeleteWorkspaceProjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceProject operation middleware
+func (sh *strictHandler) GetWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	var request GetWorkspaceProjectRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceProject(ctx, request.(GetWorkspaceProjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceProject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceProjectResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceProjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateWorkspaceProject operation middleware
+func (sh *strictHandler) UpdateWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	var request UpdateWorkspaceProjectRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+
+	var body UpdateWorkspaceProjectJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateWorkspaceProject(ctx, request.(UpdateWorkspaceProjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateWorkspaceProject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateWorkspaceProjectResponseObject); ok {
+		if err := validResponse.VisitUpdateWorkspaceProjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ArchiveWorkspaceProject operation middleware
+func (sh *strictHandler) ArchiveWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	var request ArchiveWorkspaceProjectRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ArchiveWorkspaceProject(ctx, request.(ArchiveWorkspaceProjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ArchiveWorkspaceProject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ArchiveWorkspaceProjectResponseObject); ok {
+		if err := validResponse.VisitArchiveWorkspaceProjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceProjectMembers operation middleware
+func (sh *strictHandler) ListWorkspaceProjectMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	var request ListWorkspaceProjectMembersRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceProjectMembers(ctx, request.(ListWorkspaceProjectMembersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceProjectMembers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceProjectMembersResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceProjectMembersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddWorkspaceProjectMember operation middleware
+func (sh *strictHandler) AddWorkspaceProjectMember(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	var request AddWorkspaceProjectMemberRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+
+	var body AddWorkspaceProjectMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddWorkspaceProjectMember(ctx, request.(AddWorkspaceProjectMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddWorkspaceProjectMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddWorkspaceProjectMemberResponseObject); ok {
+		if err := validResponse.VisitAddWorkspaceProjectMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveWorkspaceProjectMember operation middleware
+func (sh *strictHandler) RemoveWorkspaceProjectMember(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId, accountId AccountId) {
+	var request RemoveWorkspaceProjectMemberRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveWorkspaceProjectMember(ctx, request.(RemoveWorkspaceProjectMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveWorkspaceProjectMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveWorkspaceProjectMemberResponseObject); ok {
+		if err := validResponse.VisitRemoveWorkspaceProjectMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceProjectStatus operation middleware
+func (sh *strictHandler) ListWorkspaceProjectStatus(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	var request ListWorkspaceProjectStatusRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceProjectStatus(ctx, request.(ListWorkspaceProjectStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceProjectStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceProjectStatusResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceProjectStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostWorkspaceProjectStatus operation middleware
+func (sh *strictHandler) PostWorkspaceProjectStatus(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	var request PostWorkspaceProjectStatusRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+
+	var body PostWorkspaceProjectStatusJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostWorkspaceProjectStatus(ctx, request.(PostWorkspaceProjectStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostWorkspaceProjectStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostWorkspaceProjectStatusResponseObject); ok {
+		if err := validResponse.VisitPostWorkspaceProjectStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnarchiveWorkspaceProject operation middleware
+func (sh *strictHandler) UnarchiveWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	var request UnarchiveWorkspaceProjectRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnarchiveWorkspaceProject(ctx, request.(UnarchiveWorkspaceProjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnarchiveWorkspaceProject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnarchiveWorkspaceProjectResponseObject); ok {
+		if err := validResponse.VisitUnarchiveWorkspaceProjectResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

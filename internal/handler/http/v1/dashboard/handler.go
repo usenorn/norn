@@ -28,6 +28,7 @@ type handler struct {
 	sessions       service.Sessions
 	ssoConnections service.SSOConnections
 	cycles         service.Cycles
+	projects       service.Projects
 	blobs          repository.Blob
 	app            config.App
 	instance       config.Instance
@@ -48,6 +49,7 @@ func New(
 	sessions service.Sessions,
 	ssoConnections service.SSOConnections,
 	cycles service.Cycles,
+	projects service.Projects,
 	blobs repository.Blob,
 	app config.App,
 	instance config.Instance,
@@ -67,6 +69,7 @@ func New(
 		sessions:       sessions,
 		ssoConnections: ssoConnections,
 		cycles:         cycles,
+		projects:       projects,
 		blobs:          blobs,
 		app:            app,
 		instance:       instance,
