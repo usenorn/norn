@@ -23,5 +23,10 @@ type Issue interface {
 	Purge(ctx context.Context, issueID uuid.UUID, due time.Time) error
 	StampLabels(ctx context.Context, issueID uuid.UUID, expectedVersion int, changedAt time.Time) error
 	ReassignState(ctx context.Context, fromStateID, toStateID uuid.UUID) error
+	Ancestors(ctx context.Context, issueID uuid.UUID) ([]uuid.UUID, error)
+	SubtreeHeight(ctx context.Context, issueID uuid.UUID) (int, error)
+	SetParent(ctx context.Context, issueID uuid.UUID, expectedVersion int, parentID *uuid.UUID, depth int, changedAt time.Time) error
+	ListChildren(ctx context.Context, workspaceID, parentID uuid.UUID, scope entity.TeamScope) ([]entity.Issue, error)
+	ProgressByParent(ctx context.Context, scope entity.TeamScope, parentIDs []uuid.UUID) (map[uuid.UUID]entity.IssueProgress, error)
 	ProgressByCategory(ctx context.Context, scope entity.TeamScope, teamID *uuid.UUID) (entity.IssueProgress, error)
 }

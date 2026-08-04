@@ -1,6 +1,7 @@
 package issue
 
 import (
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -34,4 +35,48 @@ func TestProgressCountsOnlyLiveWork(t *testing.T) {
 				"outstanding work go up.",
 		)
 	}
+}
+
+func TestScanIssueTakesExactlyAsManyDestinationsAsIssueColumnsSelects(t *testing.T) {
+	selected := 1 + topLevelCommas(issueColumns)
+
+	source, err := os.ReadFile("postgres.go")
+	if err != nil {
+		t.Fatalf("read issue repository: %v", err)
+	}
+
+	scan := regexp.MustCompile(`(?s)if err := row\.Scan\((.*?)\); err != nil`).FindSubmatch(source)
+	if scan == nil {
+		t.Fatal("could not find scanIssue's Scan call")
+	}
+
+	destinations := strings.Count(string(scan[1]), "&")
+
+	if destinations != selected {
+		t.Fatalf(
+			"issueColumns selects %d columns but scanIssue passes %d destinations. Every read of "+
+				"an issue would fail at runtime with a destination-count mismatch, and no other "+
+				"test catches it because none of them reach a database.",
+			selected, destinations,
+		)
+	}
+}
+
+func topLevelCommas(columns string) int {
+	depth, commas := 0, 0
+
+	for _, r := range columns {
+		switch r {
+		case '(':
+			depth++
+		case ')':
+			depth--
+		case ',':
+			if depth == 0 {
+				commas++
+			}
+		}
+	}
+
+	return commas
 }

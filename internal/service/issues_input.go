@@ -34,16 +34,22 @@ type IssueActivityPage struct {
 	NextCursor string
 }
 
-type UpdateIssueInput struct {
+type SetIssueParentInput struct {
 	ExpectedVersion int
-	Title           *string
-	StateID         *uuid.UUID
-	Description     *string
-	Priority        *entity.IssuePriority
-	AssigneeID      *uuid.UUID
-	Estimate        *int
-	DueOn           *string
-	Clear           []string
+	ParentID        *uuid.UUID
+}
+
+type UpdateIssueInput struct {
+	ExpectedVersion         int
+	AcknowledgeOpenChildren bool
+	Title                   *string
+	StateID                 *uuid.UUID
+	Description             *string
+	Priority                *entity.IssuePriority
+	AssigneeID              *uuid.UUID
+	Estimate                *int
+	DueOn                   *string
+	Clear                   []string
 }
 
 type MoveIssueInput struct {

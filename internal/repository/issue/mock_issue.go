@@ -43,6 +43,21 @@ func (m *MockIssue) EXPECT() *MockIssueMockRecorder {
 	return m.recorder
 }
 
+// Ancestors mocks base method.
+func (m *MockIssue) Ancestors(ctx context.Context, issueID uuid.UUID) ([]uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ancestors", ctx, issueID)
+	ret0, _ := ret[0].([]uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Ancestors indicates an expected call of Ancestors.
+func (mr *MockIssueMockRecorder) Ancestors(ctx, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ancestors", reflect.TypeOf((*MockIssue)(nil).Ancestors), ctx, issueID)
+}
+
 // Create mocks base method.
 func (m *MockIssue) Create(ctx context.Context, issue entity.Issue) (entity.Issue, error) {
 	m.ctrl.T.Helper()
@@ -86,6 +101,21 @@ func (m *MockIssue) GetVisibleByReference(ctx context.Context, workspaceID uuid.
 func (mr *MockIssueMockRecorder) GetVisibleByReference(ctx, workspaceID, reference, scope any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVisibleByReference", reflect.TypeOf((*MockIssue)(nil).GetVisibleByReference), ctx, workspaceID, reference, scope)
+}
+
+// ListChildren mocks base method.
+func (m *MockIssue) ListChildren(ctx context.Context, workspaceID, parentID uuid.UUID, scope entity.TeamScope) ([]entity.Issue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListChildren", ctx, workspaceID, parentID, scope)
+	ret0, _ := ret[0].([]entity.Issue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListChildren indicates an expected call of ListChildren.
+func (mr *MockIssueMockRecorder) ListChildren(ctx, workspaceID, parentID, scope any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListChildren", reflect.TypeOf((*MockIssue)(nil).ListChildren), ctx, workspaceID, parentID, scope)
 }
 
 // ListVisible mocks base method.
@@ -147,6 +177,21 @@ func (mr *MockIssueMockRecorder) ProgressByCategory(ctx, scope, teamID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProgressByCategory", reflect.TypeOf((*MockIssue)(nil).ProgressByCategory), ctx, scope, teamID)
 }
 
+// ProgressByParent mocks base method.
+func (m *MockIssue) ProgressByParent(ctx context.Context, scope entity.TeamScope, parentIDs []uuid.UUID) (map[uuid.UUID]entity.IssueProgress, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProgressByParent", ctx, scope, parentIDs)
+	ret0, _ := ret[0].(map[uuid.UUID]entity.IssueProgress)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProgressByParent indicates an expected call of ProgressByParent.
+func (mr *MockIssueMockRecorder) ProgressByParent(ctx, scope, parentIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProgressByParent", reflect.TypeOf((*MockIssue)(nil).ProgressByParent), ctx, scope, parentIDs)
+}
+
 // Purge mocks base method.
 func (m *MockIssue) Purge(ctx context.Context, issueID uuid.UUID, due time.Time) error {
 	m.ctrl.T.Helper()
@@ -175,6 +220,20 @@ func (mr *MockIssueMockRecorder) ReassignState(ctx, fromStateID, toStateID any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReassignState", reflect.TypeOf((*MockIssue)(nil).ReassignState), ctx, fromStateID, toStateID)
 }
 
+// SetParent mocks base method.
+func (m *MockIssue) SetParent(ctx context.Context, issueID uuid.UUID, expectedVersion int, parentID *uuid.UUID, depth int, changedAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetParent", ctx, issueID, expectedVersion, parentID, depth, changedAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetParent indicates an expected call of SetParent.
+func (mr *MockIssueMockRecorder) SetParent(ctx, issueID, expectedVersion, parentID, depth, changedAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetParent", reflect.TypeOf((*MockIssue)(nil).SetParent), ctx, issueID, expectedVersion, parentID, depth, changedAt)
+}
+
 // SetStatus mocks base method.
 func (m *MockIssue) SetStatus(ctx context.Context, issueID uuid.UUID, expectedVersion int, lifecycle entity.IssueLifecycle, changedAt time.Time) error {
 	m.ctrl.T.Helper()
@@ -201,6 +260,21 @@ func (m *MockIssue) StampLabels(ctx context.Context, issueID uuid.UUID, expected
 func (mr *MockIssueMockRecorder) StampLabels(ctx, issueID, expectedVersion, changedAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StampLabels", reflect.TypeOf((*MockIssue)(nil).StampLabels), ctx, issueID, expectedVersion, changedAt)
+}
+
+// SubtreeHeight mocks base method.
+func (m *MockIssue) SubtreeHeight(ctx context.Context, issueID uuid.UUID) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubtreeHeight", ctx, issueID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubtreeHeight indicates an expected call of SubtreeHeight.
+func (mr *MockIssueMockRecorder) SubtreeHeight(ctx, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubtreeHeight", reflect.TypeOf((*MockIssue)(nil).SubtreeHeight), ctx, issueID)
 }
 
 // Update mocks base method.

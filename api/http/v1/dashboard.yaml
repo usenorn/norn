@@ -1650,6 +1650,51 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/parent:
+    post:
+      tags: [issues]
+      operationId: setWorkspaceIssueParent
+      summary: File an issue under another, or detach it, moving its sub-tree with it
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetIssueParentRequest' }
+      responses:
+        '200':
+          description: The issue as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/children:
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueChildren
+      summary: List an issue's children and how far through them the work is
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      responses:
+        '200':
+          description: The children the caller may see, and their per-category tallies
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueChildren' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/labels:
     put:
       tags: [issues]
@@ -1977,6 +2022,26 @@ components:
         status: { $ref: '#/components/schemas/IssueStatus' }
         expectedVersion: { type: integer, format: int32 }
 
+    SetIssueParentRequest:
+      type: object
+      required: [expectedVersion, parentId]
+      properties:
+        expectedVersion: { type: integer, format: int32 }
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Null detaches the issue, leaving it and its sub-tree standing alone
+
+    IssueChildren:
+      type: object
+      required: [issues, progress]
+      properties:
+        issues:
+          type: array
+          items: { $ref: '#/components/schemas/Issue' }
+        progress: { $ref: '#/components/schemas/IssueProgress' }
+
     MoveIssueRequest:
       type: object
       required: [teamId, expectedVersion]
@@ -2093,6 +2158,9 @@ components:
       type: object
       required: [expectedVersion]
       properties:
+        acknowledgeOpenChildren:
+          type: boolean
+          description: Complete this issue even though children of it are still open
         expectedVersion: { type: integer, format: int32 }
         title: { type: string }
         stateId: { type: string, format: uuid }
@@ -2123,6 +2191,10 @@ components:
                 - issue_labels_out_of_scope
                 - issue_destination_incapable
                 - issue_status_transition
+                - issue_parent_cycle
+                - issue_parent_too_deep
+                - issue_parent_not_active
+                - issue_children_open
                 - label_out_of_scope
             version: { type: integer, format: int32 }
             conflicts:
@@ -2131,6 +2203,9 @@ components:
             labels:
               type: array
               items: { $ref: '#/components/schemas/Label' }
+            children:
+              type: array
+              items: { $ref: '#/components/schemas/Issue' }
 
     IssueProgress:
       type: object
@@ -2160,6 +2235,8 @@ components:
             - unarchived
             - deleted
             - restored
+            - child_added
+            - child_removed
         fromState: { type: string }
         toState: { type: string }
         field: { type: string }
@@ -2196,6 +2273,10 @@ components:
         completedAt: { type: string, format: date-time }
         status: { $ref: '#/components/schemas/IssueStatus' }
         archivedAt: { type: string, format: date-time }
+        parentId: { type: string, format: uuid }
+        parentReference: { type: string }
+        depth: { type: integer, format: int32 }
+        childProgress: { $ref: '#/components/schemas/IssueProgress' }
         state: { $ref: '#/components/schemas/IssueState' }
         labels:
           type: array

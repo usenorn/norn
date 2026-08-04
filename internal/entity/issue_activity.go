@@ -28,6 +28,8 @@ const (
 	IssueActivityKindUnarchived      IssueActivityKind = "unarchived"
 	IssueActivityKindDeleted         IssueActivityKind = "deleted"
 	IssueActivityKindRestored        IssueActivityKind = "restored"
+	IssueActivityKindChildAdded      IssueActivityKind = "child_added"
+	IssueActivityKindChildRemoved    IssueActivityKind = "child_removed"
 )
 
 func IssueActivityKinds() []IssueActivityKind {
@@ -40,6 +42,8 @@ func IssueActivityKinds() []IssueActivityKind {
 		IssueActivityKindUnarchived,
 		IssueActivityKindDeleted,
 		IssueActivityKindRestored,
+		IssueActivityKindChildAdded,
+		IssueActivityKindChildRemoved,
 	}
 }
 

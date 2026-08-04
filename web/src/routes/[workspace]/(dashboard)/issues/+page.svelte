@@ -10,6 +10,7 @@
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import IssueRow from "$lib/components/norn/issue-row.svelte";
+	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
@@ -22,7 +23,6 @@
 		countForTab,
 		issueTabs,
 		tabLabels,
-		totalIssues,
 		type Issue,
 	} from "$lib/issues/board";
 	import { workspacePath } from "$lib/workspace/navigation";
@@ -262,18 +262,8 @@
 					</div>
 				{/if}
 
-				{#if progress && totalIssues(progress) > 0}
-					<span class="hidden shrink-0 items-center gap-2 whitespace-nowrap lg:inline-flex">
-						<span class="inline-block h-[3px] w-16 overflow-hidden rounded-xs bg-paper-3">
-							<span
-								class="block h-[3px] rounded-xs bg-primary"
-								style="width: {Math.round((progress.complete / totalIssues(progress)) * 100)}%"
-							></span>
-						</span>
-						<span class="font-mono text-xs text-muted-foreground tabular-nums">
-							{progress.complete}/{totalIssues(progress)} done
-						</span>
-					</span>
+				{#if progress}
+					<ProgressBar {progress} class="hidden lg:inline-flex" />
 				{/if}
 			</div>
 

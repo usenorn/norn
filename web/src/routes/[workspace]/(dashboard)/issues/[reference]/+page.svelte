@@ -36,6 +36,8 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
+	import IssueParent from "$lib/issues/issue-parent.svelte";
+	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import {
 		conflictFailure,
 		labelFailureMessage,
@@ -63,6 +65,7 @@
 	let failure = $state<IssueFailure | null>(null);
 	let editing = $state(false);
 	let pendingTeamId = $state("");
+	let pendingStateId = $state("");
 
 	const detail = $derived<IssueDetail>(preview?.detail ?? data.detail);
 	const ready = $derived(detail.kind === "ready" ? detail : null);
@@ -236,7 +239,9 @@
 	async function move(stateId: string) {
 		if (!issue || issue.state.id === stateId) return;
 
-		await patch({ stateId });
+		if (!(await patch({ stateId })) && failure?.kind === "children_open") {
+			pendingStateId = stateId;
+		}
 	}
 
 	async function setPriority(priority: IssuePriority) {
@@ -249,6 +254,37 @@
 		if (!issue) return;
 
 		await patch(accountId === "" ? { clear: ["assignee"] } : { assigneeId: accountId });
+	}
+
+	async function setParent(parentId: string | null) {
+		if (!issue) return;
+
+		working = true;
+		failure = null;
+
+		try {
+			const { error } = await api.POST("/workspaces/{workspaceId}/issues/{issueId}/parent", {
+				params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+				body: { expectedVersion: issue.version, parentId },
+			});
+
+			if (error) failure = readIssueFailure(error);
+
+			await invalidateAll();
+		} catch {
+			failure = { kind: "unavailable" };
+		} finally {
+			working = false;
+		}
+	}
+
+	async function completeAnyway() {
+		if (!issue || !pendingStateId) return;
+
+		const stateId = pendingStateId;
+		pendingStateId = "";
+
+		await patch({ stateId, acknowledgeOpenChildren: true });
 	}
 
 	async function setStatus(status: "active" | "archived" | "pending_deletion") {
@@ -374,7 +410,9 @@
 								? "Someone got there first"
 								: failure.kind === "labels_out_of_scope"
 									? "This move drops labels"
-									: "That did not work"}
+									: failure.kind === "children_open"
+										? "Work beneath this is unfinished"
+										: "That did not work"}
 						</Alert.Title>
 						<Alert.Description>
 							{issueFailureMessage(failure)}
@@ -387,6 +425,18 @@
 										onclick={() => moveToTeam(pendingTeamId, true)}
 									>
 										Move anyway
+									</Button>
+								</span>
+							{/if}
+							{#if failure.kind === "children_open" && pendingStateId}
+								<span class="mt-2 block">
+									<Button
+										variant="secondary"
+										size="sm"
+										disabled={working}
+										onclick={completeAnyway}
+									>
+										Finish it anyway
 									</Button>
 								</span>
 							{/if}
@@ -664,6 +714,16 @@
 						on the new team.
 					</p>
 				</section>
+
+				<IssueParent
+					{issue}
+					candidates={ready.candidates}
+					{at}
+					{working}
+					onchoose={setParent}
+				/>
+
+				<IssueChildren children={ready.children} progress={ready.childProgress} {at} />
 
 				<section class="flex flex-col gap-2">
 					<h2 class="text-sm font-medium text-ink-900">Labels</h2>

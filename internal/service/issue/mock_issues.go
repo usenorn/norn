@@ -58,6 +58,22 @@ func (mr *MockIssuesMockRecorder) Activity(ctx, workspaceID, issueID, input any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Activity", reflect.TypeOf((*MockIssues)(nil).Activity), ctx, workspaceID, issueID, input)
 }
 
+// Children mocks base method.
+func (m *MockIssues) Children(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Issue, entity.IssueProgress, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Children", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].([]entity.Issue)
+	ret1, _ := ret[1].(entity.IssueProgress)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// Children indicates an expected call of Children.
+func (mr *MockIssuesMockRecorder) Children(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Children", reflect.TypeOf((*MockIssues)(nil).Children), ctx, workspaceID, issueID)
+}
+
 // Create mocks base method.
 func (m *MockIssues) Create(ctx context.Context, input service.CreateIssueInput) (entity.Issue, error) {
 	m.ctrl.T.Helper()
@@ -175,6 +191,21 @@ func (m *MockIssues) SetLabels(ctx context.Context, workspaceID, issueID uuid.UU
 func (mr *MockIssuesMockRecorder) SetLabels(ctx, workspaceID, issueID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLabels", reflect.TypeOf((*MockIssues)(nil).SetLabels), ctx, workspaceID, issueID, input)
+}
+
+// SetParent mocks base method.
+func (m *MockIssues) SetParent(ctx context.Context, workspaceID, issueID uuid.UUID, input service.SetIssueParentInput) (entity.Issue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetParent", ctx, workspaceID, issueID, input)
+	ret0, _ := ret[0].(entity.Issue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetParent indicates an expected call of SetParent.
+func (mr *MockIssuesMockRecorder) SetParent(ctx, workspaceID, issueID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetParent", reflect.TypeOf((*MockIssues)(nil).SetParent), ctx, workspaceID, issueID, input)
 }
 
 // SetStatus mocks base method.

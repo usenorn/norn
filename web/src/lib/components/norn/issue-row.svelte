@@ -2,9 +2,11 @@
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
+	import ProgressBar from "./progress-bar.svelte";
 	import Tag from "./tag.svelte";
 	import { cn } from "$lib/utils.js";
 	import { dueLabel, overdue } from "$lib/time";
+	import { totalIssues } from "$lib/issues/board";
 	import type { Issue } from "$lib/issues/issues";
 
 	let {
@@ -41,6 +43,8 @@
 		issue.state.category === "complete" || issue.state.category === "abandoned"
 	);
 	const late = $derived(!settled && overdue(issue.dueOn, now));
+	const children = $derived(issue.childProgress);
+	const hasChildren = $derived(children ? totalIssues(children) > 0 : false);
 
 	const initials = $derived(
 		assignee
@@ -82,6 +86,9 @@
 		{issue.title}
 	</span>
 	<span class="flex flex-none items-center justify-end gap-2.5 text-xs text-muted-foreground">
+		{#if hasChildren && children}
+			<ProgressBar progress={children} label={false} class="hidden md:inline-flex" />
+		{/if}
 		{#each shown as label (label.id)}
 			<Tag name={label.name} color={label.color} class="hidden lg:inline-flex" />
 		{/each}

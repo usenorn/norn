@@ -88,6 +88,30 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	var childrenOpen entity.IssueChildrenOpenError
+	if errors.As(err, &childrenOpen) {
+		base := baseProblem(http.StatusConflict, childrenOpen.Error())
+		children := issueDTOs(childrenOpen.Children)
+
+		return problemResponse{
+			status: http.StatusConflict,
+			body: api.IssueConflictProblem{
+				Code:     api.IssueChildrenOpen,
+				Children: &children,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+	}
+
+	var tooDeep entity.IssueTooDeepError
+	if errors.As(err, &tooDeep) {
+		return issueConflictProblem(api.IssueParentTooDeep, tooDeep), true
+	}
+
 	var stranded entity.IssueLabelsOutOfScopeError
 	if errors.As(err, &stranded) {
 		base := baseProblem(http.StatusConflict, stranded.Error())
@@ -221,6 +245,12 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrIssueStatusTransition):
 		return issueConflictProblem(api.IssueStatusTransition, err), true
+
+	case errors.Is(err, entity.ErrIssueParentCycle):
+		return issueConflictProblem(api.IssueParentCycle, err), true
+
+	case errors.Is(err, entity.ErrIssueParentNotActive):
+		return issueConflictProblem(api.IssueParentNotActive, err), true
 	}
 
 	switch {
@@ -644,6 +674,14 @@ func (r problemResponse) VisitSetWorkspaceIssueStatusResponse(w http.ResponseWri
 }
 
 func (r problemResponse) VisitGetWorkspaceIssueByReferenceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

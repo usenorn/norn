@@ -33,6 +33,9 @@ const issueColumns = `
        i.completed_at,
        i.status,
        i.archived_at,
+       coalesce(i.parent_issue_id::text, ''),
+       coalesce(p.reference_key || '-' || p.number::text, ''),
+       i.depth,
        coalesce(i.created_by_account_id::text, ''),
        i.created_at,
        i.updated_at,
@@ -46,7 +49,8 @@ const issueColumns = `
 const issueJoins = `
 FROM workspace_issues i
 JOIN workspace_teams t ON t.id = i.team_id
-JOIN workspace_workflow_states s ON s.id = i.state_id AND s.team_id = i.team_id`
+JOIN workspace_workflow_states s ON s.id = i.state_id AND s.team_id = i.team_id
+LEFT JOIN workspace_issues p ON p.id = i.parent_issue_id`
 
 const issuePageQuery = `
 SELECT` + issueColumns + issueJoins + `
@@ -90,12 +94,14 @@ WITH allocated AS (
               version, field_versions, description, priority, assignee_account_id,
               estimate, due_on, state_entered_at, completed_at,
               status, archived_at,
+              parent_issue_id, depth,
               created_by_account_id, created_at, updated_at
 )
 SELECT` + issueColumns + `
 FROM inserted i
 JOIN workspace_teams t ON t.id = i.team_id
-JOIN workspace_workflow_states s ON s.id = i.state_id AND s.team_id = i.team_id`
+JOIN workspace_workflow_states s ON s.id = i.state_id AND s.team_id = i.team_id
+LEFT JOIN workspace_issues p ON p.id = i.parent_issue_id`
 
 const lockIssueQuery = `
 SELECT` + issueColumns + issueJoins + `
@@ -165,6 +171,28 @@ SET status                = $3,
     updated_at            = $7
 WHERE id = $1 AND version = $2`
 
+const rerootChildrenQuery = `
+WITH RECURSIVE subtree AS (
+    SELECT id, 1 AS depth
+    FROM workspace_issues
+    WHERE parent_issue_id = $1
+      AND EXISTS (
+          SELECT 1 FROM workspace_issues due
+          WHERE due.id = $1 AND due.status = 'pending_deletion' AND due.purge_after <= $2
+      )
+    UNION ALL
+    SELECT i.id, s.depth + 1
+    FROM workspace_issues i
+    JOIN subtree s ON i.parent_issue_id = s.id
+    WHERE s.depth < $3
+)
+UPDATE workspace_issues i
+SET parent_issue_id = CASE WHEN i.parent_issue_id = $1 THEN NULL ELSE i.parent_issue_id END,
+    depth           = s.depth,
+    updated_at      = $2
+FROM subtree s
+WHERE i.id = s.id`
+
 const purgeIssueQuery = `
 DELETE FROM workspace_issues
 WHERE id = $1 AND status = 'pending_deletion' AND purge_after <= $2`
@@ -176,15 +204,74 @@ SET version        = version + 1,
     updated_at     = $3
 WHERE id = $1 AND version = $2`
 
+const ancestorsQuery = `
+WITH RECURSIVE ancestry AS (
+    SELECT id, parent_issue_id, 1 AS step
+    FROM workspace_issues
+    WHERE id = $1
+    UNION ALL
+    SELECT i.id, i.parent_issue_id, a.step + 1
+    FROM workspace_issues i
+    JOIN ancestry a ON i.id = a.parent_issue_id
+    WHERE a.step <= $2
+)
+SELECT id FROM ancestry WHERE id <> $1`
+
+const subtreeHeightQuery = `
+WITH RECURSIVE subtree AS (
+    SELECT id, 0 AS height
+    FROM workspace_issues
+    WHERE id = $1
+    UNION ALL
+    SELECT i.id, s.height + 1
+    FROM workspace_issues i
+    JOIN subtree s ON i.parent_issue_id = s.id
+    WHERE s.height <= $2
+)
+SELECT max(height) FROM subtree`
+
+const setParentQuery = `
+UPDATE workspace_issues
+SET parent_issue_id = $3::uuid,
+    depth           = $4,
+    version         = version + 1,
+    field_versions  = field_versions || jsonb_build_object('parent', version + 1),
+    updated_at      = $5
+WHERE id = $1 AND version = $2`
+
+const rewriteSubtreeDepthQuery = `
+WITH RECURSIVE subtree AS (
+    SELECT id, $2::integer + 1 AS depth
+    FROM workspace_issues
+    WHERE parent_issue_id = $1
+    UNION ALL
+    SELECT i.id, s.depth + 1
+    FROM workspace_issues i
+    JOIN subtree s ON i.parent_issue_id = s.id
+    WHERE s.depth < $3
+)
+UPDATE workspace_issues i
+SET depth = s.depth, updated_at = $4
+FROM subtree s
+WHERE i.id = s.id AND i.depth <> s.depth`
+
+const childrenQuery = `
+SELECT` + issueColumns + issueJoins + `
+WHERE i.parent_issue_id = $1
+  AND i.workspace_id = $2
+  AND ($3::boolean IS TRUE OR i.team_id = ANY($4::uuid[]))
+ORDER BY i.created_at, i.id`
+
 const progressQuery = `
-SELECT s.category, count(*)
+SELECT coalesce(i.parent_issue_id::text, ''), s.category, count(*)
 FROM workspace_issues i
 JOIN workspace_workflow_states s ON s.id = i.state_id AND s.team_id = i.team_id
 WHERE i.workspace_id = $1
   AND ($2::boolean IS TRUE OR i.team_id = ANY($3::uuid[]))
   AND ($4::boolean IS NOT TRUE OR i.team_id = $5::uuid)
+  AND ($6::boolean IS NOT TRUE OR i.parent_issue_id = ANY($7::uuid[]))
   AND i.status = 'active'
-GROUP BY s.category`
+GROUP BY i.parent_issue_id, s.category`
 
 const issueLabelsQuery = `
 SELECT il.issue_id,
@@ -240,6 +327,7 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		assignee  string
 
 		status        string
+		parent        string
 		completedAt   sql.NullTime
 		archivedAt    sql.NullTime
 		fieldVersions []byte
@@ -262,6 +350,9 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		&completedAt,
 		&status,
 		&archivedAt,
+		&parent,
+		&issue.ParentReference,
+		&issue.Depth,
 		&createdBy,
 		&issue.CreatedAt,
 		&issue.UpdatedAt,
@@ -327,6 +418,12 @@ func scanIssue(row scanner) (entity.Issue, error) {
 	if assignee != "" {
 		if issue.AssigneeAccountID, err = uuid.Parse(assignee); err != nil {
 			return entity.Issue{}, fmt.Errorf("parse issue assignee id: %w", err)
+		}
+	}
+
+	if parent != "" {
+		if issue.ParentIssueID, err = uuid.Parse(parent); err != nil {
+			return entity.Issue{}, fmt.Errorf("parse issue parent id: %w", err)
 		}
 	}
 
@@ -410,7 +507,7 @@ func (r *issueRepository) GetVisible(
 	}
 
 	hydrated := []entity.Issue{issue}
-	if err := r.hydrateLabels(ctx, hydrated); err != nil {
+	if err := r.hydrate(ctx, scope, hydrated); err != nil {
 		return entity.Issue{}, err
 	}
 
@@ -441,7 +538,7 @@ func (r *issueRepository) GetVisibleByReference(
 	}
 
 	hydrated := []entity.Issue{issue}
-	if err := r.hydrateLabels(ctx, hydrated); err != nil {
+	if err := r.hydrate(ctx, scope, hydrated); err != nil {
 		return entity.Issue{}, err
 	}
 
@@ -495,11 +592,23 @@ func (r *issueRepository) ListVisible(
 		return nil, fmt.Errorf("iterate issues: %w", err)
 	}
 
-	if err := r.hydrateLabels(ctx, issues); err != nil {
+	if err := r.hydrate(ctx, scope, issues); err != nil {
 		return nil, err
 	}
 
 	return issues, nil
+}
+
+func (r *issueRepository) hydrate(
+	ctx context.Context,
+	scope entity.TeamScope,
+	issues []entity.Issue,
+) error {
+	if err := r.hydrateLabels(ctx, issues); err != nil {
+		return err
+	}
+
+	return r.hydrateChildProgress(ctx, scope, issues)
 }
 
 func (r *issueRepository) hydrateLabels(ctx context.Context, issues []entity.Issue) error {
@@ -798,6 +907,16 @@ func (r *issueRepository) SetStatus(
 }
 
 func (r *issueRepository) Purge(ctx context.Context, issueID uuid.UUID, due time.Time) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx,
+		rerootChildrenQuery,
+		issueID.String(),
+		due,
+		entity.IssueMaxDepth,
+	); err != nil {
+		return fmt.Errorf("re-root the children of a purged issue: %w", err)
+	}
+
 	result, err := r.db.Querier(ctx).ExecContext(ctx, purgeIssueQuery, issueID.String(), due)
 	if err != nil {
 		return fmt.Errorf("purge issue: %w", err)
@@ -858,15 +977,223 @@ func (r *issueRepository) ReassignState(ctx context.Context, fromStateID, toStat
 	return nil
 }
 
+func (r *issueRepository) Ancestors(ctx context.Context, issueID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, ancestorsQuery, issueID.String(), entity.IssueMaxDepth)
+	if err != nil {
+		return nil, fmt.Errorf("walk issue ancestry: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	ancestors := make([]uuid.UUID, 0, entity.IssueMaxDepth)
+
+	for rows.Next() {
+		var raw string
+
+		if err := rows.Scan(&raw); err != nil {
+			return nil, fmt.Errorf("scan ancestor id: %w", err)
+		}
+
+		ancestor, err := uuid.Parse(raw)
+		if err != nil {
+			return nil, fmt.Errorf("parse ancestor id: %w", err)
+		}
+
+		ancestors = append(ancestors, ancestor)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate issue ancestry: %w", err)
+	}
+
+	return ancestors, nil
+}
+
+func (r *issueRepository) SubtreeHeight(ctx context.Context, issueID uuid.UUID) (int, error) {
+	var height sql.NullInt64
+
+	if err := r.db.Querier(ctx).QueryRowContext(
+		ctx,
+		subtreeHeightQuery,
+		issueID.String(),
+		entity.IssueMaxDepth,
+	).Scan(&height); err != nil {
+		return 0, fmt.Errorf("measure issue sub-tree: %w", err)
+	}
+
+	if !height.Valid {
+		return 0, nil
+	}
+
+	return int(height.Int64), nil
+}
+
+func (r *issueRepository) SetParent(
+	ctx context.Context,
+	issueID uuid.UUID,
+	expectedVersion int,
+	parentID *uuid.UUID,
+	depth int,
+	changedAt time.Time,
+) error {
+	var parent any
+
+	if parentID != nil {
+		parent = parentID.String()
+	}
+
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx,
+		setParentQuery,
+		issueID.String(),
+		expectedVersion,
+		parent,
+		depth,
+		changedAt,
+	)
+	if err != nil {
+		return fmt.Errorf("set issue parent: %w", err)
+	}
+
+	changed, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read reparented issue count: %w", err)
+	}
+
+	if changed == 0 {
+		return entity.ErrIssueStale
+	}
+
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx,
+		rewriteSubtreeDepthQuery,
+		issueID.String(),
+		depth,
+		entity.IssueMaxDepth,
+		changedAt,
+	); err != nil {
+		return fmt.Errorf("rewrite issue sub-tree depth: %w", err)
+	}
+
+	return nil
+}
+
+func (r *issueRepository) ListChildren(
+	ctx context.Context,
+	workspaceID, parentID uuid.UUID,
+	scope entity.TeamScope,
+) ([]entity.Issue, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx,
+		childrenQuery,
+		parentID.String(),
+		workspaceID.String(),
+		scope.AllTeams,
+		teamIDs(scope),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list issue children: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	children := make([]entity.Issue, 0)
+
+	for rows.Next() {
+		child, err := scanIssue(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan issue child: %w", err)
+		}
+
+		children = append(children, child)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate issue children: %w", err)
+	}
+
+	if err := r.hydrate(ctx, scope, children); err != nil {
+		return nil, err
+	}
+
+	return children, nil
+}
+
+func (r *issueRepository) hydrateChildProgress(
+	ctx context.Context,
+	scope entity.TeamScope,
+	issues []entity.Issue,
+) error {
+	if len(issues) == 0 {
+		return nil
+	}
+
+	ids := make([]uuid.UUID, 0, len(issues))
+	for _, issue := range issues {
+		ids = append(ids, issue.ID)
+	}
+
+	byParent, err := r.ProgressByParent(ctx, scope, ids)
+	if err != nil {
+		return err
+	}
+
+	for i := range issues {
+		issues[i].Children = byParent[issues[i].ID]
+	}
+
+	return nil
+}
+
 func (r *issueRepository) ProgressByCategory(
 	ctx context.Context,
 	scope entity.TeamScope,
 	teamID *uuid.UUID,
 ) (entity.IssueProgress, error) {
+	byParent, err := r.tally(ctx, scope, teamID, nil)
+	if err != nil {
+		return entity.IssueProgress{}, err
+	}
+
+	var progress entity.IssueProgress
+
+	for _, group := range byParent {
+		progress.NotStarted += group.NotStarted
+		progress.Active += group.Active
+		progress.Complete += group.Complete
+		progress.Abandoned += group.Abandoned
+	}
+
+	return progress, nil
+}
+
+func (r *issueRepository) ProgressByParent(
+	ctx context.Context,
+	scope entity.TeamScope,
+	parentIDs []uuid.UUID,
+) (map[uuid.UUID]entity.IssueProgress, error) {
+	if len(parentIDs) == 0 {
+		return map[uuid.UUID]entity.IssueProgress{}, nil
+	}
+
+	return r.tally(ctx, scope, nil, parentIDs)
+}
+
+func (r *issueRepository) tally(
+	ctx context.Context,
+	scope entity.TeamScope,
+	teamID *uuid.UUID,
+	parentIDs []uuid.UUID,
+) (map[uuid.UUID]entity.IssueProgress, error) {
 	team := uuid.Nil.String()
 
 	if teamID != nil {
 		team = teamID.String()
+	}
+
+	parents := make([]string, 0, len(parentIDs))
+	for _, id := range parentIDs {
+		parents = append(parents, id.String())
 	}
 
 	rows, err := r.db.Querier(ctx).QueryContext(
@@ -877,33 +1204,48 @@ func (r *issueRepository) ProgressByCategory(
 		teamIDs(scope),
 		teamID != nil,
 		team,
+		len(parents) > 0,
+		parents,
 	)
 	if err != nil {
-		return entity.IssueProgress{}, fmt.Errorf("tally issue progress: %w", err)
+		return nil, fmt.Errorf("tally issue progress: %w", err)
 	}
 
 	defer func() { _ = rows.Close() }()
 
-	var progress entity.IssueProgress
+	byParent := map[uuid.UUID]entity.IssueProgress{}
 
 	for rows.Next() {
 		var (
+			parent   string
 			category string
 			issues   int
 		)
 
-		if err := rows.Scan(&category, &issues); err != nil {
-			return entity.IssueProgress{}, fmt.Errorf("scan issue progress: %w", err)
+		if err := rows.Scan(&parent, &category, &issues); err != nil {
+			return nil, fmt.Errorf("scan issue progress: %w", err)
 		}
 
-		if !progress.Add(entity.StateCategory(category), issues) {
-			return entity.IssueProgress{}, fmt.Errorf("unknown workflow state category %q", category)
+		key := uuid.Nil
+
+		if parent != "" {
+			if key, err = uuid.Parse(parent); err != nil {
+				return nil, fmt.Errorf("parse progress parent id: %w", err)
+			}
 		}
+
+		progress := byParent[key]
+
+		if !progress.Add(entity.StateCategory(category), issues) {
+			return nil, fmt.Errorf("unknown workflow state category %q", category)
+		}
+
+		byParent[key] = progress
 	}
 
 	if err := rows.Err(); err != nil {
-		return entity.IssueProgress{}, fmt.Errorf("iterate issue progress: %w", err)
+		return nil, fmt.Errorf("iterate issue progress: %w", err)
 	}
 
-	return progress, nil
+	return byParent, nil
 }

@@ -77,6 +77,10 @@ type Issue struct {
 	CompletedAt        *time.Time
 	Status             IssueStatus
 	ArchivedAt         *time.Time
+	ParentIssueID      uuid.UUID
+	ParentReference    string
+	Depth              int
+	Children           IssueProgress
 	CreatedByAccountID uuid.UUID
 	CreatedAt          time.Time
 	UpdatedAt          time.Time

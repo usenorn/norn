@@ -989,6 +989,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/parent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** File an issue under another, or detach it, moving its sub-tree with it */
+        post: operations["setWorkspaceIssueParent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/children": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List an issue's children and how far through them the work is */
+        get: operations["listWorkspaceIssueChildren"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/labels": {
         parameters: {
             query?: never;
@@ -1088,6 +1122,19 @@ export interface components {
             /** Format: int32 */
             expectedVersion: number;
         };
+        SetIssueParentRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            /**
+             * Format: uuid
+             * @description Null detaches the issue, leaving it and its sub-tree standing alone
+             */
+            parentId: string | null;
+        };
+        IssueChildren: {
+            issues: components["schemas"]["Issue"][];
+            progress: components["schemas"]["IssueProgress"];
+        };
         MoveIssueRequest: {
             /** Format: uuid */
             teamId: string;
@@ -1151,6 +1198,8 @@ export interface components {
         /** @enum {string} */
         IssuePriority: "urgent" | "high" | "medium" | "low" | "none";
         UpdateIssueRequest: {
+            /** @description Complete this issue even though children of it are still open */
+            acknowledgeOpenChildren?: boolean;
             /** Format: int32 */
             expectedVersion: number;
             title?: string;
@@ -1169,11 +1218,12 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_destination_incapable" | "issue_status_transition" | "label_out_of_scope";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "label_out_of_scope";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
             labels?: components["schemas"]["Label"][];
+            children?: components["schemas"]["Issue"][];
         };
         IssueProgress: {
             /** Format: int32 */
@@ -1194,7 +1244,7 @@ export interface components {
             actorAccountId?: string;
             actorName?: string;
             /** @enum {string} */
-            kind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored";
+            kind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed";
             fromState?: string;
             toState?: string;
             field?: string;
@@ -1235,6 +1285,12 @@ export interface components {
             status: components["schemas"]["IssueStatus"];
             /** Format: date-time */
             archivedAt?: string;
+            /** Format: uuid */
+            parentId?: string;
+            parentReference?: string;
+            /** Format: int32 */
+            depth?: number;
+            childProgress?: components["schemas"]["IssueProgress"];
             state: components["schemas"]["IssueState"];
             labels: components["schemas"]["Label"][];
             /** Format: int32 */
@@ -4085,6 +4141,66 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["IssueConflict"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceIssueParent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetIssueParentRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueChildren: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The children the caller may see, and their per-category tallies */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueChildren"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

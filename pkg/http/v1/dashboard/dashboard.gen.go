@@ -294,6 +294,8 @@ func (e InvitationUnusableProblemCode) Valid() bool {
 // Defines values for IssueActivityKind.
 const (
 	IssueActivityKindArchived        IssueActivityKind = "archived"
+	IssueActivityKindChildAdded      IssueActivityKind = "child_added"
+	IssueActivityKindChildRemoved    IssueActivityKind = "child_removed"
 	IssueActivityKindCreated         IssueActivityKind = "created"
 	IssueActivityKindDeleted         IssueActivityKind = "deleted"
 	IssueActivityKindPropertyChanged IssueActivityKind = "property_changed"
@@ -307,6 +309,10 @@ const (
 func (e IssueActivityKind) Valid() bool {
 	switch e {
 	case IssueActivityKindArchived:
+		return true
+	case IssueActivityKindChildAdded:
+		return true
+	case IssueActivityKindChildRemoved:
 		return true
 	case IssueActivityKindCreated:
 		return true
@@ -330,8 +336,12 @@ func (e IssueActivityKind) Valid() bool {
 // Defines values for IssueConflictProblemCode.
 const (
 	IssueAlreadyOnTeam        IssueConflictProblemCode = "issue_already_on_team"
+	IssueChildrenOpen         IssueConflictProblemCode = "issue_children_open"
 	IssueDestinationIncapable IssueConflictProblemCode = "issue_destination_incapable"
 	IssueLabelsOutOfScope     IssueConflictProblemCode = "issue_labels_out_of_scope"
+	IssueParentCycle          IssueConflictProblemCode = "issue_parent_cycle"
+	IssueParentNotActive      IssueConflictProblemCode = "issue_parent_not_active"
+	IssueParentTooDeep        IssueConflictProblemCode = "issue_parent_too_deep"
 	IssueReferenceTaken       IssueConflictProblemCode = "issue_reference_taken"
 	IssueStale                IssueConflictProblemCode = "issue_stale"
 	IssueStatusTransition     IssueConflictProblemCode = "issue_status_transition"
@@ -343,9 +353,17 @@ func (e IssueConflictProblemCode) Valid() bool {
 	switch e {
 	case IssueAlreadyOnTeam:
 		return true
+	case IssueChildrenOpen:
+		return true
 	case IssueDestinationIncapable:
 		return true
 	case IssueLabelsOutOfScope:
+		return true
+	case IssueParentCycle:
+		return true
+	case IssueParentNotActive:
+		return true
+	case IssueParentTooDeep:
 		return true
 	case IssueReferenceTaken:
 		return true
@@ -1186,15 +1204,19 @@ type InvitationWorkspace struct {
 type Issue struct {
 	ArchivedAt         *time.Time          `json:"archivedAt,omitempty"`
 	AssigneeAccountId  *openapi_types.UUID `json:"assigneeAccountId,omitempty"`
+	ChildProgress      *IssueProgress      `json:"childProgress,omitempty"`
 	CompletedAt        *time.Time          `json:"completedAt,omitempty"`
 	CreatedAt          time.Time           `json:"createdAt"`
 	CreatedByAccountId *openapi_types.UUID `json:"createdByAccountId,omitempty"`
+	Depth              *int32              `json:"depth,omitempty"`
 	Description        string              `json:"description"`
 	DueOn              *openapi_types.Date `json:"dueOn,omitempty"`
 	Estimate           *int32              `json:"estimate,omitempty"`
 	Id                 openapi_types.UUID  `json:"id"`
 	Labels             []Label             `json:"labels"`
 	Number             int32               `json:"number"`
+	ParentId           *openapi_types.UUID `json:"parentId,omitempty"`
+	ParentReference    *string             `json:"parentReference,omitempty"`
 	Priority           IssuePriority       `json:"priority"`
 	Reference          string              `json:"reference"`
 	ReferenceKey       string              `json:"referenceKey"`
@@ -1233,8 +1255,15 @@ type IssueActivityPage struct {
 	NextCursor *string         `json:"nextCursor,omitempty"`
 }
 
+// IssueChildren defines model for IssueChildren.
+type IssueChildren struct {
+	Issues   []Issue       `json:"issues"`
+	Progress IssueProgress `json:"progress"`
+}
+
 // IssueConflictProblem defines model for IssueConflictProblem.
 type IssueConflictProblem struct {
+	Children  *[]Issue                 `json:"children,omitempty"`
 	Code      IssueConflictProblemCode `json:"code"`
 	Conflicts *[]string                `json:"conflicts,omitempty"`
 	Detail    *string                  `json:"detail,omitempty"`
@@ -1535,6 +1564,14 @@ type SetIssueLabelsRequest struct {
 	LabelIds        []openapi_types.UUID `json:"labelIds"`
 }
 
+// SetIssueParentRequest defines model for SetIssueParentRequest.
+type SetIssueParentRequest struct {
+	ExpectedVersion int32 `json:"expectedVersion"`
+
+	// ParentId Null detaches the issue, leaving it and its sub-tree standing alone
+	ParentId *openapi_types.UUID `json:"parentId"`
+}
+
 // SetIssueStatusRequest defines model for SetIssueStatusRequest.
 type SetIssueStatusRequest struct {
 	ExpectedVersion int32       `json:"expectedVersion"`
@@ -1657,7 +1694,9 @@ type TeamVisibility string
 
 // UpdateIssueRequest defines model for UpdateIssueRequest.
 type UpdateIssueRequest struct {
-	AssigneeId *openapi_types.UUID `json:"assigneeId,omitempty"`
+	// AcknowledgeOpenChildren Complete this issue even though children of it are still open
+	AcknowledgeOpenChildren *bool               `json:"acknowledgeOpenChildren,omitempty"`
+	AssigneeId              *openapi_types.UUID `json:"assigneeId,omitempty"`
 
 	// Clear Properties to reset; absent means unchanged, which a nullable field cannot express
 	Clear           *[]UpdateIssueRequestClear `json:"clear,omitempty"`
@@ -1973,6 +2012,9 @@ type UpdateWorkspaceIssueJSONRequestBody = UpdateIssueRequest
 // SetWorkspaceIssueLabelsJSONRequestBody defines body for SetWorkspaceIssueLabels for application/json ContentType.
 type SetWorkspaceIssueLabelsJSONRequestBody = SetIssueLabelsRequest
 
+// SetWorkspaceIssueParentJSONRequestBody defines body for SetWorkspaceIssueParent for application/json ContentType.
+type SetWorkspaceIssueParentJSONRequestBody = SetIssueParentRequest
+
 // SetWorkspaceIssueStatusJSONRequestBody defines body for SetWorkspaceIssueStatus for application/json ContentType.
 type SetWorkspaceIssueStatusJSONRequestBody = SetIssueStatusRequest
 
@@ -2149,9 +2191,15 @@ type ServerInterface interface {
 	// ListWorkspaceIssueActivity List what has happened to an issue, newest first
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/activity)
 	ListWorkspaceIssueActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueActivityParams)
+	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
+	ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 	SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// SetWorkspaceIssueParent File an issue under another, or detach it, moving its sub-tree with it
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/parent)
+	SetWorkspaceIssueParent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// SetWorkspaceIssueStatus Archive, delete or restore an issue without losing its reference
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/status)
 	SetWorkspaceIssueStatus(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -2521,9 +2569,21 @@ func (_ Unimplemented) ListWorkspaceIssueActivity(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
+// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
+func (_ Unimplemented) ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 // (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 func (_ Unimplemented) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceIssueParent File an issue under another, or detach it, moving its sub-tree with it
+// (POST /workspaces/{workspaceId}/issues/{issueId}/parent)
+func (_ Unimplemented) SetWorkspaceIssueParent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3720,6 +3780,41 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceIssueActivity(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceIssueChildren operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueChildren(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SetWorkspaceIssueLabels operation middleware
 func (siw *ServerInterfaceWrapper) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request) {
 
@@ -3746,6 +3841,41 @@ func (siw *ServerInterfaceWrapper) SetWorkspaceIssueLabels(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetWorkspaceIssueLabels(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceIssueParent operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceIssueParent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceIssueParent(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5451,6 +5581,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/team", wrapper.MoveWorkspaceIssueToTeam)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/parent", wrapper.SetWorkspaceIssueParent)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/children", wrapper.ListWorkspaceIssueChildren)
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/labels", wrapper.SetWorkspaceIssueLabels)
@@ -8891,6 +9027,89 @@ func (response ListWorkspaceIssueActivity500ApplicationProblemPlusJSONResponse) 
 	return err
 }
 
+type ListWorkspaceIssueChildrenRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueChildrenResponseObject interface {
+	VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueChildren200JSONResponse IssueChildren
+
+func (response ListWorkspaceIssueChildren200JSONResponse) VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueChildren401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueChildren401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueChildren403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueChildren403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueChildren404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueChildren404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueChildren500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueChildren500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SetWorkspaceIssueLabelsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	IssueId     IssueId     `json:"issueId"`
@@ -8994,6 +9213,120 @@ func (response SetWorkspaceIssueLabels422ApplicationProblemPlusJSONResponse) Vis
 type SetWorkspaceIssueLabels500ApplicationProblemPlusJSONResponse Problem
 
 func (response SetWorkspaceIssueLabels500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueLabelsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueParentRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *SetWorkspaceIssueParentJSONRequestBody
+}
+
+type SetWorkspaceIssueParentResponseObject interface {
+	VisitSetWorkspaceIssueParentResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceIssueParent200JSONResponse Issue
+
+func (response SetWorkspaceIssueParent200JSONResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueParent401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceIssueParent401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueParent403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceIssueParent403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueParent404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceIssueParent404ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueParent409ApplicationProblemPlusJSONResponse struct {
+	IssueConflictApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceIssueParent409ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueParent422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceIssueParent422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueParent500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceIssueParent500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -12769,9 +13102,15 @@ type StrictServerInterface interface {
 	// ListWorkspaceIssueActivity List what has happened to an issue, newest first
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/activity)
 	ListWorkspaceIssueActivity(ctx context.Context, request ListWorkspaceIssueActivityRequestObject) (ListWorkspaceIssueActivityResponseObject, error)
+	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
+	ListWorkspaceIssueChildren(ctx context.Context, request ListWorkspaceIssueChildrenRequestObject) (ListWorkspaceIssueChildrenResponseObject, error)
 	// SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 	SetWorkspaceIssueLabels(ctx context.Context, request SetWorkspaceIssueLabelsRequestObject) (SetWorkspaceIssueLabelsResponseObject, error)
+	// SetWorkspaceIssueParent File an issue under another, or detach it, moving its sub-tree with it
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/parent)
+	SetWorkspaceIssueParent(ctx context.Context, request SetWorkspaceIssueParentRequestObject) (SetWorkspaceIssueParentResponseObject, error)
 	// SetWorkspaceIssueStatus Archive, delete or restore an issue without losing its reference
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/status)
 	SetWorkspaceIssueStatus(ctx context.Context, request SetWorkspaceIssueStatusRequestObject) (SetWorkspaceIssueStatusResponseObject, error)
@@ -14109,6 +14448,33 @@ func (sh *strictHandler) ListWorkspaceIssueActivity(w http.ResponseWriter, r *ht
 	}
 }
 
+// ListWorkspaceIssueChildren operation middleware
+func (sh *strictHandler) ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueChildrenRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueChildren(ctx, request.(ListWorkspaceIssueChildrenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueChildren")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueChildrenResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueChildrenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SetWorkspaceIssueLabels operation middleware
 func (sh *strictHandler) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	var request SetWorkspaceIssueLabelsRequestObject
@@ -14136,6 +14502,40 @@ func (sh *strictHandler) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetWorkspaceIssueLabelsResponseObject); ok {
 		if err := validResponse.VisitSetWorkspaceIssueLabelsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceIssueParent operation middleware
+func (sh *strictHandler) SetWorkspaceIssueParent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request SetWorkspaceIssueParentRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body SetWorkspaceIssueParentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceIssueParent(ctx, request.(SetWorkspaceIssueParentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceIssueParent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceIssueParentResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceIssueParentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
