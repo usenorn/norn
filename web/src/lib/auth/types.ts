@@ -9,12 +9,30 @@ export type SignInFailure =
 
 export type SsoPhase = "redirecting" | "returning";
 
+export type SsoStage =
+	| "discovery"
+	| "endpoints"
+	| "jwks"
+	| "authorization"
+	| "token_exchange"
+	| "id_token"
+	| "claims"
+	| "matching"
+	| "provisioning";
+
 export type SsoFailure =
 	| { kind: "rejected"; diagnostics: Diagnostic[]; reference: string }
 	| { kind: "no_account"; subject: string; diagnostics: Diagnostic[]; reference: string }
 	| {
 			kind: "provider_unreachable";
 			timeout: string;
+			diagnostics: Diagnostic[];
+			reference: string;
+	  }
+	| {
+			kind: "stage";
+			stage: SsoStage;
+			message: string;
 			diagnostics: Diagnostic[];
 			reference: string;
 	  };
@@ -52,5 +70,5 @@ export type PasswordReset =
 	| { kind: "unavailable" };
 
 export type SsoExchange =
-	| { status: "pending"; phase: SsoPhase }
+	| { status: "pending"; phase: SsoPhase; authorizationUrl?: string }
 	| { status: "failed"; failure: SsoFailure };

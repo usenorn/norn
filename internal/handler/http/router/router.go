@@ -8,6 +8,7 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/handler/http/sso"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -20,6 +21,7 @@ func New(
 	sessions service.Sessions,
 	tokens service.APITokens,
 	dashboard api.StrictServerInterface,
+	callback *sso.Callback,
 ) http.Handler {
 	base := chi.NewRouter()
 	base.Use(
@@ -30,6 +32,8 @@ func New(
 		maxRequestBytes(cfg.MaxRequestBytes),
 		middleware.ClientCapture(cfg),
 	)
+
+	base.Get(sso.CallbackPath, callback.Handle)
 
 	strict := api.NewStrictHandlerWithOptions(dashboard, nil, api.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {

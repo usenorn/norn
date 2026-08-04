@@ -24,6 +24,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.43.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.106.2
 	github.com/casbin/casbin/v3 v3.10.0
+	github.com/coreos/go-oidc/v3 v3.20.0
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/go-viper/mapstructure/v2 v2.5.0
@@ -40,6 +41,7 @@ require (
 	github.com/wneessen/go-mail v0.8.1
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.54.0
+	golang.org/x/oauth2 v0.36.0
 )
 
 require (
@@ -138,6 +140,7 @@ require (
 	github.com/go-critic/go-critic v0.14.3 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.1 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-openapi/jsonpointer v0.23.1 // indirect
 	github.com/go-openapi/swag/jsonname v0.26.0 // indirect
 	github.com/go-sql-driver/mysql v1.10.0 // indirect

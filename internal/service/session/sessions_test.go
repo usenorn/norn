@@ -559,3 +559,58 @@ func TestSigningInRecordsMembershipActivityImmediately(t *testing.T) {
 		t.Fatalf("recorded auth method = %q, want password", (*h.activity)[0].method)
 	}
 }
+
+func TestStartingASessionRecordsHowThePersonActuallyAuthenticated(t *testing.T) {
+	for _, method := range []entity.SessionAuthMethod{
+		entity.SessionAuthMethodPassword,
+		entity.SessionAuthMethodSSO,
+	} {
+		h := newHarness(t)
+		accountID := uuid.New()
+
+		h.geoLocator.EXPECT().Locate(gomock.Any(), gomock.Any()).Return(entity.Location{}, nil)
+
+		var stored entity.Session
+
+		h.sessions.EXPECT().
+			Create(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, session entity.Session) error {
+				stored = session
+
+				return nil
+			})
+
+		issued, err := h.service.Start(context.Background(), service.StartSessionInput{
+			AccountID:  accountID,
+			AuthMethod: method,
+		})
+		if err != nil {
+			t.Fatalf("Start with %q: %v", method, err)
+		}
+
+		if stored.AuthMethod != method {
+			t.Errorf(
+				"a session started with %q was stored as %q. A workspace that requires single "+
+					"sign-on decides on this field alone.",
+				method, stored.AuthMethod,
+			)
+		}
+
+		if issued.Session.AuthMethod != method {
+			t.Errorf("the returned session says %q, want %q", issued.Session.AuthMethod, method)
+		}
+	}
+}
+
+func TestASessionCannotBeStartedWithoutSayingHowItWasAuthenticated(t *testing.T) {
+	h := newHarness(t)
+
+	_, err := h.service.Start(context.Background(), service.StartSessionInput{AccountID: uuid.New()})
+	if !errors.Is(err, entity.ErrSessionAuthMethodUnknown) {
+		t.Fatalf(
+			"a session was started with no auth method (%v). Defaulting silently would let a "+
+				"new caller mint a password session for an exchange that was nothing of the kind.",
+			err,
+		)
+	}
+}

@@ -123,6 +123,11 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("valkey.read_timeout", 3*time.Second)
 	v.SetDefault("valkey.write_timeout", 3*time.Second)
 
+	v.SetDefault("security.encryption_key", "")
+
+	v.SetDefault("oidc.request_timeout", 10*time.Second)
+	v.SetDefault("oidc.max_response_size", 1<<20)
+	v.SetDefault("oidc.state_ttl", 10*time.Minute)
 	v.SetDefault("asynq.addr", "127.0.0.1:6381")
 	v.SetDefault("asynq.username", "")
 	v.SetDefault("asynq.password", "")

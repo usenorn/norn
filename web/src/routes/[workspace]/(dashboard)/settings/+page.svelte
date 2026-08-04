@@ -331,6 +331,25 @@
 				</div>
 			</section>
 
+			<section class="flex flex-col gap-4">
+				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Authentication</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Let members sign in through your identity provider instead of a Norn password. Free on
+						every instance, including self-hosted.
+					</p>
+				</div>
+
+				<div>
+					<Button
+						variant="secondary"
+						href={workspacePath(workspace.slug, "/settings/authentication")}
+					>
+						Set up single sign-on
+					</Button>
+				</div>
+			</section>
+
 			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">API tokens</h2>

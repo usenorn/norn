@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -25,6 +26,7 @@ type handler struct {
 	labels         service.Labels
 	apiTokens      service.APITokens
 	sessions       service.Sessions
+	ssoConnections service.SSOConnections
 	blobs          repository.Blob
 	app            config.App
 	instance       config.Instance
@@ -43,6 +45,7 @@ func New(
 	labels service.Labels,
 	apiTokens service.APITokens,
 	sessions service.Sessions,
+	ssoConnections service.SSOConnections,
 	blobs repository.Blob,
 	app config.App,
 	instance config.Instance,
@@ -60,6 +63,7 @@ func New(
 		labels:         labels,
 		apiTokens:      apiTokens,
 		sessions:       sessions,
+		ssoConnections: ssoConnections,
 		blobs:          blobs,
 		app:            app,
 		instance:       instance,
@@ -157,4 +161,8 @@ func (h *handler) currentAccountID(ctx context.Context) (uuid.UUID, bool) {
 
 func (h *handler) avatarURL(key string) string {
 	return h.blobs.URL(key)
+}
+
+func (h *handler) oidcRedirectURI() string {
+	return strings.TrimRight(h.app.BaseURL, "/") + oidcCallbackPath
 }

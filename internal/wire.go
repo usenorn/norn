@@ -7,12 +7,15 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/handler/http/router"
+	ssohandler "github.com/usenorn/norn/internal/handler/http/sso"
 	dashboardhandler "github.com/usenorn/norn/internal/handler/http/v1/dashboard"
 	"github.com/usenorn/norn/internal/handler/job"
 	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/pkg/authz"
+	"github.com/usenorn/norn/internal/pkg/crypter"
 	"github.com/usenorn/norn/internal/pkg/geoip"
 	"github.com/usenorn/norn/internal/pkg/objectstore"
+	oidcproviderpkg "github.com/usenorn/norn/internal/pkg/oidcprovider"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/pkg/pwned"
 	"github.com/usenorn/norn/internal/pkg/smtp"
@@ -35,6 +38,9 @@ import (
 	labelgrouprepo "github.com/usenorn/norn/internal/repository/labelgroup"
 	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	oidcconnectionrepo "github.com/usenorn/norn/internal/repository/oidcconnection"
+	oidcproviderrepo "github.com/usenorn/norn/internal/repository/oidcprovider"
+	oidcstaterepo "github.com/usenorn/norn/internal/repository/oidcstate"
 	passwordhistoryrepo "github.com/usenorn/norn/internal/repository/passwordhistory"
 	passwordresetrepo "github.com/usenorn/norn/internal/repository/passwordreset"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
@@ -55,6 +61,7 @@ import (
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
+	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
 	workflowstatesvc "github.com/usenorn/norn/internal/service/workflowstate"
 	workspacesvc "github.com/usenorn/norn/internal/service/workspace"
@@ -72,6 +79,8 @@ var baseSet = wire.NewSet(
 	authz.Set,
 	geoip.Set,
 	pwned.Set,
+	crypter.Set,
+	oidcproviderpkg.Set,
 
 	wire.Bind(new(repository.Transactor), new(*postgres.Client)),
 
@@ -101,6 +110,9 @@ var baseSet = wire.NewSet(
 	invitationrepo.Set,
 	teamrepo.Set,
 	teammemberrepo.Set,
+	oidcconnectionrepo.Set,
+	oidcstaterepo.Set,
+	oidcproviderrepo.Set,
 
 	accountsvc.Set,
 	workspacesvc.Set,
@@ -115,8 +127,10 @@ var baseSet = wire.NewSet(
 	sessionsvc.Set,
 	authorizersvc.Set,
 	jobssvc.Set,
+	ssoconnectionsvc.Set,
 
 	dashboardhandler.Set,
+	ssohandler.Set,
 	router.Set,
 	job.Set,
 

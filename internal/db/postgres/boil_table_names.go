@@ -23,6 +23,7 @@ var TableNames = struct {
 	WorkspaceLabelGroups        string
 	WorkspaceLabels             string
 	WorkspaceMemberships        string
+	WorkspaceOidcConnections    string
 	WorkspaceTeamMembers        string
 	WorkspaceTeams              string
 	WorkspaceWorkflowStates     string
@@ -47,6 +48,7 @@ var TableNames = struct {
 	WorkspaceLabelGroups:        "workspace_label_groups",
 	WorkspaceLabels:             "workspace_labels",
 	WorkspaceMemberships:        "workspace_memberships",
+	WorkspaceOidcConnections:    "workspace_oidc_connections",
 	WorkspaceTeamMembers:        "workspace_team_members",
 	WorkspaceTeams:              "workspace_teams",
 	WorkspaceWorkflowStates:     "workspace_workflow_states",

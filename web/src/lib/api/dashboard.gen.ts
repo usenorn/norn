@@ -140,6 +140,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sso/oidc/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a single sign-on exchange for a workspace */
+        post: operations["beginOidcLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/me": {
         parameters: {
             query?: never;
@@ -298,6 +315,65 @@ export interface paths {
         /** Set which authentication methods the workspace accepts */
         put: operations["setWorkspaceAuthPolicy"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso/oidc": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read the workspace single sign-on provider */
+        get: operations["getWorkspaceOidcConnection"];
+        /** Configure the workspace single sign-on provider */
+        put: operations["setWorkspaceOidcConnection"];
+        post?: never;
+        /** Remove the workspace single sign-on provider */
+        delete: operations["removeWorkspaceOidcConnection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso/oidc/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read the endpoints a provider advertises, without saving anything */
+        post: operations["discoverOidcEndpoints"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso/oidc/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a real round trip to the provider that records verification */
+        post: operations["testWorkspaceOidcConnection"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1726,6 +1802,56 @@ export interface components {
             /** Format: uuid */
             accountId: string;
         };
+        /** @enum {string} */
+        OidcStage: "discovery" | "endpoints" | "jwks" | "authorization" | "token_exchange" | "id_token" | "claims" | "matching" | "provisioning";
+        OidcEndpoints: {
+            issuer: string;
+            authorizationEndpoint: string;
+            tokenEndpoint: string;
+            jwksUri: string;
+            userinfoEndpoint?: string;
+        };
+        WorkspaceOidcConnection: {
+            /** Format: uuid */
+            workspaceId: string;
+            endpoints: components["schemas"]["OidcEndpoints"];
+            discovered: boolean;
+            clientId: string;
+            secretSet: boolean;
+            scopes: string[];
+            groupsClaim?: string;
+            provisioning: boolean;
+            redirectUri: string;
+            /** Format: date-time */
+            verifiedAt?: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        SetWorkspaceOidcConnectionRequest: {
+            issuer: string;
+            endpoints?: components["schemas"]["OidcEndpoints"];
+            clientId: string;
+            clientSecret?: string;
+            scopes?: string[];
+            groupsClaim?: string;
+            provisioning?: boolean;
+        };
+        DiscoverOidcRequest: {
+            issuer: string;
+        };
+        BeginOidcLoginRequest: {
+            workspace: string;
+            returnTo?: string;
+        };
+        OidcAuthorization: {
+            authorizationUrl: string;
+        };
+        OidcProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "oidc_failed";
+            stage: components["schemas"]["OidcStage"];
+            providerMessage?: string;
+        };
         Instance: {
             signupsOpen: boolean;
             password: boolean;
@@ -1972,6 +2098,15 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["LabelConflictProblem"];
+            };
+        };
+        /** @description The exchange with the provider broke at a named stage */
+        OidcFailed: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["OidcProblem"];
             };
         };
         /** @description The actor may not perform this action */
@@ -2274,6 +2409,33 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    beginOidcLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BeginOidcLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Send the browser to this address to authenticate */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OidcAuthorization"];
+                };
+            };
+            404: components["responses"]["Problem"];
+            422: components["responses"]["OidcFailed"];
             500: components["responses"]["Problem"];
         };
     };
@@ -2676,6 +2838,143 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceOidcConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The configured provider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceOidcConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceOidcConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetWorkspaceOidcConnectionRequest"];
+            };
+        };
+        responses: {
+            /** @description The saved provider, always unverified until it is tested again */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceOidcConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["OidcFailed"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceOidcConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The provider was removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    discoverOidcEndpoints: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoverOidcRequest"];
+            };
+        };
+        responses: {
+            /** @description The endpoints the issuer advertises */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OidcEndpoints"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["OidcFailed"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    testWorkspaceOidcConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Send the browser to this address to complete the test */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OidcAuthorization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["OidcFailed"];
             500: components["responses"]["Problem"];
         };
     };
