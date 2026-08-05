@@ -146,7 +146,18 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	serviceAuthorizer := authorizer.New(enforcer, repositoryMembership, workspaceAuthPolicy, repositoryWorkspace, repositoryTeam, repositoryAccount)
 	sessions := session2.New(repositorySession, repositoryAccount, repositoryMembership, geoLocator, signInThrottle, configSession, serviceAuthorizer)
 	apiToken := apitoken.New(postgresClient)
-	apiTokens := apitoken2.New(apiToken, repositoryMembership, repositoryAccount, serviceAuthorizer)
+	configSMTP := config.NewSMTP(configConfig)
+	smtpClient, cleanup5, err := smtp.New(configSMTP)
+	if err != nil {
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	repositoryMailer := mailer.New(smtpClient)
+	app := config.NewApp(configConfig)
+	apiTokens := apitoken2.New(apiToken, repositoryAccount, repositoryWorkspace, repositoryMailer, serviceAuthorizer, postgresClient, app)
 	emailChange := emailchange.New(postgresClient)
 	passwordReset := passwordreset.New(postgresClient)
 	signUp := signup.New(postgresClient)
@@ -158,22 +169,13 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	blobGrant := blobgrant.New(client)
 	repositoryBlob, err := blob.New(storage, attachments, blobGrant)
 	if err != nil {
+		cleanup5()
 		cleanup4()
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	configSMTP := config.NewSMTP(configConfig)
-	smtpClient, cleanup5, err := smtp.New(configSMTP)
-	if err != nil {
-		cleanup4()
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	repositoryMailer := mailer.New(smtpClient)
 	asynq := config.NewAsynq(configConfig)
 	taskqueueClient, cleanup6, err := taskqueue.NewClient(asynq)
 	if err != nil {
@@ -196,7 +198,6 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	}
 	jobqueueClient := jobqueue.NewClient(taskqueueClient, inspector, asynq)
 	jobProducer := jobqueue.AsProducer(jobqueueClient)
-	app := config.NewApp(configConfig)
 	instance := config.NewInstance(configConfig)
 	accounts := account2.New(repositoryAccount, emailChange, passwordReset, signUp, passwordHistory, repositoryMembership, repositoryWorkspace, workspaceAuthPolicy, breachCheck, signInThrottle, repositoryBlob, repositoryMailer, jobProducer, postgresClient, sessions, serviceAuthorizer, app, configSMTP, instance, attachments)
 	teamMember := teammember.New(postgresClient)
@@ -319,6 +320,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	cycles := config.NewCycles(configConfig)
 	attachments := config.NewAttachments(configConfig)
 	notifications := config.NewNotifications(configConfig)
+	apiTokens := config.NewAPITokens(configConfig)
 	asynq := config.NewAsynq(configConfig)
 	app := config.NewApp(configConfig)
 	logger, err := logging.New(app)
@@ -487,8 +489,11 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	serviceNotifications := notification2.New(repositoryNotification, notificationEvent, issueFollower, notificationSetting, repositoryIssue, issueComment, teamMember, repositoryWorkspace, repositoryMailer, serviceEvents, serviceAuthorizer, configSMTP, app)
 	notificationFanOutHandler := job.NewNotificationFanOutHandler(serviceNotifications)
 	notificationDigestHandler := job.NewNotificationDigestHandler(serviceNotifications)
-	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler)
-	worker := NewWorker(saml, cycles, attachments, notifications, server, scheduler, serveMux, logger)
+	apiToken := apitoken.New(client)
+	serviceAPITokens := apitoken2.New(apiToken, repositoryAccount, repositoryWorkspace, repositoryMailer, serviceAuthorizer, client, app)
+	apiTokenExpirySweepHandler := job.NewAPITokenExpirySweepHandler(serviceAPITokens)
+	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler)
+	worker := NewWorker(saml, cycles, attachments, notifications, apiTokens, server, scheduler, serveMux, logger)
 	return worker, func() {
 		cleanup8()
 		cleanup7()

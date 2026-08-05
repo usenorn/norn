@@ -1,0 +1,16 @@
+<p>
+  {{if .Expired}}
+    Your API token &ldquo;{{.Name}}&rdquo; expired on {{.ExpiresAt}}. Anything using it is
+    now being refused.
+  {{else}}
+    Your API token &ldquo;{{.Name}}&rdquo; stops working on {{.ExpiresAt}}, in
+    {{.DaysLeft}} day{{if ne .DaysLeft 1}}s{{end}}. Anything still using it will start
+    being refused from that moment.
+  {{end}}
+</p>
+<p>
+  A token cannot be extended. Mint a replacement, move whatever uses this one over to it,
+  and revoke this one:
+</p>
+<p><a href="{{.SettingsURL}}">{{.SettingsURL}}</a></p>
+{{if .Workspaces}}<p>This token reaches: {{.Workspaces}}</p>{{end}}

@@ -167,7 +167,7 @@ func TestAnAdministratorIsWarnedOnceAtEachThresholdAndNotAgain(t *testing.T) {
 		"expired, already told at one":        {-3, intPtr(1), false, 0},
 		"expired, never told":                 {-3, nil, true, 1},
 	} {
-		day, send := entity.ExpiryNoticeDue(tc.daysLeft, tc.notified)
+		day, send := entity.ExpiryNoticeDue(entity.SAMLExpiryNoticeDays, tc.daysLeft, tc.notified)
 
 		if send != tc.wantSend {
 			t.Errorf("%s: send = %v, want %v", name, send, tc.wantSend)
@@ -184,7 +184,7 @@ func TestAnAdministratorIsWarnedOnceAtEachThresholdAndNotAgain(t *testing.T) {
 func TestTheExpiryWarningNeverGoesBackwards(t *testing.T) {
 	notified := 7
 
-	if _, send := entity.ExpiryNoticeDue(20, &notified); send {
+	if _, send := entity.ExpiryNoticeDue(entity.SAMLExpiryNoticeDays, 20, &notified); send {
 		t.Fatal(
 			"an administrator already warned at seven days was warned again at thirty. A " +
 				"certificate that was replaced resets the record; a clock that jumped must not " +

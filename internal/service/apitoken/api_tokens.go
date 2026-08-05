@@ -6,8 +6,10 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/observability/logging"
+	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 )
@@ -15,23 +17,32 @@ import (
 const usageStampInterval = time.Minute
 
 type apiTokensService struct {
-	tokens      repository.APIToken
-	memberships repository.Membership
-	accounts    repository.Account
-	authorizer  service.Authorizer
+	tokens     repository.APIToken
+	accounts   repository.Account
+	workspaces repository.Workspace
+	mailer     repository.Mailer
+	authorizer service.Authorizer
+	transactor repository.Transactor
+	app        config.App
 }
 
 func New(
 	tokens repository.APIToken,
-	memberships repository.Membership,
 	accounts repository.Account,
+	workspaces repository.Workspace,
+	mailer repository.Mailer,
 	authorizer service.Authorizer,
+	transactor repository.Transactor,
+	app config.App,
 ) service.APITokens {
 	return &apiTokensService{
-		tokens:      tokens,
-		memberships: memberships,
-		accounts:    accounts,
-		authorizer:  authorizer,
+		tokens:     tokens,
+		accounts:   accounts,
+		workspaces: workspaces,
+		mailer:     mailer,
+		authorizer: authorizer,
+		transactor: transactor,
+		app:        app,
 	}
 }
 
@@ -39,17 +50,9 @@ func (s *apiTokensService) Mint(
 	ctx context.Context,
 	input service.MintAPITokenInput,
 ) (service.MintedAPIToken, error) {
-	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
-		Resource:    entity.ResourceAPIToken,
-		Action:      entity.ActionManage,
-		WorkspaceID: input.WorkspaceID,
-	})
+	minter, err := s.self(ctx)
 	if err != nil {
 		return service.MintedAPIToken{}, err
-	}
-
-	if decision.Actor.Kind != entity.ActorKindUser {
-		return service.MintedAPIToken{}, entity.ErrAPITokenMintForbidden
 	}
 
 	if err := entity.NewValidationError(entity.ValidateAPITokenName("name", input.Name)); err != nil {
@@ -62,13 +65,17 @@ func (s *apiTokensService) Mint(
 		return service.MintedAPIToken{}, entity.ErrAPITokenScopeInvalid
 	}
 
-	if !scopes.SubsetOf(entity.AllowedAPIScopesFor(decision.Role)) {
-		return service.MintedAPIToken{}, entity.ErrAPITokenScopeExceeds
+	if len(input.Grants) == 0 {
+		return service.MintedAPIToken{}, entity.ErrAPITokenGrantMissing
+	}
+
+	if err := s.checkGrants(ctx, scopes, input.Grants); err != nil {
+		return service.MintedAPIToken{}, err
 	}
 
 	expiresAt := input.ExpiresAt
 
-	if expiresAt == nil {
+	if expiresAt == nil || expiresAt.After(time.Now().UTC().Add(entity.APITokenMaxTTL)) {
 		deadline := time.Now().UTC().Add(entity.APITokenMaxTTL)
 		expiresAt = &deadline
 	}
@@ -78,35 +85,143 @@ func (s *apiTokensService) Mint(
 		return service.MintedAPIToken{}, err
 	}
 
-	token, err := s.tokens.Create(ctx, entity.APIToken{
-		AccountID:   decision.Actor.AccountID,
-		WorkspaceID: input.WorkspaceID,
-		Name:        input.Name,
-		TokenHash:   tokenHash,
-		Scopes:      scopes,
-		ExpiresAt:   expiresAt,
-	})
-	if err != nil {
+	var token entity.APIToken
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		created, err := s.tokens.Create(ctx, entity.APIToken{
+			AccountID: minter.AccountID,
+			Name:      input.Name,
+			TokenHash: tokenHash,
+			Scopes:    scopes,
+			Grants:    input.Grants,
+			ExpiresAt: expiresAt,
+		})
+		if err != nil {
+			return err
+		}
+
+		token = created
+
+		return nil
+	}); err != nil {
 		return service.MintedAPIToken{}, err
 	}
 
 	return service.MintedAPIToken{Token: token, Value: value}, nil
 }
 
-func (s *apiTokensService) List(ctx context.Context, workspaceID uuid.UUID) ([]entity.APIToken, error) {
-	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
-		Resource:    entity.ResourceAPIToken,
-		Action:      entity.ActionRead,
-		WorkspaceID: workspaceID,
-	})
+// checkGrants holds the token to what its creator may actually do, workspace by workspace. It
+// refuses rather than quietly dropping a scope, because a token that silently lost its write access
+// when a second workspace was added would only be discovered by the automation that needed it.
+func (s *apiTokensService) checkGrants(
+	ctx context.Context,
+	scopes entity.APIScopeSet,
+	grants entity.APITokenGrants,
+) error {
+	seen := make(map[uuid.UUID]struct{}, len(grants))
+
+	for _, grant := range grants {
+		if _, duplicate := seen[grant.WorkspaceID]; duplicate {
+			return entity.ErrAPITokenGrantInvalid
+		}
+
+		seen[grant.WorkspaceID] = struct{}{}
+
+		decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+			Resource:    entity.ResourceIssue,
+			Action:      entity.ActionRead,
+			WorkspaceID: grant.WorkspaceID,
+			Scoped:      true,
+		})
+		if err != nil {
+			return entity.ErrAPITokenGrantInvalid
+		}
+
+		if !scopes.SubsetOf(entity.AllowedAPIScopesFor(decision.Role)) {
+			return entity.ErrAPITokenScopeExceeds
+		}
+
+		if grant.AllTeams && len(grant.TeamIDs) > 0 {
+			return entity.ErrAPITokenGrantInvalid
+		}
+
+		if !grant.AllTeams && len(grant.TeamIDs) == 0 {
+			return entity.ErrAPITokenGrantInvalid
+		}
+
+		for _, teamID := range grant.TeamIDs {
+			if !decision.Scope.Covers(teamID) {
+				return entity.ErrAPITokenGrantInvalid
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *apiTokensService) List(ctx context.Context) ([]entity.APIToken, error) {
+	owner, err := s.self(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.tokens.ListByOwner(ctx, workspaceID, decision.Actor.AccountID)
+	return s.tokens.ListByOwner(ctx, owner.AccountID)
 }
 
-func (s *apiTokensService) Revoke(ctx context.Context, workspaceID, tokenID uuid.UUID) error {
+func (s *apiTokensService) ListForWorkspace(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+) ([]service.OwnedAPIToken, error) {
+	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceAPIToken,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+	}); err != nil {
+		return nil, err
+	}
+
+	tokens, err := s.tokens.ListByWorkspaceGrant(ctx, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	owned := make([]service.OwnedAPIToken, 0, len(tokens))
+
+	for _, token := range tokens {
+		account, err := s.accounts.GetByID(ctx, token.AccountID)
+		if err != nil {
+			return nil, err
+		}
+
+		owned = append(owned, service.OwnedAPIToken{
+			Token:      token,
+			OwnerName:  account.DisplayName,
+			OwnerEmail: account.Email,
+		})
+	}
+
+	return owned, nil
+}
+
+func (s *apiTokensService) Revoke(ctx context.Context, tokenID uuid.UUID) error {
+	owner, err := s.self(ctx)
+	if err != nil {
+		return err
+	}
+
+	token, err := s.tokens.GetByID(ctx, tokenID)
+	if err != nil {
+		return err
+	}
+
+	if token.AccountID != owner.AccountID {
+		return entity.ErrAPITokenNotFound
+	}
+
+	return s.tokens.Revoke(ctx, tokenID, time.Now().UTC())
+}
+
+func (s *apiTokensService) RevokeInWorkspace(ctx context.Context, workspaceID, tokenID uuid.UUID) error {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceAPIToken,
 		Action:      entity.ActionManage,
@@ -120,7 +235,18 @@ func (s *apiTokensService) Revoke(ctx context.Context, workspaceID, tokenID uuid
 		return entity.ErrAPITokenMintForbidden
 	}
 
-	return s.tokens.Revoke(ctx, workspaceID, decision.Actor.AccountID, tokenID, time.Now().UTC())
+	token, err := s.tokens.GetByID(ctx, tokenID)
+	if err != nil {
+		return err
+	}
+
+	// An administrator may only reach a token because it holds a grant on the workspace they
+	// administer. Without this it would be an identifier oracle over every token on the instance.
+	if !token.Grants.Covers(workspaceID) {
+		return entity.ErrAPITokenNotFound
+	}
+
+	return s.tokens.Revoke(ctx, tokenID, time.Now().UTC())
 }
 
 func (s *apiTokensService) Authenticate(ctx context.Context, value string) (entity.Actor, error) {
@@ -135,11 +261,6 @@ func (s *apiTokensService) Authenticate(ctx context.Context, value string) (enti
 		return entity.Actor{}, entity.ErrAPITokenNotFound
 	}
 
-	membership, err := s.memberships.Get(ctx, token.WorkspaceID, token.AccountID)
-	if err != nil {
-		return entity.Actor{}, err
-	}
-
 	account, err := s.accounts.GetByID(ctx, token.AccountID)
 	if err != nil {
 		return entity.Actor{}, err
@@ -147,15 +268,6 @@ func (s *apiTokensService) Authenticate(ctx context.Context, value string) (enti
 
 	if account.Status != entity.AccountStatusActive {
 		return entity.Actor{}, entity.ErrAPITokenNotFound
-	}
-
-	scopes := make(entity.APIScopeSet, 0, len(token.Scopes))
-	allowed := entity.AllowedAPIScopesFor(membership.Role)
-
-	for _, scope := range token.Scopes {
-		if allowed.Permits(scope.Resource(), scope.Action()) {
-			scopes = append(scopes, scope)
-		}
 	}
 
 	if token.NeedsUsageStamp(now, usageStampInterval) {
@@ -170,18 +282,44 @@ func (s *apiTokensService) Authenticate(ctx context.Context, value string) (enti
 	}
 
 	tokenID := token.ID
-	workspaceID := token.WorkspaceID
 
 	kind := entity.ActorKindToken
 	if account.Agent() {
 		kind = entity.ActorKindAgent
 	}
 
+	// The scopes are carried as minted. What the owner may currently do is re-derived per request
+	// from their live membership, so a demotion narrows the token without anything stored changing.
 	return entity.Actor{
-		Kind:        kind,
-		AccountID:   token.AccountID,
-		TokenID:     &tokenID,
-		WorkspaceID: &workspaceID,
-		Scopes:      scopes,
+		Kind:      kind,
+		AccountID: token.AccountID,
+		TokenID:   &tokenID,
+		TokenName: token.Name,
+		Grants:    token.Grants,
+		Scopes:    token.Scopes,
 	}, nil
+}
+
+// self authorises an operation on the caller's own tokens. It deliberately does not name a
+// workspace: a token spans several, so ownership rather than membership is what decides.
+func (s *apiTokensService) self(ctx context.Context) (entity.Actor, error) {
+	actor, ok := identity.Actor(ctx)
+	if !ok {
+		return entity.Actor{}, entity.ErrAccountForbidden
+	}
+
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource: entity.ResourceAPIToken,
+		Action:   entity.ActionManage,
+		Subject:  actor.AccountID,
+	})
+	if err != nil {
+		return entity.Actor{}, err
+	}
+
+	if decision.Actor.Kind != entity.ActorKindUser {
+		return entity.Actor{}, entity.ErrAPITokenMintForbidden
+	}
+
+	return decision.Actor, nil
 }

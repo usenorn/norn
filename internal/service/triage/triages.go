@@ -148,14 +148,13 @@ func (s *triagesService) record(
 	}
 
 	return s.activity.Record(ctx, entity.Activity{
-		WorkspaceID:    issue.WorkspaceID,
-		Subject:        entity.IssueSubject(issue.ID),
-		ActorAccountID: decision.Actor.AccountID,
-		ActorKind:      decision.Actor.Kind,
-		Kind:           entity.ActivityKindTriaged,
-		Field:          string(state),
-		FromValue:      string(entity.TriageStateWaiting),
-		ToValue:        object,
+		WorkspaceID: issue.WorkspaceID,
+		Subject:     entity.IssueSubject(issue.ID),
+		Actor:       decision.ActivityActor(),
+		Kind:        entity.ActivityKindTriaged,
+		Field:       string(state),
+		FromValue:   string(entity.TriageStateWaiting),
+		ToValue:     object,
 	})
 }
 
@@ -266,14 +265,13 @@ func (s *triagesService) close(
 	}
 
 	return s.activity.Record(ctx, entity.Activity{
-		WorkspaceID:    issue.WorkspaceID,
-		Subject:        entity.IssueSubject(issue.ID),
-		ActorAccountID: decision.Actor.AccountID,
-		ActorKind:      decision.Actor.Kind,
-		Kind:           entity.ActivityKindStateChanged,
-		FromState:      issue.State.Name,
-		ToState:        target.Name,
-		Version:        issue.Version + 1,
+		WorkspaceID: issue.WorkspaceID,
+		Subject:     entity.IssueSubject(issue.ID),
+		Actor:       decision.ActivityActor(),
+		Kind:        entity.ActivityKindStateChanged,
+		FromState:   issue.State.Name,
+		ToState:     target.Name,
+		Version:     issue.Version + 1,
 	})
 }
 
@@ -384,14 +382,13 @@ func (s *triagesService) Reassign(
 		}
 
 		if err := s.activity.Record(ctx, entity.Activity{
-			WorkspaceID:    workspaceID,
-			Subject:        entity.IssueSubject(issueID),
-			ActorAccountID: decision.Actor.AccountID,
-			ActorKind:      decision.Actor.Kind,
-			Kind:           entity.ActivityKindTriaged,
-			Field:          triageDecisionReassigned,
-			FromValue:      string(entity.TriageStateWaiting),
-			ToValue:        team.Name,
+			WorkspaceID: workspaceID,
+			Subject:     entity.IssueSubject(issueID),
+			Actor:       decision.ActivityActor(),
+			Kind:        entity.ActivityKindTriaged,
+			Field:       triageDecisionReassigned,
+			FromValue:   string(entity.TriageStateWaiting),
+			ToValue:     team.Name,
 		}); err != nil {
 			return err
 		}

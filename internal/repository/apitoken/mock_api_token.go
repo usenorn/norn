@@ -58,6 +58,21 @@ func (mr *MockAPITokenMockRecorder) Create(ctx, token any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockAPIToken)(nil).Create), ctx, token)
 }
 
+// GetByID mocks base method.
+func (m *MockAPIToken) GetByID(ctx context.Context, tokenID uuid.UUID) (entity.APIToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByID", ctx, tokenID)
+	ret0, _ := ret[0].(entity.APIToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID.
+func (mr *MockAPITokenMockRecorder) GetByID(ctx, tokenID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockAPIToken)(nil).GetByID), ctx, tokenID)
+}
+
 // GetByTokenHash mocks base method.
 func (m *MockAPIToken) GetByTokenHash(ctx context.Context, tokenHash []byte) (entity.APIToken, error) {
 	m.ctrl.T.Helper()
@@ -74,18 +89,62 @@ func (mr *MockAPITokenMockRecorder) GetByTokenHash(ctx, tokenHash any) *gomock.C
 }
 
 // ListByOwner mocks base method.
-func (m *MockAPIToken) ListByOwner(ctx context.Context, workspaceID, accountID uuid.UUID) ([]entity.APIToken, error) {
+func (m *MockAPIToken) ListByOwner(ctx context.Context, accountID uuid.UUID) ([]entity.APIToken, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListByOwner", ctx, workspaceID, accountID)
+	ret := m.ctrl.Call(m, "ListByOwner", ctx, accountID)
 	ret0, _ := ret[0].([]entity.APIToken)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListByOwner indicates an expected call of ListByOwner.
-func (mr *MockAPITokenMockRecorder) ListByOwner(ctx, workspaceID, accountID any) *gomock.Call {
+func (mr *MockAPITokenMockRecorder) ListByOwner(ctx, accountID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByOwner", reflect.TypeOf((*MockAPIToken)(nil).ListByOwner), ctx, workspaceID, accountID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByOwner", reflect.TypeOf((*MockAPIToken)(nil).ListByOwner), ctx, accountID)
+}
+
+// ListByWorkspaceGrant mocks base method.
+func (m *MockAPIToken) ListByWorkspaceGrant(ctx context.Context, workspaceID uuid.UUID) ([]entity.APIToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByWorkspaceGrant", ctx, workspaceID)
+	ret0, _ := ret[0].([]entity.APIToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByWorkspaceGrant indicates an expected call of ListByWorkspaceGrant.
+func (mr *MockAPITokenMockRecorder) ListByWorkspaceGrant(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByWorkspaceGrant", reflect.TypeOf((*MockAPIToken)(nil).ListByWorkspaceGrant), ctx, workspaceID)
+}
+
+// ListExpiring mocks base method.
+func (m *MockAPIToken) ListExpiring(ctx context.Context, notAfter time.Time) ([]entity.APIToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListExpiring", ctx, notAfter)
+	ret0, _ := ret[0].([]entity.APIToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListExpiring indicates an expected call of ListExpiring.
+func (mr *MockAPITokenMockRecorder) ListExpiring(ctx, notAfter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListExpiring", reflect.TypeOf((*MockAPIToken)(nil).ListExpiring), ctx, notAfter)
+}
+
+// RecordExpiryNotice mocks base method.
+func (m *MockAPIToken) RecordExpiryNotice(ctx context.Context, tokenID uuid.UUID, days int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordExpiryNotice", ctx, tokenID, days)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordExpiryNotice indicates an expected call of RecordExpiryNotice.
+func (mr *MockAPITokenMockRecorder) RecordExpiryNotice(ctx, tokenID, days any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordExpiryNotice", reflect.TypeOf((*MockAPIToken)(nil).RecordExpiryNotice), ctx, tokenID, days)
 }
 
 // RecordUsage mocks base method.
@@ -103,15 +162,15 @@ func (mr *MockAPITokenMockRecorder) RecordUsage(ctx, tokenID, usedAt any) *gomoc
 }
 
 // Revoke mocks base method.
-func (m *MockAPIToken) Revoke(ctx context.Context, workspaceID, accountID, tokenID uuid.UUID, revokedAt time.Time) error {
+func (m *MockAPIToken) Revoke(ctx context.Context, tokenID uuid.UUID, revokedAt time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Revoke", ctx, workspaceID, accountID, tokenID, revokedAt)
+	ret := m.ctrl.Call(m, "Revoke", ctx, tokenID, revokedAt)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Revoke indicates an expected call of Revoke.
-func (mr *MockAPITokenMockRecorder) Revoke(ctx, workspaceID, accountID, tokenID, revokedAt any) *gomock.Call {
+func (mr *MockAPITokenMockRecorder) Revoke(ctx, tokenID, revokedAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockAPIToken)(nil).Revoke), ctx, workspaceID, accountID, tokenID, revokedAt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockAPIToken)(nil).Revoke), ctx, tokenID, revokedAt)
 }

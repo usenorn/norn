@@ -20,6 +20,8 @@ import (
 
 // Defines values for APITokenUnusableProblemCode.
 const (
+	TokenGrantInvalid APITokenUnusableProblemCode = "token_grant_invalid"
+	TokenGrantMissing APITokenUnusableProblemCode = "token_grant_missing"
 	TokenMayNotMint   APITokenUnusableProblemCode = "token_may_not_mint"
 	TokenNameTaken    APITokenUnusableProblemCode = "token_name_taken"
 	TokenScopeExceeds APITokenUnusableProblemCode = "token_scope_exceeds"
@@ -29,6 +31,10 @@ const (
 // Valid indicates whether the value is a known member of the APITokenUnusableProblemCode enum.
 func (e APITokenUnusableProblemCode) Valid() bool {
 	switch e {
+	case TokenGrantInvalid:
+		return true
+	case TokenGrantMissing:
+		return true
 	case TokenMayNotMint:
 		return true
 	case TokenNameTaken:
@@ -2003,13 +2009,21 @@ type APIScope = string
 
 // APIToken defines model for APIToken.
 type APIToken struct {
-	CreatedAt   time.Time          `json:"createdAt"`
-	ExpiresAt   *time.Time         `json:"expiresAt,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	LastUsedAt  *time.Time         `json:"lastUsedAt,omitempty"`
-	Name        string             `json:"name"`
-	Scopes      []APIScope         `json:"scopes"`
-	WorkspaceId openapi_types.UUID `json:"workspaceId"`
+	CreatedAt  time.Time          `json:"createdAt"`
+	ExpiresAt  *time.Time         `json:"expiresAt,omitempty"`
+	Grants     []APITokenGrant    `json:"grants"`
+	Id         openapi_types.UUID `json:"id"`
+	LastUsedAt *time.Time         `json:"lastUsedAt,omitempty"`
+	Name       string             `json:"name"`
+	Scopes     []APIScope         `json:"scopes"`
+}
+
+// APITokenGrant defines model for APITokenGrant.
+type APITokenGrant struct {
+	// AllTeams When true the token reaches every team its owner can see in this workspace.
+	AllTeams    bool                  `json:"allTeams"`
+	TeamIds     *[]openapi_types.UUID `json:"teamIds,omitempty"`
+	WorkspaceId openapi_types.UUID    `json:"workspaceId"`
 }
 
 // APITokenUnusableProblem defines model for APITokenUnusableProblem.
@@ -2090,15 +2104,18 @@ type ActivityEvent struct {
 	ActorAccountId *openapi_types.UUID `json:"actorAccountId,omitempty"`
 
 	// ActorKind Who made the change — a person signed in, an integration, an agent, or Norn itself.
-	ActorKind    ActivityActorKind   `json:"actorKind"`
-	ActorName    *string             `json:"actorName,omitempty"`
-	BulkActionId *openapi_types.UUID `json:"bulkActionId,omitempty"`
-	Changes      []ActivityChange    `json:"changes"`
-	CreatedAt    time.Time           `json:"createdAt"`
-	Id           openapi_types.UUID  `json:"id"`
-	IssueId      *openapi_types.UUID `json:"issueId,omitempty"`
-	ProjectId    *openapi_types.UUID `json:"projectId,omitempty"`
-	SubjectKind  ActivitySubjectKind `json:"subjectKind"`
+	ActorKind ActivityActorKind `json:"actorKind"`
+	ActorName *string           `json:"actorName,omitempty"`
+
+	// ActorTokenName The API token that made the change, when one did. Recorded as it was named at the time, so revoking the token does not change what the record says happened.
+	ActorTokenName *string             `json:"actorTokenName,omitempty"`
+	BulkActionId   *openapi_types.UUID `json:"bulkActionId,omitempty"`
+	Changes        []ActivityChange    `json:"changes"`
+	CreatedAt      time.Time           `json:"createdAt"`
+	Id             openapi_types.UUID  `json:"id"`
+	IssueId        *openapi_types.UUID `json:"issueId,omitempty"`
+	ProjectId      *openapi_types.UUID `json:"projectId,omitempty"`
+	SubjectKind    ActivitySubjectKind `json:"subjectKind"`
 }
 
 // ActivityKind defines model for ActivityKind.
@@ -3029,9 +3046,10 @@ type MergeTriageIssueRequest struct {
 
 // MintAPITokenRequest defines model for MintAPITokenRequest.
 type MintAPITokenRequest struct {
-	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-	Name      string     `json:"name"`
-	Scopes    []APIScope `json:"scopes"`
+	ExpiresAt *time.Time      `json:"expiresAt,omitempty"`
+	Grants    []APITokenGrant `json:"grants"`
+	Name      string          `json:"name"`
+	Scopes    []APIScope      `json:"scopes"`
 }
 
 // MintedAPIToken defines model for MintedAPIToken.
@@ -3805,6 +3823,13 @@ type Workspace struct {
 	Timezone            string              `json:"timezone"`
 }
 
+// WorkspaceAPIToken defines model for WorkspaceAPIToken.
+type WorkspaceAPIToken struct {
+	OwnerEmail string   `json:"ownerEmail"`
+	OwnerName  string   `json:"ownerName"`
+	Token      APIToken `json:"token"`
+}
+
 // WorkspaceAuthPolicy defines model for WorkspaceAuthPolicy.
 type WorkspaceAuthPolicy struct {
 	Enforcement AuthEnforcement    `json:"enforcement"`
@@ -4208,6 +4233,9 @@ type RedeemRecoveryCodeJSONRequestBody = RedeemRecoveryCodeRequest
 // BeginSamlLoginJSONRequestBody defines body for BeginSamlLogin for application/json ContentType.
 type BeginSamlLoginJSONRequestBody = BeginOidcLoginRequest
 
+// MintAPITokenJSONRequestBody defines body for MintAPIToken for application/json ContentType.
+type MintAPITokenJSONRequestBody = MintAPITokenRequest
+
 // CreateWorkspaceJSONRequestBody defines body for CreateWorkspace for application/json ContentType.
 type CreateWorkspaceJSONRequestBody = CreateWorkspaceRequest
 
@@ -4349,9 +4377,6 @@ type UpdateWorkflowStateJSONRequestBody = UpdateWorkflowStateRequest
 // SetTeamTriageSettingsJSONRequestBody defines body for SetTeamTriageSettings for application/json ContentType.
 type SetTeamTriageSettingsJSONRequestBody = SetTriageSettingsRequest
 
-// MintWorkspaceAPITokenJSONRequestBody defines body for MintWorkspaceAPIToken for application/json ContentType.
-type MintWorkspaceAPITokenJSONRequestBody = MintAPITokenRequest
-
 // MergeWorkspaceTriageIssueJSONRequestBody defines body for MergeWorkspaceTriageIssue for application/json ContentType.
 type MergeWorkspaceTriageIssueJSONRequestBody = MergeTriageIssueRequest
 
@@ -4444,6 +4469,15 @@ type ServerInterface interface {
 	// BeginSamlLogin Start a SAML sign-in for a workspace
 	// (POST /sso/saml/login)
 	BeginSamlLogin(w http.ResponseWriter, r *http.Request)
+	// ListAPITokens List the caller's live API tokens
+	// (GET /tokens)
+	ListAPITokens(w http.ResponseWriter, r *http.Request)
+	// MintAPIToken Mint a token whose reach and scopes cannot exceed the caller's own rights
+	// (POST /tokens)
+	MintAPIToken(w http.ResponseWriter, r *http.Request)
+	// RevokeAPIToken Revoke one of the caller's tokens
+	// (DELETE /tokens/{tokenId})
+	RevokeAPIToken(w http.ResponseWriter, r *http.Request, tokenId TokenId)
 	// ListWorkspaces List the workspaces the signed-in account belongs to
 	// (GET /workspaces)
 	ListWorkspaces(w http.ResponseWriter, r *http.Request)
@@ -4828,13 +4862,10 @@ type ServerInterface interface {
 	// UnarchiveWorkspaceTeam Return an archived team to active use
 	// (POST /workspaces/{workspaceId}/teams/{teamId}/unarchive)
 	UnarchiveWorkspaceTeam(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
-	// ListWorkspaceAPITokens List the caller's live API tokens in this workspace
+	// ListWorkspaceAPITokens List every live token that reaches this workspace, for its administrators
 	// (GET /workspaces/{workspaceId}/tokens)
 	ListWorkspaceAPITokens(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
-	// MintWorkspaceAPIToken Mint a token whose scopes cannot exceed the caller's own rights
-	// (POST /workspaces/{workspaceId}/tokens)
-	MintWorkspaceAPIToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
-	// RevokeWorkspaceAPIToken Revoke one of the caller's tokens
+	// RevokeWorkspaceAPIToken Revoke a token reaching this workspace, as one of its administrators
 	// (DELETE /workspaces/{workspaceId}/tokens/{tokenId})
 	RevokeWorkspaceAPIToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, tokenId TokenId)
 	// ListWorkspaceTriage What has arrived and nobody has decided about yet
@@ -5023,6 +5054,24 @@ func (_ Unimplemented) RedeemRecoveryCode(w http.ResponseWriter, r *http.Request
 // BeginSamlLogin Start a SAML sign-in for a workspace
 // (POST /sso/saml/login)
 func (_ Unimplemented) BeginSamlLogin(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListAPITokens List the caller's live API tokens
+// (GET /tokens)
+func (_ Unimplemented) ListAPITokens(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MintAPIToken Mint a token whose reach and scopes cannot exceed the caller's own rights
+// (POST /tokens)
+func (_ Unimplemented) MintAPIToken(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RevokeAPIToken Revoke one of the caller's tokens
+// (DELETE /tokens/{tokenId})
+func (_ Unimplemented) RevokeAPIToken(w http.ResponseWriter, r *http.Request, tokenId TokenId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -5794,19 +5843,13 @@ func (_ Unimplemented) UnarchiveWorkspaceTeam(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ListWorkspaceAPITokens List the caller's live API tokens in this workspace
+// ListWorkspaceAPITokens List every live token that reaches this workspace, for its administrators
 // (GET /workspaces/{workspaceId}/tokens)
 func (_ Unimplemented) ListWorkspaceAPITokens(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// MintWorkspaceAPIToken Mint a token whose scopes cannot exceed the caller's own rights
-// (POST /workspaces/{workspaceId}/tokens)
-func (_ Unimplemented) MintWorkspaceAPIToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// RevokeWorkspaceAPIToken Revoke one of the caller's tokens
+// RevokeWorkspaceAPIToken Revoke a token reaching this workspace, as one of its administrators
 // (DELETE /workspaces/{workspaceId}/tokens/{tokenId})
 func (_ Unimplemented) RevokeWorkspaceAPIToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, tokenId TokenId) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -6258,6 +6301,60 @@ func (siw *ServerInterfaceWrapper) BeginSamlLogin(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.BeginSamlLogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAPITokens operation middleware
+func (siw *ServerInterfaceWrapper) ListAPITokens(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAPITokens(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MintAPIToken operation middleware
+func (siw *ServerInterfaceWrapper) MintAPIToken(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MintAPIToken(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeAPIToken operation middleware
+func (siw *ServerInterfaceWrapper) RevokeAPIToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "tokenId" -------------
+	var tokenId TokenId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tokenId", chi.URLParam(r, "tokenId"), &tokenId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tokenId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeAPIToken(w, r, tokenId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -11012,32 +11109,6 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceAPITokens(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
-// MintWorkspaceAPIToken operation middleware
-func (siw *ServerInterfaceWrapper) MintWorkspaceAPIToken(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "workspaceId" -------------
-	var workspaceId WorkspaceId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MintWorkspaceAPIToken(w, r, workspaceId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // RevokeWorkspaceAPIToken operation middleware
 func (siw *ServerInterfaceWrapper) RevokeWorkspaceAPIToken(w http.ResponseWriter, r *http.Request) {
 
@@ -11562,10 +11633,16 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/members/{accountId}", wrapper.RemoveWorkspaceTeamMember)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/workspaces/{workspaceId}/tokens", wrapper.ListWorkspaceAPITokens)
+		r.Get(options.BaseURL+"/tokens", wrapper.ListAPITokens)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/workspaces/{workspaceId}/tokens", wrapper.MintWorkspaceAPIToken)
+		r.Post(options.BaseURL+"/tokens", wrapper.MintAPIToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/tokens/{tokenId}", wrapper.RevokeAPIToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/tokens", wrapper.ListWorkspaceAPITokens)
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/tokens/{tokenId}", wrapper.RevokeWorkspaceAPIToken)
@@ -14029,6 +14106,247 @@ func (response BeginSamlLogin422ApplicationProblemPlusJSONResponse) VisitBeginSa
 type BeginSamlLogin500ApplicationProblemPlusJSONResponse Problem
 
 func (response BeginSamlLogin500ApplicationProblemPlusJSONResponse) VisitBeginSamlLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAPITokensRequestObject struct {
+}
+
+type ListAPITokensResponseObject interface {
+	VisitListAPITokensResponse(w http.ResponseWriter) error
+}
+
+type ListAPITokens200JSONResponse []APIToken
+
+func (response ListAPITokens200JSONResponse) VisitListAPITokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAPITokens401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListAPITokens401ApplicationProblemPlusJSONResponse) VisitListAPITokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAPITokens403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListAPITokens403ApplicationProblemPlusJSONResponse) VisitListAPITokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAPITokens500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListAPITokens500ApplicationProblemPlusJSONResponse) VisitListAPITokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MintAPITokenRequestObject struct {
+	Body *MintAPITokenJSONRequestBody
+}
+
+type MintAPITokenResponseObject interface {
+	VisitMintAPITokenResponse(w http.ResponseWriter) error
+}
+
+type MintAPIToken201JSONResponse MintedAPIToken
+
+func (response MintAPIToken201JSONResponse) VisitMintAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MintAPIToken401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MintAPIToken401ApplicationProblemPlusJSONResponse) VisitMintAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MintAPIToken403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response MintAPIToken403ApplicationProblemPlusJSONResponse) VisitMintAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MintAPIToken409ApplicationProblemPlusJSONResponse struct {
+	APITokenUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response MintAPIToken409ApplicationProblemPlusJSONResponse) VisitMintAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MintAPIToken422ApplicationProblemPlusJSONResponse Problem
+
+func (response MintAPIToken422ApplicationProblemPlusJSONResponse) VisitMintAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MintAPIToken500ApplicationProblemPlusJSONResponse Problem
+
+func (response MintAPIToken500ApplicationProblemPlusJSONResponse) VisitMintAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeAPITokenRequestObject struct {
+	TokenId TokenId `json:"tokenId"`
+}
+
+type RevokeAPITokenResponseObject interface {
+	VisitRevokeAPITokenResponse(w http.ResponseWriter) error
+}
+
+type RevokeAPIToken204Response struct {
+}
+
+func (response RevokeAPIToken204Response) VisitRevokeAPITokenResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeAPIToken401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RevokeAPIToken401ApplicationProblemPlusJSONResponse) VisitRevokeAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeAPIToken403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RevokeAPIToken403ApplicationProblemPlusJSONResponse) VisitRevokeAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeAPIToken404ApplicationProblemPlusJSONResponse Problem
+
+func (response RevokeAPIToken404ApplicationProblemPlusJSONResponse) VisitRevokeAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeAPIToken500ApplicationProblemPlusJSONResponse Problem
+
+func (response RevokeAPIToken500ApplicationProblemPlusJSONResponse) VisitRevokeAPITokenResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -25836,7 +26154,7 @@ type ListWorkspaceAPITokensResponseObject interface {
 	VisitListWorkspaceAPITokensResponse(w http.ResponseWriter) error
 }
 
-type ListWorkspaceAPITokens200JSONResponse []APIToken
+type ListWorkspaceAPITokens200JSONResponse []WorkspaceAPIToken
 
 func (response ListWorkspaceAPITokens200JSONResponse) VisitListWorkspaceAPITokensResponse(w http.ResponseWriter) error {
 
@@ -25885,105 +26203,6 @@ func (response ListWorkspaceAPITokens403ApplicationProblemPlusJSONResponse) Visi
 type ListWorkspaceAPITokens500ApplicationProblemPlusJSONResponse Problem
 
 func (response ListWorkspaceAPITokens500ApplicationProblemPlusJSONResponse) VisitListWorkspaceAPITokensResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type MintWorkspaceAPITokenRequestObject struct {
-	WorkspaceId WorkspaceId `json:"workspaceId"`
-	Body        *MintWorkspaceAPITokenJSONRequestBody
-}
-
-type MintWorkspaceAPITokenResponseObject interface {
-	VisitMintWorkspaceAPITokenResponse(w http.ResponseWriter) error
-}
-
-type MintWorkspaceAPIToken201JSONResponse MintedAPIToken
-
-func (response MintWorkspaceAPIToken201JSONResponse) VisitMintWorkspaceAPITokenResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type MintWorkspaceAPIToken401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response MintWorkspaceAPIToken401ApplicationProblemPlusJSONResponse) VisitMintWorkspaceAPITokenResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type MintWorkspaceAPIToken403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response MintWorkspaceAPIToken403ApplicationProblemPlusJSONResponse) VisitMintWorkspaceAPITokenResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type MintWorkspaceAPIToken409ApplicationProblemPlusJSONResponse struct {
-	APITokenUnusableApplicationProblemPlusJSONResponse
-}
-
-func (response MintWorkspaceAPIToken409ApplicationProblemPlusJSONResponse) VisitMintWorkspaceAPITokenResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(409)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type MintWorkspaceAPIToken422ApplicationProblemPlusJSONResponse Problem
-
-func (response MintWorkspaceAPIToken422ApplicationProblemPlusJSONResponse) VisitMintWorkspaceAPITokenResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type MintWorkspaceAPIToken500ApplicationProblemPlusJSONResponse Problem
-
-func (response MintWorkspaceAPIToken500ApplicationProblemPlusJSONResponse) VisitMintWorkspaceAPITokenResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -26667,6 +26886,15 @@ type StrictServerInterface interface {
 	// BeginSamlLogin Start a SAML sign-in for a workspace
 	// (POST /sso/saml/login)
 	BeginSamlLogin(ctx context.Context, request BeginSamlLoginRequestObject) (BeginSamlLoginResponseObject, error)
+	// ListAPITokens List the caller's live API tokens
+	// (GET /tokens)
+	ListAPITokens(ctx context.Context, request ListAPITokensRequestObject) (ListAPITokensResponseObject, error)
+	// MintAPIToken Mint a token whose reach and scopes cannot exceed the caller's own rights
+	// (POST /tokens)
+	MintAPIToken(ctx context.Context, request MintAPITokenRequestObject) (MintAPITokenResponseObject, error)
+	// RevokeAPIToken Revoke one of the caller's tokens
+	// (DELETE /tokens/{tokenId})
+	RevokeAPIToken(ctx context.Context, request RevokeAPITokenRequestObject) (RevokeAPITokenResponseObject, error)
 	// ListWorkspaces List the workspaces the signed-in account belongs to
 	// (GET /workspaces)
 	ListWorkspaces(ctx context.Context, request ListWorkspacesRequestObject) (ListWorkspacesResponseObject, error)
@@ -27051,13 +27279,10 @@ type StrictServerInterface interface {
 	// UnarchiveWorkspaceTeam Return an archived team to active use
 	// (POST /workspaces/{workspaceId}/teams/{teamId}/unarchive)
 	UnarchiveWorkspaceTeam(ctx context.Context, request UnarchiveWorkspaceTeamRequestObject) (UnarchiveWorkspaceTeamResponseObject, error)
-	// ListWorkspaceAPITokens List the caller's live API tokens in this workspace
+	// ListWorkspaceAPITokens List every live token that reaches this workspace, for its administrators
 	// (GET /workspaces/{workspaceId}/tokens)
 	ListWorkspaceAPITokens(ctx context.Context, request ListWorkspaceAPITokensRequestObject) (ListWorkspaceAPITokensResponseObject, error)
-	// MintWorkspaceAPIToken Mint a token whose scopes cannot exceed the caller's own rights
-	// (POST /workspaces/{workspaceId}/tokens)
-	MintWorkspaceAPIToken(ctx context.Context, request MintWorkspaceAPITokenRequestObject) (MintWorkspaceAPITokenResponseObject, error)
-	// RevokeWorkspaceAPIToken Revoke one of the caller's tokens
+	// RevokeWorkspaceAPIToken Revoke a token reaching this workspace, as one of its administrators
 	// (DELETE /workspaces/{workspaceId}/tokens/{tokenId})
 	RevokeWorkspaceAPIToken(ctx context.Context, request RevokeWorkspaceAPITokenRequestObject) (RevokeWorkspaceAPITokenResponseObject, error)
 	// ListWorkspaceTriage What has arrived and nobody has decided about yet
@@ -27897,6 +28122,87 @@ func (sh *strictHandler) BeginSamlLogin(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(BeginSamlLoginResponseObject); ok {
 		if err := validResponse.VisitBeginSamlLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAPITokens operation middleware
+func (sh *strictHandler) ListAPITokens(w http.ResponseWriter, r *http.Request) {
+	var request ListAPITokensRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAPITokens(ctx, request.(ListAPITokensRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAPITokens")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAPITokensResponseObject); ok {
+		if err := validResponse.VisitListAPITokensResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MintAPIToken operation middleware
+func (sh *strictHandler) MintAPIToken(w http.ResponseWriter, r *http.Request) {
+	var request MintAPITokenRequestObject
+
+	var body MintAPITokenJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MintAPIToken(ctx, request.(MintAPITokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MintAPIToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MintAPITokenResponseObject); ok {
+		if err := validResponse.VisitMintAPITokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeAPIToken operation middleware
+func (sh *strictHandler) RevokeAPIToken(w http.ResponseWriter, r *http.Request, tokenId TokenId) {
+	var request RevokeAPITokenRequestObject
+
+	request.TokenId = tokenId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeAPIToken(ctx, request.(RevokeAPITokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeAPIToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeAPITokenResponseObject); ok {
+		if err := validResponse.VisitRevokeAPITokenResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -31689,39 +31995,6 @@ func (sh *strictHandler) ListWorkspaceAPITokens(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListWorkspaceAPITokensResponseObject); ok {
 		if err := validResponse.VisitListWorkspaceAPITokensResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// MintWorkspaceAPIToken operation middleware
-func (sh *strictHandler) MintWorkspaceAPIToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
-	var request MintWorkspaceAPITokenRequestObject
-
-	request.WorkspaceId = workspaceId
-
-	var body MintWorkspaceAPITokenJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.MintWorkspaceAPIToken(ctx, request.(MintWorkspaceAPITokenRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "MintWorkspaceAPIToken")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(MintWorkspaceAPITokenResponseObject); ok {
-		if err := validResponse.VisitMintWorkspaceAPITokenResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

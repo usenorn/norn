@@ -63,39 +63,7 @@ func policyRules() [][]string {
 }
 
 func grants(role entity.MembershipRole, resource entity.Resource, action entity.Action) bool {
-	if resource == entity.ResourceWorkspace && action == entity.ActionDelete {
-		return role == entity.MembershipRoleAdmin
-	}
-
-	if resource == entity.ResourceAPIToken {
-		return role != entity.MembershipRoleViewer
-	}
-
-	if action == entity.ActionUpdate && resource != entity.ResourceWorkspace {
-		return false
-	}
-
-	if action == entity.ActionDelete {
-		return false
-	}
-
-	if resource == entity.ResourceProject && action == entity.ActionManage {
-		return role != entity.MembershipRoleViewer
-	}
-
-	if resource == entity.ResourceSavedView && action == entity.ActionManage {
-		return true
-	}
-
-	if resource == entity.ResourceComment && action == entity.ActionManage {
-		return true
-	}
-
-	if resource == entity.ResourceNotification {
-		return action == entity.ActionRead || action == entity.ActionManage
-	}
-
-	return entity.RolePermits(role, resource, action)
+	return entity.RoleGrants(role, resource, action)
 }
 
 type policyEnforcer interface {
@@ -315,8 +283,9 @@ func (a *casbinAuthorizer) teamScope(
 
 	if role == entity.MembershipRoleAdmin {
 		scope.AllTeams = true
+		scope.IncludePrivate = true
 
-		return scope, nil
+		return actor.NarrowScope(scope), nil
 	}
 
 	teams, err := a.teams.ListVisibleTo(ctx, workspaceID, actor.AccountID, "", false)
@@ -328,7 +297,7 @@ func (a *casbinAuthorizer) teamScope(
 		scope.TeamIDs = append(scope.TeamIDs, team.ID)
 	}
 
-	return scope, nil
+	return actor.NarrowScope(scope), nil
 }
 
 func (a *casbinAuthorizer) SeedPolicy(_ context.Context) error {

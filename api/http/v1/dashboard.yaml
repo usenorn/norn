@@ -1162,13 +1162,11 @@ paths:
         '409': { $ref: '#/components/responses/TeamConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
-  /workspaces/{workspaceId}/tokens:
+  /tokens:
     get:
       tags: [tokens]
-      operationId: listWorkspaceAPITokens
-      summary: List the caller's live API tokens in this workspace
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+      operationId: listAPITokens
+      summary: List the caller's live API tokens
       responses:
         '200':
           description: The caller's tokens
@@ -1182,10 +1180,8 @@ paths:
         '500': { $ref: '#/components/responses/Problem' }
     post:
       tags: [tokens]
-      operationId: mintWorkspaceAPIToken
-      summary: Mint a token whose scopes cannot exceed the caller's own rights
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+      operationId: mintAPIToken
+      summary: Mint a token whose reach and scopes cannot exceed the caller's own rights
       requestBody:
         required: true
         content:
@@ -1203,11 +1199,45 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /tokens/{tokenId}:
+    delete:
+      tags: [tokens]
+      operationId: revokeAPIToken
+      summary: Revoke one of the caller's tokens
+      parameters:
+        - $ref: '#/components/parameters/TokenId'
+      responses:
+        '204':
+          description: The token was revoked
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/tokens:
+    get:
+      tags: [tokens]
+      operationId: listWorkspaceAPITokens
+      summary: List every live token that reaches this workspace, for its administrators
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The tokens reaching this workspace, with the people they act for
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkspaceAPIToken' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/tokens/{tokenId}:
     delete:
       tags: [tokens]
       operationId: revokeWorkspaceAPIToken
-      summary: Revoke one of the caller's tokens
+      summary: Revoke a token reaching this workspace, as one of its administrators
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
         - $ref: '#/components/parameters/TokenId'
@@ -4611,6 +4641,11 @@ components:
         actorAccountId: { type: string, format: uuid }
         actorName: { type: string }
         actorKind: { $ref: '#/components/schemas/ActivityActorKind' }
+        actorTokenName:
+          type: string
+          description: >-
+            The API token that made the change, when one did. Recorded as it was named at the
+            time, so revoking the token does not change what the record says happened.
         bulkActionId: { type: string, format: uuid }
         changes:
           type: array
@@ -5022,19 +5057,41 @@ components:
     APIScope:
       type: string
 
+    APITokenGrant:
+      type: object
+      required: [workspaceId, allTeams]
+      properties:
+        workspaceId: { type: string, format: uuid }
+        allTeams:
+          type: boolean
+          description: When true the token reaches every team its owner can see in this workspace.
+        teamIds:
+          type: array
+          items: { type: string, format: uuid }
+
     APIToken:
       type: object
-      required: [id, workspaceId, name, scopes, createdAt]
+      required: [id, name, scopes, grants, createdAt]
       properties:
         id: { type: string, format: uuid }
-        workspaceId: { type: string, format: uuid }
         name: { type: string }
         scopes:
           type: array
           items: { $ref: '#/components/schemas/APIScope' }
+        grants:
+          type: array
+          items: { $ref: '#/components/schemas/APITokenGrant' }
         expiresAt: { type: string, format: date-time }
         lastUsedAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
+
+    WorkspaceAPIToken:
+      type: object
+      required: [token, ownerName, ownerEmail]
+      properties:
+        token: { $ref: '#/components/schemas/APIToken' }
+        ownerName: { type: string }
+        ownerEmail: { type: string }
 
     MintedAPIToken:
       type: object
@@ -5045,12 +5102,15 @@ components:
 
     MintAPITokenRequest:
       type: object
-      required: [name, scopes]
+      required: [name, scopes, grants]
       properties:
         name: { type: string }
         scopes:
           type: array
           items: { $ref: '#/components/schemas/APIScope' }
+        grants:
+          type: array
+          items: { $ref: '#/components/schemas/APITokenGrant' }
         expiresAt: { type: string, format: date-time }
 
     APITokenUnusableProblem:
@@ -5061,7 +5121,13 @@ components:
           properties:
             code:
               type: string
-              enum: [token_name_taken, token_scope_invalid, token_scope_exceeds, token_may_not_mint]
+              enum:
+                - token_name_taken
+                - token_scope_invalid
+                - token_scope_exceeds
+                - token_may_not_mint
+                - token_grant_invalid
+                - token_grant_missing
 
     ForbiddenProblem:
       allOf:

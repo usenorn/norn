@@ -354,13 +354,15 @@
 				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">API tokens</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Tokens act for you in this workspace and never carry more than you can do yourself.
+						Tokens belong to you rather than to a workspace, and can reach several at once. They
+						never carry more than you can do yourself.
 					</p>
 				</div>
 
-				<div>
-					<Button variant="secondary" href={workspacePath(workspace.slug, "/settings/tokens")}>
-						Manage tokens
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" href="/settings/tokens">Your tokens</Button>
+					<Button variant="ghost" href={workspacePath(workspace.slug, "/settings/members")}>
+						Tokens reaching {workspace.name}
 					</Button>
 				</div>
 			</section>

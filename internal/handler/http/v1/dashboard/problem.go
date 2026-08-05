@@ -575,6 +575,12 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrAPITokenMintForbidden):
 		return apiTokenUnusableProblem(api.TokenMayNotMint, err), true
 
+	case errors.Is(err, entity.ErrAPITokenGrantInvalid):
+		return apiTokenUnusableProblem(api.TokenGrantInvalid, err), true
+
+	case errors.Is(err, entity.ErrAPITokenGrantMissing):
+		return apiTokenUnusableProblem(api.TokenGrantMissing, err), true
+
 	case errors.Is(err, entity.ErrLabelNameTaken):
 		return labelConflictProblem(api.LabelNameTaken, err), true
 
@@ -806,11 +812,19 @@ func unauthorized() problemResponse {
 	return newProblem(http.StatusUnauthorized, "a valid session is required")
 }
 
-func (r problemResponse) VisitListWorkspaceAPITokensResponse(w http.ResponseWriter) error {
+func (r problemResponse) VisitListAPITokensResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 
-func (r problemResponse) VisitMintWorkspaceAPITokenResponse(w http.ResponseWriter) error {
+func (r problemResponse) VisitMintAPITokenResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRevokeAPITokenResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceAPITokensResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

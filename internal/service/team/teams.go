@@ -2,6 +2,7 @@ package team
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -141,13 +142,20 @@ func (s *teamsService) List(ctx context.Context, workspaceID uuid.UUID, status e
 		})
 	}
 
-	return s.teams.ListVisibleTo(
+	teams, err := s.teams.ListVisibleTo(
 		ctx,
 		workspaceID,
 		decision.Actor.AccountID,
 		status,
-		decision.Scope.AllTeams,
+		decision.Scope.IncludePrivate,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return slices.DeleteFunc(teams, func(team entity.Team) bool {
+		return !decision.Scope.Covers(team.ID)
+	}), nil
 }
 
 func (s *teamsService) Update(ctx context.Context, workspaceID, teamID uuid.UUID, input service.UpdateTeamInput) (entity.Team, error) {
@@ -285,14 +293,14 @@ func (s *teamsService) AddMember(ctx context.Context, workspaceID, teamID, accou
 			return err
 		}
 
-		actor, actorKind := decision.ActivityActor()
+		attribution := decision.ActivityActor()
 
 		return s.notify.Record(ctx, entity.NotificationEvent{
 			WorkspaceID: workspaceID,
 			Subject:     entity.NotifyTeam(teamID),
 			Kind:        entity.NotificationKindMembership,
-			Actor:       actor,
-			ActorKind:   actorKind,
+			Actor:       attribution.AccountID,
+			ActorKind:   attribution.Kind,
 			Target:      accountID,
 		})
 	}); err != nil {

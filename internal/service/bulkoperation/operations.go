@@ -554,8 +554,7 @@ func (s *operationsService) record(
 ) error {
 	entry.WorkspaceID = action.WorkspaceID
 	entry.Subject = entity.IssueSubject(issue.ID)
-	entry.ActorAccountID = decision.Actor.AccountID
-	entry.ActorKind = decision.Actor.Kind
+	entry.Actor = decision.ActivityActor()
 	entry.Version = issue.Version + 1
 	entry.BulkActionID = action.ID
 

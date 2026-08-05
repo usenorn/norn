@@ -1,0 +1,15 @@
+{{if .Expired}}Your API token "{{.Name}}" has expired.
+
+It stopped working on {{.ExpiresAt}}. Anything using it is now being refused.
+{{else}}Your API token "{{.Name}}" expires in {{.DaysLeft}} day{{if ne .DaysLeft 1}}s{{end}}.
+
+It stops working on {{.ExpiresAt}}. Anything still using it will start being
+refused from that moment.
+{{end}}
+A token cannot be extended. Mint a replacement, move whatever uses this one over
+to it, and revoke this one:
+
+{{.SettingsURL}}
+
+{{if .Workspaces}}This token reaches: {{.Workspaces}}
+{{end}}

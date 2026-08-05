@@ -25,72 +25,72 @@ import (
 
 // APIToken is an object representing the database table.
 type APIToken struct {
-	ID          string            `boil:"id" json:"id" toml:"id" yaml:"id"`
-	AccountID   string            `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
-	WorkspaceID string            `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	Name        string            `boil:"name" json:"name" toml:"name" yaml:"name"`
-	TokenHash   []byte            `boil:"token_hash" json:"token_hash" toml:"token_hash" yaml:"token_hash"`
-	Scopes      types.StringArray `boil:"scopes" json:"scopes" toml:"scopes" yaml:"scopes"`
-	ExpiresAt   null.Time         `boil:"expires_at" json:"expires_at,omitempty" toml:"expires_at" yaml:"expires_at,omitempty"`
-	RevokedAt   null.Time         `boil:"revoked_at" json:"revoked_at,omitempty" toml:"revoked_at" yaml:"revoked_at,omitempty"`
-	LastUsedAt  null.Time         `boil:"last_used_at" json:"last_used_at,omitempty" toml:"last_used_at" yaml:"last_used_at,omitempty"`
-	CreatedAt   time.Time         `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt   time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID               string            `boil:"id" json:"id" toml:"id" yaml:"id"`
+	AccountID        string            `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
+	Name             string            `boil:"name" json:"name" toml:"name" yaml:"name"`
+	TokenHash        []byte            `boil:"token_hash" json:"token_hash" toml:"token_hash" yaml:"token_hash"`
+	Scopes           types.StringArray `boil:"scopes" json:"scopes" toml:"scopes" yaml:"scopes"`
+	ExpiresAt        null.Time         `boil:"expires_at" json:"expires_at,omitempty" toml:"expires_at" yaml:"expires_at,omitempty"`
+	RevokedAt        null.Time         `boil:"revoked_at" json:"revoked_at,omitempty" toml:"revoked_at" yaml:"revoked_at,omitempty"`
+	LastUsedAt       null.Time         `boil:"last_used_at" json:"last_used_at,omitempty" toml:"last_used_at" yaml:"last_used_at,omitempty"`
+	ExpiryNoticeDays null.Int          `boil:"expiry_notice_days" json:"expiry_notice_days,omitempty" toml:"expiry_notice_days" yaml:"expiry_notice_days,omitempty"`
+	CreatedAt        time.Time         `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt        time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *apiTokenR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L apiTokenL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var APITokenColumns = struct {
-	ID          string
-	AccountID   string
-	WorkspaceID string
-	Name        string
-	TokenHash   string
-	Scopes      string
-	ExpiresAt   string
-	RevokedAt   string
-	LastUsedAt  string
-	CreatedAt   string
-	UpdatedAt   string
+	ID               string
+	AccountID        string
+	Name             string
+	TokenHash        string
+	Scopes           string
+	ExpiresAt        string
+	RevokedAt        string
+	LastUsedAt       string
+	ExpiryNoticeDays string
+	CreatedAt        string
+	UpdatedAt        string
 }{
-	ID:          "id",
-	AccountID:   "account_id",
-	WorkspaceID: "workspace_id",
-	Name:        "name",
-	TokenHash:   "token_hash",
-	Scopes:      "scopes",
-	ExpiresAt:   "expires_at",
-	RevokedAt:   "revoked_at",
-	LastUsedAt:  "last_used_at",
-	CreatedAt:   "created_at",
-	UpdatedAt:   "updated_at",
+	ID:               "id",
+	AccountID:        "account_id",
+	Name:             "name",
+	TokenHash:        "token_hash",
+	Scopes:           "scopes",
+	ExpiresAt:        "expires_at",
+	RevokedAt:        "revoked_at",
+	LastUsedAt:       "last_used_at",
+	ExpiryNoticeDays: "expiry_notice_days",
+	CreatedAt:        "created_at",
+	UpdatedAt:        "updated_at",
 }
 
 var APITokenTableColumns = struct {
-	ID          string
-	AccountID   string
-	WorkspaceID string
-	Name        string
-	TokenHash   string
-	Scopes      string
-	ExpiresAt   string
-	RevokedAt   string
-	LastUsedAt  string
-	CreatedAt   string
-	UpdatedAt   string
+	ID               string
+	AccountID        string
+	Name             string
+	TokenHash        string
+	Scopes           string
+	ExpiresAt        string
+	RevokedAt        string
+	LastUsedAt       string
+	ExpiryNoticeDays string
+	CreatedAt        string
+	UpdatedAt        string
 }{
-	ID:          "api_tokens.id",
-	AccountID:   "api_tokens.account_id",
-	WorkspaceID: "api_tokens.workspace_id",
-	Name:        "api_tokens.name",
-	TokenHash:   "api_tokens.token_hash",
-	Scopes:      "api_tokens.scopes",
-	ExpiresAt:   "api_tokens.expires_at",
-	RevokedAt:   "api_tokens.revoked_at",
-	LastUsedAt:  "api_tokens.last_used_at",
-	CreatedAt:   "api_tokens.created_at",
-	UpdatedAt:   "api_tokens.updated_at",
+	ID:               "api_tokens.id",
+	AccountID:        "api_tokens.account_id",
+	Name:             "api_tokens.name",
+	TokenHash:        "api_tokens.token_hash",
+	Scopes:           "api_tokens.scopes",
+	ExpiresAt:        "api_tokens.expires_at",
+	RevokedAt:        "api_tokens.revoked_at",
+	LastUsedAt:       "api_tokens.last_used_at",
+	ExpiryNoticeDays: "api_tokens.expiry_notice_days",
+	CreatedAt:        "api_tokens.created_at",
+	UpdatedAt:        "api_tokens.updated_at",
 }
 
 // Generated where
@@ -116,38 +116,86 @@ func (w whereHelpertypes_StringArray) GTE(x types.StringArray) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelpernull_Int struct{ field string }
+
+func (w whereHelpernull_Int) EQ(x null.Int) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int) NEQ(x null.Int) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int) LT(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int) LTE(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int) GT(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+func (w whereHelpernull_Int) IN(slice []int) qm.QueryMod {
+	values := make([]any, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelpernull_Int) NIN(slice []int) qm.QueryMod {
+	values := make([]any, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
+
+func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+
 var APITokenWhere = struct {
-	ID          whereHelperstring
-	AccountID   whereHelperstring
-	WorkspaceID whereHelperstring
-	Name        whereHelperstring
-	TokenHash   whereHelper__byte
-	Scopes      whereHelpertypes_StringArray
-	ExpiresAt   whereHelpernull_Time
-	RevokedAt   whereHelpernull_Time
-	LastUsedAt  whereHelpernull_Time
-	CreatedAt   whereHelpertime_Time
-	UpdatedAt   whereHelpertime_Time
+	ID               whereHelperstring
+	AccountID        whereHelperstring
+	Name             whereHelperstring
+	TokenHash        whereHelper__byte
+	Scopes           whereHelpertypes_StringArray
+	ExpiresAt        whereHelpernull_Time
+	RevokedAt        whereHelpernull_Time
+	LastUsedAt       whereHelpernull_Time
+	ExpiryNoticeDays whereHelpernull_Int
+	CreatedAt        whereHelpertime_Time
+	UpdatedAt        whereHelpertime_Time
 }{
-	ID:          whereHelperstring{field: "\"api_tokens\".\"id\""},
-	AccountID:   whereHelperstring{field: "\"api_tokens\".\"account_id\""},
-	WorkspaceID: whereHelperstring{field: "\"api_tokens\".\"workspace_id\""},
-	Name:        whereHelperstring{field: "\"api_tokens\".\"name\""},
-	TokenHash:   whereHelper__byte{field: "\"api_tokens\".\"token_hash\""},
-	Scopes:      whereHelpertypes_StringArray{field: "\"api_tokens\".\"scopes\""},
-	ExpiresAt:   whereHelpernull_Time{field: "\"api_tokens\".\"expires_at\""},
-	RevokedAt:   whereHelpernull_Time{field: "\"api_tokens\".\"revoked_at\""},
-	LastUsedAt:  whereHelpernull_Time{field: "\"api_tokens\".\"last_used_at\""},
-	CreatedAt:   whereHelpertime_Time{field: "\"api_tokens\".\"created_at\""},
-	UpdatedAt:   whereHelpertime_Time{field: "\"api_tokens\".\"updated_at\""},
+	ID:               whereHelperstring{field: "\"api_tokens\".\"id\""},
+	AccountID:        whereHelperstring{field: "\"api_tokens\".\"account_id\""},
+	Name:             whereHelperstring{field: "\"api_tokens\".\"name\""},
+	TokenHash:        whereHelper__byte{field: "\"api_tokens\".\"token_hash\""},
+	Scopes:           whereHelpertypes_StringArray{field: "\"api_tokens\".\"scopes\""},
+	ExpiresAt:        whereHelpernull_Time{field: "\"api_tokens\".\"expires_at\""},
+	RevokedAt:        whereHelpernull_Time{field: "\"api_tokens\".\"revoked_at\""},
+	LastUsedAt:       whereHelpernull_Time{field: "\"api_tokens\".\"last_used_at\""},
+	ExpiryNoticeDays: whereHelpernull_Int{field: "\"api_tokens\".\"expiry_notice_days\""},
+	CreatedAt:        whereHelpertime_Time{field: "\"api_tokens\".\"created_at\""},
+	UpdatedAt:        whereHelpertime_Time{field: "\"api_tokens\".\"updated_at\""},
 }
 
 // APITokenRels is where relationship names are stored.
 var APITokenRels = struct {
-}{}
+	Account                       string
+	TokenAPITokenGrants           string
+	ActorTokenWorkspaceActivities string
+}{
+	Account:                       "Account",
+	TokenAPITokenGrants:           "TokenAPITokenGrants",
+	ActorTokenWorkspaceActivities: "ActorTokenWorkspaceActivities",
+}
 
 // apiTokenR is where relationships are stored.
 type apiTokenR struct {
+	Account                       *Account               `boil:"Account" json:"Account" toml:"Account" yaml:"Account"`
+	TokenAPITokenGrants           APITokenGrantSlice     `boil:"TokenAPITokenGrants" json:"TokenAPITokenGrants" toml:"TokenAPITokenGrants" yaml:"TokenAPITokenGrants"`
+	ActorTokenWorkspaceActivities WorkspaceActivitySlice `boil:"ActorTokenWorkspaceActivities" json:"ActorTokenWorkspaceActivities" toml:"ActorTokenWorkspaceActivities" yaml:"ActorTokenWorkspaceActivities"`
 }
 
 // NewStruct creates a new relationship struct
@@ -155,13 +203,61 @@ func (*apiTokenR) NewStruct() *apiTokenR {
 	return &apiTokenR{}
 }
 
+func (o *APIToken) GetAccount() *Account {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetAccount()
+}
+
+func (r *apiTokenR) GetAccount() *Account {
+	if r == nil {
+		return nil
+	}
+
+	return r.Account
+}
+
+func (o *APIToken) GetTokenAPITokenGrants() APITokenGrantSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetTokenAPITokenGrants()
+}
+
+func (r *apiTokenR) GetTokenAPITokenGrants() APITokenGrantSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.TokenAPITokenGrants
+}
+
+func (o *APIToken) GetActorTokenWorkspaceActivities() WorkspaceActivitySlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetActorTokenWorkspaceActivities()
+}
+
+func (r *apiTokenR) GetActorTokenWorkspaceActivities() WorkspaceActivitySlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.ActorTokenWorkspaceActivities
+}
+
 // apiTokenL is where Load methods for each relationship are stored.
 type apiTokenL struct{}
 
 var (
-	apiTokenAllColumns            = []string{"id", "account_id", "workspace_id", "name", "token_hash", "scopes", "expires_at", "revoked_at", "last_used_at", "created_at", "updated_at"}
-	apiTokenColumnsWithoutDefault = []string{"account_id", "workspace_id", "name", "token_hash", "scopes"}
-	apiTokenColumnsWithDefault    = []string{"id", "expires_at", "revoked_at", "last_used_at", "created_at", "updated_at"}
+	apiTokenAllColumns            = []string{"id", "account_id", "name", "token_hash", "scopes", "expires_at", "revoked_at", "last_used_at", "expiry_notice_days", "created_at", "updated_at"}
+	apiTokenColumnsWithoutDefault = []string{"account_id", "name", "token_hash", "scopes"}
+	apiTokenColumnsWithDefault    = []string{"id", "expires_at", "revoked_at", "last_used_at", "expiry_notice_days", "created_at", "updated_at"}
 	apiTokenPrimaryKeyColumns     = []string{"id"}
 	apiTokenGeneratedColumns      = []string{}
 )
@@ -469,6 +565,618 @@ func (q apiTokenQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (b
 	}
 
 	return count > 0, nil
+}
+
+// Account pointed to by the foreign key.
+func (o *APIToken) Account(mods ...qm.QueryMod) accountQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.AccountID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Accounts(queryMods...)
+}
+
+// TokenAPITokenGrants retrieves all the api_token_grant's APITokenGrants with an executor via token_id column.
+func (o *APIToken) TokenAPITokenGrants(mods ...qm.QueryMod) apiTokenGrantQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"api_token_grants\".\"token_id\"=?", o.ID),
+	)
+
+	return APITokenGrants(queryMods...)
+}
+
+// ActorTokenWorkspaceActivities retrieves all the workspace_activity's WorkspaceActivities with an executor via actor_token_id column.
+func (o *APIToken) ActorTokenWorkspaceActivities(mods ...qm.QueryMod) workspaceActivityQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_activity\".\"actor_token_id\"=?", o.ID),
+	)
+
+	return WorkspaceActivities(queryMods...)
+}
+
+// LoadAccount allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (apiTokenL) LoadAccount(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAPIToken any, mods queries.Applicator) error {
+	var slice []*APIToken
+	var object *APIToken
+
+	if singular {
+		var ok bool
+		object, ok = maybeAPIToken.(*APIToken)
+		if !ok {
+			object = new(APIToken)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAPIToken)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAPIToken))
+			}
+		}
+	} else {
+		s, ok := maybeAPIToken.(*[]*APIToken)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAPIToken)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAPIToken))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &apiTokenR{}
+		}
+		args[object.AccountID] = struct{}{}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &apiTokenR{}
+			}
+
+			args[obj.AccountID] = struct{}{}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`accounts`),
+		qm.WhereIn(`accounts.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Account")
+	}
+
+	var resultSlice []*Account
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Account")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for accounts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for accounts")
+	}
+
+	if len(accountAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Account = foreign
+		if foreign.R == nil {
+			foreign.R = &accountR{}
+		}
+		foreign.R.APITokens = append(foreign.R.APITokens, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.AccountID == foreign.ID {
+				local.R.Account = foreign
+				if foreign.R == nil {
+					foreign.R = &accountR{}
+				}
+				foreign.R.APITokens = append(foreign.R.APITokens, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTokenAPITokenGrants allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (apiTokenL) LoadTokenAPITokenGrants(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAPIToken any, mods queries.Applicator) error {
+	var slice []*APIToken
+	var object *APIToken
+
+	if singular {
+		var ok bool
+		object, ok = maybeAPIToken.(*APIToken)
+		if !ok {
+			object = new(APIToken)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAPIToken)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAPIToken))
+			}
+		}
+	} else {
+		s, ok := maybeAPIToken.(*[]*APIToken)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAPIToken)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAPIToken))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &apiTokenR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &apiTokenR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`api_token_grants`),
+		qm.WhereIn(`api_token_grants.token_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load api_token_grants")
+	}
+
+	var resultSlice []*APITokenGrant
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice api_token_grants")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on api_token_grants")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for api_token_grants")
+	}
+
+	if len(apiTokenGrantAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.TokenAPITokenGrants = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &apiTokenGrantR{}
+			}
+			foreign.R.Token = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.TokenID {
+				local.R.TokenAPITokenGrants = append(local.R.TokenAPITokenGrants, foreign)
+				if foreign.R == nil {
+					foreign.R = &apiTokenGrantR{}
+				}
+				foreign.R.Token = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadActorTokenWorkspaceActivities allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (apiTokenL) LoadActorTokenWorkspaceActivities(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAPIToken any, mods queries.Applicator) error {
+	var slice []*APIToken
+	var object *APIToken
+
+	if singular {
+		var ok bool
+		object, ok = maybeAPIToken.(*APIToken)
+		if !ok {
+			object = new(APIToken)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAPIToken)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAPIToken))
+			}
+		}
+	} else {
+		s, ok := maybeAPIToken.(*[]*APIToken)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAPIToken)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAPIToken))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &apiTokenR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &apiTokenR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_activity`),
+		qm.WhereIn(`workspace_activity.actor_token_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_activity")
+	}
+
+	var resultSlice []*WorkspaceActivity
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_activity")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_activity")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_activity")
+	}
+
+	if len(workspaceActivityAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ActorTokenWorkspaceActivities = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceActivityR{}
+			}
+			foreign.R.ActorToken = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ActorTokenID) {
+				local.R.ActorTokenWorkspaceActivities = append(local.R.ActorTokenWorkspaceActivities, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceActivityR{}
+				}
+				foreign.R.ActorToken = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// SetAccount of the apiToken to the related item.
+// Sets o.R.Account to related.
+// Adds o to related.R.APITokens.
+func (o *APIToken) SetAccount(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Account) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"api_tokens\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
+		strmangle.WhereClause("\"", "\"", 2, apiTokenPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.AccountID = related.ID
+	if o.R == nil {
+		o.R = &apiTokenR{
+			Account: related,
+		}
+	} else {
+		o.R.Account = related
+	}
+
+	if related.R == nil {
+		related.R = &accountR{
+			APITokens: APITokenSlice{o},
+		}
+	} else {
+		related.R.APITokens = append(related.R.APITokens, o)
+	}
+
+	return nil
+}
+
+// AddTokenAPITokenGrants adds the given related objects to the existing relationships
+// of the api_token, optionally inserting them as new records.
+// Appends related to o.R.TokenAPITokenGrants.
+// Sets related.R.Token appropriately.
+func (o *APIToken) AddTokenAPITokenGrants(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*APITokenGrant) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.TokenID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"api_token_grants\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"token_id"}),
+				strmangle.WhereClause("\"", "\"", 2, apiTokenGrantPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.TokenID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &apiTokenR{
+			TokenAPITokenGrants: related,
+		}
+	} else {
+		o.R.TokenAPITokenGrants = append(o.R.TokenAPITokenGrants, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &apiTokenGrantR{
+				Token: o,
+			}
+		} else {
+			rel.R.Token = o
+		}
+	}
+	return nil
+}
+
+// AddActorTokenWorkspaceActivities adds the given related objects to the existing relationships
+// of the api_token, optionally inserting them as new records.
+// Appends related to o.R.ActorTokenWorkspaceActivities.
+// Sets related.R.ActorToken appropriately.
+func (o *APIToken) AddActorTokenWorkspaceActivities(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceActivity) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ActorTokenID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_activity\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"actor_token_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceActivityPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ActorTokenID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &apiTokenR{
+			ActorTokenWorkspaceActivities: related,
+		}
+	} else {
+		o.R.ActorTokenWorkspaceActivities = append(o.R.ActorTokenWorkspaceActivities, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceActivityR{
+				ActorToken: o,
+			}
+		} else {
+			rel.R.ActorToken = o
+		}
+	}
+	return nil
+}
+
+// SetActorTokenWorkspaceActivities removes all previously related items of the
+// api_token replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.ActorToken's ActorTokenWorkspaceActivities accordingly.
+// Replaces o.R.ActorTokenWorkspaceActivities with related.
+// Sets related.R.ActorToken's ActorTokenWorkspaceActivities accordingly.
+func (o *APIToken) SetActorTokenWorkspaceActivities(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceActivity) error {
+	query := "update \"workspace_activity\" set \"actor_token_id\" = null where \"actor_token_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ActorTokenWorkspaceActivities {
+			queries.SetScanner(&rel.ActorTokenID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.ActorToken = nil
+		}
+		o.R.ActorTokenWorkspaceActivities = nil
+	}
+
+	return o.AddActorTokenWorkspaceActivities(ctx, exec, insert, related...)
+}
+
+// RemoveActorTokenWorkspaceActivities relationships from objects passed in.
+// Removes related items from R.ActorTokenWorkspaceActivities (uses pointer comparison, removal does not keep order)
+// Sets related.R.ActorToken.
+func (o *APIToken) RemoveActorTokenWorkspaceActivities(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceActivity) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ActorTokenID, nil)
+		if rel.R != nil {
+			rel.R.ActorToken = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("actor_token_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ActorTokenWorkspaceActivities {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ActorTokenWorkspaceActivities)
+			if ln > 1 && i < ln-1 {
+				o.R.ActorTokenWorkspaceActivities[i] = o.R.ActorTokenWorkspaceActivities[ln-1]
+			}
+			o.R.ActorTokenWorkspaceActivities = o.R.ActorTokenWorkspaceActivities[:ln-1]
+			break
+		}
+	}
+
+	return nil
 }
 
 // APITokens retrieves all the records using an executor.

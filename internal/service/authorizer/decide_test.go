@@ -142,11 +142,11 @@ func TestATokenIsConfinedToTheWorkspaceItWasMintedFor(t *testing.T) {
 	tokenID := uuid.New()
 
 	ctx := identity.WithActor(context.Background(), entity.Actor{
-		Kind:        entity.ActorKindToken,
-		AccountID:   uuid.New(),
-		TokenID:     &tokenID,
-		WorkspaceID: &minted,
-		Scopes:      entity.APIScopeSet{entity.NewAPIScope(entity.ResourceTeam, entity.ActionRead)},
+		Kind:      entity.ActorKindToken,
+		AccountID: uuid.New(),
+		TokenID:   &tokenID,
+		Grants:    entity.APITokenGrants{{WorkspaceID: minted, AllTeams: true}},
+		Scopes:    entity.APIScopeSet{entity.NewAPIScope(entity.ResourceTeam, entity.ActionRead)},
 	})
 
 	_, err := harness.Decide(ctx, entity.AccessRequest{
@@ -168,11 +168,11 @@ func TestATokenIsRefusedAnActionOutsideItsScopes(t *testing.T) {
 	tokenID := uuid.New()
 
 	ctx := identity.WithActor(context.Background(), entity.Actor{
-		Kind:        entity.ActorKindToken,
-		AccountID:   uuid.New(),
-		TokenID:     &tokenID,
-		WorkspaceID: &workspaceID,
-		Scopes:      entity.APIScopeSet{entity.NewAPIScope(entity.ResourceTeam, entity.ActionRead)},
+		Kind:      entity.ActorKindToken,
+		AccountID: uuid.New(),
+		TokenID:   &tokenID,
+		Grants:    entity.APITokenGrants{{WorkspaceID: workspaceID, AllTeams: true}},
+		Scopes:    entity.APIScopeSet{entity.NewAPIScope(entity.ResourceTeam, entity.ActionRead)},
 	})
 
 	_, err := harness.Decide(ctx, entity.AccessRequest{
@@ -195,11 +195,11 @@ func TestATokenNeverExceedsItsCreatingAccount(t *testing.T) {
 	tokenID := uuid.New()
 
 	ctx := identity.WithActor(context.Background(), entity.Actor{
-		Kind:        entity.ActorKindToken,
-		AccountID:   uuid.New(),
-		TokenID:     &tokenID,
-		WorkspaceID: &workspaceID,
-		Scopes:      entity.APIScopeSet{entity.NewAPIScope(entity.ResourceTeam, entity.ActionManage)},
+		Kind:      entity.ActorKindToken,
+		AccountID: uuid.New(),
+		TokenID:   &tokenID,
+		Grants:    entity.APITokenGrants{{WorkspaceID: workspaceID, AllTeams: true}},
+		Scopes:    entity.APIScopeSet{entity.NewAPIScope(entity.ResourceTeam, entity.ActionManage)},
 	})
 
 	_, err := harness.Decide(ctx, entity.AccessRequest{
@@ -260,11 +260,11 @@ func TestATokenIsNotNarrowedByAnAuthMethodItCannotHave(t *testing.T) {
 	tokenID := uuid.New()
 
 	ctx := identity.WithActor(context.Background(), entity.Actor{
-		Kind:        entity.ActorKindToken,
-		AccountID:   uuid.New(),
-		TokenID:     &tokenID,
-		WorkspaceID: &workspaceID,
-		Scopes:      entity.APIScopeSet{entity.NewAPIScope(entity.ResourceTeam, entity.ActionRead)},
+		Kind:      entity.ActorKindToken,
+		AccountID: uuid.New(),
+		TokenID:   &tokenID,
+		Grants:    entity.APITokenGrants{{WorkspaceID: workspaceID, AllTeams: true}},
+		Scopes:    entity.APIScopeSet{entity.NewAPIScope(entity.ResourceTeam, entity.ActionRead)},
 	})
 
 	if _, err := harness.Decide(ctx, entity.AccessRequest{

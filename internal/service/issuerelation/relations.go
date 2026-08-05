@@ -204,14 +204,13 @@ func (s *relationsService) close(
 	}
 
 	return s.activity.Record(ctx, entity.Activity{
-		WorkspaceID:    workspaceID,
-		Subject:        entity.IssueSubject(duplicate.ID),
-		ActorAccountID: decision.Actor.AccountID,
-		ActorKind:      decision.Actor.Kind,
-		Kind:           entity.ActivityKindStateChanged,
-		FromState:      duplicate.State.Name,
-		ToState:        target.Name,
-		Version:        duplicate.Version + 1,
+		WorkspaceID: workspaceID,
+		Subject:     entity.IssueSubject(duplicate.ID),
+		Actor:       decision.ActivityActor(),
+		Kind:        entity.ActivityKindStateChanged,
+		FromState:   duplicate.State.Name,
+		ToState:     target.Name,
+		Version:     duplicate.Version + 1,
 	})
 }
 
@@ -234,8 +233,7 @@ func (s *relationsService) record(
 		}
 
 		entry.WorkspaceID = workspaceID
-		entry.ActorAccountID = decision.Actor.AccountID
-		entry.ActorKind = decision.Actor.Kind
+		entry.Actor = decision.ActivityActor()
 		entry.Kind = kind
 
 		if err := s.activity.Record(ctx, entry); err != nil {

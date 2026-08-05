@@ -157,7 +157,7 @@ func TestAcceptingLetsTheIssueThroughAndSaysWhoDecided(t *testing.T) {
 		t.Errorf("the activity names the decision as %q, want %q", recorded.Field, entity.TriageStateAccepted)
 	}
 
-	if recorded.ActorAccountID != h.actorID {
+	if recorded.Actor.AccountID != h.actorID {
 		t.Error("the activity does not name who decided")
 	}
 }

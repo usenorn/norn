@@ -254,6 +254,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("realtime.enabled", true)
 	v.SetDefault("notifications.fanout_schedule", "* * * * *")
 	v.SetDefault("notifications.digest_schedule", "*/15 * * * *")
+	v.SetDefault("api_tokens.expiry_sweep_schedule", "0 9 * * *")
 	v.SetDefault("attachments.reclaim_batch", 200)
 
 	v.SetDefault("session.cookie_name", "norn_session")

@@ -15,11 +15,11 @@ import (
 const recordActivityQuery = `
 INSERT INTO workspace_activity (
     id, operation_id, workspace_id, issue_id, project_id,
-    actor_account_id, actor_kind, kind,
+    actor_account_id, actor_kind, actor_token_id, actor_token_name, kind,
     from_state_name, to_state_name,
     field, from_value, to_value, version, bulk_action_id, created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`
 
 const activityColumns = `
 SELECT a.id,
@@ -30,6 +30,8 @@ SELECT a.id,
        coalesce(a.actor_account_id::text, ''),
        coalesce(acct.display_name, ''),
        a.actor_kind,
+       coalesce(a.actor_token_id::text, ''),
+       coalesce(a.actor_token_name, ''),
        a.kind,
        a.from_state_name,
        a.to_state_name,
@@ -112,8 +114,8 @@ func (r *activityRepository) Record(ctx context.Context, activity entity.Activit
 		activity.OperationID = postgres.Operation(ctx, activity.Subject.ID, activity.ID)
 	}
 
-	if activity.ActorKind == "" {
-		activity.ActorKind = entity.ActorKindUser
+	if activity.Actor.Kind == "" {
+		activity.Actor.Kind = entity.ActorKindUser
 	}
 
 	issueID, projectID := activity.Subject.ID, uuid.Nil
@@ -129,8 +131,10 @@ func (r *activityRepository) Record(ctx context.Context, activity entity.Activit
 		activity.WorkspaceID.String(),
 		optionalID(issueID),
 		optionalID(projectID),
-		optionalID(activity.ActorAccountID),
-		string(activity.ActorKind),
+		optionalID(activity.Actor.AccountID),
+		string(activity.Actor.Kind),
+		optionalTokenID(activity.Actor.TokenID),
+		nullIfEmpty(activity.Actor.TokenName),
 		string(activity.Kind),
 		activity.FromState,
 		activity.ToState,
@@ -241,12 +245,13 @@ func (r *activityRepository) query(
 			workspace        string
 			issue, project   string
 			actor, actorKind string
+			actorToken       string
 			kind, bulkAction string
 		)
 
 		if err := rows.Scan(
 			&id, &operation, &workspace, &issue, &project,
-			&actor, &activity.ActorName, &actorKind, &kind,
+			&actor, &activity.ActorName, &actorKind, &actorToken, &activity.Actor.TokenName, &kind,
 			&activity.FromState, &activity.ToState,
 			&activity.Field, &activity.FromValue, &activity.ToValue,
 			&activity.Version, &bulkAction, &activity.CreatedAt,
@@ -255,7 +260,16 @@ func (r *activityRepository) query(
 		}
 
 		activity.Kind = entity.ActivityKind(kind)
-		activity.ActorKind = entity.ActorKind(actorKind)
+		activity.Actor.Kind = entity.ActorKind(actorKind)
+
+		if actorToken != "" {
+			tokenID, err := uuid.Parse(actorToken)
+			if err != nil {
+				return nil, fmt.Errorf("parse activity actor token id: %w", err)
+			}
+
+			activity.Actor.TokenID = &tokenID
+		}
 
 		parsed, err := uuid.Parse(id)
 		if err != nil {
@@ -291,7 +305,7 @@ func (r *activityRepository) query(
 		}
 
 		if actor != "" {
-			if activity.ActorAccountID, err = uuid.Parse(actor); err != nil {
+			if activity.Actor.AccountID, err = uuid.Parse(actor); err != nil {
 				return nil, fmt.Errorf("parse activity actor id: %w", err)
 			}
 		}
@@ -310,4 +324,12 @@ func (r *activityRepository) query(
 	}
 
 	return entries, nil
+}
+
+func optionalTokenID(tokenID *uuid.UUID) any {
+	if tokenID == nil {
+		return nil
+	}
+
+	return tokenID.String()
 }

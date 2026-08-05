@@ -129,12 +129,11 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		}
 
 		if err := s.activity.Record(ctx, entity.Activity{
-			WorkspaceID:    created.WorkspaceID,
-			Subject:        entity.IssueSubject(created.ID),
-			ActorAccountID: decision.Actor.AccountID,
-			ActorKind:      decision.Actor.Kind,
-			Kind:           entity.ActivityKindCreated,
-			ToState:        created.State.Name,
+			WorkspaceID: created.WorkspaceID,
+			Subject:     entity.IssueSubject(created.ID),
+			Actor:       decision.ActivityActor(),
+			Kind:        entity.ActivityKindCreated,
+			ToState:     created.State.Name,
 		}); err != nil {
 			return err
 		}
@@ -386,14 +385,13 @@ func (s *issuesService) Update(
 
 		if target.ID != uuid.Nil && target.ID != issue.State.ID {
 			if err := s.activity.Record(ctx, entity.Activity{
-				WorkspaceID:    workspaceID,
-				Subject:        entity.IssueSubject(issueID),
-				ActorAccountID: decision.Actor.AccountID,
-				ActorKind:      decision.Actor.Kind,
-				Kind:           entity.ActivityKindStateChanged,
-				FromState:      issue.State.Name,
-				ToState:        target.Name,
-				Version:        issue.Version + 1,
+				WorkspaceID: workspaceID,
+				Subject:     entity.IssueSubject(issueID),
+				Actor:       decision.ActivityActor(),
+				Kind:        entity.ActivityKindStateChanged,
+				FromState:   issue.State.Name,
+				ToState:     target.Name,
+				Version:     issue.Version + 1,
 			}); err != nil {
 				return err
 			}
@@ -434,15 +432,14 @@ func (s *issuesService) recordProperty(
 	field, from, to string,
 ) error {
 	return s.activity.Record(ctx, entity.Activity{
-		WorkspaceID:    issue.WorkspaceID,
-		Subject:        entity.IssueSubject(issue.ID),
-		ActorAccountID: decision.Actor.AccountID,
-		ActorKind:      decision.Actor.Kind,
-		Kind:           entity.ActivityKindPropertyChanged,
-		Field:          field,
-		FromValue:      from,
-		ToValue:        to,
-		Version:        issue.Version + 1,
+		WorkspaceID: issue.WorkspaceID,
+		Subject:     entity.IssueSubject(issue.ID),
+		Actor:       decision.ActivityActor(),
+		Kind:        entity.ActivityKindPropertyChanged,
+		Field:       field,
+		FromValue:   from,
+		ToValue:     to,
+		Version:     issue.Version + 1,
 	})
 }
 
@@ -955,12 +952,11 @@ func (s *issuesService) recordHierarchy(
 	}
 
 	entry := entity.Activity{
-		WorkspaceID:    workspaceID,
-		Subject:        entity.IssueSubject(onIssueID),
-		ActorAccountID: decision.Actor.AccountID,
-		ActorKind:      decision.Actor.Kind,
-		Kind:           kind,
-		Field:          entity.IssueFieldChildren,
+		WorkspaceID: workspaceID,
+		Subject:     entity.IssueSubject(onIssueID),
+		Actor:       decision.ActivityActor(),
+		Kind:        kind,
+		Field:       entity.IssueFieldChildren,
 	}
 
 	if kind == entity.ActivityKindChildAdded {
@@ -1053,15 +1049,14 @@ func (s *issuesService) SetStatus(
 		}
 
 		if err := s.activity.Record(ctx, entity.Activity{
-			WorkspaceID:    workspaceID,
-			Subject:        entity.IssueSubject(issueID),
-			ActorAccountID: decision.Actor.AccountID,
-			ActorKind:      decision.Actor.Kind,
-			Kind:           statusActivityKind(issue.Status, lifecycle.Status),
-			Field:          entity.IssueFieldStatus,
-			FromValue:      string(issue.Status),
-			ToValue:        string(lifecycle.Status),
-			Version:        issue.Version + 1,
+			WorkspaceID: workspaceID,
+			Subject:     entity.IssueSubject(issueID),
+			Actor:       decision.ActivityActor(),
+			Kind:        statusActivityKind(issue.Status, lifecycle.Status),
+			Field:       entity.IssueFieldStatus,
+			FromValue:   string(issue.Status),
+			ToValue:     string(lifecycle.Status),
+			Version:     issue.Version + 1,
 		}); err != nil {
 			return err
 		}
@@ -1197,15 +1192,14 @@ func (s *issuesService) MoveToTeam(
 		}
 
 		if err := s.activity.Record(ctx, entity.Activity{
-			WorkspaceID:    workspaceID,
-			Subject:        entity.IssueSubject(issueID),
-			ActorAccountID: decision.Actor.AccountID,
-			ActorKind:      decision.Actor.Kind,
-			Kind:           entity.ActivityKindTeamMoved,
-			Field:          entity.IssueFieldTeam,
-			FromValue:      issue.TeamKey,
-			ToValue:        refreshed.TeamKey,
-			Version:        issue.Version + 1,
+			WorkspaceID: workspaceID,
+			Subject:     entity.IssueSubject(issueID),
+			Actor:       decision.ActivityActor(),
+			Kind:        entity.ActivityKindTeamMoved,
+			Field:       entity.IssueFieldTeam,
+			FromValue:   issue.TeamKey,
+			ToValue:     refreshed.TeamKey,
+			Version:     issue.Version + 1,
 		}); err != nil {
 			return err
 		}
@@ -1215,14 +1209,13 @@ func (s *issuesService) MoveToTeam(
 		}
 
 		if err := s.activity.Record(ctx, entity.Activity{
-			WorkspaceID:    workspaceID,
-			Subject:        entity.IssueSubject(issueID),
-			ActorAccountID: decision.Actor.AccountID,
-			ActorKind:      decision.Actor.Kind,
-			Kind:           entity.ActivityKindStateChanged,
-			FromState:      issue.State.Name,
-			ToState:        target.Name,
-			Version:        issue.Version + 1,
+			WorkspaceID: workspaceID,
+			Subject:     entity.IssueSubject(issueID),
+			Actor:       decision.ActivityActor(),
+			Kind:        entity.ActivityKindStateChanged,
+			FromState:   issue.State.Name,
+			ToState:     target.Name,
+			Version:     issue.Version + 1,
 		}); err != nil {
 			return err
 		}

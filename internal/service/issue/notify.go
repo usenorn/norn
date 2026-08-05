@@ -35,14 +35,14 @@ func (s *issuesService) notifyAssigned(
 		return err
 	}
 
-	actor, actorKind := decision.ActivityActor()
+	attribution := decision.ActivityActor()
 
 	return s.notify.Record(ctx, entity.NotificationEvent{
 		WorkspaceID:  issue.WorkspaceID,
 		Subject:      entity.NotifyIssue(issue.ID),
 		Kind:         entity.NotificationKindAssigned,
-		Actor:        actor,
-		ActorKind:    actorKind,
+		Actor:        attribution.AccountID,
+		ActorKind:    attribution.Kind,
 		Target:       assignee,
 		BulkActionID: bulkActionID,
 	})
@@ -54,14 +54,14 @@ func (s *issuesService) notifyStateChanged(
 	decision entity.Decision,
 	bulkActionID uuid.UUID,
 ) error {
-	actor, actorKind := decision.ActivityActor()
+	attribution := decision.ActivityActor()
 
 	return s.notify.Record(ctx, entity.NotificationEvent{
 		WorkspaceID:  issue.WorkspaceID,
 		Subject:      entity.NotifyIssue(issue.ID),
 		Kind:         entity.NotificationKindStateChanged,
-		Actor:        actor,
-		ActorKind:    actorKind,
+		Actor:        attribution.AccountID,
+		ActorKind:    attribution.Kind,
 		BulkActionID: bulkActionID,
 	})
 }

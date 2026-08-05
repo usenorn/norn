@@ -112,12 +112,16 @@ function propertyLine(change: ActivityChange): string {
 export function actorLabel(event: ActivityEvent): string {
 	if (event.actorKind === "system") return "Norn";
 
-	return event.actorName || "Someone who has left";
+	const person = event.actorName || "Someone who has left";
+
+	// A token acts for a person, so both are shown: the credential answers which automation did
+	// this, and the name answers whose authority it was acting under.
+	return event.actorTokenName ? `${person} via ${event.actorTokenName}` : person;
 }
 
 export const actorKindLabels: Record<ActivityActorKind, string> = {
 	user: "A person made this change",
-	token: "An integration made this change",
+	token: "An API token made this change",
 	agent: "An agent made this change",
 	system: "Norn made this change",
 };

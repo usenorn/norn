@@ -93,8 +93,9 @@ func (h *harness) expectActorMayActOn(
 	status entity.WorkspaceStatus,
 ) {
 	h.expectDecision(workspaceID, actorID, role, resource, action, status, entity.TeamScope{
-		WorkspaceID: workspaceID,
-		AllTeams:    true,
+		WorkspaceID:    workspaceID,
+		AllTeams:       true,
+		IncludePrivate: true,
 	})
 }
 

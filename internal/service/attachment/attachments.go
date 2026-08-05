@@ -311,13 +311,12 @@ func (s *attachmentsService) record(
 	kind entity.ActivityKind,
 ) error {
 	return s.activity.Record(ctx, entity.Activity{
-		WorkspaceID:    attachment.WorkspaceID,
-		Subject:        entity.IssueSubject(attachment.IssueID),
-		ActorAccountID: decision.Actor.AccountID,
-		ActorKind:      decision.Actor.Kind,
-		Kind:           kind,
-		Field:          entity.ActivityFieldAttachment,
-		ToValue:        attachment.FileName,
+		WorkspaceID: attachment.WorkspaceID,
+		Subject:     entity.IssueSubject(attachment.IssueID),
+		Actor:       decision.ActivityActor(),
+		Kind:        kind,
+		Field:       entity.ActivityFieldAttachment,
+		ToValue:     attachment.FileName,
 	})
 }
 

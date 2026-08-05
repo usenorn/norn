@@ -22,7 +22,9 @@ func (s *connectionsService) SweepCertificates(ctx context.Context) error {
 	for _, connection := range connections {
 		daysLeft := entity.DaysUntil(connection.Descriptor.ExpiresAt, now)
 
-		threshold, due := entity.ExpiryNoticeDue(daysLeft, connection.ExpiryNoticeDays)
+		threshold, due := entity.ExpiryNoticeDue(
+			entity.SAMLExpiryNoticeDays, daysLeft, connection.ExpiryNoticeDays,
+		)
 		if !due {
 			continue
 		}

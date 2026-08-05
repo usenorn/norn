@@ -12,7 +12,10 @@ import (
 
 type APITokens interface {
 	Mint(ctx context.Context, input MintAPITokenInput) (MintedAPIToken, error)
-	List(ctx context.Context, workspaceID uuid.UUID) ([]entity.APIToken, error)
-	Revoke(ctx context.Context, workspaceID, tokenID uuid.UUID) error
+	List(ctx context.Context) ([]entity.APIToken, error)
+	ListForWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]OwnedAPIToken, error)
+	Revoke(ctx context.Context, tokenID uuid.UUID) error
+	RevokeInWorkspace(ctx context.Context, workspaceID, tokenID uuid.UUID) error
 	Authenticate(ctx context.Context, token string) (entity.Actor, error)
+	SweepExpiring(ctx context.Context) error
 }

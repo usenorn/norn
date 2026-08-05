@@ -59,18 +59,33 @@ func (mr *MockAPITokensMockRecorder) Authenticate(ctx, token any) *gomock.Call {
 }
 
 // List mocks base method.
-func (m *MockAPITokens) List(ctx context.Context, workspaceID uuid.UUID) ([]entity.APIToken, error) {
+func (m *MockAPITokens) List(ctx context.Context) ([]entity.APIToken, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List", ctx, workspaceID)
+	ret := m.ctrl.Call(m, "List", ctx)
 	ret0, _ := ret[0].([]entity.APIToken)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // List indicates an expected call of List.
-func (mr *MockAPITokensMockRecorder) List(ctx, workspaceID any) *gomock.Call {
+func (mr *MockAPITokensMockRecorder) List(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockAPITokens)(nil).List), ctx, workspaceID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockAPITokens)(nil).List), ctx)
+}
+
+// ListForWorkspace mocks base method.
+func (m *MockAPITokens) ListForWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]service.OwnedAPIToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListForWorkspace", ctx, workspaceID)
+	ret0, _ := ret[0].([]service.OwnedAPIToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListForWorkspace indicates an expected call of ListForWorkspace.
+func (mr *MockAPITokensMockRecorder) ListForWorkspace(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListForWorkspace", reflect.TypeOf((*MockAPITokens)(nil).ListForWorkspace), ctx, workspaceID)
 }
 
 // Mint mocks base method.
@@ -89,15 +104,43 @@ func (mr *MockAPITokensMockRecorder) Mint(ctx, input any) *gomock.Call {
 }
 
 // Revoke mocks base method.
-func (m *MockAPITokens) Revoke(ctx context.Context, workspaceID, tokenID uuid.UUID) error {
+func (m *MockAPITokens) Revoke(ctx context.Context, tokenID uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Revoke", ctx, workspaceID, tokenID)
+	ret := m.ctrl.Call(m, "Revoke", ctx, tokenID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Revoke indicates an expected call of Revoke.
-func (mr *MockAPITokensMockRecorder) Revoke(ctx, workspaceID, tokenID any) *gomock.Call {
+func (mr *MockAPITokensMockRecorder) Revoke(ctx, tokenID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockAPITokens)(nil).Revoke), ctx, workspaceID, tokenID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockAPITokens)(nil).Revoke), ctx, tokenID)
+}
+
+// RevokeInWorkspace mocks base method.
+func (m *MockAPITokens) RevokeInWorkspace(ctx context.Context, workspaceID, tokenID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RevokeInWorkspace", ctx, workspaceID, tokenID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RevokeInWorkspace indicates an expected call of RevokeInWorkspace.
+func (mr *MockAPITokensMockRecorder) RevokeInWorkspace(ctx, workspaceID, tokenID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevokeInWorkspace", reflect.TypeOf((*MockAPITokens)(nil).RevokeInWorkspace), ctx, workspaceID, tokenID)
+}
+
+// SweepExpiring mocks base method.
+func (m *MockAPITokens) SweepExpiring(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SweepExpiring", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SweepExpiring indicates an expected call of SweepExpiring.
+func (mr *MockAPITokensMockRecorder) SweepExpiring(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SweepExpiring", reflect.TypeOf((*MockAPITokens)(nil).SweepExpiring), ctx)
 }

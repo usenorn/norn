@@ -1,4 +1,5 @@
 import { apiFor } from "$lib/api";
+import type { WorkspaceAPIToken } from "$lib/account/tokens";
 import { listingFor, memberPageSize, type MemberListing } from "$lib/workspace/members";
 import { membersPreviewStates } from "./preview";
 import type { PageLoad } from "./$types";
@@ -7,6 +8,7 @@ export type MembersData = {
 	listing: MemberListing;
 	query: string;
 	linked: string[];
+	tokens: WorkspaceAPIToken[] | null;
 };
 
 export const load: PageLoad = async ({ fetch, url, parent }): Promise<MembersData> => {
@@ -16,10 +18,10 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<MembersDat
 	const query = url.searchParams.get("q") ?? "";
 
 	if (import.meta.env.DEV && membersPreviewStates[url.searchParams.get("state") ?? ""]) {
-		return { listing: { kind: "loading" }, query, linked: [] };
+		return { listing: { kind: "loading" }, query, linked: [], tokens: null };
 	}
 
-	const [members, identities] = await Promise.all([
+	const [members, identities, tokens] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/members", {
 			fetch,
 			params: {
@@ -31,11 +33,16 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<MembersDat
 			fetch,
 			params: { path: { workspaceId: workspace.id } },
 		}),
+		api.GET("/workspaces/{workspaceId}/tokens", {
+			fetch,
+			params: { path: { workspaceId: workspace.id } },
+		}),
 	]);
 
 	return {
 		listing: listingFor(members.data, query),
 		query,
 		linked: (identities.data ?? []).map((identity) => identity.accountId),
+		tokens: tokens.error ? null : (tokens.data ?? []),
 	};
 };

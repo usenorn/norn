@@ -3,6 +3,7 @@
 	import { page } from "$app/state";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
+	import Plug from "@lucide/svelte/icons/plug";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
@@ -85,6 +86,29 @@
 	const failure = $derived<MembershipFailure | null>(preview?.failure ?? localFailure);
 	const notice = $derived<MembershipNotice | null>(preview?.notice ?? localNotice);
 	const busy = $derived(action.kind !== "idle" || localRemoval.kind === "removing");
+
+	let revokedTokens = $state<string[]>([]);
+	let revokingToken = $state<string | null>(null);
+
+	// A null listing means the caller is not an administrator here, which is a different thing from
+	// there being no tokens; the whole section is theirs to see or not.
+	const tokens = $derived(
+		data.tokens?.filter((owned) => !revokedTokens.includes(owned.token.id)) ?? null
+	);
+
+	async function revokeToken(tokenId: string) {
+		revokingToken = tokenId;
+
+		try {
+			const { error } = await api.DELETE("/workspaces/{workspaceId}/tokens/{tokenId}", {
+				params: { path: { workspaceId: workspace.id, tokenId } },
+			});
+
+			if (!error) revokedTokens = [...revokedTokens, tokenId];
+		} finally {
+			revokingToken = null;
+		}
+	}
 
 	const removalId = $derived(page.url.searchParams.get("remove"));
 	const removal = $derived<MemberRemoval>(preview?.removal ?? localRemoval);
@@ -611,6 +635,59 @@
 					{/if}
 				{/if}
 			</section>
+
+			{#if tokens}
+			<section class="flex flex-col gap-3">
+				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">
+						API tokens reaching {workspace.name}
+					</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						A token acts for the person who minted it and carries only what they may do. Revoking
+						one here stops it everywhere at once.
+					</p>
+				</div>
+
+				{#if tokens.length === 0}
+					<p class="text-sm text-muted-foreground">
+						No tokens reach this workspace.
+					</p>
+				{:else}
+					<ul class="rounded-lg border border-line-subtle bg-paper-0">
+						{#each tokens as owned (owned.token.id)}
+							<li
+								class="flex flex-col gap-2 border-b border-line-subtle p-3 last:border-b-0 sm:flex-row sm:items-start sm:justify-between"
+							>
+								<div class="flex min-w-0 flex-col gap-1.5">
+									<div class="flex items-center gap-2">
+										<Plug class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+										<span class="truncate text-sm text-ink-900">{owned.token.name}</span>
+									</div>
+									<p class="text-xs text-muted-foreground">
+										Acts for {owned.ownerName} &lt;{owned.ownerEmail}&gt;
+									</p>
+									<div class="flex flex-wrap gap-1">
+										{#each owned.token.scopes as scope (scope)}
+											<Tag name={scope} />
+										{/each}
+									</div>
+								</div>
+								<div class="flex-none">
+									<Button
+										variant="secondary"
+										size="sm"
+										disabled={busy || revokingToken === owned.token.id}
+										onclick={() => revokeToken(owned.token.id)}
+									>
+										{revokingToken === owned.token.id ? "Revoking…" : "Revoke"}
+									</Button>
+								</div>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</section>
+			{/if}
 		</div>
 	</div>
 </div>
