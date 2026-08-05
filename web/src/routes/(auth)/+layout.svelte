@@ -7,7 +7,7 @@
 </script>
 
 <div class="flex min-h-dvh flex-col bg-background">
-	<header class="flex flex-none flex-wrap items-center gap-2 px-5 pt-5 sm:px-6">
+	<header class="flex flex-none flex-wrap items-center gap-2 px-6 pt-5">
 		<a href="/sign-in" class="inline-flex" aria-label="Norn">
 			<Wordmark />
 		</a>

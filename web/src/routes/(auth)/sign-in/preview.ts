@@ -16,6 +16,7 @@ export const signInPreviewStates: Record<string, SignInPreview> = import.meta.en
 			invalid: { failure: { kind: "invalid_credentials", attemptsLeft: 3 } },
 			locked: { failure: { kind: "account_locked", unlocksAt: "14:32" } },
 			limited: { failure: { kind: "rate_limited" } },
+			unavailable: { failure: { kind: "unavailable" } },
 			misconfig: {
 				auth: { sso: { name: "Okta" } },
 				failure: {
