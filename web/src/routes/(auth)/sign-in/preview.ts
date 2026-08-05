@@ -1,9 +1,11 @@
 import type { Instance } from "$lib/auth/instance";
 import type { SignInFailure } from "$lib/auth/types";
+import type { WorkspaceEntry } from "$lib/auth/workspace-sign-in";
 
 export type SignInPreview = {
 	auth?: Partial<Instance>;
 	failure?: SignInFailure;
+	entry?: WorkspaceEntry;
 };
 
 export const signInPreviewStates: Record<string, SignInPreview> = import.meta.env.DEV
@@ -30,5 +32,32 @@ export const signInPreviewStates: Record<string, SignInPreview> = import.meta.en
 				},
 			},
 			closed: { auth: { signupsOpen: false } },
+			workspace_sso: {
+				entry: {
+					kind: "ready",
+					signIn: {
+						workspace: "northwind",
+						name: "Northwind",
+						password: true,
+						sso: true,
+						protocol: "oidc",
+						host: "northwind.okta.com",
+					},
+				},
+			},
+			workspace_sso_only: {
+				entry: {
+					kind: "ready",
+					signIn: {
+						workspace: "northwind",
+						name: "Northwind",
+						password: false,
+						sso: true,
+						protocol: "oidc",
+						host: "northwind.okta.com",
+					},
+				},
+			},
+			workspace_unknown: { entry: { kind: "unknown", workspace: "northwynd" } },
 		}
 	: {};
