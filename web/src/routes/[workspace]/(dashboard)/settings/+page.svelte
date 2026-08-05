@@ -352,6 +352,25 @@
 
 			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Agents</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Agents act under a person's authority and never carry more than that person can do.
+						Teams can hold what they change until somebody agrees.
+					</p>
+				</div>
+
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" href={workspacePath(workspace.slug, "/settings/agents")}>
+						Manage agents
+					</Button>
+					<Button variant="ghost" href={workspacePath(workspace.slug, "/agents/approvals")}>
+						Waiting for approval
+					</Button>
+				</div>
+			</section>
+
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">API tokens</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Tokens belong to you rather than to a workspace, and can reach several at once. They

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from "svelte";
 	import AtSign from "@lucide/svelte/icons/at-sign";
+	import Bot from "@lucide/svelte/icons/bot";
 	import X from "@lucide/svelte/icons/x";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -14,7 +15,7 @@
 	import type { Member } from "$lib/issues/members";
 	import type { Team } from "$lib/team/teams";
 
-	type Candidate = { key: string; name: string; target: MentionTarget };
+	type Candidate = { key: string; name: string; agent?: boolean; target: MentionTarget };
 
 	let {
 		members,
@@ -59,6 +60,7 @@
 			.map((member) => ({
 				key: `account:${member.accountId}`,
 				name: member.displayName ?? "",
+				agent: member.kind === "agent",
 				target: { kind: "account" as const, accountId: member.accountId },
 			})),
 		...teams.map((team) => ({
@@ -230,7 +232,12 @@
 			<DropdownMenu.Content align="start" class="max-h-64 overflow-y-auto">
 				{#each available as candidate (candidate.key)}
 					<DropdownMenu.Item onSelect={() => mention(candidate)}>
-						{candidate.name}
+						<span class="flex items-center gap-1.5">
+							{#if candidate.agent}
+								<Bot class="size-3.5 text-muted-foreground" aria-label="An agent" />
+							{/if}
+							{candidate.name}
+						</span>
 					</DropdownMenu.Item>
 				{/each}
 			</DropdownMenu.Content>

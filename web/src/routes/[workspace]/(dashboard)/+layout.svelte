@@ -11,6 +11,7 @@
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import Settings from "@lucide/svelte/icons/settings";
 	import Bell from "@lucide/svelte/icons/bell";
+	import Bot from "@lucide/svelte/icons/bot";
 	import SearchPalette from "$lib/search/search-palette.svelte";
 	import ConnectionIndicator from "$lib/realtime/connection-indicator.svelte";
 	import StaleBanner from "$lib/realtime/stale-banner.svelte";
@@ -170,6 +171,14 @@
 						<a href={workspacePath(slug, "/settings/notifications")} {...props}>
 							<Bell aria-hidden="true" />
 							Notifications
+						</a>
+					{/snippet}
+				</DropdownMenu.Item>
+				<DropdownMenu.Item>
+					{#snippet child({ props })}
+						<a href={workspacePath(slug, "/settings/agents")} {...props}>
+							<Bot aria-hidden="true" />
+							Agents
 						</a>
 					{/snippet}
 				</DropdownMenu.Item>

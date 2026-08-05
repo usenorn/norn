@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Bot from "@lucide/svelte/icons/bot";
 	import { goto, invalidateAll } from "$app/navigation";
 	import { page } from "$app/state";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
@@ -1162,7 +1163,12 @@
 									<DropdownMenu.Separator />
 									{#each ready.members as member (member.accountId)}
 										<DropdownMenu.RadioItem value={member.accountId}>
-											{member.displayName || member.email}
+											<span class="flex items-center gap-1.5">
+												{#if member.kind === "agent"}
+													<Bot class="size-3.5 text-muted-foreground" aria-label="An agent" />
+												{/if}
+												{member.displayName || member.email}
+											</span>
 										</DropdownMenu.RadioItem>
 									{/each}
 								</DropdownMenu.RadioGroup>
