@@ -4,9 +4,11 @@ import type { Team } from "$lib/team/teams";
 import { invitePreviewStates } from "./preview";
 import type { PageLoad } from "./$types";
 
+const memberScanLimit = 200;
+
 export type InviteTarget = { id: string; slug: string; name: string; defaultTeamId: string | null };
 
-export type InviteData = { target: InviteTarget; teams: Team[] };
+export type InviteData = { target: InviteTarget; teams: Team[]; members: string[] };
 
 export const load: PageLoad = async ({ fetch, url }): Promise<InviteData> => {
 	const api = apiFor(url);
@@ -39,6 +41,7 @@ export const load: PageLoad = async ({ fetch, url }): Promise<InviteData> => {
 					createdAt: "2026-02-11T09:00:00Z",
 				},
 			],
+			members: ["jun@northwind.co"],
 		};
 	}
 
@@ -51,10 +54,16 @@ export const load: PageLoad = async ({ fetch, url }): Promise<InviteData> => {
 
 	if (!target) redirect(307, "/create-workspace");
 
-	const teams = await api.GET("/workspaces/{workspaceId}/teams", {
-		fetch,
-		params: { path: { workspaceId: target.id }, query: { status: "active" } },
-	});
+	const [teams, members] = await Promise.all([
+		api.GET("/workspaces/{workspaceId}/teams", {
+			fetch,
+			params: { path: { workspaceId: target.id }, query: { status: "active" } },
+		}),
+		api.GET("/workspaces/{workspaceId}/members", {
+			fetch,
+			params: { path: { workspaceId: target.id }, query: { limit: memberScanLimit } },
+		}),
+	]);
 
 	return {
 		target: {
@@ -64,5 +73,8 @@ export const load: PageLoad = async ({ fetch, url }): Promise<InviteData> => {
 			defaultTeamId: target.defaultTeamId ?? null,
 		},
 		teams: teams.data ?? [],
+		members: (members.data?.members ?? [])
+			.map((member) => member.email?.toLowerCase())
+			.filter((email): email is string => Boolean(email)),
 	};
 };

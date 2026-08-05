@@ -24,6 +24,7 @@
 	import { api } from "$lib/api";
 	import { inviteSchema } from "$lib/workspace/invite-schema";
 	import {
+		counted,
 		inviteFromResult,
 		isEmailAddress,
 		parseAddresses,
@@ -64,10 +65,10 @@
 
 			unavailable = false;
 
-			const requested = parseAddresses(submitted.data.addresses).map((email) => ({
-				email,
-				role: roles[email] ?? "member",
-				teamIds: teamsFor(email),
+			const requested = rows.map((row) => ({
+				email: row.email,
+				role: row.role,
+				teamIds: row.teamIds,
 			}));
 
 			try {
@@ -200,6 +201,12 @@
 		removed = [...removed, row.email];
 	}
 
+	function statusOf(email: string): InviteStatus {
+		if (!isEmailAddress(email)) return "invalid";
+
+		return data.members.includes(email.toLowerCase()) ? "existing_member" : "pending";
+	}
+
 	function teamsFor(email: string): string[] {
 		return teamIds[email] ?? (data.target.defaultTeamId ? [data.target.defaultTeamId] : []);
 	}
@@ -209,7 +216,7 @@
 			email,
 			role: roles[email] ?? "member",
 			teamIds: teamsFor(email),
-			status: (isEmailAddress(email) ? "pending" : "invalid") as InviteStatus,
+			status: statusOf(email),
 		}))
 	);
 
@@ -227,6 +234,7 @@
 		total: rows.length,
 		sendable: rows.filter((row) => row.status === "pending").length,
 		linkOnly: rows.filter((row) => row.status === "link_only").length,
+		invalid: rows.filter((row) => row.status === "invalid").length,
 		attention: rows.filter(
 			(row) => row.status === "invalid" || row.status === "existing_member"
 		).length,
@@ -234,8 +242,9 @@
 		failed: rows.filter((row) => row.status === "failed").length,
 	});
 
-	const busy = $derived($submitting || settling);
-	const sending = $derived(preview?.sending ?? (busy && counts.total > 0));
+	const working = $derived($submitting || settling);
+	const sending = $derived(preview?.sending ?? (working && counts.total > 0));
+	const busy = $derived(working || sending);
 	const emailConfigured = $derived(preview?.emailConfigured ?? counts.linkOnly === 0);
 
 	const allSent = $derived(
@@ -244,9 +253,7 @@
 	const composing = $derived(!sending && counts.sent === 0 && counts.failed === 0);
 
 	const title = $derived(
-		allSent
-			? `Invited ${counts.sent} ${counts.sent === 1 ? "person" : "people"} to ${workspace}`
-			: "Invite your team"
+		allSent ? `Invited ${counted(counts.sent, "person", "people")} to ${workspace}` : "Invite your team"
 	);
 	const lede = $derived(
 		allSent
@@ -260,8 +267,8 @@
 		if (sending) return "Sending";
 		if (counts.failed > 0) return "Results";
 		if (allSent) return "Invited";
-		if (counts.attention > 0) return `${counts.total} addresses`;
-		return `${counts.total} people`;
+		if (counts.attention > 0) return counted(counts.total, "address", "addresses");
+		return counted(counts.total, "person", "people");
 	});
 
 	const rowsRight = $derived.by(() => {
@@ -269,8 +276,18 @@
 		if (counts.failed > 0) return { text: `${counts.failed} failed`, tone: "text-destructive" };
 		if (allSent) return { text: `${counts.sent} sent`, tone: "text-muted-foreground" };
 		if (counts.attention > 0)
-			return { text: `${counts.attention} need attention`, tone: "text-warning" };
+			return {
+				text: `${counts.attention} need${counts.attention === 1 ? "s" : ""} attention`,
+				tone: "text-warning",
+			};
 		return null;
+	});
+
+	const bounced = $derived.by(() => {
+		if (counts.failed === 1) return "That address bounced at the provider. Everything else went out.";
+		if (counts.failed === 2) return "Both addresses bounced at the provider. Everything else went out.";
+
+		return "Those addresses bounced at the provider. Everything else went out.";
 	});
 
 	const notice = $derived.by(() => {
@@ -289,15 +306,15 @@
 				icon: CircleX,
 				title: "Email delivery isn't configured",
 				body: "This instance can't send anything until SMTP is set. Until then, copy each single-use link and share it yourself — they expire in seven days.",
-				action: `Copy ${counts.linkOnly} invite links`,
+				action: `Copy ${counted(counts.linkOnly, "invite link", "invite links")}`,
 			};
 		}
 		if (counts.failed > 0) {
 			return {
 				variant: "warning" as const,
 				icon: TriangleAlert,
-				title: `${counts.failed} invitations didn't send`,
-				body: "Both addresses bounced at the provider. Everything else went out.",
+				title: `${counted(counts.failed, "invitation", "invitations")} didn't send`,
+				body: bounced,
 				action: null,
 			};
 		}
@@ -308,15 +325,16 @@
 		if (sending) return "Sending";
 		if (counts.failed > 0) return `Retry the ${counts.failed} that failed`;
 		if (allSent) return "Continue";
-		if (!emailConfigured && counts.linkOnly > 0) return `Copy ${counts.linkOnly} invite links`;
-		if (counts.sendable > 0) return `Send ${counts.sendable} invitations`;
+		if (!emailConfigured && counts.linkOnly > 0)
+			return `Copy ${counted(counts.linkOnly, "invite link", "invite links")}`;
+		if (counts.sendable > 0) return `Send ${counted(counts.sendable, "invitation", "invitations")}`;
 		return "Send invitations";
 	});
 
 	const secondary = $derived(sending ? null : allSent ? "Invite more" : "Skip for now");
 
 	const footer = $derived(
-		counts.attention > 0
+		counts.invalid > 0
 			? "Invalid addresses are skipped, not sent. Fix them or remove them."
 			: counts.total === 0
 				? "You can invite people any time from Settings → Members."
@@ -373,7 +391,7 @@
 
 <div class="my-auto flex w-full flex-col items-center gap-4">
 	<div class="notch w-full max-w-140">
-		<div class="flex flex-col gap-4 p-5 sm:p-6">
+		<div class="flex flex-col gap-4.5 p-6.5">
 			<div class="flex flex-col gap-1.5">
 				{#if !allSent}
 					<Eyebrow>Step 4 of 4</Eyebrow>
@@ -389,7 +407,7 @@
 					<Alert.Title>{notice.title}</Alert.Title>
 					<Alert.Description>{notice.body}</Alert.Description>
 					{#if notice.action}
-						<Alert.Action class="flex flex-wrap items-center gap-2">
+						<Alert.Action placement="below">
 							<Button variant="secondary" size="sm" disabled={busy} onclick={copyLinks}>
 								<Copy aria-hidden="true" />
 								{copied ? "Copied" : notice.action}
@@ -442,7 +460,7 @@
 						{#each rows as row (row.email)}
 							{@const RowGlyph = rowGlyph[row.status]}
 							<li
-								class="flex min-h-8.5 flex-wrap items-center gap-2 border-b border-line-subtle py-1 pr-2 pl-2.5 last:border-b-0"
+								class="flex min-h-8.5 flex-wrap items-center gap-2 border-b border-line-subtle py-1 pr-2 pl-2.5 last:border-b-0 sm:flex-nowrap"
 							>
 								<RowGlyph
 									class="size-icon-row shrink-0 {rowGlyphTone[row.status]}"
@@ -454,14 +472,14 @@
 									{row.email}
 								</span>
 								{#if rowNote[row.status]}
-									<span class="shrink truncate text-sm {rowNoteTone[row.status]}">
+									<span class="shrink-0 text-sm whitespace-nowrap {rowNoteTone[row.status]}">
 										{rowNote[row.status]}
 									</span>
 								{/if}
 								{#if editable(row) || removable(row)}
-									<span class="ml-auto flex shrink-0 items-center gap-2">
+									<span class="ml-auto flex shrink-0 items-center gap-2 max-sm:ml-0 max-sm:w-full">
 										{#if editable(row)}
-											<span class="w-[106px]">
+											<span class="w-[106px] max-sm:min-w-0 max-sm:flex-1">
 												<Select.Root
 													type="single"
 													value={row.role}
@@ -481,7 +499,7 @@
 												</Select.Root>
 											</span>
 											{#if data.teams.length > 0}
-												<span class="w-[124px]">
+												<span class="w-[124px] max-sm:min-w-0 max-sm:flex-1">
 													<Select.Root
 														type="multiple"
 														value={row.teamIds}
