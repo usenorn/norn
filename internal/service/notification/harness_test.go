@@ -21,6 +21,7 @@ import (
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	eventsvc "github.com/usenorn/norn/internal/service/event"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 )
 
@@ -34,6 +35,7 @@ type harness struct {
 	teamMembers   *teammemberrepo.MockTeamMember
 	workspaces    *workspacerepo.MockWorkspace
 	mailer        *mailerrepo.MockMailer
+	broadcast     *eventsvc.MockEvents
 	authorizer    *authorizersvc.MockAuthorizer
 	service       service.Notifications
 
@@ -59,6 +61,7 @@ func newHarness(t *testing.T, smtp config.SMTP) *harness {
 		teamMembers:   teammemberrepo.NewMockTeamMember(ctrl),
 		workspaces:    workspacerepo.NewMockWorkspace(ctrl),
 		mailer:        mailerrepo.NewMockMailer(ctrl),
+		broadcast:     eventsvc.NewMockEvents(ctrl),
 		authorizer:    authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID:   uuid.New(),
 		teamID:        uuid.New(),
@@ -69,8 +72,10 @@ func newHarness(t *testing.T, smtp config.SMTP) *harness {
 
 	h.service = notificationsvc.New(
 		h.notifications, h.events, h.followers, h.settings, h.issues, h.comments,
-		h.teamMembers, h.workspaces, h.mailer, h.authorizer, smtp, config.App{BaseURL: "https://norn.test"},
+		h.teamMembers, h.workspaces, h.mailer, h.broadcast, h.authorizer, smtp, config.App{BaseURL: "https://norn.test"},
 	)
+
+	h.broadcast.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()
 
 	return h
 }

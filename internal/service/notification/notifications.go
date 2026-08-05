@@ -22,6 +22,7 @@ type notificationsService struct {
 	teamMembers   repository.TeamMember
 	workspaces    repository.Workspace
 	mailer        repository.Mailer
+	broadcast     service.Events
 	authorizer    service.Authorizer
 	smtp          config.SMTP
 	app           config.App
@@ -37,6 +38,7 @@ func New(
 	teamMembers repository.TeamMember,
 	workspaces repository.Workspace,
 	mailer repository.Mailer,
+	broadcast service.Events,
 	authorizer service.Authorizer,
 	smtp config.SMTP,
 	app config.App,
@@ -51,6 +53,7 @@ func New(
 		teamMembers:   teamMembers,
 		workspaces:    workspaces,
 		mailer:        mailer,
+		broadcast:     broadcast,
 		authorizer:    authorizer,
 		smtp:          smtp,
 		app:           app,

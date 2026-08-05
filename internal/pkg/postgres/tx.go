@@ -29,7 +29,9 @@ func (c *Client) WithTx(ctx context.Context, fn func(context.Context) error) err
 		return fmt.Errorf("begin transaction: %w", err)
 	}
 
-	if err := fn(withOperations(context.WithValue(ctx, txKey{}, tx))); err != nil {
+	deferred := withCallbacks(ctx)
+
+	if err := fn(withOperations(context.WithValue(deferred, txKey{}, tx))); err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
 			return errors.Join(err, fmt.Errorf("rollback transaction: %w", rollbackErr))
 		}
@@ -40,6 +42,8 @@ func (c *Client) WithTx(ctx context.Context, fn func(context.Context) error) err
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit transaction: %w", err)
 	}
+
+	runCallbacks(deferred)
 
 	return nil
 }

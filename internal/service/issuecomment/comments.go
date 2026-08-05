@@ -20,6 +20,7 @@ type issueCommentsService struct {
 	teams       repository.Team
 	activity    repository.Activity
 	notify      repository.NotificationEvent
+	events      service.Events
 	followers   repository.IssueFollower
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
@@ -32,6 +33,7 @@ func New(
 	teams repository.Team,
 	activity repository.Activity,
 	notify repository.NotificationEvent,
+	events service.Events,
 	followers repository.IssueFollower,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
@@ -43,6 +45,7 @@ func New(
 		teams:       teams,
 		activity:    activity,
 		notify:      notify,
+		events:      events,
 		followers:   followers,
 		authorizer:  authorizer,
 		transactor:  transactor,
@@ -217,14 +220,20 @@ func (s *issueCommentsService) Post(
 
 		actor, actorKind := decision.ActivityActor()
 
-		return s.notify.Record(ctx, entity.NotificationEvent{
+		if err := s.notify.Record(ctx, entity.NotificationEvent{
 			WorkspaceID: workspaceID,
 			Subject:     entity.NotifyIssue(issueID),
 			Kind:        entity.NotificationKindCommented,
 			Actor:       actor,
 			ActorKind:   actorKind,
 			CommentID:   posted.ID,
-		})
+		}); err != nil {
+			return err
+		}
+
+		s.broadcast(ctx, entity.EventCommentPosted, issue, posted)
+
+		return nil
 	}); err != nil {
 		return service.CommentPosted{}, err
 	}

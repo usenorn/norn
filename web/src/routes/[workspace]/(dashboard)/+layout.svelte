@@ -12,6 +12,9 @@
 	import Settings from "@lucide/svelte/icons/settings";
 	import Bell from "@lucide/svelte/icons/bell";
 	import SearchPalette from "$lib/search/search-palette.svelte";
+	import ConnectionIndicator from "$lib/realtime/connection-indicator.svelte";
+	import StaleBanner from "$lib/realtime/stale-banner.svelte";
+	import { provideRealtime } from "$lib/realtime/connection.svelte";
 	import KeyRound from "@lucide/svelte/icons/key-round";
 	import ProviderRequired from "$lib/workspace/provider-required.svelte";
 	import Tags from "@lucide/svelte/icons/tags";
@@ -52,6 +55,27 @@
 	const current = $derived((href: string) => isCurrent(pathname, search, href));
 
 	let searching = $state(false);
+
+	const realtime = provideRealtime();
+
+	$effect(() => {
+		realtime.open(data.workspace.id);
+
+		return () => realtime.close();
+	});
+
+	$effect(() => {
+		const stop = realtime.on((event) => {
+			// The open issue and the badges patch themselves from the payload; everything that
+			// depends on a server-evaluated filter asks for a coalesced refetch instead.
+			if (event.kind === "notification.arrived" || event.kind.startsWith("issue.")) {
+				realtime.refetch();
+			}
+		});
+
+		return stop;
+	});
+
 
 	function openSearch(event: KeyboardEvent) {
 		if (event.key !== "k" || !(event.metaKey || event.ctrlKey)) return;
@@ -302,6 +326,10 @@
 
 		<div class="flex-1"></div>
 
+		<div class="flex h-6 items-center px-2">
+			<ConnectionIndicator state={realtime.state} />
+		</div>
+
 		<div class="mt-2 flex h-9.5 items-center gap-2 border-t border-line-default px-1.5">
 			<Avatar.Root size="sm">
 				<Avatar.Fallback>{initials}</Avatar.Fallback>
@@ -335,6 +363,7 @@
 		</header>
 
 		<main class="flex min-h-0 flex-1 flex-col">
+			<StaleBanner shown={realtime.degraded} off={realtime.state === "off"} />
 			{#if narrowed}
 				<ProviderRequired workspace={data.workspace} />
 			{:else}

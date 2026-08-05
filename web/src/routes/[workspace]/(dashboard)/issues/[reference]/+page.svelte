@@ -20,6 +20,7 @@
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
+	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import { cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import {
@@ -83,6 +84,7 @@
 		issueDetailPreviewStates,
 	} from "./preview";
 	import type { IssueDetail } from "./+page";
+	import type { Issue, IssueComment } from "$lib/realtime/connection.svelte";
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();
@@ -126,6 +128,40 @@
 	const sources = new Map<string, File>();
 	let pendingStateId = $state("");
 	let followWorking = $state(false);
+	let pushed = $state.raw<{ source: unknown; issue: Issue } | null>(null);
+	let pushedComments = $state.raw<{ source: unknown; comments: IssueComment[] }>({
+		source: null,
+		comments: [],
+	});
+
+	const realtime = useRealtime();
+
+	$effect(() => {
+		if (!realtime || !issue) return;
+
+		const openIssue = issue.id;
+
+		return realtime.on((event) => {
+			if (event.issueId !== openIssue) return;
+
+			// This screen holds one known thing, so an event about it can be applied directly
+			// rather than asking the server what it already told us.
+			if (event.kind === "issue.updated") {
+				pushed = { source: ready, issue: event.payload as Issue };
+			}
+
+			if (event.kind === "comment.posted") {
+				const held = pushedComments.source === ready ? pushedComments.comments : [];
+
+				pushedComments = { source: ready, comments: [...held, event.payload as IssueComment] };
+			}
+
+			if (event.kind === "comment.edited" || event.kind === "comment.deleted") {
+				realtime.refetch();
+			}
+		});
+	});
+
 
 	async function toggleFollow() {
 		if (!issue) return;
@@ -152,7 +188,7 @@
 
 	const detail = $derived<IssueDetail>(preview?.detail ?? data.detail);
 	const ready = $derived(detail.kind === "ready" ? detail : null);
-	const issue = $derived(ready?.issue ?? null);
+	const issue = $derived((pushed?.source === ready ? pushed.issue : null) ?? ready?.issue ?? null);
 	const following = $derived(ready?.follow === "following");
 	const labels = $derived(applied ?? issue?.labels ?? []);
 	const slug = $derived(page.params.workspace ?? "");
@@ -177,8 +213,20 @@
 	const shownCommentUploads = $derived(attachmentPreview?.uploads ?? commentUploads);
 
 	const thread = $derived<CommentThread>(
-		commentPreview?.thread ?? loadedComments ?? ready?.comments ?? { kind: "loading" }
+		withPushed(commentPreview?.thread ?? loadedComments ?? ready?.comments ?? { kind: "loading" })
 	);
+
+	function withPushed(base: CommentThread): CommentThread {
+		if (pushedComments.source !== ready || pushedComments.comments.length === 0) return base;
+
+		const existing = base.kind === "ready" ? base.comments : [];
+		const known = new Set(existing.map((comment) => comment.id));
+		const arrived = pushedComments.comments.filter((comment) => !known.has(comment.id));
+
+		if (arrived.length === 0) return base;
+
+		return { kind: "ready", comments: [...existing, ...arrived] };
+	}
 
 	const form = superForm(defaults(zod4(issueEditSchema)), {
 		id: "issue-edit",

@@ -6,7 +6,12 @@ import { defineConfig } from 'vite';
 export default defineConfig({
 	server: {
 		proxy: {
-			'/v1': 'http://127.0.0.1:8080'
+			'/v1': {
+				target: 'http://127.0.0.1:8080',
+				changeOrigin: true,
+				proxyTimeout: 0,
+				timeout: 0
+			}
 		}
 	},
 	plugins: [

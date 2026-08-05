@@ -21,6 +21,7 @@ import (
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
 )
 
@@ -31,6 +32,7 @@ type harness struct {
 	teams       *teamrepo.MockTeam
 	activity    *activityrepo.MockActivity
 	notify      *notificationeventrepo.MockNotificationEvent
+	events      *eventsvc.MockEvents
 	followers   *issuefollowerrepo.MockIssueFollower
 	authorizer  *authorizersvc.MockAuthorizer
 	service     service.IssueComments
@@ -55,6 +57,7 @@ func newHarness(t *testing.T) *harness {
 		teams:       teamrepo.NewMockTeam(ctrl),
 		activity:    activityrepo.NewMockActivity(ctrl),
 		notify:      notificationeventrepo.NewMockNotificationEvent(ctrl),
+		events:      eventsvc.NewMockEvents(ctrl),
 		followers:   issuefollowerrepo.NewMockIssueFollower(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID: uuid.New(),
@@ -74,11 +77,12 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = issuecommentsvc.New(
-		h.comments, h.attachments, h.issues, h.teams, h.activity, h.notify, h.followers,
+		h.comments, h.attachments, h.issues, h.teams, h.activity, h.notify, h.events, h.followers,
 		h.authorizer, transactor,
 	)
 
 	h.notify.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.events.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()
 	h.followers.EXPECT().Follow(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	return h

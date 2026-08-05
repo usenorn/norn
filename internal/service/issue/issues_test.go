@@ -29,6 +29,7 @@ import (
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 )
 
@@ -45,6 +46,7 @@ type harness struct {
 	teams       *teamrepo.MockTeam
 	triage      *triagerepo.MockTriage
 	notify      *notificationeventrepo.MockNotificationEvent
+	events      *eventsvc.MockEvents
 	followers   *issuefollowerrepo.MockIssueFollower
 	jobs        *jobqueuerepo.MockJobProducer
 	transactor  *transactorrepo.MockTransactor
@@ -70,6 +72,7 @@ func newHarness(t *testing.T) *harness {
 		teams:       teamrepo.NewMockTeam(ctrl),
 		triage:      triagerepo.NewMockTriage(ctrl),
 		notify:      notificationeventrepo.NewMockNotificationEvent(ctrl),
+		events:      eventsvc.NewMockEvents(ctrl),
 		followers:   issuefollowerrepo.NewMockIssueFollower(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
@@ -85,7 +88,7 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = issuesvc.New(
 		h.issues, h.states, h.activity, h.labels, h.accounts, h.memberships,
-		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.followers,
+		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.events, h.followers,
 		h.jobs, h.authorizer, h.transactor,
 	)
 
@@ -95,6 +98,7 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.notify.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.events.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()
 	h.followers.EXPECT().Follow(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	return h
