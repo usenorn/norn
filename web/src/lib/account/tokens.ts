@@ -70,6 +70,10 @@ export const scopeLabels: Record<string, string> = {
 	"label:manage": "Create and change labels",
 	"project:read": "Read projects",
 	"project:manage": "Create and change projects",
+	"comment:read": "Read comments",
+	"comment:manage": "Leave comments",
+	"notification:read": "Read your inbox",
+	"notification:manage": "Mark your inbox as read",
 };
 
 export function writes(scope: APIScope): boolean {

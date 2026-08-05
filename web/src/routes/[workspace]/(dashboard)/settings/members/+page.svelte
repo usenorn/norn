@@ -537,6 +537,10 @@
 											{memberName(member)}
 										</span>
 
+										{#if member.kind === "agent"}
+											<Tag name="Agent" />
+										{/if}
+
 										{#if member.accountId === viewerId}
 											<Tag name="You" />
 										{:else if isDirectoryManaged(member)}

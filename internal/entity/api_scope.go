@@ -46,6 +46,10 @@ var apiScopeCatalog = []APIScope{
 	NewAPIScope(ResourceLabel, ActionManage),
 	NewAPIScope(ResourceProject, ActionRead),
 	NewAPIScope(ResourceProject, ActionManage),
+	NewAPIScope(ResourceComment, ActionRead),
+	NewAPIScope(ResourceComment, ActionManage),
+	NewAPIScope(ResourceNotification, ActionRead),
+	NewAPIScope(ResourceNotification, ActionManage),
 }
 
 func APIScopes() []APIScope {

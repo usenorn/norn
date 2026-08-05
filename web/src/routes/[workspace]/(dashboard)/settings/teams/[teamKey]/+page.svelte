@@ -16,6 +16,7 @@
 	import WorkflowStates from "$lib/components/norn/workflow-states.svelte";
 	import CycleCadence from "$lib/team/cycle-cadence.svelte";
 	import TeamNotifications from "$lib/notifications/team-notifications.svelte";
+	import TeamAgents from "$lib/team/team-agents.svelte";
 	import TeamTriage from "$lib/team/team-triage.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
@@ -557,6 +558,13 @@
 					workspace={data.workspace}
 					{team}
 					setting={triage}
+					locked={busy || archived || readOnly}
+				/>
+
+				<TeamAgents
+					workspace={data.workspace}
+					{team}
+					settings={data.agents}
 					locked={busy || archived || readOnly}
 				/>
 
