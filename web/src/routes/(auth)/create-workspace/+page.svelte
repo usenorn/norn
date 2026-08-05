@@ -170,7 +170,7 @@
 
 <div class="my-auto flex w-full flex-col items-center gap-4">
 	<div class="notch w-full max-w-105">
-		<div class="flex flex-col gap-5 p-5 sm:p-6">
+		<div class="flex flex-col gap-5 p-6.5">
 			<div class="flex flex-col gap-1.5">
 				<Eyebrow>{eyebrow}</Eyebrow>
 				<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>
@@ -182,7 +182,7 @@
 					id="create-workspace-form"
 					method="POST"
 					use:enhance
-					class="flex flex-col gap-4"
+					class="flex flex-col gap-4.5"
 				>
 					<Form.Field {form} name="name">
 						<Form.Control>
@@ -308,16 +308,16 @@
 							{/if}
 						</div>
 					{:else}
-						<p class="text-sm leading-normal text-muted-foreground">
-							Issues in this team are numbered
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							Issues in this team will be numbered
 							<span class="font-mono text-ink-600">{$formData.teamKey || "MOB"}-1</span>,
 							<span class="font-mono text-ink-600">{$formData.teamKey || "MOB"}-2</span>, and so on.
-							The key is permanent.
+							Add more teams whenever you need them.
 						</p>
 					{/if}
 				</form>
 			{:else}
-				<div class="flex flex-col gap-2" aria-live="polite">
+				<div class="flex flex-col gap-2.5" aria-live="polite">
 					<Progress indeterminate aria-label="Creating workspace" />
 					<StepList {steps} />
 				</div>
