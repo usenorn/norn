@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
+	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
@@ -16,10 +16,9 @@
 	import { goto } from "$app/navigation";
 	import { api } from "$lib/api";
 	import { signInSchema } from "$lib/auth/sign-in-schema";
-	import { workspaceEntrySchema } from "$lib/auth/workspace-entry-schema";
 	import { signInFailure } from "$lib/auth/sign-in";
 	import type { SignInFailure } from "$lib/auth/types";
-	import { ssoEntryPoint, workspaceSlug } from "$lib/auth/workspace-sign-in";
+	import { ssoEntryPoint } from "$lib/auth/workspace-sign-in";
 	import { signInPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -72,37 +71,6 @@
 		},
 	});
 	const { form: formData, enhance, submitting } = form;
-
-	let asking = $state(false);
-
-	const entryForm = superForm(defaults(zod4(workspaceEntrySchema)), {
-		id: "workspace-entry",
-		SPA: true,
-		validators: zod4Client(workspaceEntrySchema),
-		resetForm: false,
-		onUpdate: async ({ form: asked }) => {
-			if (!asked.valid) return;
-
-			const slug = workspaceSlug(asked.data.workspace);
-
-			if (!slug) {
-				setError(asked, "workspace", "Enter the workspace address you sign in at.");
-
-				return;
-			}
-
-			await goto(`/sign-in?workspace=${slug}`, { invalidateAll: true });
-		},
-	});
-
-	const { form: entryData, enhance: entryEnhance, submitting: asking$ } = entryForm;
-
-	$effect(() => {
-		if (entry.kind === "unknown") {
-			asking = true;
-			entryData.set({ workspace: entry.workspace }, { taint: false });
-		}
-	});
 
 	const showSso = $derived(workspace ? workspace.sso : Boolean(auth.sso));
 	const showPassword = $derived(workspace ? workspace.password : auth.password);
@@ -314,40 +282,12 @@
 			{/if}
 
 			{#if !showSso}
-				{#if asking}
-					<form method="POST" use:entryEnhance class="flex flex-col gap-2">
-						<Form.Field form={entryForm} name="workspace">
-							<Form.Control>
-								{#snippet children({ props })}
-									<Form.Label>Workspace address</Form.Label>
-									<Input
-										{...props}
-										autocapitalize="none"
-										spellcheck="false"
-										placeholder="northwind"
-										disabled={$asking$}
-										bind:value={$entryData.workspace}
-									/>
-								{/snippet}
-							</Form.Control>
-							<Form.Description>
-								The address your team signs in at, like {auth.host}/northwind.
-							</Form.Description>
-							<Form.FieldErrors />
-						</Form.Field>
-						<Form.Button variant="secondary" class="w-full" disabled={$asking$}>
-							{$asking$ ? "Looking" : "Continue"}
-						</Form.Button>
-					</form>
-				{:else}
-					<button
-						type="button"
-						onclick={() => (asking = true)}
-						class="cursor-pointer text-center text-sm text-link hover:text-link-hover hover:underline"
-					>
-						Sign in with single sign-on
-					</button>
-				{/if}
+				<a
+					href="/sign-in/sso"
+					class="text-center text-sm text-link hover:text-link-hover hover:underline"
+				>
+					Sign in with single sign-on
+				</a>
 			{/if}
 		</div>
 	</div>
