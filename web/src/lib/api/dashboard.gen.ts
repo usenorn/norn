@@ -2645,6 +2645,8 @@ export interface components {
             clearAssignee?: boolean;
             /** Format: uuid */
             addLabelId?: string;
+            /** Format: uuid */
+            cycleId?: string;
             priority?: components["schemas"]["IssuePriority"];
             status?: components["schemas"]["IssueStatus"];
         };
@@ -3548,6 +3550,14 @@ export interface components {
             estimate?: number;
             /** Format: date */
             dueOn?: string;
+            /**
+             * Format: uuid
+             * @description A state on the team; absent files the issue into the team's default state
+             */
+            stateId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            labelIds?: string[];
         };
         /** @enum {string} */
         AccountKind: "person" | "agent";

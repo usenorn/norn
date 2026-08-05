@@ -119,13 +119,14 @@ type BulkChange struct {
 	AssigneeID *uuid.UUID
 	Priority   *IssuePriority
 	AddLabelID *uuid.UUID
+	CycleID    *uuid.UUID
 	Status     *IssueStatus
 
 	ClearAssignee bool
 }
 
 func (c BulkChange) Touched() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 
 	if c.StateID != nil {
 		fields = append(fields, IssueFieldState)
@@ -141,6 +142,10 @@ func (c BulkChange) Touched() []string {
 
 	if c.AddLabelID != nil {
 		fields = append(fields, IssueFieldLabels)
+	}
+
+	if c.CycleID != nil {
+		fields = append(fields, IssueFieldCycle)
 	}
 
 	if c.Status != nil {

@@ -4589,6 +4589,7 @@ components:
         assigneeId: { type: string, format: uuid }
         clearAssignee: { type: boolean }
         addLabelId: { type: string, format: uuid }
+        cycleId: { type: string, format: uuid }
         priority: { $ref: '#/components/schemas/IssuePriority' }
         status: { $ref: '#/components/schemas/IssueStatus' }
 
@@ -5955,6 +5956,14 @@ components:
         assigneeId: { type: string, format: uuid }
         estimate: { type: integer, format: int32 }
         dueOn: { type: string, format: date }
+        stateId:
+          type: string
+          format: uuid
+          description: A state on the team; absent files the issue into the team's default state
+        projectId: { type: string, format: uuid }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
 
     AccountKind:
       type: string

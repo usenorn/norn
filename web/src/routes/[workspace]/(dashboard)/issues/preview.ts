@@ -1,6 +1,9 @@
 import type { Issue, IssueProgress } from "$lib/issues/board";
+import type { Display } from "$lib/issues/display";
+import type { Facets } from "$lib/issues/facets";
 import type { WorkflowState } from "$lib/team/states";
 import type { Team } from "$lib/team/teams";
+import type { Label } from "$lib/labels/labels";
 import type { Member } from "./+page";
 import type { BulkActionResult } from "$lib/issues/bulk";
 import type { IssueGroupTally } from "$lib/issues/filter";
@@ -10,11 +13,15 @@ export type IssuesPreview = {
 	bulk?: BulkActionResult;
 	states?: WorkflowState[];
 	issues?: Issue[];
+	labels?: Label[];
 	nextCursor?: string;
 	groups?: IssueGroupTally[];
+	totals?: IssueGroupTally[];
 	paging?: { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
 	progress?: IssueProgress;
 	members?: Member[];
+	facets?: Facets;
+	display?: Display;
 };
 
 export const issuesPreviewStates: Record<string, IssuesPreview> = import.meta.env.DEV
@@ -82,6 +89,199 @@ export const issuesPreviewStates: Record<string, IssuesPreview> = import.meta.en
 				issues: [],
 				members: [],
 				progress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
+			},
+			no_matches: {
+				team: {
+					id: "00000000-0000-4000-8000-000000000101",
+					workspaceId: "00000000-0000-4000-8000-000000000000",
+					key: "MOB",
+					name: "Mobile",
+					visibility: "public",
+					status: "active",
+					createdAt: "2026-01-04T09:00:00Z",
+				},
+				states: [
+					{
+						id: "00000000-0000-4000-8000-000000000303",
+						teamId: "00000000-0000-4000-8000-000000000101",
+						name: "In progress",
+						category: "active",
+						position: 3,
+						isDefault: false,
+						isCompletion: false,
+					},
+				],
+				issues: [],
+				members: [],
+				facets: { priority: "urgent", assignee: "none" },
+				progress: { notStarted: 12, active: 4, complete: 8, abandoned: 0 },
+			},
+			grouped: {
+				team: {
+					id: "00000000-0000-4000-8000-000000000102",
+					workspaceId: "00000000-0000-4000-8000-000000000000",
+					key: "DSG",
+					name: "Design",
+					visibility: "public",
+					status: "active",
+					createdAt: "2026-02-11T09:00:00Z",
+				},
+				states: [
+					{
+						id: "00000000-0000-4000-8000-000000000402",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Ready",
+						category: "not_started",
+						position: 2,
+						isDefault: true,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000403",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Sketching",
+						category: "active",
+						position: 3,
+						isDefault: false,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000405",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Shipped",
+						category: "complete",
+						position: 5,
+						isDefault: false,
+						isCompletion: true,
+					},
+				],
+				labels: [
+					{
+						id: "00000000-0000-4000-8000-000000000701",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						name: "Needs spec",
+						color: "cyan",
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000702",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						name: "Blocker",
+						color: "magenta",
+					},
+				],
+				members: [
+					{
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						accountId: "00000000-0000-4000-8000-000000000801",
+						role: "member",
+						source: "manual",
+						displayName: "Rae Okafor",
+						email: "rae@northwind.co",
+					},
+					{
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						accountId: "00000000-0000-4000-8000-000000000802",
+						role: "member",
+						source: "manual",
+						displayName: "Jun Park",
+						email: "jun@northwind.co",
+					},
+				],
+				display: {
+					grouping: "priority",
+					ordering: "priority",
+					shown: ["labels", "due"],
+					showEmpty: true,
+				},
+				issues: [
+					{
+						id: "00000000-0000-4000-8000-000000000501",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "urgent",
+						assigneeAccountId: "00000000-0000-4000-8000-000000000801",
+						dueOn: "2026-08-04",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000403",
+							name: "Sketching",
+							category: "active",
+							position: 3,
+						},
+						labels: [
+							{
+								id: "00000000-0000-4000-8000-000000000702",
+								workspaceId: "00000000-0000-4000-8000-000000000000",
+								name: "Blocker",
+								color: "magenta",
+							},
+						],
+						number: 14,
+						reference: "DSG-14",
+						title: "Rework the empty states across settings",
+						createdAt: "2026-07-30T09:00:00Z",
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000502",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "medium",
+						assigneeAccountId: "00000000-0000-4000-8000-000000000802",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000402",
+							name: "Ready",
+							category: "not_started",
+							position: 2,
+						},
+						labels: [
+							{
+								id: "00000000-0000-4000-8000-000000000701",
+								workspaceId: "00000000-0000-4000-8000-000000000000",
+								name: "Needs spec",
+								color: "cyan",
+							},
+						],
+						number: 15,
+						reference: "DSG-15",
+						title: "Audit contrast on the dusk theme",
+						createdAt: "2026-07-31T09:00:00Z",
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000503",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "none",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000405",
+							name: "Shipped",
+							category: "complete",
+							position: 5,
+						},
+						labels: [],
+						number: 12,
+						reference: "DSG-12",
+						title: "Board column collapse state",
+						createdAt: "2026-07-27T09:00:00Z",
+					},
+				],
+				progress: { notStarted: 1, active: 1, complete: 1, abandoned: 0 },
 			},
 			renamed: {
 				team: {

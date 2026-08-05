@@ -11,6 +11,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	bulkrepo "github.com/usenorn/norn/internal/repository/bulkaction"
+	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
@@ -23,15 +24,17 @@ import (
 )
 
 type harness struct {
-	actions    *bulkrepo.MockBulkAction
-	issues     *issuerepo.MockIssue
-	states     *workflowstaterepo.MockWorkflowState
-	labels     *labelrepo.MockLabel
-	activity   *activityrepo.MockActivity
-	members    *membershiprepo.MockMembership
-	jobs       *jobqueuerepo.MockJobProducer
-	authorizer *authorizersvc.MockAuthorizer
-	service    service.BulkOperations
+	actions      *bulkrepo.MockBulkAction
+	issues       *issuerepo.MockIssue
+	states       *workflowstaterepo.MockWorkflowState
+	labels       *labelrepo.MockLabel
+	activity     *activityrepo.MockActivity
+	members      *membershiprepo.MockMembership
+	cycles       *cyclerepo.MockCycle
+	scopeChanges *cyclerepo.MockCycleScopeChange
+	jobs         *jobqueuerepo.MockJobProducer
+	authorizer   *authorizersvc.MockAuthorizer
+	service      service.BulkOperations
 }
 
 func newHarness(t *testing.T, scope entity.TeamScope) *harness {
@@ -46,14 +49,16 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 		AnyTimes()
 
 	h := &harness{
-		actions:    bulkrepo.NewMockBulkAction(ctrl),
-		issues:     issuerepo.NewMockIssue(ctrl),
-		states:     workflowstaterepo.NewMockWorkflowState(ctrl),
-		labels:     labelrepo.NewMockLabel(ctrl),
-		activity:   activityrepo.NewMockActivity(ctrl),
-		members:    membershiprepo.NewMockMembership(ctrl),
-		jobs:       jobqueuerepo.NewMockJobProducer(ctrl),
-		authorizer: authorizersvc.NewMockAuthorizer(ctrl),
+		actions:      bulkrepo.NewMockBulkAction(ctrl),
+		issues:       issuerepo.NewMockIssue(ctrl),
+		states:       workflowstaterepo.NewMockWorkflowState(ctrl),
+		labels:       labelrepo.NewMockLabel(ctrl),
+		activity:     activityrepo.NewMockActivity(ctrl),
+		members:      membershiprepo.NewMockMembership(ctrl),
+		cycles:       cyclerepo.NewMockCycle(ctrl),
+		scopeChanges: cyclerepo.NewMockCycleScopeChange(ctrl),
+		jobs:         jobqueuerepo.NewMockJobProducer(ctrl),
+		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
 	}
 
 	h.authorizer.EXPECT().
@@ -65,7 +70,8 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 		AnyTimes()
 
 	h.service = bulksvc.New(
-		h.actions, h.issues, h.states, h.labels, h.activity, h.members, h.jobs, h.authorizer, tx,
+		h.actions, h.issues, h.states, h.labels, h.activity, h.members,
+		h.cycles, h.scopeChanges, h.jobs, h.authorizer, tx,
 	)
 
 	return h
@@ -336,6 +342,96 @@ func TestEveryChangeAnIssueReceivesIsAttributedToTheOneBulkAction(t *testing.T) 
 				issue.ID, attributed[issue.ID], actionID,
 			)
 		}
+	}
+}
+
+func TestMovingABatchIntoACycleCountsAsScopeAddedToAStartedCycle(t *testing.T) {
+	workspaceID, teamID, cycleID := uuid.New(), uuid.New(), uuid.New()
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true})
+
+	issue := issueOn(teamID, 1)
+
+	h.expectAction(workspaceID, ptr(1))
+	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, issue.ID, gomock.Any()).Return(issue, nil)
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, cycleID, gomock.Any()).
+		Return(entity.Cycle{
+			ID: cycleID, WorkspaceID: workspaceID, TeamID: teamID, Number: 24, StartsOn: "2020-01-01",
+		}, nil)
+
+	var joined *uuid.UUID
+
+	h.issues.EXPECT().
+		Update(gomock.Any(), issue.ID, 1, gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, _ int, change entity.IssueChange, _ *entity.StateTimestamps, _ time.Time) error {
+			joined = change.CycleID
+
+			return nil
+		})
+
+	var recorded entity.CycleScopeChange
+
+	h.scopeChanges.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, change entity.CycleScopeChange) error {
+			recorded = change
+
+			return nil
+		})
+
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().RecordOutcomes(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Advance(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Claim(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.actions.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	if _, err := h.service.Apply(context.Background(), workspaceID, service.ApplyBulkInput{
+		Change: entity.BulkChange{CycleID: &cycleID},
+		Set:    entity.BulkSet{IssueIDs: []uuid.UUID{issue.ID}},
+	}); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	if joined == nil || *joined != cycleID {
+		t.Fatalf("the issue joined %v, want cycle %v", joined, cycleID)
+	}
+
+	if recorded.CycleID != cycleID || recorded.Change != entity.CycleScopeChangeAdded {
+		t.Fatalf(
+			"scope change = %+v, want work added to cycle %v. A cycle already under way has to "+
+				"show what arrived after it started.",
+			recorded, cycleID,
+		)
+	}
+}
+
+func TestAnIssueIsRefusedACycleBelongingToAnotherTeamWithoutFailingTheBatch(t *testing.T) {
+	workspaceID, mine, theirs, cycleID := uuid.New(), uuid.New(), uuid.New(), uuid.New()
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true})
+
+	issue := issueOn(mine, 1)
+
+	h.expectAction(workspaceID, ptr(1))
+	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, issue.ID, gomock.Any()).Return(issue, nil)
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, cycleID, gomock.Any()).
+		Return(entity.Cycle{ID: cycleID, WorkspaceID: workspaceID, TeamID: theirs, Number: 24}, nil)
+
+	h.actions.EXPECT().RecordOutcomes(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Advance(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Claim(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.actions.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	result, err := h.service.Apply(context.Background(), workspaceID, service.ApplyBulkInput{
+		Change: entity.BulkChange{CycleID: &cycleID},
+		Set:    entity.BulkSet{IssueIDs: []uuid.UUID{issue.ID}},
+	})
+	if err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	if len(result.Outcomes) != 1 || result.Outcomes[0].Outcome == entity.BulkOutcomeApplied {
+		t.Fatalf("outcomes = %+v, want the one issue reported as not applied", result.Outcomes)
 	}
 }
 

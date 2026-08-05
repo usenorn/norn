@@ -2836,6 +2836,7 @@ type BulkChange struct {
 	AddLabelId    *openapi_types.UUID `json:"addLabelId,omitempty"`
 	AssigneeId    *openapi_types.UUID `json:"assigneeId,omitempty"`
 	ClearAssignee *bool               `json:"clearAssignee,omitempty"`
+	CycleId       *openapi_types.UUID `json:"cycleId,omitempty"`
 	Priority      *IssuePriority      `json:"priority,omitempty"`
 	StateId       *openapi_types.UUID `json:"stateId,omitempty"`
 	Status        *IssueStatus        `json:"status,omitempty"`
@@ -2949,13 +2950,18 @@ type CreateInvitationsRequest struct {
 
 // CreateIssueRequest defines model for CreateIssueRequest.
 type CreateIssueRequest struct {
-	AssigneeId  *openapi_types.UUID `json:"assigneeId,omitempty"`
-	Description *string             `json:"description,omitempty"`
-	DueOn       *openapi_types.Date `json:"dueOn,omitempty"`
-	Estimate    *int32              `json:"estimate,omitempty"`
-	Priority    *IssuePriority      `json:"priority,omitempty"`
-	TeamId      openapi_types.UUID  `json:"teamId"`
-	Title       string              `json:"title"`
+	AssigneeId  *openapi_types.UUID   `json:"assigneeId,omitempty"`
+	Description *string               `json:"description,omitempty"`
+	DueOn       *openapi_types.Date   `json:"dueOn,omitempty"`
+	Estimate    *int32                `json:"estimate,omitempty"`
+	LabelIds    *[]openapi_types.UUID `json:"labelIds,omitempty"`
+	Priority    *IssuePriority        `json:"priority,omitempty"`
+	ProjectId   *openapi_types.UUID   `json:"projectId,omitempty"`
+
+	// StateId A state on the team; absent files the issue into the team's default state
+	StateId *openapi_types.UUID `json:"stateId,omitempty"`
+	TeamId  openapi_types.UUID  `json:"teamId"`
+	Title   string              `json:"title"`
 }
 
 // CreateLabelRequest defines model for CreateLabelRequest.

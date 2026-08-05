@@ -1,5 +1,6 @@
-import type { IssueQueryBody } from "$lib/issues/filter";
+import type { IssueFilter, IssueQueryBody } from "$lib/issues/filter";
 import { allOf, issuePageSize, tabFilter, teamFilter } from "$lib/issues/filter";
+import { groupByFor, sortFor, type Grouping, type Ordering } from "$lib/issues/display";
 import type { IssueTab } from "$lib/issues/board";
 import type { Team } from "$lib/team/teams";
 import type { SavedView, ViewReference } from "./views";
@@ -48,26 +49,40 @@ function collectTeams(filter: SavedView["filter"] | undefined, into: Set<string>
 	}
 }
 
+export type QueryShaping = {
+	filters?: IssueFilter[];
+	sort?: Ordering;
+	grouping?: Grouping;
+	backlogStateIds?: string[];
+};
+
 export function viewQuery(
 	applied: AppliedView,
 	tab: IssueTab,
 	teamId: string | null,
-	text = ""
+	text = "",
+	shaping: QueryShaping = {}
 ): IssueQueryBody {
+	const extra = shaping.filters ?? [];
+	const chosen = shaping.sort ? sortFor(shaping.sort) : undefined;
+
 	if (applied.kind !== "applied") {
 		return {
 			text: text || undefined,
-			filter: allOf(teamId ? teamFilter(teamId) : undefined, tabFilter(tab)),
-			groupBy: "state",
+			filter: allOf(teamId ? teamFilter(teamId) : undefined, tabFilter(tab, shaping.backlogStateIds), ...extra),
+			sort: chosen,
+			groupBy: groupByFor(shaping.grouping ?? "state"),
 			limit: issuePageSize,
 		};
 	}
 
 	return {
 		text: text || undefined,
-		filter: allOf(applied.view.filter, tabFilter(tab)),
-		sort: applied.view.sort.length > 0 ? applied.view.sort : undefined,
-		groupBy: applied.view.groupBy ?? "state",
+		filter: allOf(applied.view.filter, tabFilter(tab, shaping.backlogStateIds), ...extra),
+		sort: chosen ?? (applied.view.sort.length > 0 ? applied.view.sort : undefined),
+		groupBy: shaping.grouping
+			? groupByFor(shaping.grouping)
+			: (applied.view.groupBy ?? "state"),
 		limit: issuePageSize,
 	};
 }
