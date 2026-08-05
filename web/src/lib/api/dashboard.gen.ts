@@ -808,6 +808,128 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the agents registered in this workspace */
+        get: operations["listWorkspaceAgents"];
+        put?: never;
+        /** Register an agent that acts under a person's authority */
+        post: operations["registerWorkspaceAgent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one agent */
+        get: operations["getWorkspaceAgent"];
+        put?: never;
+        post?: never;
+        /** Disable an agent at once, keeping everything it has already done */
+        delete: operations["disableWorkspaceAgent"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Everything this agent has done, across every issue and project */
+        get: operations["listWorkspaceAgentActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/agent-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which agent actions this team holds for a person to approve */
+        get: operations["getTeamAgentSettings"];
+        /** Choose which agent actions this team holds */
+        put: operations["setTeamAgentSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Agent actions waiting for a person to approve them */
+        get: operations["listWorkspaceAgentProposals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-proposals/{proposalId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Let a held agent action take effect, still attributed to the agent */
+        post: operations["approveWorkspaceAgentProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-proposals/{proposalId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuse a held agent action so nothing is applied */
+        post: operations["rejectWorkspaceAgentProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/tokens": {
         parameters: {
             query?: never;
@@ -2985,6 +3107,96 @@ export interface components {
             /** Format: date */
             dueOn?: string;
         };
+        /** @enum {string} */
+        AccountKind: "person" | "agent";
+        /** @enum {string} */
+        AgentStatus: "active" | "disabled";
+        Agent: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            accountId: string;
+            /** Format: uuid */
+            ownerAccountId: string;
+            name: string;
+            status: components["schemas"]["AgentStatus"];
+            /**
+             * Format: int32
+             * @description Actions this agent may take per minute.
+             */
+            actionLimit: number;
+            /** Format: date-time */
+            disabledAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        WorkspaceAgent: {
+            agent: components["schemas"]["Agent"];
+            ownerName: string;
+            ownerEmail: string;
+        };
+        RegisterAgentRequest: {
+            name: string;
+            /**
+             * Format: uuid
+             * @description Defaults to whoever is registering it.
+             */
+            ownerAccountId?: string;
+            scopes: components["schemas"]["APIScope"][];
+            allTeams: boolean;
+            teamIds?: string[];
+            /** Format: int32 */
+            actionLimit?: number;
+        };
+        RegisteredAgent: {
+            agent: components["schemas"]["Agent"];
+            value: string;
+        };
+        AgentSettings: {
+            holdComments: boolean;
+            holdStateChanges: boolean;
+            holdIssueEdits: boolean;
+        };
+        /** @enum {string} */
+        AgentAction: "comment" | "state_change" | "issue_edit";
+        /** @enum {string} */
+        AgentProposalStatus: "pending" | "rejected" | "applied" | "failed";
+        AgentProposal: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            agentId: string;
+            agentName: string;
+            /** Format: uuid */
+            issueId: string;
+            /** Format: uuid */
+            teamId: string;
+            action: components["schemas"]["AgentAction"];
+            status: components["schemas"]["AgentProposalStatus"];
+            body?: string;
+            /** Format: uuid */
+            stateId?: string;
+            title?: string;
+            /** Format: uuid */
+            decidedByAccountId?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            failure?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AgentUnusableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "agent_name_taken" | "agent_owner_invalid" | "agent_disabled" | "agent_proposal_settled";
+        };
+        AgentHeldProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "agent_action_held";
+            /** Format: uuid */
+            proposalId: string;
+        };
         APIScope: string;
         APITokenGrant: {
             /** Format: uuid */
@@ -3188,6 +3400,7 @@ export interface components {
             accountId: string;
             role: components["schemas"]["MembershipRole"];
             source: components["schemas"]["MembershipSource"];
+            kind?: components["schemas"]["AccountKind"];
             displayName?: string;
             email?: string;
             /** Format: date-time */
@@ -3675,6 +3888,24 @@ export interface components {
                 "application/problem+json": components["schemas"]["ResetLinkUsedProblem"];
             };
         };
+        /** @description The agent cannot be registered or its proposal cannot be decided */
+        AgentUnusable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["AgentUnusableProblem"];
+            };
+        };
+        /** @description The action is waiting for a person to approve it */
+        AgentHeld: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["AgentHeldProblem"];
+            };
+        };
         /** @description The token name is taken, or its scopes exceed the caller's rights */
         APITokenUnusable: {
             headers: {
@@ -3861,6 +4092,8 @@ export interface components {
         AccountId: string;
         InvitationId: string;
         TokenId: string;
+        AgentId: string;
+        ProposalId: string;
         StateId: string;
         IssueId: string;
         CycleId: string;
@@ -5571,6 +5804,283 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
+    listWorkspaceAgents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workspace's agents, with the people they act for */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAgent"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    registerWorkspaceAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterAgentRequest"];
+            };
+        };
+        responses: {
+            /** @description The agent, carrying its credential for the only time */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisteredAgent"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["AgentUnusable"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAgent"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    disableWorkspaceAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agent was disabled and its credentials revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceAgentActivity: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["ActivityLimit"];
+                cursor?: components["parameters"]["ActivityCursor"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agent's record */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getTeamAgentSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team's settings, all false when it has never configured agents */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setTeamAgentSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentSettings"];
+            };
+        };
+        responses: {
+            /** @description The saved settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceAgentProposals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What is waiting */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentProposal"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    approveWorkspaceAgentProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                proposalId: components["parameters"]["ProposalId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The settled proposal, applied or carrying why it could not be */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentProposal"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentUnusable"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    rejectWorkspaceAgentProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                proposalId: components["parameters"]["ProposalId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The rejected proposal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentProposal"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentUnusable"];
+            500: components["responses"]["Problem"];
+        };
+    };
     listWorkspaceAPITokens: {
         parameters: {
             query?: never;
@@ -6788,6 +7298,7 @@ export interface operations {
                     "application/json": components["schemas"]["PostedComment"];
                 };
             };
+            202: components["responses"]["AgentHeld"];
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
@@ -6971,6 +7482,7 @@ export interface operations {
                     "application/json": components["schemas"]["Issue"];
                 };
             };
+            202: components["responses"]["AgentHeld"];
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];

@@ -23,6 +23,7 @@ const (
 	ResourceComment        Resource = "comment"
 	ResourceNotification   Resource = "notification"
 	ResourceAPIToken       Resource = "api_token"
+	ResourceAgent          Resource = "agent"
 	ResourceAuthPolicy     Resource = "auth_policy"
 	ResourceSSOConnection  Resource = "sso_connection"
 	ResourceAccount        Resource = "account"
@@ -91,14 +92,25 @@ const (
 )
 
 type Actor struct {
-	Kind          ActorKind
-	AccountID     uuid.UUID
-	TokenID       *uuid.UUID
-	TokenName     string
-	Grants        APITokenGrants
-	AuthMethod    SessionAuthMethod
-	Scopes        APIScopeSet
-	InstanceAdmin bool
+	Kind           ActorKind
+	AccountID      uuid.UUID
+	AgentID        *uuid.UUID
+	AgentAllowance int
+	OwnerAccountID uuid.UUID
+	TokenID        *uuid.UUID
+	TokenName      string
+	Grants         APITokenGrants
+	AuthMethod     SessionAuthMethod
+	Scopes         APIScopeSet
+	InstanceAdmin  bool
+}
+
+func (a Actor) Authority() uuid.UUID {
+	if a.OwnerAccountID != uuid.Nil {
+		return a.OwnerAccountID
+	}
+
+	return a.AccountID
 }
 
 func UserActor(session Session) Actor {
@@ -113,8 +125,6 @@ func (a Actor) Anonymous() bool {
 	return a.AccountID == uuid.Nil
 }
 
-// ConfinedTo reports whether this actor may act in a workspace at all. A nil grant list is a session
-// actor, which is confined by membership rather than by anything carried on the actor.
 func (a Actor) ConfinedTo(workspaceID uuid.UUID) bool {
 	return a.Grants == nil || a.Grants.Covers(workspaceID)
 }
@@ -127,9 +137,6 @@ func (a Actor) Holds(permission Permission) bool {
 	return a.Scopes.Permits(permission.Resource, permission.Action)
 }
 
-// NarrowScope intersects a scope resolved from the owner's memberships with what this actor's grant
-// allows in that workspace. A token can only ever see less than its owner, never more, so the grant
-// narrows the resolved scope and is never substituted for it.
 func (a Actor) NarrowScope(scope TeamScope) TeamScope {
 	grant, ok := a.Grants.For(scope.WorkspaceID)
 	if !ok || grant.AllTeams {
@@ -160,10 +167,6 @@ type AccessRequest struct {
 	Scoped      bool
 }
 
-// TeamScope carries two independent questions. AllTeams says the holder reaches every team in the
-// workspace; IncludePrivate says they may see private ones. An admin holding both is the common
-// case, but a token pinned to named teams keeps the second while losing the first, so they cannot
-// be collapsed into one field.
 type TeamScope struct {
 	WorkspaceID    uuid.UUID
 	AllTeams       bool
@@ -182,8 +185,6 @@ type Decision struct {
 	Scope     TeamScope
 }
 
-// ActivityAttribution is who a record says did something. A token acts for its owner, so both are
-// carried: the account answers "whose authority" and the token answers "which credential".
 type ActivityAttribution struct {
 	AccountID uuid.UUID
 	Kind      ActorKind
@@ -222,6 +223,8 @@ const (
 	DenyReasonInstanceAdminRequired  DenyReason = "instance_admin_required"
 	DenyReasonNotSelf                DenyReason = "not_self"
 	DenyReasonUnknownRole            DenyReason = "unknown_role"
+	DenyReasonAgentRateLimited       DenyReason = "agent_rate_limited"
+	DenyReasonAgentDisabled          DenyReason = "agent_disabled"
 )
 
 func (r DenyReason) Conceals() bool {
@@ -234,7 +237,9 @@ func (r DenyReason) Disclosed() bool {
 		DenyReasonAuthMethodNotPermitted,
 		DenyReasonTokenPermissionMissing,
 		DenyReasonTokenWorkspaceMismatch,
-		DenyReasonInstanceAdminRequired:
+		DenyReasonInstanceAdminRequired,
+		DenyReasonAgentRateLimited,
+		DenyReasonAgentDisabled:
 		return true
 	default:
 		return false
@@ -264,6 +269,10 @@ func (e AccessDeniedError) surface() error {
 	switch {
 	case e.Reason == DenyReasonWorkspaceDeleted:
 		return WorkspaceDeletedError{PurgeAfter: e.PurgeAfter}
+	case e.Reason == DenyReasonAgentRateLimited:
+		return ErrAgentRateLimited
+	case e.Reason == DenyReasonAgentDisabled:
+		return ErrAgentDisabled
 	case e.Reason.Conceals() && e.Resource.Conceals():
 		return e.Resource.NotFound()
 	case e.Reason == DenyReasonAuthMethodNotPermitted:

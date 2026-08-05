@@ -8,9 +8,6 @@ import (
 	"github.com/usenorn/norn/internal/pkg/postgres"
 )
 
-// broadcast queues the comment for connected clients once the transaction has committed. It
-// carries the issue's team because that is what decides who may be shown it, and asking the
-// database for it per recipient would put a query on the delivery path.
 func (s *issueCommentsService) broadcast(
 	ctx context.Context,
 	kind entity.EventKind,

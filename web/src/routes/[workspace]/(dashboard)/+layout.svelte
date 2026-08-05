@@ -67,8 +67,6 @@
 
 	$effect(() => {
 		const stop = realtime.on((event) => {
-			// The open issue and the badges patch themselves from the payload; everything that
-			// depends on a server-evaluated filter asks for a coalesced refetch instead.
 			if (event.kind === "notification.arrived" || event.kind.startsWith("issue.")) {
 				realtime.refetch();
 			}

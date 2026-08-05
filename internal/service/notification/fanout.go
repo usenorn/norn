@@ -244,9 +244,6 @@ func settingsFor(settings []entity.NotificationSettings, accountID uuid.UUID) []
 	return owned
 }
 
-// announce tells each recipient's open connections that something reached their inbox. The event
-// carries no team: a notification is addressed to one account, and that address is what decides
-// who may see it.
 func (s *notificationsService) announce(
 	ctx context.Context,
 	event entity.NotificationEvent,

@@ -26,6 +26,10 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
+	agentrepo "github.com/usenorn/norn/internal/repository/agent"
+	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
+	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
+	agentthrottlerepo "github.com/usenorn/norn/internal/repository/agentthrottle"
 	apitokenrepo "github.com/usenorn/norn/internal/repository/apitoken"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	blobrepo "github.com/usenorn/norn/internal/repository/blob"
@@ -72,6 +76,8 @@ import (
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	workspaceauthpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	accountsvc "github.com/usenorn/norn/internal/service/account"
+	agentsvc "github.com/usenorn/norn/internal/service/agent"
+	agentholdsvc "github.com/usenorn/norn/internal/service/agenthold"
 	apitokensvc "github.com/usenorn/norn/internal/service/apitoken"
 	attachmentsvc "github.com/usenorn/norn/internal/service/attachment"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -146,6 +152,10 @@ var baseSet = wire.NewSet(
 	labelrepo.Set,
 	labelgrouprepo.Set,
 	workflowstaterepo.Set,
+	agentrepo.Set,
+	agentproposalrepo.Set,
+	agentsettingrepo.Set,
+	agentthrottlerepo.Set,
 	apitokenrepo.Set,
 	passwordhistoryrepo.Set,
 	signinthrottlerepo.Set,
@@ -179,6 +189,8 @@ var baseSet = wire.NewSet(
 	triagesvc.Set,
 	labelsvc.Set,
 	workflowstatesvc.Set,
+	agentsvc.Set,
+	agentholdsvc.Set,
 	apitokensvc.Set,
 	sessionsvc.Set,
 	authorizersvc.Set,

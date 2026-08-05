@@ -29,9 +29,6 @@ var (
 	ErrAPITokenGrantMissing  = errors.New("api token must grant access to at least one workspace")
 )
 
-// APITokenGrant is one workspace a token may act in, and how much of it. AllTeams and TeamIDs are
-// the same distinction TeamScope draws: a grant naming teams reaches only those, and a team always
-// belongs to the workspace named beside it, so the two can never contradict each other.
 type APITokenGrant struct {
 	WorkspaceID uuid.UUID
 	AllTeams    bool

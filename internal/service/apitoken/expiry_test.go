@@ -145,8 +145,6 @@ func TestAFailedWarningIsNotRecordedSoTheNextSweepRetries(t *testing.T) {
 		t.Fatal("a warning that could not be sent was reported as a clean sweep")
 	}
 
-	// No RecordExpiryNotice expectation: recording it would mark the owner as warned about
-	// something they were never told, and no later sweep would ever try again.
 }
 
 func TestOneUnreachableOwnerDoesNotStopTheRestBeingWarned(t *testing.T) {

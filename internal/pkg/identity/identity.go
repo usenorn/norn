@@ -9,9 +9,20 @@ import (
 )
 
 type (
-	actorKey   struct{}
-	sessionKey struct{}
+	actorKey    struct{}
+	sessionKey  struct{}
+	approvalKey struct{}
 )
+
+func WithApproval(ctx context.Context) context.Context {
+	return context.WithValue(ctx, approvalKey{}, true)
+}
+
+func Approved(ctx context.Context) bool {
+	approved, _ := ctx.Value(approvalKey{}).(bool)
+
+	return approved
+}
 
 func WithActor(ctx context.Context, actor entity.Actor) context.Context {
 	return context.WithValue(ctx, actorKey{}, actor)

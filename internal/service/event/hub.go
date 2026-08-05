@@ -23,9 +23,6 @@ type subscriber struct {
 	closeOnce    sync.Once
 }
 
-// deliver hands the subscriber one event, or reports that it could not. A subscriber whose buffer
-// is full is not waited for: blocking here would let one stalled reader hold up every other reader
-// on the workspace, so the caller closes it instead and lets the client resume from its own cursor.
 func (s *subscriber) deliver(event entity.Event) bool {
 	scope := s.scope.Load()
 
@@ -45,9 +42,6 @@ func (s *subscriber) deliver(event entity.Event) bool {
 	}
 }
 
-// rescope drops the cached scope so nothing is delivered until it has been resolved again, then
-// asks for that resolution. A membership change can only ever narrow what somebody may see, so the
-// gap has to fail closed rather than keep using the scope the change just invalidated.
 func (s *subscriber) rescope() {
 	s.scope.Store(nil)
 

@@ -14,6 +14,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
+	agentrepo "github.com/usenorn/norn/internal/repository/agent"
 	apitokenrepo "github.com/usenorn/norn/internal/repository/apitoken"
 	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
@@ -65,6 +66,7 @@ func newHarness(t *testing.T) *harness {
 	h.service = apitokensvc.New(
 		h.tokens,
 		h.accounts,
+		agentrepo.NewMockAgent(ctrl),
 		h.workspaces,
 		h.mailer,
 		h.authorizer,
@@ -75,8 +77,6 @@ func newHarness(t *testing.T) *harness {
 	return h
 }
 
-// actingAs makes the authorizer answer the way it would for a caller with these memberships: the
-// self branch carries no workspace, and a workspace the caller is not in is refused.
 func (h *harness) actingAs(kind entity.ActorKind, workspaces map[uuid.UUID]access) context.Context {
 	h.authorizer.EXPECT().
 		Decide(gomock.Any(), gomock.Any()).

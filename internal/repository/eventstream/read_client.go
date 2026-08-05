@@ -10,9 +10,6 @@ import (
 	"github.com/usenorn/norn/internal/pkg/valkey"
 )
 
-// ReadClient is a second Valkey connection whose read timeout is disabled. A blocking XREAD is
-// meant to sit idle for tens of seconds, which the shared client's three-second timeout would
-// tear down as a failure on every quiet interval.
 type ReadClient struct {
 	*valkey.Client
 }

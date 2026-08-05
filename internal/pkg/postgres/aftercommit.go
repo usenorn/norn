@@ -16,10 +16,6 @@ func withCallbacks(ctx context.Context) context.Context {
 	return context.WithValue(ctx, commitKey{}, &callbacks{})
 }
 
-// AfterCommit defers fn until the transaction the context carries has committed, so nothing
-// observes a change that then rolls back. WithTx is re-entrant and a joining caller cannot tell
-// whether it owns the transaction, which is why registration has to be ambient rather than a
-// return value. Outside a transaction there is nothing to wait for and fn runs at once.
 func AfterCommit(ctx context.Context, fn func(context.Context)) {
 	ambient, ok := ctx.Value(commitKey{}).(*callbacks)
 	if !ok {

@@ -21,9 +21,6 @@ func TestAStreamIdentifierOrdersByTimeThenSequence(t *testing.T) {
 }
 
 func TestOnlyACursorTheStreamHasOutrunCountsAsALapse(t *testing.T) {
-	// The oldest surviving entry being newer than the cursor means everything between them was
-	// trimmed. The other direction is an ordinary reconnect and must replay, not resync: getting
-	// this backwards makes every reconnect look like a lapse and silently drops the replay.
 	if !after("200-0", "100-0") {
 		t.Fatal("a cursor the stream has outrun was not recognised as a lapse")
 	}

@@ -38,8 +38,6 @@ const insertGrantQuery = `
 const insertGrantTeamQuery = `
 	INSERT INTO api_token_grant_teams (grant_id, team_id) VALUES ($1, $2)`
 
-// grantsQuery flattens a token's grants and their teams into one row per team, with a null team for
-// a grant that names none. Assembling in Go keeps the token query from multiplying rows.
 const grantsQuery = `
 	SELECT g.token_id, g.workspace_id, g.all_teams, gt.team_id
 	FROM api_token_grants g
@@ -179,6 +177,24 @@ func (r *apiTokenRepository) Revoke(ctx context.Context, tokenID uuid.UUID, revo
 
 	if affected == 0 {
 		return entity.ErrAPITokenNotFound
+	}
+
+	return nil
+}
+
+func (r *apiTokenRepository) RevokeAllByAccount(
+	ctx context.Context,
+	accountID uuid.UUID,
+	revokedAt time.Time,
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx,
+		`UPDATE api_tokens SET revoked_at = $2, updated_at = now()
+		 WHERE account_id = $1 AND revoked_at IS NULL`,
+		accountID.String(),
+		revokedAt,
+	); err != nil {
+		return fmt.Errorf("revoke every api token for an account: %w", err)
 	}
 
 	return nil

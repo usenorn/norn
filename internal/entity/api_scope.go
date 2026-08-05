@@ -96,9 +96,6 @@ func NewAPIScopeSet(values []string) APIScopeSet {
 	return scopes
 }
 
-// AllowedAPIScopesFor is the ceiling a token may be minted with. It reads the same rule the runtime
-// policy is built from, so a token can be granted exactly what its creator may do — no more, and
-// just as importantly no less, which a second hand-maintained rule set would drift into.
 func AllowedAPIScopesFor(role MembershipRole) APIScopeSet {
 	allowed := make(APIScopeSet, 0, len(apiScopeCatalog))
 
@@ -111,16 +108,16 @@ func AllowedAPIScopesFor(role MembershipRole) APIScopeSet {
 	return allowed
 }
 
-// RoleGrants is the authorization policy: what a role may do to a resource. The casbin enforcer is
-// built from it and the token ceiling is derived from it, so the two cannot disagree.
 func RoleGrants(role MembershipRole, resource Resource, action Action) bool {
 	if resource == ResourceWorkspace && action == ActionDelete {
 		return role == MembershipRoleAdmin
 	}
 
-	// Managing tokens in a workspace context is administrative oversight of other people's
-	// credentials. Acting on your own tokens goes through the self branch and never lands here.
 	if resource == ResourceAPIToken {
+		return role == MembershipRoleAdmin
+	}
+
+	if resource == ResourceAgent {
 		return role == MembershipRoleAdmin
 	}
 

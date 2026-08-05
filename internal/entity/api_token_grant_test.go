@@ -124,8 +124,6 @@ func TestTheMintCeilingMatchesWhatTheRoleMayActuallyDo(t *testing.T) {
 		{entity.MembershipRoleMember, entity.NewAPIScope(entity.ResourceIssue, entity.ActionRead), true},
 		{entity.MembershipRoleViewer, entity.NewAPIScope(entity.ResourceIssue, entity.ActionRead), true},
 		{entity.MembershipRoleMember, entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage), false},
-		// A member may manage projects at runtime, so a member must be able to mint a token that
-		// does. The ceiling being stricter than the policy is as much a defect as being looser.
 		{entity.MembershipRoleMember, entity.NewAPIScope(entity.ResourceProject, entity.ActionManage), true},
 		{entity.MembershipRoleViewer, entity.NewAPIScope(entity.ResourceProject, entity.ActionManage), false},
 	} {

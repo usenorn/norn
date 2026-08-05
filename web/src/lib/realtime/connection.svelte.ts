@@ -28,10 +28,8 @@ export type RealtimeEvent = {
 
 export type RealtimeHandler = (event: RealtimeEvent) => void;
 
-/** How long a drop is tolerated before the screen admits it may be showing stale data. */
 export const staleAfterMs = 30_000;
 
-/** Bursts are coalesced so a bulk change is one refetch rather than one per issue. */
 export const refetchWindowMs = 400;
 
 const key = Symbol("norn.realtime");
@@ -79,8 +77,6 @@ export class RealtimeConnection {
 		};
 
 		source.onerror = () => {
-			// A closed source means the browser gave up rather than scheduled a retry, which is
-			// what an instance with live updates turned off looks like from here.
 			if (source.readyState === EventSource.CLOSED) {
 				this.state = "off";
 				clearTimeout(this.#staleTimer);
@@ -88,8 +84,6 @@ export class RealtimeConnection {
 				return;
 			}
 
-			// EventSource reconnects on its own, so a blip must not shout. Only a drop that lasts
-			// long enough for the screen to be plausibly wrong is worth interrupting anybody over.
 			if (this.state !== "stale") this.state = "reconnecting";
 
 			clearTimeout(this.#staleTimer);
@@ -112,18 +106,12 @@ export class RealtimeConnection {
 		this.#source = null;
 	}
 
-	/** Registers a handler for as long as the caller lives; the returned function unregisters it. */
 	on(handler: RealtimeHandler): () => void {
 		this.#handlers.add(handler);
 
 		return () => this.#handlers.delete(handler);
 	}
 
-	/**
-	 * Asks for a refetch, coalescing anything that arrives in the same window. A filtered list
-	 * cannot be patched from an event because only the server knows whether a changed issue still
-	 * belongs in it; the filter language exists as Go that compiles to SQL.
-	 */
 	refetch() {
 		clearTimeout(this.#refetchTimer);
 		this.#refetchTimer = setTimeout(() => void invalidateAll(), refetchWindowMs);

@@ -53,9 +53,6 @@ func (k EventKind) Valid() bool {
 	return slices.Contains(EventKinds(), k)
 }
 
-// Rescopes reports whether receiving this event invalidates a connection's cached team scope.
-// Everything else is checked against that scope in memory, so these are the only events that
-// force the four-query resolution to run again mid-connection.
 func (k EventKind) Rescopes() bool {
 	return k == EventMembershipChanged
 }
@@ -72,9 +69,6 @@ type Event struct {
 	Payload     []byte
 }
 
-// Reaches reports whether this event may be shown to an account holding scope. An event carrying
-// no team belongs to the workspace as a whole; an event addressed to one account reaches nobody
-// else, however wide their scope.
 func (e Event) Reaches(accountID uuid.UUID, scope TeamScope) bool {
 	if e.AccountID != uuid.Nil && e.AccountID != accountID {
 		return false
@@ -131,8 +125,6 @@ func DefaultEventTopics() []EventTopic {
 	return []EventTopic{EventTopicWorkspace, EventTopicInbox}
 }
 
-// topics keeps the zero value meaningful: a subscription that named nothing gets the defaults
-// rather than silently wanting no event at all.
 func (s EventSubscription) topics() []EventTopic {
 	if len(s.Topics) == 0 {
 		return DefaultEventTopics()
@@ -141,8 +133,6 @@ func (s EventSubscription) topics() []EventTopic {
 	return s.Topics
 }
 
-// Wants reports whether a subscription asked for this event. Permission is decided separately and
-// first; this only narrows an already-permitted event to what the screen is showing.
 func (s EventSubscription) Wants(event Event) bool {
 	topics := s.topics()
 

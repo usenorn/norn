@@ -32,7 +32,6 @@ export type TokenFailure =
 
 export type ScopeGroup = { resource: string; title: string; scopes: APIScope[] };
 
-/** Every scope the backend will accept, grouped so a long flat list does not have to be read. */
 export const scopeGroups: ScopeGroup[] = [
 	{ resource: "issue", title: "Issues", scopes: ["issue:read", "issue:manage"] },
 	{ resource: "project", title: "Projects", scopes: ["project:read", "project:manage"] },
@@ -123,7 +122,6 @@ export function failureMessage(failure: TokenFailure): string {
 	}
 }
 
-/** Days before expiry at which a token is worth drawing attention to on the screen. */
 export const expiringSoonDays = 30;
 
 export function daysUntil(expiresAt: string | undefined, now: string): number | null {
