@@ -19,7 +19,6 @@ FROM workspace_memberships m
 JOIN accounts a
     ON a.id = m.account_id
    AND a.status = 'active'
-   AND a.kind <> 'agent'
 LEFT JOIN workspace_teams t ON t.id = $2::uuid AND t.workspace_id = m.workspace_id
 LEFT JOIN workspace_team_members tm ON tm.team_id = t.id AND tm.account_id = m.account_id
 WHERE m.workspace_id = $1

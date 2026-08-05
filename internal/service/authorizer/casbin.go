@@ -29,6 +29,7 @@ var policyResources = []entity.Resource{
 	entity.ResourceComment,
 	entity.ResourceNotification,
 	entity.ResourceAPIToken,
+	entity.ResourceAgent,
 }
 
 var policyActions = []entity.Action{
@@ -74,12 +75,13 @@ type policyEnforcer interface {
 }
 
 type casbinAuthorizer struct {
-	enforcer     policyEnforcer
-	memberships  repository.Membership
-	authPolicies repository.WorkspaceAuthPolicy
-	workspaces   repository.Workspace
-	teams        repository.Team
-	accounts     repository.Account
+	enforcer      policyEnforcer
+	memberships   repository.Membership
+	authPolicies  repository.WorkspaceAuthPolicy
+	workspaces    repository.Workspace
+	teams         repository.Team
+	accounts      repository.Account
+	agentThrottle repository.AgentThrottle
 }
 
 func New(
@@ -89,14 +91,16 @@ func New(
 	workspaces repository.Workspace,
 	teams repository.Team,
 	accounts repository.Account,
+	agentThrottle repository.AgentThrottle,
 ) service.Authorizer {
 	return &casbinAuthorizer{
-		enforcer:     enforcer,
-		memberships:  memberships,
-		authPolicies: authPolicies,
-		workspaces:   workspaces,
-		teams:        teams,
-		accounts:     accounts,
+		enforcer:      enforcer,
+		memberships:   memberships,
+		authPolicies:  authPolicies,
+		workspaces:    workspaces,
+		teams:         teams,
+		accounts:      accounts,
+		agentThrottle: agentThrottle,
 	}
 }
 
@@ -146,6 +150,10 @@ func (a *casbinAuthorizer) Decide(ctx context.Context, request entity.AccessRequ
 		return entity.Decision{}, a.deny(ctx, actor, request, entity.DenyReasonTokenPermissionMissing)
 	}
 
+	if err := a.pace(ctx, actor, request); err != nil {
+		return entity.Decision{}, err
+	}
+
 	switch {
 	case request.WorkspaceID != uuid.Nil:
 		return a.decideInWorkspace(ctx, actor, request)
@@ -174,6 +182,27 @@ func (a *casbinAuthorizer) Decide(ctx context.Context, request entity.AccessRequ
 	default:
 		return entity.Decision{Actor: actor}, nil
 	}
+}
+
+func (a *casbinAuthorizer) pace(
+	ctx context.Context,
+	actor entity.Actor,
+	request entity.AccessRequest,
+) error {
+	if actor.Kind != entity.ActorKindAgent || actor.AgentID == nil || request.Action == entity.ActionRead {
+		return nil
+	}
+
+	taken, err := a.agentThrottle.Record(ctx, *actor.AgentID)
+	if err != nil {
+		return err
+	}
+
+	if taken > actor.AgentAllowance {
+		return a.deny(ctx, actor, request, entity.DenyReasonAgentRateLimited)
+	}
+
+	return nil
 }
 
 func (a *casbinAuthorizer) instanceAdmin(ctx context.Context, actor entity.Actor) (bool, error) {
@@ -205,7 +234,7 @@ func (a *casbinAuthorizer) decideInWorkspace(
 	decision := entity.Decision{Actor: actor}
 
 	if !request.Joining {
-		membership, err := a.memberships.Get(ctx, request.WorkspaceID, actor.AccountID)
+		membership, err := a.memberships.Get(ctx, request.WorkspaceID, actor.Authority())
 		if err != nil {
 			if errors.Is(err, entity.ErrMembershipNotFound) {
 				return entity.Decision{}, a.deny(ctx, actor, request, entity.DenyReasonNotAMember)
@@ -288,7 +317,7 @@ func (a *casbinAuthorizer) teamScope(
 		return actor.NarrowScope(scope), nil
 	}
 
-	teams, err := a.teams.ListVisibleTo(ctx, workspaceID, actor.AccountID, "", false)
+	teams, err := a.teams.ListVisibleTo(ctx, workspaceID, actor.Authority(), "", false)
 	if err != nil {
 		return entity.TeamScope{}, err
 	}

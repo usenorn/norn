@@ -19,6 +19,7 @@ const usageStampInterval = time.Minute
 type apiTokensService struct {
 	tokens     repository.APIToken
 	accounts   repository.Account
+	agents     repository.Agent
 	workspaces repository.Workspace
 	mailer     repository.Mailer
 	authorizer service.Authorizer
@@ -29,6 +30,7 @@ type apiTokensService struct {
 func New(
 	tokens repository.APIToken,
 	accounts repository.Account,
+	agents repository.Agent,
 	workspaces repository.Workspace,
 	mailer repository.Mailer,
 	authorizer service.Authorizer,
@@ -38,6 +40,7 @@ func New(
 	return &apiTokensService{
 		tokens:     tokens,
 		accounts:   accounts,
+		agents:     agents,
 		workspaces: workspaces,
 		mailer:     mailer,
 		authorizer: authorizer,
@@ -110,9 +113,6 @@ func (s *apiTokensService) Mint(
 	return service.MintedAPIToken{Token: token, Value: value}, nil
 }
 
-// checkGrants holds the token to what its creator may actually do, workspace by workspace. It
-// refuses rather than quietly dropping a scope, because a token that silently lost its write access
-// when a second workspace was added would only be discovered by the automation that needed it.
 func (s *apiTokensService) checkGrants(
 	ctx context.Context,
 	scopes entity.APIScopeSet,
@@ -240,8 +240,6 @@ func (s *apiTokensService) RevokeInWorkspace(ctx context.Context, workspaceID, t
 		return err
 	}
 
-	// An administrator may only reach a token because it holds a grant on the workspace they
-	// administer. Without this it would be an identifier oracle over every token on the instance.
 	if !token.Grants.Covers(workspaceID) {
 		return entity.ErrAPITokenNotFound
 	}
@@ -283,25 +281,39 @@ func (s *apiTokensService) Authenticate(ctx context.Context, value string) (enti
 
 	tokenID := token.ID
 
-	kind := entity.ActorKindToken
-	if account.Agent() {
-		kind = entity.ActorKindAgent
-	}
-
-	// The scopes are carried as minted. What the owner may currently do is re-derived per request
-	// from their live membership, so a demotion narrows the token without anything stored changing.
-	return entity.Actor{
-		Kind:      kind,
+	actor := entity.Actor{
+		Kind:      entity.ActorKindToken,
 		AccountID: token.AccountID,
 		TokenID:   &tokenID,
 		TokenName: token.Name,
 		Grants:    token.Grants,
 		Scopes:    token.Scopes,
-	}, nil
+	}
+
+	if !account.Agent() {
+		return actor, nil
+	}
+
+	actor.Kind = entity.ActorKindAgent
+
+	agent, err := s.agents.GetByAccountID(ctx, token.AccountID)
+	if err != nil {
+		return entity.Actor{}, err
+	}
+
+	if agent.Disabled() {
+		return entity.Actor{}, entity.ErrAgentDisabled
+	}
+
+	agentID := agent.ID
+
+	actor.AgentID = &agentID
+	actor.AgentAllowance = agent.Allowance()
+	actor.OwnerAccountID = agent.OwnerAccountID
+
+	return actor, nil
 }
 
-// self authorises an operation on the caller's own tokens. It deliberately does not name a
-// workspace: a token spans several, so ownership rather than membership is what decides.
 func (s *apiTokensService) self(ctx context.Context) (entity.Actor, error) {
 	actor, ok := identity.Actor(ctx)
 	if !ok {

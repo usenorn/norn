@@ -30,9 +30,6 @@ func New(stream repository.EventStream, authorizer service.Authorizer) service.E
 	}
 }
 
-// Publish never returns an error. It is called after the transaction has already committed, so the
-// change is durable whatever happens here; a failure costs a client its live update, which its next
-// reconnect replays from the cursor it kept.
 func (s *eventsService) Publish(ctx context.Context, event entity.Event) {
 	if err := s.stream.Publish(ctx, event); err != nil {
 		logging.From(ctx).ErrorContext(

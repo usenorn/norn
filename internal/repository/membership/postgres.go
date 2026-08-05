@@ -55,6 +55,7 @@ SELECT m.id,
        m.last_auth_method,
        m.created_at,
        m.updated_at,
+       a.kind AS account_kind,
        coalesce(a.display_name, '') AS display_name,
        coalesce(a.email, '') AS email,
        lower(coalesce(a.display_name, '')) AS sort_name
@@ -233,6 +234,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		lastAuthMethod sql.NullString
 		createdAt      time.Time
 		updatedAt      time.Time
+		accountKind    string
 		displayName    string
 		email          string
 		sortName       string
@@ -248,6 +250,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		&lastAuthMethod,
 		&createdAt,
 		&updatedAt,
+		&accountKind,
 		&displayName,
 		&email,
 		&sortName,
@@ -290,6 +293,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 	}
 
 	return entity.WorkspaceMember{
+		AccountKind: entity.AccountKind(accountKind),
 		Membership:  membership,
 		DisplayName: displayName,
 		Email:       email,

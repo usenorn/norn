@@ -12,6 +12,9 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
+	agentrepo "github.com/usenorn/norn/internal/repository/agent"
+	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
+	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
@@ -20,6 +23,7 @@ import (
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
+	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
@@ -78,6 +82,7 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = issuecommentsvc.New(
 		h.comments, h.attachments, h.issues, h.teams, h.activity, h.notify, h.events, h.followers,
+		agenthold.New(agentsettingrepo.NewMockAgentSetting(ctrl), agentproposalrepo.NewMockAgentProposal(ctrl), agentrepo.NewMockAgent(ctrl)),
 		h.authorizer, transactor,
 	)
 

@@ -144,8 +144,6 @@
 		return realtime.on((event) => {
 			if (event.issueId !== openIssue) return;
 
-			// This screen holds one known thing, so an event about it can be applied directly
-			// rather than asking the server what it already told us.
 			if (event.kind === "issue.updated") {
 				pushed = { source: ready, issue: event.payload as Issue };
 			}
@@ -569,6 +567,12 @@
 
 			if (error || !posted) {
 				commentFailure = readCommentFailure(error);
+
+				return;
+			}
+
+			if (!("unreachable" in posted)) {
+				commentFailure = readCommentFailure(undefined);
 
 				return;
 			}

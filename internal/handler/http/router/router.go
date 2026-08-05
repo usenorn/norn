@@ -51,8 +51,6 @@ func New(
 	transfers.Put(blob.UploadPath, blobEdge.Receive)
 	transfers.Get(blob.DownloadPath, blobEdge.Serve)
 
-	// No request timeout: this response is meant to stay open. Session authentication is applied
-	// here explicitly because it lives in the generated handler's middleware list, not on base.
 	streams := base.With(middleware.Session(sessions, sessionCfg))
 	streams.Get(events.Path, eventsEdge.Serve)
 

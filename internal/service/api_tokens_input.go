@@ -18,8 +18,6 @@ type MintedAPIToken struct {
 	Value string
 }
 
-// OwnedAPIToken is a token seen by a workspace administrator rather than by its owner, so it names
-// the person it acts for. The owner's own listing never needs this.
 type OwnedAPIToken struct {
 	Token      entity.APIToken
 	OwnerName  string

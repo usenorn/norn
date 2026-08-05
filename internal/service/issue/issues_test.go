@@ -15,6 +15,9 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
+	agentrepo "github.com/usenorn/norn/internal/repository/agent"
+	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
+	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
@@ -28,6 +31,7 @@ import (
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
+	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
@@ -89,7 +93,9 @@ func newHarness(t *testing.T) *harness {
 	h.service = issuesvc.New(
 		h.issues, h.states, h.activity, h.labels, h.accounts, h.memberships,
 		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.events, h.followers,
-		h.jobs, h.authorizer, h.transactor,
+		h.jobs,
+		agenthold.New(agentsettingrepo.NewMockAgentSetting(ctrl), agentproposalrepo.NewMockAgentProposal(ctrl), agentrepo.NewMockAgent(ctrl)),
+		h.authorizer, h.transactor,
 	)
 
 	h.triage.EXPECT().

@@ -114,8 +114,6 @@ export function actorLabel(event: ActivityEvent): string {
 
 	const person = event.actorName || "Someone who has left";
 
-	// A token acts for a person, so both are shown: the credential answers which automation did
-	// this, and the name answers whose authority it was acting under.
 	return event.actorTokenName ? `${person} via ${event.actorTokenName}` : person;
 }
 

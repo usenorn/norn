@@ -9,6 +9,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
+	"github.com/usenorn/norn/internal/service/agenthold"
 )
 
 const mentionsField = "mentions"
@@ -22,6 +23,7 @@ type issueCommentsService struct {
 	notify      repository.NotificationEvent
 	events      service.Events
 	followers   repository.IssueFollower
+	gate        *agenthold.Gate
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
 }
@@ -35,6 +37,7 @@ func New(
 	notify repository.NotificationEvent,
 	events service.Events,
 	followers repository.IssueFollower,
+	gate *agenthold.Gate,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.IssueComments {
@@ -47,6 +50,7 @@ func New(
 		notify:      notify,
 		events:      events,
 		followers:   followers,
+		gate:        gate,
 		authorizer:  authorizer,
 		transactor:  transactor,
 	}
@@ -172,6 +176,14 @@ func (s *issueCommentsService) Post(
 	mentions, err := s.resolve(ctx, workspaceID, issue.TeamID, decision, input.Mentions)
 	if err != nil {
 		return service.CommentPosted{}, err
+	}
+
+	if proposal, held, err := s.gate.Hold(
+		ctx, decision, issue, entity.AgentActionComment, entity.AgentChange{Body: input.Body},
+	); err != nil {
+		return service.CommentPosted{}, err
+	} else if held {
+		return service.CommentPosted{}, entity.AgentActionHeldError{ProposalID: proposal.ID}
 	}
 
 	var posted entity.IssueComment

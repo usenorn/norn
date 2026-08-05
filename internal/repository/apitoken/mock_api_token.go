@@ -174,3 +174,17 @@ func (mr *MockAPITokenMockRecorder) Revoke(ctx, tokenID, revokedAt any) *gomock.
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockAPIToken)(nil).Revoke), ctx, tokenID, revokedAt)
 }
+
+// RevokeAllByAccount mocks base method.
+func (m *MockAPIToken) RevokeAllByAccount(ctx context.Context, accountID uuid.UUID, revokedAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RevokeAllByAccount", ctx, accountID, revokedAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RevokeAllByAccount indicates an expected call of RevokeAllByAccount.
+func (mr *MockAPITokenMockRecorder) RevokeAllByAccount(ctx, accountID, revokedAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevokeAllByAccount", reflect.TypeOf((*MockAPIToken)(nil).RevokeAllByAccount), ctx, accountID, revokedAt)
+}

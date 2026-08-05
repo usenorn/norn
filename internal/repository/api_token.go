@@ -18,6 +18,7 @@ type APIToken interface {
 	ListByOwner(ctx context.Context, accountID uuid.UUID) ([]entity.APIToken, error)
 	ListByWorkspaceGrant(ctx context.Context, workspaceID uuid.UUID) ([]entity.APIToken, error)
 	Revoke(ctx context.Context, tokenID uuid.UUID, revokedAt time.Time) error
+	RevokeAllByAccount(ctx context.Context, accountID uuid.UUID, revokedAt time.Time) error
 	RecordUsage(ctx context.Context, tokenID uuid.UUID, usedAt time.Time) error
 	ListExpiring(ctx context.Context, notAfter time.Time) ([]entity.APIToken, error)
 	RecordExpiryNotice(ctx context.Context, tokenID uuid.UUID, days int) error

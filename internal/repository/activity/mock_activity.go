@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -39,6 +40,21 @@ func NewMockActivity(ctrl *gomock.Controller) *MockActivity {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockActivity) EXPECT() *MockActivityMockRecorder {
 	return m.recorder
+}
+
+// ListByActor mocks base method.
+func (m *MockActivity) ListByActor(ctx context.Context, workspaceID, accountID uuid.UUID, page entity.ActivityPage) ([]entity.ActivityEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByActor", ctx, workspaceID, accountID, page)
+	ret0, _ := ret[0].([]entity.ActivityEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByActor indicates an expected call of ListByActor.
+func (mr *MockActivityMockRecorder) ListByActor(ctx, workspaceID, accountID, page any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByActor", reflect.TypeOf((*MockActivity)(nil).ListByActor), ctx, workspaceID, accountID, page)
 }
 
 // ListBySubject mocks base method.

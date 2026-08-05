@@ -69,6 +69,29 @@ WHERE %s
   AND a.operation_id = ANY($2::uuid[])
 ORDER BY a.created_at, a.id`
 
+const actorLeadersOldest = `
+WHERE a.workspace_id = $1
+  AND a.actor_account_id = $2
+  AND a.id = a.operation_id
+  AND ($3::boolean IS NOT TRUE
+       OR (a.created_at, a.id) > ($4::timestamptz, $5::uuid))
+ORDER BY a.created_at, a.id
+LIMIT $6`
+
+const actorLeadersNewest = `
+WHERE a.workspace_id = $1
+  AND a.actor_account_id = $2
+  AND a.id = a.operation_id
+  AND ($3::boolean IS NOT TRUE
+       OR (a.created_at, a.id) < ($4::timestamptz, $5::uuid))
+ORDER BY a.created_at DESC, a.id DESC
+LIMIT $6`
+
+const actorOperationRows = `
+WHERE a.workspace_id = $1
+  AND a.operation_id = ANY($2::uuid[])
+ORDER BY a.created_at, a.id`
+
 type activityRepository struct {
 	db *postgres.Client
 }
@@ -179,6 +202,10 @@ func (r *activityRepository) ListBySubject(
 		return nil, err
 	}
 
+	return assemble(leaders, rows), nil
+}
+
+func assemble(leaders, rows []entity.Activity) []entity.ActivityEvent {
 	events := make([]entity.ActivityEvent, 0, len(leaders))
 	at := make(map[uuid.UUID]int, len(leaders))
 
@@ -196,7 +223,56 @@ func (r *activityRepository) ListBySubject(
 		events[index].Changes = append(events[index].Changes, row)
 	}
 
-	return events, nil
+	return events
+}
+
+func (r *activityRepository) ListByActor(
+	ctx context.Context,
+	workspaceID, accountID uuid.UUID,
+	page entity.ActivityPage,
+) ([]entity.ActivityEvent, error) {
+	window := actorLeadersOldest
+	if page.Order == entity.ActivityOrderNewest {
+		window = actorLeadersNewest
+	}
+
+	cursorCreatedAt := time.Time{}
+	cursorID := uuid.Nil.String()
+
+	if page.Cursor != nil {
+		cursorCreatedAt = page.Cursor.CreatedAt
+		cursorID = page.Cursor.OperationID.String()
+	}
+
+	leaders, err := r.query(
+		ctx,
+		activityColumns+window,
+		workspaceID.String(), accountID.String(),
+		page.Cursor != nil, cursorCreatedAt, cursorID, page.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(leaders) == 0 {
+		return []entity.ActivityEvent{}, nil
+	}
+
+	operations := make([]string, 0, len(leaders))
+	for _, leader := range leaders {
+		operations = append(operations, leader.OperationID.String())
+	}
+
+	rows, err := r.query(
+		ctx,
+		activityColumns+actorOperationRows,
+		workspaceID.String(), operations,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return assemble(leaders, rows), nil
 }
 
 func (r *activityRepository) leaders(

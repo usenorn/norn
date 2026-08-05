@@ -21,6 +21,7 @@ tags:
   - name: triage
   - name: states
   - name: tokens
+  - name: agents
   - name: sso
   - name: notifications
   - name: search
@@ -1214,6 +1215,201 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/agents:
+    get:
+      tags: [agents]
+      operationId: listWorkspaceAgents
+      summary: List the agents registered in this workspace
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The workspace's agents, with the people they act for
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkspaceAgent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [agents]
+      operationId: registerWorkspaceAgent
+      summary: Register an agent that acts under a person's authority
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterAgentRequest' }
+      responses:
+        '201':
+          description: The agent, carrying its credential for the only time
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisteredAgent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}:
+    get:
+      tags: [agents]
+      operationId: getWorkspaceAgent
+      summary: Read one agent
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/AgentId'
+      responses:
+        '200':
+          description: The agent
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAgent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [agents]
+      operationId: disableWorkspaceAgent
+      summary: Disable an agent at once, keeping everything it has already done
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/AgentId'
+      responses:
+        '204':
+          description: The agent was disabled and its credentials revoked
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/activity:
+    get:
+      tags: [agents]
+      operationId: listWorkspaceAgentActivity
+      summary: Everything this agent has done, across every issue and project
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/AgentId'
+        - $ref: '#/components/parameters/ActivityLimit'
+        - $ref: '#/components/parameters/ActivityCursor'
+      responses:
+        '200':
+          description: The agent's record
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActivityPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/agent-settings:
+    get:
+      tags: [agents]
+      operationId: getTeamAgentSettings
+      summary: Which agent actions this team holds for a person to approve
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: The team's settings, all false when it has never configured agents
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [agents]
+      operationId: setTeamAgentSettings
+      summary: Choose which agent actions this team holds
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentSettings' }
+      responses:
+        '200':
+          description: The saved settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-proposals:
+    get:
+      tags: [agents]
+      operationId: listWorkspaceAgentProposals
+      summary: Agent actions waiting for a person to approve them
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: What is waiting
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AgentProposal' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-proposals/{proposalId}/approve:
+    post:
+      tags: [agents]
+      operationId: approveWorkspaceAgentProposal
+      summary: Let a held agent action take effect, still attributed to the agent
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProposalId'
+      responses:
+        '200':
+          description: The settled proposal, applied or carrying why it could not be
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentProposal' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject:
+    post:
+      tags: [agents]
+      operationId: rejectWorkspaceAgentProposal
+      summary: Refuse a held agent action so nothing is applied
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProposalId'
+      responses:
+        '200':
+          description: The rejected proposal
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentProposal' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/tokens:
     get:
       tags: [tokens]
@@ -2150,6 +2346,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PostedComment' }
+        '202': { $ref: '#/components/responses/AgentHeld' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -2263,6 +2460,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Issue' }
+        '202': { $ref: '#/components/responses/AgentHeld' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -3524,6 +3722,16 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    AgentId:
+      name: agentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ProposalId:
+      name: proposalId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     StateId:
       name: stateId
       in: path
@@ -3657,6 +3865,16 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/ResetLinkUsedProblem' }
 
+    AgentUnusable:
+      description: The agent cannot be registered or its proposal cannot be decided
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/AgentUnusableProblem' }
+    AgentHeld:
+      description: The action is waiting for a person to approve it
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/AgentHeldProblem' }
     APITokenUnusable:
       description: The token name is taken, or its scopes exceed the caller's rights
       content:
@@ -5054,6 +5272,124 @@ components:
         estimate: { type: integer, format: int32 }
         dueOn: { type: string, format: date }
 
+    AccountKind:
+      type: string
+      enum: [person, agent]
+
+    AgentStatus:
+      type: string
+      enum: [active, disabled]
+
+    Agent:
+      type: object
+      required: [id, workspaceId, accountId, ownerAccountId, name, status, actionLimit, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        accountId: { type: string, format: uuid }
+        ownerAccountId: { type: string, format: uuid }
+        name: { type: string }
+        status: { $ref: '#/components/schemas/AgentStatus' }
+        actionLimit:
+          type: integer
+          format: int32
+          description: Actions this agent may take per minute.
+        disabledAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    WorkspaceAgent:
+      type: object
+      required: [agent, ownerName, ownerEmail]
+      properties:
+        agent: { $ref: '#/components/schemas/Agent' }
+        ownerName: { type: string }
+        ownerEmail: { type: string }
+
+    RegisterAgentRequest:
+      type: object
+      required: [name, scopes, allTeams]
+      properties:
+        name: { type: string }
+        ownerAccountId:
+          type: string
+          format: uuid
+          description: Defaults to whoever is registering it.
+        scopes:
+          type: array
+          items: { $ref: '#/components/schemas/APIScope' }
+        allTeams: { type: boolean }
+        teamIds:
+          type: array
+          items: { type: string, format: uuid }
+        actionLimit: { type: integer, format: int32 }
+
+    RegisteredAgent:
+      type: object
+      required: [agent, value]
+      properties:
+        agent: { $ref: '#/components/schemas/Agent' }
+        value: { type: string }
+
+    AgentSettings:
+      type: object
+      required: [holdComments, holdStateChanges, holdIssueEdits]
+      properties:
+        holdComments: { type: boolean }
+        holdStateChanges: { type: boolean }
+        holdIssueEdits: { type: boolean }
+
+    AgentAction:
+      type: string
+      enum: [comment, state_change, issue_edit]
+
+    AgentProposalStatus:
+      type: string
+      enum: [pending, rejected, applied, failed]
+
+    AgentProposal:
+      type: object
+      required: [id, agentId, agentName, issueId, teamId, action, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        agentId: { type: string, format: uuid }
+        agentName: { type: string }
+        issueId: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        action: { $ref: '#/components/schemas/AgentAction' }
+        status: { $ref: '#/components/schemas/AgentProposalStatus' }
+        body: { type: string }
+        stateId: { type: string, format: uuid }
+        title: { type: string }
+        decidedByAccountId: { type: string, format: uuid }
+        decidedAt: { type: string, format: date-time }
+        failure: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    AgentUnusableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - agent_name_taken
+                - agent_owner_invalid
+                - agent_disabled
+                - agent_proposal_settled
+
+    AgentHeldProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code, proposalId]
+          properties:
+            code:
+              type: string
+              enum: [agent_action_held]
+            proposalId: { type: string, format: uuid }
+
     APIScope:
       type: string
 
@@ -5377,6 +5713,7 @@ components:
         accountId: { type: string, format: uuid }
         role: { $ref: '#/components/schemas/MembershipRole' }
         source: { $ref: '#/components/schemas/MembershipSource' }
+        kind: { $ref: '#/components/schemas/AccountKind' }
         displayName: { type: string }
         email: { type: string }
         joinedAt: { type: string, format: date-time }

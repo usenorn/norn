@@ -238,6 +238,11 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	var held entity.AgentActionHeldError
+	if errors.As(err, &held) {
+		return agentHeldProblem(held), true
+	}
+
 	var refused entity.EnforcementRefusedError
 	if errors.As(err, &refused) {
 		return enforcementProblem(refused.Blocker, refused.Error()), true
@@ -272,6 +277,14 @@ func problemFor(err error) (problemResponse, bool) {
 	var denied entity.AccessDeniedError
 	if errors.As(err, &denied) && denied.Reason == entity.DenyReasonNoActor {
 		return unauthorized(), true
+	}
+
+	if errors.As(err, &denied) && denied.Reason == entity.DenyReasonAgentRateLimited {
+		return problemResponse{
+			status:     http.StatusTooManyRequests,
+			body:       baseProblem(http.StatusTooManyRequests, denied.Error()),
+			retryAfter: int(entity.AgentActionWindow.Seconds()),
+		}, true
 	}
 
 	if errors.As(err, &denied) && denied.Reason.Disclosed() {
@@ -578,6 +591,28 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrAPITokenGrantInvalid):
 		return apiTokenUnusableProblem(api.TokenGrantInvalid, err), true
 
+	case errors.Is(err, entity.ErrAgentRateLimited):
+		return problemResponse{
+			status:     http.StatusTooManyRequests,
+			body:       baseProblem(http.StatusTooManyRequests, err.Error()),
+			retryAfter: int(entity.AgentActionWindow.Seconds()),
+		}, true
+
+	case errors.Is(err, entity.ErrAgentDisabled):
+		return agentUnusableProblem(api.AgentDisabled, err), true
+
+	case errors.Is(err, entity.ErrAgentNameTaken):
+		return agentUnusableProblem(api.AgentNameTaken, err), true
+
+	case errors.Is(err, entity.ErrAgentOwnerInvalid):
+		return agentUnusableProblem(api.AgentOwnerInvalid, err), true
+
+	case errors.Is(err, entity.ErrAgentProposalSettled):
+		return agentUnusableProblem(api.AgentProposalSettled, err), true
+
+	case errors.Is(err, entity.ErrAgentNotFound), errors.Is(err, entity.ErrAgentProposalNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
 	case errors.Is(err, entity.ErrAPITokenGrantMissing):
 		return apiTokenUnusableProblem(api.TokenGrantMissing, err), true
 
@@ -696,6 +731,39 @@ func teamConflictProblem(code api.TeamConflictProblemCode, err error) problemRes
 	}
 }
 
+func agentUnusableProblem(code api.AgentUnusableProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.AgentUnusableProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func agentHeldProblem(held entity.AgentActionHeldError) problemResponse {
+	base := baseProblem(http.StatusAccepted, held.Error())
+
+	return problemResponse{
+		status: http.StatusAccepted,
+		body: api.AgentHeldProblem{
+			Code:       api.AgentActionHeld,
+			ProposalId: held.ProposalID,
+			Detail:     base.Detail,
+			Instance:   base.Instance,
+			Status:     base.Status,
+			Title:      base.Title,
+			Type:       base.Type,
+		},
+	}
+}
+
 func apiTokenUnusableProblem(code api.APITokenUnusableProblemCode, err error) problemResponse {
 	base := baseProblem(http.StatusConflict, err.Error())
 
@@ -810,6 +878,46 @@ func invitationUnusableProblem(code api.InvitationUnusableProblemCode, err error
 
 func unauthorized() problemResponse {
 	return newProblem(http.StatusUnauthorized, "a valid session is required")
+}
+
+func (r problemResponse) VisitListWorkspaceAgentsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRegisterWorkspaceAgentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceAgentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDisableWorkspaceAgentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceAgentActivityResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetTeamAgentSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetTeamAgentSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceAgentProposalsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitApproveWorkspaceAgentProposalResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRejectWorkspaceAgentProposalResponse(w http.ResponseWriter) error {
+	return r.write(w)
 }
 
 func (r problemResponse) VisitListAPITokensResponse(w http.ResponseWriter) error {

@@ -16,9 +16,6 @@ func withOperations(ctx context.Context) context.Context {
 	return context.WithValue(ctx, operationKey{}, &operations{leaders: map[uuid.UUID]uuid.UUID{}})
 }
 
-// Operation returns the identifier every activity row written about subjectID inside the current
-// transaction shares, adopting leaderID as that identifier when this is the first such row. Outside
-// a transaction each row stands alone, so leaderID is returned unchanged.
 func Operation(ctx context.Context, subjectID, leaderID uuid.UUID) uuid.UUID {
 	ambient, ok := ctx.Value(operationKey{}).(*operations)
 	if !ok {

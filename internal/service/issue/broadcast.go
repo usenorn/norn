@@ -10,9 +10,6 @@ import (
 	"github.com/usenorn/norn/internal/pkg/postgres"
 )
 
-// broadcast queues the change for connected clients once the transaction it belongs to has
-// committed. Registering inside the transaction and running after it is what keeps a rolled-back
-// change from being announced as though it happened.
 func (s *issuesService) broadcast(
 	ctx context.Context,
 	kind entity.EventKind,

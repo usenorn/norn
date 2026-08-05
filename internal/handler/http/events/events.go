@@ -26,10 +26,6 @@ func New(events service.Events, cfg config.Realtime) *Edge {
 	return &Edge{events: events, cfg: cfg}
 }
 
-// Serve streams a workspace's changes for as long as the client holds the connection. Everything
-// that can fail is decided before the first byte: once the event-stream header is out, the panic
-// and problem writers would append a JSON document into the middle of the stream rather than
-// replace it.
 func (e *Edge) Serve(w http.ResponseWriter, r *http.Request) {
 	if !e.cfg.Enabled {
 		middleware.WriteProblem(
@@ -64,8 +60,6 @@ func (e *Edge) Serve(w http.ResponseWriter, r *http.Request) {
 
 	stream := http.NewResponseController(w)
 
-	// The server sets a thirty second write deadline for ordinary responses; a stream that keeps
-	// it would be cut mid-sentence on its first quiet minute.
 	_ = stream.SetWriteDeadline(time.Time{})
 
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -74,9 +68,6 @@ func (e *Edge) Serve(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Accel-Buffering", "no")
 	w.WriteHeader(http.StatusOK)
 
-	// A comment primes the stream. Both Go's own buffer and an intermediary proxy hold a response
-	// that has a header but no body, so without a first byte a client on a quiet workspace never
-	// sees the connection open and sits reporting itself as still connecting.
 	if _, err := fmt.Fprint(w, ": connected\n\n"); err != nil {
 		return
 	}
@@ -166,8 +157,6 @@ func write(w http.ResponseWriter, stream *http.ResponseController, kind string, 
 	return stream.Flush() == nil
 }
 
-// translate turns the entity the service published into the shape this API already returns, so a
-// client patches an event with the same vocabulary it read the screen with.
 func translate(event entity.Event) json.RawMessage {
 	if len(event.Payload) == 0 {
 		return json.RawMessage("{}")

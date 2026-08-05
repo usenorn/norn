@@ -75,6 +75,7 @@ type Membership struct {
 }
 
 type WorkspaceMember struct {
+	AccountKind AccountKind
 	Membership  Membership
 	DisplayName string
 	Email       string

@@ -32,8 +32,6 @@ type eventStream struct {
 	reader *valkey.Client
 }
 
-// New takes two clients because a blocking XREAD outlives the shared client's read timeout by
-// design. Reads go to a connection whose timeout is disabled; everything else uses the pool.
 func New(writer *valkey.Client, reader *ReadClient) repository.EventStream {
 	return &eventStream{writer: writer, reader: reader.Client}
 }
@@ -81,9 +79,6 @@ func (s *eventStream) Since(
 		return nil, fmt.Errorf("read oldest event: %w", err)
 	}
 
-	// A cursor older than anything still in the stream returns rows without complaint, so the
-	// gap has to be detected here or the client believes a partial replay was a complete one.
-	// The oldest surviving entry being newer than the cursor is exactly that gap.
 	if len(oldest) > 0 && after(oldest[0].ID, cursor) {
 		return nil, entity.ErrEventStreamLapsed
 	}

@@ -71,6 +71,11 @@ func membershipDTO(member entity.WorkspaceMember) api.Membership {
 		Source:      api.MembershipSource(member.Membership.Source),
 	}
 
+	if member.AccountKind != "" {
+		kind := api.AccountKind(member.AccountKind)
+		dto.Kind = &kind
+	}
+
 	if member.DisplayName != "" {
 		dto.DisplayName = &member.DisplayName
 	}
@@ -1463,12 +1468,89 @@ func searchResultDTO(result entity.SearchResult) api.SearchResult {
 	return dto
 }
 
-// IssueEvent and CommentEvent give the streaming edge the same shapes this API already returns,
-// so a client can patch what it is holding without a second vocabulary for the same things.
 func IssueEvent(issue entity.Issue) api.Issue {
 	return issueDTO(issue)
 }
 
 func CommentEvent(comment entity.IssueComment) api.IssueComment {
 	return commentDTO(comment)
+}
+
+func agentDTO(agent entity.Agent) api.Agent {
+	dto := api.Agent{
+		Id:             agent.ID,
+		WorkspaceId:    agent.WorkspaceID,
+		AccountId:      agent.AccountID,
+		OwnerAccountId: agent.OwnerAccountID,
+		Name:           agent.Name,
+		Status:         api.AgentStatus(agent.Status),
+		ActionLimit:    int32(agent.Allowance()),
+		CreatedAt:      agent.CreatedAt,
+	}
+
+	dto.DisabledAt = agent.DisabledAt
+
+	return dto
+}
+
+func workspaceAgentDTO(owned service.OwnedAgent) api.WorkspaceAgent {
+	return api.WorkspaceAgent{
+		Agent:      agentDTO(owned.Agent),
+		OwnerName:  owned.OwnerName,
+		OwnerEmail: owned.OwnerEmail,
+	}
+}
+
+func workspaceAgentDTOs(agents []service.OwnedAgent) []api.WorkspaceAgent {
+	dtos := make([]api.WorkspaceAgent, 0, len(agents))
+
+	for _, owned := range agents {
+		dtos = append(dtos, workspaceAgentDTO(owned))
+	}
+
+	return dtos
+}
+
+func agentSettingsDTO(settings entity.AgentSettings) api.AgentSettings {
+	return api.AgentSettings{
+		HoldComments:     settings.HoldComments,
+		HoldStateChanges: settings.HoldStateChanges,
+		HoldIssueEdits:   settings.HoldIssueEdits,
+	}
+}
+
+func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
+	dto := api.AgentProposal{
+		Id:        proposal.ID,
+		AgentId:   proposal.AgentID,
+		AgentName: proposal.AgentName,
+		IssueId:   proposal.IssueID,
+		TeamId:    proposal.TeamID,
+		Action:    api.AgentAction(proposal.Action),
+		Status:    api.AgentProposalStatus(proposal.Status),
+		CreatedAt: proposal.CreatedAt,
+	}
+
+	dto.Body = nilIfEmpty(proposal.Change.Body)
+	dto.StateId = proposal.Change.StateID
+	dto.Title = proposal.Change.Title
+	dto.Failure = nilIfEmpty(proposal.Failure)
+	dto.DecidedAt = proposal.DecidedAt
+
+	if proposal.DecidedBy != uuid.Nil {
+		decider := proposal.DecidedBy
+		dto.DecidedByAccountId = &decider
+	}
+
+	return dto
+}
+
+func agentProposalDTOs(proposals []entity.AgentProposal) []api.AgentProposal {
+	dtos := make([]api.AgentProposal, 0, len(proposals))
+
+	for _, proposal := range proposals {
+		dtos = append(dtos, agentProposalDTO(proposal))
+	}
+
+	return dtos
 }

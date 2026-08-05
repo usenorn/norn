@@ -13,6 +13,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
+	"github.com/usenorn/norn/internal/service/agenthold"
 )
 
 type issuesService struct {
@@ -31,6 +32,7 @@ type issuesService struct {
 	events       service.Events
 	followers    repository.IssueFollower
 	jobs         repository.JobProducer
+	gate         *agenthold.Gate
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
 }
@@ -51,6 +53,7 @@ func New(
 	events service.Events,
 	followers repository.IssueFollower,
 	jobs repository.JobProducer,
+	gate *agenthold.Gate,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.Issues {
@@ -70,6 +73,7 @@ func New(
 		events:       events,
 		followers:    followers,
 		jobs:         jobs,
+		gate:         gate,
 		authorizer:   authorizer,
 		transactor:   transactor,
 	}
@@ -287,6 +291,10 @@ func (s *issuesService) Update(
 	touched := change.Touched()
 	if len(touched) == 0 {
 		return s.Get(ctx, workspaceID, issueID)
+	}
+
+	if held, err := s.held(ctx, decision, workspaceID, issueID, input, touched); err != nil || held {
+		return entity.Issue{}, err
 	}
 
 	var updated entity.Issue

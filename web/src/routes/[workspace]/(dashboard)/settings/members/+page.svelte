@@ -90,8 +90,6 @@
 	let revokedTokens = $state<string[]>([]);
 	let revokingToken = $state<string | null>(null);
 
-	// A null listing means the caller is not an administrator here, which is a different thing from
-	// there being no tokens; the whole section is theirs to see or not.
 	const tokens = $derived(
 		data.tokens?.filter((owned) => !revokedTokens.includes(owned.token.id)) ?? null
 	);

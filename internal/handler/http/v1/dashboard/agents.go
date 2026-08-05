@@ -1,0 +1,216 @@
+package dashboard
+
+import (
+	"context"
+
+	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/service"
+	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
+)
+
+func (h *handler) ListWorkspaceAgents(
+	ctx context.Context,
+	request api.ListWorkspaceAgentsRequestObject,
+) (api.ListWorkspaceAgentsResponseObject, error) {
+	agents, err := h.agents.List(ctx, request.WorkspaceId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceAgents200JSONResponse(workspaceAgentDTOs(agents)), nil
+}
+
+func (h *handler) RegisterWorkspaceAgent(
+	ctx context.Context,
+	request api.RegisterWorkspaceAgentRequestObject,
+) (api.RegisterWorkspaceAgentResponseObject, error) {
+	input := service.RegisterAgentInput{
+		WorkspaceID: request.WorkspaceId,
+		Name:        request.Body.Name,
+		Scopes:      entity.NewAPIScopeSet(request.Body.Scopes),
+		AllTeams:    request.Body.AllTeams,
+	}
+
+	if request.Body.OwnerAccountId != nil {
+		input.OwnerAccountID = *request.Body.OwnerAccountId
+	}
+
+	if request.Body.TeamIds != nil {
+		input.TeamIDs = append(input.TeamIDs, *request.Body.TeamIds...)
+	}
+
+	if request.Body.ActionLimit != nil {
+		limit := int(*request.Body.ActionLimit)
+		input.ActionLimit = &limit
+	}
+
+	registered, err := h.agents.Register(ctx, input)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.RegisterWorkspaceAgent201JSONResponse{
+		Agent: agentDTO(registered.Agent),
+		Value: registered.Value,
+	}, nil
+}
+
+func (h *handler) GetWorkspaceAgent(
+	ctx context.Context,
+	request api.GetWorkspaceAgentRequestObject,
+) (api.GetWorkspaceAgentResponseObject, error) {
+	agent, err := h.agents.Get(ctx, request.WorkspaceId, request.AgentId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetWorkspaceAgent200JSONResponse(workspaceAgentDTO(agent)), nil
+}
+
+func (h *handler) DisableWorkspaceAgent(
+	ctx context.Context,
+	request api.DisableWorkspaceAgentRequestObject,
+) (api.DisableWorkspaceAgentResponseObject, error) {
+	if err := h.agents.Disable(ctx, request.WorkspaceId, request.AgentId); err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.DisableWorkspaceAgent204Response{}, nil
+}
+
+func (h *handler) ListWorkspaceAgentActivity(
+	ctx context.Context,
+	request api.ListWorkspaceAgentActivityRequestObject,
+) (api.ListWorkspaceAgentActivityResponseObject, error) {
+	page := entity.ActivityPage{Order: entity.ActivityOrderNewest}
+
+	if request.Params.Limit != nil {
+		page.Limit = int(*request.Params.Limit)
+	}
+
+	if request.Params.Cursor != nil && *request.Params.Cursor != "" {
+		cursor, err := entity.DecodeActivityCursor(*request.Params.Cursor)
+		if err != nil {
+			if problem, ok := problemFor(err); ok {
+				return problem, nil
+			}
+
+			return nil, err
+		}
+
+		page.Cursor = &cursor
+	}
+
+	activity, err := h.agents.Activity(ctx, request.WorkspaceId, request.AgentId, page)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceAgentActivity200JSONResponse(activityPageDTO(activity)), nil
+}
+
+func (h *handler) GetTeamAgentSettings(
+	ctx context.Context,
+	request api.GetTeamAgentSettingsRequestObject,
+) (api.GetTeamAgentSettingsResponseObject, error) {
+	settings, err := h.agents.Settings(ctx, request.WorkspaceId, request.TeamId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetTeamAgentSettings200JSONResponse(agentSettingsDTO(settings)), nil
+}
+
+func (h *handler) SetTeamAgentSettings(
+	ctx context.Context,
+	request api.SetTeamAgentSettingsRequestObject,
+) (api.SetTeamAgentSettingsResponseObject, error) {
+	settings, err := h.agents.Configure(ctx, service.ConfigureAgentInput{
+		WorkspaceID:      request.WorkspaceId,
+		TeamID:           request.TeamId,
+		HoldComments:     request.Body.HoldComments,
+		HoldStateChanges: request.Body.HoldStateChanges,
+		HoldIssueEdits:   request.Body.HoldIssueEdits,
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SetTeamAgentSettings200JSONResponse(agentSettingsDTO(settings)), nil
+}
+
+func (h *handler) ListWorkspaceAgentProposals(
+	ctx context.Context,
+	request api.ListWorkspaceAgentProposalsRequestObject,
+) (api.ListWorkspaceAgentProposalsResponseObject, error) {
+	waiting, err := h.agents.Waiting(ctx, request.WorkspaceId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceAgentProposals200JSONResponse(agentProposalDTOs(waiting)), nil
+}
+
+func (h *handler) ApproveWorkspaceAgentProposal(
+	ctx context.Context,
+	request api.ApproveWorkspaceAgentProposalRequestObject,
+) (api.ApproveWorkspaceAgentProposalResponseObject, error) {
+	proposal, err := h.agents.Approve(ctx, request.WorkspaceId, request.ProposalId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ApproveWorkspaceAgentProposal200JSONResponse(agentProposalDTO(proposal)), nil
+}
+
+func (h *handler) RejectWorkspaceAgentProposal(
+	ctx context.Context,
+	request api.RejectWorkspaceAgentProposalRequestObject,
+) (api.RejectWorkspaceAgentProposalResponseObject, error) {
+	proposal, err := h.agents.Reject(ctx, request.WorkspaceId, request.ProposalId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.RejectWorkspaceAgentProposal200JSONResponse(agentProposalDTO(proposal)), nil
+}

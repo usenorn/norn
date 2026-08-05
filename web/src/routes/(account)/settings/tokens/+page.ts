@@ -12,8 +12,6 @@ export const load: PageLoad = async ({ fetch, parent, url }): Promise<TokensPage
 	const api = apiFor(url);
 	const { workspaces } = await parent();
 
-	// Teams are loaded for every workspace up front so the grant builder can offer them without a
-	// request per expansion; a person belongs to few enough workspaces for this to stay cheap.
 	const [tokens, ...rosters] = await Promise.all([
 		api.GET("/tokens", { fetch }),
 		...workspaces.map((workspace) =>

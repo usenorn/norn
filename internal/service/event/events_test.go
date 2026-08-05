@@ -62,8 +62,6 @@ func (h *harness) scopedTo(teams ...uuid.UUID) {
 		AnyTimes()
 }
 
-// feed makes the mocked stream hand the hub one batch and then block, the way a real blocking
-// XREAD sits idle between changes.
 func (h *harness) feed(events ...entity.Event) {
 	batch := events
 	h.stream.EXPECT().
@@ -83,9 +81,6 @@ func (h *harness) feed(events ...entity.Event) {
 		AnyTimes()
 }
 
-// live hands the hub one batch per send on the returned channel, the way a real blocking XREAD
-// returns each change as it lands. feed's single batch is delivered in one uninterrupted loop, so a
-// reader cannot drain part way through it and every subscriber looks equally stalled.
 func (h *harness) live() chan<- []entity.Event {
 	batches := make(chan []entity.Event)
 
@@ -234,8 +229,6 @@ func TestAStalledSubscriberIsClosedRatherThanBufferedForever(t *testing.T) {
 
 	subscription := h.subscribe(t)
 
-	// Read nothing at all while the flood lands, which is what a stalled client looks like from
-	// the server's side, then drain and expect to reach a closed channel.
 	time.Sleep(300 * time.Millisecond)
 
 	for read := 0; read <= entity.EventSubscriberBuffer; read++ {
@@ -273,8 +266,6 @@ func TestOneStalledSubscriberDoesNotStarveAHealthyOne(t *testing.T) {
 		}
 	}()
 
-	// Enough to bury the stalled subscriber's buffer twice over, published one change at a time and
-	// only once the healthy subscriber has taken the previous one, which is what keeping up means.
 	total := entity.EventSubscriberBuffer * 2
 
 	for sent := range total {
