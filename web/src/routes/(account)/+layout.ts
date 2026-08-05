@@ -19,7 +19,9 @@ export const load: LayoutLoad = async ({ fetch, url }): Promise<AccountScope> =>
 		api.GET("/accounts/me", { fetch }),
 	]);
 
-	if (workspaces.error || !workspaces.data) redirect(307, "/sign-in");
+	if (workspaces.error || !workspaces.data) {
+		redirect(307, `/sign-in?return=${encodeURIComponent(url.pathname + url.search)}`);
+	}
 
 	return {
 		now: new Date().toISOString(),

@@ -16,6 +16,7 @@ type SearchRequest struct {
 	Query       entity.SearchQuery
 	Kinds       []entity.SearchKind
 	Limit       int
+	Scope       entity.TeamScope
 }
 
 type Search interface {

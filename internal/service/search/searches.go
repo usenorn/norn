@@ -59,6 +59,7 @@ func (s *searchesService) Search(
 		Query:       query,
 		Kinds:       kinds(input.Kinds),
 		Limit:       limit(input.Limit),
+		Scope:       decision.Scope,
 	}
 
 	groups, err := s.search.Search(ctx, request)

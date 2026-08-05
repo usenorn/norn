@@ -26,6 +26,7 @@ type handler struct {
 	workflowStates service.WorkflowStates
 	labels         service.Labels
 	apiTokens      service.APITokens
+	mcpConnections service.MCPConnections
 	agents         service.Agents
 	sessions       service.Sessions
 	ssoConnections service.SSOConnections
@@ -55,6 +56,7 @@ func New(
 	workflowStates service.WorkflowStates,
 	labels service.Labels,
 	apiTokens service.APITokens,
+	mcpConnections service.MCPConnections,
 	agents service.Agents,
 	sessions service.Sessions,
 	ssoConnections service.SSOConnections,
@@ -83,6 +85,7 @@ func New(
 		workflowStates: workflowStates,
 		labels:         labels,
 		apiTokens:      apiTokens,
+		mcpConnections: mcpConnections,
 		agents:         agents,
 		sessions:       sessions,
 		ssoConnections: ssoConnections,

@@ -16,6 +16,15 @@ import (
 
 const seesTeam = `(m.role = 'admin' OR t.visibility = 'public' OR tm.account_id IS NOT NULL)`
 
+const issueInScope = `
+  AND ($7::boolean IS TRUE OR i.team_id = ANY($8::uuid[]))`
+
+const teamInScope = `
+  AND ($7::boolean IS TRUE OR t.id = ANY($8::uuid[]))`
+
+const fuzzyIssueInScope = `
+  AND ($5::boolean IS TRUE OR i.team_id = ANY($6::uuid[]))`
+
 const documentMatches = `
   AND (($3 <> '' AND %[1]s @@ websearch_to_tsquery('english', $3))
        OR ($4 <> '' AND %[1]s @@ to_tsquery('simple', $4 || ':*')))`
@@ -52,7 +61,7 @@ JOIN workspace_teams t ON t.id = i.team_id AND t.status = 'active'
 LEFT JOIN workspace_team_members tm ON tm.team_id = t.id AND tm.account_id = $2
 WHERE i.workspace_id = $1
   AND i.status = 'active'
-  AND ` + seesTeam + documentMatches + bounded
+  AND ` + seesTeam + issueInScope + documentMatches + bounded
 
 const commentResults = `
 WITH candidates AS (
@@ -74,7 +83,7 @@ JOIN workspace_teams t ON t.id = i.team_id AND t.status = 'active'
 LEFT JOIN workspace_team_members tm ON tm.team_id = t.id AND tm.account_id = $2
 WHERE c.workspace_id = $1
   AND c.deleted_at IS NULL
-  AND ` + seesTeam + documentMatches + bounded
+  AND ` + seesTeam + issueInScope + documentMatches + bounded
 
 const projectResults = `
 WITH candidates AS (
@@ -112,7 +121,7 @@ JOIN workspace_memberships m ON m.workspace_id = t.workspace_id AND m.account_id
 LEFT JOIN workspace_team_members tm ON tm.team_id = t.id AND tm.account_id = $2
 WHERE t.workspace_id = $1
   AND t.status = 'active'
-  AND ` + seesTeam + `
+  AND ` + seesTeam + teamInScope + `
   AND ($3 <> '' OR $4 <> '')
   AND (position(lower($3) IN lower(t.name)) > 0
        OR position(lower($4) IN lower(t.key)) > 0)` + bounded
@@ -160,7 +169,7 @@ JOIN workspace_teams t ON t.id = i.team_id AND t.status = 'active'
 LEFT JOIN workspace_team_members tm ON tm.team_id = t.id AND tm.account_id = $2
 WHERE i.workspace_id = $1
   AND i.status = 'active'
-  AND ` + seesTeam + `
+  AND ` + seesTeam + fuzzyIssueInScope + `
   AND $3 <% i.title
 ORDER BY $3 <<-> i.title, i.id
 LIMIT $4`
@@ -175,19 +184,29 @@ func New(db *postgres.Client) repository.Search {
 	return &searchRepository{db: db}
 }
 
-func statementFor(kind entity.SearchKind) string {
+func statementFor(kind entity.SearchKind) (string, bool) {
 	switch kind {
 	case entity.SearchKindComment:
-		return fmt.Sprintf(commentResults, "c.search_document")
+		return fmt.Sprintf(commentResults, "c.search_document"), true
 	case entity.SearchKindProject:
-		return fmt.Sprintf(projectResults, "p.search_document")
+		return fmt.Sprintf(projectResults, "p.search_document"), false
 	case entity.SearchKindTeam:
-		return teamResults
+		return teamResults, true
 	case entity.SearchKindPerson:
-		return personResults
+		return personResults, false
 	default:
-		return fmt.Sprintf(issueResults, "i.search_document")
+		return fmt.Sprintf(issueResults, "i.search_document"), true
 	}
+}
+
+func teamIDs(scope entity.TeamScope) []string {
+	ids := make([]string, 0, len(scope.TeamIDs))
+
+	for _, id := range scope.TeamIDs {
+		ids = append(ids, id.String())
+	}
+
+	return ids
 }
 
 func (r *searchRepository) Search(
@@ -201,12 +220,19 @@ func (r *searchRepository) Search(
 			continue
 		}
 
-		results, err := r.query(
-			ctx, statementFor(kind),
+		statement, scoped := statementFor(kind)
+
+		args := []any{
 			request.WorkspaceID.String(), request.AccountID.String(),
 			request.Query.Stemmed, request.Query.Prefix,
-			entity.SearchCandidateCap, request.Limit+1,
-		)
+			entity.SearchCandidateCap, request.Limit + 1,
+		}
+
+		if scoped {
+			args = append(args, request.Scope.AllTeams, teamIDs(request.Scope))
+		}
+
+		results, err := r.query(ctx, statement, args...)
 		if err != nil {
 			return nil, err
 		}
@@ -235,6 +261,7 @@ func (r *searchRepository) Fuzzy(
 		ctx, fuzzyIssueResults,
 		request.WorkspaceID.String(), request.AccountID.String(),
 		request.Query.Raw, request.Limit+1,
+		request.Scope.AllTeams, teamIDs(request.Scope),
 	)
 	if err != nil {
 		return nil, err

@@ -1090,6 +1090,7 @@ func activityEventDTO(event entity.ActivityEvent) api.ActivityEvent {
 	}
 
 	dto.ActorTokenName = nilIfEmpty(event.Actor.TokenName)
+	dto.ActorConnectionName = nilIfEmpty(event.Actor.ConnectionName)
 
 	if event.BulkActionID != uuid.Nil {
 		bulk := event.BulkActionID

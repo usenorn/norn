@@ -29,6 +29,12 @@
 
 	let submitFailure = $state<SignInFailure | null>(null);
 
+	const returnTo = $derived.by(() => {
+		const requested = page.url.searchParams.get("return") ?? "";
+
+		return requested.startsWith("/") && !requested.startsWith("//") ? requested : "/";
+	});
+
 	const auth = $derived({ ...data.auth, ...preview?.auth });
 	const failure = $derived<SignInFailure | null>(submitFailure ?? preview?.failure ?? null);
 
@@ -52,7 +58,7 @@
 					return;
 				}
 
-				await goto("/", { invalidateAll: true });
+				await goto(returnTo, { invalidateAll: true });
 			} catch {
 				submitFailure = { kind: "unavailable" };
 			}

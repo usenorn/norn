@@ -236,3 +236,50 @@ func TestAnUnknownKindIsDroppedRatherThanQueried(t *testing.T) {
 		t.Fatalf("an unknown kind produced an error rather than being ignored: %v", err)
 	}
 }
+
+func TestSearchCarriesTheNarrowedTeamScopeToTheRepository(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	searchRepo := searchrepo.NewMockSearch(ctrl)
+	authorizer := authorizersvc.NewMockAuthorizer(ctrl)
+	transactor := transactorrepo.NewMockTransactor(ctrl)
+
+	workspaceID, grantedTeam := uuid.New(), uuid.New()
+
+	authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{
+			Actor: entity.Actor{AccountID: uuid.New(), Kind: entity.ActorKindToken},
+			Scope: entity.TeamScope{
+				WorkspaceID: workspaceID,
+				TeamIDs:     []uuid.UUID{grantedTeam},
+			},
+		}, nil)
+
+	searchRepo.EXPECT().
+		Search(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, request repository.SearchRequest) ([]entity.SearchGroup, error) {
+			if request.Scope.AllTeams {
+				t.Error(
+					"a narrowed actor searched with an all-teams scope; results would reach " +
+						"beyond the teams its credential was narrowed to",
+				)
+			}
+
+			if !request.Scope.Covers(grantedTeam) {
+				t.Error("the granted team is missing from the search scope")
+			}
+
+			return []entity.SearchGroup{issueGroup(entity.SearchResult{
+				Kind: entity.SearchKindIssue, ID: uuid.New(), Title: "payments",
+			})}, nil
+		})
+
+	searches := searchsvc.New(searchRepo, issuerepo.NewMockIssue(ctrl), authorizer, transactor)
+
+	if _, err := searches.Search(context.Background(), workspaceID, service.SearchInput{
+		Query: "payments",
+	}); err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+}

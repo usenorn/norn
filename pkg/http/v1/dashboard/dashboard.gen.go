@@ -354,6 +354,9 @@ const (
 	AuditActionInvitationAccepted           AuditAction = "invitation.accepted"
 	AuditActionInvitationCreated            AuditAction = "invitation.created"
 	AuditActionInvitationRevoked            AuditAction = "invitation.revoked"
+	AuditActionMcpConnectionAuthorized      AuditAction = "mcp_connection.authorized"
+	AuditActionMcpConnectionNarrowed        AuditAction = "mcp_connection.narrowed"
+	AuditActionMcpConnectionRevoked         AuditAction = "mcp_connection.revoked"
 	AuditActionMembershipAdded              AuditAction = "membership.added"
 	AuditActionMembershipAuditAccessChanged AuditAction = "membership.audit_access_changed"
 	AuditActionMembershipRemoved            AuditAction = "membership.removed"
@@ -412,6 +415,12 @@ func (e AuditAction) Valid() bool {
 	case AuditActionInvitationCreated:
 		return true
 	case AuditActionInvitationRevoked:
+		return true
+	case AuditActionMcpConnectionAuthorized:
+		return true
+	case AuditActionMcpConnectionNarrowed:
+		return true
+	case AuditActionMcpConnectionRevoked:
 		return true
 	case AuditActionMembershipAdded:
 		return true
@@ -1515,6 +1524,24 @@ func (e LabelConflictProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for MCPCapability.
+const (
+	Read  MCPCapability = "read"
+	Write MCPCapability = "write"
+)
+
+// Valid indicates whether the value is a known member of the MCPCapability enum.
+func (e MCPCapability) Valid() bool {
+	switch e {
+	case Read:
+		return true
+	case Write:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MailUnavailableProblemCode.
 const (
 	MailUnavailableProblemCodeMailUnavailable MailUnavailableProblemCode = "mail_unavailable"
@@ -2486,6 +2513,9 @@ type ActivityChange struct {
 // ActivityEvent Everything one operation changed about one subject, read as a single event.
 type ActivityEvent struct {
 	ActorAccountId *openapi_types.UUID `json:"actorAccountId,omitempty"`
+
+	// ActorConnectionName The AI client connection that made the change, when one did. Recorded as the client was named at the time, so revoking the connection does not rewrite history.
+	ActorConnectionName *string `json:"actorConnectionName,omitempty"`
 
 	// ActorKind Who made the change — a person signed in, an integration, an agent, or Norn itself.
 	ActorKind ActivityActorKind `json:"actorKind"`
@@ -3574,6 +3604,45 @@ type LabelUsage struct {
 	Issues int32 `json:"issues"`
 }
 
+// MCPAuthorizationDecision defines model for MCPAuthorizationDecision.
+type MCPAuthorizationDecision struct {
+	RedirectTo string `json:"redirectTo"`
+}
+
+// MCPAuthorizationView defines model for MCPAuthorizationView.
+type MCPAuthorizationView struct {
+	// Capability What the connection may do — read everything its owner can see, or also write.
+	Capability MCPCapability `json:"capability"`
+	ClientName string        `json:"clientName"`
+
+	// Workspaces Every workspace the grant would reach today; future ones join automatically.
+	Workspaces []MCPAuthorizationWorkspace `json:"workspaces"`
+}
+
+// MCPAuthorizationWorkspace defines model for MCPAuthorizationWorkspace.
+type MCPAuthorizationWorkspace struct {
+	Id   openapi_types.UUID `json:"id"`
+	Name string             `json:"name"`
+	Slug string             `json:"slug"`
+}
+
+// MCPCapability What the connection may do — read everything its owner can see, or also write.
+type MCPCapability string
+
+// MCPConnection defines model for MCPConnection.
+type MCPConnection struct {
+	// Capability What the connection may do — read everything its owner can see, or also write.
+	Capability MCPCapability `json:"capability"`
+	ClientName string        `json:"clientName"`
+	CreatedAt  time.Time     `json:"createdAt"`
+
+	// FollowsMembership When true the connection reaches every workspace its owner belongs to, including ones joined after authorization. When false it is narrowed to the listed grants.
+	FollowsMembership bool               `json:"followsMembership"`
+	Grants            []APITokenGrant    `json:"grants"`
+	Id                openapi_types.UUID `json:"id"`
+	LastUsedAt        *time.Time         `json:"lastUsedAt,omitempty"`
+}
+
 // MailUnavailableProblem defines model for MailUnavailableProblem.
 type MailUnavailableProblem struct {
 	Code     MailUnavailableProblemCode `json:"code"`
@@ -3677,6 +3746,15 @@ type MoveIssueRequest struct {
 	AcknowledgeLabelLoss *bool              `json:"acknowledgeLabelLoss,omitempty"`
 	ExpectedVersion      int32              `json:"expectedVersion"`
 	TeamId               openapi_types.UUID `json:"teamId"`
+}
+
+// NarrowMCPConnectionRequest defines model for NarrowMCPConnectionRequest.
+type NarrowMCPConnectionRequest struct {
+	// Capability What the connection may do — read everything its owner can see, or also write.
+	Capability *MCPCapability `json:"capability,omitempty"`
+
+	// Grants Replaces the connection's reach; must shrink it, never widen it.
+	Grants *[]APITokenGrant `json:"grants,omitempty"`
 }
 
 // Notification defines model for Notification.
@@ -4501,6 +4579,13 @@ type WorkspaceDeletedProblem struct {
 // WorkspaceDeletedProblemCode defines model for WorkspaceDeletedProblem.Code.
 type WorkspaceDeletedProblemCode string
 
+// WorkspaceMCPConnection defines model for WorkspaceMCPConnection.
+type WorkspaceMCPConnection struct {
+	Connection MCPConnection `json:"connection"`
+	OwnerEmail string        `json:"ownerEmail"`
+	OwnerName  string        `json:"ownerName"`
+}
+
 // WorkspaceOidcConnection defines model for WorkspaceOidcConnection.
 type WorkspaceOidcConnection struct {
 	ClientId     string             `json:"clientId"`
@@ -4617,6 +4702,12 @@ type IssueId = openapi_types.UUID
 
 // LabelId defines model for LabelId.
 type LabelId = openapi_types.UUID
+
+// MCPConnectionId defines model for MCPConnectionId.
+type MCPConnectionId = openapi_types.UUID
+
+// MCPRequestId defines model for MCPRequestId.
+type MCPRequestId = string
 
 // NotificationSubjectId defines model for NotificationSubjectId.
 type NotificationSubjectId = openapi_types.UUID
@@ -4955,6 +5046,9 @@ type AcceptInvitationJSONRequestBody = AcceptInvitationRequest
 // PreviewInvitationJSONRequestBody defines body for PreviewInvitation for application/json ContentType.
 type PreviewInvitationJSONRequestBody = PreviewInvitationRequest
 
+// NarrowMCPConnectionJSONRequestBody defines body for NarrowMCPConnection for application/json ContentType.
+type NarrowMCPConnectionJSONRequestBody = NarrowMCPConnectionRequest
+
 // BeginOidcLoginJSONRequestBody defines body for BeginOidcLogin for application/json ContentType.
 type BeginOidcLoginJSONRequestBody = BeginOidcLoginRequest
 
@@ -5197,6 +5291,24 @@ type ServerInterface interface {
 	// PreviewInvitation Describe an invitation link before anyone acts on it
 	// (POST /invitations/preview)
 	PreviewInvitation(w http.ResponseWriter, r *http.Request)
+	// DescribeMCPAuthorization What an AI client is asking to be granted, for the consent screen
+	// (GET /mcp/authorizations/{requestId})
+	DescribeMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId)
+	// ApproveMCPAuthorization Grant the AI client a connection that follows the caller's own membership
+	// (POST /mcp/authorizations/{requestId}/approve)
+	ApproveMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId)
+	// DenyMCPAuthorization Refuse the AI client and send it away empty-handed
+	// (POST /mcp/authorizations/{requestId}/deny)
+	DenyMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId)
+	// ListMCPConnections List the caller's live AI client connections
+	// (GET /mcp/connections)
+	ListMCPConnections(w http.ResponseWriter, r *http.Request)
+	// RevokeMCPConnection Revoke a connection, cutting it off from the next operation on
+	// (DELETE /mcp/connections/{connectionId})
+	RevokeMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId)
+	// NarrowMCPConnection Shrink what a connection may reach, without re-authorizing
+	// (PATCH /mcp/connections/{connectionId})
+	NarrowMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId)
 	// RevokeAllSessions Revoke every session for the account, including the current one
 	// (DELETE /sessions)
 	RevokeAllSessions(w http.ResponseWriter, r *http.Request)
@@ -5449,6 +5561,12 @@ type ServerInterface interface {
 	// GetWorkspaceLabelUsage How many issues carry this label, within the actor's scope
 	// (GET /workspaces/{workspaceId}/labels/{labelId}/usage)
 	GetWorkspaceLabelUsage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, labelId LabelId)
+	// ListWorkspaceMCPConnections The AI client connections able to reach this workspace, for its admins
+	// (GET /workspaces/{workspaceId}/mcp-connections)
+	ListWorkspaceMCPConnections(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// RevokeWorkspaceMCPConnection Revoke a connection reaching this workspace, as its admin
+	// (DELETE /workspaces/{workspaceId}/mcp-connections/{connectionId})
+	RevokeWorkspaceMCPConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId MCPConnectionId)
 	// ListWorkspaceMembers List workspace members, searchable and paged by cursor
 	// (GET /workspaces/{workspaceId}/members)
 	ListWorkspaceMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceMembersParams)
@@ -5833,6 +5951,42 @@ func (_ Unimplemented) AcceptInvitation(w http.ResponseWriter, r *http.Request) 
 // PreviewInvitation Describe an invitation link before anyone acts on it
 // (POST /invitations/preview)
 func (_ Unimplemented) PreviewInvitation(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DescribeMCPAuthorization What an AI client is asking to be granted, for the consent screen
+// (GET /mcp/authorizations/{requestId})
+func (_ Unimplemented) DescribeMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ApproveMCPAuthorization Grant the AI client a connection that follows the caller's own membership
+// (POST /mcp/authorizations/{requestId}/approve)
+func (_ Unimplemented) ApproveMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DenyMCPAuthorization Refuse the AI client and send it away empty-handed
+// (POST /mcp/authorizations/{requestId}/deny)
+func (_ Unimplemented) DenyMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListMCPConnections List the caller's live AI client connections
+// (GET /mcp/connections)
+func (_ Unimplemented) ListMCPConnections(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RevokeMCPConnection Revoke a connection, cutting it off from the next operation on
+// (DELETE /mcp/connections/{connectionId})
+func (_ Unimplemented) RevokeMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// NarrowMCPConnection Shrink what a connection may reach, without re-authorizing
+// (PATCH /mcp/connections/{connectionId})
+func (_ Unimplemented) NarrowMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -6337,6 +6491,18 @@ func (_ Unimplemented) MergeWorkspaceLabel(w http.ResponseWriter, r *http.Reques
 // GetWorkspaceLabelUsage How many issues carry this label, within the actor's scope
 // (GET /workspaces/{workspaceId}/labels/{labelId}/usage)
 func (_ Unimplemented) GetWorkspaceLabelUsage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, labelId LabelId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceMCPConnections The AI client connections able to reach this workspace, for its admins
+// (GET /workspaces/{workspaceId}/mcp-connections)
+func (_ Unimplemented) ListWorkspaceMCPConnections(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RevokeWorkspaceMCPConnection Revoke a connection reaching this workspace, as its admin
+// (DELETE /workspaces/{workspaceId}/mcp-connections/{connectionId})
+func (_ Unimplemented) RevokeWorkspaceMCPConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId MCPConnectionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -7270,6 +7436,150 @@ func (siw *ServerInterfaceWrapper) PreviewInvitation(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PreviewInvitation(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DescribeMCPAuthorization operation middleware
+func (siw *ServerInterfaceWrapper) DescribeMCPAuthorization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "requestId" -------------
+	var requestId MCPRequestId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "requestId", chi.URLParam(r, "requestId"), &requestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "requestId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DescribeMCPAuthorization(w, r, requestId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ApproveMCPAuthorization operation middleware
+func (siw *ServerInterfaceWrapper) ApproveMCPAuthorization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "requestId" -------------
+	var requestId MCPRequestId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "requestId", chi.URLParam(r, "requestId"), &requestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "requestId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApproveMCPAuthorization(w, r, requestId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DenyMCPAuthorization operation middleware
+func (siw *ServerInterfaceWrapper) DenyMCPAuthorization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "requestId" -------------
+	var requestId MCPRequestId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "requestId", chi.URLParam(r, "requestId"), &requestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "requestId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DenyMCPAuthorization(w, r, requestId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMCPConnections operation middleware
+func (siw *ServerInterfaceWrapper) ListMCPConnections(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMCPConnections(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeMCPConnection operation middleware
+func (siw *ServerInterfaceWrapper) RevokeMCPConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "connectionId" -------------
+	var connectionId MCPConnectionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeMCPConnection(w, r, connectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// NarrowMCPConnection operation middleware
+func (siw *ServerInterfaceWrapper) NarrowMCPConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "connectionId" -------------
+	var connectionId MCPConnectionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.NarrowMCPConnection(w, r, connectionId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -10247,6 +10557,67 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceLabelUsage(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWorkspaceLabelUsage(w, r, workspaceId, labelId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceMCPConnections operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceMCPConnections(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceMCPConnections(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeWorkspaceMCPConnection operation middleware
+func (siw *ServerInterfaceWrapper) RevokeWorkspaceMCPConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "connectionId" -------------
+	var connectionId MCPConnectionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeWorkspaceMCPConnection(w, r, workspaceId, connectionId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -13535,6 +13906,30 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/directory/availability", wrapper.GetWorkspaceDirectoryAvailability)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/mcp/authorizations/{requestId}", wrapper.DescribeMCPAuthorization)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/mcp/authorizations/{requestId}/approve", wrapper.ApproveMCPAuthorization)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/mcp/authorizations/{requestId}/deny", wrapper.DenyMCPAuthorization)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/mcp/connections", wrapper.ListMCPConnections)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/mcp/connections/{connectionId}", wrapper.RevokeMCPConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/mcp/connections/{connectionId}", wrapper.NarrowMCPConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/mcp-connections", wrapper.ListWorkspaceMCPConnections)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/mcp-connections/{connectionId}", wrapper.RevokeWorkspaceMCPConnection)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents", wrapper.ListWorkspaceAgents)
 	})
 	r.Group(func(r chi.Router) {
@@ -15756,6 +16151,492 @@ func (response PreviewInvitation409ApplicationProblemPlusJSONResponse) VisitPrev
 type PreviewInvitation500ApplicationProblemPlusJSONResponse Problem
 
 func (response PreviewInvitation500ApplicationProblemPlusJSONResponse) VisitPreviewInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DescribeMCPAuthorizationRequestObject struct {
+	RequestId MCPRequestId `json:"requestId"`
+}
+
+type DescribeMCPAuthorizationResponseObject interface {
+	VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error
+}
+
+type DescribeMCPAuthorization200JSONResponse MCPAuthorizationView
+
+func (response DescribeMCPAuthorization200JSONResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DescribeMCPAuthorization401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DescribeMCPAuthorization401ApplicationProblemPlusJSONResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DescribeMCPAuthorization403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DescribeMCPAuthorization403ApplicationProblemPlusJSONResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DescribeMCPAuthorization404ApplicationProblemPlusJSONResponse Problem
+
+func (response DescribeMCPAuthorization404ApplicationProblemPlusJSONResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DescribeMCPAuthorization500ApplicationProblemPlusJSONResponse Problem
+
+func (response DescribeMCPAuthorization500ApplicationProblemPlusJSONResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveMCPAuthorizationRequestObject struct {
+	RequestId MCPRequestId `json:"requestId"`
+}
+
+type ApproveMCPAuthorizationResponseObject interface {
+	VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error
+}
+
+type ApproveMCPAuthorization200JSONResponse MCPAuthorizationDecision
+
+func (response ApproveMCPAuthorization200JSONResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveMCPAuthorization401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ApproveMCPAuthorization401ApplicationProblemPlusJSONResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveMCPAuthorization403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ApproveMCPAuthorization403ApplicationProblemPlusJSONResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveMCPAuthorization404ApplicationProblemPlusJSONResponse Problem
+
+func (response ApproveMCPAuthorization404ApplicationProblemPlusJSONResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveMCPAuthorization500ApplicationProblemPlusJSONResponse Problem
+
+func (response ApproveMCPAuthorization500ApplicationProblemPlusJSONResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DenyMCPAuthorizationRequestObject struct {
+	RequestId MCPRequestId `json:"requestId"`
+}
+
+type DenyMCPAuthorizationResponseObject interface {
+	VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error
+}
+
+type DenyMCPAuthorization200JSONResponse MCPAuthorizationDecision
+
+func (response DenyMCPAuthorization200JSONResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DenyMCPAuthorization401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DenyMCPAuthorization401ApplicationProblemPlusJSONResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DenyMCPAuthorization403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DenyMCPAuthorization403ApplicationProblemPlusJSONResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DenyMCPAuthorization404ApplicationProblemPlusJSONResponse Problem
+
+func (response DenyMCPAuthorization404ApplicationProblemPlusJSONResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DenyMCPAuthorization500ApplicationProblemPlusJSONResponse Problem
+
+func (response DenyMCPAuthorization500ApplicationProblemPlusJSONResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMCPConnectionsRequestObject struct {
+}
+
+type ListMCPConnectionsResponseObject interface {
+	VisitListMCPConnectionsResponse(w http.ResponseWriter) error
+}
+
+type ListMCPConnections200JSONResponse []MCPConnection
+
+func (response ListMCPConnections200JSONResponse) VisitListMCPConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMCPConnections401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListMCPConnections401ApplicationProblemPlusJSONResponse) VisitListMCPConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMCPConnections403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListMCPConnections403ApplicationProblemPlusJSONResponse) VisitListMCPConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMCPConnections500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListMCPConnections500ApplicationProblemPlusJSONResponse) VisitListMCPConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeMCPConnectionRequestObject struct {
+	ConnectionId MCPConnectionId `json:"connectionId"`
+}
+
+type RevokeMCPConnectionResponseObject interface {
+	VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error
+}
+
+type RevokeMCPConnection204Response struct {
+}
+
+func (response RevokeMCPConnection204Response) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeMCPConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RevokeMCPConnection401ApplicationProblemPlusJSONResponse) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeMCPConnection403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RevokeMCPConnection403ApplicationProblemPlusJSONResponse) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeMCPConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response RevokeMCPConnection404ApplicationProblemPlusJSONResponse) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeMCPConnection500ApplicationProblemPlusJSONResponse Problem
+
+func (response RevokeMCPConnection500ApplicationProblemPlusJSONResponse) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type NarrowMCPConnectionRequestObject struct {
+	ConnectionId MCPConnectionId `json:"connectionId"`
+	Body         *NarrowMCPConnectionJSONRequestBody
+}
+
+type NarrowMCPConnectionResponseObject interface {
+	VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error
+}
+
+type NarrowMCPConnection200JSONResponse MCPConnection
+
+func (response NarrowMCPConnection200JSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type NarrowMCPConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response NarrowMCPConnection401ApplicationProblemPlusJSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type NarrowMCPConnection403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response NarrowMCPConnection403ApplicationProblemPlusJSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type NarrowMCPConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response NarrowMCPConnection404ApplicationProblemPlusJSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type NarrowMCPConnection422ApplicationProblemPlusJSONResponse Problem
+
+func (response NarrowMCPConnection422ApplicationProblemPlusJSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type NarrowMCPConnection500ApplicationProblemPlusJSONResponse Problem
+
+func (response NarrowMCPConnection500ApplicationProblemPlusJSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -23358,6 +24239,151 @@ func (response GetWorkspaceLabelUsage500ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type ListWorkspaceMCPConnectionsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceMCPConnectionsResponseObject interface {
+	VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceMCPConnections200JSONResponse []WorkspaceMCPConnection
+
+func (response ListWorkspaceMCPConnections200JSONResponse) VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMCPConnections401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceMCPConnections401ApplicationProblemPlusJSONResponse) VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMCPConnections403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceMCPConnections403ApplicationProblemPlusJSONResponse) VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMCPConnections500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceMCPConnections500ApplicationProblemPlusJSONResponse) VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeWorkspaceMCPConnectionRequestObject struct {
+	WorkspaceId  WorkspaceId     `json:"workspaceId"`
+	ConnectionId MCPConnectionId `json:"connectionId"`
+}
+
+type RevokeWorkspaceMCPConnectionResponseObject interface {
+	VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error
+}
+
+type RevokeWorkspaceMCPConnection204Response struct {
+}
+
+func (response RevokeWorkspaceMCPConnection204Response) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeWorkspaceMCPConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RevokeWorkspaceMCPConnection401ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeWorkspaceMCPConnection403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RevokeWorkspaceMCPConnection403ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeWorkspaceMCPConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response RevokeWorkspaceMCPConnection404ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeWorkspaceMCPConnection500ApplicationProblemPlusJSONResponse Problem
+
+func (response RevokeWorkspaceMCPConnection500ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceMembersRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	Params      ListWorkspaceMembersParams
@@ -30732,6 +31758,24 @@ type StrictServerInterface interface {
 	// PreviewInvitation Describe an invitation link before anyone acts on it
 	// (POST /invitations/preview)
 	PreviewInvitation(ctx context.Context, request PreviewInvitationRequestObject) (PreviewInvitationResponseObject, error)
+	// DescribeMCPAuthorization What an AI client is asking to be granted, for the consent screen
+	// (GET /mcp/authorizations/{requestId})
+	DescribeMCPAuthorization(ctx context.Context, request DescribeMCPAuthorizationRequestObject) (DescribeMCPAuthorizationResponseObject, error)
+	// ApproveMCPAuthorization Grant the AI client a connection that follows the caller's own membership
+	// (POST /mcp/authorizations/{requestId}/approve)
+	ApproveMCPAuthorization(ctx context.Context, request ApproveMCPAuthorizationRequestObject) (ApproveMCPAuthorizationResponseObject, error)
+	// DenyMCPAuthorization Refuse the AI client and send it away empty-handed
+	// (POST /mcp/authorizations/{requestId}/deny)
+	DenyMCPAuthorization(ctx context.Context, request DenyMCPAuthorizationRequestObject) (DenyMCPAuthorizationResponseObject, error)
+	// ListMCPConnections List the caller's live AI client connections
+	// (GET /mcp/connections)
+	ListMCPConnections(ctx context.Context, request ListMCPConnectionsRequestObject) (ListMCPConnectionsResponseObject, error)
+	// RevokeMCPConnection Revoke a connection, cutting it off from the next operation on
+	// (DELETE /mcp/connections/{connectionId})
+	RevokeMCPConnection(ctx context.Context, request RevokeMCPConnectionRequestObject) (RevokeMCPConnectionResponseObject, error)
+	// NarrowMCPConnection Shrink what a connection may reach, without re-authorizing
+	// (PATCH /mcp/connections/{connectionId})
+	NarrowMCPConnection(ctx context.Context, request NarrowMCPConnectionRequestObject) (NarrowMCPConnectionResponseObject, error)
 	// RevokeAllSessions Revoke every session for the account, including the current one
 	// (DELETE /sessions)
 	RevokeAllSessions(ctx context.Context, request RevokeAllSessionsRequestObject) (RevokeAllSessionsResponseObject, error)
@@ -30984,6 +32028,12 @@ type StrictServerInterface interface {
 	// GetWorkspaceLabelUsage How many issues carry this label, within the actor's scope
 	// (GET /workspaces/{workspaceId}/labels/{labelId}/usage)
 	GetWorkspaceLabelUsage(ctx context.Context, request GetWorkspaceLabelUsageRequestObject) (GetWorkspaceLabelUsageResponseObject, error)
+	// ListWorkspaceMCPConnections The AI client connections able to reach this workspace, for its admins
+	// (GET /workspaces/{workspaceId}/mcp-connections)
+	ListWorkspaceMCPConnections(ctx context.Context, request ListWorkspaceMCPConnectionsRequestObject) (ListWorkspaceMCPConnectionsResponseObject, error)
+	// RevokeWorkspaceMCPConnection Revoke a connection reaching this workspace, as its admin
+	// (DELETE /workspaces/{workspaceId}/mcp-connections/{connectionId})
+	RevokeWorkspaceMCPConnection(ctx context.Context, request RevokeWorkspaceMCPConnectionRequestObject) (RevokeWorkspaceMCPConnectionResponseObject, error)
 	// ListWorkspaceMembers List workspace members, searchable and paged by cursor
 	// (GET /workspaces/{workspaceId}/members)
 	ListWorkspaceMembers(ctx context.Context, request ListWorkspaceMembersRequestObject) (ListWorkspaceMembersResponseObject, error)
@@ -31908,6 +32958,167 @@ func (sh *strictHandler) PreviewInvitation(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PreviewInvitationResponseObject); ok {
 		if err := validResponse.VisitPreviewInvitationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DescribeMCPAuthorization operation middleware
+func (sh *strictHandler) DescribeMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
+	var request DescribeMCPAuthorizationRequestObject
+
+	request.RequestId = requestId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DescribeMCPAuthorization(ctx, request.(DescribeMCPAuthorizationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DescribeMCPAuthorization")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DescribeMCPAuthorizationResponseObject); ok {
+		if err := validResponse.VisitDescribeMCPAuthorizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ApproveMCPAuthorization operation middleware
+func (sh *strictHandler) ApproveMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
+	var request ApproveMCPAuthorizationRequestObject
+
+	request.RequestId = requestId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApproveMCPAuthorization(ctx, request.(ApproveMCPAuthorizationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApproveMCPAuthorization")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApproveMCPAuthorizationResponseObject); ok {
+		if err := validResponse.VisitApproveMCPAuthorizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DenyMCPAuthorization operation middleware
+func (sh *strictHandler) DenyMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
+	var request DenyMCPAuthorizationRequestObject
+
+	request.RequestId = requestId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DenyMCPAuthorization(ctx, request.(DenyMCPAuthorizationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DenyMCPAuthorization")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DenyMCPAuthorizationResponseObject); ok {
+		if err := validResponse.VisitDenyMCPAuthorizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListMCPConnections operation middleware
+func (sh *strictHandler) ListMCPConnections(w http.ResponseWriter, r *http.Request) {
+	var request ListMCPConnectionsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMCPConnections(ctx, request.(ListMCPConnectionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMCPConnections")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMCPConnectionsResponseObject); ok {
+		if err := validResponse.VisitListMCPConnectionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeMCPConnection operation middleware
+func (sh *strictHandler) RevokeMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId) {
+	var request RevokeMCPConnectionRequestObject
+
+	request.ConnectionId = connectionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeMCPConnection(ctx, request.(RevokeMCPConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeMCPConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeMCPConnectionResponseObject); ok {
+		if err := validResponse.VisitRevokeMCPConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// NarrowMCPConnection operation middleware
+func (sh *strictHandler) NarrowMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId) {
+	var request NarrowMCPConnectionRequestObject
+
+	request.ConnectionId = connectionId
+
+	var body NarrowMCPConnectionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.NarrowMCPConnection(ctx, request.(NarrowMCPConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "NarrowMCPConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(NarrowMCPConnectionResponseObject); ok {
+		if err := validResponse.VisitNarrowMCPConnectionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -34339,6 +35550,59 @@ func (sh *strictHandler) GetWorkspaceLabelUsage(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceLabelUsageResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceLabelUsageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceMCPConnections operation middleware
+func (sh *strictHandler) ListWorkspaceMCPConnections(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceMCPConnectionsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceMCPConnections(ctx, request.(ListWorkspaceMCPConnectionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceMCPConnections")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceMCPConnectionsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceMCPConnectionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeWorkspaceMCPConnection operation middleware
+func (sh *strictHandler) RevokeWorkspaceMCPConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId MCPConnectionId) {
+	var request RevokeWorkspaceMCPConnectionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ConnectionId = connectionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeWorkspaceMCPConnection(ctx, request.(RevokeWorkspaceMCPConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeWorkspaceMCPConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeWorkspaceMCPConnectionResponseObject); ok {
+		if err := validResponse.VisitRevokeWorkspaceMCPConnectionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

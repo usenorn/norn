@@ -15,11 +15,12 @@ import (
 const recordActivityQuery = `
 INSERT INTO workspace_activity (
     id, operation_id, workspace_id, issue_id, project_id,
-    actor_account_id, actor_kind, actor_token_id, actor_token_name, kind,
+    actor_account_id, actor_kind, actor_token_id, actor_token_name,
+    actor_connection_id, actor_connection_name, kind,
     from_state_name, to_state_name,
     field, from_value, to_value, version, bulk_action_id, created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`
 
 const activityColumns = `
 SELECT a.id,
@@ -32,6 +33,8 @@ SELECT a.id,
        a.actor_kind,
        coalesce(a.actor_token_id::text, ''),
        coalesce(a.actor_token_name, ''),
+       coalesce(a.actor_connection_id::text, ''),
+       coalesce(a.actor_connection_name, ''),
        a.kind,
        a.from_state_name,
        a.to_state_name,
@@ -158,6 +161,8 @@ func (r *activityRepository) Record(ctx context.Context, activity entity.Activit
 		string(activity.Actor.Kind),
 		optionalTokenID(activity.Actor.TokenID),
 		nullIfEmpty(activity.Actor.TokenName),
+		optionalTokenID(activity.Actor.ConnectionID),
+		nullIfEmpty(activity.Actor.ConnectionName),
 		string(activity.Kind),
 		activity.FromState,
 		activity.ToState,
@@ -322,12 +327,14 @@ func (r *activityRepository) query(
 			issue, project   string
 			actor, actorKind string
 			actorToken       string
+			actorConnection  string
 			kind, bulkAction string
 		)
 
 		if err := rows.Scan(
 			&id, &operation, &workspace, &issue, &project,
-			&actor, &activity.ActorName, &actorKind, &actorToken, &activity.Actor.TokenName, &kind,
+			&actor, &activity.ActorName, &actorKind, &actorToken, &activity.Actor.TokenName,
+			&actorConnection, &activity.Actor.ConnectionName, &kind,
 			&activity.FromState, &activity.ToState,
 			&activity.Field, &activity.FromValue, &activity.ToValue,
 			&activity.Version, &bulkAction, &activity.CreatedAt,
@@ -345,6 +352,15 @@ func (r *activityRepository) query(
 			}
 
 			activity.Actor.TokenID = &tokenID
+		}
+
+		if actorConnection != "" {
+			connectionID, err := uuid.Parse(actorConnection)
+			if err != nil {
+				return nil, fmt.Errorf("parse activity actor connection id: %w", err)
+			}
+
+			activity.Actor.ConnectionID = &connectionID
 		}
 
 		parsed, err := uuid.Parse(id)

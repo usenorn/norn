@@ -21,6 +21,7 @@ tags:
   - name: triage
   - name: states
   - name: tokens
+  - name: connections
   - name: agents
   - name: sso
   - name: notifications
@@ -1452,6 +1453,149 @@ paths:
               schema: { $ref: '#/components/schemas/DirectoryAvailability' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /mcp/authorizations/{requestId}:
+    get:
+      tags: [connections]
+      operationId: describeMCPAuthorization
+      summary: What an AI client is asking to be granted, for the consent screen
+      parameters:
+        - $ref: '#/components/parameters/MCPRequestId'
+      responses:
+        '200':
+          description: The pending authorization request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MCPAuthorizationView' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /mcp/authorizations/{requestId}/approve:
+    post:
+      tags: [connections]
+      operationId: approveMCPAuthorization
+      summary: Grant the AI client a connection that follows the caller's own membership
+      parameters:
+        - $ref: '#/components/parameters/MCPRequestId'
+      responses:
+        '200':
+          description: Where to send the client to finish the handshake
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MCPAuthorizationDecision' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /mcp/authorizations/{requestId}/deny:
+    post:
+      tags: [connections]
+      operationId: denyMCPAuthorization
+      summary: Refuse the AI client and send it away empty-handed
+      parameters:
+        - $ref: '#/components/parameters/MCPRequestId'
+      responses:
+        '200':
+          description: Where to send the client to report the refusal
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MCPAuthorizationDecision' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /mcp/connections:
+    get:
+      tags: [connections]
+      operationId: listMCPConnections
+      summary: List the caller's live AI client connections
+      responses:
+        '200':
+          description: The caller's connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MCPConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /mcp/connections/{connectionId}:
+    patch:
+      tags: [connections]
+      operationId: narrowMCPConnection
+      summary: Shrink what a connection may reach, without re-authorizing
+      parameters:
+        - $ref: '#/components/parameters/MCPConnectionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NarrowMCPConnectionRequest' }
+      responses:
+        '200':
+          description: The connection after narrowing
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MCPConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [connections]
+      operationId: revokeMCPConnection
+      summary: Revoke a connection, cutting it off from the next operation on
+      parameters:
+        - $ref: '#/components/parameters/MCPConnectionId'
+      responses:
+        '204':
+          description: The connection was revoked
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/mcp-connections:
+    get:
+      tags: [connections]
+      operationId: listWorkspaceMCPConnections
+      summary: The AI client connections able to reach this workspace, for its admins
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The connections reaching this workspace, with their owners
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkspaceMCPConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/mcp-connections/{connectionId}:
+    delete:
+      tags: [connections]
+      operationId: revokeWorkspaceMCPConnection
+      summary: Revoke a connection reaching this workspace, as its admin
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/MCPConnectionId'
+      responses:
+        '204':
+          description: The connection was revoked everywhere it reached
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/agents:
@@ -3961,6 +4105,16 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    MCPRequestId:
+      name: requestId
+      in: path
+      required: true
+      schema: { type: string }
+    MCPConnectionId:
+      name: connectionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     AgentId:
       name: agentId
       in: path
@@ -5161,6 +5315,11 @@ components:
           description: >-
             The API token that made the change, when one did. Recorded as it was named at the
             time, so revoking the token does not change what the record says happened.
+        actorConnectionName:
+          type: string
+          description: >-
+            The AI client connection that made the change, when one did. Recorded as the client
+            was named at the time, so revoking the connection does not rewrite history.
         bulkActionId: { type: string, format: uuid }
         changes:
           type: array
@@ -5325,6 +5484,9 @@ components:
         - agent.registered
         - agent.disabled
         - agent.proposal_decided
+        - mcp_connection.authorized
+        - mcp_connection.narrowed
+        - mcp_connection.revoked
         - workspace.updated
         - workspace.deletion_requested
         - workspace.restored
@@ -5933,6 +6095,71 @@ components:
           type: array
           items: { $ref: '#/components/schemas/APITokenGrant' }
         expiresAt: { type: string, format: date-time }
+
+    MCPCapability:
+      type: string
+      description: What the connection may do — read everything its owner can see, or also write.
+      enum: [read, write]
+
+    MCPConnection:
+      type: object
+      required: [id, clientName, capability, followsMembership, grants, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        clientName: { type: string }
+        capability: { $ref: '#/components/schemas/MCPCapability' }
+        followsMembership:
+          type: boolean
+          description: >-
+            When true the connection reaches every workspace its owner belongs to, including
+            ones joined after authorization. When false it is narrowed to the listed grants.
+        grants:
+          type: array
+          items: { $ref: '#/components/schemas/APITokenGrant' }
+        lastUsedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    WorkspaceMCPConnection:
+      type: object
+      required: [connection, ownerName, ownerEmail]
+      properties:
+        connection: { $ref: '#/components/schemas/MCPConnection' }
+        ownerName: { type: string }
+        ownerEmail: { type: string }
+
+    MCPAuthorizationWorkspace:
+      type: object
+      required: [id, slug, name]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+
+    MCPAuthorizationView:
+      type: object
+      required: [clientName, capability, workspaces]
+      properties:
+        clientName: { type: string }
+        capability: { $ref: '#/components/schemas/MCPCapability' }
+        workspaces:
+          type: array
+          description: Every workspace the grant would reach today; future ones join automatically.
+          items: { $ref: '#/components/schemas/MCPAuthorizationWorkspace' }
+
+    MCPAuthorizationDecision:
+      type: object
+      required: [redirectTo]
+      properties:
+        redirectTo: { type: string }
+
+    NarrowMCPConnectionRequest:
+      type: object
+      properties:
+        capability: { $ref: '#/components/schemas/MCPCapability' }
+        grants:
+          type: array
+          description: Replaces the connection's reach; must shrink it, never widen it.
+          items: { $ref: '#/components/schemas/APITokenGrant' }
 
     APITokenUnusableProblem:
       allOf:

@@ -10,10 +10,13 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/auditexport"
 	"github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
+	"github.com/usenorn/norn/internal/handler/http/mcpauth"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/handler/http/scim"
 	"github.com/usenorn/norn/internal/handler/http/sso"
+	"github.com/usenorn/norn/internal/handler/mcpserver"
 	"github.com/usenorn/norn/internal/observability/logging"
+	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -24,8 +27,12 @@ func New(
 	cfg config.HTTP,
 	sessionCfg config.Session,
 	attachmentCfg config.Attachments,
+	appCfg config.App,
+	mcpCfg config.MCP,
 	sessions service.Sessions,
 	tokens service.APITokens,
+	connections service.MCPConnections,
+	mcpThrottle repository.MCPThrottle,
 	dashboard api.StrictServerInterface,
 	callback *sso.Callback,
 	samlEdge *sso.SAML,
@@ -33,6 +40,8 @@ func New(
 	eventsEdge *events.Edge,
 	auditEdge *auditexport.Edge,
 	scimEdge *scim.Edge,
+	mcpAuth *mcpauth.Edge,
+	mcpEdge *mcpserver.Edge,
 ) http.Handler {
 	base := chi.NewRouter()
 	base.Use(
@@ -51,9 +60,25 @@ func New(
 	bounded.Get(sso.MetadataPath, samlEdge.Metadata)
 	bounded.Post(sso.ACSPath, samlEdge.Consume)
 
+	bounded.Get(mcpauth.ResourceMetadataPath, mcpAuth.ProtectedResource)
+	bounded.Get(mcpauth.ResourceMetadataMCPPath, mcpAuth.ProtectedResource)
+	bounded.Get(mcpauth.AuthServerMetadataPath, mcpAuth.AuthorizationServer)
+	bounded.Post(mcpauth.RegisterPath, mcpAuth.Register)
+	bounded.Get(mcpauth.AuthorizePath, mcpAuth.Authorize)
+	bounded.Post(mcpauth.TokenPath, mcpAuth.Token)
+	bounded.Post(mcpauth.RevokePath, mcpAuth.Revoke)
+
 	transfers := base.With(chimiddleware.Timeout(attachmentCfg.TransferTimeout))
 	transfers.Put(blob.UploadPath, blobEdge.Receive)
 	transfers.Get(blob.DownloadPath, blobEdge.Serve)
+
+	mcpOps := base.With(
+		middleware.MCPBearer(connections, appCfg, mcpCfg),
+		middleware.MCPRateLimit(mcpThrottle, mcpCfg),
+		maxRequestBytes(cfg.MaxRequestBytes),
+		chimiddleware.Timeout(cfg.RequestTimeout),
+	)
+	mcpOps.Handle(mcpserver.Path, mcpEdge)
 
 	streams := base.With(middleware.Session(sessions, sessionCfg))
 	streams.Get(events.Path, eventsEdge.Serve)
