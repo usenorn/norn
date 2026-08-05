@@ -175,6 +175,36 @@ func (mr *MockMembershipMockRecorder) SetAuditAccess(ctx, workspaceID, accountID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAuditAccess", reflect.TypeOf((*MockMembership)(nil).SetAuditAccess), ctx, workspaceID, accountID, reads)
 }
 
+// SetDeactivated mocks base method.
+func (m *MockMembership) SetDeactivated(ctx context.Context, workspaceID, accountID uuid.UUID, at *time.Time) (entity.Membership, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetDeactivated", ctx, workspaceID, accountID, at)
+	ret0, _ := ret[0].(entity.Membership)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetDeactivated indicates an expected call of SetDeactivated.
+func (mr *MockMembershipMockRecorder) SetDeactivated(ctx, workspaceID, accountID, at any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDeactivated", reflect.TypeOf((*MockMembership)(nil).SetDeactivated), ctx, workspaceID, accountID, at)
+}
+
+// SetSource mocks base method.
+func (m *MockMembership) SetSource(ctx context.Context, workspaceID, accountID uuid.UUID, source entity.MembershipSource) (entity.Membership, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetSource", ctx, workspaceID, accountID, source)
+	ret0, _ := ret[0].(entity.Membership)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetSource indicates an expected call of SetSource.
+func (mr *MockMembershipMockRecorder) SetSource(ctx, workspaceID, accountID, source any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSource", reflect.TypeOf((*MockMembership)(nil).SetSource), ctx, workspaceID, accountID, source)
+}
+
 // UpdateRole mocks base method.
 func (m *MockMembership) UpdateRole(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.Membership, error) {
 	m.ctrl.T.Helper()

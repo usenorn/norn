@@ -17,6 +17,8 @@ type Membership interface {
 	ListPageByWorkspaceID(ctx context.Context, workspaceID uuid.UUID, page entity.MembershipPage) ([]entity.WorkspaceMember, error)
 	UpdateRole(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.Membership, error)
 	SetAuditAccess(ctx context.Context, workspaceID, accountID uuid.UUID, reads bool) (entity.Membership, error)
+	SetSource(ctx context.Context, workspaceID, accountID uuid.UUID, source entity.MembershipSource) (entity.Membership, error)
+	SetDeactivated(ctx context.Context, workspaceID, accountID uuid.UUID, at *time.Time) (entity.Membership, error)
 	RecordActivity(ctx context.Context, accountID uuid.UUID, activeAt time.Time, method entity.SessionAuthMethod) error
 	Delete(ctx context.Context, workspaceID, accountID uuid.UUID) error
 	DeleteByAccountID(ctx context.Context, accountID uuid.UUID) error

@@ -19,6 +19,7 @@
 	import {
 		authMethodLabel,
 		hasMore,
+		isDeactivated,
 		isDirectoryManaged,
 		joinedOn,
 		lastActive,
@@ -581,6 +582,10 @@
 											<Tag name="You" />
 										{:else if isDirectoryManaged(member)}
 											<Tag name="Directory" />
+										{/if}
+
+										{#if isDeactivated(member)}
+											<Tag name="Deactivated" />
 										{/if}
 
 										<span class="ml-auto flex shrink-0 items-center gap-1.5">

@@ -91,6 +91,10 @@ export function memberName(member: Membership): string {
 	return member.displayName || member.email || member.accountId;
 }
 
+export function isDeactivated(member: Membership): boolean {
+	return Boolean(member.deactivatedAt);
+}
+
 export function isDirectoryManaged(member: Membership): boolean {
 	return member.source === "directory";
 }

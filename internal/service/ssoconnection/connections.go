@@ -495,7 +495,7 @@ func (s *connectionsService) provision(
 			WorkspaceID: workspaceID,
 			AccountID:   account.ID,
 			Role:        entity.MembershipRoleMember,
-			Source:      entity.MembershipSourceDirectory,
+			Source:      entity.MembershipSourceManual,
 		}); err != nil {
 			return err
 		}

@@ -348,6 +348,9 @@ const (
 	AuditActionAgentProposalDecided         AuditAction = "agent.proposal_decided"
 	AuditActionAgentRegistered              AuditAction = "agent.registered"
 	AuditActionAuditExported                AuditAction = "audit.exported"
+	AuditActionDirectoryConnected           AuditAction = "directory.connected"
+	AuditActionDirectoryDisconnected        AuditAction = "directory.disconnected"
+	AuditActionDirectoryTokenRotated        AuditAction = "directory.token_rotated"
 	AuditActionInvitationAccepted           AuditAction = "invitation.accepted"
 	AuditActionInvitationCreated            AuditAction = "invitation.created"
 	AuditActionInvitationRevoked            AuditAction = "invitation.revoked"
@@ -397,6 +400,12 @@ func (e AuditAction) Valid() bool {
 	case AuditActionAgentRegistered:
 		return true
 	case AuditActionAuditExported:
+		return true
+	case AuditActionDirectoryConnected:
+		return true
+	case AuditActionDirectoryDisconnected:
+		return true
+	case AuditActionDirectoryTokenRotated:
 		return true
 	case AuditActionInvitationAccepted:
 		return true
@@ -777,6 +786,78 @@ func (e CycleScopeChangeKind) Valid() bool {
 	case Returned:
 		return true
 	case RolledOver:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DirectoryAbsentPolicy.
+const (
+	Deactivate DirectoryAbsentPolicy = "deactivate"
+	Flag       DirectoryAbsentPolicy = "flag"
+)
+
+// Valid indicates whether the value is a known member of the DirectoryAbsentPolicy enum.
+func (e DirectoryAbsentPolicy) Valid() bool {
+	switch e {
+	case Deactivate:
+		return true
+	case Flag:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DirectorySyncOutcome.
+const (
+	DirectorySyncOutcomeFailed    DirectorySyncOutcome = "failed"
+	DirectorySyncOutcomeRefused   DirectorySyncOutcome = "refused"
+	DirectorySyncOutcomeSucceeded DirectorySyncOutcome = "succeeded"
+)
+
+// Valid indicates whether the value is a known member of the DirectorySyncOutcome enum.
+func (e DirectorySyncOutcome) Valid() bool {
+	switch e {
+	case DirectorySyncOutcomeFailed:
+		return true
+	case DirectorySyncOutcomeRefused:
+		return true
+	case DirectorySyncOutcomeSucceeded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DirectoryUnknownPolicy.
+const (
+	Ignore    DirectoryUnknownPolicy = "ignore"
+	Provision DirectoryUnknownPolicy = "provision"
+)
+
+// Valid indicates whether the value is a known member of the DirectoryUnknownPolicy enum.
+func (e DirectoryUnknownPolicy) Valid() bool {
+	switch e {
+	case Ignore:
+		return true
+	case Provision:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DirectoryUnlicensedProblemCode.
+const (
+	DirectoryUnlicensedProblemCodeDirectoryUnlicensed DirectoryUnlicensedProblemCode = "directory_unlicensed"
+)
+
+// Valid indicates whether the value is a known member of the DirectoryUnlicensedProblemCode enum.
+func (e DirectoryUnlicensedProblemCode) Valid() bool {
+	switch e {
+	case DirectoryUnlicensedProblemCodeDirectoryUnlicensed:
 		return true
 	default:
 		return false
@@ -2784,6 +2865,14 @@ type CommentReactionTally struct {
 	Reaction   CommentReaction      `json:"reaction"`
 }
 
+// ConfigureDirectoryRequest defines model for ConfigureDirectoryRequest.
+type ConfigureDirectoryRequest struct {
+	AdminGroup string                 `json:"adminGroup"`
+	Enabled    bool                   `json:"enabled"`
+	OnAbsent   DirectoryAbsentPolicy  `json:"onAbsent"`
+	OnUnknown  DirectoryUnknownPolicy `json:"onUnknown"`
+}
+
 // ConfirmEmailChangeRequest defines model for ConfirmEmailChangeRequest.
 type ConfirmEmailChangeRequest struct {
 	Token string `json:"token"`
@@ -2945,6 +3034,79 @@ type CycleScopeChange struct {
 
 // CycleScopeChangeKind defines model for CycleScopeChangeKind.
 type CycleScopeChangeKind string
+
+// DirectoryAbsentPolicy defines model for DirectoryAbsentPolicy.
+type DirectoryAbsentPolicy string
+
+// DirectoryAvailability defines model for DirectoryAvailability.
+type DirectoryAvailability struct {
+	Available bool    `json:"available"`
+	Holder    *string `json:"holder,omitempty"`
+}
+
+// DirectoryChange defines model for DirectoryChange.
+type DirectoryChange struct {
+	Detail     *map[string]string   `json:"detail,omitempty"`
+	Id         openapi_types.UUID   `json:"id"`
+	Kind       string               `json:"kind"`
+	Outcome    DirectorySyncOutcome `json:"outcome"`
+	RecordedAt time.Time            `json:"recordedAt"`
+	Subject    string               `json:"subject"`
+}
+
+// DirectoryConnection defines model for DirectoryConnection.
+type DirectoryConnection struct {
+	AdminGroup string                 `json:"adminGroup"`
+	Enabled    bool                   `json:"enabled"`
+	LastSyncAt *time.Time             `json:"lastSyncAt,omitempty"`
+	OnAbsent   DirectoryAbsentPolicy  `json:"onAbsent"`
+	OnUnknown  DirectoryUnknownPolicy `json:"onUnknown"`
+}
+
+// DirectoryRun defines model for DirectoryRun.
+type DirectoryRun struct {
+	Detail     *string              `json:"detail,omitempty"`
+	FinishedAt time.Time            `json:"finishedAt"`
+	Id         openapi_types.UUID   `json:"id"`
+	Operation  string               `json:"operation"`
+	Outcome    DirectorySyncOutcome `json:"outcome"`
+	StartedAt  time.Time            `json:"startedAt"`
+	Trigger    string               `json:"trigger"`
+}
+
+// DirectoryRunPage defines model for DirectoryRunPage.
+type DirectoryRunPage struct {
+	NextCursor *time.Time     `json:"nextCursor,omitempty"`
+	Runs       []DirectoryRun `json:"runs"`
+}
+
+// DirectorySettings defines model for DirectorySettings.
+type DirectorySettings struct {
+	Connected   bool                 `json:"connected"`
+	Connection  *DirectoryConnection `json:"connection,omitempty"`
+	ScimBaseUrl string               `json:"scimBaseUrl"`
+	Token       *string              `json:"token,omitempty"`
+}
+
+// DirectorySyncOutcome defines model for DirectorySyncOutcome.
+type DirectorySyncOutcome string
+
+// DirectoryUnknownPolicy defines model for DirectoryUnknownPolicy.
+type DirectoryUnknownPolicy string
+
+// DirectoryUnlicensedProblem defines model for DirectoryUnlicensedProblem.
+type DirectoryUnlicensedProblem struct {
+	Code     DirectoryUnlicensedProblemCode `json:"code"`
+	Detail   *string                        `json:"detail,omitempty"`
+	Errors   *[]FieldError                  `json:"errors,omitempty"`
+	Instance *string                        `json:"instance,omitempty"`
+	Status   int32                          `json:"status"`
+	Title    string                         `json:"title"`
+	Type     string                         `json:"type"`
+}
+
+// DirectoryUnlicensedProblemCode defines model for DirectoryUnlicensedProblem.Code.
+type DirectoryUnlicensedProblemCode string
 
 // DiscoverOidcRequest defines model for DiscoverOidcRequest.
 type DiscoverOidcRequest struct {
@@ -3443,6 +3605,7 @@ type MemberRemovalPreview struct {
 // Membership defines model for Membership.
 type Membership struct {
 	AccountId      openapi_types.UUID `json:"accountId"`
+	DeactivatedAt  *time.Time         `json:"deactivatedAt,omitempty"`
 	DisplayName    *string            `json:"displayName,omitempty"`
 	Email          *string            `json:"email,omitempty"`
 	JoinedAt       *time.Time         `json:"joinedAt,omitempty"`
@@ -4437,6 +4600,12 @@ type CommentId = openapi_types.UUID
 // CycleId defines model for CycleId.
 type CycleId = openapi_types.UUID
 
+// DirectoryCursor defines model for DirectoryCursor.
+type DirectoryCursor = time.Time
+
+// DirectoryLimit defines model for DirectoryLimit.
+type DirectoryLimit = int32
+
 // GroupId defines model for GroupId.
 type GroupId = openapi_types.UUID
 
@@ -4460,6 +4629,9 @@ type ProposalId = openapi_types.UUID
 
 // Reaction defines model for Reaction.
 type Reaction = CommentReaction
+
+// RunId defines model for RunId.
+type RunId = openapi_types.UUID
 
 // SavedViewId defines model for SavedViewId.
 type SavedViewId = openapi_types.UUID
@@ -4499,6 +4671,9 @@ type CommentConflict = CommentConflictProblem
 
 // CycleConflict defines model for CycleConflict.
 type CycleConflict = CycleConflictProblem
+
+// DirectoryUnlicensed defines model for DirectoryUnlicensed.
+type DirectoryUnlicensed = DirectoryUnlicensedProblem
 
 // EnforcementRefused defines model for EnforcementRefused.
 type EnforcementRefused = EnforcementRefusedProblem
@@ -4605,6 +4780,12 @@ type ListWorkspaceAuditParams struct {
 type ListWorkspaceCyclesParams struct {
 	TeamId *openapi_types.UUID `form:"teamId,omitempty" json:"teamId,omitempty"`
 	Phase  *CyclePhase         `form:"phase,omitempty" json:"phase,omitempty"`
+}
+
+// ListWorkspaceDirectoryRunsParams defines parameters for ListWorkspaceDirectoryRuns.
+type ListWorkspaceDirectoryRunsParams struct {
+	Limit  *DirectoryLimit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *DirectoryCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // ListWorkspaceInvitationsParams defines parameters for ListWorkspaceInvitations.
@@ -4800,6 +4981,9 @@ type SetWorkspaceAuthPolicyJSONRequestBody = SetWorkspaceAuthPolicyRequest
 
 // CloseWorkspaceCycleJSONRequestBody defines body for CloseWorkspaceCycle for application/json ContentType.
 type CloseWorkspaceCycleJSONRequestBody = CloseCycleRequest
+
+// ConfigureWorkspaceDirectoryJSONRequestBody defines body for ConfigureWorkspaceDirectory for application/json ContentType.
+type ConfigureWorkspaceDirectoryJSONRequestBody = ConfigureDirectoryRequest
 
 // CreateWorkspaceInvitationsJSONRequestBody defines body for CreateWorkspaceInvitations for application/json ContentType.
 type CreateWorkspaceInvitationsJSONRequestBody = CreateInvitationsRequest
@@ -5112,6 +5296,30 @@ type ServerInterface interface {
 	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
 	GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId)
+	// DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
+	// (DELETE /workspaces/{workspaceId}/directory)
+	DisconnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceDirectory Read how this workspace is provisioned from its identity provider
+	// (GET /workspaces/{workspaceId}/directory)
+	GetWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ConfigureWorkspaceDirectory Change how arrivals and departures are handled
+	// (PATCH /workspaces/{workspaceId}/directory)
+	ConfigureWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ConnectWorkspaceDirectory Connect a directory, returning the credential for the only time
+	// (POST /workspaces/{workspaceId}/directory)
+	ConnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceDirectoryAvailability Report whether directory synchronization is licensed here
+	// (GET /workspaces/{workspaceId}/directory/availability)
+	GetWorkspaceDirectoryAvailability(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListWorkspaceDirectoryRuns Read what the directory changed and when
+	// (GET /workspaces/{workspaceId}/directory/runs)
+	ListWorkspaceDirectoryRuns(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceDirectoryRunsParams)
+	// ListWorkspaceDirectoryChanges Read every change one sync run made
+	// (GET /workspaces/{workspaceId}/directory/runs/{runId}/changes)
+	ListWorkspaceDirectoryChanges(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runId RunId)
+	// RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
+	// (POST /workspaces/{workspaceId}/directory/token)
+	RotateWorkspaceDirectoryToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// ListWorkspaceInvitations List the workspace invitations administrators see beside members
 	// (GET /workspaces/{workspaceId}/invitations)
 	ListWorkspaceInvitations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceInvitationsParams)
@@ -5823,6 +6031,54 @@ func (_ Unimplemented) CloseWorkspaceCycle(w http.ResponseWriter, r *http.Reques
 // GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 // (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
 func (_ Unimplemented) GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
+// (DELETE /workspaces/{workspaceId}/directory)
+func (_ Unimplemented) DisconnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceDirectory Read how this workspace is provisioned from its identity provider
+// (GET /workspaces/{workspaceId}/directory)
+func (_ Unimplemented) GetWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ConfigureWorkspaceDirectory Change how arrivals and departures are handled
+// (PATCH /workspaces/{workspaceId}/directory)
+func (_ Unimplemented) ConfigureWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ConnectWorkspaceDirectory Connect a directory, returning the credential for the only time
+// (POST /workspaces/{workspaceId}/directory)
+func (_ Unimplemented) ConnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceDirectoryAvailability Report whether directory synchronization is licensed here
+// (GET /workspaces/{workspaceId}/directory/availability)
+func (_ Unimplemented) GetWorkspaceDirectoryAvailability(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceDirectoryRuns Read what the directory changed and when
+// (GET /workspaces/{workspaceId}/directory/runs)
+func (_ Unimplemented) ListWorkspaceDirectoryRuns(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceDirectoryRunsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceDirectoryChanges Read every change one sync run made
+// (GET /workspaces/{workspaceId}/directory/runs/{runId}/changes)
+func (_ Unimplemented) ListWorkspaceDirectoryChanges(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runId RunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
+// (POST /workspaces/{workspaceId}/directory/token)
+func (_ Unimplemented) RotateWorkspaceDirectoryToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8019,6 +8275,252 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceCycleScope(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWorkspaceCycleScope(w, r, workspaceId, cycleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisconnectWorkspaceDirectory operation middleware
+func (siw *ServerInterfaceWrapper) DisconnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisconnectWorkspaceDirectory(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceDirectory operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceDirectory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceDirectory(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConfigureWorkspaceDirectory operation middleware
+func (siw *ServerInterfaceWrapper) ConfigureWorkspaceDirectory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfigureWorkspaceDirectory(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConnectWorkspaceDirectory operation middleware
+func (siw *ServerInterfaceWrapper) ConnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConnectWorkspaceDirectory(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceDirectoryAvailability operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceDirectoryAvailability(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceDirectoryAvailability(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceDirectoryRuns operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceDirectoryRuns(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceDirectoryRunsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceDirectoryRuns(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceDirectoryChanges operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceDirectoryChanges(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "runId" -------------
+	var runId RunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "runId", chi.URLParam(r, "runId"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceDirectoryChanges(w, r, workspaceId, runId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RotateWorkspaceDirectoryToken operation middleware
+func (siw *ServerInterfaceWrapper) RotateWorkspaceDirectoryToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RotateWorkspaceDirectoryToken(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -13009,6 +13511,30 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/instance/audit", wrapper.ListInstanceAudit)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/directory", wrapper.DisconnectWorkspaceDirectory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/directory", wrapper.GetWorkspaceDirectory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/workspaces/{workspaceId}/directory", wrapper.ConfigureWorkspaceDirectory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/directory", wrapper.ConnectWorkspaceDirectory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/directory/token", wrapper.RotateWorkspaceDirectoryToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/directory/runs", wrapper.ListWorkspaceDirectoryRuns)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/directory/runs/{runId}/changes", wrapper.ListWorkspaceDirectoryChanges)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/directory/availability", wrapper.GetWorkspaceDirectoryAvailability)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents", wrapper.ListWorkspaceAgents)
 	})
 	r.Group(func(r chi.Router) {
@@ -13366,6 +13892,8 @@ type BreachCheckUnavailableApplicationProblemPlusJSONResponse BreachCheckUnavail
 type CommentConflictApplicationProblemPlusJSONResponse CommentConflictProblem
 
 type CycleConflictApplicationProblemPlusJSONResponse CycleConflictProblem
+
+type DirectoryUnlicensedApplicationProblemPlusJSONResponse DirectoryUnlicensedProblem
 
 type EnforcementRefusedApplicationProblemPlusJSONResponse EnforcementRefusedProblem
 
@@ -17879,6 +18407,697 @@ func (response GetWorkspaceCycleScope500ApplicationProblemPlusJSONResponse) Visi
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceDirectoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type DisconnectWorkspaceDirectoryResponseObject interface {
+	VisitDisconnectWorkspaceDirectoryResponse(w http.ResponseWriter) error
+}
+
+type DisconnectWorkspaceDirectory204Response struct {
+}
+
+func (response DisconnectWorkspaceDirectory204Response) VisitDisconnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DisconnectWorkspaceDirectory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectWorkspaceDirectory401ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceDirectory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectWorkspaceDirectory403ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceDirectory404ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectWorkspaceDirectory404ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceDirectory500ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectWorkspaceDirectory500ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDirectoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceDirectoryResponseObject interface {
+	VisitGetWorkspaceDirectoryResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceDirectory200JSONResponse DirectorySettings
+
+func (response GetWorkspaceDirectory200JSONResponse) VisitGetWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDirectory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDirectory401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDirectory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDirectory403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDirectory500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceDirectory500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceDirectoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *ConfigureWorkspaceDirectoryJSONRequestBody
+}
+
+type ConfigureWorkspaceDirectoryResponseObject interface {
+	VisitConfigureWorkspaceDirectoryResponse(w http.ResponseWriter) error
+}
+
+type ConfigureWorkspaceDirectory200JSONResponse DirectorySettings
+
+func (response ConfigureWorkspaceDirectory200JSONResponse) VisitConfigureWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceDirectory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConfigureWorkspaceDirectory401ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceDirectory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ConfigureWorkspaceDirectory403ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceDirectory404ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfigureWorkspaceDirectory404ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceDirectory422ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfigureWorkspaceDirectory422ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceDirectory500ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfigureWorkspaceDirectory500ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceDirectory503ApplicationProblemPlusJSONResponse struct {
+	DirectoryUnlicensedApplicationProblemPlusJSONResponse
+}
+
+func (response ConfigureWorkspaceDirectory503ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceDirectoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ConnectWorkspaceDirectoryResponseObject interface {
+	VisitConnectWorkspaceDirectoryResponse(w http.ResponseWriter) error
+}
+
+type ConnectWorkspaceDirectory201JSONResponse DirectorySettings
+
+func (response ConnectWorkspaceDirectory201JSONResponse) VisitConnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceDirectory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceDirectory401ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceDirectory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceDirectory403ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceDirectory500ApplicationProblemPlusJSONResponse Problem
+
+func (response ConnectWorkspaceDirectory500ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceDirectory503ApplicationProblemPlusJSONResponse struct {
+	DirectoryUnlicensedApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceDirectory503ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDirectoryAvailabilityRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceDirectoryAvailabilityResponseObject interface {
+	VisitGetWorkspaceDirectoryAvailabilityResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceDirectoryAvailability200JSONResponse DirectoryAvailability
+
+func (response GetWorkspaceDirectoryAvailability200JSONResponse) VisitGetWorkspaceDirectoryAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDirectoryAvailability401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDirectoryAvailability401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDirectoryAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDirectoryAvailability403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDirectoryAvailability403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDirectoryAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDirectoryAvailability500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceDirectoryAvailability500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDirectoryAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryRunsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceDirectoryRunsParams
+}
+
+type ListWorkspaceDirectoryRunsResponseObject interface {
+	VisitListWorkspaceDirectoryRunsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceDirectoryRuns200JSONResponse DirectoryRunPage
+
+func (response ListWorkspaceDirectoryRuns200JSONResponse) VisitListWorkspaceDirectoryRunsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryRuns401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDirectoryRuns401ApplicationProblemPlusJSONResponse) VisitListWorkspaceDirectoryRunsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryRuns403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDirectoryRuns403ApplicationProblemPlusJSONResponse) VisitListWorkspaceDirectoryRunsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryRuns500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDirectoryRuns500ApplicationProblemPlusJSONResponse) VisitListWorkspaceDirectoryRunsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryRuns503ApplicationProblemPlusJSONResponse struct {
+	DirectoryUnlicensedApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDirectoryRuns503ApplicationProblemPlusJSONResponse) VisitListWorkspaceDirectoryRunsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryChangesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	RunId       RunId       `json:"runId"`
+}
+
+type ListWorkspaceDirectoryChangesResponseObject interface {
+	VisitListWorkspaceDirectoryChangesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceDirectoryChanges200JSONResponse []DirectoryChange
+
+func (response ListWorkspaceDirectoryChanges200JSONResponse) VisitListWorkspaceDirectoryChangesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryChanges401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDirectoryChanges401ApplicationProblemPlusJSONResponse) VisitListWorkspaceDirectoryChangesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryChanges403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDirectoryChanges403ApplicationProblemPlusJSONResponse) VisitListWorkspaceDirectoryChangesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryChanges404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDirectoryChanges404ApplicationProblemPlusJSONResponse) VisitListWorkspaceDirectoryChangesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryChanges500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDirectoryChanges500ApplicationProblemPlusJSONResponse) VisitListWorkspaceDirectoryChangesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDirectoryChanges503ApplicationProblemPlusJSONResponse struct {
+	DirectoryUnlicensedApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDirectoryChanges503ApplicationProblemPlusJSONResponse) VisitListWorkspaceDirectoryChangesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceDirectoryTokenRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type RotateWorkspaceDirectoryTokenResponseObject interface {
+	VisitRotateWorkspaceDirectoryTokenResponse(w http.ResponseWriter) error
+}
+
+type RotateWorkspaceDirectoryToken200JSONResponse DirectorySettings
+
+func (response RotateWorkspaceDirectoryToken200JSONResponse) VisitRotateWorkspaceDirectoryTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceDirectoryToken401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RotateWorkspaceDirectoryToken401ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceDirectoryTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceDirectoryToken403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RotateWorkspaceDirectoryToken403ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceDirectoryTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceDirectoryToken404ApplicationProblemPlusJSONResponse Problem
+
+func (response RotateWorkspaceDirectoryToken404ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceDirectoryTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceDirectoryToken500ApplicationProblemPlusJSONResponse Problem
+
+func (response RotateWorkspaceDirectoryToken500ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceDirectoryTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceDirectoryToken503ApplicationProblemPlusJSONResponse struct {
+	DirectoryUnlicensedApplicationProblemPlusJSONResponse
+}
+
+func (response RotateWorkspaceDirectoryToken503ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceDirectoryTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -29612,6 +30831,30 @@ type StrictServerInterface interface {
 	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
 	GetWorkspaceCycleScope(ctx context.Context, request GetWorkspaceCycleScopeRequestObject) (GetWorkspaceCycleScopeResponseObject, error)
+	// DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
+	// (DELETE /workspaces/{workspaceId}/directory)
+	DisconnectWorkspaceDirectory(ctx context.Context, request DisconnectWorkspaceDirectoryRequestObject) (DisconnectWorkspaceDirectoryResponseObject, error)
+	// GetWorkspaceDirectory Read how this workspace is provisioned from its identity provider
+	// (GET /workspaces/{workspaceId}/directory)
+	GetWorkspaceDirectory(ctx context.Context, request GetWorkspaceDirectoryRequestObject) (GetWorkspaceDirectoryResponseObject, error)
+	// ConfigureWorkspaceDirectory Change how arrivals and departures are handled
+	// (PATCH /workspaces/{workspaceId}/directory)
+	ConfigureWorkspaceDirectory(ctx context.Context, request ConfigureWorkspaceDirectoryRequestObject) (ConfigureWorkspaceDirectoryResponseObject, error)
+	// ConnectWorkspaceDirectory Connect a directory, returning the credential for the only time
+	// (POST /workspaces/{workspaceId}/directory)
+	ConnectWorkspaceDirectory(ctx context.Context, request ConnectWorkspaceDirectoryRequestObject) (ConnectWorkspaceDirectoryResponseObject, error)
+	// GetWorkspaceDirectoryAvailability Report whether directory synchronization is licensed here
+	// (GET /workspaces/{workspaceId}/directory/availability)
+	GetWorkspaceDirectoryAvailability(ctx context.Context, request GetWorkspaceDirectoryAvailabilityRequestObject) (GetWorkspaceDirectoryAvailabilityResponseObject, error)
+	// ListWorkspaceDirectoryRuns Read what the directory changed and when
+	// (GET /workspaces/{workspaceId}/directory/runs)
+	ListWorkspaceDirectoryRuns(ctx context.Context, request ListWorkspaceDirectoryRunsRequestObject) (ListWorkspaceDirectoryRunsResponseObject, error)
+	// ListWorkspaceDirectoryChanges Read every change one sync run made
+	// (GET /workspaces/{workspaceId}/directory/runs/{runId}/changes)
+	ListWorkspaceDirectoryChanges(ctx context.Context, request ListWorkspaceDirectoryChangesRequestObject) (ListWorkspaceDirectoryChangesResponseObject, error)
+	// RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
+	// (POST /workspaces/{workspaceId}/directory/token)
+	RotateWorkspaceDirectoryToken(ctx context.Context, request RotateWorkspaceDirectoryTokenRequestObject) (RotateWorkspaceDirectoryTokenResponseObject, error)
 	// ListWorkspaceInvitations List the workspace invitations administrators see beside members
 	// (GET /workspaces/{workspaceId}/invitations)
 	ListWorkspaceInvitations(ctx context.Context, request ListWorkspaceInvitationsRequestObject) (ListWorkspaceInvitationsResponseObject, error)
@@ -31581,6 +32824,223 @@ func (sh *strictHandler) GetWorkspaceCycleScope(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceCycleScopeResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceCycleScopeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisconnectWorkspaceDirectory operation middleware
+func (sh *strictHandler) DisconnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request DisconnectWorkspaceDirectoryRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisconnectWorkspaceDirectory(ctx, request.(DisconnectWorkspaceDirectoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisconnectWorkspaceDirectory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisconnectWorkspaceDirectoryResponseObject); ok {
+		if err := validResponse.VisitDisconnectWorkspaceDirectoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceDirectory operation middleware
+func (sh *strictHandler) GetWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceDirectoryRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceDirectory(ctx, request.(GetWorkspaceDirectoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceDirectory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceDirectoryResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceDirectoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfigureWorkspaceDirectory operation middleware
+func (sh *strictHandler) ConfigureWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ConfigureWorkspaceDirectoryRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body ConfigureWorkspaceDirectoryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfigureWorkspaceDirectory(ctx, request.(ConfigureWorkspaceDirectoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfigureWorkspaceDirectory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfigureWorkspaceDirectoryResponseObject); ok {
+		if err := validResponse.VisitConfigureWorkspaceDirectoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConnectWorkspaceDirectory operation middleware
+func (sh *strictHandler) ConnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ConnectWorkspaceDirectoryRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConnectWorkspaceDirectory(ctx, request.(ConnectWorkspaceDirectoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConnectWorkspaceDirectory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConnectWorkspaceDirectoryResponseObject); ok {
+		if err := validResponse.VisitConnectWorkspaceDirectoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceDirectoryAvailability operation middleware
+func (sh *strictHandler) GetWorkspaceDirectoryAvailability(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceDirectoryAvailabilityRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceDirectoryAvailability(ctx, request.(GetWorkspaceDirectoryAvailabilityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceDirectoryAvailability")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceDirectoryAvailabilityResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceDirectoryAvailabilityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceDirectoryRuns operation middleware
+func (sh *strictHandler) ListWorkspaceDirectoryRuns(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceDirectoryRunsParams) {
+	var request ListWorkspaceDirectoryRunsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceDirectoryRuns(ctx, request.(ListWorkspaceDirectoryRunsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceDirectoryRuns")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceDirectoryRunsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceDirectoryRunsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceDirectoryChanges operation middleware
+func (sh *strictHandler) ListWorkspaceDirectoryChanges(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runId RunId) {
+	var request ListWorkspaceDirectoryChangesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.RunId = runId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceDirectoryChanges(ctx, request.(ListWorkspaceDirectoryChangesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceDirectoryChanges")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceDirectoryChangesResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceDirectoryChangesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RotateWorkspaceDirectoryToken operation middleware
+func (sh *strictHandler) RotateWorkspaceDirectoryToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request RotateWorkspaceDirectoryTokenRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RotateWorkspaceDirectoryToken(ctx, request.(RotateWorkspaceDirectoryTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RotateWorkspaceDirectoryToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RotateWorkspaceDirectoryTokenResponseObject); ok {
+		if err := validResponse.VisitRotateWorkspaceDirectoryTokenResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -10,6 +10,7 @@ import (
 	blobedge "github.com/usenorn/norn/internal/handler/http/blob"
 	eventsedge "github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/router"
+	scimedge "github.com/usenorn/norn/internal/handler/http/scim"
 	ssohandler "github.com/usenorn/norn/internal/handler/http/sso"
 	dashboardhandler "github.com/usenorn/norn/internal/handler/http/v1/dashboard"
 	"github.com/usenorn/norn/internal/handler/job"
@@ -41,6 +42,7 @@ import (
 	breakglassrepo "github.com/usenorn/norn/internal/repository/breakglass"
 	bulkactionrepo "github.com/usenorn/norn/internal/repository/bulkaction"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
+	directoryrepo "github.com/usenorn/norn/internal/repository/directory"
 	emailchangerepo "github.com/usenorn/norn/internal/repository/emailchange"
 	eventstreamrepo "github.com/usenorn/norn/internal/repository/eventstream"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
@@ -87,6 +89,7 @@ import (
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	bulkoperationsvc "github.com/usenorn/norn/internal/service/bulkoperation"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
+	directorysvc "github.com/usenorn/norn/internal/service/directory"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
@@ -163,6 +166,7 @@ var baseSet = wire.NewSet(
 	agentthrottlerepo.Set,
 	apitokenrepo.Set,
 	auditrepo.Set,
+	directoryrepo.Set,
 	passwordhistoryrepo.Set,
 	signinthrottlerepo.Set,
 	breachcheckrepo.Set,
@@ -203,12 +207,14 @@ var baseSet = wire.NewSet(
 	jobssvc.Set,
 	ssoconnectionsvc.Set,
 	auditsvc.Set,
+	directorysvc.Set,
 
 	dashboardhandler.Set,
 	ssohandler.Set,
 	blobedge.Set,
 	eventsedge.Set,
 	auditexportedge.Set,
+	scimedge.Set,
 	router.Set,
 	job.Set,
 

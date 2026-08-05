@@ -36,6 +36,7 @@ type handler struct {
 	notifications  service.Notifications
 	searches       service.Searches
 	auditLog       service.AuditLog
+	directories    service.Directories
 	app            config.App
 	instance       config.Instance
 	session        config.Session
@@ -64,6 +65,7 @@ func New(
 	notifications service.Notifications,
 	searches service.Searches,
 	auditLog service.AuditLog,
+	directories service.Directories,
 	app config.App,
 	instance config.Instance,
 	session config.Session,
@@ -91,6 +93,7 @@ func New(
 		notifications:  notifications,
 		searches:       searches,
 		auditLog:       auditLog,
+		directories:    directories,
 		app:            app,
 		instance:       instance,
 		session:        session,
