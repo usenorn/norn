@@ -265,7 +265,7 @@
 
 <div class="my-auto flex w-full flex-col items-center gap-4">
 	<div class="notch w-full max-w-form">
-		<div class="flex flex-col gap-4 p-5 sm:p-6">
+		<div class="flex flex-col gap-4.5 p-6.5 pb-5.5">
 			<div class="flex flex-col gap-1.5">
 				<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>
 				{#if lede}
@@ -337,16 +337,16 @@
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
-					<ul class="flex flex-col gap-1">
+					<ul class="flex flex-col gap-1.5">
 						{#each passwordRules as rule (rule.label)}
 							{@const RuleIcon = rule.met ? CircleCheck : CircleDashed}
 							<li
-								class="flex items-center gap-2 text-sm {rule.met
+								class="flex items-center gap-2 font-mono text-xs {rule.met
 									? 'text-ink-600'
 									: 'text-muted-foreground'}"
 							>
 								<RuleIcon
-									class="size-icon-row shrink-0 {rule.met ? 'text-success' : ''}"
+									class="size-icon-row shrink-0 {rule.met ? 'text-success' : 'text-muted-foreground'}"
 									aria-hidden="true"
 								/>
 								{rule.label}
@@ -356,7 +356,7 @@
 				</form>
 			{/if}
 
-			<div class="flex flex-col gap-2">
+			<div class="flex flex-col gap-2.5">
 				{#if action.href}
 					<Button href={action.href} class="w-full">{action.label}</Button>
 				{:else}
