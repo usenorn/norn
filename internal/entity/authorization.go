@@ -24,6 +24,7 @@ const (
 	ResourceNotification   Resource = "notification"
 	ResourceAPIToken       Resource = "api_token"
 	ResourceAgent          Resource = "agent"
+	ResourceMCPConnection  Resource = "mcp_connection"
 	ResourceAuthPolicy     Resource = "auth_policy"
 	ResourceSSOConnection  Resource = "sso_connection"
 	ResourceAccount        Resource = "account"
@@ -100,6 +101,8 @@ type Actor struct {
 	OwnerAccountID uuid.UUID
 	TokenID        *uuid.UUID
 	TokenName      string
+	ConnectionID   *uuid.UUID
+	ConnectionName string
 	Grants         APITokenGrants
 	AuthMethod     SessionAuthMethod
 	Scopes         APIScopeSet
@@ -187,10 +190,12 @@ type Decision struct {
 }
 
 type ActivityAttribution struct {
-	AccountID uuid.UUID
-	Kind      ActorKind
-	TokenID   *uuid.UUID
-	TokenName string
+	AccountID      uuid.UUID
+	Kind           ActorKind
+	TokenID        *uuid.UUID
+	TokenName      string
+	ConnectionID   *uuid.UUID
+	ConnectionName string
 }
 
 func (d Decision) ActivityActor() ActivityAttribution {
@@ -204,10 +209,12 @@ func (d Decision) ActivityActor() ActivityAttribution {
 	}
 
 	return ActivityAttribution{
-		AccountID: d.Actor.AccountID,
-		Kind:      kind,
-		TokenID:   d.Actor.TokenID,
-		TokenName: d.Actor.TokenName,
+		AccountID:      d.Actor.AccountID,
+		Kind:           kind,
+		TokenID:        d.Actor.TokenID,
+		TokenName:      d.Actor.TokenName,
+		ConnectionID:   d.Actor.ConnectionID,
+		ConnectionName: d.Actor.ConnectionName,
 	}
 }
 

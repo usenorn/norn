@@ -17,6 +17,11 @@ var TableNames = struct {
 	DirectorySyncChanges              string
 	DirectorySyncRuns                 string
 	DirectoryUsers                    string
+	MCPClients                        string
+	MCPConnectionGrantTeams           string
+	MCPConnectionGrants               string
+	MCPConnections                    string
+	MCPTokens                         string
 	WorkspaceActivity                 string
 	WorkspaceAgentProposals           string
 	WorkspaceAgents                   string
@@ -78,6 +83,11 @@ var TableNames = struct {
 	DirectorySyncChanges:              "directory_sync_changes",
 	DirectorySyncRuns:                 "directory_sync_runs",
 	DirectoryUsers:                    "directory_users",
+	MCPClients:                        "mcp_clients",
+	MCPConnectionGrantTeams:           "mcp_connection_grant_teams",
+	MCPConnectionGrants:               "mcp_connection_grants",
+	MCPConnections:                    "mcp_connections",
+	MCPTokens:                         "mcp_tokens",
 	WorkspaceActivity:                 "workspace_activity",
 	WorkspaceAgentProposals:           "workspace_agent_proposals",
 	WorkspaceAgents:                   "workspace_agents",

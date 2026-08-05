@@ -11,6 +11,18 @@ export default defineConfig({
 				changeOrigin: true,
 				proxyTimeout: 0,
 				timeout: 0
+			},
+			'/mcp': {
+				target: 'http://127.0.0.1:8080',
+				changeOrigin: true
+			},
+			'/oauth': {
+				target: 'http://127.0.0.1:8080',
+				changeOrigin: true
+			},
+			'/.well-known': {
+				target: 'http://127.0.0.1:8080',
+				changeOrigin: true
 			}
 		}
 	},

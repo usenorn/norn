@@ -36,6 +36,8 @@ func NewRealtime(cfg Config) Realtime { return cfg.Realtime }
 
 func NewAPITokens(cfg Config) APITokens { return cfg.APITokens }
 
+func NewMCP(cfg Config) MCP { return cfg.MCP }
+
 func NewSession(cfg Config) Session { return cfg.Session }
 
 func NewCasbin(cfg Config) Casbin { return cfg.Casbin }

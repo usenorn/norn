@@ -422,6 +422,24 @@
 				</div>
 			</section>
 
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">AI clients</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						One approval connects an AI client to every workspace you belong to, without
+						re-authorizing per workspace. A connection acts as its owner and narrows the moment
+						their access does.
+					</p>
+				</div>
+
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" href="/settings/connections">Your AI clients</Button>
+					<Button variant="ghost" href={workspacePath(workspace.slug, "/settings/connections")}>
+						Connections reaching {workspace.name}
+					</Button>
+				</div>
+			</section>
+
 			{#if !pending}
 				<section class="flex flex-col gap-4 rounded-lg border border-destructive/40 p-4">
 					<div class="flex flex-col gap-1">

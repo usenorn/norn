@@ -14,10 +14,35 @@ func statements(t *testing.T) map[string]string {
 	found := map[string]string{"fuzzyIssueResults": fuzzyIssueResults}
 
 	for _, kind := range entity.SearchKinds() {
-		found[string(kind)] = statementFor(kind)
+		statement, _ := statementFor(kind)
+		found[string(kind)] = statement
 	}
 
 	return found
+}
+
+func TestEveryTeamOwnedLaneHonoursTheActorsNarrowedScope(t *testing.T) {
+	for _, kind := range []entity.SearchKind{
+		entity.SearchKindIssue, entity.SearchKindComment, entity.SearchKindTeam,
+	} {
+		statement, scoped := statementFor(kind)
+
+		if !scoped {
+			t.Errorf(
+				"%s is not marked scoped, so its query never receives the actor's team scope and "+
+					"a narrowed credential would search beyond the teams it was granted",
+				kind,
+			)
+		}
+
+		if !strings.Contains(statement, "::uuid[]") {
+			t.Errorf("%s never binds the scope's team list", kind)
+		}
+	}
+
+	if !strings.Contains(fuzzyIssueResults, "::uuid[]") {
+		t.Error("the fuzzy lane never binds the scope's team list")
+	}
 }
 
 func TestEveryKindNarrowsToTheSearchersOwnWorkspaceMembership(t *testing.T) {

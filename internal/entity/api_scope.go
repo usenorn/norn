@@ -42,6 +42,7 @@ var apiScopeCatalog = []APIScope{
 	NewAPIScope(ResourceTeamMembership, ActionManage),
 	NewAPIScope(ResourceIssue, ActionRead),
 	NewAPIScope(ResourceIssue, ActionManage),
+	NewAPIScope(ResourceCycle, ActionRead),
 	NewAPIScope(ResourceLabel, ActionRead),
 	NewAPIScope(ResourceLabel, ActionManage),
 	NewAPIScope(ResourceProject, ActionRead),
@@ -123,6 +124,10 @@ func RoleGrants(role MembershipRole, resource Resource, action Action) bool {
 	}
 
 	if resource == ResourceAgent {
+		return role == MembershipRoleAdmin
+	}
+
+	if resource == ResourceMCPConnection {
 		return role == MembershipRoleAdmin
 	}
 

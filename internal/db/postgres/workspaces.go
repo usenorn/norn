@@ -122,6 +122,7 @@ var WorkspaceRels = struct {
 	WorkspaceSsoConnection       string
 	WorkspaceStorageLedger       string
 	APITokenGrants               string
+	MCPConnectionGrants          string
 	WorkspaceAgentProposals      string
 	WorkspaceAgents              string
 	WorkspaceBreakGlassCodes     string
@@ -143,6 +144,7 @@ var WorkspaceRels = struct {
 	WorkspaceSsoConnection:       "WorkspaceSsoConnection",
 	WorkspaceStorageLedger:       "WorkspaceStorageLedger",
 	APITokenGrants:               "APITokenGrants",
+	MCPConnectionGrants:          "MCPConnectionGrants",
 	WorkspaceAgentProposals:      "WorkspaceAgentProposals",
 	WorkspaceAgents:              "WorkspaceAgents",
 	WorkspaceBreakGlassCodes:     "WorkspaceBreakGlassCodes",
@@ -167,6 +169,7 @@ type workspaceR struct {
 	WorkspaceSsoConnection       *WorkspaceSsoConnection         `boil:"WorkspaceSsoConnection" json:"WorkspaceSsoConnection" toml:"WorkspaceSsoConnection" yaml:"WorkspaceSsoConnection"`
 	WorkspaceStorageLedger       *WorkspaceStorageLedger         `boil:"WorkspaceStorageLedger" json:"WorkspaceStorageLedger" toml:"WorkspaceStorageLedger" yaml:"WorkspaceStorageLedger"`
 	APITokenGrants               APITokenGrantSlice              `boil:"APITokenGrants" json:"APITokenGrants" toml:"APITokenGrants" yaml:"APITokenGrants"`
+	MCPConnectionGrants          MCPConnectionGrantSlice         `boil:"MCPConnectionGrants" json:"MCPConnectionGrants" toml:"MCPConnectionGrants" yaml:"MCPConnectionGrants"`
 	WorkspaceAgentProposals      WorkspaceAgentProposalSlice     `boil:"WorkspaceAgentProposals" json:"WorkspaceAgentProposals" toml:"WorkspaceAgentProposals" yaml:"WorkspaceAgentProposals"`
 	WorkspaceAgents              WorkspaceAgentSlice             `boil:"WorkspaceAgents" json:"WorkspaceAgents" toml:"WorkspaceAgents" yaml:"WorkspaceAgents"`
 	WorkspaceBreakGlassCodes     WorkspaceBreakGlassCodeSlice    `boil:"WorkspaceBreakGlassCodes" json:"WorkspaceBreakGlassCodes" toml:"WorkspaceBreakGlassCodes" yaml:"WorkspaceBreakGlassCodes"`
@@ -297,6 +300,22 @@ func (r *workspaceR) GetAPITokenGrants() APITokenGrantSlice {
 	}
 
 	return r.APITokenGrants
+}
+
+func (o *Workspace) GetMCPConnectionGrants() MCPConnectionGrantSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetMCPConnectionGrants()
+}
+
+func (r *workspaceR) GetMCPConnectionGrants() MCPConnectionGrantSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.MCPConnectionGrants
 }
 
 func (o *Workspace) GetWorkspaceAgentProposals() WorkspaceAgentProposalSlice {
@@ -901,6 +920,20 @@ func (o *Workspace) APITokenGrants(mods ...qm.QueryMod) apiTokenGrantQuery {
 	)
 
 	return APITokenGrants(queryMods...)
+}
+
+// MCPConnectionGrants retrieves all the mcp_connection_grant's MCPConnectionGrants with an executor.
+func (o *Workspace) MCPConnectionGrants(mods ...qm.QueryMod) mcpConnectionGrantQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"mcp_connection_grants\".\"workspace_id\"=?", o.ID),
+	)
+
+	return MCPConnectionGrants(queryMods...)
 }
 
 // WorkspaceAgentProposals retrieves all the workspace_agent_proposal's WorkspaceAgentProposals with an executor.
@@ -1897,6 +1930,119 @@ func (workspaceL) LoadAPITokenGrants(ctx context.Context, e boil.ContextExecutor
 				local.R.APITokenGrants = append(local.R.APITokenGrants, foreign)
 				if foreign.R == nil {
 					foreign.R = &apiTokenGrantR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadMCPConnectionGrants allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadMCPConnectionGrants(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`mcp_connection_grants`),
+		qm.WhereIn(`mcp_connection_grants.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load mcp_connection_grants")
+	}
+
+	var resultSlice []*MCPConnectionGrant
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice mcp_connection_grants")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on mcp_connection_grants")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for mcp_connection_grants")
+	}
+
+	if len(mcpConnectionGrantAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.MCPConnectionGrants = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &mcpConnectionGrantR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.MCPConnectionGrants = append(local.R.MCPConnectionGrants, foreign)
+				if foreign.R == nil {
+					foreign.R = &mcpConnectionGrantR{}
 				}
 				foreign.R.Workspace = local
 				break
@@ -3750,6 +3896,59 @@ func (o *Workspace) AddAPITokenGrants(ctx context.Context, exec boil.ContextExec
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &apiTokenGrantR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddMCPConnectionGrants adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.MCPConnectionGrants.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddMCPConnectionGrants(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*MCPConnectionGrant) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"mcp_connection_grants\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, mcpConnectionGrantPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			MCPConnectionGrants: related,
+		}
+	} else {
+		o.R.MCPConnectionGrants = append(o.R.MCPConnectionGrants, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &mcpConnectionGrantR{
 				Workspace: o,
 			}
 		} else {

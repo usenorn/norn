@@ -20,6 +20,7 @@ type Config struct {
 	Notifications Notifications `mapstructure:"notifications"`
 	Realtime      Realtime      `mapstructure:"realtime"`
 	APITokens     APITokens     `mapstructure:"api_tokens"`
+	MCP           MCP           `mapstructure:"mcp"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
 	GeoIP         GeoIP         `mapstructure:"geoip"`
@@ -204,6 +205,16 @@ type Realtime struct {
 
 type APITokens struct {
 	ExpirySweepSchedule string `mapstructure:"expiry_sweep_schedule"`
+}
+
+type MCP struct {
+	Enabled           bool          `mapstructure:"enabled"`
+	AccessTokenTTL    time.Duration `mapstructure:"access_token_ttl"`
+	RefreshTokenTTL   time.Duration `mapstructure:"refresh_token_ttl"`
+	AuthRequestTTL    time.Duration `mapstructure:"auth_request_ttl"`
+	AuthCodeTTL       time.Duration `mapstructure:"auth_code_ttl"`
+	RequestsPerWindow int           `mapstructure:"requests_per_window"`
+	RateWindow        time.Duration `mapstructure:"rate_window"`
 }
 
 type Session struct {

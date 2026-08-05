@@ -24,172 +24,205 @@ import (
 
 // WorkspaceActivity is an object representing the database table.
 type WorkspaceActivity struct {
-	ID             string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID    string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	IssueID        null.String `boil:"issue_id" json:"issue_id,omitempty" toml:"issue_id" yaml:"issue_id,omitempty"`
-	ActorAccountID null.String `boil:"actor_account_id" json:"actor_account_id,omitempty" toml:"actor_account_id" yaml:"actor_account_id,omitempty"`
-	Kind           string      `boil:"kind" json:"kind" toml:"kind" yaml:"kind"`
-	FromStateName  string      `boil:"from_state_name" json:"from_state_name" toml:"from_state_name" yaml:"from_state_name"`
-	ToStateName    string      `boil:"to_state_name" json:"to_state_name" toml:"to_state_name" yaml:"to_state_name"`
-	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	Field          null.String `boil:"field" json:"field,omitempty" toml:"field" yaml:"field,omitempty"`
-	FromValue      null.String `boil:"from_value" json:"from_value,omitempty" toml:"from_value" yaml:"from_value,omitempty"`
-	ToValue        null.String `boil:"to_value" json:"to_value,omitempty" toml:"to_value" yaml:"to_value,omitempty"`
-	Version        null.Int    `boil:"version" json:"version,omitempty" toml:"version" yaml:"version,omitempty"`
-	BulkActionID   null.String `boil:"bulk_action_id" json:"bulk_action_id,omitempty" toml:"bulk_action_id" yaml:"bulk_action_id,omitempty"`
-	ProjectID      null.String `boil:"project_id" json:"project_id,omitempty" toml:"project_id" yaml:"project_id,omitempty"`
-	OperationID    string      `boil:"operation_id" json:"operation_id" toml:"operation_id" yaml:"operation_id"`
-	ActorKind      string      `boil:"actor_kind" json:"actor_kind" toml:"actor_kind" yaml:"actor_kind"`
-	ActorTokenID   null.String `boil:"actor_token_id" json:"actor_token_id,omitempty" toml:"actor_token_id" yaml:"actor_token_id,omitempty"`
-	ActorTokenName null.String `boil:"actor_token_name" json:"actor_token_name,omitempty" toml:"actor_token_name" yaml:"actor_token_name,omitempty"`
+	ID                  string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID         string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	IssueID             null.String `boil:"issue_id" json:"issue_id,omitempty" toml:"issue_id" yaml:"issue_id,omitempty"`
+	ActorAccountID      null.String `boil:"actor_account_id" json:"actor_account_id,omitempty" toml:"actor_account_id" yaml:"actor_account_id,omitempty"`
+	Kind                string      `boil:"kind" json:"kind" toml:"kind" yaml:"kind"`
+	FromStateName       string      `boil:"from_state_name" json:"from_state_name" toml:"from_state_name" yaml:"from_state_name"`
+	ToStateName         string      `boil:"to_state_name" json:"to_state_name" toml:"to_state_name" yaml:"to_state_name"`
+	CreatedAt           time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	Field               null.String `boil:"field" json:"field,omitempty" toml:"field" yaml:"field,omitempty"`
+	FromValue           null.String `boil:"from_value" json:"from_value,omitempty" toml:"from_value" yaml:"from_value,omitempty"`
+	ToValue             null.String `boil:"to_value" json:"to_value,omitempty" toml:"to_value" yaml:"to_value,omitempty"`
+	Version             null.Int    `boil:"version" json:"version,omitempty" toml:"version" yaml:"version,omitempty"`
+	BulkActionID        null.String `boil:"bulk_action_id" json:"bulk_action_id,omitempty" toml:"bulk_action_id" yaml:"bulk_action_id,omitempty"`
+	ProjectID           null.String `boil:"project_id" json:"project_id,omitempty" toml:"project_id" yaml:"project_id,omitempty"`
+	OperationID         string      `boil:"operation_id" json:"operation_id" toml:"operation_id" yaml:"operation_id"`
+	ActorKind           string      `boil:"actor_kind" json:"actor_kind" toml:"actor_kind" yaml:"actor_kind"`
+	ActorTokenID        null.String `boil:"actor_token_id" json:"actor_token_id,omitempty" toml:"actor_token_id" yaml:"actor_token_id,omitempty"`
+	ActorTokenName      null.String `boil:"actor_token_name" json:"actor_token_name,omitempty" toml:"actor_token_name" yaml:"actor_token_name,omitempty"`
+	ActorConnectionID   null.String `boil:"actor_connection_id" json:"actor_connection_id,omitempty" toml:"actor_connection_id" yaml:"actor_connection_id,omitempty"`
+	ActorConnectionName null.String `boil:"actor_connection_name" json:"actor_connection_name,omitempty" toml:"actor_connection_name" yaml:"actor_connection_name,omitempty"`
 
 	R *workspaceActivityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceActivityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceActivityColumns = struct {
-	ID             string
-	WorkspaceID    string
-	IssueID        string
-	ActorAccountID string
-	Kind           string
-	FromStateName  string
-	ToStateName    string
-	CreatedAt      string
-	Field          string
-	FromValue      string
-	ToValue        string
-	Version        string
-	BulkActionID   string
-	ProjectID      string
-	OperationID    string
-	ActorKind      string
-	ActorTokenID   string
-	ActorTokenName string
+	ID                  string
+	WorkspaceID         string
+	IssueID             string
+	ActorAccountID      string
+	Kind                string
+	FromStateName       string
+	ToStateName         string
+	CreatedAt           string
+	Field               string
+	FromValue           string
+	ToValue             string
+	Version             string
+	BulkActionID        string
+	ProjectID           string
+	OperationID         string
+	ActorKind           string
+	ActorTokenID        string
+	ActorTokenName      string
+	ActorConnectionID   string
+	ActorConnectionName string
 }{
-	ID:             "id",
-	WorkspaceID:    "workspace_id",
-	IssueID:        "issue_id",
-	ActorAccountID: "actor_account_id",
-	Kind:           "kind",
-	FromStateName:  "from_state_name",
-	ToStateName:    "to_state_name",
-	CreatedAt:      "created_at",
-	Field:          "field",
-	FromValue:      "from_value",
-	ToValue:        "to_value",
-	Version:        "version",
-	BulkActionID:   "bulk_action_id",
-	ProjectID:      "project_id",
-	OperationID:    "operation_id",
-	ActorKind:      "actor_kind",
-	ActorTokenID:   "actor_token_id",
-	ActorTokenName: "actor_token_name",
+	ID:                  "id",
+	WorkspaceID:         "workspace_id",
+	IssueID:             "issue_id",
+	ActorAccountID:      "actor_account_id",
+	Kind:                "kind",
+	FromStateName:       "from_state_name",
+	ToStateName:         "to_state_name",
+	CreatedAt:           "created_at",
+	Field:               "field",
+	FromValue:           "from_value",
+	ToValue:             "to_value",
+	Version:             "version",
+	BulkActionID:        "bulk_action_id",
+	ProjectID:           "project_id",
+	OperationID:         "operation_id",
+	ActorKind:           "actor_kind",
+	ActorTokenID:        "actor_token_id",
+	ActorTokenName:      "actor_token_name",
+	ActorConnectionID:   "actor_connection_id",
+	ActorConnectionName: "actor_connection_name",
 }
 
 var WorkspaceActivityTableColumns = struct {
-	ID             string
-	WorkspaceID    string
-	IssueID        string
-	ActorAccountID string
-	Kind           string
-	FromStateName  string
-	ToStateName    string
-	CreatedAt      string
-	Field          string
-	FromValue      string
-	ToValue        string
-	Version        string
-	BulkActionID   string
-	ProjectID      string
-	OperationID    string
-	ActorKind      string
-	ActorTokenID   string
-	ActorTokenName string
+	ID                  string
+	WorkspaceID         string
+	IssueID             string
+	ActorAccountID      string
+	Kind                string
+	FromStateName       string
+	ToStateName         string
+	CreatedAt           string
+	Field               string
+	FromValue           string
+	ToValue             string
+	Version             string
+	BulkActionID        string
+	ProjectID           string
+	OperationID         string
+	ActorKind           string
+	ActorTokenID        string
+	ActorTokenName      string
+	ActorConnectionID   string
+	ActorConnectionName string
 }{
-	ID:             "workspace_activity.id",
-	WorkspaceID:    "workspace_activity.workspace_id",
-	IssueID:        "workspace_activity.issue_id",
-	ActorAccountID: "workspace_activity.actor_account_id",
-	Kind:           "workspace_activity.kind",
-	FromStateName:  "workspace_activity.from_state_name",
-	ToStateName:    "workspace_activity.to_state_name",
-	CreatedAt:      "workspace_activity.created_at",
-	Field:          "workspace_activity.field",
-	FromValue:      "workspace_activity.from_value",
-	ToValue:        "workspace_activity.to_value",
-	Version:        "workspace_activity.version",
-	BulkActionID:   "workspace_activity.bulk_action_id",
-	ProjectID:      "workspace_activity.project_id",
-	OperationID:    "workspace_activity.operation_id",
-	ActorKind:      "workspace_activity.actor_kind",
-	ActorTokenID:   "workspace_activity.actor_token_id",
-	ActorTokenName: "workspace_activity.actor_token_name",
+	ID:                  "workspace_activity.id",
+	WorkspaceID:         "workspace_activity.workspace_id",
+	IssueID:             "workspace_activity.issue_id",
+	ActorAccountID:      "workspace_activity.actor_account_id",
+	Kind:                "workspace_activity.kind",
+	FromStateName:       "workspace_activity.from_state_name",
+	ToStateName:         "workspace_activity.to_state_name",
+	CreatedAt:           "workspace_activity.created_at",
+	Field:               "workspace_activity.field",
+	FromValue:           "workspace_activity.from_value",
+	ToValue:             "workspace_activity.to_value",
+	Version:             "workspace_activity.version",
+	BulkActionID:        "workspace_activity.bulk_action_id",
+	ProjectID:           "workspace_activity.project_id",
+	OperationID:         "workspace_activity.operation_id",
+	ActorKind:           "workspace_activity.actor_kind",
+	ActorTokenID:        "workspace_activity.actor_token_id",
+	ActorTokenName:      "workspace_activity.actor_token_name",
+	ActorConnectionID:   "workspace_activity.actor_connection_id",
+	ActorConnectionName: "workspace_activity.actor_connection_name",
 }
 
 // Generated where
 
 var WorkspaceActivityWhere = struct {
-	ID             whereHelperstring
-	WorkspaceID    whereHelperstring
-	IssueID        whereHelpernull_String
-	ActorAccountID whereHelpernull_String
-	Kind           whereHelperstring
-	FromStateName  whereHelperstring
-	ToStateName    whereHelperstring
-	CreatedAt      whereHelpertime_Time
-	Field          whereHelpernull_String
-	FromValue      whereHelpernull_String
-	ToValue        whereHelpernull_String
-	Version        whereHelpernull_Int
-	BulkActionID   whereHelpernull_String
-	ProjectID      whereHelpernull_String
-	OperationID    whereHelperstring
-	ActorKind      whereHelperstring
-	ActorTokenID   whereHelpernull_String
-	ActorTokenName whereHelpernull_String
+	ID                  whereHelperstring
+	WorkspaceID         whereHelperstring
+	IssueID             whereHelpernull_String
+	ActorAccountID      whereHelpernull_String
+	Kind                whereHelperstring
+	FromStateName       whereHelperstring
+	ToStateName         whereHelperstring
+	CreatedAt           whereHelpertime_Time
+	Field               whereHelpernull_String
+	FromValue           whereHelpernull_String
+	ToValue             whereHelpernull_String
+	Version             whereHelpernull_Int
+	BulkActionID        whereHelpernull_String
+	ProjectID           whereHelpernull_String
+	OperationID         whereHelperstring
+	ActorKind           whereHelperstring
+	ActorTokenID        whereHelpernull_String
+	ActorTokenName      whereHelpernull_String
+	ActorConnectionID   whereHelpernull_String
+	ActorConnectionName whereHelpernull_String
 }{
-	ID:             whereHelperstring{field: "\"workspace_activity\".\"id\""},
-	WorkspaceID:    whereHelperstring{field: "\"workspace_activity\".\"workspace_id\""},
-	IssueID:        whereHelpernull_String{field: "\"workspace_activity\".\"issue_id\""},
-	ActorAccountID: whereHelpernull_String{field: "\"workspace_activity\".\"actor_account_id\""},
-	Kind:           whereHelperstring{field: "\"workspace_activity\".\"kind\""},
-	FromStateName:  whereHelperstring{field: "\"workspace_activity\".\"from_state_name\""},
-	ToStateName:    whereHelperstring{field: "\"workspace_activity\".\"to_state_name\""},
-	CreatedAt:      whereHelpertime_Time{field: "\"workspace_activity\".\"created_at\""},
-	Field:          whereHelpernull_String{field: "\"workspace_activity\".\"field\""},
-	FromValue:      whereHelpernull_String{field: "\"workspace_activity\".\"from_value\""},
-	ToValue:        whereHelpernull_String{field: "\"workspace_activity\".\"to_value\""},
-	Version:        whereHelpernull_Int{field: "\"workspace_activity\".\"version\""},
-	BulkActionID:   whereHelpernull_String{field: "\"workspace_activity\".\"bulk_action_id\""},
-	ProjectID:      whereHelpernull_String{field: "\"workspace_activity\".\"project_id\""},
-	OperationID:    whereHelperstring{field: "\"workspace_activity\".\"operation_id\""},
-	ActorKind:      whereHelperstring{field: "\"workspace_activity\".\"actor_kind\""},
-	ActorTokenID:   whereHelpernull_String{field: "\"workspace_activity\".\"actor_token_id\""},
-	ActorTokenName: whereHelpernull_String{field: "\"workspace_activity\".\"actor_token_name\""},
+	ID:                  whereHelperstring{field: "\"workspace_activity\".\"id\""},
+	WorkspaceID:         whereHelperstring{field: "\"workspace_activity\".\"workspace_id\""},
+	IssueID:             whereHelpernull_String{field: "\"workspace_activity\".\"issue_id\""},
+	ActorAccountID:      whereHelpernull_String{field: "\"workspace_activity\".\"actor_account_id\""},
+	Kind:                whereHelperstring{field: "\"workspace_activity\".\"kind\""},
+	FromStateName:       whereHelperstring{field: "\"workspace_activity\".\"from_state_name\""},
+	ToStateName:         whereHelperstring{field: "\"workspace_activity\".\"to_state_name\""},
+	CreatedAt:           whereHelpertime_Time{field: "\"workspace_activity\".\"created_at\""},
+	Field:               whereHelpernull_String{field: "\"workspace_activity\".\"field\""},
+	FromValue:           whereHelpernull_String{field: "\"workspace_activity\".\"from_value\""},
+	ToValue:             whereHelpernull_String{field: "\"workspace_activity\".\"to_value\""},
+	Version:             whereHelpernull_Int{field: "\"workspace_activity\".\"version\""},
+	BulkActionID:        whereHelpernull_String{field: "\"workspace_activity\".\"bulk_action_id\""},
+	ProjectID:           whereHelpernull_String{field: "\"workspace_activity\".\"project_id\""},
+	OperationID:         whereHelperstring{field: "\"workspace_activity\".\"operation_id\""},
+	ActorKind:           whereHelperstring{field: "\"workspace_activity\".\"actor_kind\""},
+	ActorTokenID:        whereHelpernull_String{field: "\"workspace_activity\".\"actor_token_id\""},
+	ActorTokenName:      whereHelpernull_String{field: "\"workspace_activity\".\"actor_token_name\""},
+	ActorConnectionID:   whereHelpernull_String{field: "\"workspace_activity\".\"actor_connection_id\""},
+	ActorConnectionName: whereHelpernull_String{field: "\"workspace_activity\".\"actor_connection_name\""},
 }
 
 // WorkspaceActivityRels is where relationship names are stored.
 var WorkspaceActivityRels = struct {
-	ActorAccount string
-	ActorToken   string
-	BulkAction   string
+	ActorConnection string
+	ActorAccount    string
+	ActorToken      string
+	BulkAction      string
 }{
-	ActorAccount: "ActorAccount",
-	ActorToken:   "ActorToken",
-	BulkAction:   "BulkAction",
+	ActorConnection: "ActorConnection",
+	ActorAccount:    "ActorAccount",
+	ActorToken:      "ActorToken",
+	BulkAction:      "BulkAction",
 }
 
 // workspaceActivityR is where relationships are stored.
 type workspaceActivityR struct {
-	ActorAccount *Account             `boil:"ActorAccount" json:"ActorAccount" toml:"ActorAccount" yaml:"ActorAccount"`
-	ActorToken   *APIToken            `boil:"ActorToken" json:"ActorToken" toml:"ActorToken" yaml:"ActorToken"`
-	BulkAction   *WorkspaceBulkAction `boil:"BulkAction" json:"BulkAction" toml:"BulkAction" yaml:"BulkAction"`
+	ActorConnection *MCPConnection       `boil:"ActorConnection" json:"ActorConnection" toml:"ActorConnection" yaml:"ActorConnection"`
+	ActorAccount    *Account             `boil:"ActorAccount" json:"ActorAccount" toml:"ActorAccount" yaml:"ActorAccount"`
+	ActorToken      *APIToken            `boil:"ActorToken" json:"ActorToken" toml:"ActorToken" yaml:"ActorToken"`
+	BulkAction      *WorkspaceBulkAction `boil:"BulkAction" json:"BulkAction" toml:"BulkAction" yaml:"BulkAction"`
 }
 
 // NewStruct creates a new relationship struct
 func (*workspaceActivityR) NewStruct() *workspaceActivityR {
 	return &workspaceActivityR{}
+}
+
+func (o *WorkspaceActivity) GetActorConnection() *MCPConnection {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetActorConnection()
+}
+
+func (r *workspaceActivityR) GetActorConnection() *MCPConnection {
+	if r == nil {
+		return nil
+	}
+
+	return r.ActorConnection
 }
 
 func (o *WorkspaceActivity) GetActorAccount() *Account {
@@ -244,9 +277,9 @@ func (r *workspaceActivityR) GetBulkAction() *WorkspaceBulkAction {
 type workspaceActivityL struct{}
 
 var (
-	workspaceActivityAllColumns            = []string{"id", "workspace_id", "issue_id", "actor_account_id", "kind", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "operation_id", "actor_kind", "actor_token_id", "actor_token_name"}
+	workspaceActivityAllColumns            = []string{"id", "workspace_id", "issue_id", "actor_account_id", "kind", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "operation_id", "actor_kind", "actor_token_id", "actor_token_name", "actor_connection_id", "actor_connection_name"}
 	workspaceActivityColumnsWithoutDefault = []string{"workspace_id", "kind", "operation_id"}
-	workspaceActivityColumnsWithDefault    = []string{"id", "issue_id", "actor_account_id", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "actor_kind", "actor_token_id", "actor_token_name"}
+	workspaceActivityColumnsWithDefault    = []string{"id", "issue_id", "actor_account_id", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "actor_kind", "actor_token_id", "actor_token_name", "actor_connection_id", "actor_connection_name"}
 	workspaceActivityPrimaryKeyColumns     = []string{"id"}
 	workspaceActivityGeneratedColumns      = []string{}
 )
@@ -556,6 +589,17 @@ func (q workspaceActivityQuery) Exists(ctx context.Context, exec boil.ContextExe
 	return count > 0, nil
 }
 
+// ActorConnection pointed to by the foreign key.
+func (o *WorkspaceActivity) ActorConnection(mods ...qm.QueryMod) mcpConnectionQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.ActorConnectionID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return MCPConnections(queryMods...)
+}
+
 // ActorAccount pointed to by the foreign key.
 func (o *WorkspaceActivity) ActorAccount(mods ...qm.QueryMod) accountQuery {
 	queryMods := []qm.QueryMod{
@@ -587,6 +631,130 @@ func (o *WorkspaceActivity) BulkAction(mods ...qm.QueryMod) workspaceBulkActionQ
 	queryMods = append(queryMods, mods...)
 
 	return WorkspaceBulkActions(queryMods...)
+}
+
+// LoadActorConnection allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceActivityL) LoadActorConnection(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceActivity any, mods queries.Applicator) error {
+	var slice []*WorkspaceActivity
+	var object *WorkspaceActivity
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceActivity.(*WorkspaceActivity)
+		if !ok {
+			object = new(WorkspaceActivity)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceActivity)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceActivity))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceActivity.(*[]*WorkspaceActivity)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceActivity)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceActivity))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceActivityR{}
+		}
+		if !queries.IsNil(object.ActorConnectionID) {
+			args[object.ActorConnectionID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceActivityR{}
+			}
+
+			if !queries.IsNil(obj.ActorConnectionID) {
+				args[obj.ActorConnectionID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`mcp_connections`),
+		qm.WhereIn(`mcp_connections.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load MCPConnection")
+	}
+
+	var resultSlice []*MCPConnection
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice MCPConnection")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for mcp_connections")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for mcp_connections")
+	}
+
+	if len(mcpConnectionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.ActorConnection = foreign
+		if foreign.R == nil {
+			foreign.R = &mcpConnectionR{}
+		}
+		foreign.R.ActorConnectionWorkspaceActivities = append(foreign.R.ActorConnectionWorkspaceActivities, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.ActorConnectionID, foreign.ID) {
+				local.R.ActorConnection = foreign
+				if foreign.R == nil {
+					foreign.R = &mcpConnectionR{}
+				}
+				foreign.R.ActorConnectionWorkspaceActivities = append(foreign.R.ActorConnectionWorkspaceActivities, local)
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadActorAccount allows an eager lookup of values, cached into the
@@ -958,6 +1126,86 @@ func (workspaceActivityL) LoadBulkAction(ctx context.Context, e boil.ContextExec
 		}
 	}
 
+	return nil
+}
+
+// SetActorConnection of the workspaceActivity to the related item.
+// Sets o.R.ActorConnection to related.
+// Adds o to related.R.ActorConnectionWorkspaceActivities.
+func (o *WorkspaceActivity) SetActorConnection(ctx context.Context, exec boil.ContextExecutor, insert bool, related *MCPConnection) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_activity\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"actor_connection_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceActivityPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.ActorConnectionID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceActivityR{
+			ActorConnection: related,
+		}
+	} else {
+		o.R.ActorConnection = related
+	}
+
+	if related.R == nil {
+		related.R = &mcpConnectionR{
+			ActorConnectionWorkspaceActivities: WorkspaceActivitySlice{o},
+		}
+	} else {
+		related.R.ActorConnectionWorkspaceActivities = append(related.R.ActorConnectionWorkspaceActivities, o)
+	}
+
+	return nil
+}
+
+// RemoveActorConnection relationship.
+// Sets o.R.ActorConnection to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceActivity) RemoveActorConnection(ctx context.Context, exec boil.ContextExecutor, related *MCPConnection) error {
+	var err error
+
+	queries.SetScanner(&o.ActorConnectionID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("actor_connection_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.ActorConnection = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.ActorConnectionWorkspaceActivities {
+		if queries.Equal(o.ActorConnectionID, ri.ActorConnectionID) {
+			continue
+		}
+
+		ln := len(related.R.ActorConnectionWorkspaceActivities)
+		if ln > 1 && i < ln-1 {
+			related.R.ActorConnectionWorkspaceActivities[i] = related.R.ActorConnectionWorkspaceActivities[ln-1]
+		}
+		related.R.ActorConnectionWorkspaceActivities = related.R.ActorConnectionWorkspaceActivities[:ln-1]
+		break
+	}
 	return nil
 }
 

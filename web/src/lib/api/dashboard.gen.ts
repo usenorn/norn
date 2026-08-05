@@ -982,6 +982,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mcp/authorizations/{requestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What an AI client is asking to be granted, for the consent screen */
+        get: operations["describeMCPAuthorization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mcp/authorizations/{requestId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Grant the AI client a connection that follows the caller's own membership */
+        post: operations["approveMCPAuthorization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mcp/authorizations/{requestId}/deny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuse the AI client and send it away empty-handed */
+        post: operations["denyMCPAuthorization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mcp/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the caller's live AI client connections */
+        get: operations["listMCPConnections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mcp/connections/{connectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a connection, cutting it off from the next operation on */
+        delete: operations["revokeMCPConnection"];
+        options?: never;
+        head?: never;
+        /** Shrink what a connection may reach, without re-authorizing */
+        patch: operations["narrowMCPConnection"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/mcp-connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The AI client connections able to reach this workspace, for its admins */
+        get: operations["listWorkspaceMCPConnections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/mcp-connections/{connectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a connection reaching this workspace, as its admin */
+        delete: operations["revokeWorkspaceMCPConnection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents": {
         parameters: {
             query?: never;
@@ -3014,6 +3134,8 @@ export interface components {
             actorKind: components["schemas"]["ActivityActorKind"];
             /** @description The API token that made the change, when one did. Recorded as it was named at the time, so revoking the token does not change what the record says happened. */
             actorTokenName?: string;
+            /** @description The AI client connection that made the change, when one did. Recorded as the client was named at the time, so revoking the connection does not rewrite history. */
+            actorConnectionName?: string;
             /** Format: uuid */
             bulkActionId?: string;
             changes: components["schemas"]["ActivityChange"][];
@@ -3101,7 +3223,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "token.minted" | "token.revoked" | "agent.registered" | "agent.disabled" | "agent.proposal_decided" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "token.minted" | "token.revoked" | "agent.registered" | "agent.disabled" | "agent.proposal_decided" | "mcp_connection.authorized" | "mcp_connection.narrowed" | "mcp_connection.revoked" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -3521,6 +3643,49 @@ export interface components {
             grants: components["schemas"]["APITokenGrant"][];
             /** Format: date-time */
             expiresAt?: string;
+        };
+        /**
+         * @description What the connection may do — read everything its owner can see, or also write.
+         * @enum {string}
+         */
+        MCPCapability: "read" | "write";
+        MCPConnection: {
+            /** Format: uuid */
+            id: string;
+            clientName: string;
+            capability: components["schemas"]["MCPCapability"];
+            /** @description When true the connection reaches every workspace its owner belongs to, including ones joined after authorization. When false it is narrowed to the listed grants. */
+            followsMembership: boolean;
+            grants: components["schemas"]["APITokenGrant"][];
+            /** Format: date-time */
+            lastUsedAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        WorkspaceMCPConnection: {
+            connection: components["schemas"]["MCPConnection"];
+            ownerName: string;
+            ownerEmail: string;
+        };
+        MCPAuthorizationWorkspace: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+        };
+        MCPAuthorizationView: {
+            clientName: string;
+            capability: components["schemas"]["MCPCapability"];
+            /** @description Every workspace the grant would reach today; future ones join automatically. */
+            workspaces: components["schemas"]["MCPAuthorizationWorkspace"][];
+        };
+        MCPAuthorizationDecision: {
+            redirectTo: string;
+        };
+        NarrowMCPConnectionRequest: {
+            capability?: components["schemas"]["MCPCapability"];
+            /** @description Replaces the connection's reach; must shrink it, never widen it. */
+            grants?: components["schemas"]["APITokenGrant"][];
         };
         APITokenUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -4409,6 +4574,8 @@ export interface components {
         AccountId: string;
         InvitationId: string;
         TokenId: string;
+        MCPRequestId: string;
+        MCPConnectionId: string;
         AgentId: string;
         ProposalId: string;
         StateId: string;
@@ -6472,6 +6639,212 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    describeMCPAuthorization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: components["parameters"]["MCPRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The pending authorization request */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MCPAuthorizationView"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    approveMCPAuthorization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: components["parameters"]["MCPRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Where to send the client to finish the handshake */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MCPAuthorizationDecision"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    denyMCPAuthorization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: components["parameters"]["MCPRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Where to send the client to report the refusal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MCPAuthorizationDecision"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listMCPConnections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's connections */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MCPConnection"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    revokeMCPConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: components["parameters"]["MCPConnectionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connection was revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    narrowMCPConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: components["parameters"]["MCPConnectionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NarrowMCPConnectionRequest"];
+            };
+        };
+        responses: {
+            /** @description The connection after narrowing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MCPConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceMCPConnections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connections reaching this workspace, with their owners */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceMCPConnection"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    revokeWorkspaceMCPConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["MCPConnectionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connection was revoked everywhere it reached */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

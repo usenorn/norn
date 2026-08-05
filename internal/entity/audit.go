@@ -59,6 +59,10 @@ const (
 	AuditAgentDisabled   AuditAction = "agent.disabled"
 	AuditAgentProposal   AuditAction = "agent.proposal_decided"
 
+	AuditConnectionAuthorized AuditAction = "mcp_connection.authorized"
+	AuditConnectionNarrowed   AuditAction = "mcp_connection.narrowed"
+	AuditConnectionRevoked    AuditAction = "mcp_connection.revoked"
+
 	AuditWorkspaceUpdated  AuditAction = "workspace.updated"
 	AuditWorkspaceDeletion AuditAction = "workspace.deletion_requested"
 	AuditWorkspaceRestored AuditAction = "workspace.restored"
@@ -84,6 +88,7 @@ func AuditActions() []AuditAction {
 		AuditRecoveryCodesIssued, AuditRecoveryCodeRedeemed, AuditSSOIdentityUnlinked,
 		AuditTokenMinted, AuditTokenRevoked,
 		AuditAgentRegistered, AuditAgentDisabled, AuditAgentProposal,
+		AuditConnectionAuthorized, AuditConnectionNarrowed, AuditConnectionRevoked,
 		AuditWorkspaceUpdated, AuditWorkspaceDeletion, AuditWorkspaceRestored, AuditWorkspacePurged,
 		AuditDirectoryConnected, AuditDirectoryDisconnected, AuditDirectoryTokenRotated,
 		AuditExported, AuditAccessDenied,
@@ -161,6 +166,11 @@ func ActorAudited(actor Actor, name string) AuditActor {
 
 	if actor.Kind == ActorKindAgent {
 		audited.AgentName = name
+	}
+
+	if actor.ConnectionID != nil && audited.TokenID == nil {
+		audited.TokenID = actor.ConnectionID
+		audited.TokenName = actor.ConnectionName
 	}
 
 	return audited
