@@ -27,6 +27,8 @@ type issuesService struct {
 	projects     repository.Project
 	teams        repository.Team
 	triage       repository.Triage
+	notify       repository.NotificationEvent
+	followers    repository.IssueFollower
 	jobs         repository.JobProducer
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
@@ -44,6 +46,8 @@ func New(
 	projects repository.Project,
 	teams repository.Team,
 	triage repository.Triage,
+	notify repository.NotificationEvent,
+	followers repository.IssueFollower,
 	jobs repository.JobProducer,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
@@ -60,6 +64,8 @@ func New(
 		projects:     projects,
 		teams:        teams,
 		triage:       triage,
+		notify:       notify,
+		followers:    followers,
 		jobs:         jobs,
 		authorizer:   authorizer,
 		transactor:   transactor,
@@ -119,14 +125,22 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 			return err
 		}
 
-		return s.activity.Record(ctx, entity.Activity{
+		if err := s.activity.Record(ctx, entity.Activity{
 			WorkspaceID:    created.WorkspaceID,
 			Subject:        entity.IssueSubject(created.ID),
 			ActorAccountID: decision.Actor.AccountID,
 			ActorKind:      decision.Actor.Kind,
 			Kind:           entity.ActivityKindCreated,
 			ToState:        created.State.Name,
-		})
+		}); err != nil {
+			return err
+		}
+
+		if err := s.follow(ctx, created, decision.Actor.AccountID); err != nil {
+			return err
+		}
+
+		return s.notifyAssigned(ctx, created, decision, created.AssigneeAccountID, uuid.Nil)
 	})
 	if err != nil {
 		return entity.Issue{}, err
@@ -372,6 +386,16 @@ func (s *issuesService) Update(
 				ToState:        target.Name,
 				Version:        issue.Version + 1,
 			}); err != nil {
+				return err
+			}
+
+			if err := s.notifyStateChanged(ctx, issue, decision, uuid.Nil); err != nil {
+				return err
+			}
+		}
+
+		if change.Assignee != nil && *change.Assignee != issue.AssigneeAccountID {
+			if err := s.notifyAssigned(ctx, issue, decision, *change.Assignee, uuid.Nil); err != nil {
 				return err
 			}
 		}
@@ -1172,6 +1196,10 @@ func (s *issuesService) MoveToTeam(
 			ToValue:        refreshed.TeamKey,
 			Version:        issue.Version + 1,
 		}); err != nil {
+			return err
+		}
+
+		if err := s.notifyStateChanged(ctx, issue, decision, uuid.Nil); err != nil {
 			return err
 		}
 

@@ -353,8 +353,15 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrAttachmentNotFound),
 		errors.Is(err, entity.ErrBlobNotFound),
 		errors.Is(err, entity.ErrTriageDisabled),
+		errors.Is(err, entity.ErrNotificationNotFound),
 		errors.Is(err, entity.ErrBreakGlassCodeInvalid):
 		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrSnoozeNotInFuture),
+		errors.Is(err, entity.ErrNotificationCursorInvalid),
+		errors.Is(err, entity.ErrSearchQueryEmpty),
+		errors.Is(err, entity.ErrSearchKindUnknown):
+		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
 	case errors.Is(err, entity.ErrSavedViewNotOwner),
 		errors.Is(err, entity.ErrSavedViewNotShareable):
@@ -1395,5 +1402,53 @@ func (r problemResponse) VisitGetWorkspaceStorageResponse(w http.ResponseWriter)
 }
 
 func (r problemResponse) VisitListWorkspaceProjectActivityResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitReadAllWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitReadWorkspaceNotificationResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSnoozeWorkspaceNotificationResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitClearWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSearchWorkspaceResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

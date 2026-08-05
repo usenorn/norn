@@ -1,0 +1,12 @@
+<p>Hello,</p>
+<p>Here is what happened in {{ .WorkspaceName }} while you were away.</p>
+<ul>
+{{ range .Entries }}
+  <li>
+    <a href="{{ .URL }}">{{ with .Reference }}{{ . }} {{ end }}{{ .Title }}</a><br />
+    {{ .Summary }}
+  </li>
+{{ end }}
+</ul>
+<p><a href="{{ .InboxURL }}">Open your inbox</a></p>
+<p>You are receiving this because these notifications are set to reach you by email. Change that under Settings, Notifications.</p>

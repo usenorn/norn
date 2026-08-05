@@ -15,6 +15,7 @@
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import WorkflowStates from "$lib/components/norn/workflow-states.svelte";
 	import CycleCadence from "$lib/team/cycle-cadence.svelte";
+	import TeamNotifications from "$lib/notifications/team-notifications.svelte";
 	import TeamTriage from "$lib/team/team-triage.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
@@ -69,6 +70,7 @@
 	const states = $derived<StateList>(preview?.states ?? data.states);
 	const cadence = $derived<CadenceSetting>(preview?.cadence ?? data.cadence);
 	const triage = $derived(preview?.triage ?? data.triage);
+	const notifications = $derived(preview?.notifications ?? data.notifications);
 	const failure = $derived<MemberFailure | null>(preview?.failure ?? memberFailure);
 	const team = $derived(teamOf(settings));
 	const archived = $derived(settings.kind === "archived");
@@ -556,6 +558,13 @@
 					{team}
 					setting={triage}
 					locked={busy || archived || readOnly}
+				/>
+
+				<TeamNotifications
+					workspace={data.workspace}
+					{team}
+					setting={notifications}
+					locked={busy || archived}
 				/>
 
 				{#if !archived}

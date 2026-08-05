@@ -15,6 +15,8 @@ import (
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
+	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
+	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
@@ -28,6 +30,8 @@ type harness struct {
 	issues      *issuerepo.MockIssue
 	teams       *teamrepo.MockTeam
 	activity    *activityrepo.MockActivity
+	notify      *notificationeventrepo.MockNotificationEvent
+	followers   *issuefollowerrepo.MockIssueFollower
 	authorizer  *authorizersvc.MockAuthorizer
 	service     service.IssueComments
 
@@ -50,6 +54,8 @@ func newHarness(t *testing.T) *harness {
 		issues:      issuerepo.NewMockIssue(ctrl),
 		teams:       teamrepo.NewMockTeam(ctrl),
 		activity:    activityrepo.NewMockActivity(ctrl),
+		notify:      notificationeventrepo.NewMockNotificationEvent(ctrl),
+		followers:   issuefollowerrepo.NewMockIssueFollower(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID: uuid.New(),
 		issueID:     uuid.New(),
@@ -68,8 +74,12 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = issuecommentsvc.New(
-		h.comments, h.attachments, h.issues, h.teams, h.activity, h.authorizer, transactor,
+		h.comments, h.attachments, h.issues, h.teams, h.activity, h.notify, h.followers,
+		h.authorizer, transactor,
 	)
+
+	h.notify.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.followers.EXPECT().Follow(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	return h
 }

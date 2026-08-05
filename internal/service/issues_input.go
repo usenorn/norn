@@ -32,6 +32,7 @@ type IssuePage struct {
 }
 
 type QueryIssuesInput struct {
+	Text    string
 	Filter  *entity.IssueFilter
 	Sort    []entity.IssueSort
 	GroupBy entity.IssueGroupBy

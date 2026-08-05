@@ -18,10 +18,10 @@ export function workspacePath(workspace: string, path = ""): string {
 	return `/${workspace}${path}`;
 }
 
-export function primaryNav(workspace: string, waiting = 0): NavEntry[] {
+export function primaryNav(workspace: string, waiting = 0, unread = 0): NavEntry[] {
 	const at = (path: string) => workspacePath(workspace, path);
 	return [
-		{ label: "Inbox", href: at("/inbox"), icon: Inbox },
+		{ label: "Inbox", href: at("/inbox"), icon: Inbox, count: unread || undefined },
 		{ label: "My tasks", href: at("/my-tasks"), icon: CircleDot },
 		{
 			label: "Reviews",

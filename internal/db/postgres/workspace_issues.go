@@ -56,6 +56,7 @@ type WorkspaceIssue struct {
 	TriageSource             null.String `boil:"triage_source" json:"triage_source,omitempty" toml:"triage_source" yaml:"triage_source,omitempty"`
 	TriageDecidedByAccountID null.String `boil:"triage_decided_by_account_id" json:"triage_decided_by_account_id,omitempty" toml:"triage_decided_by_account_id" yaml:"triage_decided_by_account_id,omitempty"`
 	TriageDecidedAt          null.Time   `boil:"triage_decided_at" json:"triage_decided_at,omitempty" toml:"triage_decided_at" yaml:"triage_decided_at,omitempty"`
+	SearchDocument           null.String `boil:"search_document" json:"search_document,omitempty" toml:"search_document" yaml:"search_document,omitempty"`
 
 	R *workspaceIssueR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -93,6 +94,7 @@ var WorkspaceIssueColumns = struct {
 	TriageSource             string
 	TriageDecidedByAccountID string
 	TriageDecidedAt          string
+	SearchDocument           string
 }{
 	ID:                       "id",
 	WorkspaceID:              "workspace_id",
@@ -125,6 +127,7 @@ var WorkspaceIssueColumns = struct {
 	TriageSource:             "triage_source",
 	TriageDecidedByAccountID: "triage_decided_by_account_id",
 	TriageDecidedAt:          "triage_decided_at",
+	SearchDocument:           "search_document",
 }
 
 var WorkspaceIssueTableColumns = struct {
@@ -159,6 +162,7 @@ var WorkspaceIssueTableColumns = struct {
 	TriageSource             string
 	TriageDecidedByAccountID string
 	TriageDecidedAt          string
+	SearchDocument           string
 }{
 	ID:                       "workspace_issues.id",
 	WorkspaceID:              "workspace_issues.workspace_id",
@@ -191,6 +195,7 @@ var WorkspaceIssueTableColumns = struct {
 	TriageSource:             "workspace_issues.triage_source",
 	TriageDecidedByAccountID: "workspace_issues.triage_decided_by_account_id",
 	TriageDecidedAt:          "workspace_issues.triage_decided_at",
+	SearchDocument:           "workspace_issues.search_document",
 }
 
 // Generated where
@@ -227,6 +232,7 @@ var WorkspaceIssueWhere = struct {
 	TriageSource             whereHelpernull_String
 	TriageDecidedByAccountID whereHelpernull_String
 	TriageDecidedAt          whereHelpernull_Time
+	SearchDocument           whereHelpernull_String
 }{
 	ID:                       whereHelperstring{field: "\"workspace_issues\".\"id\""},
 	WorkspaceID:              whereHelperstring{field: "\"workspace_issues\".\"workspace_id\""},
@@ -259,6 +265,7 @@ var WorkspaceIssueWhere = struct {
 	TriageSource:             whereHelpernull_String{field: "\"workspace_issues\".\"triage_source\""},
 	TriageDecidedByAccountID: whereHelpernull_String{field: "\"workspace_issues\".\"triage_decided_by_account_id\""},
 	TriageDecidedAt:          whereHelpernull_Time{field: "\"workspace_issues\".\"triage_decided_at\""},
+	SearchDocument:           whereHelpernull_String{field: "\"workspace_issues\".\"search_document\""},
 }
 
 // WorkspaceIssueRels is where relationship names are stored.
@@ -355,11 +362,11 @@ func (r *workspaceIssueR) GetIssueWorkspaceCycleScopeChanges() WorkspaceCycleSco
 type workspaceIssueL struct{}
 
 var (
-	workspaceIssueAllColumns            = []string{"id", "workspace_id", "team_id", "number", "title", "created_by_account_id", "created_at", "updated_at", "state_id", "reference_key", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at"}
+	workspaceIssueAllColumns            = []string{"id", "workspace_id", "team_id", "number", "title", "created_by_account_id", "created_at", "updated_at", "state_id", "reference_key", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at", "search_document"}
 	workspaceIssueColumnsWithoutDefault = []string{"workspace_id", "team_id", "number", "title", "state_id", "reference_key"}
-	workspaceIssueColumnsWithDefault    = []string{"id", "created_by_account_id", "created_at", "updated_at", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at"}
+	workspaceIssueColumnsWithDefault    = []string{"id", "created_by_account_id", "created_at", "updated_at", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at", "search_document"}
 	workspaceIssuePrimaryKeyColumns     = []string{"id"}
-	workspaceIssueGeneratedColumns      = []string{}
+	workspaceIssueGeneratedColumns      = []string{"search_document"}
 )
 
 type (
@@ -1570,6 +1577,7 @@ func (o *WorkspaceIssue) Insert(ctx context.Context, exec boil.ContextExecutor, 
 			workspaceIssueColumnsWithoutDefault,
 			nzDefaults,
 		)
+		wl = strmangle.SetComplement(wl, workspaceIssueGeneratedColumns)
 
 		cache.valueMapping, err = queries.BindMapping(workspaceIssueType, workspaceIssueMapping, wl)
 		if err != nil {
@@ -1646,6 +1654,7 @@ func (o *WorkspaceIssue) Update(ctx context.Context, exec boil.ContextExecutor, 
 			workspaceIssueAllColumns,
 			workspaceIssuePrimaryKeyColumns,
 		)
+		wl = strmangle.SetComplement(wl, workspaceIssueGeneratedColumns)
 
 		if !columns.IsWhitelist() {
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
@@ -1823,6 +1832,9 @@ func (o *WorkspaceIssue) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 			workspaceIssueAllColumns,
 			workspaceIssuePrimaryKeyColumns,
 		)
+
+		insert = strmangle.SetComplement(insert, workspaceIssueGeneratedColumns)
+		update = strmangle.SetComplement(update, workspaceIssueGeneratedColumns)
 
 		if updateOnConflict && len(update) == 0 {
 			return errors.New("dbpostgres: unable to upsert workspace_issues, could not build update column list")

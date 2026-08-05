@@ -13,6 +13,7 @@ import (
 type ListCommentsInput struct {
 	Limit  int
 	Cursor string
+	Around uuid.UUID
 }
 
 type CommentThread struct {

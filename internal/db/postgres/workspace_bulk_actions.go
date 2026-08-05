@@ -185,11 +185,13 @@ var WorkspaceBulkActionRels = struct {
 	Workspace                             string
 	BulkActionWorkspaceActivities         string
 	BulkActionWorkspaceBulkActionOutcomes string
+	BulkActionWorkspaceNotificationEvents string
 }{
 	RequestedByAccount:                    "RequestedByAccount",
 	Workspace:                             "Workspace",
 	BulkActionWorkspaceActivities:         "BulkActionWorkspaceActivities",
 	BulkActionWorkspaceBulkActionOutcomes: "BulkActionWorkspaceBulkActionOutcomes",
+	BulkActionWorkspaceNotificationEvents: "BulkActionWorkspaceNotificationEvents",
 }
 
 // workspaceBulkActionR is where relationships are stored.
@@ -198,6 +200,7 @@ type workspaceBulkActionR struct {
 	Workspace                             *Workspace                      `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
 	BulkActionWorkspaceActivities         WorkspaceActivitySlice          `boil:"BulkActionWorkspaceActivities" json:"BulkActionWorkspaceActivities" toml:"BulkActionWorkspaceActivities" yaml:"BulkActionWorkspaceActivities"`
 	BulkActionWorkspaceBulkActionOutcomes WorkspaceBulkActionOutcomeSlice `boil:"BulkActionWorkspaceBulkActionOutcomes" json:"BulkActionWorkspaceBulkActionOutcomes" toml:"BulkActionWorkspaceBulkActionOutcomes" yaml:"BulkActionWorkspaceBulkActionOutcomes"`
+	BulkActionWorkspaceNotificationEvents WorkspaceNotificationEventSlice `boil:"BulkActionWorkspaceNotificationEvents" json:"BulkActionWorkspaceNotificationEvents" toml:"BulkActionWorkspaceNotificationEvents" yaml:"BulkActionWorkspaceNotificationEvents"`
 }
 
 // NewStruct creates a new relationship struct
@@ -267,6 +270,22 @@ func (r *workspaceBulkActionR) GetBulkActionWorkspaceBulkActionOutcomes() Worksp
 	}
 
 	return r.BulkActionWorkspaceBulkActionOutcomes
+}
+
+func (o *WorkspaceBulkAction) GetBulkActionWorkspaceNotificationEvents() WorkspaceNotificationEventSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetBulkActionWorkspaceNotificationEvents()
+}
+
+func (r *workspaceBulkActionR) GetBulkActionWorkspaceNotificationEvents() WorkspaceNotificationEventSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.BulkActionWorkspaceNotificationEvents
 }
 
 // workspaceBulkActionL is where Load methods for each relationship are stored.
@@ -633,6 +652,20 @@ func (o *WorkspaceBulkAction) BulkActionWorkspaceBulkActionOutcomes(mods ...qm.Q
 	)
 
 	return WorkspaceBulkActionOutcomes(queryMods...)
+}
+
+// BulkActionWorkspaceNotificationEvents retrieves all the workspace_notification_event's WorkspaceNotificationEvents with an executor via bulk_action_id column.
+func (o *WorkspaceBulkAction) BulkActionWorkspaceNotificationEvents(mods ...qm.QueryMod) workspaceNotificationEventQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_notification_events\".\"bulk_action_id\"=?", o.ID),
+	)
+
+	return WorkspaceNotificationEvents(queryMods...)
 }
 
 // LoadRequestedByAccount allows an eager lookup of values, cached into the
@@ -1105,6 +1138,119 @@ func (workspaceBulkActionL) LoadBulkActionWorkspaceBulkActionOutcomes(ctx contex
 	return nil
 }
 
+// LoadBulkActionWorkspaceNotificationEvents allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceBulkActionL) LoadBulkActionWorkspaceNotificationEvents(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceBulkAction any, mods queries.Applicator) error {
+	var slice []*WorkspaceBulkAction
+	var object *WorkspaceBulkAction
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceBulkAction.(*WorkspaceBulkAction)
+		if !ok {
+			object = new(WorkspaceBulkAction)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceBulkAction)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceBulkAction))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceBulkAction.(*[]*WorkspaceBulkAction)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceBulkAction)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceBulkAction))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceBulkActionR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceBulkActionR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_notification_events`),
+		qm.WhereIn(`workspace_notification_events.bulk_action_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_notification_events")
+	}
+
+	var resultSlice []*WorkspaceNotificationEvent
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_notification_events")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_notification_events")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_notification_events")
+	}
+
+	if len(workspaceNotificationEventAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.BulkActionWorkspaceNotificationEvents = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceNotificationEventR{}
+			}
+			foreign.R.BulkAction = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.BulkActionID) {
+				local.R.BulkActionWorkspaceNotificationEvents = append(local.R.BulkActionWorkspaceNotificationEvents, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceNotificationEventR{}
+				}
+				foreign.R.BulkAction = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetRequestedByAccount of the workspaceBulkAction to the related item.
 // Sets o.R.RequestedByAccount to related.
 // Adds o to related.R.RequestedByAccountWorkspaceBulkActions.
@@ -1409,6 +1555,133 @@ func (o *WorkspaceBulkAction) AddBulkActionWorkspaceBulkActionOutcomes(ctx conte
 			rel.R.BulkAction = o
 		}
 	}
+	return nil
+}
+
+// AddBulkActionWorkspaceNotificationEvents adds the given related objects to the existing relationships
+// of the workspace_bulk_action, optionally inserting them as new records.
+// Appends related to o.R.BulkActionWorkspaceNotificationEvents.
+// Sets related.R.BulkAction appropriately.
+func (o *WorkspaceBulkAction) AddBulkActionWorkspaceNotificationEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceNotificationEvent) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.BulkActionID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_notification_events\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"bulk_action_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceNotificationEventPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.BulkActionID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceBulkActionR{
+			BulkActionWorkspaceNotificationEvents: related,
+		}
+	} else {
+		o.R.BulkActionWorkspaceNotificationEvents = append(o.R.BulkActionWorkspaceNotificationEvents, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceNotificationEventR{
+				BulkAction: o,
+			}
+		} else {
+			rel.R.BulkAction = o
+		}
+	}
+	return nil
+}
+
+// SetBulkActionWorkspaceNotificationEvents removes all previously related items of the
+// workspace_bulk_action replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.BulkAction's BulkActionWorkspaceNotificationEvents accordingly.
+// Replaces o.R.BulkActionWorkspaceNotificationEvents with related.
+// Sets related.R.BulkAction's BulkActionWorkspaceNotificationEvents accordingly.
+func (o *WorkspaceBulkAction) SetBulkActionWorkspaceNotificationEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceNotificationEvent) error {
+	query := "update \"workspace_notification_events\" set \"bulk_action_id\" = null where \"bulk_action_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.BulkActionWorkspaceNotificationEvents {
+			queries.SetScanner(&rel.BulkActionID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.BulkAction = nil
+		}
+		o.R.BulkActionWorkspaceNotificationEvents = nil
+	}
+
+	return o.AddBulkActionWorkspaceNotificationEvents(ctx, exec, insert, related...)
+}
+
+// RemoveBulkActionWorkspaceNotificationEvents relationships from objects passed in.
+// Removes related items from R.BulkActionWorkspaceNotificationEvents (uses pointer comparison, removal does not keep order)
+// Sets related.R.BulkAction.
+func (o *WorkspaceBulkAction) RemoveBulkActionWorkspaceNotificationEvents(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceNotificationEvent) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.BulkActionID, nil)
+		if rel.R != nil {
+			rel.R.BulkAction = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("bulk_action_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.BulkActionWorkspaceNotificationEvents {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.BulkActionWorkspaceNotificationEvents)
+			if ln > 1 && i < ln-1 {
+				o.R.BulkActionWorkspaceNotificationEvents[i] = o.R.BulkActionWorkspaceNotificationEvents[ln-1]
+			}
+			o.R.BulkActionWorkspaceNotificationEvents = o.R.BulkActionWorkspaceNotificationEvents[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

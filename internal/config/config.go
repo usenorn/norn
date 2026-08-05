@@ -6,24 +6,25 @@ import (
 )
 
 type Config struct {
-	App         App         `mapstructure:"app"`
-	Instance    Instance    `mapstructure:"instance"`
-	HTTP        HTTP        `mapstructure:"http"`
-	Postgres    Postgres    `mapstructure:"postgres"`
-	Valkey      Valkey      `mapstructure:"valkey"`
-	Asynq       Asynq       `mapstructure:"asynq"`
-	SMTP        SMTP        `mapstructure:"smtp"`
-	Storage     Storage     `mapstructure:"storage"`
-	Attachments Attachments `mapstructure:"attachments"`
-	Session     Session     `mapstructure:"session"`
-	Casbin      Casbin      `mapstructure:"casbin"`
-	GeoIP       GeoIP       `mapstructure:"geoip"`
-	Password    Password    `mapstructure:"password"`
-	Workspace   Workspace   `mapstructure:"workspace"`
-	Security    Security    `mapstructure:"security"`
-	OIDC        OIDC        `mapstructure:"oidc"`
-	SAML        SAML        `mapstructure:"saml"`
-	Cycles      Cycles      `mapstructure:"cycles"`
+	App           App           `mapstructure:"app"`
+	Instance      Instance      `mapstructure:"instance"`
+	HTTP          HTTP          `mapstructure:"http"`
+	Postgres      Postgres      `mapstructure:"postgres"`
+	Valkey        Valkey        `mapstructure:"valkey"`
+	Asynq         Asynq         `mapstructure:"asynq"`
+	SMTP          SMTP          `mapstructure:"smtp"`
+	Storage       Storage       `mapstructure:"storage"`
+	Attachments   Attachments   `mapstructure:"attachments"`
+	Notifications Notifications `mapstructure:"notifications"`
+	Session       Session       `mapstructure:"session"`
+	Casbin        Casbin        `mapstructure:"casbin"`
+	GeoIP         GeoIP         `mapstructure:"geoip"`
+	Password      Password      `mapstructure:"password"`
+	Workspace     Workspace     `mapstructure:"workspace"`
+	Security      Security      `mapstructure:"security"`
+	OIDC          OIDC          `mapstructure:"oidc"`
+	SAML          SAML          `mapstructure:"saml"`
+	Cycles        Cycles        `mapstructure:"cycles"`
 }
 
 type Security struct {
@@ -172,6 +173,11 @@ type Attachments struct {
 	TransferTimeout   time.Duration `mapstructure:"transfer_timeout"`
 	ReclaimSchedule   string        `mapstructure:"reclaim_schedule"`
 	ReclaimBatch      int           `mapstructure:"reclaim_batch"`
+}
+
+type Notifications struct {
+	FanOutSchedule string `mapstructure:"fanout_schedule"`
+	DigestSchedule string `mapstructure:"digest_schedule"`
 }
 
 type Session struct {

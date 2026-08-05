@@ -48,9 +48,15 @@ function collectTeams(filter: SavedView["filter"] | undefined, into: Set<string>
 	}
 }
 
-export function viewQuery(applied: AppliedView, tab: IssueTab, teamId: string | null): IssueQueryBody {
+export function viewQuery(
+	applied: AppliedView,
+	tab: IssueTab,
+	teamId: string | null,
+	text = ""
+): IssueQueryBody {
 	if (applied.kind !== "applied") {
 		return {
+			text: text || undefined,
 			filter: allOf(teamId ? teamFilter(teamId) : undefined, tabFilter(tab)),
 			groupBy: "state",
 			limit: issuePageSize,
@@ -58,6 +64,7 @@ export function viewQuery(applied: AppliedView, tab: IssueTab, teamId: string | 
 	}
 
 	return {
+		text: text || undefined,
 		filter: allOf(applied.view.filter, tabFilter(tab)),
 		sort: applied.view.sort.length > 0 ? applied.view.sort : undefined,
 		groupBy: applied.view.groupBy ?? "state",

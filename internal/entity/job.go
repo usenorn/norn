@@ -19,6 +19,8 @@ const (
 	TaskTypeBulkApply               = "issue:bulk_apply"
 	TaskTypeCycleGeneration         = "cycle:generate"
 	TaskTypeAttachmentReclaim       = "attachment:reclaim"
+	TaskTypeNotificationFanOut      = "notification:fanout"
+	TaskTypeNotificationDigest      = "notification:digest"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 

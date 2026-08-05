@@ -81,6 +81,7 @@ func queryPage(input service.QueryIssuesInput) (entity.IssuePage, error) {
 
 	page := entity.IssuePage{
 		Limit:    input.Limit,
+		Text:     entity.ParseSearchQuery(input.Text),
 		Filter:   input.Filter,
 		Sort:     sort,
 		Statuses: entity.RequestedIssueStatuses(nil),

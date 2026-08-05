@@ -20,6 +20,7 @@ export type WorkspaceScope = {
 	projects: Project[];
 	views: SavedView[] | null;
 	waiting: number;
+	unread: number;
 	narrowed: boolean;
 };
 
@@ -37,7 +38,7 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 
 	if (!workspace) error(404, "That workspace does not exist, or you are not a member of it.");
 
-	const [teams, cycles, projects, views, triage] = await Promise.all([
+	const [teams, cycles, projects, views, triage, inbox] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams", {
 			fetch,
 			params: { path: { workspaceId: workspace.id } },
@@ -58,6 +59,10 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 			fetch,
 			params: { path: { workspaceId: workspace.id }, query: { limit: 1 } },
 		}),
+		api.GET("/workspaces/{workspaceId}/notifications", {
+			fetch,
+			params: { path: { workspaceId: workspace.id }, query: { limit: 1 } },
+		}),
 	]);
 
 	return {
@@ -71,6 +76,7 @@ export const load: LayoutLoad = async ({ fetch, params, url}): Promise<Workspace
 		projects: projects.data ?? [],
 		views: views.data ?? null,
 		waiting: waitingTotal(triage.data),
+		unread: inbox.data?.unread ?? 0,
 	};
 };
 

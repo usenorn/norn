@@ -17,9 +17,11 @@ import (
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
+	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
@@ -42,6 +44,8 @@ type harness struct {
 	projects    *projectrepo.MockProject
 	teams       *teamrepo.MockTeam
 	triage      *triagerepo.MockTriage
+	notify      *notificationeventrepo.MockNotificationEvent
+	followers   *issuefollowerrepo.MockIssueFollower
 	jobs        *jobqueuerepo.MockJobProducer
 	transactor  *transactorrepo.MockTransactor
 	authorizer  *authorizersvc.MockAuthorizer
@@ -65,6 +69,8 @@ func newHarness(t *testing.T) *harness {
 		projects:    projectrepo.NewMockProject(ctrl),
 		teams:       teamrepo.NewMockTeam(ctrl),
 		triage:      triagerepo.NewMockTriage(ctrl),
+		notify:      notificationeventrepo.NewMockNotificationEvent(ctrl),
+		followers:   issuefollowerrepo.NewMockIssueFollower(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
@@ -79,13 +85,17 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = issuesvc.New(
 		h.issues, h.states, h.activity, h.labels, h.accounts, h.memberships,
-		h.cycles, h.scope, h.projects, h.teams, h.triage, h.jobs, h.authorizer, h.transactor,
+		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.followers,
+		h.jobs, h.authorizer, h.transactor,
 	)
 
 	h.triage.EXPECT().
 		Settings(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(entity.TriageSettings{}, entity.ErrTriageDisabled).
 		AnyTimes()
+
+	h.notify.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.followers.EXPECT().Follow(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	return h
 }

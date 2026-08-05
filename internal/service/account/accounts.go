@@ -190,6 +190,10 @@ func (s *accountsService) RequestEmailChange(ctx context.Context, accountID uuid
 		return entity.EmailChange{}, err
 	}
 
+	if !s.smtp.Configured() {
+		return entity.EmailChange{}, entity.ErrMailDeliveryNotConfigured
+	}
+
 	email := entity.NormalizeEmail(newEmail)
 
 	if err := entity.NewValidationError(entity.ValidateEmail("email", email)); err != nil {

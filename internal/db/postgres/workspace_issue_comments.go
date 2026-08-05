@@ -36,6 +36,7 @@ type WorkspaceIssueComment struct {
 	DeletedAt       null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
 	CreatedAt       time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt       time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	SearchDocument  null.String `boil:"search_document" json:"search_document,omitempty" toml:"search_document" yaml:"search_document,omitempty"`
 
 	R *workspaceIssueCommentR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueCommentL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -54,6 +55,7 @@ var WorkspaceIssueCommentColumns = struct {
 	DeletedAt       string
 	CreatedAt       string
 	UpdatedAt       string
+	SearchDocument  string
 }{
 	ID:              "id",
 	WorkspaceID:     "workspace_id",
@@ -67,6 +69,7 @@ var WorkspaceIssueCommentColumns = struct {
 	DeletedAt:       "deleted_at",
 	CreatedAt:       "created_at",
 	UpdatedAt:       "updated_at",
+	SearchDocument:  "search_document",
 }
 
 var WorkspaceIssueCommentTableColumns = struct {
@@ -82,6 +85,7 @@ var WorkspaceIssueCommentTableColumns = struct {
 	DeletedAt       string
 	CreatedAt       string
 	UpdatedAt       string
+	SearchDocument  string
 }{
 	ID:              "workspace_issue_comments.id",
 	WorkspaceID:     "workspace_issue_comments.workspace_id",
@@ -95,6 +99,7 @@ var WorkspaceIssueCommentTableColumns = struct {
 	DeletedAt:       "workspace_issue_comments.deleted_at",
 	CreatedAt:       "workspace_issue_comments.created_at",
 	UpdatedAt:       "workspace_issue_comments.updated_at",
+	SearchDocument:  "workspace_issue_comments.search_document",
 }
 
 // Generated where
@@ -112,6 +117,7 @@ var WorkspaceIssueCommentWhere = struct {
 	DeletedAt       whereHelpernull_Time
 	CreatedAt       whereHelpertime_Time
 	UpdatedAt       whereHelpertime_Time
+	SearchDocument  whereHelpernull_String
 }{
 	ID:              whereHelperstring{field: "\"workspace_issue_comments\".\"id\""},
 	WorkspaceID:     whereHelperstring{field: "\"workspace_issue_comments\".\"workspace_id\""},
@@ -125,6 +131,7 @@ var WorkspaceIssueCommentWhere = struct {
 	DeletedAt:       whereHelpernull_Time{field: "\"workspace_issue_comments\".\"deleted_at\""},
 	CreatedAt:       whereHelpertime_Time{field: "\"workspace_issue_comments\".\"created_at\""},
 	UpdatedAt:       whereHelpertime_Time{field: "\"workspace_issue_comments\".\"updated_at\""},
+	SearchDocument:  whereHelpernull_String{field: "\"workspace_issue_comments\".\"search_document\""},
 }
 
 // WorkspaceIssueCommentRels is where relationship names are stored.
@@ -183,11 +190,11 @@ func (r *workspaceIssueCommentR) GetCommentWorkspaceIssueCommentReactions() Work
 type workspaceIssueCommentL struct{}
 
 var (
-	workspaceIssueCommentAllColumns            = []string{"id", "workspace_id", "issue_id", "parent_comment_id", "root_marker", "author_account_id", "author_kind", "body", "edited_at", "deleted_at", "created_at", "updated_at"}
+	workspaceIssueCommentAllColumns            = []string{"id", "workspace_id", "issue_id", "parent_comment_id", "root_marker", "author_account_id", "author_kind", "body", "edited_at", "deleted_at", "created_at", "updated_at", "search_document"}
 	workspaceIssueCommentColumnsWithoutDefault = []string{"workspace_id", "issue_id", "body"}
-	workspaceIssueCommentColumnsWithDefault    = []string{"id", "parent_comment_id", "root_marker", "author_account_id", "author_kind", "edited_at", "deleted_at", "created_at", "updated_at"}
+	workspaceIssueCommentColumnsWithDefault    = []string{"id", "parent_comment_id", "root_marker", "author_account_id", "author_kind", "edited_at", "deleted_at", "created_at", "updated_at", "search_document"}
 	workspaceIssueCommentPrimaryKeyColumns     = []string{"id"}
-	workspaceIssueCommentGeneratedColumns      = []string{"root_marker"}
+	workspaceIssueCommentGeneratedColumns      = []string{"root_marker", "search_document"}
 )
 
 type (

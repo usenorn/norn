@@ -144,6 +144,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					follow: "following" as const,
 					members: [
 						{
 							workspaceId: "00000000-0000-4000-8000-000000000000",
@@ -212,6 +213,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					follow: "following" as const,
 					members: [],
 					activity: { kind: "empty" },
 				},
@@ -254,6 +256,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					follow: "following" as const,
 					members: [],
 					activity: { kind: "empty" },
 				},
@@ -295,6 +298,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					follow: "following" as const,
 					members: [],
 					activity: { kind: "empty" },
 				},
@@ -336,6 +340,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					follow: "following" as const,
 					childProgress: { notStarted: 1, active: 0, complete: 2, abandoned: 0 },
 					relations: [],
 					cycles: [],
@@ -428,6 +433,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					follow: "following" as const,
 					children: [],
 					childProgress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
 					relations: [

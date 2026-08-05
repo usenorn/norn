@@ -88,7 +88,12 @@
 </script>
 
 {#snippet entry(comment: IssueComment, reply: boolean)}
-	<li class="flex flex-col gap-2 {reply ? 'border-l border-line-subtle pl-4' : ''}">
+	<li
+		id="comment-{comment.id}"
+		class="flex scroll-mt-16 flex-col gap-2 rounded-sm target:rule-inset target:bg-accent {reply
+			? 'border-l border-line-subtle pl-4'
+			: ''}"
+	>
 		<div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
 			<span class="flex items-center gap-1 text-sm font-medium text-ink-900">
 				{#if comment.authorKind === "agent"}

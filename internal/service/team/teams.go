@@ -19,6 +19,7 @@ type teamsService struct {
 	accounts     repository.Account
 	authPolicies repository.WorkspaceAuthPolicy
 	states       repository.WorkflowState
+	notify       repository.NotificationEvent
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
 }
@@ -31,6 +32,7 @@ func New(
 	accounts repository.Account,
 	authPolicies repository.WorkspaceAuthPolicy,
 	states repository.WorkflowState,
+	notify repository.NotificationEvent,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.Teams {
@@ -42,6 +44,7 @@ func New(
 		accounts:     accounts,
 		authPolicies: authPolicies,
 		states:       states,
+		notify:       notify,
 		authorizer:   authorizer,
 		transactor:   transactor,
 	}
@@ -270,12 +273,29 @@ func (s *teamsService) AddMember(ctx context.Context, workspaceID, teamID, accou
 		return service.TeamMemberView{}, entity.ErrAccountDeactivated
 	}
 
-	created, err := s.teamMembers.Create(ctx, entity.TeamMembership{
-		WorkspaceID: workspaceID,
-		TeamID:      teamID,
-		AccountID:   accountID,
-	})
-	if err != nil {
+	var created entity.TeamMembership
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		created, err = s.teamMembers.Create(ctx, entity.TeamMembership{
+			WorkspaceID: workspaceID,
+			TeamID:      teamID,
+			AccountID:   accountID,
+		})
+		if err != nil {
+			return err
+		}
+
+		actor, actorKind := decision.ActivityActor()
+
+		return s.notify.Record(ctx, entity.NotificationEvent{
+			WorkspaceID: workspaceID,
+			Subject:     entity.NotifyTeam(teamID),
+			Kind:        entity.NotificationKindMembership,
+			Actor:       actor,
+			ActorKind:   actorKind,
+			Target:      accountID,
+		})
+	}); err != nil {
 		return service.TeamMemberView{}, err
 	}
 

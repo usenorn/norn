@@ -1083,6 +1083,14 @@ func activityPageDTO(page service.ActivityPage) api.ActivityPage {
 	return dto
 }
 
+func textOf(value *string) string {
+	if value == nil {
+		return ""
+	}
+
+	return *value
+}
+
 func nilIfEmpty(value string) *string {
 	if value == "" {
 		return nil
@@ -1267,6 +1275,139 @@ func workspaceStorageDTO(ledger entity.WorkspaceStorage) api.WorkspaceStorage {
 	if !ledger.Unlimited() {
 		maxBytes := ledger.MaxBytes
 		dto.MaxBytes = &maxBytes
+	}
+
+	return dto
+}
+
+func notificationPageDTO(inbox service.Inbox) api.NotificationPage {
+	notifications := make([]api.Notification, 0, len(inbox.Notifications))
+	for _, notification := range inbox.Notifications {
+		notifications = append(notifications, notificationDTO(notification))
+	}
+
+	return api.NotificationPage{
+		Notifications: notifications,
+		Unread:        int32(inbox.Unread),
+		NextCursor:    nilIfEmpty(inbox.NextCursor),
+	}
+}
+
+func notificationDTO(notification entity.Notification) api.Notification {
+	dto := api.Notification{
+		SubjectKind: api.NotificationSubjectKind(notification.Subject.Kind),
+		SubjectId:   notification.Subject.ID,
+		Kind:        api.NotificationKind(notification.Kind),
+		Reason:      api.NotificationReason(notification.Reason),
+		ActorKind:   api.NotificationActorKind(notification.ActorKind),
+		Title:       notification.Title,
+		Reference:   nilIfEmpty(notification.Reference),
+		TeamKey:     nilIfEmpty(notification.TeamKey),
+		UnreadCount: int32(notification.UnreadCount),
+		LastEventAt: notification.LastEventAt,
+	}
+
+	if notification.Actor != uuid.Nil {
+		actor := notification.Actor
+		dto.ActorAccountId = &actor
+		dto.ActorName = nilIfEmpty(notification.ActorName)
+	}
+
+	if !notification.SnoozedUntil.IsZero() {
+		snoozed := notification.SnoozedUntil
+		dto.SnoozedUntil = &snoozed
+	}
+
+	return dto
+}
+
+func issueFollowDTO(follower entity.IssueFollower) api.IssueFollow {
+	state := follower.State
+	if state == "" {
+		state = entity.FollowStateMuted
+	}
+
+	return api.IssueFollow{State: api.FollowState(state)}
+}
+
+func notificationSettingsDTO(view service.NotificationSettingsView) api.NotificationSettings {
+	return api.NotificationSettings{
+		Preferences:  notificationPreferencesDTO(view.Team),
+		Workspace:    notificationPreferencesDTO(view.Global),
+		Overridden:   view.TeamOverridden,
+		EmailEnabled: view.EmailEnabled,
+	}
+}
+
+func notificationPreferencesDTO(preferences entity.NotificationPreferences) api.NotificationPreferences {
+	return api.NotificationPreferences{
+		Assigned:     notificationChannelsDTO(preferences.Assigned),
+		Mentioned:    notificationChannelsDTO(preferences.Mentioned),
+		Commented:    notificationChannelsDTO(preferences.Commented),
+		StateChanged: notificationChannelsDTO(preferences.StateChanged),
+		Membership:   notificationChannelsDTO(preferences.Membership),
+		Agents:       notificationChannelsDTO(preferences.Agents),
+	}
+}
+
+func notificationChannelsDTO(channels entity.NotificationChannels) api.NotificationChannels {
+	return api.NotificationChannels{Inbox: channels.Inbox, Email: channels.Email}
+}
+
+func notificationPreferences(dto api.NotificationPreferences) entity.NotificationPreferences {
+	return entity.NotificationPreferences{
+		Assigned:     notificationChannels(dto.Assigned),
+		Mentioned:    notificationChannels(dto.Mentioned),
+		Commented:    notificationChannels(dto.Commented),
+		StateChanged: notificationChannels(dto.StateChanged),
+		Membership:   notificationChannels(dto.Membership),
+		Agents:       notificationChannels(dto.Agents),
+	}
+}
+
+func notificationChannels(dto api.NotificationChannels) entity.NotificationChannels {
+	return entity.NotificationChannels{Inbox: dto.Inbox, Email: dto.Email}
+}
+
+func searchResultsDTO(results entity.SearchResults) api.SearchResults {
+	groups := make([]api.SearchGroup, 0, len(results.Groups))
+	for _, group := range results.Groups {
+		groups = append(groups, searchGroupDTO(group))
+	}
+
+	return api.SearchResults{Query: results.Query.Raw, Fuzzy: results.Fuzzy, Groups: groups}
+}
+
+func searchGroupDTO(group entity.SearchGroup) api.SearchGroup {
+	results := make([]api.SearchResult, 0, len(group.Results))
+	for _, result := range group.Results {
+		results = append(results, searchResultDTO(result))
+	}
+
+	return api.SearchGroup{
+		Kind:    api.SearchKind(group.Kind),
+		More:    group.More,
+		Results: results,
+	}
+}
+
+func searchResultDTO(result entity.SearchResult) api.SearchResult {
+	dto := api.SearchResult{
+		Kind:      api.SearchKind(result.Kind),
+		Id:        result.ID,
+		Title:     result.Title,
+		Excerpt:   nilIfEmpty(result.Excerpt),
+		Reference: nilIfEmpty(result.Reference),
+		TeamKey:   nilIfEmpty(result.TeamKey),
+		Slug:      nilIfEmpty(result.Slug),
+		Status:    nilIfEmpty(result.Status),
+		TitleHit:  result.TitleHit,
+		UpdatedAt: result.UpdatedAt,
+	}
+
+	if result.IssueID != uuid.Nil {
+		issueID := result.IssueID
+		dto.IssueId = &issueID
 	}
 
 	return dto

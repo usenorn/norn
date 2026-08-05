@@ -22,6 +22,8 @@ tags:
   - name: states
   - name: tokens
   - name: sso
+  - name: notifications
+  - name: search
 
 paths:
   /health:
@@ -2079,6 +2081,10 @@ paths:
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
         - $ref: '#/components/parameters/IssueId'
+        - name: around
+          in: query
+          description: Return the page holding this comment, so a link to it lands on it
+          schema: { type: string, format: uuid }
         - name: limit
           in: query
           schema: { type: integer, format: int32, minimum: 1, maximum: 100 }
@@ -3205,6 +3211,258 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/notifications:
+    get:
+      tags: [notifications]
+      operationId: listWorkspaceNotifications
+      summary: Read your inbox, one entry per thing that changed, newest first
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: filter
+          in: query
+          schema: { type: string, enum: [unread, all] }
+        - name: limit
+          in: query
+          schema: { type: integer, format: int32, minimum: 1, maximum: 100 }
+        - name: cursor
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: A page of notifications with the unread total across the workspace
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/notifications/read:
+    post:
+      tags: [notifications]
+      operationId: readAllWorkspaceNotifications
+      summary: Mark everything currently in your inbox as read
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '204':
+          description: Every notification in the inbox is now read
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/read:
+    post:
+      tags: [notifications]
+      operationId: readWorkspaceNotification
+      summary: Mark one thread as read
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/NotificationSubjectKind'
+        - $ref: '#/components/parameters/NotificationSubjectId'
+      responses:
+        '204':
+          description: The thread is now read
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/snooze:
+    post:
+      tags: [notifications]
+      operationId: snoozeWorkspaceNotification
+      summary: Hide one thread until a chosen time
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/NotificationSubjectKind'
+        - $ref: '#/components/parameters/NotificationSubjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SnoozeNotificationRequest' }
+      responses:
+        '204':
+          description: The thread is hidden until the time given
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/follow:
+    get:
+      tags: [notifications]
+      operationId: getWorkspaceIssueFollow
+      summary: Read whether this issue reaches your inbox
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      responses:
+        '200':
+          description: Your follow state for this issue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueFollow' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [notifications]
+      operationId: setWorkspaceIssueFollow
+      summary: Follow this issue, or unsubscribe from it without being made unreachable
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IssueFollow' }
+      responses:
+        '200':
+          description: Your follow state as stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueFollow' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/notification-settings:
+    get:
+      tags: [notifications]
+      operationId: getWorkspaceNotificationSettings
+      summary: Read which events reach you and through which channel
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Your notification settings for the whole workspace
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [notifications]
+      operationId: setWorkspaceNotificationSettings
+      summary: Choose which events reach you and through which channel
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationPreferences' }
+      responses:
+        '200':
+          description: Your notification settings as stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/notification-settings:
+    get:
+      tags: [notifications]
+      operationId: getWorkspaceTeamNotificationSettings
+      summary: Read this team's override, falling back to your workspace settings
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: The settings that apply on this team, and whether they are an override
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [notifications]
+      operationId: setWorkspaceTeamNotificationSettings
+      summary: Override your workspace settings for this team alone
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationPreferences' }
+      responses:
+        '200':
+          description: The override as stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [notifications]
+      operationId: clearWorkspaceTeamNotificationSettings
+      summary: Drop this team's override and go back to your workspace settings
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: The workspace settings that now apply on this team
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/search:
+    get:
+      tags: [search]
+      operationId: searchWorkspace
+      summary: Find issues, comments, projects, teams and people by typing words
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, maxLength: 256 }
+        - name: kinds
+          in: query
+          explode: false
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/SearchKind' }
+        - name: limit
+          in: query
+          schema: { type: integer, format: int32, minimum: 1, maximum: 25 }
+      responses:
+        '200':
+          description: One group per kind of thing that matched, each ranked and capped
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SearchResults' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
     bearerToken:
@@ -3301,6 +3559,18 @@ components:
       schema: { $ref: '#/components/schemas/CommentReaction' }
     TeamId:
       name: teamId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    NotificationSubjectKind:
+      name: subjectKind
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/NotificationSubjectKind' }
+
+    NotificationSubjectId:
+      name: subjectId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -4704,6 +4974,7 @@ components:
     IssueQueryRequest:
       type: object
       properties:
+        text: { type: string, maxLength: 256 }
         filter: { $ref: '#/components/schemas/IssueFilter' }
         sort:
           type: array
@@ -5519,3 +5790,130 @@ components:
       properties:
         workspace: { $ref: '#/components/schemas/Workspace' }
         membership: { $ref: '#/components/schemas/Membership' }
+
+    NotificationPage:
+      type: object
+      required: [notifications, unread]
+      properties:
+        notifications:
+          type: array
+          items: { $ref: '#/components/schemas/Notification' }
+        unread: { type: integer, format: int32 }
+        nextCursor: { type: string }
+
+    Notification:
+      type: object
+      required: [subjectKind, subjectId, kind, reason, actorKind, title, unreadCount, lastEventAt]
+      properties:
+        subjectKind: { $ref: '#/components/schemas/NotificationSubjectKind' }
+        subjectId: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/NotificationKind' }
+        reason: { $ref: '#/components/schemas/NotificationReason' }
+        actorAccountId: { type: string, format: uuid }
+        actorName: { type: string }
+        actorKind: { $ref: '#/components/schemas/NotificationActorKind' }
+        title: { type: string }
+        reference: { type: string }
+        teamKey: { type: string }
+        unreadCount: { type: integer, format: int32 }
+        lastEventAt: { type: string, format: date-time }
+        snoozedUntil: { type: string, format: date-time }
+
+    NotificationSubjectKind:
+      type: string
+      enum: [issue, project, team]
+
+    NotificationKind:
+      type: string
+      enum: [assigned, mentioned, commented, state_changed, membership]
+
+    NotificationReason:
+      type: string
+      enum: [mentioned, assigned, membership, following]
+
+    NotificationActorKind:
+      type: string
+      enum: [user, token, agent, system]
+
+    SnoozeNotificationRequest:
+      type: object
+      required: [until]
+      properties:
+        until: { type: string, format: date-time }
+
+    IssueFollow:
+      type: object
+      required: [state]
+      properties:
+        state: { $ref: '#/components/schemas/FollowState' }
+
+    FollowState:
+      type: string
+      enum: [following, muted]
+
+    NotificationSettings:
+      type: object
+      required: [preferences, workspace, overridden, emailEnabled]
+      properties:
+        preferences: { $ref: '#/components/schemas/NotificationPreferences' }
+        workspace: { $ref: '#/components/schemas/NotificationPreferences' }
+        overridden: { type: boolean }
+        emailEnabled: { type: boolean }
+
+    NotificationPreferences:
+      type: object
+      required: [assigned, mentioned, commented, stateChanged, membership, agents]
+      properties:
+        assigned: { $ref: '#/components/schemas/NotificationChannels' }
+        mentioned: { $ref: '#/components/schemas/NotificationChannels' }
+        commented: { $ref: '#/components/schemas/NotificationChannels' }
+        stateChanged: { $ref: '#/components/schemas/NotificationChannels' }
+        membership: { $ref: '#/components/schemas/NotificationChannels' }
+        agents: { $ref: '#/components/schemas/NotificationChannels' }
+
+    NotificationChannels:
+      type: object
+      required: [inbox, email]
+      properties:
+        inbox: { type: boolean }
+        email: { type: boolean }
+
+    SearchResults:
+      type: object
+      required: [query, groups, fuzzy]
+      properties:
+        query: { type: string }
+        fuzzy: { type: boolean }
+        groups:
+          type: array
+          items: { $ref: '#/components/schemas/SearchGroup' }
+
+    SearchGroup:
+      type: object
+      required: [kind, results, more]
+      properties:
+        kind: { $ref: '#/components/schemas/SearchKind' }
+        more: { type: boolean }
+        results:
+          type: array
+          items: { $ref: '#/components/schemas/SearchResult' }
+
+    SearchResult:
+      type: object
+      required: [kind, id, title, titleHit, updatedAt]
+      properties:
+        kind: { $ref: '#/components/schemas/SearchKind' }
+        id: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        title: { type: string }
+        excerpt: { type: string }
+        reference: { type: string }
+        teamKey: { type: string }
+        slug: { type: string }
+        status: { type: string }
+        titleHit: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+
+    SearchKind:
+      type: string
+      enum: [issue, comment, project, team, person]

@@ -1943,6 +1943,146 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read your inbox, one entry per thing that changed, newest first */
+        get: operations["listWorkspaceNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark everything currently in your inbox as read */
+        post: operations["readAllWorkspaceNotifications"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark one thread as read */
+        post: operations["readWorkspaceNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/snooze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hide one thread until a chosen time */
+        post: operations["snoozeWorkspaceNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/follow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read whether this issue reaches your inbox */
+        get: operations["getWorkspaceIssueFollow"];
+        /** Follow this issue, or unsubscribe from it without being made unreachable */
+        put: operations["setWorkspaceIssueFollow"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/notification-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read which events reach you and through which channel */
+        get: operations["getWorkspaceNotificationSettings"];
+        /** Choose which events reach you and through which channel */
+        put: operations["setWorkspaceNotificationSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/notification-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read this team's override, falling back to your workspace settings */
+        get: operations["getWorkspaceTeamNotificationSettings"];
+        /** Override your workspace settings for this team alone */
+        put: operations["setWorkspaceTeamNotificationSettings"];
+        post?: never;
+        /** Drop this team's override and go back to your workspace settings */
+        delete: operations["clearWorkspaceTeamNotificationSettings"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Find issues, comments, projects, teams and people by typing words */
+        get: operations["searchWorkspace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2778,6 +2918,7 @@ export interface components {
             issues: number;
         };
         IssueQueryRequest: {
+            text?: string;
             filter?: components["schemas"]["IssueFilter"];
             sort?: components["schemas"]["IssueSort"][];
             groupBy?: components["schemas"]["IssueGroupBy"];
@@ -3322,6 +3463,95 @@ export interface components {
             workspace: components["schemas"]["Workspace"];
             membership: components["schemas"]["Membership"];
         };
+        NotificationPage: {
+            notifications: components["schemas"]["Notification"][];
+            /** Format: int32 */
+            unread: number;
+            nextCursor?: string;
+        };
+        Notification: {
+            subjectKind: components["schemas"]["NotificationSubjectKind"];
+            /** Format: uuid */
+            subjectId: string;
+            kind: components["schemas"]["NotificationKind"];
+            reason: components["schemas"]["NotificationReason"];
+            /** Format: uuid */
+            actorAccountId?: string;
+            actorName?: string;
+            actorKind: components["schemas"]["NotificationActorKind"];
+            title: string;
+            reference?: string;
+            teamKey?: string;
+            /** Format: int32 */
+            unreadCount: number;
+            /** Format: date-time */
+            lastEventAt: string;
+            /** Format: date-time */
+            snoozedUntil?: string;
+        };
+        /** @enum {string} */
+        NotificationSubjectKind: "issue" | "project" | "team";
+        /** @enum {string} */
+        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership";
+        /** @enum {string} */
+        NotificationReason: "mentioned" | "assigned" | "membership" | "following";
+        /** @enum {string} */
+        NotificationActorKind: "user" | "token" | "agent" | "system";
+        SnoozeNotificationRequest: {
+            /** Format: date-time */
+            until: string;
+        };
+        IssueFollow: {
+            state: components["schemas"]["FollowState"];
+        };
+        /** @enum {string} */
+        FollowState: "following" | "muted";
+        NotificationSettings: {
+            preferences: components["schemas"]["NotificationPreferences"];
+            workspace: components["schemas"]["NotificationPreferences"];
+            overridden: boolean;
+            emailEnabled: boolean;
+        };
+        NotificationPreferences: {
+            assigned: components["schemas"]["NotificationChannels"];
+            mentioned: components["schemas"]["NotificationChannels"];
+            commented: components["schemas"]["NotificationChannels"];
+            stateChanged: components["schemas"]["NotificationChannels"];
+            membership: components["schemas"]["NotificationChannels"];
+            agents: components["schemas"]["NotificationChannels"];
+        };
+        NotificationChannels: {
+            inbox: boolean;
+            email: boolean;
+        };
+        SearchResults: {
+            query: string;
+            fuzzy: boolean;
+            groups: components["schemas"]["SearchGroup"][];
+        };
+        SearchGroup: {
+            kind: components["schemas"]["SearchKind"];
+            more: boolean;
+            results: components["schemas"]["SearchResult"][];
+        };
+        SearchResult: {
+            kind: components["schemas"]["SearchKind"];
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            issueId?: string;
+            title: string;
+            excerpt?: string;
+            reference?: string;
+            teamKey?: string;
+            slug?: string;
+            status?: string;
+            titleHit: boolean;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** @enum {string} */
+        SearchKind: "issue" | "comment" | "project" | "team" | "person";
     };
     responses: {
         /** @description A problem occurred */
@@ -3598,6 +3828,8 @@ export interface components {
         CommentId: string;
         Reaction: components["schemas"]["CommentReaction"];
         TeamId: string;
+        NotificationSubjectKind: components["schemas"]["NotificationSubjectKind"];
+        NotificationSubjectId: string;
     };
     requestBodies: never;
     headers: never;
@@ -6408,6 +6640,8 @@ export interface operations {
     listWorkspaceIssueComments: {
         parameters: {
             query?: {
+                /** @description Return the page holding this comment, so a link to it lands on it */
+                around?: string;
                 limit?: number;
                 cursor?: string;
             };
@@ -7937,6 +8171,347 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["ProjectConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceNotifications: {
+        parameters: {
+            query?: {
+                filter?: "unread" | "all";
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of notifications with the unread total across the workspace */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    readAllWorkspaceNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every notification in the inbox is now read */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    readWorkspaceNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                subjectKind: components["parameters"]["NotificationSubjectKind"];
+                subjectId: components["parameters"]["NotificationSubjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The thread is now read */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    snoozeWorkspaceNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                subjectKind: components["parameters"]["NotificationSubjectKind"];
+                subjectId: components["parameters"]["NotificationSubjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SnoozeNotificationRequest"];
+            };
+        };
+        responses: {
+            /** @description The thread is hidden until the time given */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceIssueFollow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your follow state for this issue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueFollow"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceIssueFollow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueFollow"];
+            };
+        };
+        responses: {
+            /** @description Your follow state as stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueFollow"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your notification settings for the whole workspace */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreferences"];
+            };
+        };
+        responses: {
+            /** @description Your notification settings as stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceTeamNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The settings that apply on this team, and whether they are an override */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceTeamNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreferences"];
+            };
+        };
+        responses: {
+            /** @description The override as stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    clearWorkspaceTeamNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workspace settings that now apply on this team */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    searchWorkspace: {
+        parameters: {
+            query: {
+                q: string;
+                kinds?: components["schemas"]["SearchKind"][];
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One group per kind of thing that matched, each ranked and capped */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResults"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };

@@ -17,6 +17,7 @@ var Set = wire.NewSet(
 	NewSMTP,
 	NewStorage,
 	NewAttachments,
+	NewNotifications,
 	NewSession,
 	NewCasbin,
 	NewGeoIP,
