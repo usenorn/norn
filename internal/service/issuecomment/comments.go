@@ -19,6 +19,8 @@ type issueCommentsService struct {
 	issues      repository.Issue
 	teams       repository.Team
 	activity    repository.Activity
+	notify      repository.NotificationEvent
+	followers   repository.IssueFollower
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
 }
@@ -29,6 +31,8 @@ func New(
 	issues repository.Issue,
 	teams repository.Team,
 	activity repository.Activity,
+	notify repository.NotificationEvent,
+	followers repository.IssueFollower,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.IssueComments {
@@ -38,6 +42,8 @@ func New(
 		issues:      issues,
 		teams:       teams,
 		activity:    activity,
+		notify:      notify,
+		followers:   followers,
 		authorizer:  authorizer,
 		transactor:  transactor,
 	}
@@ -107,7 +113,15 @@ func (s *issueCommentsService) List(
 
 	page := entity.CommentPage{Limit: input.Limit}.Normalized()
 
-	if input.Cursor != "" {
+	switch {
+	case input.Around != uuid.Nil:
+		cursor, err := s.comments.CursorBefore(ctx, issueID, input.Around)
+		if err != nil {
+			return service.CommentThread{}, err
+		}
+
+		page.Cursor = cursor
+	case input.Cursor != "":
 		cursor, err := entity.DecodeCommentCursor(input.Cursor)
 		if err != nil {
 			return service.CommentThread{}, err
@@ -181,12 +195,35 @@ func (s *issueCommentsService) Post(
 			return err
 		}
 
-		return s.activity.Record(ctx, entity.Activity{
+		if err := s.activity.Record(ctx, entity.Activity{
 			WorkspaceID:    workspaceID,
 			Subject:        entity.IssueSubject(issueID),
 			ActorAccountID: decision.Actor.AccountID,
 			ActorKind:      decision.Actor.Kind,
 			Kind:           entity.ActivityKindCommented,
+		}); err != nil {
+			return err
+		}
+
+		for _, follower := range append(mentionedAccounts(mentions), decision.Actor.AccountID) {
+			if err := s.followers.Follow(ctx, entity.IssueFollower{
+				IssueID:     issueID,
+				WorkspaceID: workspaceID,
+				AccountID:   follower,
+			}); err != nil {
+				return err
+			}
+		}
+
+		actor, actorKind := decision.ActivityActor()
+
+		return s.notify.Record(ctx, entity.NotificationEvent{
+			WorkspaceID: workspaceID,
+			Subject:     entity.NotifyIssue(issueID),
+			Kind:        entity.NotificationKindCommented,
+			Actor:       actor,
+			ActorKind:   actorKind,
+			CommentID:   posted.ID,
 		})
 	}); err != nil {
 		return service.CommentPosted{}, err
@@ -219,6 +256,18 @@ func (s *issueCommentsService) replyable(
 	}
 
 	return nil
+}
+
+func mentionedAccounts(mentions []entity.CommentMention) []uuid.UUID {
+	accounts := make([]uuid.UUID, 0, len(mentions))
+
+	for _, mention := range mentions {
+		if mention.Visible && mention.Kind == entity.MentionKindAccount {
+			accounts = append(accounts, mention.AccountID)
+		}
+	}
+
+	return accounts
 }
 
 func unreachable(mentions []entity.CommentMention) []entity.CommentMention {

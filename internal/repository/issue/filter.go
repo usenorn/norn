@@ -86,13 +86,28 @@ const (
 )
 
 func (b *builder) where(scope entity.TeamScope, page entity.IssuePage, filter *entity.IssueFilter) string {
-	clause := b.scope(scope, page.Waiting)
+	clause := b.scope(scope, page.Waiting) + b.text(page.Text)
 
 	if filter == nil || filter.Empty() {
 		return clause
 	}
 
 	return clause + " AND " + b.node(*filter)
+}
+
+const matchesText = `
+  AND ((%s <> '' AND i.search_document @@ websearch_to_tsquery('english', %[1]s))
+       OR (%s <> '' AND i.search_document @@ to_tsquery('simple', %[3]s || ':*')))`
+
+func (b *builder) text(query entity.SearchQuery) string {
+	if query.Empty() {
+		return ""
+	}
+
+	stemmed := b.bind(query.Stemmed)
+	prefix := b.bind(query.Prefix)
+
+	return fmt.Sprintf(matchesText, stemmed, stemmed, prefix, prefix)
 }
 
 func (b *builder) node(filter entity.IssueFilter) string {

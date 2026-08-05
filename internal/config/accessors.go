@@ -26,6 +26,8 @@ func NewStorage(cfg Config) Storage { return cfg.Storage }
 
 func NewAttachments(cfg Config) Attachments { return cfg.Attachments }
 
+func NewNotifications(cfg Config) Notifications { return cfg.Notifications }
+
 func NewSession(cfg Config) Session { return cfg.Session }
 
 func NewCasbin(cfg Config) Casbin { return cfg.Casbin }

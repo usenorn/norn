@@ -6,6 +6,7 @@ import type { Project } from "$lib/projects/projects";
 import type { Issue } from "$lib/issues/issues";
 import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
+import type { FollowState } from "$lib/notifications/notifications";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type { WorkflowState } from "$lib/team/states";
 import type { PageLoad } from "./$types";
@@ -34,13 +35,14 @@ export type IssueDetail =
 			cycles: Cycle[];
 			projects: Project[];
 			comments: CommentThread;
+			follow: FollowState;
 			attachments: AttachmentPanel;
 	  }
 	| { kind: "unavailable" };
 
 export type IssuePageData = { detail: IssueDetail };
 
-export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<IssuePageData> => {
+export const load: PageLoad = async ({ fetch, params, parent, url }): Promise<IssuePageData> => {
 	const api = apiFor(url);
 
 	const { workspace } = await parent();
@@ -79,6 +81,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 		projects,
 		comments,
 		attachments,
+		follow,
 	] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			fetch,
@@ -114,8 +117,12 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			fetch,
 			params: { path: { workspaceId: workspace.id } },
 		}),
-		api.GET("/workspaces/{workspaceId}/issues/{issueId}/comments", { fetch, params: { path } }),
+		api.GET("/workspaces/{workspaceId}/issues/{issueId}/comments", {
+			fetch,
+			params: { path, query: around(url) },
+		}),
 		api.GET("/workspaces/{workspaceId}/issues/{issueId}/attachments", { fetch, params: { path } }),
+		api.GET("/workspaces/{workspaceId}/issues/{issueId}/follow", { fetch, params: { path } }),
 	]);
 
 	if (
@@ -147,9 +154,16 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Iss
 			projects: (projects.data ?? []).filter((project) => !project.archived),
 			comments: readThread(comments.data),
 			attachments: readAttachments(attachments.data),
+			follow: follow.data?.state ?? "muted",
 		},
 	};
 };
+
+function around(url: URL): { around?: string } {
+	const comment = url.searchParams.get("comment");
+
+	return comment ? { around: comment } : {};
+}
 
 function readThread(page: components["schemas"]["IssueCommentPage"] | undefined): CommentThread {
 	if (!page) return { kind: "unavailable" };

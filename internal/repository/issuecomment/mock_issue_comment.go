@@ -74,6 +74,21 @@ func (mr *MockIssueCommentMockRecorder) Create(ctx, comment any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockIssueComment)(nil).Create), ctx, comment)
 }
 
+// CursorBefore mocks base method.
+func (m *MockIssueComment) CursorBefore(ctx context.Context, issueID, commentID uuid.UUID) (*entity.CommentCursor, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CursorBefore", ctx, issueID, commentID)
+	ret0, _ := ret[0].(*entity.CommentCursor)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CursorBefore indicates an expected call of CursorBefore.
+func (mr *MockIssueCommentMockRecorder) CursorBefore(ctx, issueID, commentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CursorBefore", reflect.TypeOf((*MockIssueComment)(nil).CursorBefore), ctx, issueID, commentID)
+}
+
 // Edit mocks base method.
 func (m *MockIssueComment) Edit(ctx context.Context, commentID uuid.UUID, body string, at time.Time) error {
 	m.ctrl.T.Helper()
@@ -131,6 +146,21 @@ func (m *MockIssueComment) LockByID(ctx context.Context, workspaceID, commentID 
 func (mr *MockIssueCommentMockRecorder) LockByID(ctx, workspaceID, commentID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByID", reflect.TypeOf((*MockIssueComment)(nil).LockByID), ctx, workspaceID, commentID)
+}
+
+// Mentioned mocks base method.
+func (m *MockIssueComment) Mentioned(ctx context.Context, commentID uuid.UUID) ([]entity.CommentMention, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Mentioned", ctx, commentID)
+	ret0, _ := ret[0].([]entity.CommentMention)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Mentioned indicates an expected call of Mentioned.
+func (mr *MockIssueCommentMockRecorder) Mentioned(ctx, commentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mentioned", reflect.TypeOf((*MockIssueComment)(nil).Mentioned), ctx, commentID)
 }
 
 // React mocks base method.

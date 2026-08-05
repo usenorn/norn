@@ -10,6 +10,8 @@
 	import Trash2 from "@lucide/svelte/icons/trash-2";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Users from "@lucide/svelte/icons/users";
+	import BellOff from "@lucide/svelte/icons/bell-off";
+	import BellRing from "@lucide/svelte/icons/bell-ring";
 	import List from "@lucide/svelte/icons/list";
 	import Tags from "@lucide/svelte/icons/tags";
 	import * as Alert from "$lib/components/ui/alert/index.js";
@@ -123,10 +125,35 @@
 	const aborts = new Map<string, () => void>();
 	const sources = new Map<string, File>();
 	let pendingStateId = $state("");
+	let followWorking = $state(false);
+
+	async function toggleFollow() {
+		if (!issue) return;
+
+		followWorking = true;
+
+		try {
+			const { error } = await api.PUT("/workspaces/{workspaceId}/issues/{issueId}/follow", {
+				params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+				body: { state: following ? "muted" : "following" },
+			});
+
+			if (error) return;
+
+			announcement = following
+				? `You will not be notified about ${issue.reference} unless someone names you.`
+				: `You are following ${issue.reference}.`;
+
+			await invalidateAll();
+		} finally {
+			followWorking = false;
+		}
+	}
 
 	const detail = $derived<IssueDetail>(preview?.detail ?? data.detail);
 	const ready = $derived(detail.kind === "ready" ? detail : null);
 	const issue = $derived(ready?.issue ?? null);
+	const following = $derived(ready?.follow === "following");
 	const labels = $derived(applied ?? issue?.labels ?? []);
 	const slug = $derived(page.params.workspace ?? "");
 	const at = $derived((path: string) => workspacePath(slug, path));
@@ -776,6 +803,22 @@
 			{#if issue}
 				<span class="text-md text-muted-foreground" aria-hidden="true">/</span>
 				<span class="font-mono text-xs text-muted-foreground">{issue.reference}</span>
+				<Button
+					class="ml-auto shrink-0"
+					variant={following ? "secondary" : "ghost"}
+					size="sm"
+					disabled={followWorking}
+					aria-pressed={following}
+					onclick={toggleFollow}
+				>
+					{#if following}
+						<BellRing class="size-icon-row" aria-hidden="true" />
+						Following
+					{:else}
+						<BellOff class="size-icon-row" aria-hidden="true" />
+						Not following
+					{/if}
+				</Button>
 			{/if}
 		</div>
 	</div>

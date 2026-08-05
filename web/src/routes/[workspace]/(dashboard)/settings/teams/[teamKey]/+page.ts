@@ -4,6 +4,7 @@ import { rosterFor, type TeamRoster } from "$lib/team/members";
 import { statesFor, type StateList } from "$lib/team/states";
 import { settingsFor, type TeamSettings } from "$lib/team/team-settings";
 import { settingFor, type TriageSetting, type TriageSettings } from "$lib/triage/triage";
+import type { TeamNotificationSetting } from "$lib/notifications/notifications";
 import type { PageLoad } from "./$types";
 
 export type TeamPageData = {
@@ -12,6 +13,7 @@ export type TeamPageData = {
 	states: StateList;
 	cadence: CadenceSetting;
 	triage: TriageSetting;
+	notifications: TeamNotificationSetting;
 };
 
 const unavailable: TeamPageData = {
@@ -20,6 +22,7 @@ const unavailable: TeamPageData = {
 	states: { kind: "unavailable" },
 	cadence: { kind: "unavailable" },
 	triage: { kind: "unavailable" },
+	notifications: { kind: "unavailable" },
 };
 
 export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<TeamPageData> => {
@@ -35,11 +38,15 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Tea
 
 	const path = { workspaceId: workspace.id, teamId: team.id };
 
-	const [members, states, cadence, triage] = await Promise.all([
+	const [members, states, cadence, triage, notifications] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/members", { fetch, params: { path } }),
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", { fetch, params: { path } }),
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/cycle-cadence", { fetch, params: { path } }),
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/triage", { fetch, params: { path } }),
+		api.GET("/workspaces/{workspaceId}/teams/{teamId}/notification-settings", {
+			fetch,
+			params: { path },
+		}),
 	]);
 
 	return {
@@ -48,6 +55,9 @@ export const load: PageLoad = async ({ fetch, params, parent, url}): Promise<Tea
 		states: statesFor(states.data),
 		cadence: cadenceFor(cadence.data, cadence.response.status),
 		triage: settingFor(triage.data, triage.response.status),
+		notifications: notifications.data
+			? { kind: "ready", settings: notifications.data }
+			: { kind: "unavailable" },
 	};
 };
 

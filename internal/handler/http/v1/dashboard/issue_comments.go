@@ -23,6 +23,10 @@ func (h *handler) ListWorkspaceIssueComments(
 		input.Cursor = *request.Params.Cursor
 	}
 
+	if request.Params.Around != nil {
+		input.Around = *request.Params.Around
+	}
+
 	thread, err := h.issueComments.List(ctx, request.WorkspaceId, request.IssueId, input)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

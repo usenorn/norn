@@ -185,6 +185,7 @@ type IssuePage struct {
 	CycleID   *uuid.UUID
 	ProjectID *uuid.UUID
 
+	Text        SearchQuery
 	Filter      *IssueFilter
 	Sort        []IssueSort
 	QueryCursor *IssueQueryCursor

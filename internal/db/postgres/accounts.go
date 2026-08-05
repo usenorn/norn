@@ -218,6 +218,8 @@ var AccountRels = struct {
 	CreatedByAccountWorkspaceIssues            string
 	TriageDecidedByAccountWorkspaceIssues      string
 	WorkspaceMemberships                       string
+	ActorAccountWorkspaceNotificationEvents    string
+	TargetAccountWorkspaceNotificationEvents   string
 	AuthorAccountWorkspaceProjectStatusUpdates string
 	LeadAccountWorkspaceProjects               string
 	WorkspaceSsoIdentities                     string
@@ -239,6 +241,8 @@ var AccountRels = struct {
 	CreatedByAccountWorkspaceIssues:            "CreatedByAccountWorkspaceIssues",
 	TriageDecidedByAccountWorkspaceIssues:      "TriageDecidedByAccountWorkspaceIssues",
 	WorkspaceMemberships:                       "WorkspaceMemberships",
+	ActorAccountWorkspaceNotificationEvents:    "ActorAccountWorkspaceNotificationEvents",
+	TargetAccountWorkspaceNotificationEvents:   "TargetAccountWorkspaceNotificationEvents",
 	AuthorAccountWorkspaceProjectStatusUpdates: "AuthorAccountWorkspaceProjectStatusUpdates",
 	LeadAccountWorkspaceProjects:               "LeadAccountWorkspaceProjects",
 	WorkspaceSsoIdentities:                     "WorkspaceSsoIdentities",
@@ -263,6 +267,8 @@ type accountR struct {
 	CreatedByAccountWorkspaceIssues            WorkspaceIssueSlice                `boil:"CreatedByAccountWorkspaceIssues" json:"CreatedByAccountWorkspaceIssues" toml:"CreatedByAccountWorkspaceIssues" yaml:"CreatedByAccountWorkspaceIssues"`
 	TriageDecidedByAccountWorkspaceIssues      WorkspaceIssueSlice                `boil:"TriageDecidedByAccountWorkspaceIssues" json:"TriageDecidedByAccountWorkspaceIssues" toml:"TriageDecidedByAccountWorkspaceIssues" yaml:"TriageDecidedByAccountWorkspaceIssues"`
 	WorkspaceMemberships                       WorkspaceMembershipSlice           `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
+	ActorAccountWorkspaceNotificationEvents    WorkspaceNotificationEventSlice    `boil:"ActorAccountWorkspaceNotificationEvents" json:"ActorAccountWorkspaceNotificationEvents" toml:"ActorAccountWorkspaceNotificationEvents" yaml:"ActorAccountWorkspaceNotificationEvents"`
+	TargetAccountWorkspaceNotificationEvents   WorkspaceNotificationEventSlice    `boil:"TargetAccountWorkspaceNotificationEvents" json:"TargetAccountWorkspaceNotificationEvents" toml:"TargetAccountWorkspaceNotificationEvents" yaml:"TargetAccountWorkspaceNotificationEvents"`
 	AuthorAccountWorkspaceProjectStatusUpdates WorkspaceProjectStatusUpdateSlice  `boil:"AuthorAccountWorkspaceProjectStatusUpdates" json:"AuthorAccountWorkspaceProjectStatusUpdates" toml:"AuthorAccountWorkspaceProjectStatusUpdates" yaml:"AuthorAccountWorkspaceProjectStatusUpdates"`
 	LeadAccountWorkspaceProjects               WorkspaceProjectSlice              `boil:"LeadAccountWorkspaceProjects" json:"LeadAccountWorkspaceProjects" toml:"LeadAccountWorkspaceProjects" yaml:"LeadAccountWorkspaceProjects"`
 	WorkspaceSsoIdentities                     WorkspaceSsoIdentitySlice          `boil:"WorkspaceSsoIdentities" json:"WorkspaceSsoIdentities" toml:"WorkspaceSsoIdentities" yaml:"WorkspaceSsoIdentities"`
@@ -543,6 +549,38 @@ func (r *accountR) GetWorkspaceMemberships() WorkspaceMembershipSlice {
 	}
 
 	return r.WorkspaceMemberships
+}
+
+func (o *Account) GetActorAccountWorkspaceNotificationEvents() WorkspaceNotificationEventSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetActorAccountWorkspaceNotificationEvents()
+}
+
+func (r *accountR) GetActorAccountWorkspaceNotificationEvents() WorkspaceNotificationEventSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.ActorAccountWorkspaceNotificationEvents
+}
+
+func (o *Account) GetTargetAccountWorkspaceNotificationEvents() WorkspaceNotificationEventSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetTargetAccountWorkspaceNotificationEvents()
+}
+
+func (r *accountR) GetTargetAccountWorkspaceNotificationEvents() WorkspaceNotificationEventSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.TargetAccountWorkspaceNotificationEvents
 }
 
 func (o *Account) GetAuthorAccountWorkspaceProjectStatusUpdates() WorkspaceProjectStatusUpdateSlice {
@@ -1145,6 +1183,34 @@ func (o *Account) WorkspaceMemberships(mods ...qm.QueryMod) workspaceMembershipQ
 	)
 
 	return WorkspaceMemberships(queryMods...)
+}
+
+// ActorAccountWorkspaceNotificationEvents retrieves all the workspace_notification_event's WorkspaceNotificationEvents with an executor via actor_account_id column.
+func (o *Account) ActorAccountWorkspaceNotificationEvents(mods ...qm.QueryMod) workspaceNotificationEventQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_notification_events\".\"actor_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceNotificationEvents(queryMods...)
+}
+
+// TargetAccountWorkspaceNotificationEvents retrieves all the workspace_notification_event's WorkspaceNotificationEvents with an executor via target_account_id column.
+func (o *Account) TargetAccountWorkspaceNotificationEvents(mods ...qm.QueryMod) workspaceNotificationEventQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_notification_events\".\"target_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceNotificationEvents(queryMods...)
 }
 
 // AuthorAccountWorkspaceProjectStatusUpdates retrieves all the workspace_project_status_update's WorkspaceProjectStatusUpdates with an executor via author_account_id column.
@@ -3102,6 +3168,232 @@ func (accountL) LoadWorkspaceMemberships(ctx context.Context, e boil.ContextExec
 					foreign.R = &workspaceMembershipR{}
 				}
 				foreign.R.Account = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadActorAccountWorkspaceNotificationEvents allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadActorAccountWorkspaceNotificationEvents(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_notification_events`),
+		qm.WhereIn(`workspace_notification_events.actor_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_notification_events")
+	}
+
+	var resultSlice []*WorkspaceNotificationEvent
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_notification_events")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_notification_events")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_notification_events")
+	}
+
+	if len(workspaceNotificationEventAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ActorAccountWorkspaceNotificationEvents = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceNotificationEventR{}
+			}
+			foreign.R.ActorAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ActorAccountID) {
+				local.R.ActorAccountWorkspaceNotificationEvents = append(local.R.ActorAccountWorkspaceNotificationEvents, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceNotificationEventR{}
+				}
+				foreign.R.ActorAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTargetAccountWorkspaceNotificationEvents allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadTargetAccountWorkspaceNotificationEvents(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_notification_events`),
+		qm.WhereIn(`workspace_notification_events.target_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_notification_events")
+	}
+
+	var resultSlice []*WorkspaceNotificationEvent
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_notification_events")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_notification_events")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_notification_events")
+	}
+
+	if len(workspaceNotificationEventAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.TargetAccountWorkspaceNotificationEvents = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceNotificationEventR{}
+			}
+			foreign.R.TargetAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.TargetAccountID) {
+				local.R.TargetAccountWorkspaceNotificationEvents = append(local.R.TargetAccountWorkspaceNotificationEvents, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceNotificationEventR{}
+				}
+				foreign.R.TargetAccount = local
 				break
 			}
 		}
@@ -5235,6 +5527,260 @@ func (o *Account) AddWorkspaceMemberships(ctx context.Context, exec boil.Context
 			rel.R.Account = o
 		}
 	}
+	return nil
+}
+
+// AddActorAccountWorkspaceNotificationEvents adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.ActorAccountWorkspaceNotificationEvents.
+// Sets related.R.ActorAccount appropriately.
+func (o *Account) AddActorAccountWorkspaceNotificationEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceNotificationEvent) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ActorAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_notification_events\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"actor_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceNotificationEventPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ActorAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			ActorAccountWorkspaceNotificationEvents: related,
+		}
+	} else {
+		o.R.ActorAccountWorkspaceNotificationEvents = append(o.R.ActorAccountWorkspaceNotificationEvents, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceNotificationEventR{
+				ActorAccount: o,
+			}
+		} else {
+			rel.R.ActorAccount = o
+		}
+	}
+	return nil
+}
+
+// SetActorAccountWorkspaceNotificationEvents removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.ActorAccount's ActorAccountWorkspaceNotificationEvents accordingly.
+// Replaces o.R.ActorAccountWorkspaceNotificationEvents with related.
+// Sets related.R.ActorAccount's ActorAccountWorkspaceNotificationEvents accordingly.
+func (o *Account) SetActorAccountWorkspaceNotificationEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceNotificationEvent) error {
+	query := "update \"workspace_notification_events\" set \"actor_account_id\" = null where \"actor_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ActorAccountWorkspaceNotificationEvents {
+			queries.SetScanner(&rel.ActorAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.ActorAccount = nil
+		}
+		o.R.ActorAccountWorkspaceNotificationEvents = nil
+	}
+
+	return o.AddActorAccountWorkspaceNotificationEvents(ctx, exec, insert, related...)
+}
+
+// RemoveActorAccountWorkspaceNotificationEvents relationships from objects passed in.
+// Removes related items from R.ActorAccountWorkspaceNotificationEvents (uses pointer comparison, removal does not keep order)
+// Sets related.R.ActorAccount.
+func (o *Account) RemoveActorAccountWorkspaceNotificationEvents(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceNotificationEvent) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ActorAccountID, nil)
+		if rel.R != nil {
+			rel.R.ActorAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("actor_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ActorAccountWorkspaceNotificationEvents {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ActorAccountWorkspaceNotificationEvents)
+			if ln > 1 && i < ln-1 {
+				o.R.ActorAccountWorkspaceNotificationEvents[i] = o.R.ActorAccountWorkspaceNotificationEvents[ln-1]
+			}
+			o.R.ActorAccountWorkspaceNotificationEvents = o.R.ActorAccountWorkspaceNotificationEvents[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddTargetAccountWorkspaceNotificationEvents adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.TargetAccountWorkspaceNotificationEvents.
+// Sets related.R.TargetAccount appropriately.
+func (o *Account) AddTargetAccountWorkspaceNotificationEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceNotificationEvent) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.TargetAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_notification_events\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"target_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceNotificationEventPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.TargetAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			TargetAccountWorkspaceNotificationEvents: related,
+		}
+	} else {
+		o.R.TargetAccountWorkspaceNotificationEvents = append(o.R.TargetAccountWorkspaceNotificationEvents, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceNotificationEventR{
+				TargetAccount: o,
+			}
+		} else {
+			rel.R.TargetAccount = o
+		}
+	}
+	return nil
+}
+
+// SetTargetAccountWorkspaceNotificationEvents removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.TargetAccount's TargetAccountWorkspaceNotificationEvents accordingly.
+// Replaces o.R.TargetAccountWorkspaceNotificationEvents with related.
+// Sets related.R.TargetAccount's TargetAccountWorkspaceNotificationEvents accordingly.
+func (o *Account) SetTargetAccountWorkspaceNotificationEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceNotificationEvent) error {
+	query := "update \"workspace_notification_events\" set \"target_account_id\" = null where \"target_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.TargetAccountWorkspaceNotificationEvents {
+			queries.SetScanner(&rel.TargetAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.TargetAccount = nil
+		}
+		o.R.TargetAccountWorkspaceNotificationEvents = nil
+	}
+
+	return o.AddTargetAccountWorkspaceNotificationEvents(ctx, exec, insert, related...)
+}
+
+// RemoveTargetAccountWorkspaceNotificationEvents relationships from objects passed in.
+// Removes related items from R.TargetAccountWorkspaceNotificationEvents (uses pointer comparison, removal does not keep order)
+// Sets related.R.TargetAccount.
+func (o *Account) RemoveTargetAccountWorkspaceNotificationEvents(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceNotificationEvent) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.TargetAccountID, nil)
+		if rel.R != nil {
+			rel.R.TargetAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("target_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.TargetAccountWorkspaceNotificationEvents {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.TargetAccountWorkspaceNotificationEvents)
+			if ln > 1 && i < ln-1 {
+				o.R.TargetAccountWorkspaceNotificationEvents[i] = o.R.TargetAccountWorkspaceNotificationEvents[ln-1]
+			}
+			o.R.TargetAccountWorkspaceNotificationEvents = o.R.TargetAccountWorkspaceNotificationEvents[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

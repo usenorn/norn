@@ -20,6 +20,7 @@ type projectsService struct {
 	activity    repository.Activity
 	accounts    repository.Account
 	memberships repository.Membership
+	notify      repository.NotificationEvent
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
 }
@@ -31,6 +32,7 @@ func New(
 	activity repository.Activity,
 	accounts repository.Account,
 	memberships repository.Membership,
+	notify repository.NotificationEvent,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.Projects {
@@ -41,6 +43,7 @@ func New(
 		activity:    activity,
 		accounts:    accounts,
 		memberships: memberships,
+		notify:      notify,
 		authorizer:  authorizer,
 		transactor:  transactor,
 	}
@@ -611,10 +614,23 @@ func (s *projectsService) AddMember(
 			return err
 		}
 
-		return s.record(ctx, project, decision, entity.Activity{
+		if err := s.record(ctx, project, decision, entity.Activity{
 			Kind:    entity.ActivityKindMemberAdded,
 			Field:   entity.ActivityFieldMember,
 			ToValue: account.DisplayName,
+		}); err != nil {
+			return err
+		}
+
+		actor, actorKind := decision.ActivityActor()
+
+		return s.notify.Record(ctx, entity.NotificationEvent{
+			WorkspaceID: workspaceID,
+			Subject:     entity.NotifyProject(projectID),
+			Kind:        entity.NotificationKindMembership,
+			Actor:       actor,
+			ActorKind:   actorKind,
+			Target:      accountID,
 		})
 	}); err != nil {
 		return service.ProjectMemberView{}, err

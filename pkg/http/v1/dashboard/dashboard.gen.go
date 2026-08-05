@@ -513,6 +513,24 @@ func (e EnforcementRefusedProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for FollowState.
+const (
+	FollowStateFollowing FollowState = "following"
+	FollowStateMuted     FollowState = "muted"
+)
+
+// Valid indicates whether the value is a known member of the FollowState enum.
+func (e FollowState) Valid() bool {
+	switch e {
+	case FollowStateFollowing:
+		return true
+	case FollowStateMuted:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ForbiddenProblemCode.
 const (
 	ForbiddenProblemCodeForbidden ForbiddenProblemCode = "forbidden"
@@ -1188,6 +1206,102 @@ func (e MembershipSource) Valid() bool {
 	}
 }
 
+// Defines values for NotificationActorKind.
+const (
+	NotificationActorKindAgent  NotificationActorKind = "agent"
+	NotificationActorKindSystem NotificationActorKind = "system"
+	NotificationActorKindToken  NotificationActorKind = "token"
+	NotificationActorKindUser   NotificationActorKind = "user"
+)
+
+// Valid indicates whether the value is a known member of the NotificationActorKind enum.
+func (e NotificationActorKind) Valid() bool {
+	switch e {
+	case NotificationActorKindAgent:
+		return true
+	case NotificationActorKindSystem:
+		return true
+	case NotificationActorKindToken:
+		return true
+	case NotificationActorKindUser:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NotificationKind.
+const (
+	NotificationKindAssigned     NotificationKind = "assigned"
+	NotificationKindCommented    NotificationKind = "commented"
+	NotificationKindMembership   NotificationKind = "membership"
+	NotificationKindMentioned    NotificationKind = "mentioned"
+	NotificationKindStateChanged NotificationKind = "state_changed"
+)
+
+// Valid indicates whether the value is a known member of the NotificationKind enum.
+func (e NotificationKind) Valid() bool {
+	switch e {
+	case NotificationKindAssigned:
+		return true
+	case NotificationKindCommented:
+		return true
+	case NotificationKindMembership:
+		return true
+	case NotificationKindMentioned:
+		return true
+	case NotificationKindStateChanged:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NotificationReason.
+const (
+	NotificationReasonAssigned   NotificationReason = "assigned"
+	NotificationReasonFollowing  NotificationReason = "following"
+	NotificationReasonMembership NotificationReason = "membership"
+	NotificationReasonMentioned  NotificationReason = "mentioned"
+)
+
+// Valid indicates whether the value is a known member of the NotificationReason enum.
+func (e NotificationReason) Valid() bool {
+	switch e {
+	case NotificationReasonAssigned:
+		return true
+	case NotificationReasonFollowing:
+		return true
+	case NotificationReasonMembership:
+		return true
+	case NotificationReasonMentioned:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NotificationSubjectKind.
+const (
+	NotificationSubjectKindIssue   NotificationSubjectKind = "issue"
+	NotificationSubjectKindProject NotificationSubjectKind = "project"
+	NotificationSubjectKindTeam    NotificationSubjectKind = "team"
+)
+
+// Valid indicates whether the value is a known member of the NotificationSubjectKind enum.
+func (e NotificationSubjectKind) Valid() bool {
+	switch e {
+	case NotificationSubjectKindIssue:
+		return true
+	case NotificationSubjectKindProject:
+		return true
+	case NotificationSubjectKindTeam:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ProjectConflictProblemCode.
 const (
 	ProjectConflictProblemCodeProjectArchived     ProjectConflictProblemCode = "project_archived"
@@ -1338,6 +1452,33 @@ func (e SavedViewSharing) Valid() bool {
 	case SavedViewSharingTeam:
 		return true
 	case SavedViewSharingWorkspace:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SearchKind.
+const (
+	SearchKindComment SearchKind = "comment"
+	SearchKindIssue   SearchKind = "issue"
+	SearchKindPerson  SearchKind = "person"
+	SearchKindProject SearchKind = "project"
+	SearchKindTeam    SearchKind = "team"
+)
+
+// Valid indicates whether the value is a known member of the SearchKind enum.
+func (e SearchKind) Valid() bool {
+	switch e {
+	case SearchKindComment:
+		return true
+	case SearchKindIssue:
+		return true
+	case SearchKindPerson:
+		return true
+	case SearchKindProject:
+		return true
+	case SearchKindTeam:
 		return true
 	default:
 		return false
@@ -1815,6 +1956,24 @@ func (e ListWorkspaceIssueActivityParamsOrder) Valid() bool {
 	case ListWorkspaceIssueActivityParamsOrderNewest:
 		return true
 	case ListWorkspaceIssueActivityParamsOrderOldest:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListWorkspaceNotificationsParamsFilter.
+const (
+	All    ListWorkspaceNotificationsParamsFilter = "all"
+	Unread ListWorkspaceNotificationsParamsFilter = "unread"
+)
+
+// Valid indicates whether the value is a known member of the ListWorkspaceNotificationsParamsFilter enum.
+func (e ListWorkspaceNotificationsParamsFilter) Valid() bool {
+	switch e {
+	case All:
+		return true
+	case Unread:
 		return true
 	default:
 		return false
@@ -2363,6 +2522,9 @@ type FieldError struct {
 	Field string `json:"field"`
 }
 
+// FollowState defines model for FollowState.
+type FollowState string
+
 // ForbiddenProblem defines model for ForbiddenProblem.
 type ForbiddenProblem struct {
 	Code     ForbiddenProblemCode    `json:"code"`
@@ -2635,6 +2797,11 @@ type IssueFilterReference struct {
 // IssueFilterReferenceState resolved - it exists and the caller may see it. restricted - it exists but sits on a team the caller cannot see, so it is named to nobody. missing - nothing in this workspace has that id any more.
 type IssueFilterReferenceState string
 
+// IssueFollow defines model for IssueFollow.
+type IssueFollow struct {
+	State FollowState `json:"state"`
+}
+
 // IssueGroupBy defines model for IssueGroupBy.
 type IssueGroupBy string
 
@@ -2672,6 +2839,7 @@ type IssueQueryRequest struct {
 	GroupBy *IssueGroupBy `json:"groupBy,omitempty"`
 	Limit   *int32        `json:"limit,omitempty"`
 	Sort    *[]IssueSort  `json:"sort,omitempty"`
+	Text    *string       `json:"text,omitempty"`
 }
 
 // IssueQueryResult defines model for IssueQueryResult.
@@ -2878,6 +3046,66 @@ type MoveIssueRequest struct {
 	ExpectedVersion      int32              `json:"expectedVersion"`
 	TeamId               openapi_types.UUID `json:"teamId"`
 }
+
+// Notification defines model for Notification.
+type Notification struct {
+	ActorAccountId *openapi_types.UUID     `json:"actorAccountId,omitempty"`
+	ActorKind      NotificationActorKind   `json:"actorKind"`
+	ActorName      *string                 `json:"actorName,omitempty"`
+	Kind           NotificationKind        `json:"kind"`
+	LastEventAt    time.Time               `json:"lastEventAt"`
+	Reason         NotificationReason      `json:"reason"`
+	Reference      *string                 `json:"reference,omitempty"`
+	SnoozedUntil   *time.Time              `json:"snoozedUntil,omitempty"`
+	SubjectId      openapi_types.UUID      `json:"subjectId"`
+	SubjectKind    NotificationSubjectKind `json:"subjectKind"`
+	TeamKey        *string                 `json:"teamKey,omitempty"`
+	Title          string                  `json:"title"`
+	UnreadCount    int32                   `json:"unreadCount"`
+}
+
+// NotificationActorKind defines model for NotificationActorKind.
+type NotificationActorKind string
+
+// NotificationChannels defines model for NotificationChannels.
+type NotificationChannels struct {
+	Email bool `json:"email"`
+	Inbox bool `json:"inbox"`
+}
+
+// NotificationKind defines model for NotificationKind.
+type NotificationKind string
+
+// NotificationPage defines model for NotificationPage.
+type NotificationPage struct {
+	NextCursor    *string        `json:"nextCursor,omitempty"`
+	Notifications []Notification `json:"notifications"`
+	Unread        int32          `json:"unread"`
+}
+
+// NotificationPreferences defines model for NotificationPreferences.
+type NotificationPreferences struct {
+	Agents       NotificationChannels `json:"agents"`
+	Assigned     NotificationChannels `json:"assigned"`
+	Commented    NotificationChannels `json:"commented"`
+	Membership   NotificationChannels `json:"membership"`
+	Mentioned    NotificationChannels `json:"mentioned"`
+	StateChanged NotificationChannels `json:"stateChanged"`
+}
+
+// NotificationReason defines model for NotificationReason.
+type NotificationReason string
+
+// NotificationSettings defines model for NotificationSettings.
+type NotificationSettings struct {
+	EmailEnabled bool                    `json:"emailEnabled"`
+	Overridden   bool                    `json:"overridden"`
+	Preferences  NotificationPreferences `json:"preferences"`
+	Workspace    NotificationPreferences `json:"workspace"`
+}
+
+// NotificationSubjectKind defines model for NotificationSubjectKind.
+type NotificationSubjectKind string
 
 // OidcAuthorization defines model for OidcAuthorization.
 type OidcAuthorization struct {
@@ -3152,6 +3380,38 @@ type SavedViewDetail struct {
 // SavedViewSharing defines model for SavedViewSharing.
 type SavedViewSharing string
 
+// SearchGroup defines model for SearchGroup.
+type SearchGroup struct {
+	Kind    SearchKind     `json:"kind"`
+	More    bool           `json:"more"`
+	Results []SearchResult `json:"results"`
+}
+
+// SearchKind defines model for SearchKind.
+type SearchKind string
+
+// SearchResult defines model for SearchResult.
+type SearchResult struct {
+	Excerpt   *string             `json:"excerpt,omitempty"`
+	Id        openapi_types.UUID  `json:"id"`
+	IssueId   *openapi_types.UUID `json:"issueId,omitempty"`
+	Kind      SearchKind          `json:"kind"`
+	Reference *string             `json:"reference,omitempty"`
+	Slug      *string             `json:"slug,omitempty"`
+	Status    *string             `json:"status,omitempty"`
+	TeamKey   *string             `json:"teamKey,omitempty"`
+	Title     string              `json:"title"`
+	TitleHit  bool                `json:"titleHit"`
+	UpdatedAt time.Time           `json:"updatedAt"`
+}
+
+// SearchResults defines model for SearchResults.
+type SearchResults struct {
+	Fuzzy  bool          `json:"fuzzy"`
+	Groups []SearchGroup `json:"groups"`
+	Query  string        `json:"query"`
+}
+
 // Session defines model for Session.
 type Session struct {
 	AuthMethod SessionAuthMethod  `json:"authMethod"`
@@ -3301,6 +3561,11 @@ type SignUpUnusableProblem struct {
 
 // SignUpUnusableProblemCode defines model for SignUpUnusableProblem.Code.
 type SignUpUnusableProblemCode string
+
+// SnoozeNotificationRequest defines model for SnoozeNotificationRequest.
+type SnoozeNotificationRequest struct {
+	Until time.Time `json:"until"`
+}
 
 // SsoIdentity defines model for SsoIdentity.
 type SsoIdentity struct {
@@ -3651,6 +3916,9 @@ type IssueId = openapi_types.UUID
 // LabelId defines model for LabelId.
 type LabelId = openapi_types.UUID
 
+// NotificationSubjectId defines model for NotificationSubjectId.
+type NotificationSubjectId = openapi_types.UUID
+
 // ProjectId defines model for ProjectId.
 type ProjectId = openapi_types.UUID
 
@@ -3806,8 +4074,10 @@ type ListWorkspaceIssueActivityParamsOrder string
 
 // ListWorkspaceIssueCommentsParams defines parameters for ListWorkspaceIssueComments.
 type ListWorkspaceIssueCommentsParams struct {
-	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	// Around Return the page holding this comment, so a link to it lands on it
+	Around *openapi_types.UUID `form:"around,omitempty" json:"around,omitempty"`
+	Limit  *int32              `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string             `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // RemoveWorkspaceLabelParams defines parameters for RemoveWorkspaceLabel.
@@ -3827,6 +4097,16 @@ type ListWorkspaceMembersParams struct {
 type RemoveWorkspaceMemberParams struct {
 	ReassignTo *openapi_types.UUID `form:"reassignTo,omitempty" json:"reassignTo,omitempty"`
 }
+
+// ListWorkspaceNotificationsParams defines parameters for ListWorkspaceNotifications.
+type ListWorkspaceNotificationsParams struct {
+	Filter *ListWorkspaceNotificationsParamsFilter `form:"filter,omitempty" json:"filter,omitempty"`
+	Limit  *int32                                  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string                                 `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListWorkspaceNotificationsParamsFilter defines parameters for ListWorkspaceNotifications.
+type ListWorkspaceNotificationsParamsFilter string
 
 // ListWorkspaceProjectsParams defines parameters for ListWorkspaceProjects.
 type ListWorkspaceProjectsParams struct {
@@ -3855,6 +4135,13 @@ type ListWorkspaceProjectActivityParamsOrder string
 type RemoveWorkspaceSavedViewParams struct {
 	// AcknowledgedSharing The sharing the caller was shown. If someone widened the view while the dialog was open, the removal is refused and names the sharing it actually has now.
 	AcknowledgedSharing SavedViewSharing `form:"acknowledgedSharing" json:"acknowledgedSharing"`
+}
+
+// SearchWorkspaceParams defines parameters for SearchWorkspace.
+type SearchWorkspaceParams struct {
+	Q     string        `form:"q" json:"q"`
+	Kinds *[]SearchKind `form:"kinds,omitempty" json:"kinds,omitempty"`
+	Limit *int32        `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListWorkspaceTeamsParams defines parameters for ListWorkspaceTeams.
@@ -3957,6 +4244,9 @@ type PostWorkspaceIssueCommentJSONRequestBody = PostCommentRequest
 // EditWorkspaceIssueCommentJSONRequestBody defines body for EditWorkspaceIssueComment for application/json ContentType.
 type EditWorkspaceIssueCommentJSONRequestBody = EditCommentRequest
 
+// SetWorkspaceIssueFollowJSONRequestBody defines body for SetWorkspaceIssueFollow for application/json ContentType.
+type SetWorkspaceIssueFollowJSONRequestBody = IssueFollow
+
 // SetWorkspaceIssueLabelsJSONRequestBody defines body for SetWorkspaceIssueLabels for application/json ContentType.
 type SetWorkspaceIssueLabelsJSONRequestBody = SetIssueLabelsRequest
 
@@ -3992,6 +4282,12 @@ type AddWorkspaceMemberJSONRequestBody = AddMemberRequest
 
 // ChangeWorkspaceMemberRoleJSONRequestBody defines body for ChangeWorkspaceMemberRole for application/json ContentType.
 type ChangeWorkspaceMemberRoleJSONRequestBody = ChangeMemberRoleRequest
+
+// SetWorkspaceNotificationSettingsJSONRequestBody defines body for SetWorkspaceNotificationSettings for application/json ContentType.
+type SetWorkspaceNotificationSettingsJSONRequestBody = NotificationPreferences
+
+// SnoozeWorkspaceNotificationJSONRequestBody defines body for SnoozeWorkspaceNotification for application/json ContentType.
+type SnoozeWorkspaceNotificationJSONRequestBody = SnoozeNotificationRequest
 
 // CreateWorkspaceProjectJSONRequestBody defines body for CreateWorkspaceProject for application/json ContentType.
 type CreateWorkspaceProjectJSONRequestBody = CreateProjectRequest
@@ -4037,6 +4333,9 @@ type SetTeamCycleCadenceJSONRequestBody = SetCycleCadenceRequest
 
 // AddWorkspaceTeamMemberJSONRequestBody defines body for AddWorkspaceTeamMember for application/json ContentType.
 type AddWorkspaceTeamMemberJSONRequestBody = AddTeamMemberRequest
+
+// SetWorkspaceTeamNotificationSettingsJSONRequestBody defines body for SetWorkspaceTeamNotificationSettings for application/json ContentType.
+type SetWorkspaceTeamNotificationSettingsJSONRequestBody = NotificationPreferences
 
 // CreateWorkflowStateJSONRequestBody defines body for CreateWorkflowState for application/json ContentType.
 type CreateWorkflowStateJSONRequestBody = CreateWorkflowStateRequest
@@ -4259,6 +4558,12 @@ type ServerInterface interface {
 	// ReactToWorkspaceIssueComment React to a comment, once, whatever you already did
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction})
 	ReactToWorkspaceIssueComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, commentId CommentId, reaction Reaction)
+	// GetWorkspaceIssueFollow Read whether this issue reaches your inbox
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/follow)
+	GetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// SetWorkspaceIssueFollow Follow this issue, or unsubscribe from it without being made unreachable
+	// (PUT /workspaces/{workspaceId}/issues/{issueId}/follow)
+	SetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 	SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -4325,6 +4630,24 @@ type ServerInterface interface {
 	// PreviewWorkspaceMemberRemoval Report what removing this member would affect
 	// (GET /workspaces/{workspaceId}/members/{accountId}/removal)
 	PreviewWorkspaceMemberRemoval(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId)
+	// GetWorkspaceNotificationSettings Read which events reach you and through which channel
+	// (GET /workspaces/{workspaceId}/notification-settings)
+	GetWorkspaceNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// SetWorkspaceNotificationSettings Choose which events reach you and through which channel
+	// (PUT /workspaces/{workspaceId}/notification-settings)
+	SetWorkspaceNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListWorkspaceNotifications Read your inbox, one entry per thing that changed, newest first
+	// (GET /workspaces/{workspaceId}/notifications)
+	ListWorkspaceNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceNotificationsParams)
+	// ReadAllWorkspaceNotifications Mark everything currently in your inbox as read
+	// (POST /workspaces/{workspaceId}/notifications/read)
+	ReadAllWorkspaceNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ReadWorkspaceNotification Mark one thread as read
+	// (POST /workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/read)
+	ReadWorkspaceNotification(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, subjectKind NotificationSubjectKind, subjectId NotificationSubjectId)
+	// SnoozeWorkspaceNotification Hide one thread until a chosen time
+	// (POST /workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/snooze)
+	SnoozeWorkspaceNotification(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, subjectKind NotificationSubjectKind, subjectId NotificationSubjectId)
 	// ListWorkspaceProjects List the projects in a workspace
 	// (GET /workspaces/{workspaceId}/projects)
 	ListWorkspaceProjects(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceProjectsParams)
@@ -4385,6 +4708,9 @@ type ServerInterface interface {
 	// UpdateWorkspaceSavedView Rename a view, re-scope who it is shared with, or replace what it asks for
 	// (PATCH /workspaces/{workspaceId}/saved-views/{savedViewId})
 	UpdateWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId)
+	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
+	// (GET /workspaces/{workspaceId}/search)
+	SearchWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchWorkspaceParams)
 	// RemoveWorkspaceSsoConnection Remove the workspace single sign-on provider, whichever protocol it uses
 	// (DELETE /workspaces/{workspaceId}/sso)
 	RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -4460,6 +4786,15 @@ type ServerInterface interface {
 	// RemoveWorkspaceTeamMember Remove an account from the team
 	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/members/{accountId})
 	RemoveWorkspaceTeamMember(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId, accountId AccountId)
+	// ClearWorkspaceTeamNotificationSettings Drop this team's override and go back to your workspace settings
+	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
+	ClearWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// GetWorkspaceTeamNotificationSettings Read this team's override, falling back to your workspace settings
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
+	GetWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// SetWorkspaceTeamNotificationSettings Override your workspace settings for this team alone
+	// (PUT /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
+	SetWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
 	// ListWorkflowStates List a team's workflow states in order
 	// (GET /workspaces/{workspaceId}/teams/{teamId}/states)
 	ListWorkflowStates(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
@@ -4919,6 +5254,18 @@ func (_ Unimplemented) ReactToWorkspaceIssueComment(w http.ResponseWriter, r *ht
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetWorkspaceIssueFollow Read whether this issue reaches your inbox
+// (GET /workspaces/{workspaceId}/issues/{issueId}/follow)
+func (_ Unimplemented) GetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceIssueFollow Follow this issue, or unsubscribe from it without being made unreachable
+// (PUT /workspaces/{workspaceId}/issues/{issueId}/follow)
+func (_ Unimplemented) SetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 // (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 func (_ Unimplemented) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
@@ -5051,6 +5398,42 @@ func (_ Unimplemented) PreviewWorkspaceMemberRemoval(w http.ResponseWriter, r *h
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetWorkspaceNotificationSettings Read which events reach you and through which channel
+// (GET /workspaces/{workspaceId}/notification-settings)
+func (_ Unimplemented) GetWorkspaceNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceNotificationSettings Choose which events reach you and through which channel
+// (PUT /workspaces/{workspaceId}/notification-settings)
+func (_ Unimplemented) SetWorkspaceNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceNotifications Read your inbox, one entry per thing that changed, newest first
+// (GET /workspaces/{workspaceId}/notifications)
+func (_ Unimplemented) ListWorkspaceNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceNotificationsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReadAllWorkspaceNotifications Mark everything currently in your inbox as read
+// (POST /workspaces/{workspaceId}/notifications/read)
+func (_ Unimplemented) ReadAllWorkspaceNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReadWorkspaceNotification Mark one thread as read
+// (POST /workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/read)
+func (_ Unimplemented) ReadWorkspaceNotification(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, subjectKind NotificationSubjectKind, subjectId NotificationSubjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SnoozeWorkspaceNotification Hide one thread until a chosen time
+// (POST /workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/snooze)
+func (_ Unimplemented) SnoozeWorkspaceNotification(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, subjectKind NotificationSubjectKind, subjectId NotificationSubjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceProjects List the projects in a workspace
 // (GET /workspaces/{workspaceId}/projects)
 func (_ Unimplemented) ListWorkspaceProjects(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceProjectsParams) {
@@ -5168,6 +5551,12 @@ func (_ Unimplemented) GetWorkspaceSavedView(w http.ResponseWriter, r *http.Requ
 // UpdateWorkspaceSavedView Rename a view, re-scope who it is shared with, or replace what it asks for
 // (PATCH /workspaces/{workspaceId}/saved-views/{savedViewId})
 func (_ Unimplemented) UpdateWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SearchWorkspace Find issues, comments, projects, teams and people by typing words
+// (GET /workspaces/{workspaceId}/search)
+func (_ Unimplemented) SearchWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchWorkspaceParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -5318,6 +5707,24 @@ func (_ Unimplemented) AddWorkspaceTeamMember(w http.ResponseWriter, r *http.Req
 // RemoveWorkspaceTeamMember Remove an account from the team
 // (DELETE /workspaces/{workspaceId}/teams/{teamId}/members/{accountId})
 func (_ Unimplemented) RemoveWorkspaceTeamMember(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId, accountId AccountId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ClearWorkspaceTeamNotificationSettings Drop this team's override and go back to your workspace settings
+// (DELETE /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
+func (_ Unimplemented) ClearWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceTeamNotificationSettings Read this team's override, falling back to your workspace settings
+// (GET /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
+func (_ Unimplemented) GetWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceTeamNotificationSettings Override your workspace settings for this team alone
+// (PUT /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
+func (_ Unimplemented) SetWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -7067,6 +7474,19 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceIssueComments(w http.ResponseWri
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListWorkspaceIssueCommentsParams
 
+	// ------------- Optional query parameter "around" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "around", r.URL.Query(), &params.Around, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "around"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "around", Err: err})
+		}
+		return
+	}
+
 	// ------------- Optional query parameter "limit" -------------
 
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
@@ -7324,6 +7744,76 @@ func (siw *ServerInterfaceWrapper) ReactToWorkspaceIssueComment(w http.ResponseW
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ReactToWorkspaceIssueComment(w, r, workspaceId, issueId, commentId, reaction)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceIssueFollow operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceIssueFollow(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceIssueFollow operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceIssueFollow(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -8132,6 +8622,240 @@ func (siw *ServerInterfaceWrapper) PreviewWorkspaceMemberRemoval(w http.Response
 	handler.ServeHTTP(w, r)
 }
 
+// GetWorkspaceNotificationSettings operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceNotificationSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceNotificationSettings(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceNotificationSettings operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceNotificationSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceNotificationSettings(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceNotifications operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceNotifications(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceNotificationsParams
+
+	// ------------- Optional query parameter "filter" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "filter", r.URL.Query(), &params.Filter, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "filter"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceNotifications(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReadAllWorkspaceNotifications operation middleware
+func (siw *ServerInterfaceWrapper) ReadAllWorkspaceNotifications(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReadAllWorkspaceNotifications(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReadWorkspaceNotification operation middleware
+func (siw *ServerInterfaceWrapper) ReadWorkspaceNotification(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subjectKind" -------------
+	var subjectKind NotificationSubjectKind
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subjectKind", chi.URLParam(r, "subjectKind"), &subjectKind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subjectKind", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subjectId" -------------
+	var subjectId NotificationSubjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subjectId", chi.URLParam(r, "subjectId"), &subjectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subjectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReadWorkspaceNotification(w, r, workspaceId, subjectKind, subjectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SnoozeWorkspaceNotification operation middleware
+func (siw *ServerInterfaceWrapper) SnoozeWorkspaceNotification(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subjectKind" -------------
+	var subjectKind NotificationSubjectKind
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subjectKind", chi.URLParam(r, "subjectKind"), &subjectKind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subjectKind", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subjectId" -------------
+	var subjectId NotificationSubjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subjectId", chi.URLParam(r, "subjectId"), &subjectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subjectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SnoozeWorkspaceNotification(w, r, workspaceId, subjectKind, subjectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceProjects operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceProjects(w http.ResponseWriter, r *http.Request) {
 
@@ -8878,6 +9602,74 @@ func (siw *ServerInterfaceWrapper) UpdateWorkspaceSavedView(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateWorkspaceSavedView(w, r, workspaceId, savedViewId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SearchWorkspace operation middleware
+func (siw *ServerInterfaceWrapper) SearchWorkspace(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchWorkspaceParams
+
+	// ------------- Required query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "kinds" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", false, false, "kinds", r.URL.Query(), &params.Kinds, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "kinds"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kinds", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SearchWorkspace(w, r, workspaceId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -9643,6 +10435,111 @@ func (siw *ServerInterfaceWrapper) RemoveWorkspaceTeamMember(w http.ResponseWrit
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RemoveWorkspaceTeamMember(w, r, workspaceId, teamId, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ClearWorkspaceTeamNotificationSettings operation middleware
+func (siw *ServerInterfaceWrapper) ClearWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ClearWorkspaceTeamNotificationSettings(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceTeamNotificationSettings operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceTeamNotificationSettings(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceTeamNotificationSettings operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceTeamNotificationSettings(w, r, workspaceId, teamId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -10939,6 +11836,42 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/status", wrapper.PostWorkspaceProjectStatus)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/notifications", wrapper.ListWorkspaceNotifications)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/notifications/read", wrapper.ReadAllWorkspaceNotifications)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/read", wrapper.ReadWorkspaceNotification)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/snooze", wrapper.SnoozeWorkspaceNotification)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/follow", wrapper.GetWorkspaceIssueFollow)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/follow", wrapper.SetWorkspaceIssueFollow)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/notification-settings", wrapper.GetWorkspaceNotificationSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/notification-settings", wrapper.SetWorkspaceNotificationSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/notification-settings", wrapper.ClearWorkspaceTeamNotificationSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/notification-settings", wrapper.GetWorkspaceTeamNotificationSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/notification-settings", wrapper.SetWorkspaceTeamNotificationSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/search", wrapper.SearchWorkspace)
 	})
 
 	return r
@@ -16599,6 +17532,187 @@ func (response ReactToWorkspaceIssueComment500ApplicationProblemPlusJSONResponse
 	return err
 }
 
+type GetWorkspaceIssueFollowRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type GetWorkspaceIssueFollowResponseObject interface {
+	VisitGetWorkspaceIssueFollowResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceIssueFollow200JSONResponse IssueFollow
+
+func (response GetWorkspaceIssueFollow200JSONResponse) VisitGetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueFollow401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueFollow401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueFollow403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueFollow403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueFollow404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueFollow404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueFollow500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueFollow500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueFollowRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *SetWorkspaceIssueFollowJSONRequestBody
+}
+
+type SetWorkspaceIssueFollowResponseObject interface {
+	VisitSetWorkspaceIssueFollowResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceIssueFollow200JSONResponse IssueFollow
+
+func (response SetWorkspaceIssueFollow200JSONResponse) VisitSetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueFollow401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceIssueFollow401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueFollow403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceIssueFollow403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueFollow404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceIssueFollow404ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueFollow422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceIssueFollow422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceIssueFollow500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceIssueFollow500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SetWorkspaceIssueLabelsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	IssueId     IssueId     `json:"issueId"`
@@ -18815,6 +19929,473 @@ func (response PreviewWorkspaceMemberRemoval500ApplicationProblemPlusJSONRespons
 	return err
 }
 
+type GetWorkspaceNotificationSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceNotificationSettingsResponseObject interface {
+	VisitGetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceNotificationSettings200JSONResponse NotificationSettings
+
+func (response GetWorkspaceNotificationSettings200JSONResponse) VisitGetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceNotificationSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceNotificationSettings401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceNotificationSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceNotificationSettings403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceNotificationSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceNotificationSettings500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceNotificationSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *SetWorkspaceNotificationSettingsJSONRequestBody
+}
+
+type SetWorkspaceNotificationSettingsResponseObject interface {
+	VisitSetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceNotificationSettings200JSONResponse NotificationSettings
+
+func (response SetWorkspaceNotificationSettings200JSONResponse) VisitSetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceNotificationSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceNotificationSettings401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceNotificationSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceNotificationSettings403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceNotificationSettings422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceNotificationSettings422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceNotificationSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceNotificationSettings500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceNotificationsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceNotificationsParams
+}
+
+type ListWorkspaceNotificationsResponseObject interface {
+	VisitListWorkspaceNotificationsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceNotifications200JSONResponse NotificationPage
+
+func (response ListWorkspaceNotifications200JSONResponse) VisitListWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceNotifications401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceNotifications401ApplicationProblemPlusJSONResponse) VisitListWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceNotifications403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceNotifications403ApplicationProblemPlusJSONResponse) VisitListWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceNotifications422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceNotifications422ApplicationProblemPlusJSONResponse) VisitListWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceNotifications500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceNotifications500ApplicationProblemPlusJSONResponse) VisitListWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadAllWorkspaceNotificationsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ReadAllWorkspaceNotificationsResponseObject interface {
+	VisitReadAllWorkspaceNotificationsResponse(w http.ResponseWriter) error
+}
+
+type ReadAllWorkspaceNotifications204Response struct {
+}
+
+func (response ReadAllWorkspaceNotifications204Response) VisitReadAllWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ReadAllWorkspaceNotifications401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReadAllWorkspaceNotifications401ApplicationProblemPlusJSONResponse) VisitReadAllWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadAllWorkspaceNotifications403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ReadAllWorkspaceNotifications403ApplicationProblemPlusJSONResponse) VisitReadAllWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadAllWorkspaceNotifications500ApplicationProblemPlusJSONResponse Problem
+
+func (response ReadAllWorkspaceNotifications500ApplicationProblemPlusJSONResponse) VisitReadAllWorkspaceNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadWorkspaceNotificationRequestObject struct {
+	WorkspaceId WorkspaceId             `json:"workspaceId"`
+	SubjectKind NotificationSubjectKind `json:"subjectKind"`
+	SubjectId   NotificationSubjectId   `json:"subjectId"`
+}
+
+type ReadWorkspaceNotificationResponseObject interface {
+	VisitReadWorkspaceNotificationResponse(w http.ResponseWriter) error
+}
+
+type ReadWorkspaceNotification204Response struct {
+}
+
+func (response ReadWorkspaceNotification204Response) VisitReadWorkspaceNotificationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ReadWorkspaceNotification401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReadWorkspaceNotification401ApplicationProblemPlusJSONResponse) VisitReadWorkspaceNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadWorkspaceNotification403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ReadWorkspaceNotification403ApplicationProblemPlusJSONResponse) VisitReadWorkspaceNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadWorkspaceNotification404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReadWorkspaceNotification404ApplicationProblemPlusJSONResponse) VisitReadWorkspaceNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReadWorkspaceNotification500ApplicationProblemPlusJSONResponse Problem
+
+func (response ReadWorkspaceNotification500ApplicationProblemPlusJSONResponse) VisitReadWorkspaceNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SnoozeWorkspaceNotificationRequestObject struct {
+	WorkspaceId WorkspaceId             `json:"workspaceId"`
+	SubjectKind NotificationSubjectKind `json:"subjectKind"`
+	SubjectId   NotificationSubjectId   `json:"subjectId"`
+	Body        *SnoozeWorkspaceNotificationJSONRequestBody
+}
+
+type SnoozeWorkspaceNotificationResponseObject interface {
+	VisitSnoozeWorkspaceNotificationResponse(w http.ResponseWriter) error
+}
+
+type SnoozeWorkspaceNotification204Response struct {
+}
+
+func (response SnoozeWorkspaceNotification204Response) VisitSnoozeWorkspaceNotificationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type SnoozeWorkspaceNotification401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SnoozeWorkspaceNotification401ApplicationProblemPlusJSONResponse) VisitSnoozeWorkspaceNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SnoozeWorkspaceNotification403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SnoozeWorkspaceNotification403ApplicationProblemPlusJSONResponse) VisitSnoozeWorkspaceNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SnoozeWorkspaceNotification404ApplicationProblemPlusJSONResponse Problem
+
+func (response SnoozeWorkspaceNotification404ApplicationProblemPlusJSONResponse) VisitSnoozeWorkspaceNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SnoozeWorkspaceNotification422ApplicationProblemPlusJSONResponse Problem
+
+func (response SnoozeWorkspaceNotification422ApplicationProblemPlusJSONResponse) VisitSnoozeWorkspaceNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SnoozeWorkspaceNotification500ApplicationProblemPlusJSONResponse Problem
+
+func (response SnoozeWorkspaceNotification500ApplicationProblemPlusJSONResponse) VisitSnoozeWorkspaceNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceProjectsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	Params      ListWorkspaceProjectsParams
@@ -20621,6 +22202,103 @@ func (response UpdateWorkspaceSavedView422ApplicationProblemPlusJSONResponse) Vi
 type UpdateWorkspaceSavedView500ApplicationProblemPlusJSONResponse Problem
 
 func (response UpdateWorkspaceSavedView500ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSavedViewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchWorkspaceRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      SearchWorkspaceParams
+}
+
+type SearchWorkspaceResponseObject interface {
+	VisitSearchWorkspaceResponse(w http.ResponseWriter) error
+}
+
+type SearchWorkspace200JSONResponse SearchResults
+
+func (response SearchWorkspace200JSONResponse) VisitSearchWorkspaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchWorkspace401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SearchWorkspace401ApplicationProblemPlusJSONResponse) VisitSearchWorkspaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchWorkspace403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SearchWorkspace403ApplicationProblemPlusJSONResponse) VisitSearchWorkspaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchWorkspace404ApplicationProblemPlusJSONResponse Problem
+
+func (response SearchWorkspace404ApplicationProblemPlusJSONResponse) VisitSearchWorkspaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchWorkspace422ApplicationProblemPlusJSONResponse Problem
+
+func (response SearchWorkspace422ApplicationProblemPlusJSONResponse) VisitSearchWorkspaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchWorkspace500ApplicationProblemPlusJSONResponse Problem
+
+func (response SearchWorkspace500ApplicationProblemPlusJSONResponse) VisitSearchWorkspaceResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -22820,6 +24498,270 @@ func (response RemoveWorkspaceTeamMember500ApplicationProblemPlusJSONResponse) V
 	return err
 }
 
+type ClearWorkspaceTeamNotificationSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type ClearWorkspaceTeamNotificationSettingsResponseObject interface {
+	VisitClearWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error
+}
+
+type ClearWorkspaceTeamNotificationSettings200JSONResponse NotificationSettings
+
+func (response ClearWorkspaceTeamNotificationSettings200JSONResponse) VisitClearWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearWorkspaceTeamNotificationSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ClearWorkspaceTeamNotificationSettings401ApplicationProblemPlusJSONResponse) VisitClearWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearWorkspaceTeamNotificationSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ClearWorkspaceTeamNotificationSettings403ApplicationProblemPlusJSONResponse) VisitClearWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearWorkspaceTeamNotificationSettings404ApplicationProblemPlusJSONResponse Problem
+
+func (response ClearWorkspaceTeamNotificationSettings404ApplicationProblemPlusJSONResponse) VisitClearWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearWorkspaceTeamNotificationSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response ClearWorkspaceTeamNotificationSettings500ApplicationProblemPlusJSONResponse) VisitClearWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceTeamNotificationSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type GetWorkspaceTeamNotificationSettingsResponseObject interface {
+	VisitGetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceTeamNotificationSettings200JSONResponse NotificationSettings
+
+func (response GetWorkspaceTeamNotificationSettings200JSONResponse) VisitGetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceTeamNotificationSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceTeamNotificationSettings401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceTeamNotificationSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceTeamNotificationSettings403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceTeamNotificationSettings404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceTeamNotificationSettings404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceTeamNotificationSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceTeamNotificationSettings500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceTeamNotificationSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+	Body        *SetWorkspaceTeamNotificationSettingsJSONRequestBody
+}
+
+type SetWorkspaceTeamNotificationSettingsResponseObject interface {
+	VisitSetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceTeamNotificationSettings200JSONResponse NotificationSettings
+
+func (response SetWorkspaceTeamNotificationSettings200JSONResponse) VisitSetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceTeamNotificationSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceTeamNotificationSettings401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceTeamNotificationSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceTeamNotificationSettings403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceTeamNotificationSettings404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceTeamNotificationSettings404ApplicationProblemPlusJSONResponse) VisitSetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceTeamNotificationSettings422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceTeamNotificationSettings422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceTeamNotificationSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceTeamNotificationSettings500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkflowStatesRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	TeamId      TeamId      `json:"teamId"`
@@ -24839,6 +26781,12 @@ type StrictServerInterface interface {
 	// ReactToWorkspaceIssueComment React to a comment, once, whatever you already did
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction})
 	ReactToWorkspaceIssueComment(ctx context.Context, request ReactToWorkspaceIssueCommentRequestObject) (ReactToWorkspaceIssueCommentResponseObject, error)
+	// GetWorkspaceIssueFollow Read whether this issue reaches your inbox
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/follow)
+	GetWorkspaceIssueFollow(ctx context.Context, request GetWorkspaceIssueFollowRequestObject) (GetWorkspaceIssueFollowResponseObject, error)
+	// SetWorkspaceIssueFollow Follow this issue, or unsubscribe from it without being made unreachable
+	// (PUT /workspaces/{workspaceId}/issues/{issueId}/follow)
+	SetWorkspaceIssueFollow(ctx context.Context, request SetWorkspaceIssueFollowRequestObject) (SetWorkspaceIssueFollowResponseObject, error)
 	// SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 	SetWorkspaceIssueLabels(ctx context.Context, request SetWorkspaceIssueLabelsRequestObject) (SetWorkspaceIssueLabelsResponseObject, error)
@@ -24905,6 +26853,24 @@ type StrictServerInterface interface {
 	// PreviewWorkspaceMemberRemoval Report what removing this member would affect
 	// (GET /workspaces/{workspaceId}/members/{accountId}/removal)
 	PreviewWorkspaceMemberRemoval(ctx context.Context, request PreviewWorkspaceMemberRemovalRequestObject) (PreviewWorkspaceMemberRemovalResponseObject, error)
+	// GetWorkspaceNotificationSettings Read which events reach you and through which channel
+	// (GET /workspaces/{workspaceId}/notification-settings)
+	GetWorkspaceNotificationSettings(ctx context.Context, request GetWorkspaceNotificationSettingsRequestObject) (GetWorkspaceNotificationSettingsResponseObject, error)
+	// SetWorkspaceNotificationSettings Choose which events reach you and through which channel
+	// (PUT /workspaces/{workspaceId}/notification-settings)
+	SetWorkspaceNotificationSettings(ctx context.Context, request SetWorkspaceNotificationSettingsRequestObject) (SetWorkspaceNotificationSettingsResponseObject, error)
+	// ListWorkspaceNotifications Read your inbox, one entry per thing that changed, newest first
+	// (GET /workspaces/{workspaceId}/notifications)
+	ListWorkspaceNotifications(ctx context.Context, request ListWorkspaceNotificationsRequestObject) (ListWorkspaceNotificationsResponseObject, error)
+	// ReadAllWorkspaceNotifications Mark everything currently in your inbox as read
+	// (POST /workspaces/{workspaceId}/notifications/read)
+	ReadAllWorkspaceNotifications(ctx context.Context, request ReadAllWorkspaceNotificationsRequestObject) (ReadAllWorkspaceNotificationsResponseObject, error)
+	// ReadWorkspaceNotification Mark one thread as read
+	// (POST /workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/read)
+	ReadWorkspaceNotification(ctx context.Context, request ReadWorkspaceNotificationRequestObject) (ReadWorkspaceNotificationResponseObject, error)
+	// SnoozeWorkspaceNotification Hide one thread until a chosen time
+	// (POST /workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/snooze)
+	SnoozeWorkspaceNotification(ctx context.Context, request SnoozeWorkspaceNotificationRequestObject) (SnoozeWorkspaceNotificationResponseObject, error)
 	// ListWorkspaceProjects List the projects in a workspace
 	// (GET /workspaces/{workspaceId}/projects)
 	ListWorkspaceProjects(ctx context.Context, request ListWorkspaceProjectsRequestObject) (ListWorkspaceProjectsResponseObject, error)
@@ -24965,6 +26931,9 @@ type StrictServerInterface interface {
 	// UpdateWorkspaceSavedView Rename a view, re-scope who it is shared with, or replace what it asks for
 	// (PATCH /workspaces/{workspaceId}/saved-views/{savedViewId})
 	UpdateWorkspaceSavedView(ctx context.Context, request UpdateWorkspaceSavedViewRequestObject) (UpdateWorkspaceSavedViewResponseObject, error)
+	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
+	// (GET /workspaces/{workspaceId}/search)
+	SearchWorkspace(ctx context.Context, request SearchWorkspaceRequestObject) (SearchWorkspaceResponseObject, error)
 	// RemoveWorkspaceSsoConnection Remove the workspace single sign-on provider, whichever protocol it uses
 	// (DELETE /workspaces/{workspaceId}/sso)
 	RemoveWorkspaceSsoConnection(ctx context.Context, request RemoveWorkspaceSsoConnectionRequestObject) (RemoveWorkspaceSsoConnectionResponseObject, error)
@@ -25040,6 +27009,15 @@ type StrictServerInterface interface {
 	// RemoveWorkspaceTeamMember Remove an account from the team
 	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/members/{accountId})
 	RemoveWorkspaceTeamMember(ctx context.Context, request RemoveWorkspaceTeamMemberRequestObject) (RemoveWorkspaceTeamMemberResponseObject, error)
+	// ClearWorkspaceTeamNotificationSettings Drop this team's override and go back to your workspace settings
+	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
+	ClearWorkspaceTeamNotificationSettings(ctx context.Context, request ClearWorkspaceTeamNotificationSettingsRequestObject) (ClearWorkspaceTeamNotificationSettingsResponseObject, error)
+	// GetWorkspaceTeamNotificationSettings Read this team's override, falling back to your workspace settings
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
+	GetWorkspaceTeamNotificationSettings(ctx context.Context, request GetWorkspaceTeamNotificationSettingsRequestObject) (GetWorkspaceTeamNotificationSettingsResponseObject, error)
+	// SetWorkspaceTeamNotificationSettings Override your workspace settings for this team alone
+	// (PUT /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
+	SetWorkspaceTeamNotificationSettings(ctx context.Context, request SetWorkspaceTeamNotificationSettingsRequestObject) (SetWorkspaceTeamNotificationSettingsResponseObject, error)
 	// ListWorkflowStates List a team's workflow states in order
 	// (GET /workspaces/{workspaceId}/teams/{teamId}/states)
 	ListWorkflowStates(ctx context.Context, request ListWorkflowStatesRequestObject) (ListWorkflowStatesResponseObject, error)
@@ -27030,6 +29008,67 @@ func (sh *strictHandler) ReactToWorkspaceIssueComment(w http.ResponseWriter, r *
 	}
 }
 
+// GetWorkspaceIssueFollow operation middleware
+func (sh *strictHandler) GetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request GetWorkspaceIssueFollowRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceIssueFollow(ctx, request.(GetWorkspaceIssueFollowRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceIssueFollow")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceIssueFollowResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceIssueFollowResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceIssueFollow operation middleware
+func (sh *strictHandler) SetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request SetWorkspaceIssueFollowRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body SetWorkspaceIssueFollowJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceIssueFollow(ctx, request.(SetWorkspaceIssueFollowRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceIssueFollow")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceIssueFollowResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceIssueFollowResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SetWorkspaceIssueLabels operation middleware
 func (sh *strictHandler) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	var request SetWorkspaceIssueLabelsRequestObject
@@ -27706,6 +29745,181 @@ func (sh *strictHandler) PreviewWorkspaceMemberRemoval(w http.ResponseWriter, r 
 	}
 }
 
+// GetWorkspaceNotificationSettings operation middleware
+func (sh *strictHandler) GetWorkspaceNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceNotificationSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceNotificationSettings(ctx, request.(GetWorkspaceNotificationSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceNotificationSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceNotificationSettingsResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceNotificationSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceNotificationSettings operation middleware
+func (sh *strictHandler) SetWorkspaceNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request SetWorkspaceNotificationSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body SetWorkspaceNotificationSettingsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceNotificationSettings(ctx, request.(SetWorkspaceNotificationSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceNotificationSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceNotificationSettingsResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceNotificationSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceNotifications operation middleware
+func (sh *strictHandler) ListWorkspaceNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceNotificationsParams) {
+	var request ListWorkspaceNotificationsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceNotifications(ctx, request.(ListWorkspaceNotificationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceNotifications")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceNotificationsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceNotificationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReadAllWorkspaceNotifications operation middleware
+func (sh *strictHandler) ReadAllWorkspaceNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ReadAllWorkspaceNotificationsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReadAllWorkspaceNotifications(ctx, request.(ReadAllWorkspaceNotificationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReadAllWorkspaceNotifications")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReadAllWorkspaceNotificationsResponseObject); ok {
+		if err := validResponse.VisitReadAllWorkspaceNotificationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReadWorkspaceNotification operation middleware
+func (sh *strictHandler) ReadWorkspaceNotification(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, subjectKind NotificationSubjectKind, subjectId NotificationSubjectId) {
+	var request ReadWorkspaceNotificationRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.SubjectKind = subjectKind
+	request.SubjectId = subjectId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReadWorkspaceNotification(ctx, request.(ReadWorkspaceNotificationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReadWorkspaceNotification")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReadWorkspaceNotificationResponseObject); ok {
+		if err := validResponse.VisitReadWorkspaceNotificationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SnoozeWorkspaceNotification operation middleware
+func (sh *strictHandler) SnoozeWorkspaceNotification(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, subjectKind NotificationSubjectKind, subjectId NotificationSubjectId) {
+	var request SnoozeWorkspaceNotificationRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.SubjectKind = subjectKind
+	request.SubjectId = subjectId
+
+	var body SnoozeWorkspaceNotificationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SnoozeWorkspaceNotification(ctx, request.(SnoozeWorkspaceNotificationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SnoozeWorkspaceNotification")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SnoozeWorkspaceNotificationResponseObject); ok {
+		if err := validResponse.VisitSnoozeWorkspaceNotificationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListWorkspaceProjects operation middleware
 func (sh *strictHandler) ListWorkspaceProjects(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceProjectsParams) {
 	var request ListWorkspaceProjectsRequestObject
@@ -28286,6 +30500,33 @@ func (sh *strictHandler) UpdateWorkspaceSavedView(w http.ResponseWriter, r *http
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateWorkspaceSavedViewResponseObject); ok {
 		if err := validResponse.VisitUpdateWorkspaceSavedViewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SearchWorkspace operation middleware
+func (sh *strictHandler) SearchWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchWorkspaceParams) {
+	var request SearchWorkspaceRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SearchWorkspace(ctx, request.(SearchWorkspaceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SearchWorkspace")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SearchWorkspaceResponseObject); ok {
+		if err := validResponse.VisitSearchWorkspaceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -29004,6 +31245,94 @@ func (sh *strictHandler) RemoveWorkspaceTeamMember(w http.ResponseWriter, r *htt
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RemoveWorkspaceTeamMemberResponseObject); ok {
 		if err := validResponse.VisitRemoveWorkspaceTeamMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ClearWorkspaceTeamNotificationSettings operation middleware
+func (sh *strictHandler) ClearWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request ClearWorkspaceTeamNotificationSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ClearWorkspaceTeamNotificationSettings(ctx, request.(ClearWorkspaceTeamNotificationSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ClearWorkspaceTeamNotificationSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ClearWorkspaceTeamNotificationSettingsResponseObject); ok {
+		if err := validResponse.VisitClearWorkspaceTeamNotificationSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceTeamNotificationSettings operation middleware
+func (sh *strictHandler) GetWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request GetWorkspaceTeamNotificationSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceTeamNotificationSettings(ctx, request.(GetWorkspaceTeamNotificationSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceTeamNotificationSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceTeamNotificationSettingsResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceTeamNotificationSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceTeamNotificationSettings operation middleware
+func (sh *strictHandler) SetWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request SetWorkspaceTeamNotificationSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	var body SetWorkspaceTeamNotificationSettingsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceTeamNotificationSettings(ctx, request.(SetWorkspaceTeamNotificationSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceTeamNotificationSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceTeamNotificationSettingsResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceTeamNotificationSettingsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

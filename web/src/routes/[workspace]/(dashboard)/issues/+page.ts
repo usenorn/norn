@@ -24,6 +24,7 @@ export type IssuesPageData = {
 	tab: IssueTab;
 	layout: IssueLayout;
 	showEmpty: boolean;
+	text: string;
 };
 
 function pick<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
@@ -40,6 +41,7 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<IssuesPage
 		tab: pick(q.get("tab"), issueTabs, "open"),
 		layout: pick(q.get("layout"), issueLayouts, "list"),
 		showEmpty: q.get("empty") === "1",
+		text: q.get("q") ?? "",
 	};
 
 	const available = teams ?? [];
@@ -55,7 +57,7 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<IssuesPage
 		return {
 			...options,
 			applied,
-			query: viewQuery(applied, options.tab, null),
+			query: viewQuery(applied, options.tab, null, options.text),
 			team: null,
 			teams: available,
 			issues: undefined,
@@ -67,7 +69,7 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<IssuesPage
 		};
 	}
 
-	const query = viewQuery(applied, options.tab, team?.id ?? null);
+	const query = viewQuery(applied, options.tab, team?.id ?? null, options.text);
 
 	const path = { workspaceId: workspace.id };
 

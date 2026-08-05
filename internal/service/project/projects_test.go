@@ -15,6 +15,7 @@ import (
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
@@ -29,6 +30,7 @@ type harness struct {
 	activity    *activityrepo.MockActivity
 	accounts    *accountrepo.MockAccount
 	memberships *membershiprepo.MockMembership
+	notify      *notificationeventrepo.MockNotificationEvent
 	authorizer  *authorizersvc.MockAuthorizer
 	transactor  *transactorrepo.MockTransactor
 	service     service.Projects
@@ -50,6 +52,7 @@ func newHarness(t *testing.T) *harness {
 		activity:    activityrepo.NewMockActivity(ctrl),
 		accounts:    accountrepo.NewMockAccount(ctrl),
 		memberships: membershiprepo.NewMockMembership(ctrl),
+		notify:      notificationeventrepo.NewMockNotificationEvent(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		workspaceID: uuid.New(),
@@ -67,7 +70,7 @@ func newHarness(t *testing.T) *harness {
 	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	h.service = projectsvc.New(
-		h.projects, h.members, h.statuses, h.activity, h.accounts, h.memberships, h.authorizer, h.transactor,
+		h.projects, h.members, h.statuses, h.activity, h.accounts, h.memberships, h.notify, h.authorizer, h.transactor,
 	)
 
 	return h

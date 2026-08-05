@@ -32,6 +32,8 @@ type handler struct {
 	projects       service.Projects
 	savedViews     service.SavedViews
 	triages        service.Triages
+	notifications  service.Notifications
+	searches       service.Searches
 	app            config.App
 	instance       config.Instance
 	session        config.Session
@@ -56,6 +58,8 @@ func New(
 	projects service.Projects,
 	savedViews service.SavedViews,
 	triages service.Triages,
+	notifications service.Notifications,
+	searches service.Searches,
 	app config.App,
 	instance config.Instance,
 	session config.Session,
@@ -79,6 +83,8 @@ func New(
 		projects:       projects,
 		savedViews:     savedViews,
 		triages:        triages,
+		notifications:  notifications,
+		searches:       searches,
 		app:            app,
 		instance:       instance,
 		session:        session,

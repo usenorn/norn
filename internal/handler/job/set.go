@@ -14,4 +14,6 @@ var Set = wire.NewSet(
 	NewSSOCertificateSweepHandler,
 	NewCycleGenerationHandler,
 	NewAttachmentReclaimHandler,
+	NewNotificationFanOutHandler,
+	NewNotificationDigestHandler,
 )

@@ -12,6 +12,7 @@ import (
 	"github.com/usenorn/norn/internal/pkg/identity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
@@ -31,6 +32,7 @@ type harness struct {
 	accounts     *accountrepo.MockAccount
 	authPolicies *authpolicyrepo.MockWorkspaceAuthPolicy
 	states       *workflowstaterepo.MockWorkflowState
+	notify       *notificationeventrepo.MockNotificationEvent
 	transactor   *transactorrepo.MockTransactor
 	authorizer   *authorizersvc.MockAuthorizer
 	service      service.Teams
@@ -49,6 +51,7 @@ func newHarness(t *testing.T) *harness {
 		accounts:     accountrepo.NewMockAccount(ctrl),
 		authPolicies: authpolicyrepo.NewMockWorkspaceAuthPolicy(ctrl),
 		states:       workflowstaterepo.NewMockWorkflowState(ctrl),
+		notify:       notificationeventrepo.NewMockNotificationEvent(ctrl),
 		transactor:   transactorrepo.NewMockTransactor(ctrl),
 		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
 	}
@@ -68,9 +71,12 @@ func newHarness(t *testing.T) *harness {
 		h.accounts,
 		h.authPolicies,
 		h.states,
+		h.notify,
 		h.authorizer,
 		h.transactor,
 	)
+
+	h.notify.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	return h
 }

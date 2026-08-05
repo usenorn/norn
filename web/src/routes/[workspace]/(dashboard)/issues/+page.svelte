@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { goto, invalidateAll } from "$app/navigation";
 	import { page } from "$app/state";
 	import Bell from "@lucide/svelte/icons/bell";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
@@ -22,6 +22,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { api } from "$lib/api";
+	import { searchDebounceMs } from "$lib/search/search";
 	import {
 		boardFor,
 		countForTab,
@@ -144,6 +145,7 @@
 		if (data.tab !== "open") q.set("tab", data.tab);
 		if (data.layout !== "list") q.set("layout", data.layout);
 		if (data.showEmpty) q.set("empty", "1");
+		if (data.text) q.set("q", data.text);
 
 		return q;
 	});
@@ -160,6 +162,31 @@
 
 		return at(`/issues${query ? `?${query}` : ""}`);
 	});
+
+	let typedText = $state("");
+	let textTimer: ReturnType<typeof setTimeout> | undefined;
+
+	$effect(() => {
+		typedText = data.text;
+	});
+
+	$effect(() => () => clearTimeout(textTimer));
+
+	function typeText(value: string) {
+		typedText = value;
+		clearTimeout(textTimer);
+		textTimer = setTimeout(commitText, searchDebounceMs);
+	}
+
+	function commitText() {
+		clearTimeout(textTimer);
+
+		void goto(linkWith({ q: typedText.trim() === "" ? null : typedText }), {
+			replaceState: true,
+			keepFocus: true,
+			noScroll: true,
+		});
+	}
 
 	async function moveIssue(issue: Issue, stateId: string) {
 		const target = (states ?? []).find((state) => state.id === stateId);
@@ -480,7 +507,16 @@
 				{/if}
 			</div>
 
-			<div class="flex flex-none gap-1">
+			<div class="flex flex-none items-center gap-1">
+				<Input
+					type="search"
+					value={typedText}
+					placeholder="Search these issues"
+					aria-label="Search these issues"
+					class="h-7.5 w-40 lg:w-56"
+					oninput={(event) => typeText(event.currentTarget.value)}
+					onkeydown={(event) => event.key === "Enter" && commitText()}
+				/>
 				<Button
 					href={linkWith({ layout: null })}
 					variant="outline"

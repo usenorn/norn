@@ -15,13 +15,14 @@ import (
 )
 
 type Worker struct {
-	saml        config.SAML
-	cycles      config.Cycles
-	attachments config.Attachments
-	server      *taskqueue.Server
-	scheduler   *taskqueue.Scheduler
-	mux         *asynq.ServeMux
-	logger      *slog.Logger
+	saml          config.SAML
+	cycles        config.Cycles
+	attachments   config.Attachments
+	notifications config.Notifications
+	server        *taskqueue.Server
+	scheduler     *taskqueue.Scheduler
+	mux           *asynq.ServeMux
+	logger        *slog.Logger
 }
 
 func NewServeMux(
@@ -36,6 +37,8 @@ func NewServeMux(
 	certificateSweep *job.SSOCertificateSweepHandler,
 	cycleGeneration *job.CycleGenerationHandler,
 	attachmentReclaim *job.AttachmentReclaimHandler,
+	notificationFanOut *job.NotificationFanOutHandler,
+	notificationDigest *job.NotificationDigestHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -49,6 +52,8 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeSSOCertificateSweep, certificateSweep)
 	mux.Handle(entity.TaskTypeCycleGeneration, cycleGeneration)
 	mux.Handle(entity.TaskTypeAttachmentReclaim, attachmentReclaim)
+	mux.Handle(entity.TaskTypeNotificationFanOut, notificationFanOut)
+	mux.Handle(entity.TaskTypeNotificationDigest, notificationDigest)
 
 	return mux
 }
@@ -57,19 +62,21 @@ func NewWorker(
 	saml config.SAML,
 	cycles config.Cycles,
 	attachments config.Attachments,
+	notifications config.Notifications,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	mux *asynq.ServeMux,
 	logger *slog.Logger,
 ) *Worker {
 	return &Worker{
-		saml:        saml,
-		cycles:      cycles,
-		attachments: attachments,
-		server:      server,
-		scheduler:   scheduler,
-		mux:         mux,
-		logger:      logger,
+		saml:          saml,
+		cycles:        cycles,
+		attachments:   attachments,
+		notifications: notifications,
+		server:        server,
+		scheduler:     scheduler,
+		mux:           mux,
+		logger:        logger,
 	}
 }
 
@@ -98,6 +105,22 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueDefault),
 	); err != nil {
 		return fmt.Errorf("register attachment reclaim: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.notifications.FanOutSchedule,
+		asynq.NewTask(entity.TaskTypeNotificationFanOut, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register notification fan-out: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.notifications.DigestSchedule,
+		asynq.NewTask(entity.TaskTypeNotificationDigest, nil),
+		asynq.Queue(entity.QueueMail),
+	); err != nil {
+		return fmt.Errorf("register notification digest: %w", err)
 	}
 
 	if err := w.server.Start(w.mux); err != nil {

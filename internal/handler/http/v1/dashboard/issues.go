@@ -50,7 +50,8 @@ func (h *handler) QueryWorkspaceIssues(
 	ctx context.Context,
 	request api.QueryWorkspaceIssuesRequestObject,
 ) (api.QueryWorkspaceIssuesResponseObject, error) {
-	input := service.QueryIssuesInput{Filter: issueFilterFrom(request.Body.Filter)}
+	input := service.QueryIssuesInput{
+		Text: textOf(request.Body.Text), Filter: issueFilterFrom(request.Body.Filter)}
 
 	if request.Body.Sort != nil {
 		input.Sort = issueSortFrom(*request.Body.Sort)

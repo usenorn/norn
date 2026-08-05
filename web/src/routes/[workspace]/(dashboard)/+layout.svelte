@@ -10,6 +10,8 @@
 	import Search from "@lucide/svelte/icons/search";
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import Settings from "@lucide/svelte/icons/settings";
+	import Bell from "@lucide/svelte/icons/bell";
+	import SearchPalette from "$lib/search/search-palette.svelte";
 	import KeyRound from "@lucide/svelte/icons/key-round";
 	import ProviderRequired from "$lib/workspace/provider-required.svelte";
 	import Tags from "@lucide/svelte/icons/tags";
@@ -49,7 +51,26 @@
 	const search = $derived(page.url.searchParams);
 	const current = $derived((href: string) => isCurrent(pathname, search, href));
 
-	const nav = $derived(primaryNav(slug, data.waiting));
+	let searching = $state(false);
+
+	function openSearch(event: KeyboardEvent) {
+		if (event.key !== "k" || !(event.metaKey || event.ctrlKey)) return;
+
+		const target = event.target as HTMLElement | null;
+
+		if (
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target?.isContentEditable
+		) {
+			return;
+		}
+
+		event.preventDefault();
+		searching = true;
+	}
+
+	const nav = $derived(primaryNav(slug, data.waiting, data.unread));
 	const views = $derived(viewEntries(slug, data.views ?? []));
 	const tabs = $derived(mobileNav(slug));
 
@@ -123,6 +144,14 @@
 				</DropdownMenu.Item>
 				<DropdownMenu.Item>
 					{#snippet child({ props })}
+						<a href={workspacePath(slug, "/settings/notifications")} {...props}>
+							<Bell aria-hidden="true" />
+							Notifications
+						</a>
+					{/snippet}
+				</DropdownMenu.Item>
+				<DropdownMenu.Item>
+					{#snippet child({ props })}
 						<a href={workspacePath(slug, "/settings/authentication")} {...props}>
 							<KeyRound aria-hidden="true" />
 							Authentication
@@ -151,6 +180,7 @@
 
 		<button
 			type="button"
+			onclick={() => (searching = true)}
 			class="keycap mt-2.5 mb-1 flex h-control-md w-full items-center gap-2 rounded-sm border border-line-default bg-card px-2 text-md text-muted-foreground transition-colors duration-110 ease-out [--keycap-lip:var(--paper-2)] hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 		>
 			<Search class="size-icon-toolbar shrink-0" aria-hidden="true" />
@@ -296,7 +326,7 @@
 			<span class="min-w-0 flex-1 truncate text-lg font-medium tracking-snug text-ink-900">
 				{data.workspace.name}
 			</span>
-			<Button variant="ghost" size="icon" aria-label="Search">
+			<Button variant="ghost" size="icon" aria-label="Search" onclick={() => (searching = true)}>
 				<Search class="size-icon-toolbar" aria-hidden="true" />
 			</Button>
 			<Avatar.Root size="sm">
@@ -340,3 +370,11 @@
 		</nav>
 	</div>
 </div>
+
+<svelte:window onkeydown={openSearch} />
+
+<SearchPalette
+	bind:open={searching}
+	workspaceId={data.workspace.id}
+	workspaceSlug={slug}
+/>

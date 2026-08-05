@@ -67,6 +67,24 @@ WHERE c.issue_id = $1
 ORDER BY c.created_at, c.id
 LIMIT $5`
 
+const cursorBeforeQuery = `
+WITH target AS (
+    SELECT coalesce(c.parent_comment_id, c.id) AS root_id
+    FROM workspace_issue_comments c
+    WHERE c.id = $2 AND c.issue_id = $1
+), root AS (
+    SELECT r.created_at, r.id
+    FROM workspace_issue_comments r
+    JOIN target ON r.id = target.root_id
+)
+SELECT p.created_at, p.id
+FROM workspace_issue_comments p, root
+WHERE p.issue_id = $1
+  AND p.parent_comment_id IS NULL
+  AND (p.created_at, p.id) < (root.created_at, root.id)
+ORDER BY p.created_at DESC, p.id DESC
+LIMIT 1`
+
 const repliesQuery = `SELECT` + commentColumns + commentJoins + `
 WHERE c.parent_comment_id = ANY($1::uuid[])
 ORDER BY c.created_at, c.id`
@@ -80,6 +98,15 @@ SELECT m.comment_id,
        m.visible
 FROM workspace_issue_comment_mentions m
 WHERE m.comment_id = ANY($1::uuid[])
+ORDER BY m.created_at, m.mentioned_name`
+
+const visibleMentionsQuery = `
+SELECT m.kind,
+       coalesce(m.account_id::text, ''),
+       coalesce(m.team_id::text, ''),
+       m.mentioned_name
+FROM workspace_issue_comment_mentions m
+WHERE m.comment_id = $1 AND m.visible
 ORDER BY m.created_at, m.mentioned_name`
 
 const reactionsQuery = `
@@ -556,6 +583,75 @@ func (r *issueCommentRepository) RecordMentions(
 	}
 
 	return nil
+}
+
+func (r *issueCommentRepository) CursorBefore(
+	ctx context.Context,
+	issueID, commentID uuid.UUID,
+) (*entity.CommentCursor, error) {
+	var cursor entity.CommentCursor
+
+	err := r.db.Querier(ctx).QueryRowContext(
+		ctx, cursorBeforeQuery, issueID.String(), commentID.String(),
+	).Scan(&cursor.CreatedAt, &cursor.CommentID)
+
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("read comment cursor: %w", err)
+	default:
+		return &cursor, nil
+	}
+}
+
+func (r *issueCommentRepository) Mentioned(
+	ctx context.Context,
+	commentID uuid.UUID,
+) ([]entity.CommentMention, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, visibleMentionsQuery, commentID.String())
+	if err != nil {
+		return nil, fmt.Errorf("read visible comment mentions: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	mentions := make([]entity.CommentMention, 0)
+
+	for rows.Next() {
+		var (
+			mention       entity.CommentMention
+			kind          string
+			account, team string
+		)
+
+		if err := rows.Scan(&kind, &account, &team, &mention.Name); err != nil {
+			return nil, fmt.Errorf("scan visible comment mention: %w", err)
+		}
+
+		mention.Kind = entity.MentionKind(kind)
+		mention.Visible = true
+
+		if account != "" {
+			if mention.AccountID, err = uuid.Parse(account); err != nil {
+				return nil, fmt.Errorf("parse mentioned account id: %w", err)
+			}
+		}
+
+		if team != "" {
+			if mention.TeamID, err = uuid.Parse(team); err != nil {
+				return nil, fmt.Errorf("parse mentioned team id: %w", err)
+			}
+		}
+
+		mentions = append(mentions, mention)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read visible comment mentions: %w", err)
+	}
+
+	return mentions, nil
 }
 
 func (r *issueCommentRepository) Audience(

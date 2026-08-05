@@ -2,6 +2,8 @@ package ssoconnection
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -15,6 +17,7 @@ func (s *connectionsService) SweepCertificates(ctx context.Context) error {
 	}
 
 	now := time.Now().UTC()
+	failures := make([]error, 0)
 
 	for _, connection := range connections {
 		daysLeft := entity.DaysUntil(connection.Descriptor.ExpiresAt, now)
@@ -32,6 +35,10 @@ func (s *connectionsService) SweepCertificates(ctx context.Context) error {
 				"error", err.Error(),
 			)
 
+			failures = append(failures, fmt.Errorf(
+				"warn %s about an expiring certificate: %w", connection.WorkspaceID, err,
+			))
+
 			continue
 		}
 
@@ -40,7 +47,7 @@ func (s *connectionsService) SweepCertificates(ctx context.Context) error {
 		}
 	}
 
-	return nil
+	return errors.Join(failures...)
 }
 
 func (s *connectionsService) warn(

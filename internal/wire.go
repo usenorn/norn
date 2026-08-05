@@ -39,12 +39,16 @@ import (
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
 	issuefilterreferencerepo "github.com/usenorn/norn/internal/repository/issuefilterreference"
+	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	labelgrouprepo "github.com/usenorn/norn/internal/repository/labelgroup"
 	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	notificationrepo "github.com/usenorn/norn/internal/repository/notification"
+	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
+	notificationsettingrepo "github.com/usenorn/norn/internal/repository/notificationsetting"
 	oidcproviderrepo "github.com/usenorn/norn/internal/repository/oidcprovider"
 	oidcstaterepo "github.com/usenorn/norn/internal/repository/oidcstate"
 	passwordhistoryrepo "github.com/usenorn/norn/internal/repository/passwordhistory"
@@ -53,6 +57,7 @@ import (
 	samlreplayrepo "github.com/usenorn/norn/internal/repository/samlreplay"
 	samlrequestrepo "github.com/usenorn/norn/internal/repository/samlrequest"
 	savedviewrepo "github.com/usenorn/norn/internal/repository/savedview"
+	searchrepo "github.com/usenorn/norn/internal/repository/search"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	signuprepo "github.com/usenorn/norn/internal/repository/signup"
@@ -76,8 +81,10 @@ import (
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
+	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
+	searchsvc "github.com/usenorn/norn/internal/service/search"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
@@ -124,7 +131,12 @@ var baseSet = wire.NewSet(
 	attachmentrepo.Set,
 	blobgrantrepo.Set,
 	issuecommentrepo.Set,
+	issuefollowerrepo.Set,
+	notificationrepo.Set,
+	notificationeventrepo.Set,
+	notificationsettingrepo.Set,
 	savedviewrepo.Set,
+	searchrepo.Set,
 	triagerepo.Set,
 	issuefilterreferencerepo.Set,
 	labelrepo.Set,
@@ -156,7 +168,9 @@ var baseSet = wire.NewSet(
 	projectsvc.Set,
 	attachmentsvc.Set,
 	issuecommentsvc.Set,
+	notificationsvc.Set,
 	savedviewsvc.Set,
+	searchsvc.Set,
 	triagesvc.Set,
 	labelsvc.Set,
 	workflowstatesvc.Set,

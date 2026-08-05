@@ -1,0 +1,12 @@
+Hello,
+
+Here is what happened in {{ .WorkspaceName }} while you were away.
+
+{{ range .Entries }}
+{{ .Reference }} {{ .Title }}
+  {{ .Summary }}
+  {{ .URL }}
+{{ end }}
+Open your inbox: {{ .InboxURL }}
+
+You are receiving this because these notifications are set to reach you by email. Change that under Settings, Notifications.
