@@ -107,6 +107,7 @@ import (
 	issuerelation2 "github.com/usenorn/norn/internal/service/issuerelation"
 	"github.com/usenorn/norn/internal/service/jobs"
 	label2 "github.com/usenorn/norn/internal/service/label"
+	"github.com/usenorn/norn/internal/service/licensing"
 	mcpconnection2 "github.com/usenorn/norn/internal/service/mcpconnection"
 	notification2 "github.com/usenorn/norn/internal/service/notification"
 	project2 "github.com/usenorn/norn/internal/service/project"
@@ -250,7 +251,20 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	ssoIdentity := ssoidentity.New(postgresClient)
 	breakGlass := breakglass.New(postgresClient)
 	configWorkspace := config.NewWorkspace(configConfig)
-	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, jobProducer, repositoryBlob, serviceAuthorizer, postgresClient, configWorkspace, serviceAudit)
+	configLicence := config.NewLicence(configConfig)
+	entityLicence, err := licence.Resolve(configLicence)
+	if err != nil {
+		cleanup7()
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	serviceLicensing := licensing.New(entityLicence, configLicence)
+	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, jobProducer, repositoryBlob, serviceAuthorizer, postgresClient, configWorkspace, serviceAudit, serviceLicensing)
 	notificationEvent := notificationevent.New(postgresClient)
 	teams := team2.New(repositoryTeam, teamMember, repositoryWorkspace, repositoryMembership, repositoryAccount, workspaceAuthPolicy, workflowState, notificationEvent, serviceAuthorizer, postgresClient, serviceAudit)
 	repositoryInvitation := invitation.New(postgresClient)
@@ -315,25 +329,12 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	notifications := notification2.New(repositoryNotification, notificationEvent, issueFollower, notificationSetting, repositoryIssue, issueComment, teamMember, repositoryWorkspace, repositoryMailer, serviceEvents, serviceAuthorizer, configSMTP, app)
 	repositorySearch := search.New(postgresClient)
 	searches := search2.New(repositorySearch, repositoryIssue, serviceAuthorizer, postgresClient)
-	configLicence := config.NewLicence(configConfig)
-	entityLicence, err := licence.Resolve(configLicence)
-	if err != nil {
-		cleanup8()
-		cleanup7()
-		cleanup6()
-		cleanup5()
-		cleanup4()
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
 	configAudit := config.NewAudit(configConfig)
-	auditLog := audit2.NewReader(repositoryAudit, repositoryMembership, serviceAuthorizer, serviceAudit, entityLicence, configAudit)
+	auditLog := audit2.NewReader(repositoryAudit, repositoryMembership, serviceAuthorizer, serviceAudit, serviceLicensing, configAudit)
 	repositoryDirectory := directory.New(postgresClient)
 	directorySync := directory.NewSync(postgresClient)
-	directories := directory2.New(repositoryDirectory, directorySync, repositoryMembership, repositoryAccount, repositoryWorkspace, repositoryTeam, teamMember, repositoryIssue, repositoryProject, serviceAuthorizer, serviceAudit, postgresClient, entityLicence)
-	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, issueComments, serviceAttachments, bulkOperations, workflowStates, labels, apiTokens, mcpConnections, agents, sessions, ssoConnections, cycles, projects, savedViews, triages, notifications, searches, auditLog, directories, app, instance, configSession)
+	directories := directory2.New(repositoryDirectory, directorySync, repositoryMembership, repositoryAccount, repositoryWorkspace, repositoryTeam, teamMember, repositoryIssue, repositoryProject, serviceAuthorizer, serviceAudit, postgresClient, serviceLicensing)
+	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, issueComments, serviceAttachments, bulkOperations, workflowStates, labels, apiTokens, mcpConnections, agents, sessions, ssoConnections, cycles, projects, savedViews, triages, notifications, searches, auditLog, directories, serviceLicensing, app, instance, configSession)
 	callback := sso.NewCallback(ssoConnections, configSession)
 	ssoSAML := sso.NewSAML(ssoConnections, configSession)
 	edge := blob2.New(repositoryBlob, blobGrant, attachments)
@@ -356,7 +357,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	internalApp := NewApp(http, handler, logger)
+	internalApp := NewApp(http, handler, serviceLicensing, logger)
 	return internalApp, func() {
 		cleanup8()
 		cleanup7()
@@ -501,7 +502,20 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	ssoIdentity := ssoidentity.New(client)
 	breakGlass := breakglass.New(client)
 	configWorkspace := config.NewWorkspace(configConfig)
-	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, jobProducer, repositoryBlob, serviceAuthorizer, client, configWorkspace, serviceAudit)
+	configLicence := config.NewLicence(configConfig)
+	entityLicence, err := licence.Resolve(configLicence)
+	if err != nil {
+		cleanup7()
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	serviceLicensing := licensing.New(entityLicence, configLicence)
+	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, jobProducer, repositoryBlob, serviceAuthorizer, client, configWorkspace, serviceAudit, serviceLicensing)
 	workspacePurgeHandler := job.NewWorkspacePurgeHandler(workspaces)
 	repositoryIssue := issue.New(client)
 	repositoryActivity := activity.New(client)
@@ -559,7 +573,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	serviceAPITokens := apitoken2.New(apiToken, repositoryAccount, repositoryAgent, repositoryWorkspace, repositoryMailer, serviceAuthorizer, client, app, serviceAudit)
 	apiTokenExpirySweepHandler := job.NewAPITokenExpirySweepHandler(serviceAPITokens)
 	auditRetention := audit.NewRetention(client)
-	serviceAuditRetention := audit2.NewSweeper(auditRetention, configAudit)
+	serviceAuditRetention := audit2.NewSweeper(auditRetention, serviceLicensing, configAudit)
 	auditSweepHandler := job.NewAuditSweepHandler(serviceAuditRetention)
 	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler)
 	worker := NewWorker(saml, cycles, attachments, notifications, apiTokens, configAudit, server, scheduler, serveMux, logger)
@@ -676,7 +690,7 @@ func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, mcpclient.Set, mcpconnection.Set, mcptoken.Set, mcpauthstate.Set, mcpthrottle.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, mcpconnection2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, directory2.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, auditexport.Set, scim.Set, mcpauth.Set, mcpserver.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, mcpclient.Set, mcpconnection.Set, mcptoken.Set, mcpauthstate.Set, mcpthrottle.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, mcpconnection2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, licensing.Set, directory2.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, auditexport.Set, scim.Set, mcpauth.Set, mcpserver.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

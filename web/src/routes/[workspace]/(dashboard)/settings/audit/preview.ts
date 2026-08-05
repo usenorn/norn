@@ -96,7 +96,7 @@ export const auditPreviewStates: Record<string, AuditPreview> = import.meta.env.
 				},
 			},
 			unlicensed: {
-				record: { kind: "unlicensed", retentionDays: 365, holder: "Northwind Studio" },
+				record: { kind: "unlicensed", retentionDays: 365 },
 			},
 			forbidden: { record: { kind: "forbidden" } },
 			unavailable: { record: { kind: "unavailable" } },

@@ -440,6 +440,23 @@
 				</div>
 			</section>
 
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Licence</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Most of Norn is free forever, on every tier, self-hosted included — members, issues,
+						projects, teams and agents are never counted for pricing. Only the audit log and
+						directory synchronization need a licence.
+					</p>
+				</div>
+
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" href="/settings/licence">
+						What this instance is licensed for
+					</Button>
+				</div>
+			</section>
+
 			{#if !pending}
 				<section class="flex flex-col gap-4 rounded-lg border border-destructive/40 p-4">
 					<div class="flex flex-col gap-1">

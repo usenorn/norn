@@ -101,10 +101,6 @@ func (h *handler) GetWorkspaceDirectoryAvailability(
 
 	dto := api.DirectoryAvailability{Available: available.Available}
 
-	if available.Holder != "" {
-		dto.Holder = &available.Holder
-	}
-
 	return api.GetWorkspaceDirectoryAvailability200JSONResponse(dto), nil
 }
 

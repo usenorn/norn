@@ -38,6 +38,7 @@ type handler struct {
 	searches       service.Searches
 	auditLog       service.AuditLog
 	directories    service.Directories
+	licensing      service.Licensing
 	app            config.App
 	instance       config.Instance
 	session        config.Session
@@ -68,6 +69,7 @@ func New(
 	searches service.Searches,
 	auditLog service.AuditLog,
 	directories service.Directories,
+	licensing service.Licensing,
 	app config.App,
 	instance config.Instance,
 	session config.Session,
@@ -97,6 +99,7 @@ func New(
 		searches:       searches,
 		auditLog:       auditLog,
 		directories:    directories,
+		licensing:      licensing,
 		app:            app,
 		instance:       instance,
 		session:        session,

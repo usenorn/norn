@@ -21,7 +21,7 @@ func TestAnInstanceWithNoKeyIsUnlicensedRatherThanBroken(t *testing.T) {
 		)
 	}
 
-	if resolved.Valid(time.Now()) {
+	if resolved.Status(time.Now(), 0) != entity.LicenceAbsent {
 		t.Fatal("an absent key produced a valid licence")
 	}
 
@@ -81,11 +81,11 @@ func TestAnExpiredLicenceGrantsNothing(t *testing.T) {
 		Features:  entity.LicenceFeatures{Audit: true},
 	}
 
-	if expired.Valid(time.Now()) {
+	if expired.Status(time.Now(), 0) == entity.LicenceActive {
 		t.Fatal("a licence that ran out yesterday still reported itself valid")
 	}
 
-	if expired.Permits(time.Now(), entity.AuditFeature) {
+	if expired.Permits(time.Now(), 0, entity.FeatureAudit) {
 		t.Fatal(
 			"an expired licence still permitted a paid feature. The features it names are only " +
 				"meaningful while it is in date.",

@@ -104,6 +104,7 @@ import (
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
+	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
 	mcpconnectionsvc "github.com/usenorn/norn/internal/service/mcpconnection"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
@@ -221,6 +222,7 @@ var baseSet = wire.NewSet(
 	jobssvc.Set,
 	ssoconnectionsvc.Set,
 	auditsvc.Set,
+	licensingsvc.Set,
 	directorysvc.Set,
 
 	dashboardhandler.Set,

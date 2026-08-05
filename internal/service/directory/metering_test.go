@@ -98,7 +98,7 @@ func TestTheDirectoryFeatureNeverGatesSigningIn(t *testing.T) {
 
 	unlicensed := entity.Licence{}
 
-	if unlicensed.Permits(nowForTest(), entity.DirectoryFeature) {
+	if unlicensed.Permits(nowForTest(), 0, entity.FeatureDirectory) {
 		t.Error("an absent licence permits directory synchronization")
 	}
 

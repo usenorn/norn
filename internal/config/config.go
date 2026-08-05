@@ -33,7 +33,8 @@ type Config struct {
 }
 
 type Licence struct {
-	Key string `mapstructure:"key"`
+	Key   string        `mapstructure:"key"`
+	Grace time.Duration `mapstructure:"grace"`
 }
 
 type Audit struct {

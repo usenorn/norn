@@ -78,6 +78,14 @@ func validate(cfg Config) error {
 		return fmt.Errorf("password.breach_check_endpoint is required when password.breach_check_enabled is set")
 	}
 
+	if cfg.Licence.Grace < 0 {
+		return fmt.Errorf(
+			"licence.grace (%s) cannot be negative; a licence that expires is given this long "+
+				"before its features stop, and zero means they stop the moment it expires",
+			cfg.Licence.Grace,
+		)
+	}
+
 	if cfg.Audit.Retention <= 0 {
 		return fmt.Errorf(
 			"audit.retention (%s) must be positive; the audit log always ages out and there is no setting for keeping it forever",
@@ -181,6 +189,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("instance.password_auth", true)
 	v.SetDefault("instance.self_hosted", false)
 	v.SetDefault("licence.key", "")
+	v.SetDefault("licence.grace", 30*24*time.Hour)
 	v.SetDefault("audit.retention", 365*24*time.Hour)
 	v.SetDefault("audit.sweep_schedule", "0 4 * * *")
 	v.SetDefault("audit.sweep_batch", 5000)

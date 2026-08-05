@@ -83,10 +83,6 @@ func (h *handler) GetWorkspaceAuditAvailability(
 		RetentionDays: int32(available.RetentionDays),
 	}
 
-	if available.Holder != "" {
-		dto.Holder = &available.Holder
-	}
-
 	return api.GetWorkspaceAuditAvailability200JSONResponse(dto), nil
 }
 

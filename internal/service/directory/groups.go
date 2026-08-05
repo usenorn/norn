@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -18,8 +17,8 @@ func (s *directoriesService) PutGroup(
 	id *uuid.UUID,
 	profile service.DirectoryGroupProfile,
 ) (entity.DirectoryGroup, error) {
-	if !s.licensed(time.Now()) {
-		return entity.DirectoryGroup{}, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return entity.DirectoryGroup{}, err
 	}
 
 	displayName := strings.TrimSpace(profile.DisplayName)
@@ -81,8 +80,8 @@ func (s *directoriesService) EditGroupMembers(
 	workspaceID, id uuid.UUID,
 	edit service.DirectoryMembershipEdit,
 ) (entity.DirectoryGroup, error) {
-	if !s.licensed(time.Now()) {
-		return entity.DirectoryGroup{}, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return entity.DirectoryGroup{}, err
 	}
 
 	log := newRecorder(workspaceID, "EditGroupMembers")
@@ -342,8 +341,8 @@ func (s *directoriesService) GetGroup(
 	ctx context.Context,
 	workspaceID, id uuid.UUID,
 ) (entity.DirectoryGroup, error) {
-	if !s.licensed(time.Now()) {
-		return entity.DirectoryGroup{}, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return entity.DirectoryGroup{}, err
 	}
 
 	return s.directories.GetGroup(ctx, workspaceID, id)
@@ -355,8 +354,8 @@ func (s *directoriesService) ListGroups(
 	displayName string,
 	limit int,
 ) ([]entity.DirectoryGroup, error) {
-	if !s.licensed(time.Now()) {
-		return nil, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return nil, err
 	}
 
 	if limit <= 0 || limit > entity.DirectoryPageMaxSize {
@@ -370,8 +369,8 @@ func (s *directoriesService) ListGroupMembers(
 	ctx context.Context,
 	workspaceID, id uuid.UUID,
 ) ([]entity.DirectoryUser, error) {
-	if !s.licensed(time.Now()) {
-		return nil, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return nil, err
 	}
 
 	group, err := s.directories.GetGroup(ctx, workspaceID, id)
@@ -383,8 +382,8 @@ func (s *directoriesService) ListGroupMembers(
 }
 
 func (s *directoriesService) DeleteGroup(ctx context.Context, workspaceID, id uuid.UUID) error {
-	if !s.licensed(time.Now()) {
-		return entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return err
 	}
 
 	log := newRecorder(workspaceID, "DeleteGroup")

@@ -212,15 +212,17 @@
 							Directory synchronization is not part of this instance's licence
 						</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
-							Signing in through your identity provider stays free and keeps working{view.holder
-								? `, and this instance is licensed to ${view.holder}`
-								: ""}. Having that provider create, update and remove members automatically needs
-							a licence that covers it.
+							Signing in through your identity provider stays free and keeps working. Having that
+							provider create, update and remove members automatically needs a licence that covers
+							it.
 						</p>
 					</div>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Provisioning is never charged per person. Ask whoever administers this instance to add
-						a licence key.
+						Provisioning is never charged per person, and members it already created keep their
+						places.
+						<a class="underline underline-offset-2 hover:text-ink-900" href="/settings/licence">
+							See what this instance is licensed for
+						</a>.
 					</p>
 				</section>
 			{:else if view.kind === "forbidden"}

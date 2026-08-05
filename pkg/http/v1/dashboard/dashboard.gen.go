@@ -1524,6 +1524,30 @@ func (e LabelConflictProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for LicenceStatus.
+const (
+	LicenceStatusAbsent  LicenceStatus = "absent"
+	LicenceStatusActive  LicenceStatus = "active"
+	LicenceStatusExpired LicenceStatus = "expired"
+	LicenceStatusGrace   LicenceStatus = "grace"
+)
+
+// Valid indicates whether the value is a known member of the LicenceStatus enum.
+func (e LicenceStatus) Valid() bool {
+	switch e {
+	case LicenceStatusAbsent:
+		return true
+	case LicenceStatusActive:
+		return true
+	case LicenceStatusExpired:
+		return true
+	case LicenceStatusGrace:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MCPCapability.
 const (
 	Read  MCPCapability = "read"
@@ -2719,9 +2743,8 @@ type AuditAuthMethod string
 
 // AuditAvailability defines model for AuditAvailability.
 type AuditAvailability struct {
-	Available     bool    `json:"available"`
-	Holder        *string `json:"holder,omitempty"`
-	RetentionDays int32   `json:"retentionDays"`
+	Available     bool  `json:"available"`
+	RetentionDays int32 `json:"retentionDays"`
 }
 
 // AuditEvent defines model for AuditEvent.
@@ -3070,8 +3093,7 @@ type DirectoryAbsentPolicy string
 
 // DirectoryAvailability defines model for DirectoryAvailability.
 type DirectoryAvailability struct {
-	Available bool    `json:"available"`
-	Holder    *string `json:"holder,omitempty"`
+	Available bool `json:"available"`
 }
 
 // DirectoryChange defines model for DirectoryChange.
@@ -3603,6 +3625,25 @@ type LabelGroupRequest struct {
 type LabelUsage struct {
 	Issues int32 `json:"issues"`
 }
+
+// LicenceFeature defines model for LicenceFeature.
+type LicenceFeature struct {
+	Enabled bool   `json:"enabled"`
+	Name    string `json:"name"`
+}
+
+// LicenceReport defines model for LicenceReport.
+type LicenceReport struct {
+	ExpiresAt   *time.Time       `json:"expiresAt,omitempty"`
+	Features    []LicenceFeature `json:"features"`
+	GraceEndsAt *time.Time       `json:"graceEndsAt,omitempty"`
+	Holder      *string          `json:"holder,omitempty"`
+	IssuedAt    *time.Time       `json:"issuedAt,omitempty"`
+	Status      LicenceStatus    `json:"status"`
+}
+
+// LicenceStatus defines model for LicenceStatus.
+type LicenceStatus string
 
 // MCPAuthorizationDecision defines model for MCPAuthorizationDecision.
 type MCPAuthorizationDecision struct {
@@ -5285,6 +5326,9 @@ type ServerInterface interface {
 	// ListInstanceAudit Read every record on this instance, including the account-level ones
 	// (GET /instance/audit)
 	ListInstanceAudit(w http.ResponseWriter, r *http.Request, params ListInstanceAuditParams)
+	// GetInstanceLicence Report what this instance is licensed for, and until when
+	// (GET /instance/licence)
+	GetInstanceLicence(w http.ResponseWriter, r *http.Request)
 	// AcceptInvitation Join the workspace, creating an account when there is none
 	// (POST /invitations/accept)
 	AcceptInvitation(w http.ResponseWriter, r *http.Request)
@@ -5939,6 +5983,12 @@ func (_ Unimplemented) GetInstance(w http.ResponseWriter, r *http.Request) {
 // ListInstanceAudit Read every record on this instance, including the account-level ones
 // (GET /instance/audit)
 func (_ Unimplemented) ListInstanceAudit(w http.ResponseWriter, r *http.Request, params ListInstanceAuditParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetInstanceLicence Report what this instance is licensed for, and until when
+// (GET /instance/licence)
+func (_ Unimplemented) GetInstanceLicence(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -7408,6 +7458,20 @@ func (siw *ServerInterfaceWrapper) ListInstanceAudit(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListInstanceAudit(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetInstanceLicence operation middleware
+func (siw *ServerInterfaceWrapper) GetInstanceLicence(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetInstanceLicence(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -13879,6 +13943,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/members/{accountId}/audit-access", wrapper.SetWorkspaceMemberAuditAccess)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/instance/licence", wrapper.GetInstanceLicence)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/instance/audit", wrapper.ListInstanceAudit)
 	})
 	r.Group(func(r chi.Router) {
@@ -15915,6 +15982,57 @@ func (response ListInstanceAudit503ApplicationProblemPlusJSONResponse) VisitList
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstanceLicenceRequestObject struct {
+}
+
+type GetInstanceLicenceResponseObject interface {
+	VisitGetInstanceLicenceResponse(w http.ResponseWriter) error
+}
+
+type GetInstanceLicence200JSONResponse LicenceReport
+
+func (response GetInstanceLicence200JSONResponse) VisitGetInstanceLicenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstanceLicence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetInstanceLicence401ApplicationProblemPlusJSONResponse) VisitGetInstanceLicenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstanceLicence500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetInstanceLicence500ApplicationProblemPlusJSONResponse) VisitGetInstanceLicenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -31752,6 +31870,9 @@ type StrictServerInterface interface {
 	// ListInstanceAudit Read every record on this instance, including the account-level ones
 	// (GET /instance/audit)
 	ListInstanceAudit(ctx context.Context, request ListInstanceAuditRequestObject) (ListInstanceAuditResponseObject, error)
+	// GetInstanceLicence Report what this instance is licensed for, and until when
+	// (GET /instance/licence)
+	GetInstanceLicence(ctx context.Context, request GetInstanceLicenceRequestObject) (GetInstanceLicenceResponseObject, error)
 	// AcceptInvitation Join the workspace, creating an account when there is none
 	// (POST /invitations/accept)
 	AcceptInvitation(ctx context.Context, request AcceptInvitationRequestObject) (AcceptInvitationResponseObject, error)
@@ -32896,6 +33017,30 @@ func (sh *strictHandler) ListInstanceAudit(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListInstanceAuditResponseObject); ok {
 		if err := validResponse.VisitListInstanceAuditResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetInstanceLicence operation middleware
+func (sh *strictHandler) GetInstanceLicence(w http.ResponseWriter, r *http.Request) {
+	var request GetInstanceLicenceRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetInstanceLicence(ctx, request.(GetInstanceLicenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetInstanceLicence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetInstanceLicenceResponseObject); ok {
+		if err := validResponse.VisitGetInstanceLicenceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

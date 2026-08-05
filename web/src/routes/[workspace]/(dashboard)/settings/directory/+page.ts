@@ -20,7 +20,7 @@ export const load: PageLoad = async ({ fetch, parent, url }): Promise<DirectoryP
 	}
 
 	if (!availability.data?.available) {
-		return { view: { kind: "unlicensed", holder: availability.data?.holder } };
+		return { view: { kind: "unlicensed" } };
 	}
 
 	const settings = await api.GET("/workspaces/{workspaceId}/directory", {

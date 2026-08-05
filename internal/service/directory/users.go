@@ -18,8 +18,8 @@ func (s *directoriesService) PutUser(
 	id *uuid.UUID,
 	profile service.DirectoryProfile,
 ) (service.DirectoryUserView, error) {
-	if !s.licensed(time.Now()) {
-		return service.DirectoryUserView{}, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return service.DirectoryUserView{}, err
 	}
 
 	userName := entity.NormalizeDirectoryUserName(profile.UserName)
@@ -280,8 +280,8 @@ func (s *directoriesService) SetUserActive(
 	workspaceID, id uuid.UUID,
 	active bool,
 ) (service.DirectoryUserView, error) {
-	if !s.licensed(time.Now()) {
-		return service.DirectoryUserView{}, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return service.DirectoryUserView{}, err
 	}
 
 	log := newRecorder(workspaceID, "SetUserActive")
@@ -328,8 +328,8 @@ func (s *directoriesService) DeleteUser(
 	ctx context.Context,
 	workspaceID, id uuid.UUID,
 ) (service.DirectoryUserView, error) {
-	if !s.licensed(time.Now()) {
-		return service.DirectoryUserView{}, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return service.DirectoryUserView{}, err
 	}
 
 	log := newRecorder(workspaceID, "DeleteUser")
@@ -440,8 +440,8 @@ func (s *directoriesService) GetUser(
 	ctx context.Context,
 	workspaceID, id uuid.UUID,
 ) (entity.DirectoryUser, error) {
-	if !s.licensed(time.Now()) {
-		return entity.DirectoryUser{}, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return entity.DirectoryUser{}, err
 	}
 
 	return s.directories.GetUser(ctx, workspaceID, id)
@@ -453,8 +453,8 @@ func (s *directoriesService) ListUsers(
 	userName string,
 	limit int,
 ) ([]entity.DirectoryUser, error) {
-	if !s.licensed(time.Now()) {
-		return nil, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return nil, err
 	}
 
 	if limit <= 0 || limit > entity.DirectoryPageMaxSize {

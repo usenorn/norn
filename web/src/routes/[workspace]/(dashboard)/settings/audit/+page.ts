@@ -28,7 +28,7 @@ export const load: PageLoad = async ({ fetch, parent, url }): Promise<AuditPageD
 	if (!availability.data?.available) {
 		return {
 			filters: noAuditFilters,
-			record: { kind: "unlicensed", retentionDays, holder: availability.data?.holder },
+			record: { kind: "unlicensed", retentionDays },
 		};
 	}
 

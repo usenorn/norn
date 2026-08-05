@@ -27,6 +27,7 @@ import (
 	authpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
 	workspacesvc "github.com/usenorn/norn/internal/service/workspace"
 )
 
@@ -50,6 +51,12 @@ type harness struct {
 }
 
 func newHarness(t *testing.T) *harness {
+	t.Helper()
+
+	return newHarnessWithLicence(t, licensedForDirectory())
+}
+
+func newHarnessWithLicence(t *testing.T, licence entity.Licence) *harness {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
@@ -95,6 +102,7 @@ func newHarness(t *testing.T) *harness {
 		transactor,
 		config.Workspace{DeletionGracePeriod: deletionGracePeriod},
 		silentAudit(ctrl),
+		licensingsvc.New(licence, config.Licence{Grace: 30 * 24 * time.Hour}),
 	)
 
 	return h

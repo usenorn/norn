@@ -866,6 +866,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instance/licence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report what this instance is licensed for, and until when */
+        get: operations["getInstanceLicence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/instance/audit": {
         parameters: {
             query?: never;
@@ -3164,6 +3181,23 @@ export interface components {
         /** @enum {string} */
         ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed";
         /** @enum {string} */
+        LicenceStatus: "absent" | "active" | "grace" | "expired";
+        LicenceFeature: {
+            name: string;
+            enabled: boolean;
+        };
+        LicenceReport: {
+            status: components["schemas"]["LicenceStatus"];
+            holder?: string;
+            /** Format: date-time */
+            issuedAt?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+            /** Format: date-time */
+            graceEndsAt?: string;
+            features: components["schemas"]["LicenceFeature"][];
+        };
+        /** @enum {string} */
         DirectoryUnknownPolicy: "provision" | "ignore";
         /** @enum {string} */
         DirectoryAbsentPolicy: "deactivate" | "flag";
@@ -3189,7 +3223,6 @@ export interface components {
         };
         DirectoryAvailability: {
             available: boolean;
-            holder?: string;
         };
         /** @enum {string} */
         DirectorySyncOutcome: "succeeded" | "refused" | "failed";
@@ -3272,7 +3305,6 @@ export interface components {
             available: boolean;
             /** Format: int32 */
             retentionDays: number;
-            holder?: string;
         };
         SetAuditAccessRequest: {
             readsAudit: boolean;
@@ -6389,6 +6421,28 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getInstanceLicence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The licence this instance is running under, if any */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicenceReport"];
+                };
+            };
+            401: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

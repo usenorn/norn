@@ -3,7 +3,6 @@ package directory
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -35,12 +34,12 @@ func (s *directoriesService) Connect(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 ) (service.DirectorySettings, error) {
-	if err := s.authorize(ctx, workspaceID, entity.ActionManage); err != nil {
+	if err := s.licensed(); err != nil {
 		return service.DirectorySettings{}, err
 	}
 
-	if !s.licensed(time.Now()) {
-		return service.DirectorySettings{}, entity.ErrDirectoryUnlicensed
+	if err := s.authorize(ctx, workspaceID, entity.ActionManage); err != nil {
+		return service.DirectorySettings{}, err
 	}
 
 	if _, err := s.directories.GetConnection(ctx, workspaceID); err == nil {
@@ -79,12 +78,12 @@ func (s *directoriesService) RotateToken(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 ) (service.DirectorySettings, error) {
-	if err := s.authorize(ctx, workspaceID, entity.ActionManage); err != nil {
+	if err := s.licensed(); err != nil {
 		return service.DirectorySettings{}, err
 	}
 
-	if !s.licensed(time.Now()) {
-		return service.DirectorySettings{}, entity.ErrDirectoryUnlicensed
+	if err := s.authorize(ctx, workspaceID, entity.ActionManage); err != nil {
+		return service.DirectorySettings{}, err
 	}
 
 	current, err := s.directories.GetConnection(ctx, workspaceID)
@@ -119,12 +118,12 @@ func (s *directoriesService) Configure(
 	workspaceID uuid.UUID,
 	wanted entity.DirectoryConnection,
 ) (service.DirectorySettings, error) {
-	if err := s.authorize(ctx, workspaceID, entity.ActionManage); err != nil {
+	if err := s.licensed(); err != nil {
 		return service.DirectorySettings{}, err
 	}
 
-	if !s.licensed(time.Now()) {
-		return service.DirectorySettings{}, entity.ErrDirectoryUnlicensed
+	if err := s.authorize(ctx, workspaceID, entity.ActionManage); err != nil {
+		return service.DirectorySettings{}, err
 	}
 
 	if !wanted.OnUnknown.Valid() {
@@ -183,12 +182,12 @@ func (s *directoriesService) Runs(
 	workspaceID uuid.UUID,
 	page entity.DirectoryRunPage,
 ) ([]entity.DirectorySyncRun, error) {
-	if err := s.authorize(ctx, workspaceID, entity.ActionRead); err != nil {
+	if err := s.licensed(); err != nil {
 		return nil, err
 	}
 
-	if !s.licensed(time.Now()) {
-		return nil, entity.ErrDirectoryUnlicensed
+	if err := s.authorize(ctx, workspaceID, entity.ActionRead); err != nil {
+		return nil, err
 	}
 
 	return s.runs.ListRuns(ctx, workspaceID, page)
@@ -198,12 +197,12 @@ func (s *directoriesService) Changes(
 	ctx context.Context,
 	workspaceID, runID uuid.UUID,
 ) ([]entity.DirectorySyncChange, error) {
-	if err := s.authorize(ctx, workspaceID, entity.ActionRead); err != nil {
+	if err := s.licensed(); err != nil {
 		return nil, err
 	}
 
-	if !s.licensed(time.Now()) {
-		return nil, entity.ErrDirectoryUnlicensed
+	if err := s.authorize(ctx, workspaceID, entity.ActionRead); err != nil {
+		return nil, err
 	}
 
 	runs, err := s.runs.ListRuns(ctx, workspaceID, entity.DirectoryRunPage{Limit: entity.DirectoryPageMaxSize})
