@@ -23,7 +23,12 @@ func NewMigrator(client *postgres.Client, logger *slog.Logger) (*Migrator, error
 		return nil, err
 	}
 
-	provider, err := goose.NewProvider(goose.DialectPostgres, client.DB, fsys)
+	provider, err := goose.NewProvider(
+		goose.DialectPostgres,
+		client.DB,
+		fsys,
+		goose.WithAllowOutofOrder(true),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("create goose provider: %w", err)
 	}
