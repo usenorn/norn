@@ -16,6 +16,7 @@ type Config struct {
 	Storage       Storage       `mapstructure:"storage"`
 	Attachments   Attachments   `mapstructure:"attachments"`
 	Notifications Notifications `mapstructure:"notifications"`
+	Realtime      Realtime      `mapstructure:"realtime"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
 	GeoIP         GeoIP         `mapstructure:"geoip"`
@@ -178,6 +179,10 @@ type Attachments struct {
 type Notifications struct {
 	FanOutSchedule string `mapstructure:"fanout_schedule"`
 	DigestSchedule string `mapstructure:"digest_schedule"`
+}
+
+type Realtime struct {
+	Enabled bool `mapstructure:"enabled"`
 }
 
 type Session struct {

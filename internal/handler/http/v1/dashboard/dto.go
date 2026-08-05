@@ -1412,3 +1412,13 @@ func searchResultDTO(result entity.SearchResult) api.SearchResult {
 
 	return dto
 }
+
+// IssueEvent and CommentEvent give the streaming edge the same shapes this API already returns,
+// so a client can patch what it is holding without a second vocabulary for the same things.
+func IssueEvent(issue entity.Issue) api.Issue {
+	return issueDTO(issue)
+}
+
+func CommentEvent(comment entity.IssueComment) api.IssueComment {
+	return commentDTO(comment)
+}

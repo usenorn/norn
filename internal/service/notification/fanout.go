@@ -106,6 +106,8 @@ func (s *notificationsService) fanOut(ctx context.Context, event entity.Notifica
 		return 0, err
 	}
 
+	s.announce(ctx, event, deliveries)
+
 	return len(deliveries), nil
 }
 
@@ -240,4 +242,28 @@ func settingsFor(settings []entity.NotificationSettings, accountID uuid.UUID) []
 	}
 
 	return owned
+}
+
+// announce tells each recipient's open connections that something reached their inbox. The event
+// carries no team: a notification is addressed to one account, and that address is what decides
+// who may see it.
+func (s *notificationsService) announce(
+	ctx context.Context,
+	event entity.NotificationEvent,
+	deliveries []repository.NotificationDelivery,
+) {
+	for _, delivery := range deliveries {
+		if !delivery.Channels.Inbox {
+			continue
+		}
+
+		s.broadcast.Publish(ctx, entity.Event{
+			WorkspaceID: event.WorkspaceID,
+			Kind:        entity.EventNotificationArrived,
+			SubjectID:   event.Subject.ID,
+			IssueID:     event.Subject.ID,
+			AccountID:   delivery.AccountID,
+			ActorID:     event.Actor,
+		})
+	}
 }

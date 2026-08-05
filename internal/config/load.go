@@ -251,6 +251,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("attachments.link_ttl", 5*time.Minute)
 	v.SetDefault("attachments.transfer_timeout", 10*time.Minute)
 	v.SetDefault("attachments.reclaim_schedule", "*/5 * * * *")
+	v.SetDefault("realtime.enabled", true)
 	v.SetDefault("notifications.fanout_schedule", "* * * * *")
 	v.SetDefault("notifications.digest_schedule", "*/15 * * * *")
 	v.SetDefault("attachments.reclaim_batch", 200)

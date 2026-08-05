@@ -8,6 +8,7 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/handler/http/blob"
+	"github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/handler/http/sso"
 	"github.com/usenorn/norn/internal/observability/logging"
@@ -27,6 +28,7 @@ func New(
 	callback *sso.Callback,
 	samlEdge *sso.SAML,
 	blobEdge *blob.Edge,
+	eventsEdge *events.Edge,
 ) http.Handler {
 	base := chi.NewRouter()
 	base.Use(
@@ -48,6 +50,11 @@ func New(
 	transfers := base.With(chimiddleware.Timeout(attachmentCfg.TransferTimeout))
 	transfers.Put(blob.UploadPath, blobEdge.Receive)
 	transfers.Get(blob.DownloadPath, blobEdge.Serve)
+
+	// No request timeout: this response is meant to stay open. Session authentication is applied
+	// here explicitly because it lives in the generated handler's middleware list, not on base.
+	streams := base.With(middleware.Session(sessions, sessionCfg))
+	streams.Get(events.Path, eventsEdge.Serve)
 
 	strict := api.NewStrictHandlerWithOptions(dashboard, nil, api.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {

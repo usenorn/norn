@@ -28,6 +28,7 @@ type issuesService struct {
 	teams        repository.Team
 	triage       repository.Triage
 	notify       repository.NotificationEvent
+	events       service.Events
 	followers    repository.IssueFollower
 	jobs         repository.JobProducer
 	authorizer   service.Authorizer
@@ -47,6 +48,7 @@ func New(
 	teams repository.Team,
 	triage repository.Triage,
 	notify repository.NotificationEvent,
+	events service.Events,
 	followers repository.IssueFollower,
 	jobs repository.JobProducer,
 	authorizer service.Authorizer,
@@ -65,6 +67,7 @@ func New(
 		teams:        teams,
 		triage:       triage,
 		notify:       notify,
+		events:       events,
 		followers:    followers,
 		jobs:         jobs,
 		authorizer:   authorizer,
@@ -140,7 +143,13 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 			return err
 		}
 
-		return s.notifyAssigned(ctx, created, decision, created.AssigneeAccountID, uuid.Nil)
+		if err := s.notifyAssigned(ctx, created, decision, created.AssigneeAccountID, uuid.Nil); err != nil {
+			return err
+		}
+
+		s.broadcast(ctx, entity.EventIssueCreated, created, decision.Actor.AccountID)
+
+		return nil
 	})
 	if err != nil {
 		return entity.Issue{}, err
@@ -406,6 +415,8 @@ func (s *issuesService) Update(
 		}
 
 		updated = refreshed
+
+		s.broadcast(ctx, entity.EventIssueUpdated, refreshed, decision.Actor.AccountID)
 
 		return nil
 	})

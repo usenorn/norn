@@ -7,6 +7,7 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	blobedge "github.com/usenorn/norn/internal/handler/http/blob"
+	eventsedge "github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/router"
 	ssohandler "github.com/usenorn/norn/internal/handler/http/sso"
 	dashboardhandler "github.com/usenorn/norn/internal/handler/http/v1/dashboard"
@@ -34,6 +35,7 @@ import (
 	bulkactionrepo "github.com/usenorn/norn/internal/repository/bulkaction"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	emailchangerepo "github.com/usenorn/norn/internal/repository/emailchange"
+	eventstreamrepo "github.com/usenorn/norn/internal/repository/eventstream"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
@@ -75,6 +77,7 @@ import (
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	bulkoperationsvc "github.com/usenorn/norn/internal/service/bulkoperation"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
+	eventsvc "github.com/usenorn/norn/internal/service/event"
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
@@ -136,6 +139,7 @@ var baseSet = wire.NewSet(
 	notificationeventrepo.Set,
 	notificationsettingrepo.Set,
 	savedviewrepo.Set,
+	eventstreamrepo.Set,
 	searchrepo.Set,
 	triagerepo.Set,
 	issuefilterreferencerepo.Set,
@@ -170,6 +174,7 @@ var baseSet = wire.NewSet(
 	issuecommentsvc.Set,
 	notificationsvc.Set,
 	savedviewsvc.Set,
+	eventsvc.Set,
 	searchsvc.Set,
 	triagesvc.Set,
 	labelsvc.Set,
@@ -183,6 +188,7 @@ var baseSet = wire.NewSet(
 	dashboardhandler.Set,
 	ssohandler.Set,
 	blobedge.Set,
+	eventsedge.Set,
 	router.Set,
 	job.Set,
 
