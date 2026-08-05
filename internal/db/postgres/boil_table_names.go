@@ -9,6 +9,8 @@ var TableNames = struct {
 	AccountPasswordResets             string
 	AccountSignUps                    string
 	Accounts                          string
+	APITokenGrantTeams                string
+	APITokenGrants                    string
 	APITokens                         string
 	WorkspaceActivity                 string
 	WorkspaceAuthPolicies             string
@@ -59,6 +61,8 @@ var TableNames = struct {
 	AccountPasswordResets:             "account_password_resets",
 	AccountSignUps:                    "account_sign_ups",
 	Accounts:                          "accounts",
+	APITokenGrantTeams:                "api_token_grant_teams",
+	APITokenGrants:                    "api_token_grants",
 	APITokens:                         "api_tokens",
 	WorkspaceActivity:                 "workspace_activity",
 	WorkspaceAuthPolicies:             "workspace_auth_policies",

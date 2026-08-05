@@ -199,11 +199,10 @@ func (s *issueCommentsService) Post(
 		}
 
 		if err := s.activity.Record(ctx, entity.Activity{
-			WorkspaceID:    workspaceID,
-			Subject:        entity.IssueSubject(issueID),
-			ActorAccountID: decision.Actor.AccountID,
-			ActorKind:      decision.Actor.Kind,
-			Kind:           entity.ActivityKindCommented,
+			WorkspaceID: workspaceID,
+			Subject:     entity.IssueSubject(issueID),
+			Actor:       decision.ActivityActor(),
+			Kind:        entity.ActivityKindCommented,
 		}); err != nil {
 			return err
 		}
@@ -218,14 +217,14 @@ func (s *issueCommentsService) Post(
 			}
 		}
 
-		actor, actorKind := decision.ActivityActor()
+		attribution := decision.ActivityActor()
 
 		if err := s.notify.Record(ctx, entity.NotificationEvent{
 			WorkspaceID: workspaceID,
 			Subject:     entity.NotifyIssue(issueID),
 			Kind:        entity.NotificationKindCommented,
-			Actor:       actor,
-			ActorKind:   actorKind,
+			Actor:       attribution.AccountID,
+			ActorKind:   attribution.Kind,
 			CommentID:   posted.ID,
 		}); err != nil {
 			return err
@@ -433,11 +432,10 @@ func (s *issueCommentsService) Remove(
 		}
 
 		return s.activity.Record(ctx, entity.Activity{
-			WorkspaceID:    workspaceID,
-			Subject:        entity.IssueSubject(comment.IssueID),
-			ActorAccountID: decision.Actor.AccountID,
-			ActorKind:      decision.Actor.Kind,
-			Kind:           entity.ActivityKindCommentDeleted,
+			WorkspaceID: workspaceID,
+			Subject:     entity.IssueSubject(comment.IssueID),
+			Actor:       decision.ActivityActor(),
+			Kind:        entity.ActivityKindCommentDeleted,
 		})
 	})
 }

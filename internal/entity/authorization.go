@@ -94,7 +94,8 @@ type Actor struct {
 	Kind          ActorKind
 	AccountID     uuid.UUID
 	TokenID       *uuid.UUID
-	WorkspaceID   *uuid.UUID
+	TokenName     string
+	Grants        APITokenGrants
 	AuthMethod    SessionAuthMethod
 	Scopes        APIScopeSet
 	InstanceAdmin bool
@@ -112,8 +113,10 @@ func (a Actor) Anonymous() bool {
 	return a.AccountID == uuid.Nil
 }
 
+// ConfinedTo reports whether this actor may act in a workspace at all. A nil grant list is a session
+// actor, which is confined by membership rather than by anything carried on the actor.
 func (a Actor) ConfinedTo(workspaceID uuid.UUID) bool {
-	return a.WorkspaceID == nil || *a.WorkspaceID == workspaceID
+	return a.Grants == nil || a.Grants.Covers(workspaceID)
 }
 
 func (a Actor) Holds(permission Permission) bool {
@@ -122,6 +125,30 @@ func (a Actor) Holds(permission Permission) bool {
 	}
 
 	return a.Scopes.Permits(permission.Resource, permission.Action)
+}
+
+// NarrowScope intersects a scope resolved from the owner's memberships with what this actor's grant
+// allows in that workspace. A token can only ever see less than its owner, never more, so the grant
+// narrows the resolved scope and is never substituted for it.
+func (a Actor) NarrowScope(scope TeamScope) TeamScope {
+	grant, ok := a.Grants.For(scope.WorkspaceID)
+	if !ok || grant.AllTeams {
+		return scope
+	}
+
+	narrowed := TeamScope{
+		WorkspaceID:    scope.WorkspaceID,
+		IncludePrivate: scope.IncludePrivate,
+		TeamIDs:        make([]uuid.UUID, 0, len(grant.TeamIDs)),
+	}
+
+	for _, teamID := range grant.TeamIDs {
+		if scope.Covers(teamID) {
+			narrowed.TeamIDs = append(narrowed.TeamIDs, teamID)
+		}
+	}
+
+	return narrowed
 }
 
 type AccessRequest struct {
@@ -133,10 +160,15 @@ type AccessRequest struct {
 	Scoped      bool
 }
 
+// TeamScope carries two independent questions. AllTeams says the holder reaches every team in the
+// workspace; IncludePrivate says they may see private ones. An admin holding both is the common
+// case, but a token pinned to named teams keeps the second while losing the first, so they cannot
+// be collapsed into one field.
 type TeamScope struct {
-	WorkspaceID uuid.UUID
-	AllTeams    bool
-	TeamIDs     []uuid.UUID
+	WorkspaceID    uuid.UUID
+	AllTeams       bool
+	IncludePrivate bool
+	TeamIDs        []uuid.UUID
 }
 
 func (s TeamScope) Covers(teamID uuid.UUID) bool {
@@ -150,9 +182,18 @@ type Decision struct {
 	Scope     TeamScope
 }
 
-func (d Decision) ActivityActor() (uuid.UUID, ActorKind) {
+// ActivityAttribution is who a record says did something. A token acts for its owner, so both are
+// carried: the account answers "whose authority" and the token answers "which credential".
+type ActivityAttribution struct {
+	AccountID uuid.UUID
+	Kind      ActorKind
+	TokenID   *uuid.UUID
+	TokenName string
+}
+
+func (d Decision) ActivityActor() ActivityAttribution {
 	if d.Actor.Anonymous() {
-		return uuid.Nil, ActorKindSystem
+		return ActivityAttribution{Kind: ActorKindSystem}
 	}
 
 	kind := d.Actor.Kind
@@ -160,7 +201,12 @@ func (d Decision) ActivityActor() (uuid.UUID, ActorKind) {
 		kind = ActorKindUser
 	}
 
-	return d.Actor.AccountID, kind
+	return ActivityAttribution{
+		AccountID: d.Actor.AccountID,
+		Kind:      kind,
+		TokenID:   d.Actor.TokenID,
+		TokenName: d.Actor.TokenName,
+	}
 }
 
 type DenyReason string

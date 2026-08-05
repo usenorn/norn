@@ -903,17 +903,65 @@ func issueSortFrom(dtos []api.IssueSort) []entity.IssueSort {
 
 func apiTokenDTO(token entity.APIToken) api.APIToken {
 	dto := api.APIToken{
-		Id:          token.ID,
-		WorkspaceId: token.WorkspaceID,
-		Name:        token.Name,
-		Scopes:      token.Scopes.Strings(),
-		CreatedAt:   token.CreatedAt,
+		Id:        token.ID,
+		Name:      token.Name,
+		Scopes:    token.Scopes.Strings(),
+		Grants:    apiTokenGrantDTOs(token.Grants),
+		CreatedAt: token.CreatedAt,
 	}
 
 	dto.ExpiresAt = token.ExpiresAt
 	dto.LastUsedAt = token.LastUsedAt
 
 	return dto
+}
+
+func apiTokenGrantDTOs(grants entity.APITokenGrants) []api.APITokenGrant {
+	dtos := make([]api.APITokenGrant, 0, len(grants))
+
+	for _, grant := range grants {
+		dto := api.APITokenGrant{WorkspaceId: grant.WorkspaceID, AllTeams: grant.AllTeams}
+
+		if len(grant.TeamIDs) > 0 {
+			teamIDs := make([]uuid.UUID, 0, len(grant.TeamIDs))
+			teamIDs = append(teamIDs, grant.TeamIDs...)
+			dto.TeamIds = &teamIDs
+		}
+
+		dtos = append(dtos, dto)
+	}
+
+	return dtos
+}
+
+func apiTokenGrants(dtos []api.APITokenGrant) entity.APITokenGrants {
+	grants := make(entity.APITokenGrants, 0, len(dtos))
+
+	for _, dto := range dtos {
+		grant := entity.APITokenGrant{WorkspaceID: dto.WorkspaceId, AllTeams: dto.AllTeams}
+
+		if dto.TeamIds != nil {
+			grant.TeamIDs = append(grant.TeamIDs, *dto.TeamIds...)
+		}
+
+		grants = append(grants, grant)
+	}
+
+	return grants
+}
+
+func workspaceAPITokenDTOs(tokens []service.OwnedAPIToken) []api.WorkspaceAPIToken {
+	dtos := make([]api.WorkspaceAPIToken, 0, len(tokens))
+
+	for _, owned := range tokens {
+		dtos = append(dtos, api.WorkspaceAPIToken{
+			Token:      apiTokenDTO(owned.Token),
+			OwnerName:  owned.OwnerName,
+			OwnerEmail: owned.OwnerEmail,
+		})
+	}
+
+	return dtos
 }
 
 func apiTokenDTOs(tokens []entity.APIToken) []api.APIToken {
@@ -1014,7 +1062,7 @@ func activityEventDTO(event entity.ActivityEvent) api.ActivityEvent {
 	dto := api.ActivityEvent{
 		Id:          event.ID,
 		SubjectKind: api.ActivitySubjectKind(event.Subject.Kind),
-		ActorKind:   api.ActivityActorKind(event.ActorKind),
+		ActorKind:   api.ActivityActorKind(event.Actor.Kind),
 		Changes:     activityChangeDTOs(event.Changes),
 		CreatedAt:   event.CreatedAt,
 	}
@@ -1027,11 +1075,13 @@ func activityEventDTO(event entity.ActivityEvent) api.ActivityEvent {
 		dto.IssueId = &subject
 	}
 
-	if event.ActorAccountID != uuid.Nil {
-		actor := event.ActorAccountID
+	if event.Actor.AccountID != uuid.Nil {
+		actor := event.Actor.AccountID
 		dto.ActorAccountId = &actor
 		dto.ActorName = nilIfEmpty(event.ActorName)
 	}
+
+	dto.ActorTokenName = nilIfEmpty(event.Actor.TokenName)
 
 	if event.BulkActionID != uuid.Nil {
 		bulk := event.BulkActionID

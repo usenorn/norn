@@ -120,6 +120,7 @@ var WorkspaceRels = struct {
 	WorkspaceOidcConnection     string
 	WorkspaceSsoConnection      string
 	WorkspaceStorageLedger      string
+	APITokenGrants              string
 	WorkspaceBreakGlassCodes    string
 	WorkspaceBulkActions        string
 	WorkspaceInvitations        string
@@ -137,6 +138,7 @@ var WorkspaceRels = struct {
 	WorkspaceOidcConnection:     "WorkspaceOidcConnection",
 	WorkspaceSsoConnection:      "WorkspaceSsoConnection",
 	WorkspaceStorageLedger:      "WorkspaceStorageLedger",
+	APITokenGrants:              "APITokenGrants",
 	WorkspaceBreakGlassCodes:    "WorkspaceBreakGlassCodes",
 	WorkspaceBulkActions:        "WorkspaceBulkActions",
 	WorkspaceInvitations:        "WorkspaceInvitations",
@@ -157,6 +159,7 @@ type workspaceR struct {
 	WorkspaceOidcConnection     *WorkspaceOidcConnection        `boil:"WorkspaceOidcConnection" json:"WorkspaceOidcConnection" toml:"WorkspaceOidcConnection" yaml:"WorkspaceOidcConnection"`
 	WorkspaceSsoConnection      *WorkspaceSsoConnection         `boil:"WorkspaceSsoConnection" json:"WorkspaceSsoConnection" toml:"WorkspaceSsoConnection" yaml:"WorkspaceSsoConnection"`
 	WorkspaceStorageLedger      *WorkspaceStorageLedger         `boil:"WorkspaceStorageLedger" json:"WorkspaceStorageLedger" toml:"WorkspaceStorageLedger" yaml:"WorkspaceStorageLedger"`
+	APITokenGrants              APITokenGrantSlice              `boil:"APITokenGrants" json:"APITokenGrants" toml:"APITokenGrants" yaml:"APITokenGrants"`
 	WorkspaceBreakGlassCodes    WorkspaceBreakGlassCodeSlice    `boil:"WorkspaceBreakGlassCodes" json:"WorkspaceBreakGlassCodes" toml:"WorkspaceBreakGlassCodes" yaml:"WorkspaceBreakGlassCodes"`
 	WorkspaceBulkActions        WorkspaceBulkActionSlice        `boil:"WorkspaceBulkActions" json:"WorkspaceBulkActions" toml:"WorkspaceBulkActions" yaml:"WorkspaceBulkActions"`
 	WorkspaceInvitations        WorkspaceInvitationSlice        `boil:"WorkspaceInvitations" json:"WorkspaceInvitations" toml:"WorkspaceInvitations" yaml:"WorkspaceInvitations"`
@@ -253,6 +256,22 @@ func (r *workspaceR) GetWorkspaceStorageLedger() *WorkspaceStorageLedger {
 	}
 
 	return r.WorkspaceStorageLedger
+}
+
+func (o *Workspace) GetAPITokenGrants() APITokenGrantSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetAPITokenGrants()
+}
+
+func (r *workspaceR) GetAPITokenGrants() APITokenGrantSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.APITokenGrants
 }
 
 func (o *Workspace) GetWorkspaceBreakGlassCodes() WorkspaceBreakGlassCodeSlice {
@@ -800,6 +819,20 @@ func (o *Workspace) WorkspaceStorageLedger(mods ...qm.QueryMod) workspaceStorage
 	queryMods = append(queryMods, mods...)
 
 	return WorkspaceStorageLedgers(queryMods...)
+}
+
+// APITokenGrants retrieves all the api_token_grant's APITokenGrants with an executor.
+func (o *Workspace) APITokenGrants(mods ...qm.QueryMod) apiTokenGrantQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"api_token_grants\".\"workspace_id\"=?", o.ID),
+	)
+
+	return APITokenGrants(queryMods...)
 }
 
 // WorkspaceBreakGlassCodes retrieves all the workspace_break_glass_code's WorkspaceBreakGlassCodes with an executor.
@@ -1538,6 +1571,119 @@ func (workspaceL) LoadWorkspaceStorageLedger(ctx context.Context, e boil.Context
 				local.R.WorkspaceStorageLedger = foreign
 				if foreign.R == nil {
 					foreign.R = &workspaceStorageLedgerR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadAPITokenGrants allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadAPITokenGrants(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`api_token_grants`),
+		qm.WhereIn(`api_token_grants.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load api_token_grants")
+	}
+
+	var resultSlice []*APITokenGrant
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice api_token_grants")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on api_token_grants")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for api_token_grants")
+	}
+
+	if len(apiTokenGrantAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.APITokenGrants = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &apiTokenGrantR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.APITokenGrants = append(local.R.APITokenGrants, foreign)
+				if foreign.R == nil {
+					foreign.R = &apiTokenGrantR{}
 				}
 				foreign.R.Workspace = local
 				break
@@ -3067,6 +3213,59 @@ func (o *Workspace) SetWorkspaceStorageLedger(ctx context.Context, exec boil.Con
 		}
 	} else {
 		related.R.Workspace = o
+	}
+	return nil
+}
+
+// AddAPITokenGrants adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.APITokenGrants.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddAPITokenGrants(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*APITokenGrant) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"api_token_grants\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, apiTokenGrantPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			APITokenGrants: related,
+		}
+	} else {
+		o.R.APITokenGrants = append(o.R.APITokenGrants, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &apiTokenGrantR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
 	}
 	return nil
 }

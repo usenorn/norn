@@ -16,4 +16,5 @@ var Set = wire.NewSet(
 	NewAttachmentReclaimHandler,
 	NewNotificationFanOutHandler,
 	NewNotificationDigestHandler,
+	NewAPITokenExpirySweepHandler,
 )

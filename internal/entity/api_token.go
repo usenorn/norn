@@ -21,24 +21,64 @@ const (
 
 var (
 	ErrAPITokenNotFound      = errors.New("api token not found")
-	ErrAPITokenNameTaken     = errors.New("api token name already used in this workspace")
+	ErrAPITokenNameTaken     = errors.New("api token name already used by this account")
 	ErrAPITokenScopeInvalid  = errors.New("api token scope is not recognised")
 	ErrAPITokenScopeExceeds  = errors.New("api token scope exceeds what its creator may do")
 	ErrAPITokenMintForbidden = errors.New("api tokens may not mint or manage api tokens")
+	ErrAPITokenGrantInvalid  = errors.New("api token grant names a workspace or team its creator cannot reach")
+	ErrAPITokenGrantMissing  = errors.New("api token must grant access to at least one workspace")
 )
 
-type APIToken struct {
-	ID          uuid.UUID
-	AccountID   uuid.UUID
+// APITokenGrant is one workspace a token may act in, and how much of it. AllTeams and TeamIDs are
+// the same distinction TeamScope draws: a grant naming teams reaches only those, and a team always
+// belongs to the workspace named beside it, so the two can never contradict each other.
+type APITokenGrant struct {
 	WorkspaceID uuid.UUID
-	Name        string
-	TokenHash   []byte
-	Scopes      APIScopeSet
-	ExpiresAt   *time.Time
-	RevokedAt   *time.Time
-	LastUsedAt  *time.Time
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	AllTeams    bool
+	TeamIDs     []uuid.UUID
+}
+
+type APITokenGrants []APITokenGrant
+
+func (g APITokenGrants) Covers(workspaceID uuid.UUID) bool {
+	_, ok := g.For(workspaceID)
+
+	return ok
+}
+
+func (g APITokenGrants) For(workspaceID uuid.UUID) (APITokenGrant, bool) {
+	for _, grant := range g {
+		if grant.WorkspaceID == workspaceID {
+			return grant, true
+		}
+	}
+
+	return APITokenGrant{}, false
+}
+
+func (g APITokenGrants) WorkspaceIDs() []uuid.UUID {
+	ids := make([]uuid.UUID, 0, len(g))
+
+	for _, grant := range g {
+		ids = append(ids, grant.WorkspaceID)
+	}
+
+	return ids
+}
+
+type APIToken struct {
+	ID               uuid.UUID
+	AccountID        uuid.UUID
+	Name             string
+	TokenHash        []byte
+	Scopes           APIScopeSet
+	Grants           APITokenGrants
+	ExpiresAt        *time.Time
+	RevokedAt        *time.Time
+	LastUsedAt       *time.Time
+	ExpiryNoticeDays *int
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 func (t APIToken) Revoked() bool {

@@ -388,8 +388,7 @@ func (s *projectsService) record(
 ) error {
 	entry.WorkspaceID = project.WorkspaceID
 	entry.Subject = entity.ProjectSubject(project.ID)
-	entry.ActorAccountID = decision.Actor.AccountID
-	entry.ActorKind = decision.Actor.Kind
+	entry.Actor = decision.ActivityActor()
 
 	return s.activity.Record(ctx, entry)
 }
@@ -622,14 +621,14 @@ func (s *projectsService) AddMember(
 			return err
 		}
 
-		actor, actorKind := decision.ActivityActor()
+		attribution := decision.ActivityActor()
 
 		return s.notify.Record(ctx, entity.NotificationEvent{
 			WorkspaceID: workspaceID,
 			Subject:     entity.NotifyProject(projectID),
 			Kind:        entity.NotificationKindMembership,
-			Actor:       actor,
-			ActorKind:   actorKind,
+			Actor:       attribution.AccountID,
+			ActorKind:   attribution.Kind,
 			Target:      accountID,
 		})
 	}); err != nil {

@@ -21,6 +21,7 @@ const (
 	TaskTypeAttachmentReclaim       = "attachment:reclaim"
 	TaskTypeNotificationFanOut      = "notification:fanout"
 	TaskTypeNotificationDigest      = "notification:digest"
+	TaskTypeAPITokenExpirySweep     = "api_token:expiry_sweep"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 

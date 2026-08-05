@@ -17,6 +17,7 @@ type Config struct {
 	Attachments   Attachments   `mapstructure:"attachments"`
 	Notifications Notifications `mapstructure:"notifications"`
 	Realtime      Realtime      `mapstructure:"realtime"`
+	APITokens     APITokens     `mapstructure:"api_tokens"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
 	GeoIP         GeoIP         `mapstructure:"geoip"`
@@ -183,6 +184,10 @@ type Notifications struct {
 
 type Realtime struct {
 	Enabled bool `mapstructure:"enabled"`
+}
+
+type APITokens struct {
+	ExpirySweepSchedule string `mapstructure:"expiry_sweep_schedule"`
 }
 
 type Session struct {

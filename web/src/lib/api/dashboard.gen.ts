@@ -773,6 +773,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the caller's live API tokens */
+        get: operations["listAPITokens"];
+        put?: never;
+        /** Mint a token whose reach and scopes cannot exceed the caller's own rights */
+        post: operations["mintAPIToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tokens/{tokenId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke one of the caller's tokens */
+        delete: operations["revokeAPIToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/tokens": {
         parameters: {
             query?: never;
@@ -780,11 +815,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List the caller's live API tokens in this workspace */
+        /** List every live token that reaches this workspace, for its administrators */
         get: operations["listWorkspaceAPITokens"];
         put?: never;
-        /** Mint a token whose scopes cannot exceed the caller's own rights */
-        post: operations["mintWorkspaceAPIToken"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -801,7 +835,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Revoke one of the caller's tokens */
+        /** Revoke a token reaching this workspace, as one of its administrators */
         delete: operations["revokeWorkspaceAPIToken"];
         options?: never;
         head?: never;
@@ -2682,6 +2716,8 @@ export interface components {
             actorAccountId?: string;
             actorName?: string;
             actorKind: components["schemas"]["ActivityActorKind"];
+            /** @description The API token that made the change, when one did. Recorded as it was named at the time, so revoking the token does not change what the record says happened. */
+            actorTokenName?: string;
             /** Format: uuid */
             bulkActionId?: string;
             changes: components["schemas"]["ActivityChange"][];
@@ -2950,19 +2986,30 @@ export interface components {
             dueOn?: string;
         };
         APIScope: string;
+        APITokenGrant: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** @description When true the token reaches every team its owner can see in this workspace. */
+            allTeams: boolean;
+            teamIds?: string[];
+        };
         APIToken: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
-            workspaceId: string;
             name: string;
             scopes: components["schemas"]["APIScope"][];
+            grants: components["schemas"]["APITokenGrant"][];
             /** Format: date-time */
             expiresAt?: string;
             /** Format: date-time */
             lastUsedAt?: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        WorkspaceAPIToken: {
+            token: components["schemas"]["APIToken"];
+            ownerName: string;
+            ownerEmail: string;
         };
         MintedAPIToken: {
             token: components["schemas"]["APIToken"];
@@ -2971,12 +3018,13 @@ export interface components {
         MintAPITokenRequest: {
             name: string;
             scopes: components["schemas"]["APIScope"][];
+            grants: components["schemas"]["APITokenGrant"][];
             /** Format: date-time */
             expiresAt?: string;
         };
         APITokenUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "token_name_taken" | "token_scope_invalid" | "token_scope_exceeds" | "token_may_not_mint";
+            code: "token_name_taken" | "token_scope_invalid" | "token_scope_exceeds" | "token_may_not_mint" | "token_grant_invalid" | "token_grant_missing";
         };
         ForbiddenProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -5447,13 +5495,11 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
-    listWorkspaceAPITokens: {
+    listAPITokens: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -5472,13 +5518,11 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
-    mintWorkspaceAPIToken: {
+    mintAPIToken: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
@@ -5500,6 +5544,55 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             409: components["responses"]["APITokenUnusable"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    revokeAPIToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tokenId: components["parameters"]["TokenId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The token was revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceAPITokens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The tokens reaching this workspace, with the people they act for */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAPIToken"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
             500: components["responses"]["Problem"];
         };
     };

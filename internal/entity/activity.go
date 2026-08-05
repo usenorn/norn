@@ -117,22 +117,21 @@ func (o ActivityOrder) Normalized() ActivityOrder {
 }
 
 type Activity struct {
-	ID             uuid.UUID
-	OperationID    uuid.UUID
-	WorkspaceID    uuid.UUID
-	Subject        ActivitySubject
-	ActorAccountID uuid.UUID
-	ActorName      string
-	ActorKind      ActorKind
-	Kind           ActivityKind
-	FromState      string
-	ToState        string
-	Field          string
-	FromValue      string
-	ToValue        string
-	Version        int
-	BulkActionID   uuid.UUID
-	CreatedAt      time.Time
+	ID           uuid.UUID
+	OperationID  uuid.UUID
+	WorkspaceID  uuid.UUID
+	Subject      ActivitySubject
+	Actor        ActivityAttribution
+	ActorName    string
+	Kind         ActivityKind
+	FromState    string
+	ToState      string
+	Field        string
+	FromValue    string
+	ToValue      string
+	Version      int
+	BulkActionID uuid.UUID
+	CreatedAt    time.Time
 }
 
 func (a Activity) Leader() bool {
@@ -140,27 +139,25 @@ func (a Activity) Leader() bool {
 }
 
 type ActivityEvent struct {
-	ID             uuid.UUID
-	WorkspaceID    uuid.UUID
-	Subject        ActivitySubject
-	ActorAccountID uuid.UUID
-	ActorName      string
-	ActorKind      ActorKind
-	BulkActionID   uuid.UUID
-	Changes        []Activity
-	CreatedAt      time.Time
+	ID           uuid.UUID
+	WorkspaceID  uuid.UUID
+	Subject      ActivitySubject
+	Actor        ActivityAttribution
+	ActorName    string
+	BulkActionID uuid.UUID
+	Changes      []Activity
+	CreatedAt    time.Time
 }
 
 func NewActivityEvent(leader Activity) ActivityEvent {
 	return ActivityEvent{
-		ID:             leader.OperationID,
-		WorkspaceID:    leader.WorkspaceID,
-		Subject:        leader.Subject,
-		ActorAccountID: leader.ActorAccountID,
-		ActorName:      leader.ActorName,
-		ActorKind:      leader.ActorKind,
-		BulkActionID:   leader.BulkActionID,
-		CreatedAt:      leader.CreatedAt,
+		ID:           leader.OperationID,
+		WorkspaceID:  leader.WorkspaceID,
+		Subject:      leader.Subject,
+		Actor:        leader.Actor,
+		ActorName:    leader.ActorName,
+		BulkActionID: leader.BulkActionID,
+		CreatedAt:    leader.CreatedAt,
 	}
 }
 

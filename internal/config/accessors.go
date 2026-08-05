@@ -30,6 +30,8 @@ func NewNotifications(cfg Config) Notifications { return cfg.Notifications }
 
 func NewRealtime(cfg Config) Realtime { return cfg.Realtime }
 
+func NewAPITokens(cfg Config) APITokens { return cfg.APITokens }
+
 func NewSession(cfg Config) Session { return cfg.Session }
 
 func NewCasbin(cfg Config) Casbin { return cfg.Casbin }

@@ -40,6 +40,8 @@ type WorkspaceActivity struct {
 	ProjectID      null.String `boil:"project_id" json:"project_id,omitempty" toml:"project_id" yaml:"project_id,omitempty"`
 	OperationID    string      `boil:"operation_id" json:"operation_id" toml:"operation_id" yaml:"operation_id"`
 	ActorKind      string      `boil:"actor_kind" json:"actor_kind" toml:"actor_kind" yaml:"actor_kind"`
+	ActorTokenID   null.String `boil:"actor_token_id" json:"actor_token_id,omitempty" toml:"actor_token_id" yaml:"actor_token_id,omitempty"`
+	ActorTokenName null.String `boil:"actor_token_name" json:"actor_token_name,omitempty" toml:"actor_token_name" yaml:"actor_token_name,omitempty"`
 
 	R *workspaceActivityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceActivityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -62,6 +64,8 @@ var WorkspaceActivityColumns = struct {
 	ProjectID      string
 	OperationID    string
 	ActorKind      string
+	ActorTokenID   string
+	ActorTokenName string
 }{
 	ID:             "id",
 	WorkspaceID:    "workspace_id",
@@ -79,6 +83,8 @@ var WorkspaceActivityColumns = struct {
 	ProjectID:      "project_id",
 	OperationID:    "operation_id",
 	ActorKind:      "actor_kind",
+	ActorTokenID:   "actor_token_id",
+	ActorTokenName: "actor_token_name",
 }
 
 var WorkspaceActivityTableColumns = struct {
@@ -98,6 +104,8 @@ var WorkspaceActivityTableColumns = struct {
 	ProjectID      string
 	OperationID    string
 	ActorKind      string
+	ActorTokenID   string
+	ActorTokenName string
 }{
 	ID:             "workspace_activity.id",
 	WorkspaceID:    "workspace_activity.workspace_id",
@@ -115,47 +123,11 @@ var WorkspaceActivityTableColumns = struct {
 	ProjectID:      "workspace_activity.project_id",
 	OperationID:    "workspace_activity.operation_id",
 	ActorKind:      "workspace_activity.actor_kind",
+	ActorTokenID:   "workspace_activity.actor_token_id",
+	ActorTokenName: "workspace_activity.actor_token_name",
 }
 
 // Generated where
-
-type whereHelpernull_Int struct{ field string }
-
-func (w whereHelpernull_Int) EQ(x null.Int) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Int) NEQ(x null.Int) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Int) LT(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Int) LTE(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Int) GT(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-func (w whereHelpernull_Int) IN(slice []int) qm.QueryMod {
-	values := make([]any, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelpernull_Int) NIN(slice []int) qm.QueryMod {
-	values := make([]any, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
-func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var WorkspaceActivityWhere = struct {
 	ID             whereHelperstring
@@ -174,6 +146,8 @@ var WorkspaceActivityWhere = struct {
 	ProjectID      whereHelpernull_String
 	OperationID    whereHelperstring
 	ActorKind      whereHelperstring
+	ActorTokenID   whereHelpernull_String
+	ActorTokenName whereHelpernull_String
 }{
 	ID:             whereHelperstring{field: "\"workspace_activity\".\"id\""},
 	WorkspaceID:    whereHelperstring{field: "\"workspace_activity\".\"workspace_id\""},
@@ -191,20 +165,25 @@ var WorkspaceActivityWhere = struct {
 	ProjectID:      whereHelpernull_String{field: "\"workspace_activity\".\"project_id\""},
 	OperationID:    whereHelperstring{field: "\"workspace_activity\".\"operation_id\""},
 	ActorKind:      whereHelperstring{field: "\"workspace_activity\".\"actor_kind\""},
+	ActorTokenID:   whereHelpernull_String{field: "\"workspace_activity\".\"actor_token_id\""},
+	ActorTokenName: whereHelpernull_String{field: "\"workspace_activity\".\"actor_token_name\""},
 }
 
 // WorkspaceActivityRels is where relationship names are stored.
 var WorkspaceActivityRels = struct {
 	ActorAccount string
+	ActorToken   string
 	BulkAction   string
 }{
 	ActorAccount: "ActorAccount",
+	ActorToken:   "ActorToken",
 	BulkAction:   "BulkAction",
 }
 
 // workspaceActivityR is where relationships are stored.
 type workspaceActivityR struct {
 	ActorAccount *Account             `boil:"ActorAccount" json:"ActorAccount" toml:"ActorAccount" yaml:"ActorAccount"`
+	ActorToken   *APIToken            `boil:"ActorToken" json:"ActorToken" toml:"ActorToken" yaml:"ActorToken"`
 	BulkAction   *WorkspaceBulkAction `boil:"BulkAction" json:"BulkAction" toml:"BulkAction" yaml:"BulkAction"`
 }
 
@@ -229,6 +208,22 @@ func (r *workspaceActivityR) GetActorAccount() *Account {
 	return r.ActorAccount
 }
 
+func (o *WorkspaceActivity) GetActorToken() *APIToken {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetActorToken()
+}
+
+func (r *workspaceActivityR) GetActorToken() *APIToken {
+	if r == nil {
+		return nil
+	}
+
+	return r.ActorToken
+}
+
 func (o *WorkspaceActivity) GetBulkAction() *WorkspaceBulkAction {
 	if o == nil {
 		return nil
@@ -249,9 +244,9 @@ func (r *workspaceActivityR) GetBulkAction() *WorkspaceBulkAction {
 type workspaceActivityL struct{}
 
 var (
-	workspaceActivityAllColumns            = []string{"id", "workspace_id", "issue_id", "actor_account_id", "kind", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "operation_id", "actor_kind"}
+	workspaceActivityAllColumns            = []string{"id", "workspace_id", "issue_id", "actor_account_id", "kind", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "operation_id", "actor_kind", "actor_token_id", "actor_token_name"}
 	workspaceActivityColumnsWithoutDefault = []string{"workspace_id", "kind", "operation_id"}
-	workspaceActivityColumnsWithDefault    = []string{"id", "issue_id", "actor_account_id", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "actor_kind"}
+	workspaceActivityColumnsWithDefault    = []string{"id", "issue_id", "actor_account_id", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "actor_kind", "actor_token_id", "actor_token_name"}
 	workspaceActivityPrimaryKeyColumns     = []string{"id"}
 	workspaceActivityGeneratedColumns      = []string{}
 )
@@ -572,6 +567,17 @@ func (o *WorkspaceActivity) ActorAccount(mods ...qm.QueryMod) accountQuery {
 	return Accounts(queryMods...)
 }
 
+// ActorToken pointed to by the foreign key.
+func (o *WorkspaceActivity) ActorToken(mods ...qm.QueryMod) apiTokenQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.ActorTokenID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return APITokens(queryMods...)
+}
+
 // BulkAction pointed to by the foreign key.
 func (o *WorkspaceActivity) BulkAction(mods ...qm.QueryMod) workspaceBulkActionQuery {
 	queryMods := []qm.QueryMod{
@@ -699,6 +705,130 @@ func (workspaceActivityL) LoadActorAccount(ctx context.Context, e boil.ContextEx
 					foreign.R = &accountR{}
 				}
 				foreign.R.ActorAccountWorkspaceActivities = append(foreign.R.ActorAccountWorkspaceActivities, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadActorToken allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceActivityL) LoadActorToken(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceActivity any, mods queries.Applicator) error {
+	var slice []*WorkspaceActivity
+	var object *WorkspaceActivity
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceActivity.(*WorkspaceActivity)
+		if !ok {
+			object = new(WorkspaceActivity)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceActivity)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceActivity))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceActivity.(*[]*WorkspaceActivity)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceActivity)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceActivity))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceActivityR{}
+		}
+		if !queries.IsNil(object.ActorTokenID) {
+			args[object.ActorTokenID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceActivityR{}
+			}
+
+			if !queries.IsNil(obj.ActorTokenID) {
+				args[obj.ActorTokenID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`api_tokens`),
+		qm.WhereIn(`api_tokens.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load APIToken")
+	}
+
+	var resultSlice []*APIToken
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice APIToken")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for api_tokens")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for api_tokens")
+	}
+
+	if len(apiTokenAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.ActorToken = foreign
+		if foreign.R == nil {
+			foreign.R = &apiTokenR{}
+		}
+		foreign.R.ActorTokenWorkspaceActivities = append(foreign.R.ActorTokenWorkspaceActivities, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.ActorTokenID, foreign.ID) {
+				local.R.ActorToken = foreign
+				if foreign.R == nil {
+					foreign.R = &apiTokenR{}
+				}
+				foreign.R.ActorTokenWorkspaceActivities = append(foreign.R.ActorTokenWorkspaceActivities, local)
 				break
 			}
 		}
@@ -906,6 +1036,86 @@ func (o *WorkspaceActivity) RemoveActorAccount(ctx context.Context, exec boil.Co
 			related.R.ActorAccountWorkspaceActivities[i] = related.R.ActorAccountWorkspaceActivities[ln-1]
 		}
 		related.R.ActorAccountWorkspaceActivities = related.R.ActorAccountWorkspaceActivities[:ln-1]
+		break
+	}
+	return nil
+}
+
+// SetActorToken of the workspaceActivity to the related item.
+// Sets o.R.ActorToken to related.
+// Adds o to related.R.ActorTokenWorkspaceActivities.
+func (o *WorkspaceActivity) SetActorToken(ctx context.Context, exec boil.ContextExecutor, insert bool, related *APIToken) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_activity\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"actor_token_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceActivityPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.ActorTokenID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceActivityR{
+			ActorToken: related,
+		}
+	} else {
+		o.R.ActorToken = related
+	}
+
+	if related.R == nil {
+		related.R = &apiTokenR{
+			ActorTokenWorkspaceActivities: WorkspaceActivitySlice{o},
+		}
+	} else {
+		related.R.ActorTokenWorkspaceActivities = append(related.R.ActorTokenWorkspaceActivities, o)
+	}
+
+	return nil
+}
+
+// RemoveActorToken relationship.
+// Sets o.R.ActorToken to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceActivity) RemoveActorToken(ctx context.Context, exec boil.ContextExecutor, related *APIToken) error {
+	var err error
+
+	queries.SetScanner(&o.ActorTokenID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("actor_token_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.ActorToken = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.ActorTokenWorkspaceActivities {
+		if queries.Equal(o.ActorTokenID, ri.ActorTokenID) {
+			continue
+		}
+
+		ln := len(related.R.ActorTokenWorkspaceActivities)
+		if ln > 1 && i < ln-1 {
+			related.R.ActorTokenWorkspaceActivities[i] = related.R.ActorTokenWorkspaceActivities[ln-1]
+		}
+		related.R.ActorTokenWorkspaceActivities = related.R.ActorTokenWorkspaceActivities[:ln-1]
 		break
 	}
 	return nil
