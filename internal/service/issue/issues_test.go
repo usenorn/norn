@@ -344,6 +344,130 @@ func TestAnIssueIsRaisedAgainstTheActorWhoRaisedIt(t *testing.T) {
 	}
 }
 
+func TestAnIssueCanBeRaisedStraightIntoAChosenStateProjectAndLabels(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID := uuid.New(), uuid.New()
+	stateID, projectID, labelID := uuid.New(), uuid.New(), uuid.New()
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	h.states.EXPECT().
+		ListByTeamID(gomock.Any(), teamID).
+		Return([]entity.WorkflowState{
+			{ID: uuid.New(), TeamID: teamID, Name: "Backlog", IsDefault: true},
+			{ID: stateID, TeamID: teamID, Name: "In progress"},
+		}, nil)
+
+	label := entity.Label{ID: labelID, WorkspaceID: workspaceID, Name: "Bug"}
+
+	h.labels.EXPECT().ListByIDs(gomock.Any(), workspaceID, []uuid.UUID{labelID}).Return([]entity.Label{label}, nil)
+	h.projects.EXPECT().
+		GetByID(gomock.Any(), workspaceID, projectID).
+		Return(entity.Project{ID: projectID, WorkspaceID: workspaceID}, nil)
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil)
+
+	var (
+		captured entity.Issue
+		applied  []entity.Label
+	)
+
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, issue entity.Issue) (entity.Issue, error) {
+			captured = issue
+			issue.ID = uuid.New()
+
+			return issue, nil
+		})
+
+	h.labels.EXPECT().
+		SetForIssue(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ entity.Issue, labels []entity.Label) error {
+			applied = labels
+
+			return nil
+		})
+
+	created, err := h.service.Create(context.Background(), service.CreateIssueInput{
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		Title:       "Offline queue drops edits on reconnect",
+		StateID:     stateID,
+		ProjectID:   projectID,
+		LabelIDs:    []uuid.UUID{labelID},
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if captured.State.ID != stateID {
+		t.Errorf("state = %v, want the chosen state %v", captured.State.ID, stateID)
+	}
+
+	if captured.ProjectID != projectID {
+		t.Errorf("project = %v, want %v", captured.ProjectID, projectID)
+	}
+
+	if len(applied) != 1 || applied[0].ID != labelID {
+		t.Errorf("labels applied = %v, want the one label asked for", applied)
+	}
+
+	if len(created.Labels) != 1 {
+		t.Errorf("the issue came back with %d labels, want the ones it was created with", len(created.Labels))
+	}
+}
+
+func TestRaisingAnIssueIntoAStateAnotherTeamOwnsIsRefused(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID := uuid.New(), uuid.New()
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	h.states.EXPECT().
+		ListByTeamID(gomock.Any(), teamID).
+		Return([]entity.WorkflowState{{ID: uuid.New(), TeamID: teamID, IsDefault: true}}, nil)
+
+	_, err := h.service.Create(context.Background(), service.CreateIssueInput{
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		Title:       "An issue",
+		StateID:     uuid.New(),
+	})
+
+	var validation entity.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("Create error = %v, want a ValidationError naming stateId", err)
+	}
+}
+
+func TestRaisingAnIssueIntoAnArchivedProjectIsRefused(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID, projectID := uuid.New(), uuid.New(), uuid.New()
+	archived := time.Now().UTC()
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	h.states.EXPECT().
+		DefaultForTeam(gomock.Any(), teamID).
+		Return(entity.WorkflowState{ID: uuid.New(), TeamID: teamID, IsDefault: true}, nil)
+	h.projects.EXPECT().
+		GetByID(gomock.Any(), workspaceID, projectID).
+		Return(entity.Project{ID: projectID, WorkspaceID: workspaceID, ArchivedAt: &archived}, nil)
+
+	_, err := h.service.Create(context.Background(), service.CreateIssueInput{
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		Title:       "An issue",
+		ProjectID:   projectID,
+	})
+	if !errors.Is(err, entity.ErrProjectArchived) {
+		t.Fatalf("Create error = %v, want ErrProjectArchived", err)
+	}
+}
+
 func TestAnEmptyTitleIsRefused(t *testing.T) {
 	h := newHarness(t)
 

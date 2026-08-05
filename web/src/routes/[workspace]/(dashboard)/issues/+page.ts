@@ -1,8 +1,18 @@
 import { apiFor } from "$lib/api";
-import { issueLayouts, issueTabs, type IssueLayout, type IssueTab } from "$lib/issues/board";
+import {
+	backlogStates,
+	issueLayouts,
+	issueTabs,
+	type IssueLayout,
+	type IssueTab,
+} from "$lib/issues/board";
 import type { Issue, IssueProgress } from "$lib/issues/board";
+import { readDisplay, type Display } from "$lib/issues/display";
+import { facetFilters, readFacets, type Facets } from "$lib/issues/facets";
 import type { IssueGroupTally, IssueQueryBody } from "$lib/issues/filter";
+import type { Label } from "$lib/labels/labels";
 import { appliedView, viewQuery, type AppliedView } from "$lib/views/applied";
+import { calendarDate } from "$lib/time";
 import type { Team } from "$lib/team/teams";
 import type { WorkflowState } from "$lib/team/states";
 import type { components } from "$lib/api/dashboard.gen";
@@ -18,13 +28,16 @@ export type IssuesPageData = {
 	issues: Issue[] | undefined;
 	nextCursor: string | undefined;
 	groups: IssueGroupTally[] | undefined;
+	totals: IssueGroupTally[] | undefined;
 	states: WorkflowState[] | undefined;
+	labels: Label[];
 	progress: IssueProgress | undefined;
 	members: Member[];
+	facets: Facets;
+	display: Display;
+	today: string;
 	tab: IssueTab;
 	layout: IssueLayout;
-	showEmpty: boolean;
-	text: string;
 };
 
 function pick<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
@@ -34,14 +47,19 @@ function pick<T extends string>(value: string | null, allowed: readonly T[], fal
 export const load: PageLoad = async ({ fetch, url, parent }): Promise<IssuesPageData> => {
 	const api = apiFor(url);
 
-	const { workspace, teams, views } = await parent();
+	const { workspace, teams, views, now } = await parent();
 	const q = url.searchParams;
 
+	const facets = readFacets(q);
+	const display = readDisplay(q);
+	const today = calendarDate(now, workspace.timezone);
+
 	const options = {
-		tab: pick(q.get("tab"), issueTabs, "open"),
+		tab: pick(q.get("tab"), issueTabs, "active"),
 		layout: pick(q.get("layout"), issueLayouts, "list"),
-		showEmpty: q.get("empty") === "1",
-		text: q.get("q") ?? "",
+		facets,
+		display,
+		today,
 	};
 
 	const available = teams ?? [];
@@ -57,37 +75,56 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<IssuesPage
 		return {
 			...options,
 			applied,
-			query: viewQuery(applied, options.tab, null, options.text),
+			query: viewQuery(applied, options.tab, null),
 			team: null,
 			teams: available,
 			issues: undefined,
 			nextCursor: undefined,
 			groups: undefined,
+			totals: undefined,
 			states: undefined,
+			labels: [],
 			progress: undefined,
 			members: [],
 		};
 	}
 
-	const query = viewQuery(applied, options.tab, team?.id ?? null, options.text);
-
 	const path = { workspaceId: workspace.id };
 
-	const [issues, states, progress, members, detail] = await Promise.all([
+	const states = team
+		? await api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
+				fetch,
+				params: { path: { ...path, teamId: team.id } },
+			})
+		: { data: undefined };
+
+	const backlog = backlogStates(states.data ?? []);
+	const filters = facetFilters(facets, today);
+
+	const query = viewQuery(applied, options.tab, team?.id ?? null, "", {
+		filters,
+		sort: display.ordering,
+		grouping: display.grouping,
+		backlogStateIds: backlog.map((state) => state.id),
+	});
+
+	const across = viewQuery(applied, "all", team?.id ?? null, "", { filters, grouping: "state" });
+
+	const [issues, totals, progress, members, labels, detail] = await Promise.all([
 		api.POST("/workspaces/{workspaceId}/issues/query", { fetch, params: { path }, body: query }),
-		team
-			? api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
-					fetch,
-					params: { path: { ...path, teamId: team.id } },
-				})
-			: Promise.resolve({ data: undefined }),
-		team
+		api.POST("/workspaces/{workspaceId}/issues/query", {
+			fetch,
+			params: { path },
+			body: { ...across, limit: 1 },
+		}),
+		facets.cycle
 			? api.GET("/workspaces/{workspaceId}/issues/progress", {
 					fetch,
-					params: { path, query: { teamId: team.id } },
+					params: { path, query: { cycleId: facets.cycle } },
 				})
 			: Promise.resolve({ data: undefined }),
 		api.GET("/workspaces/{workspaceId}/members", { fetch, params: { path } }),
+		api.GET("/workspaces/{workspaceId}/labels", { fetch, params: { path } }),
 		applied.kind === "applied"
 			? api.GET("/workspaces/{workspaceId}/saved-views/{savedViewId}", {
 					fetch,
@@ -108,7 +145,9 @@ export const load: PageLoad = async ({ fetch, url, parent }): Promise<IssuesPage
 		issues: issues.data?.issues,
 		nextCursor: issues.data?.nextCursor,
 		groups: issues.data?.groups,
+		totals: totals.data?.groups,
 		states: states.data,
+		labels: labels.data ?? [],
 		progress: progress.data,
 		members: members.data?.members ?? [],
 	};

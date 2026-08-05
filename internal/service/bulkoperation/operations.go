@@ -3,6 +3,7 @@ package bulkoperation
 import (
 	"context"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,15 +16,17 @@ import (
 )
 
 type operationsService struct {
-	actions    repository.BulkAction
-	issues     repository.Issue
-	states     repository.WorkflowState
-	labels     repository.Label
-	activity   repository.Activity
-	members    repository.Membership
-	jobs       repository.JobProducer
-	authorizer service.Authorizer
-	transactor repository.Transactor
+	actions      repository.BulkAction
+	issues       repository.Issue
+	states       repository.WorkflowState
+	labels       repository.Label
+	activity     repository.Activity
+	members      repository.Membership
+	cycles       repository.Cycle
+	scopeChanges repository.CycleScopeChange
+	jobs         repository.JobProducer
+	authorizer   service.Authorizer
+	transactor   repository.Transactor
 }
 
 func New(
@@ -33,20 +36,24 @@ func New(
 	labels repository.Label,
 	activity repository.Activity,
 	members repository.Membership,
+	cycles repository.Cycle,
+	scopeChanges repository.CycleScopeChange,
 	jobs repository.JobProducer,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.BulkOperations {
 	return &operationsService{
-		actions:    actions,
-		issues:     issues,
-		states:     states,
-		labels:     labels,
-		activity:   activity,
-		members:    members,
-		jobs:       jobs,
-		authorizer: authorizer,
-		transactor: transactor,
+		actions:      actions,
+		issues:       issues,
+		states:       states,
+		labels:       labels,
+		activity:     activity,
+		members:      members,
+		cycles:       cycles,
+		scopeChanges: scopeChanges,
+		jobs:         jobs,
+		authorizer:   authorizer,
+		transactor:   transactor,
 	}
 }
 
@@ -504,6 +511,18 @@ func (s *operationsService) edit(
 		}
 	}
 
+	var joining entity.Cycle
+
+	if action.Change.CycleID != nil {
+		found, err := s.joinable(ctx, action, decision, issue)
+		if err != nil {
+			return err
+		}
+
+		joining = found
+		change.CycleID = &joining.ID
+	}
+
 	if len(change.Touched()) == 0 {
 		return nil
 	}
@@ -542,7 +561,105 @@ func (s *operationsService) edit(
 		}
 	}
 
+	if joining.ID != uuid.Nil {
+		if err := s.record(ctx, action, decision, issue, entity.Activity{
+			Kind:      entity.ActivityKindPropertyChanged,
+			Field:     entity.IssueFieldCycle,
+			FromValue: cycleName(issue.CycleNumber),
+			ToValue:   cycleName(joining.Number),
+		}); err != nil {
+			return err
+		}
+
+		if err := s.rescope(ctx, decision, issue, joining, now); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (s *operationsService) joinable(
+	ctx context.Context,
+	action entity.BulkAction,
+	decision entity.Decision,
+	issue entity.Issue,
+) (entity.Cycle, error) {
+	cycle, err := s.cycles.GetVisible(ctx, action.WorkspaceID, *action.Change.CycleID, decision.Scope)
+	if err != nil {
+		return entity.Cycle{}, err
+	}
+
+	if cycle.TeamID != issue.TeamID {
+		return entity.Cycle{}, entity.ErrCycleTeamMismatch
+	}
+
+	if cycle.Closed() {
+		return entity.Cycle{}, entity.ErrCycleClosed
+	}
+
+	return cycle, nil
+}
+
+func (s *operationsService) rescope(
+	ctx context.Context,
+	decision entity.Decision,
+	issue entity.Issue,
+	joining entity.Cycle,
+	now time.Time,
+) error {
+	if joining.ID == issue.CycleID {
+		return nil
+	}
+
+	today := entity.Today(now, decision.Workspace.Timezone)
+
+	if issue.CycleID != uuid.Nil {
+		left, err := s.cycles.GetVisible(ctx, issue.WorkspaceID, issue.CycleID, decision.Scope)
+		if err != nil {
+			return err
+		}
+
+		if left.Closed() {
+			return entity.ErrCycleClosed
+		}
+
+		if err := s.markScope(ctx, left, issue, decision, entity.CycleScopeChangeRemoved, today, now); err != nil {
+			return err
+		}
+	}
+
+	return s.markScope(ctx, joining, issue, decision, entity.CycleScopeChangeAdded, today, now)
+}
+
+func (s *operationsService) markScope(
+	ctx context.Context,
+	cycle entity.Cycle,
+	issue entity.Issue,
+	decision entity.Decision,
+	kind entity.CycleScopeChangeKind,
+	today string,
+	now time.Time,
+) error {
+	if !cycle.Started(today) {
+		return nil
+	}
+
+	return s.scopeChanges.Record(ctx, entity.CycleScopeChange{
+		CycleID:        cycle.ID,
+		IssueID:        issue.ID,
+		Change:         kind,
+		ActorAccountID: decision.Actor.AccountID,
+		ChangedAt:      now,
+	})
+}
+
+func cycleName(number int) string {
+	if number == 0 {
+		return ""
+	}
+
+	return "Cycle " + strconv.Itoa(number)
 }
 
 func (s *operationsService) record(

@@ -88,11 +88,11 @@ WITH allocated AS (
     INSERT INTO workspace_issues (
         id, workspace_id, team_id, reference_key, number, title, state_id,
         created_by_account_id, description, priority, assignee_account_id,
-        estimate, due_on, triage_state, triage_source, created_at, updated_at
+        estimate, due_on, project_id, triage_state, triage_source, created_at, updated_at
     )
     SELECT $1, $2, $3, t.key, allocated.number, $4, $5, $6,
            $8, $9, nullif($10, '')::uuid, nullif($11, 0), nullif($12, '')::date,
-           nullif($13, ''), nullif($14, ''), $7, $7
+           nullif($15, '')::uuid, nullif($13, ''), nullif($14, ''), $7, $7
     FROM allocated
     JOIN workspace_teams t ON t.id = $3
     RETURNING id, workspace_id, team_id, reference_key, number, title, state_id,
@@ -564,6 +564,7 @@ func (r *issueRepository) Create(ctx context.Context, issue entity.Issue) (entit
 		issue.DueOn,
 		string(issue.TriageState),
 		string(issue.TriageSource),
+		text(issue.ProjectID),
 	))
 	if err != nil {
 		if translated := translateWriteError(err); !errors.Is(translated, err) {

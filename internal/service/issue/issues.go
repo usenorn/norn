@@ -98,9 +98,29 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		return entity.Issue{}, entity.ErrTeamNotFound
 	}
 
-	state, err := s.states.DefaultForTeam(ctx, input.TeamID)
+	state, err := s.opening(ctx, input)
 	if err != nil {
 		return entity.Issue{}, err
+	}
+
+	var labels []entity.Label
+
+	if len(input.LabelIDs) > 0 {
+		labels, err = s.resolveLabels(ctx, input.WorkspaceID, input.TeamID, input.LabelIDs, decision)
+		if err != nil {
+			return entity.Issue{}, err
+		}
+	}
+
+	if input.ProjectID != uuid.Nil {
+		project, err := s.projects.GetByID(ctx, input.WorkspaceID, input.ProjectID)
+		if err != nil {
+			return entity.Issue{}, err
+		}
+
+		if project.Archived() {
+			return entity.Issue{}, entity.ErrProjectArchived
+		}
 	}
 
 	arriving := entity.Issue{
@@ -112,6 +132,7 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		AssigneeAccountID:  input.AssigneeAccountID,
 		Estimate:           input.Estimate,
 		DueOn:              input.DueOn,
+		ProjectID:          input.ProjectID,
 		State:              entity.IssueState{ID: state.ID},
 		CreatedByAccountID: decision.Actor.AccountID,
 	}
@@ -130,6 +151,14 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		created, err = s.issues.Create(ctx, arriving)
 		if err != nil {
 			return err
+		}
+
+		if len(labels) > 0 {
+			if err := s.labels.SetForIssue(ctx, created, labels); err != nil {
+				return err
+			}
+
+			created.Labels = labels
 		}
 
 		if err := s.activity.Record(ctx, entity.Activity{
@@ -159,6 +188,66 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 	}
 
 	return created, nil
+}
+
+func (s *issuesService) opening(
+	ctx context.Context,
+	input service.CreateIssueInput,
+) (entity.WorkflowState, error) {
+	if input.StateID == uuid.Nil {
+		return s.states.DefaultForTeam(ctx, input.TeamID)
+	}
+
+	states, err := s.states.ListByTeamID(ctx, input.TeamID)
+	if err != nil {
+		return entity.WorkflowState{}, err
+	}
+
+	for _, state := range states {
+		if state.ID == input.StateID {
+			return state, nil
+		}
+	}
+
+	return entity.WorkflowState{}, entity.NewValidationError(entity.FieldError{
+		Field: "stateId",
+		Code:  entity.ValidationCodeUnsupportedValue,
+	})
+}
+
+func (s *issuesService) resolveLabels(
+	ctx context.Context,
+	workspaceID, teamID uuid.UUID,
+	ids []uuid.UUID,
+	decision entity.Decision,
+) ([]entity.Label, error) {
+	labels, err := s.labels.ListByIDs(ctx, workspaceID, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(labels) != len(unique(ids)) {
+		return nil, entity.ErrLabelNotFound
+	}
+
+	for _, label := range labels {
+		if !label.AppliesTo(teamID) {
+			return nil, entity.ErrLabelOutOfScope
+		}
+
+		if label.TeamID != uuid.Nil && !decision.Scope.Covers(label.TeamID) {
+			return nil, entity.ErrLabelNotFound
+		}
+	}
+
+	if entity.GroupedLabelConflict(labels) {
+		return nil, entity.NewValidationError(entity.FieldError{
+			Field: "labelIds",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
+	return labels, nil
 }
 
 func (s *issuesService) Get(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.Issue, error) {
@@ -486,30 +575,9 @@ func (s *issuesService) SetLabels(
 			return err
 		}
 
-		labels, err := s.labels.ListByIDs(ctx, workspaceID, input.LabelIDs)
+		labels, err := s.resolveLabels(ctx, workspaceID, issue.TeamID, input.LabelIDs, decision)
 		if err != nil {
 			return err
-		}
-
-		if len(labels) != len(unique(input.LabelIDs)) {
-			return entity.ErrLabelNotFound
-		}
-
-		for _, label := range labels {
-			if !label.AppliesTo(issue.TeamID) {
-				return entity.ErrLabelOutOfScope
-			}
-
-			if label.TeamID != uuid.Nil && !decision.Scope.Covers(label.TeamID) {
-				return entity.ErrLabelNotFound
-			}
-		}
-
-		if entity.GroupedLabelConflict(labels) {
-			return entity.NewValidationError(entity.FieldError{
-				Field: "labelIds",
-				Code:  entity.ValidationCodeUnsupportedValue,
-			})
 		}
 
 		before := labelNames(issue.Labels)

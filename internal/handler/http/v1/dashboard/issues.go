@@ -113,6 +113,18 @@ func (h *handler) CreateWorkspaceIssue(
 		input.DueOn = request.Body.DueOn.Format(time.DateOnly)
 	}
 
+	if request.Body.StateId != nil {
+		input.StateID = *request.Body.StateId
+	}
+
+	if request.Body.ProjectId != nil {
+		input.ProjectID = *request.Body.ProjectId
+	}
+
+	if request.Body.LabelIds != nil {
+		input.LabelIDs = *request.Body.LabelIds
+	}
+
 	issue, err := h.issues.Create(ctx, input)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

@@ -15,7 +15,7 @@
 	bind:ref
 	data-slot="command-item"
 	class={cn(
-		"group/command-item relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none in-data-[slot=dialog-content]:rounded-lg! data-selected:bg-muted data-selected:text-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-selected:*:[svg]:text-foreground",
+		"group/command-item relative flex h-7 cursor-default items-center gap-2 rounded-sm px-1.5 text-md text-foreground outline-hidden select-none data-selected:bg-accent data-selected:text-ink-900 data-[disabled=true]:pointer-events-none data-[disabled=true]:text-ink-300 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-icon-row",
 		className
 	)}
 	{...restProps}

@@ -9,17 +9,25 @@ export type IssueGroupTally = components["schemas"]["IssueGroupTally"];
 
 export const issuePageSize = 50;
 
-const tabCategories: Record<IssueTab, StateCategory[] | null> = {
-	open: ["not_started", "active"],
-	closed: ["complete", "abandoned"],
-	all: null,
-};
+const openCategories: StateCategory[] = ["not_started", "active"];
 
-export function tabFilter(tab: IssueTab): IssueFilter | undefined {
-	const categories = tabCategories[tab];
-	if (!categories) return undefined;
+export function tabFilter(tab: IssueTab, backlogStateIds: string[] = []): IssueFilter | undefined {
+	const backlog: IssueFilter | undefined =
+		backlogStateIds.length > 0
+			? { field: "state", op: "in", values: backlogStateIds }
+			: undefined;
 
-	return { field: "stateCategory", op: "in", values: categories };
+	switch (tab) {
+		case "backlog":
+			return backlog ?? { field: "state", op: "is_not_set" };
+		case "active": {
+			const open: IssueFilter = { field: "stateCategory", op: "in", values: openCategories };
+
+			return backlog ? { all: [open, { not: backlog }] } : open;
+		}
+		default:
+			return undefined;
+	}
 }
 
 export function teamFilter(teamId: string): IssueFilter {

@@ -63,6 +63,23 @@ export function overdue(due: string | undefined, now: string): boolean {
 	return Boolean(due) && daysBetween(now, due as string) < 0;
 }
 
+export function calendarDate(instant: string, timezone: string): string {
+	const parts = new Intl.DateTimeFormat("en-CA", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		timeZone: timezone,
+	}).format(new Date(instant));
+
+	return parts;
+}
+
+export function shiftDays(date: string, days: number): string {
+	const shifted = new Date(`${date}T00:00:00Z`).getTime() + days * dayMs;
+
+	return new Date(shifted).toISOString().slice(0, 10);
+}
+
 export function onCalendarDate(date: string): string {
 	return new Date(`${date}T00:00:00Z`).toLocaleString(locale, {
 		month: "short",

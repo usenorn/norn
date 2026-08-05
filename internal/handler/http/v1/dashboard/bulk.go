@@ -77,6 +77,7 @@ func bulkChangeFrom(body api.BulkChange) entity.BulkChange {
 		StateID:    body.StateId,
 		AssigneeID: body.AssigneeId,
 		AddLabelID: body.AddLabelId,
+		CycleID:    body.CycleId,
 	}
 
 	if body.ClearAssignee != nil {

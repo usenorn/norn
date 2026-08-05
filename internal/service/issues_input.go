@@ -15,6 +15,9 @@ type CreateIssueInput struct {
 	AssigneeAccountID uuid.UUID
 	Estimate          int
 	DueOn             string
+	StateID           uuid.UUID
+	ProjectID         uuid.UUID
+	LabelIDs          []uuid.UUID
 }
 
 type ListIssuesInput struct {
