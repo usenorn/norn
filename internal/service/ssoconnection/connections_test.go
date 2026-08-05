@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
@@ -929,6 +930,106 @@ func TestAFailedExchangeStillSaysWhichWorkspaceItWasFor(t *testing.T) {
 			"a failed exchange came back with slug %q. The failure screen offers Try again, and "+
 				"without the workspace that link cannot point back at the same provider.",
 			exchange.WorkspaceSlug,
+		)
+	}
+}
+
+func TestAWorkspaceReportsWhatItAcceptsBeforeAnyoneHasSignedIn(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+
+	h.workspaces.EXPECT().
+		GetBySlug(gomock.Any(), "northwind").
+		Return(entity.Workspace{ID: workspaceID, Slug: "northwind", Name: "Northwind"}, nil)
+	h.policies.EXPECT().
+		Get(gomock.Any(), workspaceID).
+		Return(entity.WorkspaceAuthPolicy{
+			WorkspaceID: workspaceID,
+			Enforcement: entity.AuthEnforcementSSO,
+		}, nil)
+	h.connections.EXPECT().
+		Protocol(gomock.Any(), workspaceID).
+		Return(entity.SSOProtocolOIDC, nil)
+	verified := connection(workspaceID, false)
+	stamped := time.Now().UTC()
+	verified.VerifiedAt = &stamped
+
+	h.connections.EXPECT().GetOIDC(gomock.Any(), workspaceID).Return(verified, nil)
+
+	signIn, err := h.service.SignIn(context.Background(), "northwind")
+	if err != nil {
+		t.Fatalf("SignIn: %v", err)
+	}
+
+	if signIn.Password {
+		t.Error(
+			"a workspace that requires single sign-on still advertised password sign-in, so the " +
+				"screen would offer a form that can only ever be refused",
+		)
+	}
+
+	if !signIn.SSO || signIn.Protocol != entity.SSOProtocolOIDC {
+		t.Errorf("sso = %v protocol = %q, want a ready OIDC provider", signIn.SSO, signIn.Protocol)
+	}
+
+	if signIn.Host == "" {
+		t.Error("no provider host came back, so nobody can see where they are being sent")
+	}
+}
+
+func TestAWorkspaceWithoutAProviderStillAcceptsAPassword(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+
+	h.workspaces.EXPECT().
+		GetBySlug(gomock.Any(), "northwind").
+		Return(entity.Workspace{ID: workspaceID, Slug: "northwind", Name: "Northwind"}, nil)
+	h.policies.EXPECT().
+		Get(gomock.Any(), workspaceID).
+		Return(entity.DefaultWorkspaceAuthPolicy(workspaceID), nil)
+	h.connections.EXPECT().
+		Protocol(gomock.Any(), workspaceID).
+		Return(entity.SSOProtocol(""), entity.ErrSSOConnectionNotFound)
+
+	signIn, err := h.service.SignIn(context.Background(), "northwind")
+	if err != nil {
+		t.Fatalf("SignIn: %v", err)
+	}
+
+	if !signIn.Password || signIn.SSO {
+		t.Errorf("signIn = %+v, want password only", signIn)
+	}
+}
+
+func TestAnUnverifiedProviderIsNotOfferedToSignInWith(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+
+	h.workspaces.EXPECT().
+		GetBySlug(gomock.Any(), "northwind").
+		Return(entity.Workspace{ID: workspaceID, Slug: "northwind", Name: "Northwind"}, nil)
+	h.policies.EXPECT().
+		Get(gomock.Any(), workspaceID).
+		Return(entity.DefaultWorkspaceAuthPolicy(workspaceID), nil)
+	h.connections.EXPECT().
+		Protocol(gomock.Any(), workspaceID).
+		Return(entity.SSOProtocolOIDC, nil)
+	h.connections.EXPECT().
+		GetOIDC(gomock.Any(), workspaceID).
+		Return(connection(workspaceID, false), nil)
+
+	signIn, err := h.service.SignIn(context.Background(), "northwind")
+	if err != nil {
+		t.Fatalf("SignIn: %v", err)
+	}
+
+	if signIn.SSO {
+		t.Error(
+			"a provider nobody has completed a round trip with was offered on the sign-in " +
+				"screen, which sends people into a redirect that cannot work",
 		)
 	}
 }

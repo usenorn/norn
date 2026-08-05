@@ -22,7 +22,7 @@
 
 	const auth = $derived({ ...data.auth, ...preview?.auth });
 	const exchange = $derived<SsoExchange>(preview?.exchange ?? data.exchange);
-	const provider = $derived(auth.sso?.name ?? "your identity provider");
+	const provider = $derived(auth.sso?.name || data.provider || "your identity provider");
 
 	let elapsedMs = $state(0);
 
@@ -141,7 +141,7 @@
 
 <div class="my-auto flex w-full flex-col items-center gap-4">
 	{#if !report}
-		<div class="flex w-full max-w-90 flex-col items-center gap-6">
+		<div class="flex w-full max-w-90 flex-col items-center gap-5.5">
 			<div class="flex w-full flex-col gap-3" aria-live="polite">
 				<div class="flex items-baseline justify-between gap-2">
 					<Eyebrow class="text-ink-600">{stage}</Eyebrow>
@@ -157,28 +157,25 @@
 		</div>
 	{:else}
 		{@const ReportIcon = report.icon}
-		<div class="flex w-full max-w-115 flex-col gap-3">
+		<div class="flex w-full max-w-115 flex-col gap-3.5">
 			<div class="notch w-full">
-				<div class="flex flex-col gap-4 p-5 sm:p-6">
-					<div class="flex items-start gap-2">
-						<ReportIcon
-							class="mt-0.5 size-icon-toolbar shrink-0 {report.tone}"
-							aria-hidden="true"
-						/>
+				<div class="flex flex-col gap-4 p-6 pb-5">
+					<div class="flex items-start gap-2.5">
+						<ReportIcon class="mt-0.5 size-4.5 shrink-0 {report.tone}" aria-hidden="true" />
 						<div class="flex flex-col gap-1.5">
-							<h1 class="text-xl font-medium tracking-title text-ink-900">{report.title}</h1>
+							<h1 class="text-heading font-medium tracking-title text-ink-900">{report.title}</h1>
 							<p class="text-md leading-normal text-ink-600 text-pretty">{report.body}</p>
 						</div>
 					</div>
 
-					<Diagnostics label="Details" entries={report.diagnostics} />
+					<Diagnostics label="Details" entries={report.diagnostics} keyWidth="w-18 sm:w-24" />
 
 					<div class="flex flex-col gap-2">
 						<Eyebrow class="text-ink-600">{report.fixTitle}</Eyebrow>
 						<ul class="flex flex-col gap-2">
 							{#each report.fixes as fix (fix)}
 								<li class="flex items-start gap-2">
-									<span class="mt-2 size-1 flex-none bg-muted-foreground" aria-hidden="true"></span>
+									<span class="mt-1.75 size-1 flex-none bg-muted-foreground" aria-hidden="true"></span>
 									<span class="flex-1 text-md leading-normal text-ink-600">{fix}</span>
 								</li>
 							{/each}

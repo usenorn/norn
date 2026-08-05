@@ -741,6 +741,26 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /sso/sign-in:
+    get:
+      tags: [sso]
+      operationId: getWorkspaceSignIn
+      summary: Describe how a workspace signs people in, before anyone has signed in
+      security: []
+      parameters:
+        - name: workspace
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: What this workspace accepts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSignIn' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /sso/recovery:
     post:
       tags: [sso]
@@ -6647,6 +6667,23 @@ components:
             code: { type: string, enum: [sso_failed] }
             stage: { $ref: '#/components/schemas/SsoStage' }
             providerMessage: { type: string }
+
+    WorkspaceSignIn:
+      type: object
+      required: [workspace, name, password, sso]
+      properties:
+        workspace: { type: string }
+        name: { type: string }
+        password:
+          type: boolean
+          description: False when the workspace admits nothing but its provider
+        sso:
+          type: boolean
+          description: True when a verified provider is ready to take a sign-in
+        protocol: { $ref: '#/components/schemas/SsoProtocol' }
+        host:
+          type: string
+          description: The provider's host, so a person can see where they are being sent
 
     WorkspaceSsoProtocol:
       type: object

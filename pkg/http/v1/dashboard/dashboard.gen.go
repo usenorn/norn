@@ -4667,6 +4667,21 @@ type WorkspaceSamlConnection struct {
 	WorkspaceId          openapi_types.UUID   `json:"workspaceId"`
 }
 
+// WorkspaceSignIn defines model for WorkspaceSignIn.
+type WorkspaceSignIn struct {
+	// Host The provider's host, so a person can see where they are being sent
+	Host *string `json:"host,omitempty"`
+	Name string  `json:"name"`
+
+	// Password False when the workspace admits nothing but its provider
+	Password bool         `json:"password"`
+	Protocol *SsoProtocol `json:"protocol,omitempty"`
+
+	// Sso True when a verified provider is ready to take a sign-in
+	Sso       bool   `json:"sso"`
+	Workspace string `json:"workspace"`
+}
+
 // WorkspaceSsoProtocol defines model for WorkspaceSsoProtocol.
 type WorkspaceSsoProtocol struct {
 	Protocol    SsoProtocol        `json:"protocol"`
@@ -4894,6 +4909,11 @@ type ListInstanceAuditParams struct {
 	ResourceId   *AuditResourceId   `form:"resourceId,omitempty" json:"resourceId,omitempty"`
 	From         *AuditFrom         `form:"from,omitempty" json:"from,omitempty"`
 	To           *AuditTo           `form:"to,omitempty" json:"to,omitempty"`
+}
+
+// GetWorkspaceSignInParams defines parameters for GetWorkspaceSignIn.
+type GetWorkspaceSignInParams struct {
+	Workspace string `form:"workspace" json:"workspace"`
 }
 
 // ListWorkspaceAgentActivityParams defines parameters for ListWorkspaceAgentActivity.
@@ -5377,6 +5397,9 @@ type ServerInterface interface {
 	// BeginSamlLogin Start a SAML sign-in for a workspace
 	// (POST /sso/saml/login)
 	BeginSamlLogin(w http.ResponseWriter, r *http.Request)
+	// GetWorkspaceSignIn Describe how a workspace signs people in, before anyone has signed in
+	// (GET /sso/sign-in)
+	GetWorkspaceSignIn(w http.ResponseWriter, r *http.Request, params GetWorkspaceSignInParams)
 	// ListAPITokens List the caller's live API tokens
 	// (GET /tokens)
 	ListAPITokens(w http.ResponseWriter, r *http.Request)
@@ -6079,6 +6102,12 @@ func (_ Unimplemented) RedeemRecoveryCode(w http.ResponseWriter, r *http.Request
 // BeginSamlLogin Start a SAML sign-in for a workspace
 // (POST /sso/saml/login)
 func (_ Unimplemented) BeginSamlLogin(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceSignIn Describe how a workspace signs people in, before anyone has signed in
+// (GET /sso/sign-in)
+func (_ Unimplemented) GetWorkspaceSignIn(w http.ResponseWriter, r *http.Request, params GetWorkspaceSignInParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -7746,6 +7775,39 @@ func (siw *ServerInterfaceWrapper) BeginSamlLogin(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.BeginSamlLogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceSignIn operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceSignIn(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetWorkspaceSignInParams
+
+	// ------------- Required query parameter "workspace" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "workspace", r.URL.Query(), &params.Workspace, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "workspace"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspace", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceSignIn(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -13868,6 +13930,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/sso/identities/{accountId}", wrapper.UnlinkWorkspaceSsoIdentity)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/sso/sign-in", wrapper.GetWorkspaceSignIn)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/sso/recovery", wrapper.RedeemRecoveryCode)
 	})
 	r.Group(func(r chi.Router) {
@@ -17140,6 +17205,58 @@ func (response BeginSamlLogin422ApplicationProblemPlusJSONResponse) VisitBeginSa
 type BeginSamlLogin500ApplicationProblemPlusJSONResponse Problem
 
 func (response BeginSamlLogin500ApplicationProblemPlusJSONResponse) VisitBeginSamlLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSignInRequestObject struct {
+	Params GetWorkspaceSignInParams
+}
+
+type GetWorkspaceSignInResponseObject interface {
+	VisitGetWorkspaceSignInResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceSignIn200JSONResponse WorkspaceSignIn
+
+func (response GetWorkspaceSignIn200JSONResponse) VisitGetWorkspaceSignInResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSignIn404ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSignIn404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSignInResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSignIn500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceSignIn500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSignInResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -31921,6 +32038,9 @@ type StrictServerInterface interface {
 	// BeginSamlLogin Start a SAML sign-in for a workspace
 	// (POST /sso/saml/login)
 	BeginSamlLogin(ctx context.Context, request BeginSamlLoginRequestObject) (BeginSamlLoginResponseObject, error)
+	// GetWorkspaceSignIn Describe how a workspace signs people in, before anyone has signed in
+	// (GET /sso/sign-in)
+	GetWorkspaceSignIn(ctx context.Context, request GetWorkspaceSignInRequestObject) (GetWorkspaceSignInResponseObject, error)
 	// ListAPITokens List the caller's live API tokens
 	// (GET /tokens)
 	ListAPITokens(ctx context.Context, request ListAPITokensRequestObject) (ListAPITokensResponseObject, error)
@@ -33437,6 +33557,32 @@ func (sh *strictHandler) BeginSamlLogin(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(BeginSamlLoginResponseObject); ok {
 		if err := validResponse.VisitBeginSamlLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceSignIn operation middleware
+func (sh *strictHandler) GetWorkspaceSignIn(w http.ResponseWriter, r *http.Request, params GetWorkspaceSignInParams) {
+	var request GetWorkspaceSignInRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceSignIn(ctx, request.(GetWorkspaceSignInRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceSignIn")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceSignInResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceSignInResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

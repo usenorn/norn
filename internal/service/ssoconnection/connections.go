@@ -21,6 +21,7 @@ import (
 
 type connectionsService struct {
 	connections repository.SSOConnection
+	policies    repository.WorkspaceAuthPolicy
 	identities  repository.SSOIdentity
 	states      repository.OIDCState
 	requests    repository.SAMLRequest
@@ -40,6 +41,7 @@ type connectionsService struct {
 
 func New(
 	connections repository.SSOConnection,
+	policies repository.WorkspaceAuthPolicy,
 	identities repository.SSOIdentity,
 	states repository.OIDCState,
 	requests repository.SAMLRequest,
@@ -58,6 +60,7 @@ func New(
 ) service.SSOConnections {
 	return &connectionsService{
 		connections: connections,
+		policies:    policies,
 		identities:  identities,
 		states:      states,
 		requests:    requests,
@@ -251,6 +254,79 @@ func (s *connectionsService) BeginLogin(
 	}
 
 	return s.begin(ctx, connection, entity.SSOPurposeLogin, input.ReturnTo)
+}
+
+func (s *connectionsService) SignIn(
+	ctx context.Context,
+	slug string,
+) (entity.WorkspaceSignIn, error) {
+	workspace, err := s.workspaces.GetBySlug(ctx, slug)
+	if err != nil {
+		return entity.WorkspaceSignIn{}, err
+	}
+
+	policy, err := s.policies.Get(ctx, workspace.ID)
+	if err != nil {
+		return entity.WorkspaceSignIn{}, err
+	}
+
+	signIn := entity.WorkspaceSignIn{
+		Slug:     workspace.Slug,
+		Name:     workspace.Name,
+		Password: policy.Enforcement.Permits(entity.SessionAuthMethodPassword),
+	}
+
+	protocol, err := s.connections.Protocol(ctx, workspace.ID)
+	if err != nil {
+		if errors.Is(err, entity.ErrSSOConnectionNotFound) {
+			return signIn, nil
+		}
+
+		return entity.WorkspaceSignIn{}, err
+	}
+
+	signIn.Protocol = protocol
+
+	host, verified, err := s.providerHost(ctx, workspace.ID, protocol)
+	if err != nil {
+		return entity.WorkspaceSignIn{}, err
+	}
+
+	signIn.SSO = verified
+	signIn.Host = host
+
+	return signIn, nil
+}
+
+func (s *connectionsService) providerHost(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	protocol entity.SSOProtocol,
+) (string, bool, error) {
+	if protocol == entity.SSOProtocolSAML {
+		connection, err := s.connections.GetSAML(ctx, workspaceID)
+		if err != nil {
+			return "", false, err
+		}
+
+		return hostOf(connection.Descriptor.SSOURL), connection.Verified(), nil
+	}
+
+	connection, err := s.connections.GetOIDC(ctx, workspaceID)
+	if err != nil {
+		return "", false, err
+	}
+
+	return hostOf(connection.Endpoints.Issuer), connection.Verified(), nil
+}
+
+func hostOf(address string) string {
+	parsed, err := url.Parse(address)
+	if err != nil {
+		return ""
+	}
+
+	return parsed.Host
 }
 
 func (s *connectionsService) begin(

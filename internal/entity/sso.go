@@ -205,6 +205,15 @@ func (p SSOPurpose) Valid() bool {
 	}
 }
 
+type WorkspaceSignIn struct {
+	Slug     string
+	Name     string
+	Password bool
+	SSO      bool
+	Protocol SSOProtocol
+	Host     string
+}
+
 type SSOExchange struct {
 	Protocol      SSOProtocol
 	Purpose       SSOPurpose

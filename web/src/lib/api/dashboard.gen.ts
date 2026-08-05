@@ -514,6 +514,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sso/sign-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Describe how a workspace signs people in, before anyone has signed in */
+        get: operations["getWorkspaceSignIn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sso/recovery": {
         parameters: {
             query?: never;
@@ -4018,6 +4035,17 @@ export interface components {
             stage: components["schemas"]["SsoStage"];
             providerMessage?: string;
         };
+        WorkspaceSignIn: {
+            workspace: string;
+            name: string;
+            /** @description False when the workspace admits nothing but its provider */
+            password: boolean;
+            /** @description True when a verified provider is ready to take a sign-in */
+            sso: boolean;
+            protocol?: components["schemas"]["SsoProtocol"];
+            /** @description The provider's host, so a person can see where they are being sent */
+            host?: string;
+        };
         WorkspaceSsoProtocol: {
             /** Format: uuid */
             workspaceId: string;
@@ -5661,6 +5689,30 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceSignIn: {
+        parameters: {
+            query: {
+                workspace: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What this workspace accepts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceSignIn"];
+                };
+            };
             404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
