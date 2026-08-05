@@ -35,7 +35,10 @@ type InvitationPreview struct {
 	Workspace     entity.Workspace
 	Email         string
 	Role          entity.MembershipRole
+	InvitedBy     *entity.Account
+	InvitedAt     time.Time
 	ExpiresAt     time.Time
+	Teams         []string
 	AccountExists bool
 	SSOEnforced   bool
 }

@@ -352,14 +352,60 @@ func (s *invitationsService) Preview(ctx context.Context, token string) (service
 		return service.InvitationPreview{}, err
 	}
 
+	teams, err := s.teamNames(ctx, invitation.TeamIDs)
+	if err != nil {
+		return service.InvitationPreview{}, err
+	}
+
 	return service.InvitationPreview{
 		Workspace:     workspace,
 		Email:         invitation.Email,
 		Role:          invitation.Role,
+		InvitedBy:     s.inviter(ctx, invitation.InvitedByAccountID),
+		InvitedAt:     invitation.InvitedAt,
 		ExpiresAt:     invitation.ExpiresAt,
+		Teams:         teams,
 		AccountExists: accountExists,
 		SSOEnforced:   policy.Enforcement == entity.AuthEnforcementSSO,
 	}, nil
+}
+
+func (s *invitationsService) inviter(
+	ctx context.Context,
+	accountID *uuid.UUID,
+) *entity.Account {
+	if accountID == nil {
+		return nil
+	}
+
+	account, err := s.accounts.GetByID(ctx, *accountID)
+	if err != nil {
+		return nil
+	}
+
+	return &account
+}
+
+func (s *invitationsService) teamNames(
+	ctx context.Context,
+	teamIDs []uuid.UUID,
+) ([]string, error) {
+	names := make([]string, 0, len(teamIDs))
+
+	for _, teamID := range teamIDs {
+		team, err := s.teams.GetByID(ctx, teamID)
+		if err != nil {
+			if errors.Is(err, entity.ErrTeamNotFound) {
+				continue
+			}
+
+			return nil, err
+		}
+
+		names = append(names, team.Name)
+	}
+
+	return names, nil
 }
 
 func (s *invitationsService) Accept(ctx context.Context, input service.AcceptInvitationInput) (service.AcceptedInvitation, error) {

@@ -6975,14 +6975,27 @@ components:
 
     InvitationPreview:
       type: object
-      required: [workspace, email, role, expiresAt, accountExists, ssoEnforced]
+      required: [workspace, email, role, invitedAt, expiresAt, accountExists, ssoEnforced, teams]
       properties:
         workspace: { $ref: '#/components/schemas/InvitationWorkspace' }
         email: { type: string }
         role: { $ref: '#/components/schemas/MembershipRole' }
+        invitedBy: { $ref: '#/components/schemas/InvitationInviter' }
+        invitedAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
         accountExists: { type: boolean }
         ssoEnforced: { type: boolean }
+        teams:
+          type: array
+          description: The teams this invitation puts the person on
+          items: { type: string }
+
+    InvitationInviter:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string }
+        email: { type: string }
 
     InvitationWorkspace:
       type: object

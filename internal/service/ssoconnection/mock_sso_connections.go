@@ -267,6 +267,21 @@ func (mr *MockSSOConnectionsMockRecorder) SaveSAML(ctx, input any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSAML", reflect.TypeOf((*MockSSOConnections)(nil).SaveSAML), ctx, input)
 }
 
+// SignIn mocks base method.
+func (m *MockSSOConnections) SignIn(ctx context.Context, slug string) (entity.WorkspaceSignIn, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SignIn", ctx, slug)
+	ret0, _ := ret[0].(entity.WorkspaceSignIn)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SignIn indicates an expected call of SignIn.
+func (mr *MockSSOConnectionsMockRecorder) SignIn(ctx, slug any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignIn", reflect.TypeOf((*MockSSOConnections)(nil).SignIn), ctx, slug)
+}
+
 // SweepCertificates mocks base method.
 func (m *MockSSOConnections) SweepCertificates(ctx context.Context) error {
 	m.ctrl.T.Helper()

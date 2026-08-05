@@ -434,3 +434,72 @@ func TestPreviewRefusesAnUnrecognisedToken(t *testing.T) {
 		t.Fatalf("Preview error = %v, want ErrInvitationNotFound", err)
 	}
 }
+
+func TestPreviewNamesWhoInvitedYouAndWhatYouAreJoining(t *testing.T) {
+	h := newHarness(t)
+
+	workspace := workspaceFixture()
+	invitation := pendingInvitation(workspace.ID, "ada@northwind.co", entity.MembershipRoleMember)
+	inviter := accountFixture("jun@northwind.co")
+	teamID := uuid.New()
+
+	invitation.InvitedByAccountID = &inviter.ID
+	invitation.TeamIDs = []uuid.UUID{teamID}
+
+	h.expectInvitationByToken(invitation)
+	h.expectWorkspace(workspace)
+	h.expectNoAccount(invitation.Email)
+	h.expectAuthEnforcement(workspace.ID, entity.AuthEnforcementAny)
+	h.accounts.EXPECT().GetByID(gomock.Any(), inviter.ID).Return(inviter, nil)
+	h.teams.EXPECT().
+		GetByID(gomock.Any(), teamID).
+		Return(entity.Team{ID: teamID, WorkspaceID: workspace.ID, Name: "Mobile"}, nil)
+
+	preview, err := h.service.Preview(context.Background(), acceptToken)
+	if err != nil {
+		t.Fatalf("Preview: %v", err)
+	}
+
+	if preview.InvitedBy == nil || preview.InvitedBy.Email != inviter.Email {
+		t.Errorf(
+			"the preview does not name who invited you, so the screen cannot say whose "+
+				"invitation this is: %+v",
+			preview.InvitedBy,
+		)
+	}
+
+	if preview.InvitedAt.IsZero() {
+		t.Error("the preview carries no invited-at, so the screen cannot say when it was sent")
+	}
+
+	if len(preview.Teams) != 1 || preview.Teams[0] != "Mobile" {
+		t.Errorf("teams = %v, want the team the invitation puts you on", preview.Teams)
+	}
+}
+
+func TestPreviewSurvivesAnInviterWhoHasSinceGone(t *testing.T) {
+	h := newHarness(t)
+
+	workspace := workspaceFixture()
+	invitation := pendingInvitation(workspace.ID, "ada@northwind.co", entity.MembershipRoleMember)
+	gone := uuid.New()
+
+	invitation.InvitedByAccountID = &gone
+
+	h.expectInvitationByToken(invitation)
+	h.expectWorkspace(workspace)
+	h.expectNoAccount(invitation.Email)
+	h.expectAuthEnforcement(workspace.ID, entity.AuthEnforcementAny)
+	h.accounts.EXPECT().
+		GetByID(gomock.Any(), gone).
+		Return(entity.Account{}, entity.ErrAccountNotFound)
+
+	preview, err := h.service.Preview(context.Background(), acceptToken)
+	if err != nil {
+		t.Fatalf("Preview: %v", err)
+	}
+
+	if preview.InvitedBy != nil {
+		t.Error("an inviter who has left the instance was reported anyway")
+	}
+}

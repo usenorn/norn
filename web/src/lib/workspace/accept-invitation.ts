@@ -3,17 +3,28 @@ import type { MembershipRole } from "./members";
 
 export type InvitationWorkspace = components["schemas"]["InvitationWorkspace"];
 
+export type InvitationInviter = components["schemas"]["InvitationInviter"];
+
+export type InvitationDetail = {
+	workspace: InvitationWorkspace;
+	email: string;
+	invitedBy?: InvitationInviter;
+	invitedAt: string;
+	expiresAt: string;
+	teams: string[];
+};
+
 export type AcceptInvitation =
 	| { kind: "no_token" }
 	| { kind: "invalid" }
 	| { kind: "expired" }
 	| { kind: "revoked" }
 	| { kind: "already_accepted" }
-	| { kind: "create_account"; workspace: InvitationWorkspace; email: string; role: MembershipRole }
-	| { kind: "sign_in_required"; workspace: InvitationWorkspace; email: string }
-	| { kind: "confirm"; workspace: InvitationWorkspace; email: string; role: MembershipRole }
+	| ({ kind: "create_account"; role: MembershipRole } & InvitationDetail)
+	| ({ kind: "sign_in_required" } & InvitationDetail)
+	| ({ kind: "confirm"; role: MembershipRole } & InvitationDetail)
 	| { kind: "address_mismatch"; email: string }
-	| { kind: "sso_required"; workspace: InvitationWorkspace; email: string }
+	| ({ kind: "sso_required" } & InvitationDetail)
 	| { kind: "joined"; workspace: InvitationWorkspace }
 	| { kind: "unavailable" };
 
@@ -35,7 +46,7 @@ function coded(problem: PreviewProblem | AcceptProblem): problem is CodedPreview
 	return "code" in problem;
 }
 
-export type InvitationContext = { workspace: InvitationWorkspace; email: string };
+export type InvitationContext = InvitationDetail;
 
 export function linkFailure(
 	problem: PreviewProblem | AcceptProblem,
@@ -55,9 +66,7 @@ export function linkFailure(
 		case "invitation_address_mismatch":
 			return { kind: "address_mismatch", email: problem.invitedEmail ?? context?.email ?? "" };
 		case "account_exists":
-			return context
-				? { kind: "sign_in_required", ...context }
-				: { kind: "already_accepted" };
+			return context ? { kind: "sign_in_required", ...context } : { kind: "already_accepted" };
 		default:
 			return { kind: "unavailable" };
 	}
@@ -69,15 +78,30 @@ export function invitationState(
 ): AcceptInvitation {
 	const { workspace, email, role } = preview;
 
-	if (preview.ssoEnforced) return { kind: "sso_required", workspace, email };
+	const detail: InvitationDetail = {
+		workspace,
+		email,
+		invitedBy: preview.invitedBy,
+		invitedAt: preview.invitedAt,
+		expiresAt: preview.expiresAt,
+		teams: preview.teams,
+	};
+
+	if (preview.ssoEnforced) return { kind: "sso_required", ...detail };
 
 	if (signedInAs) {
 		return signedInAs.toLowerCase() === email.toLowerCase()
-			? { kind: "confirm", workspace, email, role }
+			? { kind: "confirm", role, ...detail }
 			: { kind: "address_mismatch", email };
 	}
 
 	return preview.accountExists
-		? { kind: "sign_in_required", workspace, email }
-		: { kind: "create_account", workspace, email, role };
+		? { kind: "sign_in_required", ...detail }
+		: { kind: "create_account", role, ...detail };
+}
+
+export function invitedHeadline(detail: InvitationDetail): string {
+	return detail.invitedBy
+		? `${detail.invitedBy.name} invited you to ${detail.workspace.name}`
+		: `You were invited to ${detail.workspace.name}`;
 }
