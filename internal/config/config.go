@@ -8,6 +8,8 @@ import (
 type Config struct {
 	App           App           `mapstructure:"app"`
 	Instance      Instance      `mapstructure:"instance"`
+	Licence       Licence       `mapstructure:"licence"`
+	Audit         Audit         `mapstructure:"audit"`
 	HTTP          HTTP          `mapstructure:"http"`
 	Postgres      Postgres      `mapstructure:"postgres"`
 	Valkey        Valkey        `mapstructure:"valkey"`
@@ -27,6 +29,20 @@ type Config struct {
 	OIDC          OIDC          `mapstructure:"oidc"`
 	SAML          SAML          `mapstructure:"saml"`
 	Cycles        Cycles        `mapstructure:"cycles"`
+}
+
+type Licence struct {
+	Key string `mapstructure:"key"`
+}
+
+type Audit struct {
+	Retention     time.Duration `mapstructure:"retention"`
+	SweepSchedule string        `mapstructure:"sweep_schedule"`
+	SweepBatch    int           `mapstructure:"sweep_batch"`
+}
+
+func (c Audit) RetentionDays() int {
+	return int(c.Retention.Hours() / 24)
 }
 
 type Security struct {

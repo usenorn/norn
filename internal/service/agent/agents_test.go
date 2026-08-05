@@ -85,6 +85,7 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		(service.IssueComments)(nil),
 		h.authorizer,
 		transactor,
+		silentAudit(ctrl),
 	)
 
 	return h
@@ -336,6 +337,7 @@ func TestATokenMayNotRegisterOrApproveOnAnAgentsBehalf(t *testing.T) {
 		(service.IssueComments)(nil),
 		authorizer,
 		transactorrepo.NewMockTransactor(ctrl),
+		silentAudit(ctrl),
 	)
 
 	if _, err := svc.Register(context.Background(), service.RegisterAgentInput{

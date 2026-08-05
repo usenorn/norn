@@ -170,6 +170,12 @@ func (s *accountsService) storePassword(ctx context.Context, account entity.Acco
 		return service.IssuedSession{}, err
 	}
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action:       entity.AuditPasswordChanged,
+		ResourceKind: string(entity.ResourceAccount),
+		ResourceID:   account.ID,
+	})
+
 	return issued, nil
 }
 

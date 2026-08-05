@@ -31,6 +31,7 @@ type workspacesService struct {
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
 	workspaceCfg config.Workspace
+	audit        service.Audit
 }
 
 func New(
@@ -49,6 +50,7 @@ func New(
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 	workspaceCfg config.Workspace,
+	audit service.Audit,
 ) service.Workspaces {
 	return &workspacesService{
 		workspaces:   workspaces,
@@ -66,6 +68,7 @@ func New(
 		authorizer:   authorizer,
 		transactor:   transactor,
 		workspaceCfg: workspaceCfg,
+		audit:        audit,
 	}
 }
 
@@ -95,6 +98,7 @@ func (s *workspacesService) Create(ctx context.Context, input service.CreateWork
 			AccountID:   actor,
 			Role:        entity.MembershipRoleAdmin,
 			Source:      entity.MembershipSourceManual,
+			ReadsAudit:  true,
 		}); err != nil {
 			return err
 		}
@@ -194,7 +198,20 @@ func (s *workspacesService) Update(ctx context.Context, workspaceID uuid.UUID, i
 		defaultTeamID = &assignable
 	}
 
-	return s.workspaces.UpdateSettings(ctx, workspaceID, name, timezone, defaultTeamID)
+	updated, err := s.workspaces.UpdateSettings(ctx, workspaceID, name, timezone, defaultTeamID)
+	if err != nil {
+		return entity.Workspace{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:   workspaceID,
+		WorkspaceName: updated.Name,
+		Action:        entity.AuditWorkspaceUpdated,
+		ResourceKind:  string(entity.ResourceWorkspace),
+		ResourceID:    workspaceID,
+	})
+
+	return updated, nil
 }
 
 func (s *workspacesService) assignableTeam(ctx context.Context, workspaceID, teamID uuid.UUID) (uuid.UUID, error) {
@@ -262,6 +279,14 @@ func (s *workspacesService) Delete(ctx context.Context, workspaceID uuid.UUID) (
 		return entity.Workspace{}, err
 	}
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:   workspaceID,
+		WorkspaceName: deleted.Name,
+		Action:        entity.AuditWorkspaceDeletion,
+		ResourceKind:  string(entity.ResourceWorkspace),
+		ResourceID:    workspaceID,
+	})
+
 	return deleted, nil
 }
 
@@ -270,7 +295,20 @@ func (s *workspacesService) Restore(ctx context.Context, workspaceID uuid.UUID) 
 		return entity.Workspace{}, err
 	}
 
-	return s.workspaces.Restore(ctx, workspaceID)
+	restored, err := s.workspaces.Restore(ctx, workspaceID)
+	if err != nil {
+		return entity.Workspace{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:   workspaceID,
+		WorkspaceName: restored.Name,
+		Action:        entity.AuditWorkspaceRestored,
+		ResourceKind:  string(entity.ResourceWorkspace),
+		ResourceID:    workspaceID,
+	})
+
+	return restored, nil
 }
 
 func (s *workspacesService) Purge(ctx context.Context, workspaceID uuid.UUID) error {
@@ -287,13 +325,26 @@ func (s *workspacesService) Purge(ctx context.Context, workspaceID uuid.UUID) er
 		return nil
 	}
 
-	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		if err := s.blobs.RemoveAll(ctx, entity.AttachmentPrefix(workspaceID)); err != nil {
 			return err
 		}
 
 		return s.workspaces.Purge(ctx, workspaceID)
+	}); err != nil {
+		return err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:   workspaceID,
+		WorkspaceName: workspace.Name,
+		Action:        entity.AuditWorkspacePurged,
+		Actor:         entity.AuditActor{Kind: entity.ActorKindSystem},
+		ResourceKind:  string(entity.ResourceWorkspace),
+		ResourceID:    workspaceID,
 	})
+
+	return nil
 }
 
 func (s *workspacesService) ListForAccount(ctx context.Context, accountID uuid.UUID) ([]entity.Workspace, error) {
@@ -372,6 +423,15 @@ func (s *workspacesService) AddMember(ctx context.Context, workspaceID, accountI
 		return entity.WorkspaceMember{}, err
 	}
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditMemberAdded,
+		ResourceKind: string(entity.ResourceMembership),
+		ResourceID:   accountID,
+		ResourceName: account.DisplayName,
+		Detail:       map[string]string{"role": string(role)},
+	})
+
 	return describe(created, account), nil
 }
 
@@ -432,6 +492,15 @@ func (s *workspacesService) ChangeMemberRole(ctx context.Context, workspaceID, a
 		return entity.WorkspaceMember{}, err
 	}
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditMemberRoleChanged,
+		ResourceKind: string(entity.ResourceMembership),
+		ResourceID:   accountID,
+		ResourceName: account.DisplayName,
+		Detail:       map[string]string{"role": string(role)},
+	})
+
 	return describe(updated, account), nil
 }
 
@@ -473,7 +542,7 @@ func (s *workspacesService) RemoveMember(ctx context.Context, workspaceID, accou
 		return err
 	}
 
-	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		membership, err := s.memberships.Get(ctx, workspaceID, accountID)
 		if err != nil {
 			return err
@@ -494,7 +563,18 @@ func (s *workspacesService) RemoveMember(ctx context.Context, workspaceID, accou
 		}
 
 		return s.memberships.Delete(ctx, workspaceID, accountID)
+	}); err != nil {
+		return err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditMemberRemoved,
+		ResourceKind: string(entity.ResourceMembership),
+		ResourceID:   accountID,
 	})
+
+	return nil
 }
 
 func (s *workspacesService) guardReassignmentTarget(ctx context.Context, workspaceID, from, to uuid.UUID) error {

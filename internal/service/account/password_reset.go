@@ -168,6 +168,16 @@ func (s *accountsService) ConfirmPasswordReset(ctx context.Context, token, passw
 		return err
 	}
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action: entity.AuditPasswordReset,
+		Actor: entity.AuditActor{
+			Kind:      entity.ActorKindSystem,
+			AccountID: account.ID,
+		},
+		ResourceKind: string(entity.ResourceAccount),
+		ResourceID:   account.ID,
+	})
+
 	return s.throttle.Clear(ctx, entity.HashSignInSubject(entity.NormalizeEmail(account.Email)))
 }
 

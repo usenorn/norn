@@ -293,22 +293,22 @@ func (e AgentStatus) Valid() bool {
 
 // Defines values for AgentUnusableProblemCode.
 const (
-	AgentDisabled        AgentUnusableProblemCode = "agent_disabled"
-	AgentNameTaken       AgentUnusableProblemCode = "agent_name_taken"
-	AgentOwnerInvalid    AgentUnusableProblemCode = "agent_owner_invalid"
-	AgentProposalSettled AgentUnusableProblemCode = "agent_proposal_settled"
+	AgentUnusableProblemCodeAgentDisabled        AgentUnusableProblemCode = "agent_disabled"
+	AgentUnusableProblemCodeAgentNameTaken       AgentUnusableProblemCode = "agent_name_taken"
+	AgentUnusableProblemCodeAgentOwnerInvalid    AgentUnusableProblemCode = "agent_owner_invalid"
+	AgentUnusableProblemCodeAgentProposalSettled AgentUnusableProblemCode = "agent_proposal_settled"
 )
 
 // Valid indicates whether the value is a known member of the AgentUnusableProblemCode enum.
 func (e AgentUnusableProblemCode) Valid() bool {
 	switch e {
-	case AgentDisabled:
+	case AgentUnusableProblemCodeAgentDisabled:
 		return true
-	case AgentNameTaken:
+	case AgentUnusableProblemCodeAgentNameTaken:
 		return true
-	case AgentOwnerInvalid:
+	case AgentUnusableProblemCodeAgentOwnerInvalid:
 		return true
-	case AgentProposalSettled:
+	case AgentUnusableProblemCodeAgentProposalSettled:
 		return true
 	default:
 		return false
@@ -330,6 +330,186 @@ func (e AttachmentStatus) Valid() bool {
 	case AttachmentStatusPending:
 		return true
 	case AttachmentStatusStored:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AuditAction.
+const (
+	AuditActionAccessDenied                 AuditAction = "access.denied"
+	AuditActionAccountDeactivated           AuditAction = "account.deactivated"
+	AuditActionAccountDeleted               AuditAction = "account.deleted"
+	AuditActionAccountEmailChanged          AuditAction = "account.email_changed"
+	AuditActionAccountPasswordChanged       AuditAction = "account.password_changed"
+	AuditActionAccountPasswordReset         AuditAction = "account.password_reset"
+	AuditActionAgentDisabled                AuditAction = "agent.disabled"
+	AuditActionAgentProposalDecided         AuditAction = "agent.proposal_decided"
+	AuditActionAgentRegistered              AuditAction = "agent.registered"
+	AuditActionAuditExported                AuditAction = "audit.exported"
+	AuditActionInvitationAccepted           AuditAction = "invitation.accepted"
+	AuditActionInvitationCreated            AuditAction = "invitation.created"
+	AuditActionInvitationRevoked            AuditAction = "invitation.revoked"
+	AuditActionMembershipAdded              AuditAction = "membership.added"
+	AuditActionMembershipAuditAccessChanged AuditAction = "membership.audit_access_changed"
+	AuditActionMembershipRemoved            AuditAction = "membership.removed"
+	AuditActionMembershipRoleChanged        AuditAction = "membership.role_changed"
+	AuditActionSessionRevoked               AuditAction = "session.revoked"
+	AuditActionSessionSignInFailed          AuditAction = "session.sign_in_failed"
+	AuditActionSessionSignedIn              AuditAction = "session.signed_in"
+	AuditActionSessionSignedOut             AuditAction = "session.signed_out"
+	AuditActionSsoConnectionRemoved         AuditAction = "sso.connection_removed"
+	AuditActionSsoConnectionSaved           AuditAction = "sso.connection_saved"
+	AuditActionSsoEnforcementChanged        AuditAction = "sso.enforcement_changed"
+	AuditActionSsoIdentityUnlinked          AuditAction = "sso.identity_unlinked"
+	AuditActionSsoRecoveryCodeRedeemed      AuditAction = "sso.recovery_code_redeemed"
+	AuditActionSsoRecoveryCodesIssued       AuditAction = "sso.recovery_codes_issued"
+	AuditActionTeamMembershipAdded          AuditAction = "team_membership.added"
+	AuditActionTeamMembershipRemoved        AuditAction = "team_membership.removed"
+	AuditActionTokenMinted                  AuditAction = "token.minted"
+	AuditActionTokenRevoked                 AuditAction = "token.revoked"
+	AuditActionWorkspaceDeletionRequested   AuditAction = "workspace.deletion_requested"
+	AuditActionWorkspacePurged              AuditAction = "workspace.purged"
+	AuditActionWorkspaceRestored            AuditAction = "workspace.restored"
+	AuditActionWorkspaceUpdated             AuditAction = "workspace.updated"
+)
+
+// Valid indicates whether the value is a known member of the AuditAction enum.
+func (e AuditAction) Valid() bool {
+	switch e {
+	case AuditActionAccessDenied:
+		return true
+	case AuditActionAccountDeactivated:
+		return true
+	case AuditActionAccountDeleted:
+		return true
+	case AuditActionAccountEmailChanged:
+		return true
+	case AuditActionAccountPasswordChanged:
+		return true
+	case AuditActionAccountPasswordReset:
+		return true
+	case AuditActionAgentDisabled:
+		return true
+	case AuditActionAgentProposalDecided:
+		return true
+	case AuditActionAgentRegistered:
+		return true
+	case AuditActionAuditExported:
+		return true
+	case AuditActionInvitationAccepted:
+		return true
+	case AuditActionInvitationCreated:
+		return true
+	case AuditActionInvitationRevoked:
+		return true
+	case AuditActionMembershipAdded:
+		return true
+	case AuditActionMembershipAuditAccessChanged:
+		return true
+	case AuditActionMembershipRemoved:
+		return true
+	case AuditActionMembershipRoleChanged:
+		return true
+	case AuditActionSessionRevoked:
+		return true
+	case AuditActionSessionSignInFailed:
+		return true
+	case AuditActionSessionSignedIn:
+		return true
+	case AuditActionSessionSignedOut:
+		return true
+	case AuditActionSsoConnectionRemoved:
+		return true
+	case AuditActionSsoConnectionSaved:
+		return true
+	case AuditActionSsoEnforcementChanged:
+		return true
+	case AuditActionSsoIdentityUnlinked:
+		return true
+	case AuditActionSsoRecoveryCodeRedeemed:
+		return true
+	case AuditActionSsoRecoveryCodesIssued:
+		return true
+	case AuditActionTeamMembershipAdded:
+		return true
+	case AuditActionTeamMembershipRemoved:
+		return true
+	case AuditActionTokenMinted:
+		return true
+	case AuditActionTokenRevoked:
+		return true
+	case AuditActionWorkspaceDeletionRequested:
+		return true
+	case AuditActionWorkspacePurged:
+		return true
+	case AuditActionWorkspaceRestored:
+		return true
+	case AuditActionWorkspaceUpdated:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AuditAuthMethod.
+const (
+	AuditAuthMethodAgent    AuditAuthMethod = "agent"
+	AuditAuthMethodApiToken AuditAuthMethod = "api_token"
+	AuditAuthMethodPassword AuditAuthMethod = "password"
+	AuditAuthMethodSso      AuditAuthMethod = "sso"
+	AuditAuthMethodSystem   AuditAuthMethod = "system"
+)
+
+// Valid indicates whether the value is a known member of the AuditAuthMethod enum.
+func (e AuditAuthMethod) Valid() bool {
+	switch e {
+	case AuditAuthMethodAgent:
+		return true
+	case AuditAuthMethodApiToken:
+		return true
+	case AuditAuthMethodPassword:
+		return true
+	case AuditAuthMethodSso:
+		return true
+	case AuditAuthMethodSystem:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AuditOutcome.
+const (
+	AuditOutcomeDenied    AuditOutcome = "denied"
+	AuditOutcomeFailed    AuditOutcome = "failed"
+	AuditOutcomeSucceeded AuditOutcome = "succeeded"
+)
+
+// Valid indicates whether the value is a known member of the AuditOutcome enum.
+func (e AuditOutcome) Valid() bool {
+	switch e {
+	case AuditOutcomeDenied:
+		return true
+	case AuditOutcomeFailed:
+		return true
+	case AuditOutcomeSucceeded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AuditUnlicensedProblemCode.
+const (
+	AuditUnlicensedProblemCodeAuditUnlicensed AuditUnlicensedProblemCode = "audit_unlicensed"
+)
+
+// Valid indicates whether the value is a known member of the AuditUnlicensedProblemCode enum.
+func (e AuditUnlicensedProblemCode) Valid() bool {
+	switch e {
+	case AuditUnlicensedProblemCodeAuditUnlicensed:
 		return true
 	default:
 		return false
@@ -815,22 +995,22 @@ func (e InvitationStatus) Valid() bool {
 
 // Defines values for InvitationUnusableProblemCode.
 const (
-	AccountExists             InvitationUnusableProblemCode = "account_exists"
-	InvitationAccepted        InvitationUnusableProblemCode = "invitation_accepted"
-	InvitationAddressMismatch InvitationUnusableProblemCode = "invitation_address_mismatch"
-	InvitationRevoked         InvitationUnusableProblemCode = "invitation_revoked"
+	InvitationUnusableProblemCodeAccountExists             InvitationUnusableProblemCode = "account_exists"
+	InvitationUnusableProblemCodeInvitationAccepted        InvitationUnusableProblemCode = "invitation_accepted"
+	InvitationUnusableProblemCodeInvitationAddressMismatch InvitationUnusableProblemCode = "invitation_address_mismatch"
+	InvitationUnusableProblemCodeInvitationRevoked         InvitationUnusableProblemCode = "invitation_revoked"
 )
 
 // Valid indicates whether the value is a known member of the InvitationUnusableProblemCode enum.
 func (e InvitationUnusableProblemCode) Valid() bool {
 	switch e {
-	case AccountExists:
+	case InvitationUnusableProblemCodeAccountExists:
 		return true
-	case InvitationAccepted:
+	case InvitationUnusableProblemCodeInvitationAccepted:
 		return true
-	case InvitationAddressMismatch:
+	case InvitationUnusableProblemCodeInvitationAddressMismatch:
 		return true
-	case InvitationRevoked:
+	case InvitationUnusableProblemCodeInvitationRevoked:
 		return true
 	default:
 		return false
@@ -2406,6 +2586,74 @@ type AttachmentTransfer struct {
 	Url       string            `json:"url"`
 }
 
+// AuditAction defines model for AuditAction.
+type AuditAction string
+
+// AuditActor defines model for AuditActor.
+type AuditActor struct {
+	AccountId  *openapi_types.UUID `json:"accountId,omitempty"`
+	AgentId    *openapi_types.UUID `json:"agentId,omitempty"`
+	AgentName  *string             `json:"agentName,omitempty"`
+	AuthMethod AuditAuthMethod     `json:"authMethod"`
+
+	// Kind Who made the change — a person signed in, an integration, an agent, or Norn itself.
+	Kind      ActivityActorKind   `json:"kind"`
+	Name      *string             `json:"name,omitempty"`
+	TokenId   *openapi_types.UUID `json:"tokenId,omitempty"`
+	TokenName *string             `json:"tokenName,omitempty"`
+}
+
+// AuditAuthMethod defines model for AuditAuthMethod.
+type AuditAuthMethod string
+
+// AuditAvailability defines model for AuditAvailability.
+type AuditAvailability struct {
+	Available     bool    `json:"available"`
+	Holder        *string `json:"holder,omitempty"`
+	RetentionDays int32   `json:"retentionDays"`
+}
+
+// AuditEvent defines model for AuditEvent.
+type AuditEvent struct {
+	Action        AuditAction         `json:"action"`
+	Actor         AuditActor          `json:"actor"`
+	Detail        *map[string]string  `json:"detail,omitempty"`
+	Id            openapi_types.UUID  `json:"id"`
+	OccurredAt    time.Time           `json:"occurredAt"`
+	Outcome       AuditOutcome        `json:"outcome"`
+	ResourceId    *openapi_types.UUID `json:"resourceId,omitempty"`
+	ResourceKind  *string             `json:"resourceKind,omitempty"`
+	ResourceName  *string             `json:"resourceName,omitempty"`
+	SourceIp      *string             `json:"sourceIp,omitempty"`
+	UserAgent     *string             `json:"userAgent,omitempty"`
+	WorkspaceId   *openapi_types.UUID `json:"workspaceId,omitempty"`
+	WorkspaceName *string             `json:"workspaceName,omitempty"`
+}
+
+// AuditOutcome defines model for AuditOutcome.
+type AuditOutcome string
+
+// AuditPage defines model for AuditPage.
+type AuditPage struct {
+	Events        []AuditEvent `json:"events"`
+	NextCursor    *string      `json:"nextCursor,omitempty"`
+	RetentionDays int32        `json:"retentionDays"`
+}
+
+// AuditUnlicensedProblem defines model for AuditUnlicensedProblem.
+type AuditUnlicensedProblem struct {
+	Code     AuditUnlicensedProblemCode `json:"code"`
+	Detail   *string                    `json:"detail,omitempty"`
+	Errors   *[]FieldError              `json:"errors,omitempty"`
+	Instance *string                    `json:"instance,omitempty"`
+	Status   int32                      `json:"status"`
+	Title    string                     `json:"title"`
+	Type     string                     `json:"type"`
+}
+
+// AuditUnlicensedProblemCode defines model for AuditUnlicensedProblem.Code.
+type AuditUnlicensedProblemCode string
+
 // AuthEnforcement defines model for AuthEnforcement.
 type AuthEnforcement string
 
@@ -3201,6 +3449,7 @@ type Membership struct {
 	Kind           *AccountKind       `json:"kind,omitempty"`
 	LastActiveAt   *time.Time         `json:"lastActiveAt,omitempty"`
 	LastAuthMethod *SessionAuthMethod `json:"lastAuthMethod,omitempty"`
+	ReadsAudit     *bool              `json:"readsAudit,omitempty"`
 	Role           MembershipRole     `json:"role"`
 	Source         MembershipSource   `json:"source"`
 	WorkspaceId    openapi_types.UUID `json:"workspaceId"`
@@ -3675,6 +3924,11 @@ type SessionClient struct {
 type SessionLocation struct {
 	City        *string `json:"city,omitempty"`
 	CountryCode *string `json:"countryCode,omitempty"`
+}
+
+// SetAuditAccessRequest defines model for SetAuditAccessRequest.
+type SetAuditAccessRequest struct {
+	ReadsAudit bool `json:"readsAudit"`
 }
 
 // SetCycleCadenceRequest defines model for SetCycleCadenceRequest.
@@ -4153,6 +4407,30 @@ type AgentId = openapi_types.UUID
 // AttachmentId defines model for AttachmentId.
 type AttachmentId = openapi_types.UUID
 
+// AuditActionFilter defines model for AuditActionFilter.
+type AuditActionFilter = []AuditAction
+
+// AuditActorFilter defines model for AuditActorFilter.
+type AuditActorFilter = openapi_types.UUID
+
+// AuditCursor defines model for AuditCursor.
+type AuditCursor = string
+
+// AuditFrom defines model for AuditFrom.
+type AuditFrom = time.Time
+
+// AuditLimit defines model for AuditLimit.
+type AuditLimit = int32
+
+// AuditResourceId defines model for AuditResourceId.
+type AuditResourceId = openapi_types.UUID
+
+// AuditResourceKind defines model for AuditResourceKind.
+type AuditResourceKind = string
+
+// AuditTo defines model for AuditTo.
+type AuditTo = time.Time
+
 // CommentId defines model for CommentId.
 type CommentId = openapi_types.UUID
 
@@ -4209,6 +4487,9 @@ type AgentHeld = AgentHeldProblem
 
 // AgentUnusable defines model for AgentUnusable.
 type AgentUnusable = AgentUnusableProblem
+
+// AuditUnlicensed defines model for AuditUnlicensed.
+type AuditUnlicensed = AuditUnlicensedProblem
 
 // BreachCheckUnavailable defines model for BreachCheckUnavailable.
 type BreachCheckUnavailable = BreachCheckUnavailableProblem
@@ -4290,10 +4571,34 @@ type UploadAvatarMultipartBody struct {
 	File openapi_types.File `json:"file"`
 }
 
+// ListInstanceAuditParams defines parameters for ListInstanceAudit.
+type ListInstanceAuditParams struct {
+	Limit        *AuditLimit        `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor       *AuditCursor       `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Actor        *AuditActorFilter  `form:"actor,omitempty" json:"actor,omitempty"`
+	Action       *AuditActionFilter `form:"action,omitempty" json:"action,omitempty"`
+	ResourceKind *AuditResourceKind `form:"resourceKind,omitempty" json:"resourceKind,omitempty"`
+	ResourceId   *AuditResourceId   `form:"resourceId,omitempty" json:"resourceId,omitempty"`
+	From         *AuditFrom         `form:"from,omitempty" json:"from,omitempty"`
+	To           *AuditTo           `form:"to,omitempty" json:"to,omitempty"`
+}
+
 // ListWorkspaceAgentActivityParams defines parameters for ListWorkspaceAgentActivity.
 type ListWorkspaceAgentActivityParams struct {
 	Limit  *ActivityLimit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *ActivityCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListWorkspaceAuditParams defines parameters for ListWorkspaceAudit.
+type ListWorkspaceAuditParams struct {
+	Limit        *AuditLimit        `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor       *AuditCursor       `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Actor        *AuditActorFilter  `form:"actor,omitempty" json:"actor,omitempty"`
+	Action       *AuditActionFilter `form:"action,omitempty" json:"action,omitempty"`
+	ResourceKind *AuditResourceKind `form:"resourceKind,omitempty" json:"resourceKind,omitempty"`
+	ResourceId   *AuditResourceId   `form:"resourceId,omitempty" json:"resourceId,omitempty"`
+	From         *AuditFrom         `form:"from,omitempty" json:"from,omitempty"`
+	To           *AuditTo           `form:"to,omitempty" json:"to,omitempty"`
 }
 
 // ListWorkspaceCyclesParams defines parameters for ListWorkspaceCycles.
@@ -4559,6 +4864,9 @@ type AddWorkspaceMemberJSONRequestBody = AddMemberRequest
 // ChangeWorkspaceMemberRoleJSONRequestBody defines body for ChangeWorkspaceMemberRole for application/json ContentType.
 type ChangeWorkspaceMemberRoleJSONRequestBody = ChangeMemberRoleRequest
 
+// SetWorkspaceMemberAuditAccessJSONRequestBody defines body for SetWorkspaceMemberAuditAccess for application/json ContentType.
+type SetWorkspaceMemberAuditAccessJSONRequestBody = SetAuditAccessRequest
+
 // SetWorkspaceNotificationSettingsJSONRequestBody defines body for SetWorkspaceNotificationSettings for application/json ContentType.
 type SetWorkspaceNotificationSettingsJSONRequestBody = NotificationPreferences
 
@@ -4696,6 +5004,9 @@ type ServerInterface interface {
 	// GetInstance Describe what this instance offers before anyone signs in
 	// (GET /instance)
 	GetInstance(w http.ResponseWriter, r *http.Request)
+	// ListInstanceAudit Read every record on this instance, including the account-level ones
+	// (GET /instance/audit)
+	ListInstanceAudit(w http.ResponseWriter, r *http.Request, params ListInstanceAuditParams)
 	// AcceptInvitation Join the workspace, creating an account when there is none
 	// (POST /invitations/accept)
 	AcceptInvitation(w http.ResponseWriter, r *http.Request)
@@ -4771,6 +5082,12 @@ type ServerInterface interface {
 	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 	// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
 	DownloadWorkspaceAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, attachmentId AttachmentId)
+	// ListWorkspaceAudit Read what has been done in this workspace, one record per operation
+	// (GET /workspaces/{workspaceId}/audit)
+	ListWorkspaceAudit(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceAuditParams)
+	// GetWorkspaceAuditAvailability Report whether the audit log is licensed and how long it is kept
+	// (GET /workspaces/{workspaceId}/audit/availability)
+	GetWorkspaceAuditAvailability(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// GetWorkspaceAuthPolicy Read which authentication methods the workspace accepts
 	// (GET /workspaces/{workspaceId}/auth-policy)
 	GetWorkspaceAuthPolicy(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -4936,6 +5253,9 @@ type ServerInterface interface {
 	// ChangeWorkspaceMemberRole Change a member role
 	// (PATCH /workspaces/{workspaceId}/members/{accountId})
 	ChangeWorkspaceMemberRole(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId)
+	// SetWorkspaceMemberAuditAccess Grant or withdraw this member's access to the audit log
+	// (PUT /workspaces/{workspaceId}/members/{accountId}/audit-access)
+	SetWorkspaceMemberAuditAccess(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId)
 	// PreviewWorkspaceMemberRemoval Report what removing this member would affect
 	// (GET /workspaces/{workspaceId}/members/{accountId}/removal)
 	PreviewWorkspaceMemberRemoval(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId)
@@ -5290,6 +5610,12 @@ func (_ Unimplemented) GetInstance(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListInstanceAudit Read every record on this instance, including the account-level ones
+// (GET /instance/audit)
+func (_ Unimplemented) ListInstanceAudit(w http.ResponseWriter, r *http.Request, params ListInstanceAuditParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // AcceptInvitation Join the workspace, creating an account when there is none
 // (POST /invitations/accept)
 func (_ Unimplemented) AcceptInvitation(w http.ResponseWriter, r *http.Request) {
@@ -5437,6 +5763,18 @@ func (_ Unimplemented) ListWorkspaceAgentActivity(w http.ResponseWriter, r *http
 // DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 // (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
 func (_ Unimplemented) DownloadWorkspaceAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, attachmentId AttachmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceAudit Read what has been done in this workspace, one record per operation
+// (GET /workspaces/{workspaceId}/audit)
+func (_ Unimplemented) ListWorkspaceAudit(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceAuditParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceAuditAvailability Report whether the audit log is licensed and how long it is kept
+// (GET /workspaces/{workspaceId}/audit/availability)
+func (_ Unimplemented) GetWorkspaceAuditAvailability(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -5767,6 +6105,12 @@ func (_ Unimplemented) RemoveWorkspaceMember(w http.ResponseWriter, r *http.Requ
 // ChangeWorkspaceMemberRole Change a member role
 // (PATCH /workspaces/{workspaceId}/members/{accountId})
 func (_ Unimplemented) ChangeWorkspaceMemberRole(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceMemberAuditAccess Grant or withdraw this member's access to the audit log
+// (PUT /workspaces/{workspaceId}/members/{accountId}/audit-access)
+func (_ Unimplemented) SetWorkspaceMemberAuditAccess(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -6527,6 +6871,130 @@ func (siw *ServerInterfaceWrapper) GetInstance(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// ListInstanceAudit operation middleware
+func (siw *ServerInterfaceWrapper) ListInstanceAudit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListInstanceAuditParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "actor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "actor", r.URL.Query(), &params.Actor, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "actor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "actor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "action" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "action", r.URL.Query(), &params.Action, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "action"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "action", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "resourceKind" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "resourceKind", r.URL.Query(), &params.ResourceKind, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "resourceKind"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "resourceKind", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "resourceId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "resourceId", r.URL.Query(), &params.ResourceId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "resourceId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "resourceId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListInstanceAudit(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // AcceptInvitation operation middleware
 func (siw *ServerInterfaceWrapper) AcceptInvitation(w http.ResponseWriter, r *http.Request) {
 
@@ -7119,6 +7587,165 @@ func (siw *ServerInterfaceWrapper) DownloadWorkspaceAttachment(w http.ResponseWr
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DownloadWorkspaceAttachment(w, r, workspaceId, attachmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceAudit operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceAudit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceAuditParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "actor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "actor", r.URL.Query(), &params.Actor, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "actor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "actor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "action" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "action", r.URL.Query(), &params.Action, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "action"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "action", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "resourceKind" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "resourceKind", r.URL.Query(), &params.ResourceKind, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "resourceKind"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "resourceKind", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "resourceId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "resourceId", r.URL.Query(), &params.ResourceId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "resourceId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "resourceId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceAudit(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceAuditAvailability operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceAuditAvailability(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceAuditAvailability(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -9298,6 +9925,41 @@ func (siw *ServerInterfaceWrapper) ChangeWorkspaceMemberRole(w http.ResponseWrit
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ChangeWorkspaceMemberRole(w, r, workspaceId, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceMemberAuditAccess operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceMemberAuditAccess(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "accountId" -------------
+	var accountId AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "accountId", chi.URLParam(r, "accountId"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accountId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceMemberAuditAccess(w, r, workspaceId, accountId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -12335,6 +12997,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Delete(options.BaseURL+"/tokens/{tokenId}", wrapper.RevokeAPIToken)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/audit", wrapper.ListWorkspaceAudit)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/audit/availability", wrapper.GetWorkspaceAuditAvailability)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/members/{accountId}/audit-access", wrapper.SetWorkspaceMemberAuditAccess)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/instance/audit", wrapper.ListInstanceAudit)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents", wrapper.ListWorkspaceAgents)
 	})
 	r.Group(func(r chi.Router) {
@@ -12684,6 +13358,8 @@ type AccountLockedApplicationProblemPlusJSONResponse AccountLockedProblem
 type AgentHeldApplicationProblemPlusJSONResponse AgentHeldProblem
 
 type AgentUnusableApplicationProblemPlusJSONResponse AgentUnusableProblem
+
+type AuditUnlicensedApplicationProblemPlusJSONResponse AuditUnlicensedProblem
 
 type BreachCheckUnavailableApplicationProblemPlusJSONResponse BreachCheckUnavailableProblem
 
@@ -14218,6 +14894,104 @@ func (response GetInstance500ApplicationProblemPlusJSONResponse) VisitGetInstanc
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstanceAuditRequestObject struct {
+	Params ListInstanceAuditParams
+}
+
+type ListInstanceAuditResponseObject interface {
+	VisitListInstanceAuditResponse(w http.ResponseWriter) error
+}
+
+type ListInstanceAudit200JSONResponse AuditPage
+
+func (response ListInstanceAudit200JSONResponse) VisitListInstanceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstanceAudit401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListInstanceAudit401ApplicationProblemPlusJSONResponse) VisitListInstanceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstanceAudit403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListInstanceAudit403ApplicationProblemPlusJSONResponse) VisitListInstanceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstanceAudit422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListInstanceAudit422ApplicationProblemPlusJSONResponse) VisitListInstanceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstanceAudit500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListInstanceAudit500ApplicationProblemPlusJSONResponse) VisitListInstanceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstanceAudit503ApplicationProblemPlusJSONResponse struct {
+	AuditUnlicensedApplicationProblemPlusJSONResponse
+}
+
+func (response ListInstanceAudit503ApplicationProblemPlusJSONResponse) VisitListInstanceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -16264,6 +17038,173 @@ func (response DownloadWorkspaceAttachment404ApplicationProblemPlusJSONResponse)
 type DownloadWorkspaceAttachment500ApplicationProblemPlusJSONResponse Problem
 
 func (response DownloadWorkspaceAttachment500ApplicationProblemPlusJSONResponse) VisitDownloadWorkspaceAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAuditRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceAuditParams
+}
+
+type ListWorkspaceAuditResponseObject interface {
+	VisitListWorkspaceAuditResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceAudit200JSONResponse AuditPage
+
+func (response ListWorkspaceAudit200JSONResponse) VisitListWorkspaceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAudit401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceAudit401ApplicationProblemPlusJSONResponse) VisitListWorkspaceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAudit403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceAudit403ApplicationProblemPlusJSONResponse) VisitListWorkspaceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAudit422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceAudit422ApplicationProblemPlusJSONResponse) VisitListWorkspaceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAudit500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceAudit500ApplicationProblemPlusJSONResponse) VisitListWorkspaceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAudit503ApplicationProblemPlusJSONResponse struct {
+	AuditUnlicensedApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceAudit503ApplicationProblemPlusJSONResponse) VisitListWorkspaceAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAuditAvailabilityRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceAuditAvailabilityResponseObject interface {
+	VisitGetWorkspaceAuditAvailabilityResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceAuditAvailability200JSONResponse AuditAvailability
+
+func (response GetWorkspaceAuditAvailability200JSONResponse) VisitGetWorkspaceAuditAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAuditAvailability401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceAuditAvailability401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAuditAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAuditAvailability403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceAuditAvailability403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAuditAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAuditAvailability500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceAuditAvailability500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAuditAvailabilityResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -21589,6 +22530,104 @@ func (response ChangeWorkspaceMemberRole422ApplicationProblemPlusJSONResponse) V
 type ChangeWorkspaceMemberRole500ApplicationProblemPlusJSONResponse Problem
 
 func (response ChangeWorkspaceMemberRole500ApplicationProblemPlusJSONResponse) VisitChangeWorkspaceMemberRoleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceMemberAuditAccessRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AccountId   AccountId   `json:"accountId"`
+	Body        *SetWorkspaceMemberAuditAccessJSONRequestBody
+}
+
+type SetWorkspaceMemberAuditAccessResponseObject interface {
+	VisitSetWorkspaceMemberAuditAccessResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceMemberAuditAccess200JSONResponse Membership
+
+func (response SetWorkspaceMemberAuditAccess200JSONResponse) VisitSetWorkspaceMemberAuditAccessResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceMemberAuditAccess401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceMemberAuditAccess401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceMemberAuditAccessResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceMemberAuditAccess403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceMemberAuditAccess403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceMemberAuditAccessResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceMemberAuditAccess404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceMemberAuditAccess404ApplicationProblemPlusJSONResponse) VisitSetWorkspaceMemberAuditAccessResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceMemberAuditAccess422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceMemberAuditAccess422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceMemberAuditAccessResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceMemberAuditAccess500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceMemberAuditAccess500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceMemberAuditAccessResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -28465,6 +29504,9 @@ type StrictServerInterface interface {
 	// GetInstance Describe what this instance offers before anyone signs in
 	// (GET /instance)
 	GetInstance(ctx context.Context, request GetInstanceRequestObject) (GetInstanceResponseObject, error)
+	// ListInstanceAudit Read every record on this instance, including the account-level ones
+	// (GET /instance/audit)
+	ListInstanceAudit(ctx context.Context, request ListInstanceAuditRequestObject) (ListInstanceAuditResponseObject, error)
 	// AcceptInvitation Join the workspace, creating an account when there is none
 	// (POST /invitations/accept)
 	AcceptInvitation(ctx context.Context, request AcceptInvitationRequestObject) (AcceptInvitationResponseObject, error)
@@ -28540,6 +29582,12 @@ type StrictServerInterface interface {
 	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 	// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
 	DownloadWorkspaceAttachment(ctx context.Context, request DownloadWorkspaceAttachmentRequestObject) (DownloadWorkspaceAttachmentResponseObject, error)
+	// ListWorkspaceAudit Read what has been done in this workspace, one record per operation
+	// (GET /workspaces/{workspaceId}/audit)
+	ListWorkspaceAudit(ctx context.Context, request ListWorkspaceAuditRequestObject) (ListWorkspaceAuditResponseObject, error)
+	// GetWorkspaceAuditAvailability Report whether the audit log is licensed and how long it is kept
+	// (GET /workspaces/{workspaceId}/audit/availability)
+	GetWorkspaceAuditAvailability(ctx context.Context, request GetWorkspaceAuditAvailabilityRequestObject) (GetWorkspaceAuditAvailabilityResponseObject, error)
 	// GetWorkspaceAuthPolicy Read which authentication methods the workspace accepts
 	// (GET /workspaces/{workspaceId}/auth-policy)
 	GetWorkspaceAuthPolicy(ctx context.Context, request GetWorkspaceAuthPolicyRequestObject) (GetWorkspaceAuthPolicyResponseObject, error)
@@ -28705,6 +29753,9 @@ type StrictServerInterface interface {
 	// ChangeWorkspaceMemberRole Change a member role
 	// (PATCH /workspaces/{workspaceId}/members/{accountId})
 	ChangeWorkspaceMemberRole(ctx context.Context, request ChangeWorkspaceMemberRoleRequestObject) (ChangeWorkspaceMemberRoleResponseObject, error)
+	// SetWorkspaceMemberAuditAccess Grant or withdraw this member's access to the audit log
+	// (PUT /workspaces/{workspaceId}/members/{accountId}/audit-access)
+	SetWorkspaceMemberAuditAccess(ctx context.Context, request SetWorkspaceMemberAuditAccessRequestObject) (SetWorkspaceMemberAuditAccessResponseObject, error)
 	// PreviewWorkspaceMemberRemoval Report what removing this member would affect
 	// (GET /workspaces/{workspaceId}/members/{accountId}/removal)
 	PreviewWorkspaceMemberRemoval(ctx context.Context, request PreviewWorkspaceMemberRemovalRequestObject) (PreviewWorkspaceMemberRemovalResponseObject, error)
@@ -29533,6 +30584,32 @@ func (sh *strictHandler) GetInstance(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListInstanceAudit operation middleware
+func (sh *strictHandler) ListInstanceAudit(w http.ResponseWriter, r *http.Request, params ListInstanceAuditParams) {
+	var request ListInstanceAuditRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInstanceAudit(ctx, request.(ListInstanceAuditRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInstanceAudit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListInstanceAuditResponseObject); ok {
+		if err := validResponse.VisitListInstanceAuditResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // AcceptInvitation operation middleware
 func (sh *strictHandler) AcceptInvitation(w http.ResponseWriter, r *http.Request) {
 	var request AcceptInvitationRequestObject
@@ -30224,6 +31301,59 @@ func (sh *strictHandler) DownloadWorkspaceAttachment(w http.ResponseWriter, r *h
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DownloadWorkspaceAttachmentResponseObject); ok {
 		if err := validResponse.VisitDownloadWorkspaceAttachmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceAudit operation middleware
+func (sh *strictHandler) ListWorkspaceAudit(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceAuditParams) {
+	var request ListWorkspaceAuditRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceAudit(ctx, request.(ListWorkspaceAuditRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceAudit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceAuditResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceAuditResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceAuditAvailability operation middleware
+func (sh *strictHandler) GetWorkspaceAuditAvailability(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceAuditAvailabilityRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceAuditAvailability(ctx, request.(GetWorkspaceAuditAvailabilityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceAuditAvailability")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceAuditAvailabilityResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceAuditAvailabilityResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -31871,6 +33001,40 @@ func (sh *strictHandler) ChangeWorkspaceMemberRole(w http.ResponseWriter, r *htt
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ChangeWorkspaceMemberRoleResponseObject); ok {
 		if err := validResponse.VisitChangeWorkspaceMemberRoleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceMemberAuditAccess operation middleware
+func (sh *strictHandler) SetWorkspaceMemberAuditAccess(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId) {
+	var request SetWorkspaceMemberAuditAccessRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AccountId = accountId
+
+	var body SetWorkspaceMemberAuditAccessJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceMemberAuditAccess(ctx, request.(SetWorkspaceMemberAuditAccessRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceMemberAuditAccess")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceMemberAuditAccessResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceMemberAuditAccessResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

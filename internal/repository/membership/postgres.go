@@ -53,6 +53,7 @@ SELECT m.id,
        m.source,
        m.last_active_at,
        m.last_auth_method,
+       m.reads_audit,
        m.created_at,
        m.updated_at,
        a.kind AS account_kind,
@@ -92,6 +93,7 @@ func toEntity(model *dbpostgres.WorkspaceMembership) (entity.Membership, error) 
 		AccountID:   accountID,
 		Role:        entity.MembershipRole(model.Role),
 		Source:      entity.MembershipSource(model.Source),
+		ReadsAudit:  model.ReadsAudit,
 		CreatedAt:   model.CreatedAt,
 		UpdatedAt:   model.UpdatedAt,
 	}
@@ -115,6 +117,7 @@ func toModel(membership entity.Membership) *dbpostgres.WorkspaceMembership {
 		AccountID:   membership.AccountID.String(),
 		Role:        string(membership.Role),
 		Source:      string(membership.Source),
+		ReadsAudit:  membership.ReadsAudit,
 		CreatedAt:   membership.CreatedAt,
 		UpdatedAt:   membership.UpdatedAt,
 	}
@@ -232,6 +235,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		source         string
 		lastActiveAt   sql.NullTime
 		lastAuthMethod sql.NullString
+		readsAudit     bool
 		createdAt      time.Time
 		updatedAt      time.Time
 		accountKind    string
@@ -248,6 +252,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		&source,
 		&lastActiveAt,
 		&lastAuthMethod,
+		&readsAudit,
 		&createdAt,
 		&updatedAt,
 		&accountKind,
@@ -279,6 +284,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		AccountID:   accountID,
 		Role:        entity.MembershipRole(role),
 		Source:      entity.MembershipSource(source),
+		ReadsAudit:  readsAudit,
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
 	}
@@ -329,6 +335,25 @@ func (r *membershipRepository) UpdateRole(ctx context.Context, workspaceID, acco
 	})
 	if err != nil {
 		return entity.Membership{}, fmt.Errorf("update membership role: %w", err)
+	}
+
+	if updated == 0 {
+		return entity.Membership{}, entity.ErrMembershipNotFound
+	}
+
+	return r.Get(ctx, workspaceID, accountID)
+}
+
+func (r *membershipRepository) SetAuditAccess(ctx context.Context, workspaceID, accountID uuid.UUID, reads bool) (entity.Membership, error) {
+	updated, err := dbpostgres.WorkspaceMemberships(
+		dbpostgres.WorkspaceMembershipWhere.WorkspaceID.EQ(workspaceID.String()),
+		dbpostgres.WorkspaceMembershipWhere.AccountID.EQ(accountID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceMembershipColumns.ReadsAudit: reads,
+		dbpostgres.WorkspaceMembershipColumns.UpdatedAt:  time.Now().UTC(),
+	})
+	if err != nil {
+		return entity.Membership{}, fmt.Errorf("update membership audit access: %w", err)
 	}
 
 	if updated == 0 {

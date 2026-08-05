@@ -78,6 +78,17 @@ func validate(cfg Config) error {
 		return fmt.Errorf("password.breach_check_endpoint is required when password.breach_check_enabled is set")
 	}
 
+	if cfg.Audit.Retention <= 0 {
+		return fmt.Errorf(
+			"audit.retention (%s) must be positive; the audit log always ages out and there is no setting for keeping it forever",
+			cfg.Audit.Retention,
+		)
+	}
+
+	if cfg.Audit.SweepBatch < 1 {
+		return fmt.Errorf("audit.sweep_batch (%d) must be at least 1", cfg.Audit.SweepBatch)
+	}
+
 	if cfg.Password.BreachCheckEnabled && cfg.Password.BreachCheckTimeout <= 0 {
 		return fmt.Errorf(
 			"password.breach_check_timeout (%s) must be positive",
@@ -169,6 +180,10 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("instance.signups_open", true)
 	v.SetDefault("instance.password_auth", true)
 	v.SetDefault("instance.self_hosted", false)
+	v.SetDefault("licence.key", "")
+	v.SetDefault("audit.retention", 365*24*time.Hour)
+	v.SetDefault("audit.sweep_schedule", "0 4 * * *")
+	v.SetDefault("audit.sweep_batch", 5000)
 
 	v.SetDefault("http.addr", "127.0.0.1:8080")
 	v.SetDefault("http.read_header_timeout", 5*time.Second)

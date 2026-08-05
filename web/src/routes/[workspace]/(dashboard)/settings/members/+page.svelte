@@ -8,6 +8,7 @@
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
@@ -240,6 +241,37 @@
 		}
 	}
 
+	async function changeAuditAccess(member: Membership, reads: boolean) {
+		localAction = { kind: "changing_role", accountId: member.accountId };
+		localFailure = null;
+		localNotice = null;
+
+		try {
+			const { data: updated, error } = await api.PUT(
+				"/workspaces/{workspaceId}/members/{accountId}/audit-access",
+				{
+					params: { path: { workspaceId: workspace.id, accountId: member.accountId } },
+					body: { readsAudit: reads },
+				}
+			);
+
+			if (updated) {
+				replace(members.map((row) => (row.accountId === updated.accountId ? updated : row)));
+				announcement = reads
+					? `${memberName(updated)} can read the audit log.`
+					: `${memberName(updated)} can no longer read the audit log.`;
+
+				return;
+			}
+
+			localFailure = roleFailureFor(error, member);
+		} catch {
+			localFailure = { kind: "unavailable" };
+		} finally {
+			localAction = { kind: "idle" };
+		}
+	}
+
 	async function openRemoval(accountId: string) {
 		const known = members.find((row) => row.accountId === accountId);
 
@@ -386,6 +418,10 @@
 							</div>
 						{/each}
 					</dl>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Audit is separate from all three: ticking it lets that person read the audit log, and
+						being an administrator does not grant it on its own.
+					</p>
 					{#if directoryInView}
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
 							Accounts marked Directory are provisioned by your identity provider. Change their role
@@ -548,6 +584,20 @@
 										{/if}
 
 										<span class="ml-auto flex shrink-0 items-center gap-1.5">
+											{#if member.kind !== "agent"}
+												<label
+													class="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
+												>
+													<Checkbox
+														checked={member.readsAudit ?? false}
+														disabled={busy}
+														onCheckedChange={(checked) =>
+															changeAuditAccess(member, checked === true)}
+														aria-label="Audit log access for {memberName(member)}"
+													/>
+													<span class="hidden sm:inline">Audit</span>
+												</label>
+											{/if}
 											<span class="w-[104px]">
 												<Select.Root
 													type="single"

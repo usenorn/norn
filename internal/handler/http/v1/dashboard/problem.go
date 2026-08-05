@@ -489,6 +489,27 @@ func problemFor(err error) (problemResponse, bool) {
 			retryAfter: int(entity.SignInAddressCooldown.Seconds()),
 		}, true
 
+	case errors.Is(err, entity.ErrAuditUnlicensed):
+		base := baseProblem(http.StatusServiceUnavailable, err.Error())
+
+		return problemResponse{
+			status: http.StatusServiceUnavailable,
+			body: api.AuditUnlicensedProblem{
+				Code:     api.AuditUnlicensedProblemCodeAuditUnlicensed,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
+	case errors.Is(err, entity.ErrAuditNotPermitted):
+		return newProblem(http.StatusForbidden, err.Error()), true
+
+	case errors.Is(err, entity.ErrAuditCursorInvalid):
+		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
+
 	case errors.Is(err, entity.ErrMailDeliveryNotConfigured):
 		base := baseProblem(http.StatusServiceUnavailable, err.Error())
 
@@ -599,16 +620,16 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 
 	case errors.Is(err, entity.ErrAgentDisabled):
-		return agentUnusableProblem(api.AgentDisabled, err), true
+		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentDisabled, err), true
 
 	case errors.Is(err, entity.ErrAgentNameTaken):
-		return agentUnusableProblem(api.AgentNameTaken, err), true
+		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentNameTaken, err), true
 
 	case errors.Is(err, entity.ErrAgentOwnerInvalid):
-		return agentUnusableProblem(api.AgentOwnerInvalid, err), true
+		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentOwnerInvalid, err), true
 
 	case errors.Is(err, entity.ErrAgentProposalSettled):
-		return agentUnusableProblem(api.AgentProposalSettled, err), true
+		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentProposalSettled, err), true
 
 	case errors.Is(err, entity.ErrAgentNotFound), errors.Is(err, entity.ErrAgentProposalNotFound):
 		return newProblem(http.StatusNotFound, err.Error()), true
@@ -686,13 +707,13 @@ func problemFor(err error) (problemResponse, bool) {
 		return invitationExpiredProblem(api.InvitationInvalid, err), true
 
 	case errors.Is(err, entity.ErrInvitationRevoked):
-		return invitationUnusableProblem(api.InvitationRevoked, err), true
+		return invitationUnusableProblem(api.InvitationUnusableProblemCodeInvitationRevoked, err), true
 
 	case errors.Is(err, entity.ErrInvitationAccepted):
-		return invitationUnusableProblem(api.InvitationAccepted, err), true
+		return invitationUnusableProblem(api.InvitationUnusableProblemCodeInvitationAccepted, err), true
 
 	case errors.Is(err, entity.ErrInvitationAddressMismatch):
-		return invitationUnusableProblem(api.InvitationAddressMismatch, err), true
+		return invitationUnusableProblem(api.InvitationUnusableProblemCodeInvitationAddressMismatch, err), true
 
 	default:
 		return problemResponse{}, false
@@ -878,6 +899,22 @@ func invitationUnusableProblem(code api.InvitationUnusableProblemCode, err error
 
 func unauthorized() problemResponse {
 	return newProblem(http.StatusUnauthorized, "a valid session is required")
+}
+
+func (r problemResponse) VisitListWorkspaceAuditResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListInstanceAuditResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceAuditAvailabilityResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceMemberAuditAccessResponse(w http.ResponseWriter) error {
+	return r.write(w)
 }
 
 func (r problemResponse) VisitListWorkspaceAgentsResponse(w http.ResponseWriter) error {

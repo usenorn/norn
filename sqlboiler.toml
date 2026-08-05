@@ -4,7 +4,7 @@ output = "internal/db/postgres"
 pkgname = "dbpostgres"
 
 [psql]
-blacklist = ["goose_db_version", "casbin_rule"]
+blacklist = ["goose_db_version", "casbin_rule", "audit_events"]
 host = "127.0.0.1"
 port = 5433
 dbname = "norn"

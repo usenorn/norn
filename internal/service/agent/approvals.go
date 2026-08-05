@@ -133,6 +133,8 @@ func (s *agentsService) Approve(
 		return s.proposals.GetByID(ctx, workspaceID, proposal.ID)
 	}
 
+	s.recordDecision(ctx, workspaceID, proposal, entity.AgentProposalApplied)
+
 	return s.proposals.GetByID(ctx, workspaceID, proposal.ID)
 }
 
@@ -152,7 +154,27 @@ func (s *agentsService) Reject(
 		return entity.AgentProposal{}, err
 	}
 
+	s.recordDecision(ctx, workspaceID, proposal, entity.AgentProposalRejected)
+
 	return s.proposals.GetByID(ctx, workspaceID, proposal.ID)
+}
+
+func (s *agentsService) recordDecision(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	proposal entity.AgentProposal,
+	outcome entity.AgentProposalStatus,
+) {
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditAgentProposal,
+		ResourceKind: string(entity.ResourceAgent),
+		ResourceID:   proposal.AgentID,
+		Detail: map[string]string{
+			"proposal_id": proposal.ID.String(),
+			"outcome":     string(outcome),
+		},
+	})
 }
 
 func (s *agentsService) decidable(

@@ -91,5 +91,6 @@ func decider(
 		workspaces:   workspaces,
 		teams:        teams,
 		accounts:     accounts,
+		audit:        silentAudit(ctrl),
 	}, memberships
 }

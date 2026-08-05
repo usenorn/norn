@@ -25,6 +25,7 @@ type apiTokensService struct {
 	authorizer service.Authorizer
 	transactor repository.Transactor
 	app        config.App
+	audit      service.Audit
 }
 
 func New(
@@ -36,6 +37,7 @@ func New(
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 	app config.App,
+	audit service.Audit,
 ) service.APITokens {
 	return &apiTokensService{
 		tokens:     tokens,
@@ -46,6 +48,7 @@ func New(
 		authorizer: authorizer,
 		transactor: transactor,
 		app:        app,
+		audit:      audit,
 	}
 }
 
@@ -108,6 +111,16 @@ func (s *apiTokensService) Mint(
 		return nil
 	}); err != nil {
 		return service.MintedAPIToken{}, err
+	}
+
+	for _, grant := range input.Grants {
+		s.audit.Record(ctx, entity.AuditEntry{
+			WorkspaceID:  grant.WorkspaceID,
+			Action:       entity.AuditTokenMinted,
+			ResourceKind: string(entity.ResourceAPIToken),
+			ResourceID:   token.ID,
+			ResourceName: token.Name,
+		})
 	}
 
 	return service.MintedAPIToken{Token: token, Value: value}, nil
@@ -218,7 +231,13 @@ func (s *apiTokensService) Revoke(ctx context.Context, tokenID uuid.UUID) error 
 		return entity.ErrAPITokenNotFound
 	}
 
-	return s.tokens.Revoke(ctx, tokenID, time.Now().UTC())
+	if err := s.tokens.Revoke(ctx, tokenID, time.Now().UTC()); err != nil {
+		return err
+	}
+
+	s.recordRevocation(ctx, token)
+
+	return nil
 }
 
 func (s *apiTokensService) RevokeInWorkspace(ctx context.Context, workspaceID, tokenID uuid.UUID) error {
@@ -244,7 +263,13 @@ func (s *apiTokensService) RevokeInWorkspace(ctx context.Context, workspaceID, t
 		return entity.ErrAPITokenNotFound
 	}
 
-	return s.tokens.Revoke(ctx, tokenID, time.Now().UTC())
+	if err := s.tokens.Revoke(ctx, tokenID, time.Now().UTC()); err != nil {
+		return err
+	}
+
+	s.recordRevocation(ctx, token)
+
+	return nil
 }
 
 func (s *apiTokensService) Authenticate(ctx context.Context, value string) (entity.Actor, error) {
@@ -334,4 +359,16 @@ func (s *apiTokensService) self(ctx context.Context) (entity.Actor, error) {
 	}
 
 	return decision.Actor, nil
+}
+
+func (s *apiTokensService) recordRevocation(ctx context.Context, token entity.APIToken) {
+	for _, grant := range token.Grants {
+		s.audit.Record(ctx, entity.AuditEntry{
+			WorkspaceID:  grant.WorkspaceID,
+			Action:       entity.AuditTokenRevoked,
+			ResourceKind: string(entity.ResourceAPIToken),
+			ResourceID:   token.ID,
+			ResourceName: token.Name,
+		})
+	}
 }

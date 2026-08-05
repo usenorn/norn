@@ -30,6 +30,7 @@ var policyResources = []entity.Resource{
 	entity.ResourceNotification,
 	entity.ResourceAPIToken,
 	entity.ResourceAgent,
+	entity.ResourceAuditLog,
 }
 
 var policyActions = []entity.Action{
@@ -82,6 +83,7 @@ type casbinAuthorizer struct {
 	teams         repository.Team
 	accounts      repository.Account
 	agentThrottle repository.AgentThrottle
+	audit         service.Audit
 }
 
 func New(
@@ -92,6 +94,7 @@ func New(
 	teams repository.Team,
 	accounts repository.Account,
 	agentThrottle repository.AgentThrottle,
+	audit service.Audit,
 ) service.Authorizer {
 	return &casbinAuthorizer{
 		enforcer:      enforcer,
@@ -101,6 +104,7 @@ func New(
 		teams:         teams,
 		accounts:      accounts,
 		agentThrottle: agentThrottle,
+		audit:         audit,
 	}
 }
 
@@ -135,6 +139,19 @@ func (a *casbinAuthorizer) deny(
 	}
 
 	logging.From(ctx).InfoContext(ctx, "access denied", attrs...)
+
+	a.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  request.WorkspaceID,
+		Action:       entity.AuditAccessDenied,
+		Outcome:      entity.AuditDenied,
+		Actor:        entity.ActorAudited(actor, ""),
+		ResourceKind: string(request.Resource),
+		ResourceID:   request.Subject,
+		Detail: map[string]string{
+			"reason": string(reason),
+			"action": string(request.Action),
+		},
+	})
 
 	return denied
 }

@@ -109,6 +109,7 @@ func newHarnessWithoutLinking(t *testing.T) *harness {
 		config.App{BaseURL: "https://norn.example.com"},
 		h.authorizer,
 		h.transactor,
+		silentAudit(ctrl),
 	)
 
 	return h

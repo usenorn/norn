@@ -7,6 +7,7 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
 	"github.com/usenorn/norn/internal/config"
+	"github.com/usenorn/norn/internal/handler/http/auditexport"
 	"github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
@@ -29,6 +30,7 @@ func New(
 	samlEdge *sso.SAML,
 	blobEdge *blob.Edge,
 	eventsEdge *events.Edge,
+	auditEdge *auditexport.Edge,
 ) http.Handler {
 	base := chi.NewRouter()
 	base.Use(
@@ -53,6 +55,13 @@ func New(
 
 	streams := base.With(middleware.Session(sessions, sessionCfg))
 	streams.Get(events.Path, eventsEdge.Serve)
+
+	exports := base.With(
+		middleware.BearerToken(tokens),
+		middleware.Session(sessions, sessionCfg),
+	)
+	exports.Get(auditexport.WorkspacePath, auditEdge.ServeWorkspace)
+	exports.Get(auditexport.InstancePath, auditEdge.ServeInstance)
 
 	strict := api.NewStrictHandlerWithOptions(dashboard, nil, api.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {

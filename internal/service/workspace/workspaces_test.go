@@ -94,6 +94,7 @@ func newHarness(t *testing.T) *harness {
 		h.authorizer,
 		transactor,
 		config.Workspace{DeletionGracePeriod: deletionGracePeriod},
+		silentAudit(ctrl),
 	)
 
 	return h

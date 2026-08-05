@@ -72,6 +72,7 @@ func newHarness(t *testing.T) *harness {
 		h.authorizer,
 		transactor,
 		config.App{BaseURL: "https://norn.test"},
+		silentAudit(ctrl),
 	)
 
 	return h

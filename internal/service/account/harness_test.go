@@ -27,6 +27,7 @@ import (
 	workspaceauthpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	"github.com/usenorn/norn/internal/service"
 	accountsvc "github.com/usenorn/norn/internal/service/account"
+	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 )
@@ -53,6 +54,7 @@ type harness struct {
 	transactor      *transactorrepo.MockTransactor
 	sessions        *sessionsvc.MockSessions
 	authorizer      *authorizersvc.MockAuthorizer
+	audit           *auditsvc.MockAudit
 	service         service.Accounts
 }
 
@@ -67,6 +69,7 @@ func newHarness(t *testing.T) *harness {
 		passwordResets:  passwordresetrepo.NewMockPasswordReset(ctrl),
 		signUps:         signuprepo.NewMockSignUp(ctrl),
 		passwordHistory: passwordhistoryrepo.NewMockPasswordHistory(ctrl),
+		audit:           silentAudit(ctrl),
 		memberships:     membershiprepo.NewMockMembership(ctrl),
 		workspaces:      workspacerepo.NewMockWorkspace(ctrl),
 		authPolicies:    workspaceauthpolicyrepo.NewMockWorkspaceAuthPolicy(ctrl),
@@ -138,6 +141,7 @@ func newService(h *harness, smtp config.SMTP, instance config.Instance) service.
 		smtp,
 		instance,
 		config.Attachments{LinkTTL: 5 * time.Minute},
+		h.audit,
 	)
 }
 

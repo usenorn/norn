@@ -35,6 +35,7 @@ type accountsService struct {
 	smtp            config.SMTP
 	instance        config.Instance
 	attachments     config.Attachments
+	audit           service.Audit
 }
 
 func New(
@@ -58,6 +59,7 @@ func New(
 	smtp config.SMTP,
 	instance config.Instance,
 	attachments config.Attachments,
+	audit service.Audit,
 ) service.Accounts {
 	return &accountsService{
 		accounts:        accounts,
@@ -80,6 +82,7 @@ func New(
 		smtp:            smtp,
 		instance:        instance,
 		attachments:     attachments,
+		audit:           audit,
 	}
 }
 
@@ -305,6 +308,17 @@ func (s *accountsService) ConfirmEmailChange(ctx context.Context, token string) 
 		return entity.Account{}, err
 	}
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action: entity.AuditEmailChanged,
+		Actor: entity.AuditActor{
+			Kind:      entity.ActorKindUser,
+			AccountID: account.ID,
+		},
+		ResourceKind: string(entity.ResourceAccount),
+		ResourceID:   account.ID,
+		Detail:       map[string]string{"email": account.Email},
+	})
+
 	return account, nil
 }
 
@@ -381,6 +395,12 @@ func (s *accountsService) Deactivate(ctx context.Context, accountID uuid.UUID) (
 		return entity.Account{}, err
 	}
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action:       entity.AuditAccountDisabled,
+		ResourceKind: string(entity.ResourceAccount),
+		ResourceID:   account.ID,
+	})
+
 	return account, nil
 }
 
@@ -448,6 +468,12 @@ func (s *accountsService) Delete(ctx context.Context, accountID uuid.UUID) error
 	}
 
 	s.discardAvatar(ctx, avatarObjectKey)
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action:       entity.AuditAccountDeleted,
+		ResourceKind: string(entity.ResourceAccount),
+		ResourceID:   accountID,
+	})
 
 	return nil
 }

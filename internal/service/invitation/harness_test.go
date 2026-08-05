@@ -99,6 +99,7 @@ func newHarnessWithSMTP(t *testing.T, smtp config.SMTP) *harness {
 		h.sessions,
 		config.App{BaseURL: baseURL},
 		smtp,
+		silentAudit(ctrl),
 	)
 
 	return h

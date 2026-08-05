@@ -24,6 +24,7 @@ type agentsService struct {
 	comments    service.IssueComments
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
+	audit       service.Audit
 }
 
 func New(
@@ -39,6 +40,7 @@ func New(
 	comments service.IssueComments,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
+	audit service.Audit,
 ) service.Agents {
 	return &agentsService{
 		agents:      agents,
@@ -53,6 +55,7 @@ func New(
 		comments:    comments,
 		authorizer:  authorizer,
 		transactor:  transactor,
+		audit:       audit,
 	}
 }
 
@@ -162,6 +165,14 @@ func (s *agentsService) Register(
 		return service.RegisteredAgent{}, err
 	}
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  input.WorkspaceID,
+		Action:       entity.AuditAgentRegistered,
+		ResourceKind: string(entity.ResourceAgent),
+		ResourceID:   registered.Agent.ID,
+		ResourceName: input.Name,
+	})
+
 	return registered, nil
 }
 
@@ -269,13 +280,25 @@ func (s *agentsService) Disable(ctx context.Context, workspaceID, agentID uuid.U
 
 	now := time.Now().UTC()
 
-	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		if err := s.agents.Disable(ctx, workspaceID, agentID, now); err != nil {
 			return err
 		}
 
 		return s.tokens.RevokeAllByAccount(ctx, agent.AccountID, now)
+	}); err != nil {
+		return err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditAgentDisabled,
+		ResourceKind: string(entity.ResourceAgent),
+		ResourceID:   agentID,
+		ResourceName: agent.Name,
 	})
+
+	return nil
 }
 
 func (s *agentsService) Activity(
