@@ -12,6 +12,11 @@ var TableNames = struct {
 	APITokenGrantTeams                string
 	APITokenGrants                    string
 	APITokens                         string
+	DirectoryGroupMembers             string
+	DirectoryGroups                   string
+	DirectorySyncChanges              string
+	DirectorySyncRuns                 string
+	DirectoryUsers                    string
 	WorkspaceActivity                 string
 	WorkspaceAgentProposals           string
 	WorkspaceAgents                   string
@@ -21,6 +26,7 @@ var TableNames = struct {
 	WorkspaceBulkActions              string
 	WorkspaceCycleScopeChanges        string
 	WorkspaceCycles                   string
+	WorkspaceDirectoryConnections     string
 	WorkspaceInvitationTeams          string
 	WorkspaceInvitations              string
 	WorkspaceIssueAttachments         string
@@ -67,6 +73,11 @@ var TableNames = struct {
 	APITokenGrantTeams:                "api_token_grant_teams",
 	APITokenGrants:                    "api_token_grants",
 	APITokens:                         "api_tokens",
+	DirectoryGroupMembers:             "directory_group_members",
+	DirectoryGroups:                   "directory_groups",
+	DirectorySyncChanges:              "directory_sync_changes",
+	DirectorySyncRuns:                 "directory_sync_runs",
+	DirectoryUsers:                    "directory_users",
 	WorkspaceActivity:                 "workspace_activity",
 	WorkspaceAgentProposals:           "workspace_agent_proposals",
 	WorkspaceAgents:                   "workspace_agents",
@@ -76,6 +87,7 @@ var TableNames = struct {
 	WorkspaceBulkActions:              "workspace_bulk_actions",
 	WorkspaceCycleScopeChanges:        "workspace_cycle_scope_changes",
 	WorkspaceCycles:                   "workspace_cycles",
+	WorkspaceDirectoryConnections:     "workspace_directory_connections",
 	WorkspaceInvitationTeams:          "workspace_invitation_teams",
 	WorkspaceInvitations:              "workspace_invitations",
 	WorkspaceIssueAttachments:         "workspace_issue_attachments",

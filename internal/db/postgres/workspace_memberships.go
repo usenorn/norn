@@ -34,6 +34,7 @@ type WorkspaceMembership struct {
 	LastActiveAt   null.Time   `boil:"last_active_at" json:"last_active_at,omitempty" toml:"last_active_at" yaml:"last_active_at,omitempty"`
 	LastAuthMethod null.String `boil:"last_auth_method" json:"last_auth_method,omitempty" toml:"last_auth_method" yaml:"last_auth_method,omitempty"`
 	ReadsAudit     bool        `boil:"reads_audit" json:"reads_audit" toml:"reads_audit" yaml:"reads_audit"`
+	DeactivatedAt  null.Time   `boil:"deactivated_at" json:"deactivated_at,omitempty" toml:"deactivated_at" yaml:"deactivated_at,omitempty"`
 
 	R *workspaceMembershipR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceMembershipL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -50,6 +51,7 @@ var WorkspaceMembershipColumns = struct {
 	LastActiveAt   string
 	LastAuthMethod string
 	ReadsAudit     string
+	DeactivatedAt  string
 }{
 	ID:             "id",
 	WorkspaceID:    "workspace_id",
@@ -61,6 +63,7 @@ var WorkspaceMembershipColumns = struct {
 	LastActiveAt:   "last_active_at",
 	LastAuthMethod: "last_auth_method",
 	ReadsAudit:     "reads_audit",
+	DeactivatedAt:  "deactivated_at",
 }
 
 var WorkspaceMembershipTableColumns = struct {
@@ -74,6 +77,7 @@ var WorkspaceMembershipTableColumns = struct {
 	LastActiveAt   string
 	LastAuthMethod string
 	ReadsAudit     string
+	DeactivatedAt  string
 }{
 	ID:             "workspace_memberships.id",
 	WorkspaceID:    "workspace_memberships.workspace_id",
@@ -85,6 +89,7 @@ var WorkspaceMembershipTableColumns = struct {
 	LastActiveAt:   "workspace_memberships.last_active_at",
 	LastAuthMethod: "workspace_memberships.last_auth_method",
 	ReadsAudit:     "workspace_memberships.reads_audit",
+	DeactivatedAt:  "workspace_memberships.deactivated_at",
 }
 
 // Generated where
@@ -100,6 +105,7 @@ var WorkspaceMembershipWhere = struct {
 	LastActiveAt   whereHelpernull_Time
 	LastAuthMethod whereHelpernull_String
 	ReadsAudit     whereHelperbool
+	DeactivatedAt  whereHelpernull_Time
 }{
 	ID:             whereHelperstring{field: "\"workspace_memberships\".\"id\""},
 	WorkspaceID:    whereHelperstring{field: "\"workspace_memberships\".\"workspace_id\""},
@@ -111,6 +117,7 @@ var WorkspaceMembershipWhere = struct {
 	LastActiveAt:   whereHelpernull_Time{field: "\"workspace_memberships\".\"last_active_at\""},
 	LastAuthMethod: whereHelpernull_String{field: "\"workspace_memberships\".\"last_auth_method\""},
 	ReadsAudit:     whereHelperbool{field: "\"workspace_memberships\".\"reads_audit\""},
+	DeactivatedAt:  whereHelpernull_Time{field: "\"workspace_memberships\".\"deactivated_at\""},
 }
 
 // WorkspaceMembershipRels is where relationship names are stored.
@@ -169,9 +176,9 @@ func (r *workspaceMembershipR) GetWorkspace() *Workspace {
 type workspaceMembershipL struct{}
 
 var (
-	workspaceMembershipAllColumns            = []string{"id", "workspace_id", "account_id", "role", "created_at", "updated_at", "source", "last_active_at", "last_auth_method", "reads_audit"}
+	workspaceMembershipAllColumns            = []string{"id", "workspace_id", "account_id", "role", "created_at", "updated_at", "source", "last_active_at", "last_auth_method", "reads_audit", "deactivated_at"}
 	workspaceMembershipColumnsWithoutDefault = []string{"workspace_id", "account_id", "role"}
-	workspaceMembershipColumnsWithDefault    = []string{"id", "created_at", "updated_at", "source", "last_active_at", "last_auth_method", "reads_audit"}
+	workspaceMembershipColumnsWithDefault    = []string{"id", "created_at", "updated_at", "source", "last_active_at", "last_auth_method", "reads_audit", "deactivated_at"}
 	workspaceMembershipPrimaryKeyColumns     = []string{"id"}
 	workspaceMembershipGeneratedColumns      = []string{}
 )

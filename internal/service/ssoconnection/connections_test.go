@@ -225,10 +225,13 @@ func TestAnUnknownAddressIsGivenAnAccountAndAMembershipWhenProvisioningIsOn(t *t
 		)
 	}
 
-	if madeMembership.Source != entity.MembershipSourceDirectory {
+	if madeMembership.Source != entity.MembershipSourceManual {
 		t.Errorf(
-			"membership source %q, want directory so an admin can tell who arrived through "+
-				"the provider",
+			"membership source %q, want manual. Signing in through a provider is authentication, "+
+				"not provisioning by a directory: nothing syncs these members, so marking them "+
+				"directory would lock an administrator out of a membership no directory governs. "+
+				"Who arrived through the provider is told by the single sign-on identity link, "+
+				"which the members screen already shows.",
 			madeMembership.Source,
 		)
 	}

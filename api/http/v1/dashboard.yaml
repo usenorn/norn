@@ -26,6 +26,7 @@ tags:
   - name: notifications
   - name: search
   - name: audit
+  - name: directory
 
 paths:
   /health:
@@ -1310,6 +1311,147 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/Problem' }
         '503': { $ref: '#/components/responses/AuditUnlicensed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/directory:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [directory]
+      operationId: getWorkspaceDirectory
+      summary: Read how this workspace is provisioned from its identity provider
+      responses:
+        '200':
+          description: The directory connection, if there is one
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DirectorySettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [directory]
+      operationId: connectWorkspaceDirectory
+      summary: Connect a directory, returning the credential for the only time
+      responses:
+        '201':
+          description: The connection, carrying its credential once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DirectorySettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/DirectoryUnlicensed' }
+        '500': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [directory]
+      operationId: configureWorkspaceDirectory
+      summary: Change how arrivals and departures are handled
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfigureDirectoryRequest' }
+      responses:
+        '200':
+          description: The updated connection
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DirectorySettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/DirectoryUnlicensed' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [directory]
+      operationId: disconnectWorkspaceDirectory
+      summary: Disconnect the directory, leaving every member as they are
+      responses:
+        '204': { description: The directory was disconnected }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/directory/token:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [directory]
+      operationId: rotateWorkspaceDirectoryToken
+      summary: Replace the credential, ending the old one at once
+      responses:
+        '200':
+          description: The connection, carrying its new credential once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DirectorySettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/DirectoryUnlicensed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/directory/runs:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [directory]
+      operationId: listWorkspaceDirectoryRuns
+      summary: Read what the directory changed and when
+      parameters:
+        - $ref: '#/components/parameters/DirectoryLimit'
+        - $ref: '#/components/parameters/DirectoryCursor'
+      responses:
+        '200':
+          description: A page of sync runs, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DirectoryRunPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/DirectoryUnlicensed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/directory/runs/{runId}/changes:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/RunId'
+    get:
+      tags: [directory]
+      operationId: listWorkspaceDirectoryChanges
+      summary: Read every change one sync run made
+      responses:
+        '200':
+          description: The changes that run made
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DirectoryChange' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/DirectoryUnlicensed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/directory/availability:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [directory]
+      operationId: getWorkspaceDirectoryAvailability
+      summary: Report whether directory synchronization is licensed here
+      responses:
+        '200':
+          description: What this instance offers
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DirectoryAvailability' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/agents:
@@ -3864,6 +4006,19 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    DirectoryLimit:
+      name: limit
+      in: query
+      schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+    DirectoryCursor:
+      name: cursor
+      in: query
+      schema: { type: string, format: date-time }
+    RunId:
+      name: runId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     AuditLimit:
       name: limit
       in: query
@@ -4097,6 +4252,11 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/SignUpUnusableProblem' }
 
+    DirectoryUnlicensed:
+      description: This instance has no licence covering directory synchronization
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/DirectoryUnlicensedProblem' }
     AuditUnlicensed:
       description: This instance has no licence covering the audit log
       content:
@@ -5052,6 +5212,87 @@ components:
         - attachment_added
         - attachment_removed
 
+    DirectoryUnknownPolicy:
+      type: string
+      enum: [provision, ignore]
+
+    DirectoryAbsentPolicy:
+      type: string
+      enum: [deactivate, flag]
+
+    DirectoryConnection:
+      type: object
+      required: [enabled, onUnknown, onAbsent, adminGroup]
+      properties:
+        enabled: { type: boolean }
+        onUnknown: { $ref: '#/components/schemas/DirectoryUnknownPolicy' }
+        onAbsent: { $ref: '#/components/schemas/DirectoryAbsentPolicy' }
+        adminGroup: { type: string }
+        lastSyncAt: { type: string, format: date-time }
+
+    DirectorySettings:
+      type: object
+      required: [connected, scimBaseUrl]
+      properties:
+        connected: { type: boolean }
+        connection: { $ref: '#/components/schemas/DirectoryConnection' }
+        token: { type: string }
+        scimBaseUrl: { type: string }
+
+    ConfigureDirectoryRequest:
+      type: object
+      required: [enabled, onUnknown, onAbsent, adminGroup]
+      properties:
+        enabled: { type: boolean }
+        onUnknown: { $ref: '#/components/schemas/DirectoryUnknownPolicy' }
+        onAbsent: { $ref: '#/components/schemas/DirectoryAbsentPolicy' }
+        adminGroup: { type: string }
+
+    DirectoryAvailability:
+      type: object
+      required: [available]
+      properties:
+        available: { type: boolean }
+        holder: { type: string }
+
+    DirectorySyncOutcome:
+      type: string
+      enum: [succeeded, refused, failed]
+
+    DirectoryRun:
+      type: object
+      required: [id, trigger, outcome, operation, startedAt, finishedAt]
+      properties:
+        id: { type: string, format: uuid }
+        trigger: { type: string }
+        outcome: { $ref: '#/components/schemas/DirectorySyncOutcome' }
+        operation: { type: string }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time }
+        detail: { type: string }
+
+    DirectoryRunPage:
+      type: object
+      required: [runs]
+      properties:
+        runs:
+          type: array
+          items: { $ref: '#/components/schemas/DirectoryRun' }
+        nextCursor: { type: string, format: date-time }
+
+    DirectoryChange:
+      type: object
+      required: [id, subject, kind, outcome, recordedAt]
+      properties:
+        id: { type: string, format: uuid }
+        subject: { type: string }
+        kind: { type: string }
+        outcome: { $ref: '#/components/schemas/DirectorySyncOutcome' }
+        recordedAt: { type: string, format: date-time }
+        detail:
+          type: object
+          additionalProperties: { type: string }
+
     AuditAction:
       type: string
       enum:
@@ -5088,6 +5329,9 @@ components:
         - workspace.deletion_requested
         - workspace.restored
         - workspace.purged
+        - directory.connected
+        - directory.disconnected
+        - directory.token_rotated
         - audit.exported
         - access.denied
 
@@ -5746,6 +5990,14 @@ components:
           properties:
             code: { type: string, enum: [sign_up_used, sign_up_email_taken] }
 
+    DirectoryUnlicensedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [directory_unlicensed] }
+
     AuditUnlicensedProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -5969,6 +6221,7 @@ components:
         lastActiveAt: { type: string, format: date-time }
         lastAuthMethod: { $ref: '#/components/schemas/SessionAuthMethod' }
         readsAudit: { type: boolean }
+        deactivatedAt: { type: string, format: date-time }
 
     MemberPage:
       type: object

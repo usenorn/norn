@@ -371,6 +371,22 @@
 
 			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Directory</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Let your identity provider create, update and remove members over SCIM, and drive team
+						membership from its groups. Provisioning is never charged per person.
+					</p>
+				</div>
+
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" href={workspacePath(workspace.slug, "/settings/directory")}>
+						Manage provisioning
+					</Button>
+				</div>
+			</section>
+
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">Audit log</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Every sign-in, membership change, token and configuration change is recorded and cannot

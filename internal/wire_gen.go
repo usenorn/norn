@@ -13,6 +13,7 @@ import (
 	blob2 "github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/router"
+	"github.com/usenorn/norn/internal/handler/http/scim"
 	"github.com/usenorn/norn/internal/handler/http/sso"
 	"github.com/usenorn/norn/internal/handler/http/v1/dashboard"
 	"github.com/usenorn/norn/internal/handler/job"
@@ -44,6 +45,7 @@ import (
 	"github.com/usenorn/norn/internal/repository/breakglass"
 	"github.com/usenorn/norn/internal/repository/bulkaction"
 	"github.com/usenorn/norn/internal/repository/cycle"
+	"github.com/usenorn/norn/internal/repository/directory"
 	"github.com/usenorn/norn/internal/repository/emailchange"
 	"github.com/usenorn/norn/internal/repository/eventstream"
 	"github.com/usenorn/norn/internal/repository/geolocation"
@@ -90,6 +92,7 @@ import (
 	"github.com/usenorn/norn/internal/service/authorizer"
 	"github.com/usenorn/norn/internal/service/bulkoperation"
 	cycle2 "github.com/usenorn/norn/internal/service/cycle"
+	directory2 "github.com/usenorn/norn/internal/service/directory"
 	"github.com/usenorn/norn/internal/service/event"
 	invitation2 "github.com/usenorn/norn/internal/service/invitation"
 	issue2 "github.com/usenorn/norn/internal/service/issue"
@@ -312,14 +315,18 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	}
 	configAudit := config.NewAudit(configConfig)
 	auditLog := audit2.NewReader(repositoryAudit, repositoryMembership, serviceAuthorizer, serviceAudit, entityLicence, configAudit)
-	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, issueComments, serviceAttachments, bulkOperations, workflowStates, labels, apiTokens, agents, sessions, ssoConnections, cycles, projects, savedViews, triages, notifications, searches, auditLog, app, instance, configSession)
+	repositoryDirectory := directory.New(postgresClient)
+	directorySync := directory.NewSync(postgresClient)
+	directories := directory2.New(repositoryDirectory, directorySync, repositoryMembership, repositoryAccount, repositoryWorkspace, repositoryTeam, teamMember, repositoryIssue, repositoryProject, serviceAuthorizer, serviceAudit, postgresClient, entityLicence)
+	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, issueComments, serviceAttachments, bulkOperations, workflowStates, labels, apiTokens, agents, sessions, ssoConnections, cycles, projects, savedViews, triages, notifications, searches, auditLog, directories, app, instance, configSession)
 	callback := sso.NewCallback(ssoConnections, configSession)
 	ssoSAML := sso.NewSAML(ssoConnections, configSession)
 	edge := blob2.New(repositoryBlob, blobGrant, attachments)
 	realtime := config.NewRealtime(configConfig)
 	eventsEdge := events.New(serviceEvents, realtime)
 	auditexportEdge := auditexport.New(auditLog)
-	handler := router.New(http, configSession, attachments, sessions, apiTokens, strictServerInterface, callback, ssoSAML, edge, eventsEdge, auditexportEdge)
+	scimEdge := scim.New(directories)
+	handler := router.New(http, configSession, attachments, sessions, apiTokens, strictServerInterface, callback, ssoSAML, edge, eventsEdge, auditexportEdge, scimEdge)
 	logger, err := logging.New(app)
 	if err != nil {
 		cleanup8()
@@ -652,7 +659,7 @@ func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, auditexport.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, directory2.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, auditexport.Set, scim.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

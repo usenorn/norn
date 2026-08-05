@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
@@ -268,5 +269,36 @@ func TestAPersonIsNeverPacedLikeAnAgent(t *testing.T) {
 		WorkspaceID: h.workspaceID,
 	}); err != nil {
 		t.Fatalf("Decide: %v", err)
+	}
+}
+
+func TestADeactivatedMemberIsRefusedTheWorkspace(t *testing.T) {
+	h := newAgentHarness(t, &stubEnforcer{allow: true})
+
+	stoppedAt := time.Now().UTC()
+
+	h.memberships.EXPECT().
+		Get(gomock.Any(), gomock.Any(), h.owner).
+		Return(entity.Membership{
+			Role:          entity.MembershipRoleAdmin,
+			Source:        entity.MembershipSourceDirectory,
+			DeactivatedAt: &stoppedAt,
+		}, nil)
+
+	_, err := h.decide(entity.AccessRequest{
+		Resource:    entity.ResourceIssue,
+		Action:      entity.ActionRead,
+		WorkspaceID: h.workspaceID,
+	})
+
+	var denied entity.AccessDeniedError
+
+	if !errors.As(err, &denied) || denied.Reason != entity.DenyReasonMembershipDeactivated {
+		t.Fatalf(
+			"Decide error = %v, want a membership_deactivated denial. Deprovisioning keeps the "+
+				"row so the leaver's work stays visible; if the authorizer still honoured it, "+
+				"deprovisioning would end nothing.",
+			err,
+		)
 	}
 }

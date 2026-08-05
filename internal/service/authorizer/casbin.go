@@ -260,6 +260,10 @@ func (a *casbinAuthorizer) decideInWorkspace(
 			return entity.Decision{}, err
 		}
 
+		if membership.Deactivated() {
+			return entity.Decision{}, a.deny(ctx, actor, request, entity.DenyReasonMembershipDeactivated)
+		}
+
 		decision.Role = membership.Role
 	}
 

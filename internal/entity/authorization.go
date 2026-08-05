@@ -226,6 +226,7 @@ const (
 	DenyReasonUnknownRole            DenyReason = "unknown_role"
 	DenyReasonAgentRateLimited       DenyReason = "agent_rate_limited"
 	DenyReasonAgentDisabled          DenyReason = "agent_disabled"
+	DenyReasonMembershipDeactivated  DenyReason = "membership_deactivated"
 )
 
 func (r DenyReason) Conceals() bool {
@@ -235,6 +236,7 @@ func (r DenyReason) Conceals() bool {
 func (r DenyReason) Disclosed() bool {
 	switch r {
 	case DenyReasonRoleLacksAction,
+		DenyReasonMembershipDeactivated,
 		DenyReasonAuthMethodNotPermitted,
 		DenyReasonTokenPermissionMissing,
 		DenyReasonTokenWorkspaceMismatch,
@@ -276,6 +278,8 @@ func (e AccessDeniedError) surface() error {
 		return ErrAgentDisabled
 	case e.Reason.Conceals() && e.Resource.Conceals():
 		return e.Resource.NotFound()
+	case e.Reason == DenyReasonMembershipDeactivated:
+		return ErrMembershipDeactivated
 	case e.Reason == DenyReasonAuthMethodNotPermitted:
 		return ErrWorkspaceAuthMethodNotPermitted
 	default:

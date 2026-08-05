@@ -42,6 +42,7 @@ WHERE held.account_id = $1
         AND peer.account_id <> held.account_id
         AND peer.role = $2
         AND peer_account.status = $3
+        AND peer.deactivated_at IS NULL
   )
 ORDER BY held.workspace_id`
 
@@ -54,6 +55,7 @@ SELECT m.id,
        m.last_active_at,
        m.last_auth_method,
        m.reads_audit,
+       m.deactivated_at,
        m.created_at,
        m.updated_at,
        a.kind AS account_kind,
@@ -107,6 +109,11 @@ func toEntity(model *dbpostgres.WorkspaceMembership) (entity.Membership, error) 
 		membership.LastAuthMethod = entity.SessionAuthMethod(model.LastAuthMethod.String)
 	}
 
+	if model.DeactivatedAt.Valid {
+		deactivatedAt := model.DeactivatedAt.Time
+		membership.DeactivatedAt = &deactivatedAt
+	}
+
 	return membership, nil
 }
 
@@ -128,6 +135,10 @@ func toModel(membership entity.Membership) *dbpostgres.WorkspaceMembership {
 
 	if membership.LastAuthMethod != "" {
 		model.LastAuthMethod = null.StringFrom(string(membership.LastAuthMethod))
+	}
+
+	if membership.DeactivatedAt != nil {
+		model.DeactivatedAt = null.TimeFrom(*membership.DeactivatedAt)
 	}
 
 	return model
@@ -236,6 +247,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		lastActiveAt   sql.NullTime
 		lastAuthMethod sql.NullString
 		readsAudit     bool
+		deactivatedAt  sql.NullTime
 		createdAt      time.Time
 		updatedAt      time.Time
 		accountKind    string
@@ -253,6 +265,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		&lastActiveAt,
 		&lastAuthMethod,
 		&readsAudit,
+		&deactivatedAt,
 		&createdAt,
 		&updatedAt,
 		&accountKind,
@@ -296,6 +309,11 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 
 	if lastAuthMethod.Valid {
 		membership.LastAuthMethod = entity.SessionAuthMethod(lastAuthMethod.String)
+	}
+
+	if deactivatedAt.Valid {
+		stoppedAt := deactivatedAt.Time
+		membership.DeactivatedAt = &stoppedAt
 	}
 
 	return entity.WorkspaceMember{
@@ -354,6 +372,49 @@ func (r *membershipRepository) SetAuditAccess(ctx context.Context, workspaceID, 
 	})
 	if err != nil {
 		return entity.Membership{}, fmt.Errorf("update membership audit access: %w", err)
+	}
+
+	if updated == 0 {
+		return entity.Membership{}, entity.ErrMembershipNotFound
+	}
+
+	return r.Get(ctx, workspaceID, accountID)
+}
+
+func (r *membershipRepository) SetSource(ctx context.Context, workspaceID, accountID uuid.UUID, source entity.MembershipSource) (entity.Membership, error) {
+	updated, err := dbpostgres.WorkspaceMemberships(
+		dbpostgres.WorkspaceMembershipWhere.WorkspaceID.EQ(workspaceID.String()),
+		dbpostgres.WorkspaceMembershipWhere.AccountID.EQ(accountID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceMembershipColumns.Source:    string(source),
+		dbpostgres.WorkspaceMembershipColumns.UpdatedAt: time.Now().UTC(),
+	})
+	if err != nil {
+		return entity.Membership{}, fmt.Errorf("update membership source: %w", err)
+	}
+
+	if updated == 0 {
+		return entity.Membership{}, entity.ErrMembershipNotFound
+	}
+
+	return r.Get(ctx, workspaceID, accountID)
+}
+
+func (r *membershipRepository) SetDeactivated(ctx context.Context, workspaceID, accountID uuid.UUID, at *time.Time) (entity.Membership, error) {
+	stoppedAt := null.Time{}
+	if at != nil {
+		stoppedAt = null.TimeFrom(*at)
+	}
+
+	updated, err := dbpostgres.WorkspaceMemberships(
+		dbpostgres.WorkspaceMembershipWhere.WorkspaceID.EQ(workspaceID.String()),
+		dbpostgres.WorkspaceMembershipWhere.AccountID.EQ(accountID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceMembershipColumns.DeactivatedAt: stoppedAt,
+		dbpostgres.WorkspaceMembershipColumns.UpdatedAt:     time.Now().UTC(),
+	})
+	if err != nil {
+		return entity.Membership{}, fmt.Errorf("update membership deactivation: %w", err)
 	}
 
 	if updated == 0 {

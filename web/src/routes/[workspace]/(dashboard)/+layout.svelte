@@ -17,6 +17,7 @@
 	import StaleBanner from "$lib/realtime/stale-banner.svelte";
 	import { provideRealtime } from "$lib/realtime/connection.svelte";
 	import KeyRound from "@lucide/svelte/icons/key-round";
+	import Network from "@lucide/svelte/icons/network";
 	import Terminal from "@lucide/svelte/icons/terminal";
 	import ProviderRequired from "$lib/workspace/provider-required.svelte";
 	import Tags from "@lucide/svelte/icons/tags";
@@ -187,6 +188,14 @@
 						<a href={workspacePath(slug, "/settings/authentication")} {...props}>
 							<KeyRound aria-hidden="true" />
 							Authentication
+						</a>
+					{/snippet}
+				</DropdownMenu.Item>
+				<DropdownMenu.Item>
+					{#snippet child({ props })}
+						<a href={workspacePath(slug, "/settings/directory")} {...props}>
+							<Network aria-hidden="true" />
+							Directory
 						</a>
 					{/snippet}
 				</DropdownMenu.Item>

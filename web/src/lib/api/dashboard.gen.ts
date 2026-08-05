@@ -883,6 +883,105 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/directory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read how this workspace is provisioned from its identity provider */
+        get: operations["getWorkspaceDirectory"];
+        put?: never;
+        /** Connect a directory, returning the credential for the only time */
+        post: operations["connectWorkspaceDirectory"];
+        /** Disconnect the directory, leaving every member as they are */
+        delete: operations["disconnectWorkspaceDirectory"];
+        options?: never;
+        head?: never;
+        /** Change how arrivals and departures are handled */
+        patch: operations["configureWorkspaceDirectory"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/directory/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace the credential, ending the old one at once */
+        post: operations["rotateWorkspaceDirectoryToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/directory/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read what the directory changed and when */
+        get: operations["listWorkspaceDirectoryRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/directory/runs/{runId}/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                runId: components["parameters"]["RunId"];
+            };
+            cookie?: never;
+        };
+        /** Read every change one sync run made */
+        get: operations["listWorkspaceDirectoryChanges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/directory/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Report whether directory synchronization is licensed here */
+        get: operations["getWorkspaceDirectoryAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents": {
         parameters: {
             query?: never;
@@ -2943,7 +3042,66 @@ export interface components {
         /** @enum {string} */
         ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed";
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "token.minted" | "token.revoked" | "agent.registered" | "agent.disabled" | "agent.proposal_decided" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "audit.exported" | "access.denied";
+        DirectoryUnknownPolicy: "provision" | "ignore";
+        /** @enum {string} */
+        DirectoryAbsentPolicy: "deactivate" | "flag";
+        DirectoryConnection: {
+            enabled: boolean;
+            onUnknown: components["schemas"]["DirectoryUnknownPolicy"];
+            onAbsent: components["schemas"]["DirectoryAbsentPolicy"];
+            adminGroup: string;
+            /** Format: date-time */
+            lastSyncAt?: string;
+        };
+        DirectorySettings: {
+            connected: boolean;
+            connection?: components["schemas"]["DirectoryConnection"];
+            token?: string;
+            scimBaseUrl: string;
+        };
+        ConfigureDirectoryRequest: {
+            enabled: boolean;
+            onUnknown: components["schemas"]["DirectoryUnknownPolicy"];
+            onAbsent: components["schemas"]["DirectoryAbsentPolicy"];
+            adminGroup: string;
+        };
+        DirectoryAvailability: {
+            available: boolean;
+            holder?: string;
+        };
+        /** @enum {string} */
+        DirectorySyncOutcome: "succeeded" | "refused" | "failed";
+        DirectoryRun: {
+            /** Format: uuid */
+            id: string;
+            trigger: string;
+            outcome: components["schemas"]["DirectorySyncOutcome"];
+            operation: string;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            finishedAt: string;
+            detail?: string;
+        };
+        DirectoryRunPage: {
+            runs: components["schemas"]["DirectoryRun"][];
+            /** Format: date-time */
+            nextCursor?: string;
+        };
+        DirectoryChange: {
+            /** Format: uuid */
+            id: string;
+            subject: string;
+            kind: string;
+            outcome: components["schemas"]["DirectorySyncOutcome"];
+            /** Format: date-time */
+            recordedAt: string;
+            detail?: {
+                [key: string]: string;
+            };
+        };
+        /** @enum {string} */
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "token.minted" | "token.revoked" | "agent.registered" | "agent.disabled" | "agent.proposal_decided" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -3386,6 +3544,10 @@ export interface components {
             /** @enum {string} */
             code: "sign_up_used" | "sign_up_email_taken";
         };
+        DirectoryUnlicensedProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "directory_unlicensed";
+        };
         AuditUnlicensedProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "audit_unlicensed";
@@ -3543,6 +3705,8 @@ export interface components {
             lastActiveAt?: string;
             lastAuthMethod?: components["schemas"]["SessionAuthMethod"];
             readsAudit?: boolean;
+            /** Format: date-time */
+            deactivatedAt?: string;
         };
         MemberPage: {
             members: components["schemas"]["Membership"][];
@@ -4176,6 +4340,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["SignUpUnusableProblem"];
             };
         };
+        /** @description This instance has no licence covering directory synchronization */
+        DirectoryUnlicensed: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["DirectoryUnlicensedProblem"];
+            };
+        };
         /** @description This instance has no licence covering the audit log */
         AuditUnlicensed: {
             headers: {
@@ -4245,6 +4418,9 @@ export interface components {
         SavedViewId: string;
         LabelId: string;
         GroupId: string;
+        DirectoryLimit: number;
+        DirectoryCursor: string;
+        RunId: string;
         AuditLimit: number;
         AuditCursor: string;
         AuditActorFilter: string;
@@ -6081,6 +6257,222 @@ export interface operations {
             422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
             503: components["responses"]["AuditUnlicensed"];
+        };
+    };
+    getWorkspaceDirectory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The directory connection, if there is one */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectorySettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    connectWorkspaceDirectory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connection, carrying its credential once */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectorySettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["DirectoryUnlicensed"];
+        };
+    };
+    disconnectWorkspaceDirectory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The directory was disconnected */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    configureWorkspaceDirectory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigureDirectoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated connection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectorySettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["DirectoryUnlicensed"];
+        };
+    };
+    rotateWorkspaceDirectoryToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connection, carrying its new credential once */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectorySettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["DirectoryUnlicensed"];
+        };
+    };
+    listWorkspaceDirectoryRuns: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["DirectoryLimit"];
+                cursor?: components["parameters"]["DirectoryCursor"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of sync runs, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectoryRunPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["DirectoryUnlicensed"];
+        };
+    };
+    listWorkspaceDirectoryChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                runId: components["parameters"]["RunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The changes that run made */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectoryChange"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["DirectoryUnlicensed"];
+        };
+    };
+    getWorkspaceDirectoryAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What this instance offers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectoryAvailability"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
         };
     };
     listWorkspaceAgents: {

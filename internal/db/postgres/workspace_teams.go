@@ -111,6 +111,7 @@ var WorkspaceTeamRels = struct {
 	Workspace                         string
 	TeamWorkspaceIssueNumber          string
 	GrantAPITokenGrants               string
+	TeamDirectoryGroups               string
 	TeamWorkspaceInvitationTeams      string
 	TeamWorkspaceIssueCommentMentions string
 	DefaultTeamWorkspaces             string
@@ -118,6 +119,7 @@ var WorkspaceTeamRels = struct {
 	Workspace:                         "Workspace",
 	TeamWorkspaceIssueNumber:          "TeamWorkspaceIssueNumber",
 	GrantAPITokenGrants:               "GrantAPITokenGrants",
+	TeamDirectoryGroups:               "TeamDirectoryGroups",
 	TeamWorkspaceInvitationTeams:      "TeamWorkspaceInvitationTeams",
 	TeamWorkspaceIssueCommentMentions: "TeamWorkspaceIssueCommentMentions",
 	DefaultTeamWorkspaces:             "DefaultTeamWorkspaces",
@@ -128,6 +130,7 @@ type workspaceTeamR struct {
 	Workspace                         *Workspace                        `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
 	TeamWorkspaceIssueNumber          *WorkspaceIssueNumber             `boil:"TeamWorkspaceIssueNumber" json:"TeamWorkspaceIssueNumber" toml:"TeamWorkspaceIssueNumber" yaml:"TeamWorkspaceIssueNumber"`
 	GrantAPITokenGrants               APITokenGrantSlice                `boil:"GrantAPITokenGrants" json:"GrantAPITokenGrants" toml:"GrantAPITokenGrants" yaml:"GrantAPITokenGrants"`
+	TeamDirectoryGroups               DirectoryGroupSlice               `boil:"TeamDirectoryGroups" json:"TeamDirectoryGroups" toml:"TeamDirectoryGroups" yaml:"TeamDirectoryGroups"`
 	TeamWorkspaceInvitationTeams      WorkspaceInvitationTeamSlice      `boil:"TeamWorkspaceInvitationTeams" json:"TeamWorkspaceInvitationTeams" toml:"TeamWorkspaceInvitationTeams" yaml:"TeamWorkspaceInvitationTeams"`
 	TeamWorkspaceIssueCommentMentions WorkspaceIssueCommentMentionSlice `boil:"TeamWorkspaceIssueCommentMentions" json:"TeamWorkspaceIssueCommentMentions" toml:"TeamWorkspaceIssueCommentMentions" yaml:"TeamWorkspaceIssueCommentMentions"`
 	DefaultTeamWorkspaces             WorkspaceSlice                    `boil:"DefaultTeamWorkspaces" json:"DefaultTeamWorkspaces" toml:"DefaultTeamWorkspaces" yaml:"DefaultTeamWorkspaces"`
@@ -184,6 +187,22 @@ func (r *workspaceTeamR) GetGrantAPITokenGrants() APITokenGrantSlice {
 	}
 
 	return r.GrantAPITokenGrants
+}
+
+func (o *WorkspaceTeam) GetTeamDirectoryGroups() DirectoryGroupSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetTeamDirectoryGroups()
+}
+
+func (r *workspaceTeamR) GetTeamDirectoryGroups() DirectoryGroupSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.TeamDirectoryGroups
 }
 
 func (o *WorkspaceTeam) GetTeamWorkspaceInvitationTeams() WorkspaceInvitationTeamSlice {
@@ -587,6 +606,20 @@ func (o *WorkspaceTeam) GrantAPITokenGrants(mods ...qm.QueryMod) apiTokenGrantQu
 	return APITokenGrants(queryMods...)
 }
 
+// TeamDirectoryGroups retrieves all the directory_group's DirectoryGroups with an executor via team_id column.
+func (o *WorkspaceTeam) TeamDirectoryGroups(mods ...qm.QueryMod) directoryGroupQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"directory_groups\".\"team_id\"=?", o.ID),
+	)
+
+	return DirectoryGroups(queryMods...)
+}
+
 // TeamWorkspaceInvitationTeams retrieves all the workspace_invitation_team's WorkspaceInvitationTeams with an executor via team_id column.
 func (o *WorkspaceTeam) TeamWorkspaceInvitationTeams(mods ...qm.QueryMod) workspaceInvitationTeamQuery {
 	var queryMods []qm.QueryMod
@@ -988,6 +1021,119 @@ func (workspaceTeamL) LoadGrantAPITokenGrants(ctx context.Context, e boil.Contex
 					foreign.R = &apiTokenGrantR{}
 				}
 				foreign.R.TeamWorkspaceTeams = append(foreign.R.TeamWorkspaceTeams, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTeamDirectoryGroups allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceTeamL) LoadTeamDirectoryGroups(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceTeam any, mods queries.Applicator) error {
+	var slice []*WorkspaceTeam
+	var object *WorkspaceTeam
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceTeam.(*WorkspaceTeam)
+		if !ok {
+			object = new(WorkspaceTeam)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceTeam)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceTeam))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceTeam.(*[]*WorkspaceTeam)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceTeam)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceTeam))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceTeamR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceTeamR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`directory_groups`),
+		qm.WhereIn(`directory_groups.team_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load directory_groups")
+	}
+
+	var resultSlice []*DirectoryGroup
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice directory_groups")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on directory_groups")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for directory_groups")
+	}
+
+	if len(directoryGroupAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.TeamDirectoryGroups = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &directoryGroupR{}
+			}
+			foreign.R.Team = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.TeamID) {
+				local.R.TeamDirectoryGroups = append(local.R.TeamDirectoryGroups, foreign)
+				if foreign.R == nil {
+					foreign.R = &directoryGroupR{}
+				}
+				foreign.R.Team = local
 				break
 			}
 		}
@@ -1575,6 +1721,133 @@ func removeGrantAPITokenGrantsFromTeamWorkspaceTeamsSlice(o *WorkspaceTeam, rela
 			break
 		}
 	}
+}
+
+// AddTeamDirectoryGroups adds the given related objects to the existing relationships
+// of the workspace_team, optionally inserting them as new records.
+// Appends related to o.R.TeamDirectoryGroups.
+// Sets related.R.Team appropriately.
+func (o *WorkspaceTeam) AddTeamDirectoryGroups(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*DirectoryGroup) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.TeamID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"directory_groups\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"team_id"}),
+				strmangle.WhereClause("\"", "\"", 2, directoryGroupPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.TeamID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceTeamR{
+			TeamDirectoryGroups: related,
+		}
+	} else {
+		o.R.TeamDirectoryGroups = append(o.R.TeamDirectoryGroups, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &directoryGroupR{
+				Team: o,
+			}
+		} else {
+			rel.R.Team = o
+		}
+	}
+	return nil
+}
+
+// SetTeamDirectoryGroups removes all previously related items of the
+// workspace_team replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Team's TeamDirectoryGroups accordingly.
+// Replaces o.R.TeamDirectoryGroups with related.
+// Sets related.R.Team's TeamDirectoryGroups accordingly.
+func (o *WorkspaceTeam) SetTeamDirectoryGroups(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*DirectoryGroup) error {
+	query := "update \"directory_groups\" set \"team_id\" = null where \"team_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.TeamDirectoryGroups {
+			queries.SetScanner(&rel.TeamID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Team = nil
+		}
+		o.R.TeamDirectoryGroups = nil
+	}
+
+	return o.AddTeamDirectoryGroups(ctx, exec, insert, related...)
+}
+
+// RemoveTeamDirectoryGroups relationships from objects passed in.
+// Removes related items from R.TeamDirectoryGroups (uses pointer comparison, removal does not keep order)
+// Sets related.R.Team.
+func (o *WorkspaceTeam) RemoveTeamDirectoryGroups(ctx context.Context, exec boil.ContextExecutor, related ...*DirectoryGroup) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.TeamID, nil)
+		if rel.R != nil {
+			rel.R.Team = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("team_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.TeamDirectoryGroups {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.TeamDirectoryGroups)
+			if ln > 1 && i < ln-1 {
+				o.R.TeamDirectoryGroups[i] = o.R.TeamDirectoryGroups[ln-1]
+			}
+			o.R.TeamDirectoryGroups = o.R.TeamDirectoryGroups[:ln-1]
+			break
+		}
+	}
+
+	return nil
 }
 
 // AddTeamWorkspaceInvitationTeams adds the given related objects to the existing relationships

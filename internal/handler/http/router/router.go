@@ -11,6 +11,7 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/handler/http/scim"
 	"github.com/usenorn/norn/internal/handler/http/sso"
 	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/service"
@@ -31,6 +32,7 @@ func New(
 	blobEdge *blob.Edge,
 	eventsEdge *events.Edge,
 	auditEdge *auditexport.Edge,
+	scimEdge *scim.Edge,
 ) http.Handler {
 	base := chi.NewRouter()
 	base.Use(
@@ -62,6 +64,26 @@ func New(
 	)
 	exports.Get(auditexport.WorkspacePath, auditEdge.ServeWorkspace)
 	exports.Get(auditexport.InstancePath, auditEdge.ServeInstance)
+
+	directory := base.With(
+		chimiddleware.Timeout(cfg.RequestTimeout),
+		maxRequestBytes(cfg.MaxRequestBytes),
+	)
+	directory.Get(scim.ConfigPath, scimEdge.ServiceProviderConfig)
+	directory.Get(scim.TypesPath, scimEdge.ResourceTypes)
+	directory.Get(scim.SchemasPath, scimEdge.Schemas)
+	directory.Get(scim.UsersPath, scimEdge.ListUsers)
+	directory.Post(scim.UsersPath, scimEdge.CreateUser)
+	directory.Get(scim.UserPath, scimEdge.GetUser)
+	directory.Put(scim.UserPath, scimEdge.ReplaceUser)
+	directory.Patch(scim.UserPath, scimEdge.PatchUser)
+	directory.Delete(scim.UserPath, scimEdge.DeleteUser)
+	directory.Get(scim.GroupsPath, scimEdge.ListGroups)
+	directory.Post(scim.GroupsPath, scimEdge.CreateGroup)
+	directory.Get(scim.GroupPath, scimEdge.GetGroup)
+	directory.Put(scim.GroupPath, scimEdge.ReplaceGroup)
+	directory.Patch(scim.GroupPath, scimEdge.PatchGroup)
+	directory.Delete(scim.GroupPath, scimEdge.DeleteGroup)
 
 	strict := api.NewStrictHandlerWithOptions(dashboard, nil, api.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {

@@ -20,6 +20,7 @@ var (
 	ErrMembershipExists           = errors.New("workspace membership already exists")
 	ErrMembershipSelfRoleChange   = errors.New("workspace membership role cannot be changed by its own account")
 	ErrMembershipDirectoryManaged = errors.New("workspace membership is managed by directory sync")
+	ErrMembershipDeactivated      = errors.New("workspace membership has been deactivated by directory sync")
 	ErrMembershipCursorInvalid    = errors.New("workspace membership cursor is invalid")
 )
 
@@ -71,8 +72,13 @@ type Membership struct {
 	LastActiveAt   *time.Time
 	LastAuthMethod SessionAuthMethod
 	ReadsAudit     bool
+	DeactivatedAt  *time.Time
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+}
+
+func (m Membership) Deactivated() bool {
+	return m.DeactivatedAt != nil
 }
 
 type WorkspaceMember struct {

@@ -67,6 +67,9 @@ export const auditActions: AuditAction[] = [
 	"workspace.deletion_requested",
 	"workspace.restored",
 	"workspace.purged",
+	"directory.connected",
+	"directory.disconnected",
+	"directory.token_rotated",
 	"audit.exported",
 	"access.denied",
 ];
@@ -105,6 +108,9 @@ const actionLabels: Record<AuditAction, string> = {
 	"workspace.deletion_requested": "Deletion requested",
 	"workspace.restored": "Workspace restored",
 	"workspace.purged": "Workspace purged",
+	"directory.connected": "Directory connected",
+	"directory.disconnected": "Directory disconnected",
+	"directory.token_rotated": "Directory credential replaced",
 	"audit.exported": "Audit log exported",
 	"access.denied": "Access denied",
 };

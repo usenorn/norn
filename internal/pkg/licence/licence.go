@@ -22,7 +22,8 @@ type claims struct {
 }
 
 type features struct {
-	Audit bool `json:"audit"`
+	Audit     bool `json:"audit"`
+	Directory bool `json:"directory"`
 }
 
 func Resolve(cfg config.Licence) (entity.Licence, error) {
@@ -68,6 +69,9 @@ func Verify(key string) (entity.Licence, error) {
 		Holder:    decoded.Holder,
 		IssuedAt:  decoded.IssuedAt,
 		ExpiresAt: decoded.ExpiresAt,
-		Features:  entity.LicenceFeatures{Audit: decoded.Features.Audit},
+		Features: entity.LicenceFeatures{
+			Audit:     decoded.Features.Audit,
+			Directory: decoded.Features.Directory,
+		},
 	}, nil
 }

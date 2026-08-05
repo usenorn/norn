@@ -99,6 +99,7 @@ func membershipDTO(member entity.WorkspaceMember) api.Membership {
 	}
 
 	dto.ReadsAudit = &member.Membership.ReadsAudit
+	dto.DeactivatedAt = member.Membership.DeactivatedAt
 
 	return dto
 }

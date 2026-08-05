@@ -64,6 +64,10 @@ const (
 	AuditWorkspaceRestored AuditAction = "workspace.restored"
 	AuditWorkspacePurged   AuditAction = "workspace.purged"
 
+	AuditDirectoryConnected    AuditAction = "directory.connected"
+	AuditDirectoryDisconnected AuditAction = "directory.disconnected"
+	AuditDirectoryTokenRotated AuditAction = "directory.token_rotated"
+
 	AuditExported     AuditAction = "audit.exported"
 	AuditAccessDenied AuditAction = "access.denied"
 )
@@ -81,6 +85,7 @@ func AuditActions() []AuditAction {
 		AuditTokenMinted, AuditTokenRevoked,
 		AuditAgentRegistered, AuditAgentDisabled, AuditAgentProposal,
 		AuditWorkspaceUpdated, AuditWorkspaceDeletion, AuditWorkspaceRestored, AuditWorkspacePurged,
+		AuditDirectoryConnected, AuditDirectoryDisconnected, AuditDirectoryTokenRotated,
 		AuditExported, AuditAccessDenied,
 	}
 }

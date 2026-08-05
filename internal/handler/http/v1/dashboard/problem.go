@@ -489,6 +489,28 @@ func problemFor(err error) (problemResponse, bool) {
 			retryAfter: int(entity.SignInAddressCooldown.Seconds()),
 		}, true
 
+	case errors.Is(err, entity.ErrDirectoryUnlicensed):
+		base := baseProblem(http.StatusServiceUnavailable, err.Error())
+
+		return problemResponse{
+			status: http.StatusServiceUnavailable,
+			body: api.DirectoryUnlicensedProblem{
+				Code:     api.DirectoryUnlicensedProblemCodeDirectoryUnlicensed,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
+	case errors.Is(err, entity.ErrDirectoryNotConnected),
+		errors.Is(err, entity.ErrDirectoryRunNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrMembershipDeactivated):
+		return newProblem(http.StatusForbidden, err.Error()), true
+
 	case errors.Is(err, entity.ErrAuditUnlicensed):
 		base := baseProblem(http.StatusServiceUnavailable, err.Error())
 
@@ -899,6 +921,38 @@ func invitationUnusableProblem(code api.InvitationUnusableProblemCode, err error
 
 func unauthorized() problemResponse {
 	return newProblem(http.StatusUnauthorized, "a valid session is required")
+}
+
+func (r problemResponse) VisitGetWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitConnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRotateWorkspaceDirectoryTokenResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitConfigureWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDisconnectWorkspaceDirectoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceDirectoryAvailabilityResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceDirectoryRunsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceDirectoryChangesResponse(w http.ResponseWriter) error {
+	return r.write(w)
 }
 
 func (r problemResponse) VisitListWorkspaceAuditResponse(w http.ResponseWriter) error {
