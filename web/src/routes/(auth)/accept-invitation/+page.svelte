@@ -7,6 +7,9 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Info from "@lucide/svelte/icons/info";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
@@ -16,10 +19,14 @@
 	import { minPasswordLength } from "$lib/auth/sign-up-schema";
 	import { acceptInvitationSchema } from "$lib/workspace/accept-invitation-schema";
 	import {
+		invitedHeadline,
 		linkFailure,
 		type AcceptInvitation,
 		type InvitationContext,
+		type InvitationDetail,
 	} from "$lib/workspace/accept-invitation";
+	import { initialsOf } from "$lib/team/members";
+	import { onDate } from "$lib/time";
 	import { roleLabels } from "$lib/workspace/members";
 	import { acceptInvitationPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -40,11 +47,51 @@
 	const auth = $derived(data.auth);
 	const invitation = $derived<AcceptInvitation>(submitted ?? preview ?? data.invitation);
 
-	const context = $derived<InvitationContext | undefined>(
-		"workspace" in invitation && "email" in invitation
-			? { workspace: invitation.workspace, email: invitation.email }
+	const detail = $derived<InvitationDetail | undefined>(
+		invitation.kind === "create_account" ||
+			invitation.kind === "confirm" ||
+			invitation.kind === "sign_in_required" ||
+			invitation.kind === "sso_required"
+			? invitation
 			: undefined
 	);
+
+	const context = $derived<InvitationContext | undefined>(detail);
+
+	const inviterName = $derived(detail?.invitedBy?.name ?? detail?.workspace.name ?? "");
+
+	const invitedMeta = $derived(
+		detail
+			? [detail.invitedBy?.email, `sent ${onDate(detail.invitedAt, "UTC")}`]
+					.filter(Boolean)
+					.join(" · ")
+			: ""
+	);
+
+	const workspaceMeta = $derived.by(() => {
+		if (!detail) return "";
+
+		const teams = (detail.teams ?? []).map((team) => `${team} team`);
+		const role = "role" in invitation ? roleLabels[invitation.role] : "";
+
+		return [...teams, role].filter(Boolean).join(" · ");
+	});
+
+	const note = $derived.by(() => {
+		if (invitation.kind === "create_account") {
+			const team = invitation.teams[0];
+
+			return team
+				? `You'll land in the ${team} team. That can change any time.`
+				: "You can be put on a team once you are in.";
+		}
+
+		if (invitation.kind === "confirm") {
+			return "You keep your account and switch workspaces from the sidebar.";
+		}
+
+		return null;
+	});
 
 	async function join(displayName?: string, password?: string) {
 		if (!data.token) {
@@ -126,6 +173,14 @@
 	}
 
 	const busy = $derived($submitting || joining);
+
+	const passwordHint = $derived(
+		$formData.password.length > 0 && $formData.password.length < minPasswordLength
+			? `${minPasswordLength} characters minimum. This one is shorter.`
+			: `${minPasswordLength} characters minimum.`
+	);
+
+
 
 	const workspaceName = $derived(
 		"workspace" in invitation ? invitation.workspace.name : ""
@@ -258,22 +313,54 @@
 		}
 	});
 
-	const footer = $derived(
-		invitation.kind === "create_account" || invitation.kind === "confirm"
-			? "Norn doesn't charge per seat, so nobody is paying for your account."
-			: null
-	);
+	const footer = $derived.by(() => {
+		const until = detail ? onDate(detail.expiresAt, "UTC") : "";
+
+		if (invitation.kind === "create_account") {
+			return `The invitation is good until ${until}. Accounts exist only by invitation.`;
+		}
+
+		if (invitation.kind === "confirm") return `The invitation is good until ${until}.`;
+
+		if (invitation.kind === "already_accepted") {
+			return "Forgotten the password? Reset it from the sign-in screen.";
+		}
+
+		return null;
+	});
 </script>
 
 <svelte:head><title>{title} · Norn</title></svelte:head>
 
 <div class="my-auto flex w-full flex-col items-center gap-4">
-	<div class="notch w-full max-w-form">
-		<div class="flex flex-col gap-4 p-5 sm:p-6">
-			<div class="flex flex-col gap-1.5">
-				<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>
-				<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
-			</div>
+	<div class="notch w-full max-w-100">
+		<div class="flex flex-col gap-4.5 p-6 pb-5.5">
+			{#if detail}
+				<div class="flex items-center gap-2.5 border-b border-line-subtle pb-4">
+					<Avatar.Root size="default" class="flex-none">
+						<Avatar.Fallback>{initialsOf(inviterName)}</Avatar.Fallback>
+					</Avatar.Root>
+					<div class="flex min-w-0 flex-col gap-0.5">
+						<span class="text-md text-ink-900">{invitedHeadline(detail)}</span>
+						<span class="font-mono text-xs break-all text-muted-foreground">{invitedMeta}</span>
+					</div>
+				</div>
+
+				<div class="flex items-center gap-2.5">
+					<WorkspaceMark name={detail.workspace.name} class="size-7 flex-none text-base" />
+					<div class="flex min-w-0 flex-col gap-px">
+						<span class="text-base font-medium tracking-snug text-ink-900">
+							{detail.workspace.name}
+						</span>
+						<span class="font-mono text-xs text-muted-foreground">{workspaceMeta}</span>
+					</div>
+				</div>
+			{:else}
+				<div class="flex flex-col gap-1.5">
+					<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>
+					<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
+				</div>
+			{/if}
 
 			{#if notice}
 				{@const NoticeIcon = notice.icon}
@@ -282,18 +369,6 @@
 					<Alert.Title>{notice.title}</Alert.Title>
 					<Alert.Description>{notice.body}</Alert.Description>
 				</Alert.Root>
-			{/if}
-
-			{#if invitation.kind === "create_account" || invitation.kind === "confirm" || invitation.kind === "sign_in_required" || invitation.kind === "sso_required"}
-				<div class="flex flex-col gap-2.5 rounded-lg border border-line-default bg-paper-1 p-3">
-					<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-						<span class="font-mono text-xs break-all text-ink-900">{invitation.email}</span>
-						<span class="font-mono text-xs text-muted-foreground">{workspaceName}</span>
-					</div>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Invitations are issued to one address. Accepting adds this address to the workspace.
-					</p>
-				</div>
 			{/if}
 
 			{#if showForm}
@@ -313,6 +388,15 @@
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
+
+					<div class="flex flex-col gap-1">
+						<span class="font-mono text-2xs font-medium tracking-caps text-ink-600 uppercase">
+							Email
+						</span>
+						<Input value={invitation.kind === "create_account" ? invitation.email : ""} disabled />
+						<span class="text-sm text-muted-foreground">Fixed by the invitation.</span>
+					</div>
+
 					<Form.Field {form} name="password">
 						<Form.Control>
 							{#snippet children({ props })}
@@ -326,28 +410,79 @@
 								/>
 							{/snippet}
 						</Form.Control>
+						<Form.Description>{passwordHint}</Form.Description>
 						<Form.FieldErrors />
 					</Form.Field>
-					<ul class="flex flex-col gap-1">
-						{#each passwordRules as rule (rule.label)}
-							{@const RuleIcon = rule.met ? CircleCheck : CircleDashed}
-							<li
-								class="flex items-center gap-2 text-sm {rule.met
-									? 'text-ink-600'
-									: 'text-muted-foreground'}"
-							>
-								<RuleIcon
-									class="size-icon-row shrink-0 {rule.met ? 'text-success' : ''}"
-									aria-hidden="true"
+
+					<Form.Field {form} name="repeat">
+						<Form.Control>
+							{#snippet children({ props })}
+								<Form.Label>Repeat password</Form.Label>
+								<Input
+									{...props}
+									type="password"
+									autocomplete="new-password"
+									disabled={busy}
+									bind:value={$formData.repeat}
 								/>
-								{rule.label}
-							</li>
-						{/each}
-					</ul>
+							{/snippet}
+						</Form.Control>
+						<Form.FieldErrors />
+					</Form.Field>
 				</form>
 			{/if}
 
-			<div class="flex flex-col gap-2">
+			{#if invitation.kind === "confirm"}
+				<div
+					class="flex items-center gap-2.5 rounded-lg border border-line-default bg-paper-1 px-3 py-2.5"
+				>
+					<Avatar.Root size="sm" class="flex-none">
+						<Avatar.Fallback>{initialsOf(invitation.email)}</Avatar.Fallback>
+					</Avatar.Root>
+					<div class="flex min-w-0 flex-1 flex-col gap-px">
+						<span class="truncate text-md text-ink-900">{data.signedInAs || invitation.email}</span>
+						<span class="font-mono text-xs break-all text-muted-foreground">{invitation.email}</span>
+					</div>
+					<a
+						href="/sign-in?return={encodeURIComponent(page.url.pathname + page.url.search)}"
+						class="flex-none text-sm text-link hover:text-link-hover hover:underline"
+					>
+						Switch
+					</a>
+				</div>
+			{/if}
+
+			<div class="flex flex-col gap-3">
+				{#if showForm}
+					<Form.Field {form} name="terms">
+						<Form.Control>
+							{#snippet children({ props })}
+								<label
+									class="flex cursor-pointer items-start gap-2.25 text-sm leading-normal text-ink-600 text-pretty"
+								>
+									<Checkbox
+										{...props}
+										bind:checked={$formData.terms}
+										disabled={busy}
+										class="mt-px flex-none"
+									/>
+									<span>
+										I agree to the
+										<a href="/terms" class="text-link hover:text-link-hover hover:underline">
+											terms of service
+										</a>
+										and the
+										<a href="/privacy" class="text-link hover:text-link-hover hover:underline">
+											privacy notice
+										</a>.
+									</span>
+								</label>
+							{/snippet}
+						</Form.Control>
+						<Form.FieldErrors />
+					</Form.Field>
+				{/if}
+
 				{#if action.href}
 					<Button href={action.href} class="w-full">{action.label}</Button>
 				{:else if action.form}
@@ -357,8 +492,9 @@
 				{:else}
 					<Button class="w-full" disabled={busy} onclick={action.onclick}>{action.label}</Button>
 				{/if}
-				{#if action.href !== "/sign-in"}
-					<Button href="/sign-in" variant="ghost" class="w-full">Back to sign in</Button>
+
+				{#if note}
+					<p class="text-center text-sm leading-normal text-muted-foreground text-pretty">{note}</p>
 				{/if}
 			</div>
 		</div>

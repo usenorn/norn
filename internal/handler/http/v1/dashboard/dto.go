@@ -283,17 +283,33 @@ func invitationResultDTOs(results []service.InvitationResult) []api.InvitationRe
 }
 
 func invitationPreviewDTO(preview service.InvitationPreview) api.InvitationPreview {
-	return api.InvitationPreview{
+	teams := preview.Teams
+	if teams == nil {
+		teams = []string{}
+	}
+
+	dto := api.InvitationPreview{
 		Workspace: api.InvitationWorkspace{
 			Slug: preview.Workspace.Slug,
 			Name: preview.Workspace.Name,
 		},
 		Email:         preview.Email,
 		Role:          api.MembershipRole(preview.Role),
+		InvitedAt:     preview.InvitedAt,
 		ExpiresAt:     preview.ExpiresAt,
+		Teams:         teams,
 		AccountExists: preview.AccountExists,
 		SsoEnforced:   preview.SSOEnforced,
 	}
+
+	if preview.InvitedBy != nil {
+		dto.InvitedBy = &api.InvitationInviter{
+			Name:  preview.InvitedBy.DisplayName,
+			Email: preview.InvitedBy.Email,
+		}
+	}
+
+	return dto
 }
 
 func signUpRequestedDTO(requested service.RequestedSignUp) api.SignUpRequested {

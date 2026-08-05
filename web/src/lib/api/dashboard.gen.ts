@@ -4239,10 +4239,19 @@ export interface components {
             workspace: components["schemas"]["InvitationWorkspace"];
             email: string;
             role: components["schemas"]["MembershipRole"];
+            invitedBy?: components["schemas"]["InvitationInviter"];
+            /** Format: date-time */
+            invitedAt: string;
             /** Format: date-time */
             expiresAt: string;
             accountExists: boolean;
             ssoEnforced: boolean;
+            /** @description The teams this invitation puts the person on */
+            teams: string[];
+        };
+        InvitationInviter: {
+            name: string;
+            email: string;
         };
         InvitationWorkspace: {
             slug: string;

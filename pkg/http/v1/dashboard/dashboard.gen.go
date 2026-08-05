@@ -3304,17 +3304,28 @@ type InvitationExpiredProblem struct {
 // InvitationExpiredProblemCode defines model for InvitationExpiredProblem.Code.
 type InvitationExpiredProblemCode string
 
+// InvitationInviter defines model for InvitationInviter.
+type InvitationInviter struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
 // InvitationOutcome defines model for InvitationOutcome.
 type InvitationOutcome string
 
 // InvitationPreview defines model for InvitationPreview.
 type InvitationPreview struct {
-	AccountExists bool                `json:"accountExists"`
-	Email         string              `json:"email"`
-	ExpiresAt     time.Time           `json:"expiresAt"`
-	Role          MembershipRole      `json:"role"`
-	SsoEnforced   bool                `json:"ssoEnforced"`
-	Workspace     InvitationWorkspace `json:"workspace"`
+	AccountExists bool               `json:"accountExists"`
+	Email         string             `json:"email"`
+	ExpiresAt     time.Time          `json:"expiresAt"`
+	InvitedAt     time.Time          `json:"invitedAt"`
+	InvitedBy     *InvitationInviter `json:"invitedBy,omitempty"`
+	Role          MembershipRole     `json:"role"`
+	SsoEnforced   bool               `json:"ssoEnforced"`
+
+	// Teams The teams this invitation puts the person on
+	Teams     []string            `json:"teams"`
+	Workspace InvitationWorkspace `json:"workspace"`
 }
 
 // InvitationRequest defines model for InvitationRequest.
