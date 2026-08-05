@@ -31,6 +31,7 @@ type invitationsService struct {
 	sessions     service.Sessions
 	app          config.App
 	smtp         config.SMTP
+	audit        service.Audit
 }
 
 func New(
@@ -49,6 +50,7 @@ func New(
 	sessions service.Sessions,
 	app config.App,
 	smtp config.SMTP,
+	audit service.Audit,
 ) service.Invitations {
 	return &invitationsService{
 		invitations:  invitations,
@@ -66,6 +68,7 @@ func New(
 		sessions:     sessions,
 		app:          app,
 		smtp:         smtp,
+		audit:        audit,
 	}
 }
 
@@ -180,6 +183,15 @@ func (s *invitationsService) invite(
 	if err != nil {
 		return service.InvitationResult{}, "", err
 	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditInvitationCreated,
+		ResourceKind: string(entity.ResourceInvitation),
+		ResourceID:   created.ID,
+		ResourceName: email,
+		Detail:       map[string]string{"role": string(recipient.Role)},
+	})
 
 	result := service.InvitationResult{
 		Email:      email,
@@ -299,7 +311,19 @@ func (s *invitationsService) Revoke(ctx context.Context, workspaceID, invitation
 		return entity.ErrInvitationAccepted
 	}
 
-	return s.invitations.MarkRevoked(ctx, invitation.ID, time.Now().UTC())
+	if err := s.invitations.MarkRevoked(ctx, invitation.ID, time.Now().UTC()); err != nil {
+		return err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditInvitationRevoked,
+		ResourceKind: string(entity.ResourceInvitation),
+		ResourceID:   invitation.ID,
+		ResourceName: invitation.Email,
+	})
+
+	return nil
 }
 
 func (s *invitationsService) Preview(ctx context.Context, token string) (service.InvitationPreview, error) {
@@ -465,6 +489,20 @@ func (s *invitationsService) join(
 	if err != nil {
 		return entity.Membership{}, err
 	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:   invitation.WorkspaceID,
+		WorkspaceName: workspace.Name,
+		Action:        entity.AuditInvitationAccepted,
+		Actor: entity.AuditActor{
+			Kind:      entity.ActorKindUser,
+			AccountID: accountID,
+		},
+		ResourceKind: string(entity.ResourceInvitation),
+		ResourceID:   invitation.ID,
+		ResourceName: invitation.Email,
+		Detail:       map[string]string{"role": string(invitation.Role)},
+	})
 
 	return membership, nil
 }

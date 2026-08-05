@@ -201,11 +201,14 @@ var AccountWhere = struct {
 
 // AccountRels is where relationship names are stored.
 var AccountRels = struct {
+	WorkspaceAgent                             string
 	AccountEmailChanges                        string
 	AccountPasswordHistories                   string
 	AccountPasswordResets                      string
 	APITokens                                  string
 	ActorAccountWorkspaceActivities            string
+	DecidedByAccountWorkspaceAgentProposals    string
+	OwnerAccountWorkspaceAgents                string
 	IssuedByWorkspaceBreakGlassCodes           string
 	RequestedByAccountWorkspaceBulkActions     string
 	ActorAccountWorkspaceCycleScopeChanges     string
@@ -225,11 +228,14 @@ var AccountRels = struct {
 	LeadAccountWorkspaceProjects               string
 	WorkspaceSsoIdentities                     string
 }{
+	WorkspaceAgent:                             "WorkspaceAgent",
 	AccountEmailChanges:                        "AccountEmailChanges",
 	AccountPasswordHistories:                   "AccountPasswordHistories",
 	AccountPasswordResets:                      "AccountPasswordResets",
 	APITokens:                                  "APITokens",
 	ActorAccountWorkspaceActivities:            "ActorAccountWorkspaceActivities",
+	DecidedByAccountWorkspaceAgentProposals:    "DecidedByAccountWorkspaceAgentProposals",
+	OwnerAccountWorkspaceAgents:                "OwnerAccountWorkspaceAgents",
 	IssuedByWorkspaceBreakGlassCodes:           "IssuedByWorkspaceBreakGlassCodes",
 	RequestedByAccountWorkspaceBulkActions:     "RequestedByAccountWorkspaceBulkActions",
 	ActorAccountWorkspaceCycleScopeChanges:     "ActorAccountWorkspaceCycleScopeChanges",
@@ -252,11 +258,14 @@ var AccountRels = struct {
 
 // accountR is where relationships are stored.
 type accountR struct {
+	WorkspaceAgent                             *WorkspaceAgent                    `boil:"WorkspaceAgent" json:"WorkspaceAgent" toml:"WorkspaceAgent" yaml:"WorkspaceAgent"`
 	AccountEmailChanges                        AccountEmailChangeSlice            `boil:"AccountEmailChanges" json:"AccountEmailChanges" toml:"AccountEmailChanges" yaml:"AccountEmailChanges"`
 	AccountPasswordHistories                   AccountPasswordHistorySlice        `boil:"AccountPasswordHistories" json:"AccountPasswordHistories" toml:"AccountPasswordHistories" yaml:"AccountPasswordHistories"`
 	AccountPasswordResets                      AccountPasswordResetSlice          `boil:"AccountPasswordResets" json:"AccountPasswordResets" toml:"AccountPasswordResets" yaml:"AccountPasswordResets"`
 	APITokens                                  APITokenSlice                      `boil:"APITokens" json:"APITokens" toml:"APITokens" yaml:"APITokens"`
 	ActorAccountWorkspaceActivities            WorkspaceActivitySlice             `boil:"ActorAccountWorkspaceActivities" json:"ActorAccountWorkspaceActivities" toml:"ActorAccountWorkspaceActivities" yaml:"ActorAccountWorkspaceActivities"`
+	DecidedByAccountWorkspaceAgentProposals    WorkspaceAgentProposalSlice        `boil:"DecidedByAccountWorkspaceAgentProposals" json:"DecidedByAccountWorkspaceAgentProposals" toml:"DecidedByAccountWorkspaceAgentProposals" yaml:"DecidedByAccountWorkspaceAgentProposals"`
+	OwnerAccountWorkspaceAgents                WorkspaceAgentSlice                `boil:"OwnerAccountWorkspaceAgents" json:"OwnerAccountWorkspaceAgents" toml:"OwnerAccountWorkspaceAgents" yaml:"OwnerAccountWorkspaceAgents"`
 	IssuedByWorkspaceBreakGlassCodes           WorkspaceBreakGlassCodeSlice       `boil:"IssuedByWorkspaceBreakGlassCodes" json:"IssuedByWorkspaceBreakGlassCodes" toml:"IssuedByWorkspaceBreakGlassCodes" yaml:"IssuedByWorkspaceBreakGlassCodes"`
 	RequestedByAccountWorkspaceBulkActions     WorkspaceBulkActionSlice           `boil:"RequestedByAccountWorkspaceBulkActions" json:"RequestedByAccountWorkspaceBulkActions" toml:"RequestedByAccountWorkspaceBulkActions" yaml:"RequestedByAccountWorkspaceBulkActions"`
 	ActorAccountWorkspaceCycleScopeChanges     WorkspaceCycleScopeChangeSlice     `boil:"ActorAccountWorkspaceCycleScopeChanges" json:"ActorAccountWorkspaceCycleScopeChanges" toml:"ActorAccountWorkspaceCycleScopeChanges" yaml:"ActorAccountWorkspaceCycleScopeChanges"`
@@ -280,6 +289,22 @@ type accountR struct {
 // NewStruct creates a new relationship struct
 func (*accountR) NewStruct() *accountR {
 	return &accountR{}
+}
+
+func (o *Account) GetWorkspaceAgent() *WorkspaceAgent {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceAgent()
+}
+
+func (r *accountR) GetWorkspaceAgent() *WorkspaceAgent {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceAgent
 }
 
 func (o *Account) GetAccountEmailChanges() AccountEmailChangeSlice {
@@ -360,6 +385,38 @@ func (r *accountR) GetActorAccountWorkspaceActivities() WorkspaceActivitySlice {
 	}
 
 	return r.ActorAccountWorkspaceActivities
+}
+
+func (o *Account) GetDecidedByAccountWorkspaceAgentProposals() WorkspaceAgentProposalSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetDecidedByAccountWorkspaceAgentProposals()
+}
+
+func (r *accountR) GetDecidedByAccountWorkspaceAgentProposals() WorkspaceAgentProposalSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.DecidedByAccountWorkspaceAgentProposals
+}
+
+func (o *Account) GetOwnerAccountWorkspaceAgents() WorkspaceAgentSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetOwnerAccountWorkspaceAgents()
+}
+
+func (r *accountR) GetOwnerAccountWorkspaceAgents() WorkspaceAgentSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.OwnerAccountWorkspaceAgents
 }
 
 func (o *Account) GetIssuedByWorkspaceBreakGlassCodes() WorkspaceBreakGlassCodeSlice {
@@ -966,6 +1023,17 @@ func (q accountQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bo
 	return count > 0, nil
 }
 
+// WorkspaceAgent pointed to by the foreign key.
+func (o *Account) WorkspaceAgent(mods ...qm.QueryMod) workspaceAgentQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"account_id\" = ?", o.ID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceAgents(queryMods...)
+}
+
 // AccountEmailChanges retrieves all the account_email_change's AccountEmailChanges with an executor.
 func (o *Account) AccountEmailChanges(mods ...qm.QueryMod) accountEmailChangeQuery {
 	var queryMods []qm.QueryMod
@@ -1034,6 +1102,34 @@ func (o *Account) ActorAccountWorkspaceActivities(mods ...qm.QueryMod) workspace
 	)
 
 	return WorkspaceActivities(queryMods...)
+}
+
+// DecidedByAccountWorkspaceAgentProposals retrieves all the workspace_agent_proposal's WorkspaceAgentProposals with an executor via decided_by_account_id column.
+func (o *Account) DecidedByAccountWorkspaceAgentProposals(mods ...qm.QueryMod) workspaceAgentProposalQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_proposals\".\"decided_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentProposals(queryMods...)
+}
+
+// OwnerAccountWorkspaceAgents retrieves all the workspace_agent's WorkspaceAgents with an executor via owner_account_id column.
+func (o *Account) OwnerAccountWorkspaceAgents(mods ...qm.QueryMod) workspaceAgentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agents\".\"owner_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgents(queryMods...)
 }
 
 // IssuedByWorkspaceBreakGlassCodes retrieves all the workspace_break_glass_code's WorkspaceBreakGlassCodes with an executor via issued_by column.
@@ -1286,6 +1382,123 @@ func (o *Account) WorkspaceSsoIdentities(mods ...qm.QueryMod) workspaceSsoIdenti
 	)
 
 	return WorkspaceSsoIdentities(queryMods...)
+}
+
+// LoadWorkspaceAgent allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-1 relationship.
+func (accountL) LoadWorkspaceAgent(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agents`),
+		qm.WhereIn(`workspace_agents.account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceAgent")
+	}
+
+	var resultSlice []*WorkspaceAgent
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceAgent")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_agents")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agents")
+	}
+
+	if len(workspaceAgentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.WorkspaceAgent = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceAgentR{}
+		}
+		foreign.R.Account = object
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.ID == foreign.AccountID {
+				local.R.WorkspaceAgent = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentR{}
+				}
+				foreign.R.Account = local
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadAccountEmailChanges allows an eager lookup of values, cached into the
@@ -1845,6 +2058,232 @@ func (accountL) LoadActorAccountWorkspaceActivities(ctx context.Context, e boil.
 					foreign.R = &workspaceActivityR{}
 				}
 				foreign.R.ActorAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadDecidedByAccountWorkspaceAgentProposals allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadDecidedByAccountWorkspaceAgentProposals(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_proposals`),
+		qm.WhereIn(`workspace_agent_proposals.decided_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_proposals")
+	}
+
+	var resultSlice []*WorkspaceAgentProposal
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_proposals")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_proposals")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_proposals")
+	}
+
+	if len(workspaceAgentProposalAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.DecidedByAccountWorkspaceAgentProposals = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentProposalR{}
+			}
+			foreign.R.DecidedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.DecidedByAccountID) {
+				local.R.DecidedByAccountWorkspaceAgentProposals = append(local.R.DecidedByAccountWorkspaceAgentProposals, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentProposalR{}
+				}
+				foreign.R.DecidedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadOwnerAccountWorkspaceAgents allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadOwnerAccountWorkspaceAgents(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agents`),
+		qm.WhereIn(`workspace_agents.owner_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agents")
+	}
+
+	var resultSlice []*WorkspaceAgent
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agents")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agents")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agents")
+	}
+
+	if len(workspaceAgentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.OwnerAccountWorkspaceAgents = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentR{}
+			}
+			foreign.R.OwnerAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.OwnerAccountID {
+				local.R.OwnerAccountWorkspaceAgents = append(local.R.OwnerAccountWorkspaceAgents, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentR{}
+				}
+				foreign.R.OwnerAccount = local
 				break
 			}
 		}
@@ -3887,6 +4326,56 @@ func (accountL) LoadWorkspaceSsoIdentities(ctx context.Context, e boil.ContextEx
 	return nil
 }
 
+// SetWorkspaceAgent of the account to the related item.
+// Sets o.R.WorkspaceAgent to related.
+// Adds o to related.R.Account.
+func (o *Account) SetWorkspaceAgent(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceAgent) error {
+	var err error
+
+	if insert {
+		related.AccountID = o.ID
+
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	} else {
+		updateQuery := fmt.Sprintf(
+			"UPDATE \"workspace_agents\" SET %s WHERE %s",
+			strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
+			strmangle.WhereClause("\"", "\"", 2, workspaceAgentPrimaryKeyColumns),
+		)
+		values := []any{o.ID, related.ID}
+
+		if boil.IsDebug(ctx) {
+			writer := boil.DebugWriterFrom(ctx)
+			fmt.Fprintln(writer, updateQuery)
+			fmt.Fprintln(writer, values)
+		}
+		if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+			return errors.Wrap(err, "failed to update foreign table")
+		}
+
+		related.AccountID = o.ID
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			WorkspaceAgent: related,
+		}
+	} else {
+		o.R.WorkspaceAgent = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceAgentR{
+			Account: o,
+		}
+	} else {
+		related.R.Account = o
+	}
+	return nil
+}
+
 // AddAccountEmailChanges adds the given related objects to the existing relationships
 // of the account, optionally inserting them as new records.
 // Appends related to o.R.AccountEmailChanges.
@@ -4223,6 +4712,186 @@ func (o *Account) RemoveActorAccountWorkspaceActivities(ctx context.Context, exe
 		}
 	}
 
+	return nil
+}
+
+// AddDecidedByAccountWorkspaceAgentProposals adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.DecidedByAccountWorkspaceAgentProposals.
+// Sets related.R.DecidedByAccount appropriately.
+func (o *Account) AddDecidedByAccountWorkspaceAgentProposals(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentProposal) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.DecidedByAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_proposals\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"decided_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentProposalPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.DecidedByAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			DecidedByAccountWorkspaceAgentProposals: related,
+		}
+	} else {
+		o.R.DecidedByAccountWorkspaceAgentProposals = append(o.R.DecidedByAccountWorkspaceAgentProposals, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentProposalR{
+				DecidedByAccount: o,
+			}
+		} else {
+			rel.R.DecidedByAccount = o
+		}
+	}
+	return nil
+}
+
+// SetDecidedByAccountWorkspaceAgentProposals removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.DecidedByAccount's DecidedByAccountWorkspaceAgentProposals accordingly.
+// Replaces o.R.DecidedByAccountWorkspaceAgentProposals with related.
+// Sets related.R.DecidedByAccount's DecidedByAccountWorkspaceAgentProposals accordingly.
+func (o *Account) SetDecidedByAccountWorkspaceAgentProposals(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentProposal) error {
+	query := "update \"workspace_agent_proposals\" set \"decided_by_account_id\" = null where \"decided_by_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.DecidedByAccountWorkspaceAgentProposals {
+			queries.SetScanner(&rel.DecidedByAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.DecidedByAccount = nil
+		}
+		o.R.DecidedByAccountWorkspaceAgentProposals = nil
+	}
+
+	return o.AddDecidedByAccountWorkspaceAgentProposals(ctx, exec, insert, related...)
+}
+
+// RemoveDecidedByAccountWorkspaceAgentProposals relationships from objects passed in.
+// Removes related items from R.DecidedByAccountWorkspaceAgentProposals (uses pointer comparison, removal does not keep order)
+// Sets related.R.DecidedByAccount.
+func (o *Account) RemoveDecidedByAccountWorkspaceAgentProposals(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceAgentProposal) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.DecidedByAccountID, nil)
+		if rel.R != nil {
+			rel.R.DecidedByAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("decided_by_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.DecidedByAccountWorkspaceAgentProposals {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.DecidedByAccountWorkspaceAgentProposals)
+			if ln > 1 && i < ln-1 {
+				o.R.DecidedByAccountWorkspaceAgentProposals[i] = o.R.DecidedByAccountWorkspaceAgentProposals[ln-1]
+			}
+			o.R.DecidedByAccountWorkspaceAgentProposals = o.R.DecidedByAccountWorkspaceAgentProposals[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddOwnerAccountWorkspaceAgents adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.OwnerAccountWorkspaceAgents.
+// Sets related.R.OwnerAccount appropriately.
+func (o *Account) AddOwnerAccountWorkspaceAgents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgent) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.OwnerAccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agents\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"owner_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.OwnerAccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			OwnerAccountWorkspaceAgents: related,
+		}
+	} else {
+		o.R.OwnerAccountWorkspaceAgents = append(o.R.OwnerAccountWorkspaceAgents, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentR{
+				OwnerAccount: o,
+			}
+		} else {
+			rel.R.OwnerAccount = o
+		}
+	}
 	return nil
 }
 

@@ -3,6 +3,8 @@ package workspace
 import (
 	"context"
 	"errors"
+	"net/netip"
+	"strconv"
 
 	"github.com/google/uuid"
 
@@ -68,6 +70,24 @@ func (s *workspacesService) SetAuthPolicy(
 	})
 	if err != nil {
 		return service.AuthPolicyOutcome{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditSSOEnforcement,
+		ResourceKind: string(entity.ResourceAuthPolicy),
+		ResourceID:   workspaceID,
+		Detail:       map[string]string{"enforcement": string(enforcement)},
+	})
+
+	if len(outcome.RecoveryCodes) > 0 {
+		s.audit.Record(ctx, entity.AuditEntry{
+			WorkspaceID:  workspaceID,
+			Action:       entity.AuditRecoveryCodesIssued,
+			ResourceKind: string(entity.ResourceAuthPolicy),
+			ResourceID:   workspaceID,
+			Detail:       map[string]string{"codes": strconv.Itoa(len(outcome.RecoveryCodes))},
+		})
 	}
 
 	return outcome, nil
@@ -208,6 +228,16 @@ func (s *workspacesService) RedeemRecoveryCode(
 		"from", input.From,
 	)
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:   workspace.ID,
+		WorkspaceName: workspace.Name,
+		Action:        entity.AuditRecoveryCodeRedeemed,
+		Actor:         entity.AuditActor{Kind: entity.ActorKindSystem},
+		SourceIP:      redeemedFrom(input.From),
+		ResourceKind:  string(entity.ResourceAuthPolicy),
+		ResourceID:    workspace.ID,
+	})
+
 	return nil
 }
 
@@ -238,5 +268,25 @@ func (s *workspacesService) UnlinkSSOIdentity(
 		return err
 	}
 
-	return s.identities.Unlink(ctx, workspaceID, accountID)
+	if err := s.identities.Unlink(ctx, workspaceID, accountID); err != nil {
+		return err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditSSOIdentityUnlinked,
+		ResourceKind: string(entity.ResourceAccount),
+		ResourceID:   accountID,
+	})
+
+	return nil
+}
+
+func redeemedFrom(raw string) netip.Addr {
+	addr, err := netip.ParseAddr(raw)
+	if err != nil {
+		return netip.Addr{}
+	}
+
+	return addr
 }

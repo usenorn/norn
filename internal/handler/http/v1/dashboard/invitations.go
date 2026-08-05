@@ -134,7 +134,7 @@ func (h *handler) AcceptInvitation(ctx context.Context, request api.AcceptInvita
 	accepted, err := h.invitations.Accept(ctx, input)
 	if err != nil {
 		if errors.Is(err, entity.ErrAccountEmailTaken) {
-			return invitationUnusableProblem(api.AccountExists, err), nil
+			return invitationUnusableProblem(api.InvitationUnusableProblemCodeAccountExists, err), nil
 		}
 
 		if problem, ok := problemFor(err); ok {

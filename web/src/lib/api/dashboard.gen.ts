@@ -808,6 +808,81 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read what has been done in this workspace, one record per operation */
+        get: operations["listWorkspaceAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/audit/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Report whether the audit log is licensed and how long it is kept */
+        get: operations["getWorkspaceAuditAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/members/{accountId}/audit-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                accountId: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Grant or withdraw this member's access to the audit log */
+        put: operations["setWorkspaceMemberAuditAccess"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instance/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read every record on this instance, including the account-level ones */
+        get: operations["listInstanceAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents": {
         parameters: {
             query?: never;
@@ -2867,6 +2942,61 @@ export interface components {
         };
         /** @enum {string} */
         ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed";
+        /** @enum {string} */
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "token.minted" | "token.revoked" | "agent.registered" | "agent.disabled" | "agent.proposal_decided" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "audit.exported" | "access.denied";
+        /** @enum {string} */
+        AuditOutcome: "succeeded" | "failed" | "denied";
+        /** @enum {string} */
+        AuditAuthMethod: "password" | "sso" | "api_token" | "agent" | "system";
+        AuditActor: {
+            /** Format: uuid */
+            accountId?: string;
+            kind: components["schemas"]["ActivityActorKind"];
+            name?: string;
+            /** Format: uuid */
+            tokenId?: string;
+            tokenName?: string;
+            /** Format: uuid */
+            agentId?: string;
+            agentName?: string;
+            authMethod: components["schemas"]["AuditAuthMethod"];
+        };
+        AuditEvent: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            workspaceId?: string;
+            workspaceName?: string;
+            action: components["schemas"]["AuditAction"];
+            outcome: components["schemas"]["AuditOutcome"];
+            actor: components["schemas"]["AuditActor"];
+            sourceIp?: string;
+            userAgent?: string;
+            resourceKind?: string;
+            /** Format: uuid */
+            resourceId?: string;
+            resourceName?: string;
+            detail?: {
+                [key: string]: string;
+            };
+        };
+        AuditPage: {
+            events: components["schemas"]["AuditEvent"][];
+            nextCursor?: string;
+            /** Format: int32 */
+            retentionDays: number;
+        };
+        AuditAvailability: {
+            available: boolean;
+            /** Format: int32 */
+            retentionDays: number;
+            holder?: string;
+        };
+        SetAuditAccessRequest: {
+            readsAudit: boolean;
+        };
         ActivityPage: {
             events: components["schemas"]["ActivityEvent"][];
             nextCursor?: string;
@@ -3256,6 +3386,10 @@ export interface components {
             /** @enum {string} */
             code: "sign_up_used" | "sign_up_email_taken";
         };
+        AuditUnlicensedProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "audit_unlicensed";
+        };
         MailUnavailableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "mail_unavailable";
@@ -3408,6 +3542,7 @@ export interface components {
             /** Format: date-time */
             lastActiveAt?: string;
             lastAuthMethod?: components["schemas"]["SessionAuthMethod"];
+            readsAudit?: boolean;
         };
         MemberPage: {
             members: components["schemas"]["Membership"][];
@@ -4041,6 +4176,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["SignUpUnusableProblem"];
             };
         };
+        /** @description This instance has no licence covering the audit log */
+        AuditUnlicensed: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["AuditUnlicensedProblem"];
+            };
+        };
         /** @description The instance is not configured to send mail */
         MailUnavailable: {
             headers: {
@@ -4101,6 +4245,14 @@ export interface components {
         SavedViewId: string;
         LabelId: string;
         GroupId: string;
+        AuditLimit: number;
+        AuditCursor: string;
+        AuditActorFilter: string;
+        AuditActionFilter: components["schemas"]["AuditAction"][];
+        AuditResourceKind: string;
+        AuditResourceId: string;
+        AuditFrom: string;
+        AuditTo: string;
         ActivityLimit: number;
         ActivityCursor: string;
         /** @description Oldest first tells the story forward; newest first shows what just happened. */
@@ -5802,6 +5954,133 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceAudit: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["AuditLimit"];
+                cursor?: components["parameters"]["AuditCursor"];
+                actor?: components["parameters"]["AuditActorFilter"];
+                action?: components["parameters"]["AuditActionFilter"];
+                resourceKind?: components["parameters"]["AuditResourceKind"];
+                resourceId?: components["parameters"]["AuditResourceId"];
+                from?: components["parameters"]["AuditFrom"];
+                to?: components["parameters"]["AuditTo"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of records, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["AuditUnlicensed"];
+        };
+    };
+    getWorkspaceAuditAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What this instance offers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditAvailability"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceMemberAuditAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                accountId: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAuditAccessRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated membership */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Membership"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listInstanceAudit: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["AuditLimit"];
+                cursor?: components["parameters"]["AuditCursor"];
+                actor?: components["parameters"]["AuditActorFilter"];
+                action?: components["parameters"]["AuditActionFilter"];
+                resourceKind?: components["parameters"]["AuditResourceKind"];
+                resourceId?: components["parameters"]["AuditResourceId"];
+                from?: components["parameters"]["AuditFrom"];
+                to?: components["parameters"]["AuditTo"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of records, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["AuditUnlicensed"];
         };
     };
     listWorkspaceAgents: {

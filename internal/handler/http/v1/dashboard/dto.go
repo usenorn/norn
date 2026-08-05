@@ -98,6 +98,8 @@ func membershipDTO(member entity.WorkspaceMember) api.Membership {
 		dto.LastAuthMethod = &method
 	}
 
+	dto.ReadsAudit = &member.Membership.ReadsAudit
+
 	return dto
 }
 

@@ -84,6 +84,7 @@ func newAgentHarness(t *testing.T, enforcer policyEnforcer) *agentHarness {
 		teams:         h.teams,
 		accounts:      accounts,
 		agentThrottle: h.throttle,
+		audit:         silentAudit(ctrl),
 	}
 
 	return h

@@ -20,6 +20,7 @@ type Worker struct {
 	attachments   config.Attachments
 	notifications config.Notifications
 	tokens        config.APITokens
+	audit         config.Audit
 	server        *taskqueue.Server
 	scheduler     *taskqueue.Scheduler
 	mux           *asynq.ServeMux
@@ -41,6 +42,7 @@ func NewServeMux(
 	notificationFanOut *job.NotificationFanOutHandler,
 	notificationDigest *job.NotificationDigestHandler,
 	tokenExpirySweep *job.APITokenExpirySweepHandler,
+	auditSweep *job.AuditSweepHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -57,6 +59,7 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeNotificationFanOut, notificationFanOut)
 	mux.Handle(entity.TaskTypeNotificationDigest, notificationDigest)
 	mux.Handle(entity.TaskTypeAPITokenExpirySweep, tokenExpirySweep)
+	mux.Handle(entity.TaskTypeAuditSweep, auditSweep)
 
 	return mux
 }
@@ -67,6 +70,7 @@ func NewWorker(
 	attachments config.Attachments,
 	notifications config.Notifications,
 	tokens config.APITokens,
+	audit config.Audit,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	mux *asynq.ServeMux,
@@ -78,6 +82,7 @@ func NewWorker(
 		attachments:   attachments,
 		notifications: notifications,
 		tokens:        tokens,
+		audit:         audit,
 		server:        server,
 		scheduler:     scheduler,
 		mux:           mux,
@@ -134,6 +139,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueMail),
 	); err != nil {
 		return fmt.Errorf("register api token expiry sweep: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.audit.SweepSchedule,
+		asynq.NewTask(entity.TaskTypeAuditSweep, nil),
+		asynq.Queue(entity.QueueMail),
+	); err != nil {
+		return fmt.Errorf("register audit retention sweep: %w", err)
 	}
 
 	if err := w.server.Start(w.mux); err != nil {

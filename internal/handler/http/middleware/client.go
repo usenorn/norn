@@ -9,9 +9,8 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/identity"
 )
-
-type clientKey struct{}
 
 func ClientCapture(cfg config.HTTP) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -21,15 +20,13 @@ func ClientCapture(cfg config.HTTP) func(http.Handler) http.Handler {
 				IP:        clientIP(r, cfg.ClientIPHeader),
 			}
 
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), clientKey{}, client)))
+			next.ServeHTTP(w, r.WithContext(identity.WithClient(r.Context(), client)))
 		})
 	}
 }
 
 func ClientFrom(ctx context.Context) entity.SessionClient {
-	client, _ := ctx.Value(clientKey{}).(entity.SessionClient)
-
-	return client
+	return identity.Client(ctx)
 }
 
 func clientIP(r *http.Request, header string) netip.Addr {

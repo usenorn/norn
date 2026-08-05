@@ -6,6 +6,7 @@ import (
 	"github.com/goforj/wire"
 
 	"github.com/usenorn/norn/internal/config"
+	auditexportedge "github.com/usenorn/norn/internal/handler/http/auditexport"
 	blobedge "github.com/usenorn/norn/internal/handler/http/blob"
 	eventsedge "github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/router"
@@ -16,6 +17,7 @@ import (
 	"github.com/usenorn/norn/internal/pkg/authz"
 	"github.com/usenorn/norn/internal/pkg/crypter"
 	"github.com/usenorn/norn/internal/pkg/geoip"
+	licencepkg "github.com/usenorn/norn/internal/pkg/licence"
 	oidcproviderpkg "github.com/usenorn/norn/internal/pkg/oidcprovider"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/pkg/pwned"
@@ -32,6 +34,7 @@ import (
 	agentthrottlerepo "github.com/usenorn/norn/internal/repository/agentthrottle"
 	apitokenrepo "github.com/usenorn/norn/internal/repository/apitoken"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
+	auditrepo "github.com/usenorn/norn/internal/repository/audit"
 	blobrepo "github.com/usenorn/norn/internal/repository/blob"
 	blobgrantrepo "github.com/usenorn/norn/internal/repository/blobgrant"
 	breachcheckrepo "github.com/usenorn/norn/internal/repository/breachcheck"
@@ -80,6 +83,7 @@ import (
 	agentholdsvc "github.com/usenorn/norn/internal/service/agenthold"
 	apitokensvc "github.com/usenorn/norn/internal/service/apitoken"
 	attachmentsvc "github.com/usenorn/norn/internal/service/attachment"
+	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	bulkoperationsvc "github.com/usenorn/norn/internal/service/bulkoperation"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
@@ -114,6 +118,7 @@ var baseSet = wire.NewSet(
 	geoip.Set,
 	pwned.Set,
 	crypter.Set,
+	licencepkg.Set,
 	oidcproviderpkg.Set,
 	samlproviderpkg.Set,
 
@@ -157,6 +162,7 @@ var baseSet = wire.NewSet(
 	agentsettingrepo.Set,
 	agentthrottlerepo.Set,
 	apitokenrepo.Set,
+	auditrepo.Set,
 	passwordhistoryrepo.Set,
 	signinthrottlerepo.Set,
 	breachcheckrepo.Set,
@@ -196,11 +202,13 @@ var baseSet = wire.NewSet(
 	authorizersvc.Set,
 	jobssvc.Set,
 	ssoconnectionsvc.Set,
+	auditsvc.Set,
 
 	dashboardhandler.Set,
 	ssohandler.Set,
 	blobedge.Set,
 	eventsedge.Set,
+	auditexportedge.Set,
 	router.Set,
 	job.Set,
 

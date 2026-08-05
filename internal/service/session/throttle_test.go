@@ -42,7 +42,7 @@ func newBareHarness(t *testing.T) *harness {
 		IdleTimeout:      idleTimeout,
 		AbsoluteLifetime: absoluteTime,
 		RefreshInterval:  refreshInterval,
-	}, h.authorizer)
+	}, h.authorizer, silentAudit(ctrl))
 
 	return h
 }

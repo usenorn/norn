@@ -10,6 +10,8 @@ var Set = wire.NewSet(
 	NewSAML,
 	NewCycles,
 	NewInstance,
+	NewLicence,
+	NewAudit,
 	NewHTTP,
 	NewPostgres,
 	NewValkey,

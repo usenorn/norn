@@ -23,6 +23,7 @@ type teamsService struct {
 	notify       repository.NotificationEvent
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
+	audit        service.Audit
 }
 
 func New(
@@ -36,6 +37,7 @@ func New(
 	notify repository.NotificationEvent,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
+	audit service.Audit,
 ) service.Teams {
 	return &teamsService{
 		teams:        teams,
@@ -48,6 +50,7 @@ func New(
 		notify:       notify,
 		authorizer:   authorizer,
 		transactor:   transactor,
+		audit:        audit,
 	}
 }
 
@@ -307,6 +310,15 @@ func (s *teamsService) AddMember(ctx context.Context, workspaceID, teamID, accou
 		return service.TeamMemberView{}, err
 	}
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditTeamMemberAdded,
+		ResourceKind: string(entity.ResourceTeamMembership),
+		ResourceID:   accountID,
+		ResourceName: account.DisplayName,
+		Detail:       map[string]string{"team_id": teamID.String()},
+	})
+
 	return service.TeamMemberView{
 		Membership:  created,
 		DisplayName: account.DisplayName,
@@ -329,7 +341,19 @@ func (s *teamsService) RemoveMember(ctx context.Context, workspaceID, teamID, ac
 		return err
 	}
 
-	return s.teamMembers.Delete(ctx, teamID, accountID)
+	if err := s.teamMembers.Delete(ctx, teamID, accountID); err != nil {
+		return err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditTeamMemberRemoved,
+		ResourceKind: string(entity.ResourceTeamMembership),
+		ResourceID:   accountID,
+		Detail:       map[string]string{"team_id": teamID.String()},
+	})
+
+	return nil
 }
 
 func (s *teamsService) describe(ctx context.Context, memberships []entity.TeamMembership) ([]service.TeamMemberView, error) {

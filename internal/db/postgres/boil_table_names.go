@@ -13,6 +13,8 @@ var TableNames = struct {
 	APITokenGrants                    string
 	APITokens                         string
 	WorkspaceActivity                 string
+	WorkspaceAgentProposals           string
+	WorkspaceAgents                   string
 	WorkspaceAuthPolicies             string
 	WorkspaceBreakGlassCodes          string
 	WorkspaceBulkActionOutcomes       string
@@ -48,6 +50,7 @@ var TableNames = struct {
 	WorkspaceSsoConnections           string
 	WorkspaceSsoIdentities            string
 	WorkspaceStorageLedger            string
+	WorkspaceTeamAgentSettings        string
 	WorkspaceTeamCycleCadences        string
 	WorkspaceTeamMembers              string
 	WorkspaceTeamNotificationSettings string
@@ -65,6 +68,8 @@ var TableNames = struct {
 	APITokenGrants:                    "api_token_grants",
 	APITokens:                         "api_tokens",
 	WorkspaceActivity:                 "workspace_activity",
+	WorkspaceAgentProposals:           "workspace_agent_proposals",
+	WorkspaceAgents:                   "workspace_agents",
 	WorkspaceAuthPolicies:             "workspace_auth_policies",
 	WorkspaceBreakGlassCodes:          "workspace_break_glass_codes",
 	WorkspaceBulkActionOutcomes:       "workspace_bulk_action_outcomes",
@@ -100,6 +105,7 @@ var TableNames = struct {
 	WorkspaceSsoConnections:           "workspace_sso_connections",
 	WorkspaceSsoIdentities:            "workspace_sso_identities",
 	WorkspaceStorageLedger:            "workspace_storage_ledger",
+	WorkspaceTeamAgentSettings:        "workspace_team_agent_settings",
 	WorkspaceTeamCycleCadences:        "workspace_team_cycle_cadences",
 	WorkspaceTeamMembers:              "workspace_team_members",
 	WorkspaceTeamNotificationSettings: "workspace_team_notification_settings",

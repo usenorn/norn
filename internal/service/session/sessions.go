@@ -23,6 +23,7 @@ type sessionsService struct {
 	throttle    repository.SignInThrottle
 	cfg         config.Session
 	authorizer  service.Authorizer
+	audit       service.Audit
 }
 
 func New(
@@ -33,6 +34,7 @@ func New(
 	throttle repository.SignInThrottle,
 	cfg config.Session,
 	authorizer service.Authorizer,
+	audit service.Audit,
 ) service.Sessions {
 	return &sessionsService{
 		sessions:    sessions,
@@ -42,6 +44,7 @@ func New(
 		throttle:    throttle,
 		cfg:         cfg,
 		authorizer:  authorizer,
+		audit:       audit,
 	}
 }
 
@@ -84,14 +87,14 @@ func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput)
 	account, err := s.accounts.GetByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, entity.ErrAccountNotFound) {
-			return service.IssuedSession{}, s.recordFailure(ctx, subject)
+			return service.IssuedSession{}, s.recordFailure(ctx, subject, email, uuid.Nil)
 		}
 
 		return service.IssuedSession{}, err
 	}
 
 	if !account.CanAuthenticate() {
-		return service.IssuedSession{}, s.recordFailure(ctx, subject)
+		return service.IssuedSession{}, s.recordFailure(ctx, subject, email, account.ID)
 	}
 
 	matches, err := entity.VerifyPassword(account.PasswordHash, input.Password)
@@ -100,7 +103,7 @@ func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput)
 	}
 
 	if !matches {
-		return service.IssuedSession{}, s.recordFailure(ctx, subject)
+		return service.IssuedSession{}, s.recordFailure(ctx, subject, email, account.ID)
 	}
 
 	if err := s.throttle.Clear(ctx, subject); err != nil {
@@ -118,7 +121,24 @@ func (s *sessionsService) Start(ctx context.Context, input service.StartSessionI
 	return s.issue(ctx, input.AccountID, input.AuthMethod, input.Client)
 }
 
-func (s *sessionsService) recordFailure(ctx context.Context, subject string) error {
+func (s *sessionsService) recordFailure(
+	ctx context.Context,
+	subject, email string,
+	accountID uuid.UUID,
+) error {
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action:  entity.AuditSignInFailed,
+		Outcome: entity.AuditFailed,
+		Actor: entity.AuditActor{
+			Kind:       entity.ActorKindUser,
+			AccountID:  accountID,
+			AuthMethod: entity.SessionAuthMethodPassword,
+		},
+		ResourceKind: string(entity.ResourceAccount),
+		ResourceID:   accountID,
+		Detail:       map[string]string{"email": email},
+	})
+
 	throttle, err := s.throttle.RecordFailure(ctx, subject)
 	if err != nil {
 		return err
@@ -186,6 +206,19 @@ func (s *sessionsService) issue(
 
 	s.recordMembershipActivity(ctx, session)
 
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action: entity.AuditSignedIn,
+		Actor: entity.AuditActor{
+			Kind:       entity.ActorKindUser,
+			AccountID:  accountID,
+			AuthMethod: method,
+		},
+		SourceIP:     client.IP,
+		UserAgent:    client.UserAgent,
+		ResourceKind: string(entity.ResourceSession),
+		ResourceID:   session.ID,
+	})
+
 	return service.IssuedSession{Session: session, Token: token}, nil
 }
 
@@ -246,7 +279,17 @@ func (s *sessionsService) SignOut(ctx context.Context, sessionID uuid.UUID) erro
 		return entity.ErrAccountForbidden
 	}
 
-	return s.sessions.DeleteByID(ctx, accountID, sessionID)
+	if err := s.sessions.DeleteByID(ctx, accountID, sessionID); err != nil {
+		return err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action:       entity.AuditSignedOut,
+		ResourceKind: string(entity.ResourceSession),
+		ResourceID:   sessionID,
+	})
+
+	return nil
 }
 
 func (s *sessionsService) List(ctx context.Context, accountID uuid.UUID) ([]entity.Session, error) {
@@ -262,7 +305,18 @@ func (s *sessionsService) Revoke(ctx context.Context, accountID, sessionID uuid.
 		return err
 	}
 
-	return s.sessions.DeleteByID(ctx, accountID, sessionID)
+	if err := s.sessions.DeleteByID(ctx, accountID, sessionID); err != nil {
+		return err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action:       entity.AuditSessionRevoked,
+		ResourceKind: string(entity.ResourceSession),
+		ResourceID:   sessionID,
+		Detail:       map[string]string{"account_id": accountID.String()},
+	})
+
+	return nil
 }
 
 func (s *sessionsService) RevokeAllByAccountID(ctx context.Context, accountID uuid.UUID) error {
@@ -274,7 +328,18 @@ func (s *sessionsService) RevokeAllByAccountID(ctx context.Context, accountID uu
 		return err
 	}
 
-	return s.sessions.DeleteByAccountID(ctx, accountID)
+	if err := s.sessions.DeleteByAccountID(ctx, accountID); err != nil {
+		return err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action:       entity.AuditSessionRevoked,
+		ResourceKind: string(entity.ResourceAccount),
+		ResourceID:   accountID,
+		Detail:       map[string]string{"scope": "all"},
+	})
+
+	return nil
 }
 
 func (s *sessionsService) RotateAfterCredentialChange(ctx context.Context, accountID uuid.UUID) (service.IssuedSession, error) {

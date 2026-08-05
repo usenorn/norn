@@ -70,6 +70,7 @@ type Membership struct {
 	Source         MembershipSource
 	LastActiveAt   *time.Time
 	LastAuthMethod SessionAuthMethod
+	ReadsAudit     bool
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }

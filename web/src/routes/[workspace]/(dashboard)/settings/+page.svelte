@@ -371,6 +371,26 @@
 
 			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Audit log</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Every sign-in, membership change, token and configuration change is recorded and cannot
+						be altered afterwards. Reading it is granted per person, separately from administering
+						{workspace.name}.
+					</p>
+				</div>
+
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" href={workspacePath(workspace.slug, "/settings/audit")}>
+						Read the audit log
+					</Button>
+					<Button variant="ghost" href={workspacePath(workspace.slug, "/settings/members")}>
+						Who can read it
+					</Button>
+				</div>
+			</section>
+
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">API tokens</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Tokens belong to you rather than to a workspace, and can reach several at once. They

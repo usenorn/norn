@@ -35,6 +35,7 @@ type connectionsService struct {
 	sessions    service.Sessions
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
+	audit       service.Audit
 }
 
 func New(
@@ -53,6 +54,7 @@ func New(
 	app config.App,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
+	audit service.Audit,
 ) service.SSOConnections {
 	return &connectionsService{
 		connections: connections,
@@ -70,6 +72,7 @@ func New(
 		app:         app,
 		authorizer:  authorizer,
 		transactor:  transactor,
+		audit:       audit,
 	}
 }
 
@@ -158,7 +161,20 @@ func (s *connectionsService) Save(
 		return entity.OIDCConnection{}, err
 	}
 
-	return s.connections.SaveOIDC(ctx, connection)
+	saved, err := s.connections.SaveOIDC(ctx, connection)
+	if err != nil {
+		return entity.OIDCConnection{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  input.WorkspaceID,
+		Action:       entity.AuditSSOConnectionSaved,
+		ResourceKind: string(entity.ResourceSSOConnection),
+		ResourceID:   input.WorkspaceID,
+		Detail:       map[string]string{"issuer": saved.Endpoints.Issuer},
+	})
+
+	return saved, nil
 }
 
 func (s *connectionsService) secretFor(
@@ -189,7 +205,18 @@ func (s *connectionsService) Remove(ctx context.Context, workspaceID uuid.UUID) 
 		return err
 	}
 
-	return s.connections.Delete(ctx, workspaceID)
+	if err := s.connections.Delete(ctx, workspaceID); err != nil {
+		return err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditSSOConnectionRemoved,
+		ResourceKind: string(entity.ResourceSSOConnection),
+		ResourceID:   workspaceID,
+	})
+
+	return nil
 }
 
 func (s *connectionsService) BeginTest(ctx context.Context, workspaceID uuid.UUID) (string, error) {

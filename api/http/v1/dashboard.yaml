@@ -25,6 +25,7 @@ tags:
   - name: sso
   - name: notifications
   - name: search
+  - name: audit
 
 paths:
   /health:
@@ -1213,6 +1214,102 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/audit:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [audit]
+      operationId: listWorkspaceAudit
+      summary: Read what has been done in this workspace, one record per operation
+      parameters:
+        - $ref: '#/components/parameters/AuditLimit'
+        - $ref: '#/components/parameters/AuditCursor'
+        - $ref: '#/components/parameters/AuditActorFilter'
+        - $ref: '#/components/parameters/AuditActionFilter'
+        - $ref: '#/components/parameters/AuditResourceKind'
+        - $ref: '#/components/parameters/AuditResourceId'
+        - $ref: '#/components/parameters/AuditFrom'
+        - $ref: '#/components/parameters/AuditTo'
+      responses:
+        '200':
+          description: A page of records, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuditPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/AuditUnlicensed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/audit/availability:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [audit]
+      operationId: getWorkspaceAuditAvailability
+      summary: Report whether the audit log is licensed and how long it is kept
+      responses:
+        '200':
+          description: What this instance offers
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuditAvailability' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/members/{accountId}/audit-access:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AccountId'
+    put:
+      tags: [audit]
+      operationId: setWorkspaceMemberAuditAccess
+      summary: Grant or withdraw this member's access to the audit log
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetAuditAccessRequest' }
+      responses:
+        '200':
+          description: The updated membership
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Membership' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /instance/audit:
+    get:
+      tags: [audit]
+      operationId: listInstanceAudit
+      summary: Read every record on this instance, including the account-level ones
+      parameters:
+        - $ref: '#/components/parameters/AuditLimit'
+        - $ref: '#/components/parameters/AuditCursor'
+        - $ref: '#/components/parameters/AuditActorFilter'
+        - $ref: '#/components/parameters/AuditActionFilter'
+        - $ref: '#/components/parameters/AuditResourceKind'
+        - $ref: '#/components/parameters/AuditResourceId'
+        - $ref: '#/components/parameters/AuditFrom'
+        - $ref: '#/components/parameters/AuditTo'
+      responses:
+        '200':
+          description: A page of records, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuditPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/AuditUnlicensed' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/agents:
@@ -3767,6 +3864,41 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    AuditLimit:
+      name: limit
+      in: query
+      schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+    AuditCursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    AuditActorFilter:
+      name: actor
+      in: query
+      schema: { type: string, format: uuid }
+    AuditActionFilter:
+      name: action
+      in: query
+      explode: true
+      schema:
+        type: array
+        items: { $ref: '#/components/schemas/AuditAction' }
+    AuditResourceKind:
+      name: resourceKind
+      in: query
+      schema: { type: string }
+    AuditResourceId:
+      name: resourceId
+      in: query
+      schema: { type: string, format: uuid }
+    AuditFrom:
+      name: from
+      in: query
+      schema: { type: string, format: date-time }
+    AuditTo:
+      name: to
+      in: query
+      schema: { type: string, format: date-time }
     ActivityLimit:
       name: limit
       in: query
@@ -3965,6 +4097,11 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/SignUpUnusableProblem' }
 
+    AuditUnlicensed:
+      description: This instance has no licence covering the audit log
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/AuditUnlicensedProblem' }
     MailUnavailable:
       description: The instance is not configured to send mail
       content:
@@ -4915,6 +5052,110 @@ components:
         - attachment_added
         - attachment_removed
 
+    AuditAction:
+      type: string
+      enum:
+        - session.signed_in
+        - session.sign_in_failed
+        - session.signed_out
+        - session.revoked
+        - account.password_changed
+        - account.password_reset
+        - account.email_changed
+        - account.deactivated
+        - account.deleted
+        - membership.added
+        - membership.role_changed
+        - membership.removed
+        - membership.audit_access_changed
+        - team_membership.added
+        - team_membership.removed
+        - invitation.created
+        - invitation.revoked
+        - invitation.accepted
+        - sso.connection_saved
+        - sso.connection_removed
+        - sso.enforcement_changed
+        - sso.recovery_codes_issued
+        - sso.recovery_code_redeemed
+        - sso.identity_unlinked
+        - token.minted
+        - token.revoked
+        - agent.registered
+        - agent.disabled
+        - agent.proposal_decided
+        - workspace.updated
+        - workspace.deletion_requested
+        - workspace.restored
+        - workspace.purged
+        - audit.exported
+        - access.denied
+
+    AuditOutcome:
+      type: string
+      enum: [succeeded, failed, denied]
+
+    AuditAuthMethod:
+      type: string
+      enum: [password, sso, api_token, agent, system]
+
+    AuditActor:
+      type: object
+      required: [kind, authMethod]
+      properties:
+        accountId: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/ActivityActorKind' }
+        name: { type: string }
+        tokenId: { type: string, format: uuid }
+        tokenName: { type: string }
+        agentId: { type: string, format: uuid }
+        agentName: { type: string }
+        authMethod: { $ref: '#/components/schemas/AuditAuthMethod' }
+
+    AuditEvent:
+      type: object
+      required: [id, occurredAt, action, outcome, actor]
+      properties:
+        id: { type: string, format: uuid }
+        occurredAt: { type: string, format: date-time }
+        workspaceId: { type: string, format: uuid }
+        workspaceName: { type: string }
+        action: { $ref: '#/components/schemas/AuditAction' }
+        outcome: { $ref: '#/components/schemas/AuditOutcome' }
+        actor: { $ref: '#/components/schemas/AuditActor' }
+        sourceIp: { type: string }
+        userAgent: { type: string }
+        resourceKind: { type: string }
+        resourceId: { type: string, format: uuid }
+        resourceName: { type: string }
+        detail:
+          type: object
+          additionalProperties: { type: string }
+
+    AuditPage:
+      type: object
+      required: [events, retentionDays]
+      properties:
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/AuditEvent' }
+        nextCursor: { type: string }
+        retentionDays: { type: integer, format: int32 }
+
+    AuditAvailability:
+      type: object
+      required: [available, retentionDays]
+      properties:
+        available: { type: boolean }
+        retentionDays: { type: integer, format: int32 }
+        holder: { type: string }
+
+    SetAuditAccessRequest:
+      type: object
+      required: [readsAudit]
+      properties:
+        readsAudit: { type: boolean }
+
     ActivityPage:
       type: object
       required: [events]
@@ -5505,6 +5746,14 @@ components:
           properties:
             code: { type: string, enum: [sign_up_used, sign_up_email_taken] }
 
+    AuditUnlicensedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [audit_unlicensed] }
+
     MailUnavailableProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -5719,6 +5968,7 @@ components:
         joinedAt: { type: string, format: date-time }
         lastActiveAt: { type: string, format: date-time }
         lastAuthMethod: { $ref: '#/components/schemas/SessionAuthMethod' }
+        readsAudit: { type: boolean }
 
     MemberPage:
       type: object

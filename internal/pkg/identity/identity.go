@@ -12,7 +12,18 @@ type (
 	actorKey    struct{}
 	sessionKey  struct{}
 	approvalKey struct{}
+	clientKey   struct{}
 )
+
+func WithClient(ctx context.Context, client entity.SessionClient) context.Context {
+	return context.WithValue(ctx, clientKey{}, client)
+}
+
+func Client(ctx context.Context) entity.SessionClient {
+	client, _ := ctx.Value(clientKey{}).(entity.SessionClient)
+
+	return client
+}
 
 func WithApproval(ctx context.Context) context.Context {
 	return context.WithValue(ctx, approvalKey{}, true)

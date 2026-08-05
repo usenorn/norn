@@ -160,6 +160,21 @@ func (mr *MockMembershipMockRecorder) RecordActivity(ctx, accountID, activeAt, m
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordActivity", reflect.TypeOf((*MockMembership)(nil).RecordActivity), ctx, accountID, activeAt, method)
 }
 
+// SetAuditAccess mocks base method.
+func (m *MockMembership) SetAuditAccess(ctx context.Context, workspaceID, accountID uuid.UUID, reads bool) (entity.Membership, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAuditAccess", ctx, workspaceID, accountID, reads)
+	ret0, _ := ret[0].(entity.Membership)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetAuditAccess indicates an expected call of SetAuditAccess.
+func (mr *MockMembershipMockRecorder) SetAuditAccess(ctx, workspaceID, accountID, reads any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAuditAccess", reflect.TypeOf((*MockMembership)(nil).SetAuditAccess), ctx, workspaceID, accountID, reads)
+}
+
 // UpdateRole mocks base method.
 func (m *MockMembership) UpdateRole(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.Membership, error) {
 	m.ctrl.T.Helper()

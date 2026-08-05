@@ -74,6 +74,7 @@ func newHarness(t *testing.T) *harness {
 		h.notify,
 		h.authorizer,
 		h.transactor,
+		silentAudit(ctrl),
 	)
 
 	h.notify.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
