@@ -21,14 +21,14 @@
 <div
 	class={cn("overflow-hidden rounded-lg border border-line-strong bg-paper-0", className)}
 >
-	<div class="flex h-7 items-center justify-between gap-2 border-b border-line-subtle pr-1 pl-2">
+	<div class="flex h-7 items-center justify-between gap-2 border-b border-line-subtle pr-1 pl-2.5">
 		<Eyebrow>{label}</Eyebrow>
 		<Button variant="ghost" size="sm">
 			<Copy aria-hidden="true" />
 			Copy
 		</Button>
 	</div>
-	<dl class="flex flex-col gap-0.5 p-2">
+	<dl class="flex flex-col gap-0.75 px-2.5 py-2">
 		{#each entries as entry (entry.key)}
 			<div class="flex gap-2 font-mono text-xs leading-normal">
 				<dt class="flex-none text-muted-foreground {keyWidth}">{entry.key}</dt>

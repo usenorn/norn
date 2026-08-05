@@ -140,19 +140,20 @@
 		if (failure?.kind === "rate_limited") return "Nothing is wrong with your account.";
 		if (failure?.kind === "sso_unavailable") return "Members see a shorter message than this one.";
 		if (ssoOnly) return "Only an admin can turn password sign-in back on.";
-		if (!auth.signupsOpen) return "This instance creates accounts by invitation only.";
+		if (!auth.signupsOpen) {
+			return "Invitations arrive by email. Open the link in yours to create an account.";
+		}
 		return "New to Norn? Create an account and start a workspace.";
 	});
 
 	const showSignupLink = $derived(!ssoOnly && auth.signupsOpen);
-	const showInviteLink = $derived(!ssoOnly && !auth.signupsOpen);
 </script>
 
 <svelte:head><title>Sign in · Norn</title></svelte:head>
 
 <div class="my-auto flex w-full flex-col items-center gap-4">
 	<div class="notch w-full max-w-form">
-		<div class="flex flex-col gap-4 p-5 sm:p-6">
+		<div class="flex flex-col gap-4.5 p-6.5 pb-5.5">
 			<div class="flex flex-col gap-1.5">
 				<h1 class="text-2xl font-medium tracking-title text-ink-900">Sign in</h1>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
@@ -236,7 +237,7 @@
 			{/if}
 
 			{#if showDivider}
-				<div class="flex items-center gap-2">
+				<div class="flex items-center gap-2.5">
 					<span class="h-px flex-1 bg-line-subtle"></span>
 					<Eyebrow>or</Eyebrow>
 					<span class="h-px flex-1 bg-line-subtle"></span>
@@ -268,11 +269,6 @@
 		{#if showSignupLink}
 			<a href="/sign-up" class="text-sm text-link hover:text-link-hover hover:underline">
 				Create an account
-			</a>
-		{/if}
-		{#if showInviteLink}
-			<a href="/accept-invitation" class="text-sm text-link hover:text-link-hover hover:underline">
-				Have an invitation? Open it
 			</a>
 		{/if}
 		<InstanceLine instance={auth} />
