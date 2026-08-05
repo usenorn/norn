@@ -9,21 +9,31 @@ import (
 	"net/http"
 
 	"github.com/usenorn/norn/internal/config"
+	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/observability/logging"
+	"github.com/usenorn/norn/internal/service"
 )
 
 type App struct {
-	cfg    config.HTTP
-	router http.Handler
-	logger *slog.Logger
+	cfg       config.HTTP
+	router    http.Handler
+	licensing service.Licensing
+	logger    *slog.Logger
 }
 
-func NewApp(cfg config.HTTP, router http.Handler, logger *slog.Logger) *App {
-	return &App{cfg: cfg, router: router, logger: logger}
+func NewApp(
+	cfg config.HTTP,
+	router http.Handler,
+	licensing service.Licensing,
+	logger *slog.Logger,
+) *App {
+	return &App{cfg: cfg, router: router, licensing: licensing, logger: logger}
 }
 
 func (a *App) Run(ctx context.Context) error {
 	ctx = logging.Into(ctx, a.logger)
+
+	a.announceLicence(ctx)
 
 	server := &http.Server{
 		Addr:              a.cfg.Addr,
@@ -65,4 +75,36 @@ func (a *App) Run(ctx context.Context) error {
 	}
 
 	return <-serving
+}
+
+func (a *App) announceLicence(ctx context.Context) {
+	report := a.licensing.Report()
+
+	if report.Status == entity.LicenceAbsent {
+		logging.From(ctx).InfoContext(
+			ctx,
+			"no licence key is configured, which is the normal state",
+			slog.String("licence_status", string(report.Status)),
+		)
+
+		return
+	}
+
+	enabled := make([]string, 0, len(report.Features))
+
+	for _, feature := range report.Features {
+		if feature.Enabled {
+			enabled = append(enabled, string(feature.Name))
+		}
+	}
+
+	logging.From(ctx).InfoContext(
+		ctx,
+		"licence loaded",
+		slog.String("licence_status", string(report.Status)),
+		slog.String("licence_holder", report.Holder),
+		slog.Time("licence_expires_at", report.ExpiresAt),
+		slog.Time("licence_grace_ends_at", report.GraceEndsAt),
+		slog.Any("licence_features", enabled),
+	)
 }

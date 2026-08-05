@@ -3,7 +3,6 @@ package audit
 import (
 	"context"
 	"strconv"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -18,7 +17,7 @@ type reader struct {
 	memberships repository.Membership
 	authorizer  service.Authorizer
 	audit       service.Audit
-	licence     entity.Licence
+	licensing   service.Licensing
 	cfg         config.Audit
 }
 
@@ -27,7 +26,7 @@ func NewReader(
 	memberships repository.Membership,
 	authorizer service.Authorizer,
 	audit service.Audit,
-	licence entity.Licence,
+	licensing service.Licensing,
 	cfg config.Audit,
 ) service.AuditLog {
 	return &reader{
@@ -35,21 +34,16 @@ func NewReader(
 		memberships: memberships,
 		authorizer:  authorizer,
 		audit:       audit,
-		licence:     licence,
+		licensing:   licensing,
 		cfg:         cfg,
 	}
 }
 
 func (r *reader) Availability(_ context.Context) service.AuditAvailability {
 	return service.AuditAvailability{
-		Available:     r.licensed(time.Now()),
+		Available:     r.licensing.Permits(entity.FeatureAudit) == nil,
 		RetentionDays: r.cfg.RetentionDays(),
-		Holder:        r.licence.Holder,
 	}
-}
-
-func (r *reader) licensed(now time.Time) bool {
-	return r.licence.Permits(now, entity.AuditFeature)
 }
 
 func (r *reader) List(
@@ -128,8 +122,8 @@ func (r *reader) authorized(
 	scope service.AuditScope,
 	input service.ListAuditInput,
 ) (entity.AuditFilter, error) {
-	if !r.licensed(time.Now()) {
-		return entity.AuditFilter{}, entity.ErrAuditUnlicensed
+	if err := r.licensing.Permits(entity.FeatureAudit); err != nil {
+		return entity.AuditFilter{}, err
 	}
 
 	filter := input.Filter.Normalized()

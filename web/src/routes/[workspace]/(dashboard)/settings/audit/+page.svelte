@@ -194,14 +194,15 @@
 							The audit log is not part of this instance's licence
 						</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
-							Norn is still recording what happens{record.holder
-								? `, and this instance is licensed to ${record.holder}`
-								: ""}. Reading the record needs a licence that covers the audit log.
+							Norn is still recording what happens. Reading the record needs a licence that
+							covers the audit log.
 						</p>
 					</div>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Ask whoever administers this instance to add a licence key. Nothing recorded so far is
-						lost.
+						Nothing recorded so far is lost, and nothing is being removed while this is off.
+						<a class="underline underline-offset-2 hover:text-ink-900" href="/settings/licence">
+							See what this instance is licensed for
+						</a>.
 					</p>
 				</section>
 			{:else if record.kind === "forbidden"}

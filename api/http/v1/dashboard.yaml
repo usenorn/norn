@@ -28,6 +28,7 @@ tags:
   - name: search
   - name: audit
   - name: directory
+  - name: licence
 
 paths:
   /health:
@@ -1286,6 +1287,20 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /instance/licence:
+    get:
+      tags: [licence]
+      operationId: getInstanceLicence
+      summary: Report what this instance is licensed for, and until when
+      responses:
+        '200':
+          description: The licence this instance is running under, if any
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LicenceReport' }
+        '401': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /instance/audit:
@@ -5371,6 +5386,30 @@ components:
         - attachment_added
         - attachment_removed
 
+    LicenceStatus:
+      type: string
+      enum: [absent, active, grace, expired]
+
+    LicenceFeature:
+      type: object
+      required: [name, enabled]
+      properties:
+        name: { type: string }
+        enabled: { type: boolean }
+
+    LicenceReport:
+      type: object
+      required: [status, features]
+      properties:
+        status: { $ref: '#/components/schemas/LicenceStatus' }
+        holder: { type: string }
+        issuedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        graceEndsAt: { type: string, format: date-time }
+        features:
+          type: array
+          items: { $ref: '#/components/schemas/LicenceFeature' }
+
     DirectoryUnknownPolicy:
       type: string
       enum: [provision, ignore]
@@ -5412,7 +5451,6 @@ components:
       required: [available]
       properties:
         available: { type: boolean }
-        holder: { type: string }
 
     DirectorySyncOutcome:
       type: string
@@ -5554,7 +5592,6 @@ components:
       properties:
         available: { type: boolean }
         retentionDays: { type: integer, format: int32 }
-        holder: { type: string }
 
     SetAuditAccessRequest:
       type: object

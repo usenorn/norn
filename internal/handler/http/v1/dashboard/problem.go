@@ -933,6 +933,10 @@ func unauthorized() problemResponse {
 	return newProblem(http.StatusUnauthorized, "a valid session is required")
 }
 
+func (r problemResponse) VisitGetInstanceLicenceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitGetWorkspaceDirectoryResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

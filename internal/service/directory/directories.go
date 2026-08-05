@@ -27,7 +27,7 @@ type directoriesService struct {
 	authorizer  service.Authorizer
 	audit       service.Audit
 	transactor  repository.Transactor
-	licence     entity.Licence
+	licensing   service.Licensing
 }
 
 func New(
@@ -43,7 +43,7 @@ func New(
 	authorizer service.Authorizer,
 	audit service.Audit,
 	transactor repository.Transactor,
-	licence entity.Licence,
+	licensing service.Licensing,
 ) service.Directories {
 	return &directoriesService{
 		directories: directories,
@@ -58,27 +58,24 @@ func New(
 		authorizer:  authorizer,
 		audit:       audit,
 		transactor:  transactor,
-		licence:     licence,
+		licensing:   licensing,
 	}
 }
 
 func (s *directoriesService) Availability(_ context.Context) service.DirectoryAvailability {
-	return service.DirectoryAvailability{
-		Available: s.licensed(time.Now()),
-		Holder:    s.licence.Holder,
-	}
+	return service.DirectoryAvailability{Available: s.licensed() == nil}
 }
 
-func (s *directoriesService) licensed(now time.Time) bool {
-	return s.licence.Permits(now, entity.DirectoryFeature)
+func (s *directoriesService) licensed() error {
+	return s.licensing.Permits(entity.FeatureDirectory)
 }
 
 func (s *directoriesService) Authenticate(
 	ctx context.Context,
 	token string,
 ) (entity.DirectoryConnection, error) {
-	if !s.licensed(time.Now()) {
-		return entity.DirectoryConnection{}, entity.ErrDirectoryUnlicensed
+	if err := s.licensed(); err != nil {
+		return entity.DirectoryConnection{}, err
 	}
 
 	if !entity.LooksLikeDirectoryToken(token) {

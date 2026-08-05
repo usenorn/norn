@@ -14,7 +14,7 @@ export type DirectoryProblem =
 
 export type DirectoryView =
 	| { kind: "loading" }
-	| { kind: "unlicensed"; holder?: string }
+	| { kind: "unlicensed" }
 	| { kind: "disconnected" }
 	| { kind: "connected"; connection: DirectoryConnection; scimBaseUrl: string; runs: DirectoryRun[] }
 	| { kind: "issued"; connection: DirectoryConnection; scimBaseUrl: string; runs: DirectoryRun[]; token: string }

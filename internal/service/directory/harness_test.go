@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	directoryrepo "github.com/usenorn/norn/internal/repository/directory"
@@ -22,6 +23,7 @@ import (
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
+	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
 )
 
 type harness struct {
@@ -97,7 +99,7 @@ func newHarness(t *testing.T, licence entity.Licence) *harness {
 		authorizersvc.NewMockAuthorizer(ctrl),
 		recorder,
 		transactor,
-		licence,
+		licensingsvc.New(licence, config.Licence{Grace: 30 * 24 * time.Hour}),
 	)
 
 	return h

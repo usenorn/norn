@@ -10,6 +10,7 @@
 	import Search from "@lucide/svelte/icons/search";
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import Settings from "@lucide/svelte/icons/settings";
+	import BadgeCheck from "@lucide/svelte/icons/badge-check";
 	import Bell from "@lucide/svelte/icons/bell";
 	import Bot from "@lucide/svelte/icons/bot";
 	import SearchPalette from "$lib/search/search-palette.svelte";
@@ -205,6 +206,14 @@
 						<a href="/settings/tokens" {...props}>
 							<Terminal aria-hidden="true" />
 							Your API tokens
+						</a>
+					{/snippet}
+				</DropdownMenu.Item>
+				<DropdownMenu.Item>
+					{#snippet child({ props })}
+						<a href="/settings/licence" {...props}>
+							<BadgeCheck aria-hidden="true" />
+							Licence
 						</a>
 					{/snippet}
 				</DropdownMenu.Item>

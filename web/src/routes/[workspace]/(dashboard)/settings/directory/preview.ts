@@ -9,7 +9,7 @@ export type DirectoryPreview = {
 export const directoryPreviewStates: Record<string, DirectoryPreview> = import.meta.env.DEV
 	? {
 			loading: { view: { kind: "loading" } },
-			unlicensed: { view: { kind: "unlicensed", holder: "Northwind Studio" } },
+			unlicensed: { view: { kind: "unlicensed" } },
 			disconnected: { view: { kind: "disconnected" } },
 			connecting: { view: { kind: "disconnected" }, busy: true },
 			issued: {

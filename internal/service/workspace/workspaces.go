@@ -32,6 +32,7 @@ type workspacesService struct {
 	transactor   repository.Transactor
 	workspaceCfg config.Workspace
 	audit        service.Audit
+	licensing    service.Licensing
 }
 
 func New(
@@ -51,6 +52,7 @@ func New(
 	transactor repository.Transactor,
 	workspaceCfg config.Workspace,
 	audit service.Audit,
+	licensing service.Licensing,
 ) service.Workspaces {
 	return &workspacesService{
 		workspaces:   workspaces,
@@ -69,6 +71,7 @@ func New(
 		transactor:   transactor,
 		workspaceCfg: workspaceCfg,
 		audit:        audit,
+		licensing:    licensing,
 	}
 }
 
@@ -464,7 +467,7 @@ func (s *workspacesService) ChangeMemberRole(ctx context.Context, workspaceID, a
 			return err
 		}
 
-		if err := guardManualEdit(current); err != nil {
+		if err := s.guardManualEdit(current); err != nil {
 			return err
 		}
 
@@ -548,7 +551,7 @@ func (s *workspacesService) RemoveMember(ctx context.Context, workspaceID, accou
 			return err
 		}
 
-		if err := guardManualEdit(membership); err != nil {
+		if err := s.guardManualEdit(membership); err != nil {
 			return err
 		}
 
@@ -633,12 +636,16 @@ func (s *workspacesService) guardLastAdmin(ctx context.Context, workspaceID, acc
 	return nil
 }
 
-func guardManualEdit(membership entity.Membership) error {
-	if membership.Source.Managed() {
-		return entity.ErrMembershipDirectoryManaged
+func (s *workspacesService) guardManualEdit(membership entity.Membership) error {
+	if !membership.Source.Managed() {
+		return nil
 	}
 
-	return nil
+	if err := s.licensing.Permits(entity.FeatureDirectory); err != nil {
+		return nil
+	}
+
+	return entity.ErrMembershipDirectoryManaged
 }
 
 func guardSelfRoleChange(actor, accountID uuid.UUID) error {

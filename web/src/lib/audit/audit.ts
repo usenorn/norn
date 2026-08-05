@@ -9,7 +9,7 @@ export type AuditRecord =
 	| { kind: "loading" }
 	| { kind: "empty"; retentionDays: number }
 	| { kind: "ready"; events: AuditEvent[]; nextCursor?: string; retentionDays: number }
-	| { kind: "unlicensed"; retentionDays: number; holder?: string }
+	| { kind: "unlicensed"; retentionDays: number }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
 
