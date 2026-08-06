@@ -3444,6 +3444,13 @@ export interface components {
             routeIntegrations: boolean;
             routeNonMembers: boolean;
         };
+        /** @enum {string} */
+        TriageDeclineReason: "not_reproducible" | "working_as_intended" | "out_of_scope" | "no_response";
+        DeclineTriageIssueRequest: {
+            reason: components["schemas"]["TriageDeclineReason"];
+            /** @description Sent to whoever reported it, and kept in the issue's history */
+            note?: string;
+        };
         MergeTriageIssueRequest: {
             /**
              * Format: uuid
@@ -7717,7 +7724,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeclineTriageIssueRequest"];
+            };
+        };
         responses: {
             /** @description The issue, now closed */
             200: {
@@ -7732,6 +7743,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

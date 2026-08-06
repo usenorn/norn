@@ -74,18 +74,18 @@ func (mr *MockTriagesMockRecorder) Configure(ctx, workspaceID, teamID, input any
 }
 
 // Decline mocks base method.
-func (m *MockTriages) Decline(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.Issue, error) {
+func (m *MockTriages) Decline(ctx context.Context, workspaceID, issueID uuid.UUID, input service.DeclineTriageInput) (entity.Issue, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Decline", ctx, workspaceID, issueID)
+	ret := m.ctrl.Call(m, "Decline", ctx, workspaceID, issueID, input)
 	ret0, _ := ret[0].(entity.Issue)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Decline indicates an expected call of Decline.
-func (mr *MockTriagesMockRecorder) Decline(ctx, workspaceID, issueID any) *gomock.Call {
+func (mr *MockTriagesMockRecorder) Decline(ctx, workspaceID, issueID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Decline", reflect.TypeOf((*MockTriages)(nil).Decline), ctx, workspaceID, issueID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Decline", reflect.TypeOf((*MockTriages)(nil).Decline), ctx, workspaceID, issueID, input)
 }
 
 // Disable mocks base method.

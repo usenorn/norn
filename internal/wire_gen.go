@@ -323,7 +323,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	savedView := savedview.New(postgresClient)
 	issueFilterReference := issuefilterreference.New(postgresClient)
 	savedViews := savedview2.New(savedView, issueFilterReference, repositoryTeam, serviceAuthorizer, postgresClient)
-	triages := triage2.New(repositoryTriage, repositoryIssue, workflowState, repositoryActivity, repositoryTeam, issueRelations, issues, serviceAuthorizer, postgresClient)
+	triages := triage2.New(repositoryTriage, repositoryIssue, workflowState, repositoryActivity, repositoryTeam, issueRelations, issues, issueComments, serviceAuthorizer, postgresClient)
 	repositoryNotification := notification.New(postgresClient)
 	notificationSetting := notificationsetting.New(postgresClient)
 	notifications := notification2.New(repositoryNotification, notificationEvent, issueFollower, notificationSetting, repositoryIssue, issueComment, teamMember, repositoryWorkspace, repositoryMailer, serviceEvents, serviceAuthorizer, configSMTP, app)
