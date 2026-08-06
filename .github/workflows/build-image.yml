@@ -1,0 +1,68 @@
+name: build-image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: norn-api
+            dockerfile: Dockerfile.api
+          - image: norn-web
+            dockerfile: Dockerfile.web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The shared cluster's untainted worker pool is arm64, so arm64 is mandatory — an
+      # amd64-only image schedules fine and then CrashLoopBackOffs with "exec format error".
+      # amd64 is built too, for local development on Intel hardware.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  # ArgoCD is reachable only over the NetBird mesh, which GitHub-hosted runners are not on.
+  # After a successful build, roll the deployment from an operator machine:
+  #
+  #   argocd app set norn \
+  #     --kustomize-image ghcr.io/usenorn/norn-api:sha-<short> \
+  #     --kustomize-image ghcr.io/usenorn/norn-web:sha-<short>
+  #   argocd app sync norn
+  #
+  # The sync runs the PreSync migrate+seed Job with the new image before any pod rolls.

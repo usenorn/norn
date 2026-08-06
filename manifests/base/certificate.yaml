@@ -1,0 +1,15 @@
+# An explicit Certificate, not a cert-manager.io/cluster-issuer annotation: the ingress-shim
+# only watches networking.k8s.io Ingress objects and never traefik.io IngressRoute.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: norn-edge-tls
+  namespace: norn
+spec:
+  secretName: norn-edge-tls
+  issuerRef:
+    name: letsencrypt-norn
+    kind: ClusterIssuer
+  commonName: app.norn.so
+  dnsNames:
+    - app.norn.so

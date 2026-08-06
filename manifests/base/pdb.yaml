@@ -1,0 +1,37 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: norn-api
+  namespace: norn
+spec:
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app: norn-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: norn-web
+  namespace: norn
+spec:
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app: norn-web
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: norn-worker
+  namespace: norn
+spec:
+  # Single replica, so maxUnavailable 1 rather than minAvailable 1 — the latter would deadlock
+  # every drain of whichever node holds the sole worker.
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app: norn-worker

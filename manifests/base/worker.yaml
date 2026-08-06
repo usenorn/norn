@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: norn-worker
+  namespace: norn
+spec:
+  # Exactly one. The worker runs the Asynq server and the Asynq scheduler in the same process,
+  # and the scheduler has no leader election — a second replica double-fires every cron.
+  replicas: 1
+  strategy:
+    # Recreate, not RollingUpdate: maxSurge would briefly run two schedulers and double-enqueue
+    # the nightly cycle generation and SAML certificate sweep on every deploy. The cost is a
+    # short gap in consumption; tasks queue in Valkey, nothing is lost.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: norn-worker
+  template:
+    metadata:
+      labels:
+        app: norn-worker
+    spec:
+      # SIGTERM then asynq.shutdown_timeout 20s, plus margin. No preStop: nothing routes here,
+      # so there is no endpoint race to cover.
+      terminationGracePeriodSeconds: 40
+      imagePullSecrets:
+        - name: github
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      containers:
+        - name: worker
+          image: ghcr.io/usenorn/norn-api:latest
+          args: ["worker"]
+          envFrom:
+            - secretRef:
+                name: norn-app
+          env:
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: worker
+                  resource: limits.cpu
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          # No probes: `norn worker` builds no HTTP server, so there is no port to probe and
+          # the distroless image has no shell for an exec probe. A wedged worker will not be
+          # restarted — see the deployment notes about adding a health listener.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi

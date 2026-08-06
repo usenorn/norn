@@ -1,0 +1,14 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+data
+deploy/local
+docker-compose.yml
+manifests
+web/node_modules
+web/build
+web/.svelte-kit
+web/.playwright-mcp
+*.md
