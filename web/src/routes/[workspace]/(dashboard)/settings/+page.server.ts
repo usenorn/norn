@@ -21,6 +21,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	return {
 		settings: settingsFor(workspace),
+		workspace,
 		teams: (teams ?? []).filter((team) => team.status === "active"),
 		form: await superValidate<WorkspaceSettingsForm, WorkspaceSettings>(
 			{
@@ -43,15 +44,6 @@ async function workspaceOf(
 	});
 
 	return data;
-}
-
-async function unavailableSettings(
-	locals: App.Locals,
-	workspaceId: string
-): Promise<WorkspaceSettings | null> {
-	const workspace = await workspaceOf(locals, workspaceId);
-
-	return workspace ? { kind: "unavailable", workspace } : null;
 }
 
 export const actions: Actions = {
@@ -88,15 +80,13 @@ export const actions: Actions = {
 			return fail(400, { form });
 		}
 
-		const workspace = await workspaceOf(locals, workspaceId);
-
-		if (!workspace) return fail(500, { form });
-
 		if (error && "code" in error && error.code === "workspace_deleted") {
-			return message(form, settingsFor(workspace), { status: 409 });
+			const deleted = await workspaceOf(locals, workspaceId);
+
+			if (deleted) return message(form, settingsFor(deleted), { status: 409 });
 		}
 
-		return message(form, { kind: "unavailable", workspace }, { status: 500 });
+		return message(form, { kind: "unavailable" }, { status: 500 });
 	},
 
 	delete: async ({ locals, request }) => {
@@ -108,7 +98,7 @@ export const actions: Actions = {
 
 		if (data) return { settings: settingsFor(data) };
 
-		return fail(500, { settings: await unavailableSettings(locals, workspaceId) });
+		return fail(500, { settings: { kind: "unavailable" } as WorkspaceSettings });
 	},
 
 	restore: async ({ locals, request }) => {
@@ -120,6 +110,6 @@ export const actions: Actions = {
 
 		if (data) return { settings: settingsFor(data) };
 
-		return fail(500, { settings: await unavailableSettings(locals, workspaceId) });
+		return fail(500, { settings: { kind: "unavailable" } as WorkspaceSettings });
 	},
 };

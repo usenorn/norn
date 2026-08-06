@@ -14,6 +14,8 @@ import type { Actions, PageServerLoad } from "./$types";
 
 type RegisterForm = Infer<typeof registerAgentSchema>;
 
+const formId = "register-agent-form";
+
 type AgentOutcome = { kind: "issued"; agent: Agent; value: string } | AgentFailure;
 
 export const load: PageServerLoad = async ({ depends, route, locals, parent }) => {
@@ -30,13 +32,11 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 		}),
 	]);
 
-	const form = await superValidate<RegisterForm, AgentOutcome>(zod4(registerAgentSchema));
 	const people = (members.data?.members ?? []).filter((member) => member.kind !== "agent");
 	const reachable = (teams ?? []).filter((team) => team.status === "active");
 
 	if (agents.error) {
 		return {
-			form,
 			people,
 			teams: reachable,
 			listing: {
@@ -46,11 +46,10 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 	}
 
 	if (!agents.data || agents.data.length === 0) {
-		return { form, people, teams: reachable, listing: { kind: "empty" } as AgentListing };
+		return { people, teams: reachable, listing: { kind: "empty" } as AgentListing };
 	}
 
 	return {
-		form,
 		people,
 		teams: reachable,
 		listing: { kind: "ready", agents: agents.data } as AgentListing,
@@ -60,7 +59,9 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 export const actions: Actions = {
 	default: async ({ locals, request }) => {
 		const body = await request.formData();
-		const form = await superValidate<RegisterForm, AgentOutcome>(body, zod4(registerAgentSchema));
+		const form = await superValidate<RegisterForm, AgentOutcome>(body, zod4(registerAgentSchema), {
+			id: formId,
+		});
 
 		if (!form.valid) return fail(400, { form });
 
