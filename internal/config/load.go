@@ -109,6 +109,10 @@ func validate(cfg Config) error {
 		)
 	}
 
+	if err := validateForwarding(cfg.HTTP); err != nil {
+		return err
+	}
+
 	return validateStorage(cfg)
 }
 
@@ -154,6 +158,23 @@ func validateWebhooks(cfg Webhooks) error {
 				destination, err,
 			)
 		}
+	}
+
+	return nil
+}
+
+func validateForwarding(cfg HTTP) error {
+	prefixes, err := cfg.TrustedPrefixes()
+	if err != nil {
+		return err
+	}
+
+	if cfg.ClientIPHeader != "" && len(prefixes) == 0 {
+		return fmt.Errorf(
+			"http.trusted_proxies is required when http.client_ip_header (%q) is set; without an "+
+				"allow-list any caller could forge that header and evade the per-address sign-in throttle",
+			cfg.ClientIPHeader,
+		)
 	}
 
 	return nil
@@ -254,6 +275,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("http.request_timeout", 25*time.Second)
 	v.SetDefault("http.shutdown_timeout", 20*time.Second)
 	v.SetDefault("http.max_request_bytes", int64(4<<20))
+	v.SetDefault("http.client_ip_header", "")
+	v.SetDefault("http.trusted_proxies", []string{})
 
 	v.SetDefault("postgres.dsn", "postgres://norn:norn@127.0.0.1:5433/norn?sslmode=disable")
 	v.SetDefault("postgres.max_conns", int32(10))

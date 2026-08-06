@@ -1,7 +1,11 @@
 package config
 
 import (
+	"errors"
+	"fmt"
+	"net/netip"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -109,6 +113,42 @@ type HTTP struct {
 	ShutdownTimeout   time.Duration `mapstructure:"shutdown_timeout"`
 	MaxRequestBytes   int64         `mapstructure:"max_request_bytes"`
 	ClientIPHeader    string        `mapstructure:"client_ip_header"`
+	TrustedProxies    []string      `mapstructure:"trusted_proxies"`
+}
+
+func (c HTTP) TrustedPrefixes() ([]netip.Prefix, error) {
+	prefixes := make([]netip.Prefix, 0, len(c.TrustedProxies))
+
+	for _, entry := range c.TrustedProxies {
+		trimmed := strings.TrimSpace(entry)
+		if trimmed == "" {
+			continue
+		}
+
+		prefix, err := parsePrefix(trimmed)
+		if err != nil {
+			return nil, fmt.Errorf("http.trusted_proxies entry %q: %w", trimmed, err)
+		}
+
+		prefixes = append(prefixes, prefix)
+	}
+
+	return prefixes, nil
+}
+
+func parsePrefix(entry string) (netip.Prefix, error) {
+	if prefix, err := netip.ParsePrefix(entry); err == nil {
+		return prefix.Masked(), nil
+	}
+
+	addr, err := netip.ParseAddr(entry)
+	if err != nil {
+		return netip.Prefix{}, errors.New("must be an IP address or a CIDR block")
+	}
+
+	unmapped := addr.Unmap()
+
+	return netip.PrefixFrom(unmapped, unmapped.BitLen()), nil
 }
 
 type GeoIP struct {
