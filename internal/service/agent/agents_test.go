@@ -95,8 +95,8 @@ func readScopes() entity.APIScopeSet {
 	return entity.APIScopeSet{entity.NewAPIScope(entity.ResourceIssue, entity.ActionRead)}
 }
 
-func manageScopes() entity.APIScopeSet {
-	return entity.APIScopeSet{entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage)}
+func adminOnlyScopes() entity.APIScopeSet {
+	return entity.APIScopeSet{entity.NewAPIScope(entity.ResourceLabel, entity.ActionManage)}
 }
 
 func TestRegisteringAnAgentCreatesANonHumanAccountThatCannotSignIn(t *testing.T) {
@@ -220,7 +220,7 @@ func TestAnAgentCannotBeGivenMoreThanItsOwnerHas(t *testing.T) {
 		WorkspaceID:    h.workspaceID,
 		Name:           "triage-bot",
 		OwnerAccountID: owner,
-		Scopes:         manageScopes(),
+		Scopes:         adminOnlyScopes(),
 		AllTeams:       true,
 	})
 

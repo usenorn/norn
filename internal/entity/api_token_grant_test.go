@@ -114,6 +114,32 @@ func TestPinningATokenToTeamsKeepsItsAbilityToSeePrivateOnes(t *testing.T) {
 	}
 }
 
+func TestAMemberWorksOnIssuesAndAViewerOnlyReadsThem(t *testing.T) {
+	for _, probe := range []struct {
+		role    entity.MembershipRole
+		allowed bool
+		why     string
+	}{
+		{entity.MembershipRoleAdmin, true, "an administrator runs the workspace"},
+		{
+			entity.MembershipRoleMember,
+			true,
+			"a member is the ordinary working role: raising, editing, moving, assigning and " +
+				"labelling issues is the job, and everyone invited to a workspace arrives as one",
+		},
+		{entity.MembershipRoleViewer, false, "a viewer reads and comments, nothing more"},
+	} {
+		if got := entity.RoleGrants(
+			probe.role, entity.ResourceIssue, entity.ActionManage,
+		); got != probe.allowed {
+			t.Errorf(
+				"a %s changing an issue: allowed = %v, want %v — %s",
+				probe.role, got, probe.allowed, probe.why,
+			)
+		}
+	}
+}
+
 func TestTheMintCeilingMatchesWhatTheRoleMayActuallyDo(t *testing.T) {
 	for _, probe := range []struct {
 		role     entity.MembershipRole
@@ -123,7 +149,8 @@ func TestTheMintCeilingMatchesWhatTheRoleMayActuallyDo(t *testing.T) {
 		{entity.MembershipRoleAdmin, entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage), true},
 		{entity.MembershipRoleMember, entity.NewAPIScope(entity.ResourceIssue, entity.ActionRead), true},
 		{entity.MembershipRoleViewer, entity.NewAPIScope(entity.ResourceIssue, entity.ActionRead), true},
-		{entity.MembershipRoleMember, entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage), false},
+		{entity.MembershipRoleMember, entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage), true},
+		{entity.MembershipRoleViewer, entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage), false},
 		{entity.MembershipRoleMember, entity.NewAPIScope(entity.ResourceProject, entity.ActionManage), true},
 		{entity.MembershipRoleViewer, entity.NewAPIScope(entity.ResourceProject, entity.ActionManage), false},
 	} {
