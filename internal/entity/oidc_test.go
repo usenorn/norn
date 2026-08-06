@@ -267,6 +267,7 @@ func TestAProviderAddressMustBeReachableOverTLS(t *testing.T) {
 		accept bool
 	}{
 		"an https issuer":                {"https://login.example.com/realms/norn", true},
+		"an issuer that ends in a slash": {"https://login.example.com/application/o/norn/", true},
 		"loopback over http for dev":     {"http://localhost:8081/realms/norn", true},
 		"docker host over http for dev":  {"http://host.docker.internal:8081/realms/norn", true},
 		"plain http to a public host":    {"http://login.example.com", false},
