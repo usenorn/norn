@@ -1,5 +1,5 @@
-import { apiFor } from "$lib/api";
-import type { components } from "$lib/api/dashboard.gen";
+import type { Client } from "openapi-fetch";
+import type { components, paths } from "$lib/api/dashboard.gen";
 
 export type WorkspaceSignIn = components["schemas"]["WorkspaceSignIn"];
 
@@ -16,19 +16,15 @@ export function workspaceSlug(raw: string): string {
 }
 
 export async function reachWorkspaceSignIn(
-	fetch: typeof globalThis.fetch,
-	url: URL,
+	api: Client<paths>,
 	requested: string
 ): Promise<WorkspaceEntry> {
 	const workspace = workspaceSlug(requested);
 
 	if (!workspace) return { kind: "none" };
 
-	const api = apiFor(url);
-
 	try {
 		const { data } = await api.GET("/sso/sign-in", {
-			fetch,
 			params: { query: { workspace } },
 		});
 

@@ -7,6 +7,24 @@ export type IssueRelationKind = components["schemas"]["IssueRelationKind"];
 export type IssueRelation = components["schemas"]["IssueRelation"];
 export type IssueRelationGroup = components["schemas"]["IssueRelationGroup"];
 
+export type IssueCandidate = {
+	id: string;
+	reference: string;
+	title: string;
+	state: components["schemas"]["IssueState"];
+	triageState?: components["schemas"]["TriageState"];
+};
+
+export function candidateOf(issue: Issue): IssueCandidate {
+	return {
+		id: issue.id,
+		reference: issue.reference,
+		title: issue.title,
+		state: issue.state,
+		triageState: issue.triageState,
+	};
+}
+
 export const relationKinds: { value: IssueRelationKind; label: string }[] = [
 	{ value: "blocks", label: "blocks" },
 	{ value: "blocked_by", label: "is blocked by" },

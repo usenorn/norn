@@ -107,7 +107,7 @@
 		commentPreviewStates,
 		issueDetailPreviewStates,
 	} from "./preview";
-	import type { IssueDetail } from "./+page";
+	import type { IssueDetail } from "./+page.server";
 	import type { Issue, IssueComment } from "$lib/realtime/connection.svelte";
 	import type { PageProps } from "./$types";
 
