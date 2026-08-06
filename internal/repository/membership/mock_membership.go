@@ -86,6 +86,21 @@ func (mr *MockMembershipMockRecorder) DeleteByAccountID(ctx, accountID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByAccountID", reflect.TypeOf((*MockMembership)(nil).DeleteByAccountID), ctx, accountID)
 }
 
+// ExistsOutside mocks base method.
+func (m *MockMembership) ExistsOutside(ctx context.Context, accountID, workspaceID uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExistsOutside", ctx, accountID, workspaceID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExistsOutside indicates an expected call of ExistsOutside.
+func (mr *MockMembershipMockRecorder) ExistsOutside(ctx, accountID, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExistsOutside", reflect.TypeOf((*MockMembership)(nil).ExistsOutside), ctx, accountID, workspaceID)
+}
+
 // Get mocks base method.
 func (m *MockMembership) Get(ctx context.Context, workspaceID, accountID uuid.UUID) (entity.Membership, error) {
 	m.ctrl.T.Helper()

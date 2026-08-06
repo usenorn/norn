@@ -135,6 +135,95 @@ func TestAnAccountThatIsNotAMemberIsTurnedAwayEvenThoughItExists(t *testing.T) {
 	}
 }
 
+func TestAProviderCannotClaimAnAccountThatHasItsOwnPassword(t *testing.T) {
+	h := newHarnessWithoutLinking(t)
+
+	workspaceID := uuid.New()
+	victim := entity.Account{
+		ID:           uuid.New(),
+		Status:       entity.AccountStatusActive,
+		Email:        "victim@othercorp.com",
+		PasswordHash: "argon2id$stored",
+	}
+
+	h.expectExchange(workspaceID, false, verifiedClaims("victim@othercorp.com"))
+	h.unlinkedSubject()
+	h.accounts.EXPECT().GetByEmail(gomock.Any(), "victim@othercorp.com").Return(victim, nil)
+	h.memberships.EXPECT().Get(gomock.Any(), workspaceID, victim.ID).Return(entity.Membership{}, nil)
+	h.memberships.EXPECT().ExistsOutside(gomock.Any(), victim.ID, workspaceID).Return(false, nil)
+
+	_, err := h.complete()
+	if err == nil {
+		t.Fatal(
+			"a workspace's own provider asserted an address it does not own and was handed the " +
+				"account that holds it. Whoever administers a workspace could then sign in as any " +
+				"member of it by pointing their provider at that member's address.",
+		)
+	}
+
+	if stage := stageOf(t, err); stage != entity.SSOStageMatching {
+		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageMatching)
+	}
+
+	if !strings.Contains(err.Error(), "cannot claim it by address") {
+		t.Errorf("refused for some other reason than the address claim: %v", err)
+	}
+}
+
+func TestAProviderCannotClaimAnAccountThatIsUsedInOtherWorkspaces(t *testing.T) {
+	h := newHarnessWithoutLinking(t)
+
+	workspaceID := uuid.New()
+	victim := entity.Account{ID: uuid.New(), Status: entity.AccountStatusActive, Email: "victim@othercorp.com"}
+
+	h.expectExchange(workspaceID, false, verifiedClaims("victim@othercorp.com"))
+	h.unlinkedSubject()
+	h.accounts.EXPECT().GetByEmail(gomock.Any(), "victim@othercorp.com").Return(victim, nil)
+	h.memberships.EXPECT().Get(gomock.Any(), workspaceID, victim.ID).Return(entity.Membership{}, nil)
+	h.memberships.EXPECT().ExistsOutside(gomock.Any(), victim.ID, workspaceID).Return(true, nil)
+
+	_, err := h.complete()
+	if err == nil {
+		t.Fatal(
+			"one workspace's provider claimed an account that other workspaces also rely on. The " +
+				"session it mints is not confined to this workspace, so that reaches the others too.",
+		)
+	}
+
+	if stage := stageOf(t, err); stage != entity.SSOStageMatching {
+		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageMatching)
+	}
+
+	if !strings.Contains(err.Error(), "cannot claim it by address") {
+		t.Errorf("refused for some other reason than the address claim: %v", err)
+	}
+}
+
+func TestAnAddressTheProviderWillNotVouchForNeverReachesAnAccount(t *testing.T) {
+	h := newHarnessWithoutLinking(t)
+
+	workspaceID := uuid.New()
+
+	claims := verifiedClaims("victim@othercorp.com")
+	claims.EmailVerified = nil
+
+	h.expectExchange(workspaceID, true, claims)
+	h.unlinkedSubject()
+
+	_, err := h.complete()
+	if err == nil {
+		t.Fatal(
+			"an address the provider never confirmed was used to find an account. Refusing only " +
+				"an explicit email_verified of false lets a provider skip the check by omitting " +
+				"the claim entirely.",
+		)
+	}
+
+	if stage := stageOf(t, err); stage != entity.SSOStageClaims {
+		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageClaims)
+	}
+}
+
 func TestAnUnknownAddressIsRefusedWhenProvisioningIsOff(t *testing.T) {
 	h := newHarness(t)
 

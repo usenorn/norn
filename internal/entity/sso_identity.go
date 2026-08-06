@@ -40,3 +40,38 @@ func MatchLink(linked *SSOIdentity, issuer, subject, email string) error {
 			"in Settings, Members.",
 	)
 }
+
+func EmailClaimRefusal(account Account, elsewhere bool) error {
+	if account.HasPassword() {
+		return NewSSOError(
+			SSOStageMatching,
+			"The Norn account for "+NormalizeEmail(account.Email)+" has a password of its own, so "+
+				"this workspace's provider cannot claim it by address. Sign in with that password "+
+				"and connect your provider from account settings.",
+		)
+	}
+
+	if elsewhere {
+		return NewSSOError(
+			SSOStageMatching,
+			"The Norn account for "+NormalizeEmail(account.Email)+" is a member of other "+
+				"workspaces, so this workspace's provider cannot claim it by address. Sign in as "+
+				"you normally do and connect your provider from account settings.",
+		)
+	}
+
+	return nil
+}
+
+func VerifiedEmailRefusal(protocol SSOProtocol, verified *bool, email string) error {
+	if protocol != SSOProtocolOIDC || (verified != nil && *verified) {
+		return nil
+	}
+
+	return NewSSOError(
+		SSOStageClaims,
+		"Your provider did not confirm that "+NormalizeEmail(email)+" is verified, so Norn will "+
+			"not use that address to find or open an account. Release the email_verified claim "+
+			"for this client.",
+	)
+}

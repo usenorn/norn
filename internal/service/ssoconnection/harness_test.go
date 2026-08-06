@@ -58,6 +58,7 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.unlinkedSubject()
+	h.accountBelongsOnlyHere()
 
 	h.identities.EXPECT().Link(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
@@ -68,6 +69,13 @@ func (h *harness) unlinkedSubject() {
 	h.identities.EXPECT().
 		GetBySubject(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(entity.SSOIdentity{}, entity.ErrSSOIdentityNotFound).
+		AnyTimes()
+}
+
+func (h *harness) accountBelongsOnlyHere() {
+	h.memberships.EXPECT().
+		ExistsOutside(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(false, nil).
 		AnyTimes()
 }
 

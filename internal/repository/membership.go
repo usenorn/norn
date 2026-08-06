@@ -14,6 +14,7 @@ import (
 type Membership interface {
 	Create(ctx context.Context, membership entity.Membership) (entity.Membership, error)
 	Get(ctx context.Context, workspaceID, accountID uuid.UUID) (entity.Membership, error)
+	ExistsOutside(ctx context.Context, accountID, workspaceID uuid.UUID) (bool, error)
 	ListPageByWorkspaceID(ctx context.Context, workspaceID uuid.UUID, page entity.MembershipPage) ([]entity.WorkspaceMember, error)
 	UpdateRole(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.Membership, error)
 	SetAuditAccess(ctx context.Context, workspaceID, accountID uuid.UUID, reads bool) (entity.Membership, error)
