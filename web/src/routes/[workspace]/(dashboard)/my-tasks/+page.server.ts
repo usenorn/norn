@@ -11,9 +11,12 @@ export type MyTasksPageData = { buckets: TaskBucket[] };
 
 export const load: PageServerLoad = async ({
 	depends,
+	route,
 	locals,
 	parent,
 }): Promise<MyTasksPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace, member, now } = await parent();
 
 	depends(keys.issues(workspace.id));

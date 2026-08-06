@@ -6,10 +6,13 @@ export type InboxPageData = { listing: InboxListing; filter: InboxFilter; unread
 
 export const load: PageServerLoad = async ({
 	depends,
+	route,
 	locals,
 	parent,
 	url,
 }): Promise<InboxPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 
 	depends(keys.inbox(workspace.id));

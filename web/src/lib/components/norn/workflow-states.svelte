@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
@@ -129,7 +130,7 @@
 
 		if (data) submitted = data;
 
-		await invalidateAll();
+		await invalidate(keys.page(page.route.id));
 	}
 
 	function startEditing(state: WorkflowState) {
@@ -159,7 +160,7 @@
 			if (data) {
 				submitted = data;
 				announcement = `${state.name} moved to position ${stateIds.indexOf(state.id) + 1} of ${stateIds.length}.`;
-				await invalidateAll();
+				await invalidate(keys.page(page.route.id));
 
 				return;
 			}
@@ -195,7 +196,7 @@
 					role === "default"
 						? `New issues now start in ${state.name}.`
 						: `${state.name} now counts as finished.`;
-				await invalidateAll();
+				await invalidate(keys.page(page.route.id));
 
 				return;
 			}

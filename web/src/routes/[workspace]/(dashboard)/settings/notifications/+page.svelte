@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import Bell from "@lucide/svelte/icons/bell";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -53,7 +54,7 @@
 
 			announcement = "Your notification settings are saved.";
 			draft = null;
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failed = true;
 		} finally {

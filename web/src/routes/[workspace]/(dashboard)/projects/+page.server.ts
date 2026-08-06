@@ -7,10 +7,13 @@ export type ProjectsData = { listing: ProjectListing };
 
 export const load: PageServerLoad = async ({
 	depends,
+	route,
 	locals,
 	parent,
 	url,
 }): Promise<ProjectsData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 
 	depends(keys.projects(workspace.id));

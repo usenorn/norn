@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Layers from "@lucide/svelte/icons/layers";
@@ -97,7 +98,7 @@
 
 			overrides = {};
 			dismiss();
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failure = { kind: "unavailable" };
 		} finally {

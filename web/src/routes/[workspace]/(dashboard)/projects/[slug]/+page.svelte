@@ -1,7 +1,8 @@
 <script lang="ts">
 	import ActivityFeedView from "$lib/activity/activity-feed.svelte";
 	import type { ActivityFeed } from "$lib/activity/activity";
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import EyeOff from "@lucide/svelte/icons/eye-off";
@@ -130,7 +131,7 @@
 				return false;
 			}
 
-			await invalidateAll();
+			await invalidate(keys.projects(data.workspace.id));
 
 			return true;
 		} catch {

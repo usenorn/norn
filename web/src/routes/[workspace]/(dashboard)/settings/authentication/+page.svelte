@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
@@ -137,7 +138,7 @@
 				saved = { kind: "oidc", connection: result };
 				liveOutcome = { kind: "saved" };
 				formData.update((current) => ({ ...current, clientSecret: "" }), { taint: false });
-				await invalidateAll();
+				await invalidate(keys.page(page.route.id));
 			} catch {
 				liveOutcome = { kind: "failed", failure: { kind: "unavailable" } };
 			}
@@ -254,7 +255,7 @@
 
 			saved = { kind: "unconfigured" };
 			liveOutcome = { kind: "removed" };
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			liveOutcome = { kind: "failed", failure: { kind: "unavailable" } };
 		} finally {

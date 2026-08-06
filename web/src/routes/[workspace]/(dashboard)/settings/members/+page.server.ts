@@ -13,10 +13,13 @@ export type MembersData = {
 
 export const load: PageServerLoad = async ({
 	depends,
+	route,
 	locals,
 	url,
 	parent,
 }): Promise<MembersData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 
 	depends(keys.members(workspace.id));

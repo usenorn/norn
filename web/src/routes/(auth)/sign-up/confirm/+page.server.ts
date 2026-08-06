@@ -1,4 +1,5 @@
 import { redirect } from "@sveltejs/kit";
+import { keys } from "$lib/api/keys";
 import { signUpConfirmFailure } from "$lib/auth/sign-up";
 import type { SignUpConfirmation } from "$lib/auth/types";
 import { signUpConfirmPreviewStates } from "./preview";
@@ -6,7 +7,9 @@ import type { Actions, PageServerLoad } from "./$types";
 
 type ConfirmSignUpData = { token: string | null; confirmation: SignUpConfirmation };
 
-export const load: PageServerLoad = ({ url }): ConfirmSignUpData => {
+export const load: PageServerLoad = ({ depends, route, url }): ConfirmSignUpData => {
+	depends(keys.page(route.id));
+
 	const token = url.searchParams.get("token");
 
 	if (import.meta.env.DEV && signUpConfirmPreviewStates[url.searchParams.get("state") ?? ""]) {

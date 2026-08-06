@@ -1,4 +1,5 @@
 import { boardFor, type LabelBoard } from "$lib/labels/labels";
+import { keys } from "$lib/api/keys";
 import type { Team } from "$lib/team/teams";
 import type { PageServerLoad } from "./$types";
 
@@ -7,7 +8,9 @@ export type LabelsPageData = {
 	teams: Team[];
 };
 
-export const load: PageServerLoad = async ({ locals, parent }): Promise<LabelsPageData> => {
+export const load: PageServerLoad = async ({ depends, route, locals, parent }): Promise<LabelsPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace, teams } = await parent();
 	const path = { workspaceId: workspace.id };
 

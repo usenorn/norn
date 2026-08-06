@@ -1,4 +1,5 @@
 import type { TokenListing } from "$lib/account/tokens";
+import { keys } from "$lib/api/keys";
 import type { Team } from "$lib/team/teams";
 import type { PageServerLoad } from "./$types";
 
@@ -7,7 +8,9 @@ export type TokensPageData = {
 	teams: Record<string, Team[]>;
 };
 
-export const load: PageServerLoad = async ({ locals, parent }): Promise<TokensPageData> => {
+export const load: PageServerLoad = async ({ depends, route, locals, parent }): Promise<TokensPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspaces } = await parent();
 
 	const [tokens, ...rosters] = await Promise.all([

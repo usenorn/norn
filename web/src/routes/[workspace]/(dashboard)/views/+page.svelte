@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
@@ -65,7 +66,7 @@
 		});
 
 		submitted = listingFor(fresh);
-		await invalidateAll();
+		await invalidate(keys.views(data.workspace.id));
 	}
 
 	async function closePanels() {
@@ -193,7 +194,7 @@
 
 			submitted = listingFor(ordered);
 			announcement = `${view.name} moved to position ${savedViewIds.indexOf(view.id) + 1} of ${savedViewIds.length}.`;
-			await invalidateAll();
+			await invalidate(keys.views(data.workspace.id));
 		} catch {
 			localFailure = { kind: "unavailable" };
 		} finally {

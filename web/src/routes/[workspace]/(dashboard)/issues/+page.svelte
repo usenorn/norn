@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import Bell from "@lucide/svelte/icons/bell";
@@ -209,12 +210,12 @@
 
 		if (error) {
 			failure = issueFailureMessage(readIssueFailure(error));
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 
 			return false;
 		}
 
-		await invalidateAll();
+		await invalidate(keys.page(page.route.id));
 
 		return true;
 	}
@@ -296,7 +297,7 @@
 			return;
 		}
 
-		await invalidateAll();
+		await invalidate(keys.page(page.route.id));
 
 		announce(
 			carries
@@ -312,7 +313,7 @@
 					body: { expectedVersion: fresh.version, labelIds: held },
 				});
 
-				await invalidateAll();
+				await invalidate(keys.page(page.route.id));
 			}
 		);
 	}
@@ -409,7 +410,7 @@
 
 			viewName = "";
 			saving = false;
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failure = "That view was not saved. Nothing changed — try again.";
 		} finally {
@@ -468,7 +469,7 @@
 		liveBulk = latest;
 
 		if (settled(latest.status)) {
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 
 			return;
 		}
@@ -501,7 +502,7 @@
 			if (settled(result.status)) {
 				selected.clear();
 				anchor = null;
-				await invalidateAll();
+				await invalidate(keys.page(page.route.id));
 			} else {
 				polling = setTimeout(() => poll(result.id), 700);
 			}
@@ -1638,7 +1639,7 @@
 		today={data.today}
 		{prefill}
 		oncreated={(issue) => {
-			void invalidateAll();
+			void invalidate(keys.page(page.route.id));
 			announce(`Created ${issue.reference}`);
 		}}
 	/>

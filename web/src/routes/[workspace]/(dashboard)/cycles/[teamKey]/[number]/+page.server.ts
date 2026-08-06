@@ -19,11 +19,14 @@ const unavailable: CyclePageData = {
 
 export const load: PageServerLoad = async ({
 	depends,
+	route,
 	locals,
 	params,
 	parent,
 	url,
 }): Promise<CyclePageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace, teams } = await parent();
 
 	depends(keys.cycles(workspace.id));

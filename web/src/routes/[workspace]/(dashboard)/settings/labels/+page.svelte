@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
@@ -86,7 +87,7 @@
 			submitted = { kind: "ready", labels: next.data, groups: nextGroups.data };
 		}
 
-		await invalidateAll();
+		await invalidate(keys.page(page.route.id));
 	}
 
 	function readFailure(error: unknown): LabelFailure {

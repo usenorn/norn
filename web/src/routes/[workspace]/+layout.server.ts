@@ -29,6 +29,7 @@ export const load: LayoutServerLoad = async ({
 	locals,
 	params,
 }): Promise<WorkspaceScope> => {
+
 	const [workspaces, account] = await Promise.all([
 		locals.api.GET("/workspaces"),
 		locals.api.GET("/accounts/me"),

@@ -1,4 +1,5 @@
 import type { AgentListing } from "$lib/agents/agents";
+import { keys } from "$lib/api/keys";
 import type { components } from "$lib/api/dashboard.gen";
 import type { Team } from "$lib/team/teams";
 import type { PageServerLoad } from "./$types";
@@ -11,7 +12,9 @@ export type AgentsPageData = {
 	teams: Team[];
 };
 
-export const load: PageServerLoad = async ({ locals, parent }): Promise<AgentsPageData> => {
+export const load: PageServerLoad = async ({ depends, route, locals, parent }): Promise<AgentsPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace, teams } = await parent();
 
 	const [agents, members] = await Promise.all([

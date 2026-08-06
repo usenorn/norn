@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { invalidate } from "$app/navigation";
+	import { page } from "$app/state";
+	import { keys } from "$lib/api/keys";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
@@ -52,7 +54,7 @@
 			}
 
 			saved = data;
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failed = true;
 		} finally {

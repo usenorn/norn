@@ -46,10 +46,13 @@ function pick<T extends string>(value: string | null, allowed: readonly T[], fal
 
 export const load: PageServerLoad = async ({
 	depends,
+	route,
 	locals,
 	url,
 	parent,
 }): Promise<IssuesPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace, teams, views, now } = await parent();
 
 	depends(keys.issues(workspace.id));

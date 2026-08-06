@@ -1,4 +1,5 @@
 import type { CadenceSetting, CycleCadence } from "$lib/cycles/cycles";
+import { keys } from "$lib/api/keys";
 import { rosterFor, type TeamRoster } from "$lib/team/members";
 import { statesFor, type StateList } from "$lib/team/states";
 import { settingsFor, type TeamSettings } from "$lib/team/team-settings";
@@ -27,7 +28,9 @@ const unavailable: TeamPageData = {
 	notifications: { kind: "unavailable" },
 };
 
-export const load: PageServerLoad = async ({ locals, params, parent }): Promise<TeamPageData> => {
+export const load: PageServerLoad = async ({ depends, route, locals, params, parent }): Promise<TeamPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace, teams } = await parent();
 
 	if (!teams) return unavailable;
