@@ -33,6 +33,25 @@ func TestAnEmailIsFoundHoweverTheProviderSpellsTheAttribute(t *testing.T) {
 	}
 }
 
+func TestAnAssertionWithNoNameIDIsRefusedRatherThanKeyedOnItsAddress(t *testing.T) {
+	_, err := entity.ResolveSAMLIdentity(entity.SAMLAssertion{
+		ID:         "assertion-1",
+		Attributes: map[string][]string{"email": {"ada@example.com"}},
+	}, entity.SAMLAttributeMapping{})
+
+	if err == nil {
+		t.Fatal(
+			"an assertion with no NameID was accepted, and the address became the subject. The " +
+				"subject is what makes the binding durable, so deriving it from the very attribute " +
+				"it is meant to outrank leaves nothing pinning the identity down.",
+		)
+	}
+
+	if stage := stageOf(t, err); stage != entity.SSOStageAttributes {
+		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageAttributes)
+	}
+}
+
 func TestAnExplicitMappingBeatsTheGuesses(t *testing.T) {
 	identity, err := entity.ResolveSAMLIdentity(entity.SAMLAssertion{
 		ID:     "assertion-1",

@@ -147,7 +147,10 @@ func (h *harness) allow(workspaceID uuid.UUID) {
 }
 
 func connection(workspaceID uuid.UUID, provisioning bool) entity.OIDCConnection {
+	tested := time.Date(2026, time.August, 1, 0, 0, 0, 0, time.UTC)
+
 	return entity.OIDCConnection{
+		VerifiedAt:  &tested,
 		WorkspaceID: workspaceID,
 		Endpoints: entity.OIDCEndpoints{
 			Issuer:                "https://login.example.com",

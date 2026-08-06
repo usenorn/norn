@@ -224,6 +224,31 @@ func TestAnAddressTheProviderWillNotVouchForNeverReachesAnAccount(t *testing.T) 
 	}
 }
 
+func TestAProviderNobodyHasTestedCannotSignAnybodyIn(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	untested := connection(workspaceID, false)
+	untested.VerifiedAt = nil
+
+	h.workspaces.EXPECT().
+		GetBySlug(gomock.Any(), "northwind").
+		Return(entity.Workspace{ID: workspaceID, Slug: "northwind"}, nil)
+	h.connections.EXPECT().GetOIDC(gomock.Any(), workspaceID).Return(untested, nil)
+
+	_, err := h.service.BeginLogin(context.Background(), service.BeginOIDCLoginInput{
+		WorkspaceSlug: "northwind",
+	})
+
+	if !errors.Is(err, entity.ErrSSONotVerified) {
+		t.Fatalf(
+			"BeginLogin gave %v. A connection saved but never tested can be pointed anywhere, so "+
+				"it must not be able to mint a session before somebody has proved it works.",
+			err,
+		)
+	}
+}
+
 func TestConnectingAProviderBindsTheSignedInAccountAndMintsNoSession(t *testing.T) {
 	h := newHarnessWithoutLinking(t)
 
@@ -1161,6 +1186,8 @@ func TestAnUnverifiedProviderIsNotOfferedToSignInWith(t *testing.T) {
 	h := newHarness(t)
 
 	workspaceID := uuid.New()
+	untested := connection(workspaceID, false)
+	untested.VerifiedAt = nil
 
 	h.workspaces.EXPECT().
 		GetBySlug(gomock.Any(), "northwind").
@@ -1173,7 +1200,7 @@ func TestAnUnverifiedProviderIsNotOfferedToSignInWith(t *testing.T) {
 		Return(entity.SSOProtocolOIDC, nil)
 	h.connections.EXPECT().
 		GetOIDC(gomock.Any(), workspaceID).
-		Return(connection(workspaceID, false), nil)
+		Return(untested, nil)
 
 	signIn, err := h.service.SignIn(context.Background(), "northwind")
 	if err != nil {

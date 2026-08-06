@@ -23,7 +23,10 @@ func samlConnection(t *testing.T, workspaceID uuid.UUID, idpInitiated, provision
 		t.Fatalf("Generate: %v", err)
 	}
 
+	tested := time.Date(2026, time.August, 1, 0, 0, 0, 0, time.UTC)
+
 	return entity.SAMLConnection{
+		VerifiedAt:  &tested,
 		WorkspaceID: workspaceID,
 		Descriptor: entity.SAMLDescriptor{
 			EntityID:     "https://login.example.com/realms/norn",

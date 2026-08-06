@@ -253,6 +253,10 @@ func (s *connectionsService) BeginLogin(
 		return "", err
 	}
 
+	if !connection.Verified() {
+		return "", entity.ErrSSONotVerified
+	}
+
 	return s.begin(ctx, connection, entity.SSOPurposeLogin, uuid.Nil, input.ReturnTo)
 }
 

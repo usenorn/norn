@@ -187,7 +187,11 @@ func ResolveSAMLIdentity(
 	}
 
 	if identity.Subject == "" {
-		identity.Subject = identity.Email
+		return SAMLIdentity{}, NewSSOError(
+			SSOStageAttributes,
+			"The assertion carried no NameID, so Norn has nothing durable to recognise this "+
+				"person by. Configure your provider to release one.",
+		)
 	}
 
 	if identity.Email == "" {
