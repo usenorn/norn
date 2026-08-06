@@ -241,6 +241,10 @@ func (s *connectionsService) BeginSAMLLogin(
 		return "", err
 	}
 
+	if !connection.Verified() {
+		return "", entity.ErrSSONotVerified
+	}
+
 	return s.beginSAML(ctx, workspace, connection, entity.SSOPurposeLogin, input.ReturnTo)
 }
 

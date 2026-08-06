@@ -252,6 +252,10 @@ func problemFor(err error) (problemResponse, bool) {
 		return newProblem(http.StatusInternalServerError, err.Error()), true
 	}
 
+	if errors.Is(err, entity.ErrSSONotVerified) {
+		return newProblem(http.StatusConflict, err.Error()), true
+	}
+
 	if failure, ok := entity.AsSSOError(err); ok {
 		base := baseProblem(http.StatusUnprocessableEntity, failure.Message)
 		stage := api.SsoStage(failure.Stage)
