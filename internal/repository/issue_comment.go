@@ -25,6 +25,7 @@ type IssueComment interface {
 	CursorBefore(ctx context.Context, issueID, commentID uuid.UUID) (*entity.CommentCursor, error)
 	Edit(ctx context.Context, commentID uuid.UUID, body string, at time.Time) error
 	Tombstone(ctx context.Context, commentID uuid.UUID, at time.Time) error
+	PurgeImported(ctx context.Context, workspaceID uuid.UUID, ids []uuid.UUID) error
 	RecordMentions(ctx context.Context, commentID uuid.UUID, mentions []entity.CommentMention) error
 	Mentioned(ctx context.Context, commentID uuid.UUID) ([]entity.CommentMention, error)
 	Audience(ctx context.Context, workspaceID, teamID uuid.UUID, accountIDs []uuid.UUID) ([]CommentAudience, error)

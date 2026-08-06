@@ -12,6 +12,7 @@ type CreateLabelInput struct {
 	GroupID     uuid.UUID
 	Name        string
 	Color       entity.LabelColor
+	Origin      *entity.ImportOrigin
 }
 
 type UpdateLabelInput struct {

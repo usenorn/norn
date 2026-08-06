@@ -21,4 +21,8 @@ var Set = wire.NewSet(
 	NewWebhookFanOutHandler,
 	NewWebhookDeliverHandler,
 	NewWebhookSweepHandler,
+	NewImportStageHandler,
+	NewImportExecuteHandler,
+	NewImportRevertHandler,
+	NewImportRescueHandler,
 )

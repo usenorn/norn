@@ -21,6 +21,10 @@ type JobProducer interface {
 	EnqueueBulkApply(ctx context.Context, payload entity.BulkApplyPayload) error
 	EnqueueWebhookFanOut(ctx context.Context) error
 	EnqueueWebhookDeliver(ctx context.Context, payload entity.WebhookDeliverPayload, processAt time.Time) error
+	EnqueueImportStage(ctx context.Context, payload entity.ImportStagePayload, processAt time.Time) error
+	EnqueueImportExecute(ctx context.Context, payload entity.ImportExecutePayload, processAt time.Time) error
+	EnqueueImportRevert(ctx context.Context, payload entity.ImportRevertPayload, processAt time.Time) error
+	EnqueueImportRescue(ctx context.Context) error
 }
 
 type JobInspector interface {

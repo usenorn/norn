@@ -50,8 +50,9 @@ LEFT JOIN LATERAL (
 
 const insertProjectQuery = `
 WITH inserted AS (
-    INSERT INTO workspace_projects (workspace_id, slug, name, description, state, lead_account_id, target_on)
-    VALUES ($1, $2, $3, $4, $5, $6::uuid, $7::date)
+    INSERT INTO workspace_projects (workspace_id, slug, name, description, state, lead_account_id,
+                                    target_on, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6::uuid, $7::date, $8, $9)
     RETURNING id, workspace_id, slug, name, description, state, lead_account_id,
               target_on, archived_at, created_at, updated_at
 )
@@ -276,6 +277,8 @@ func (r *projectRepository) Create(
 		state = entity.ProjectStatePlanned
 	}
 
+	createdAt, updatedAt := entity.OriginStamp(project.Origin, time.Now().UTC())
+
 	created, err := scanProject(r.db.Querier(ctx).QueryRowContext(
 		ctx,
 		insertProjectQuery,
@@ -286,6 +289,8 @@ func (r *projectRepository) Create(
 		string(state),
 		lead,
 		target,
+		createdAt,
+		updatedAt,
 	))
 	if err != nil {
 		if translated := translateWriteError(err); !errors.Is(translated, err) {

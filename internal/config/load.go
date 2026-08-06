@@ -102,6 +102,10 @@ func validate(cfg Config) error {
 		return err
 	}
 
+	if err := validateImports(cfg.Imports); err != nil {
+		return err
+	}
+
 	if cfg.Password.BreachCheckEnabled && cfg.Password.BreachCheckTimeout <= 0 {
 		return fmt.Errorf(
 			"password.breach_check_timeout (%s) must be positive",
@@ -174,6 +178,52 @@ func validateForwarding(cfg HTTP) error {
 			"http.trusted_proxies is required when http.client_ip_header (%q) is set; without an "+
 				"allow-list any caller could forge that header and evade the per-address sign-in throttle",
 			cfg.ClientIPHeader,
+		)
+	}
+
+	return nil
+}
+
+func validateImports(cfg Imports) error {
+	if cfg.ChunkSize < 1 || cfg.PageSize < 1 || cfg.RescueBatch < 1 || cfg.MaxAttempts < 1 {
+		return fmt.Errorf(
+			"imports.chunk_size (%d), imports.page_size (%d), imports.rescue_batch (%d) and "+
+				"imports.max_attempts (%d) must be at least 1. These size the work an import does at a "+
+				"time; none of them caps how much it may carry, which is deliberately unbounded",
+			cfg.ChunkSize, cfg.PageSize, cfg.RescueBatch, cfg.MaxAttempts,
+		)
+	}
+
+	if cfg.SliceBudget <= 0 || cfg.LeaseTTL <= 0 {
+		return fmt.Errorf(
+			"imports.slice_budget (%s) and imports.lease_ttl (%s) must be positive; an import runs in "+
+				"slices so that shutting the worker down loses at most one chunk",
+			cfg.SliceBudget, cfg.LeaseTTL,
+		)
+	}
+
+	if cfg.SliceBudget >= cfg.LeaseTTL {
+		return fmt.Errorf(
+			"imports.slice_budget (%s) is not shorter than imports.lease_ttl (%s). A slice that outlives "+
+				"its lease is rescued while it is still running, and the two workers then write the same "+
+				"chunk against each other",
+			cfg.SliceBudget, cfg.LeaseTTL,
+		)
+	}
+
+	if cfg.MinBackoff <= 0 || cfg.MaxBackoff < cfg.MinBackoff {
+		return fmt.Errorf(
+			"imports.min_backoff (%s) must be positive and imports.max_backoff (%s) must not be shorter; "+
+				"a source that asks to be left alone is obeyed only within these bounds",
+			cfg.MinBackoff, cfg.MaxBackoff,
+		)
+	}
+
+	if cfg.RecordRetention <= 0 {
+		return fmt.Errorf(
+			"imports.record_retention (%s) must be positive; the staged copy of a source's rows is "+
+				"working state and always ages out, while the ledger and the report do not",
+			cfg.RecordRetention,
 		)
 	}
 
@@ -314,7 +364,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("asynq.password", "")
 	v.SetDefault("asynq.db", 1)
 	v.SetDefault("asynq.concurrency", 10)
-	v.SetDefault("asynq.queues", map[string]int{"default": 6, "mail": 3, "webhook": 3})
+	v.SetDefault("asynq.queues", map[string]int{"default": 6, "mail": 3, "webhook": 3, "import": 1})
 	v.SetDefault("asynq.shutdown_timeout", 20*time.Second)
 	v.SetDefault("asynq.max_retry", 5)
 
@@ -375,6 +425,17 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("webhooks.sweep_schedule", "0 5 * * *")
 	v.SetDefault("webhooks.sweep_batch", 5000)
 	v.SetDefault("webhooks.allowed_destinations", []string{})
+
+	v.SetDefault("imports.chunk_size", 25)
+	v.SetDefault("imports.page_size", 200)
+	v.SetDefault("imports.slice_budget", 45*time.Second)
+	v.SetDefault("imports.lease_ttl", 2*time.Minute)
+	v.SetDefault("imports.rescue_schedule", "* * * * *")
+	v.SetDefault("imports.rescue_batch", 50)
+	v.SetDefault("imports.max_attempts", 20)
+	v.SetDefault("imports.min_backoff", time.Second)
+	v.SetDefault("imports.max_backoff", 15*time.Minute)
+	v.SetDefault("imports.record_retention", 30*24*time.Hour)
 	v.SetDefault("attachments.reclaim_batch", 200)
 
 	v.SetDefault("session.cookie_name", "norn_session")

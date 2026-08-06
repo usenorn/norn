@@ -42,6 +42,8 @@ func NewMCP(cfg Config) MCP { return cfg.MCP }
 
 func NewWebhooks(cfg Config) Webhooks { return cfg.Webhooks }
 
+func NewImports(cfg Config) Imports { return cfg.Imports }
+
 func NewSession(cfg Config) Session { return cfg.Session }
 
 func NewCasbin(cfg Config) Casbin { return cfg.Casbin }

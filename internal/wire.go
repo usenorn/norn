@@ -49,6 +49,7 @@ import (
 	emailchangerepo "github.com/usenorn/norn/internal/repository/emailchange"
 	eventstreamrepo "github.com/usenorn/norn/internal/repository/eventstream"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
+	importsrepo "github.com/usenorn/norn/internal/repository/imports"
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
@@ -85,10 +86,10 @@ import (
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
-	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
-	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	webhookrepo "github.com/usenorn/norn/internal/repository/webhook"
 	webhooksenderrepo "github.com/usenorn/norn/internal/repository/webhooksender"
+	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
+	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	workspaceauthpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	accountsvc "github.com/usenorn/norn/internal/service/account"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
@@ -101,6 +102,7 @@ import (
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
+	importssvc "github.com/usenorn/norn/internal/service/imports"
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
@@ -117,8 +119,8 @@ import (
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
 	triagesvc "github.com/usenorn/norn/internal/service/triage"
-	workflowstatesvc "github.com/usenorn/norn/internal/service/workflowstate"
 	webhooksvc "github.com/usenorn/norn/internal/service/webhook"
+	workflowstatesvc "github.com/usenorn/norn/internal/service/workflowstate"
 	workspacesvc "github.com/usenorn/norn/internal/service/workspace"
 )
 
@@ -201,6 +203,7 @@ var baseSet = wire.NewSet(
 	mcpthrottlerepo.Set,
 	webhookrepo.Set,
 	webhooksenderrepo.Set,
+	importsrepo.Set,
 
 	accountsvc.Set,
 	workspacesvc.Set,
@@ -232,6 +235,7 @@ var baseSet = wire.NewSet(
 	auditsvc.Set,
 	licensingsvc.Set,
 	directorysvc.Set,
+	importssvc.Set,
 
 	dashboardhandler.Set,
 	ssohandler.Set,

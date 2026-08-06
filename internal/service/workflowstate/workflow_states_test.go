@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
@@ -435,5 +436,49 @@ func TestANewStateLandsAtTheEndOfTheOrder(t *testing.T) {
 
 	if captured.IsDefault || captured.IsCompletion {
 		t.Fatal("a newly created state must not claim the default or completion flag")
+	}
+}
+
+func TestAnImportedStateReachesTheRepositoryWithTheDatesItsSourceRecorded(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	teamID := uuid.New()
+
+	h.expectActorMayManage(workspaceID, teamID)
+	h.expectLocked(teamID, seededStates(workspaceID, teamID))
+
+	var captured entity.WorkflowState
+
+	h.states.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, state entity.WorkflowState) (entity.WorkflowState, error) {
+			captured = state
+
+			return state, nil
+		})
+
+	createdAt := time.Date(2019, time.April, 2, 9, 15, 0, 0, time.UTC)
+	updatedAt := createdAt.Add(72 * time.Hour)
+	origin := entity.NewImportOrigin(createdAt, updatedAt, uuid.New())
+
+	if _, err := h.service.Create(context.Background(), service.CreateWorkflowStateInput{
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		Name:        "Blocked",
+		Category:    entity.StateCategoryActive,
+		Origin:      &origin,
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if captured.Origin == nil {
+		t.Fatal("the origin stopped at the service, so the state would be dated the moment the import ran")
+	}
+
+	gotCreated, gotUpdated := captured.Origin.Stamp(time.Now().UTC())
+
+	if !gotCreated.Equal(createdAt) || !gotUpdated.Equal(updatedAt) {
+		t.Fatalf("stamp = (%v, %v), want (%v, %v)", gotCreated, gotUpdated, createdAt, updatedAt)
 	}
 }

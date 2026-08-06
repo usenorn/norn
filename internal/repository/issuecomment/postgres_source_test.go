@@ -95,6 +95,36 @@ func TestEveryCommentInsertSuppliesAValueForEveryColumnItNames(t *testing.T) {
 	}
 }
 
+func TestAnImportedCommentKeepsItsOwnTwoTimestamps(t *testing.T) {
+	columns := strings.Split(writtenColumns(createCommentQuery), ",")
+	values := strings.Split(writtenValues(createCommentQuery), ",")
+
+	bound := map[string]string{}
+
+	for i, raw := range columns {
+		if i < len(values) {
+			bound[strings.TrimSpace(raw)] = strings.TrimSpace(values[i])
+		}
+	}
+
+	created, updated := bound["created_at"], bound["updated_at"]
+
+	if created == "" || updated == "" {
+		t.Fatal(
+			"createCommentQuery leaves created_at or updated_at to the column default. A comment " +
+				"imported from elsewhere would be dated the moment the import ran.",
+		)
+	}
+
+	if created == updated {
+		t.Fatalf(
+			"created_at and updated_at are both bound to %s, so an imported comment loses the "+
+				"edit history its source recorded",
+			created,
+		)
+	}
+}
+
 func TestWhatEachInsertWritesTheMatchingReadReturns(t *testing.T) {
 	for name, pair := range map[string]struct {
 		insert, read string

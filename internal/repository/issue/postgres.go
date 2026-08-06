@@ -92,7 +92,7 @@ WITH allocated AS (
     )
     SELECT $1, $2, $3, t.key, allocated.number, $4, $5, $6,
            $8, $9, nullif($10, '')::uuid, nullif($11, 0), nullif($12, '')::date,
-           nullif($15, '')::uuid, nullif($13, ''), nullif($14, ''), $7, $7
+           nullif($15, '')::uuid, nullif($13, ''), nullif($14, ''), $7, $16
     FROM allocated
     JOIN workspace_teams t ON t.id = $3
     RETURNING id, workspace_id, team_id, reference_key, number, title, state_id,
@@ -539,7 +539,7 @@ func (r *issueRepository) Create(ctx context.Context, issue entity.Issue) (entit
 		issue.ID = uuid.New()
 	}
 
-	now := time.Now().UTC()
+	createdAt, updatedAt := entity.OriginStamp(issue.Origin, time.Now().UTC())
 
 	var author any
 
@@ -556,7 +556,7 @@ func (r *issueRepository) Create(ctx context.Context, issue entity.Issue) (entit
 		issue.Title,
 		issue.State.ID.String(),
 		author,
-		now,
+		createdAt,
 		issue.Description,
 		string(issue.Priority),
 		text(issue.AssigneeAccountID),
@@ -565,6 +565,7 @@ func (r *issueRepository) Create(ctx context.Context, issue entity.Issue) (entit
 		string(issue.TriageState),
 		string(issue.TriageSource),
 		text(issue.ProjectID),
+		updatedAt,
 	))
 	if err != nil {
 		if translated := translateWriteError(err); !errors.Is(translated, err) {

@@ -60,6 +60,7 @@ type WorkflowState struct {
 	IsCompletion bool
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	Origin       *ImportOrigin
 }
 
 func ValidateWorkflowStateName(field, name string) FieldError {

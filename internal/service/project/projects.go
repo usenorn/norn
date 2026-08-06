@@ -115,6 +115,7 @@ func (s *projectsService) Create(
 		Description: input.Description,
 		State:       entity.ProjectStatePlanned,
 		TargetOn:    input.TargetOn,
+		Origin:      input.Origin,
 	}
 
 	if input.LeadAccountID != nil {

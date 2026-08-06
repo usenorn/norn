@@ -11,6 +11,7 @@ type CreateWorkflowStateInput struct {
 	TeamID      uuid.UUID
 	Name        string
 	Category    entity.StateCategory
+	Origin      *entity.ImportOrigin
 }
 
 type UpdateWorkflowStateInput struct {

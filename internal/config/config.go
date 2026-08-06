@@ -27,6 +27,7 @@ type Config struct {
 	Worker        Worker        `mapstructure:"worker"`
 	MCP           MCP           `mapstructure:"mcp"`
 	Webhooks      Webhooks      `mapstructure:"webhooks"`
+	Imports       Imports       `mapstructure:"imports"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
 	GeoIP         GeoIP         `mapstructure:"geoip"`
@@ -268,6 +269,19 @@ func (c Webhooks) RetentionDays() int { return int(c.Retention.Hours() / 24) }
 type Worker struct {
 	HealthAddr      string        `mapstructure:"health_addr"`
 	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout"`
+}
+
+type Imports struct {
+	ChunkSize       int           `mapstructure:"chunk_size"`
+	PageSize        int           `mapstructure:"page_size"`
+	SliceBudget     time.Duration `mapstructure:"slice_budget"`
+	LeaseTTL        time.Duration `mapstructure:"lease_ttl"`
+	RescueSchedule  string        `mapstructure:"rescue_schedule"`
+	RescueBatch     int           `mapstructure:"rescue_batch"`
+	MaxAttempts     int           `mapstructure:"max_attempts"`
+	MinBackoff      time.Duration `mapstructure:"min_backoff"`
+	MaxBackoff      time.Duration `mapstructure:"max_backoff"`
+	RecordRetention time.Duration `mapstructure:"record_retention"`
 }
 
 type MCP struct {

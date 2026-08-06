@@ -178,9 +178,7 @@ func (r *labelRepository) Create(ctx context.Context, label entity.Label) (entit
 		label.ID = uuid.New()
 	}
 
-	now := time.Now().UTC()
-	label.CreatedAt = now
-	label.UpdatedAt = now
+	label.CreatedAt, label.UpdatedAt = entity.OriginStamp(label.Origin, time.Now().UTC())
 
 	model := toModel(label)
 

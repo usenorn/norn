@@ -52,6 +52,7 @@ import (
 	"github.com/usenorn/norn/internal/repository/emailchange"
 	"github.com/usenorn/norn/internal/repository/eventstream"
 	"github.com/usenorn/norn/internal/repository/geolocation"
+	"github.com/usenorn/norn/internal/repository/imports"
 	"github.com/usenorn/norn/internal/repository/invitation"
 	"github.com/usenorn/norn/internal/repository/issue"
 	"github.com/usenorn/norn/internal/repository/issuecomment"
@@ -104,6 +105,7 @@ import (
 	cycle2 "github.com/usenorn/norn/internal/service/cycle"
 	directory2 "github.com/usenorn/norn/internal/service/directory"
 	"github.com/usenorn/norn/internal/service/event"
+	imports2 "github.com/usenorn/norn/internal/service/imports"
 	invitation2 "github.com/usenorn/norn/internal/service/invitation"
 	issue2 "github.com/usenorn/norn/internal/service/issue"
 	issuecomment2 "github.com/usenorn/norn/internal/service/issuecomment"
@@ -233,7 +235,8 @@ func InitApp(cfgFile string) (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	jobqueueClient := jobqueue.NewClient(taskqueueClient, inspector, asynq)
+	imports := config.NewImports(configConfig)
+	jobqueueClient := jobqueue.NewClient(taskqueueClient, inspector, asynq, imports)
 	jobProducer := jobqueue.AsProducer(jobqueueClient)
 	instance := config.NewInstance(configConfig)
 	accounts := account2.New(repositoryAccount, emailChange, passwordReset, signUp, passwordHistory, repositoryMembership, repositoryWorkspace, workspaceAuthPolicy, breachCheck, signInThrottle, repositoryBlob, repositoryMailer, jobProducer, postgresClient, sessions, serviceAuthorizer, app, configSMTP, instance, attachments, serviceAudit)
@@ -408,6 +411,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	apiTokens := config.NewAPITokens(configConfig)
 	configAudit := config.NewAudit(configConfig)
 	webhooks := config.NewWebhooks(configConfig)
+	configImports := config.NewImports(configConfig)
 	asynq := config.NewAsynq(configConfig)
 	app := config.NewApp(configConfig)
 	logger, err := logging.New(app)
@@ -471,7 +475,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	jobqueueClient := jobqueue.NewClient(taskqueueClient, inspector, asynq)
+	jobqueueClient := jobqueue.NewClient(taskqueueClient, inspector, asynq, configImports)
 	jobProducer := jobqueue.AsProducer(jobqueueClient)
 	configSession := config.NewSession(configConfig)
 	repositorySession := session.New(valkeyClient, configSession)
@@ -628,8 +632,32 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	webhookRetention := webhook.NewRetention(client)
 	serviceWebhookRetention := webhook2.NewSweeper(webhookRetention, webhooks)
 	webhookSweepHandler := job.NewWebhookSweepHandler(serviceWebhookRetention)
-	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler)
-	internalWorker := NewWorker(worker, saml, cycles, attachments, notifications, apiTokens, configAudit, webhooks, server, scheduler, inspector, serveMux, logger)
+	importRun := imports.NewImportRun(client)
+	importCursor := imports.NewImportCursor(client)
+	importRecord := imports.NewImportRecord(client)
+	importMapping := imports.NewImportMapping(client)
+	importLedger := imports.NewImportLedger(client)
+	importReport := imports.NewImportReport(client)
+	issueRelation := issuerelation.New(client)
+	labelGroup := labelgroup.New(client)
+	projectMember := project.NewMember(client)
+	projectStatusUpdate := project.NewStatusUpdate(client)
+	projects := project2.New(repositoryProject, projectMember, projectStatusUpdate, repositoryActivity, repositoryAccount, repositoryMembership, notificationEvent, serviceAuthorizer, webhookEmitter, client)
+	labels := label2.New(repositoryLabel, labelGroup, repositoryTeam, serviceAuthorizer, client)
+	workflowStates := workflowstate2.New(workflowState, repositoryIssue, repositoryTeam, serviceAuthorizer, client)
+	issueComments := issuecomment2.New(issueComment, repositoryAttachment, repositoryIssue, repositoryTeam, repositoryActivity, notificationEvent, serviceEvents, webhookEmitter, issueFollower, gate, serviceAuthorizer, client)
+	teams := team2.New(repositoryTeam, teamMember, repositoryWorkspace, repositoryMembership, repositoryAccount, workspaceAuthPolicy, workflowState, notificationEvent, serviceAuthorizer, client, serviceAudit, serviceEvents, webhookEmitter)
+	issueRelations := issuerelation2.New(issueRelation, repositoryIssue, workflowState, repositoryActivity, serviceAuthorizer, client)
+	importSources := imports2.NewSourceRegistry()
+	importsService := imports2.New(importRun, importCursor, importRecord, importMapping, importLedger, importReport, repositoryMembership, repositoryTeam, workflowState, repositoryLabel, repositoryProject, repositoryIssue, issueComment, issueRelation, labelGroup, teamMember, repositoryTriage, issues, projects, labels, workflowStates, issueComments, teams, issueRelations, importSources, serviceAuthorizer, jobProducer, client, configImports)
+	importRunner := imports2.NewImportRunner(importsService)
+	importStageHandler := job.NewImportStageHandler(importRunner)
+	importExecuteHandler := job.NewImportExecuteHandler(importRunner)
+	importRevertHandler := job.NewImportRevertHandler(importRunner)
+	importRescue := imports2.NewImportRescue(importsService)
+	importRescueHandler := job.NewImportRescueHandler(importRescue)
+	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler, importStageHandler, importExecuteHandler, importRevertHandler, importRescueHandler)
+	internalWorker := NewWorker(worker, saml, cycles, attachments, notifications, apiTokens, configAudit, webhooks, configImports, server, scheduler, inspector, serveMux, logger)
 	return internalWorker, func() {
 		cleanup8()
 		cleanup7()
@@ -731,7 +759,8 @@ func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	jobqueueClient := jobqueue.NewClient(client, inspector, asynq)
+	configImports := config.NewImports(configConfig)
+	jobqueueClient := jobqueue.NewClient(client, inspector, asynq, configImports)
 	jobInspector := jobqueue.AsInspector(jobqueueClient)
 	serviceJobs := jobs.New(jobInspector)
 	jobsAdmin := NewJobsAdmin(serviceJobs)
@@ -743,7 +772,7 @@ func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, mcpclient.Set, mcpconnection.Set, mcptoken.Set, mcpauthstate.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, mcpconnection2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, licensing.Set, directory2.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, auditexport.Set, scim.Set, mcpauth.Set, mcpserver.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, mcpclient.Set, mcpconnection.Set, mcptoken.Set, mcpauthstate.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, mcpconnection2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, auditexport.Set, scim.Set, mcpauth.Set, mcpserver.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

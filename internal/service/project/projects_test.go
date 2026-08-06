@@ -279,6 +279,55 @@ func TestWhoeverStartsAProjectIsInIt(t *testing.T) {
 	}
 }
 
+func TestAnImportedProjectReachesTheRepositoryWithTheDatesItsSourceRecorded(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.MembershipRoleMember, uuid.New())
+
+	var captured entity.Project
+
+	h.projects.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, project entity.Project) (entity.Project, error) {
+			captured = project
+			project.ID = h.projectID
+
+			return project, nil
+		})
+	h.members.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, membership entity.ProjectMembership) (entity.ProjectMembership, error) {
+			return membership, nil
+		})
+	h.members.EXPECT().ListByProjectID(gomock.Any(), h.projectID).Return(nil, nil).AnyTimes()
+	h.projects.EXPECT().
+		HasConcealedWork(gomock.Any(), gomock.Any(), h.projectID).
+		Return(false, nil).
+		AnyTimes()
+
+	createdAt := time.Date(2019, time.April, 2, 9, 15, 0, 0, time.UTC)
+	updatedAt := createdAt.Add(72 * time.Hour)
+	origin := entity.NewImportOrigin(createdAt, updatedAt, uuid.New())
+
+	if _, err := h.service.Create(context.Background(), service.CreateProjectInput{
+		WorkspaceID: h.workspaceID,
+		Slug:        "offline-support",
+		Name:        "Offline support",
+		Origin:      &origin,
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if captured.Origin == nil {
+		t.Fatal("the origin stopped at the service, so the project would be dated the moment the import ran")
+	}
+
+	gotCreated, gotUpdated := captured.Origin.Stamp(time.Now().UTC())
+
+	if !gotCreated.Equal(createdAt) || !gotUpdated.Equal(updatedAt) {
+		t.Fatalf("stamp = (%v, %v), want (%v, %v)", gotCreated, gotUpdated, createdAt, updatedAt)
+	}
+}
+
 func TestAnArchivedProjectTakesNoFurtherChanges(t *testing.T) {
 	h := newHarness(t)
 	h.actAs(entity.MembershipRoleAdmin, uuid.New())

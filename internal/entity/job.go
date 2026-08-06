@@ -26,15 +26,21 @@ const (
 	TaskTypeWebhookFanOut           = "webhook:fan_out"
 	TaskTypeWebhookDeliver          = "webhook:deliver"
 	TaskTypeWebhookSweep            = "webhook:retention_sweep"
+	TaskTypeImportStage             = "import:stage"
+	TaskTypeImportExecute           = "import:execute"
+	TaskTypeImportRevert            = "import:revert"
+	TaskTypeImportRescue            = "import:rescue"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 	WebhookFanOutTaskID     = "webhook-fan-out"
+	ImportRescueTaskID      = "import-rescue"
 
 	WorkerHealthReadHeaderTimeout = 5 * time.Second
 
 	QueueDefault = "default"
 	QueueMail    = "mail"
 	QueueWebhook = "webhook"
+	QueueImport  = "import"
 )
 
 var ErrTaskNotFound = errors.New("task not found")
@@ -82,6 +88,24 @@ type BulkApplyPayload struct {
 type WebhookDeliverPayload struct {
 	DeliveryID uuid.UUID
 	Attempt    int
+}
+
+type ImportStagePayload struct {
+	ImportRunID uuid.UUID
+	WorkspaceID uuid.UUID
+	Attempt     int
+}
+
+type ImportExecutePayload struct {
+	ImportRunID uuid.UUID
+	WorkspaceID uuid.UUID
+	Attempt     int
+}
+
+type ImportRevertPayload struct {
+	ImportRunID uuid.UUID
+	WorkspaceID uuid.UUID
+	Attempt     int
 }
 
 type TaskState string

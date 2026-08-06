@@ -343,6 +343,71 @@ func TestAnIssueIsRaisedAgainstTheActorWhoRaisedIt(t *testing.T) {
 	if captured.CreatedByAccountID != actorID {
 		t.Fatalf("author = %v, want the acting account %v", captured.CreatedByAccountID, actorID)
 	}
+
+	if captured.Origin != nil {
+		t.Fatal("an issue raised by hand carries an import origin, so the repository would date it from a source it does not have")
+	}
+}
+
+func TestAnImportedIssueIsFiledUnderItsOriginalDateAndAuthor(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	teamID := uuid.New()
+	actorID := uuid.New()
+	sourceAuthorID := uuid.New()
+
+	h.authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{
+			Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: actorID},
+			Scope: entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}},
+		}, nil)
+
+	h.states.EXPECT().
+		DefaultForTeam(gomock.Any(), teamID).
+		Return(entity.WorkflowState{ID: uuid.New(), TeamID: teamID, IsDefault: true}, nil)
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil)
+
+	var captured entity.Issue
+
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, issue entity.Issue) (entity.Issue, error) {
+			captured = issue
+
+			return issue, nil
+		})
+
+	createdAt := time.Date(2019, time.April, 2, 9, 15, 0, 0, time.UTC)
+	updatedAt := createdAt.Add(72 * time.Hour)
+	origin := entity.NewImportOrigin(createdAt, updatedAt, sourceAuthorID)
+
+	if _, err := h.service.Create(context.Background(), service.CreateIssueInput{
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		Title:       "Offline queue drops edits on reconnect",
+		Origin:      &origin,
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if captured.CreatedByAccountID != sourceAuthorID {
+		t.Fatalf(
+			"author = %v, want the source author %v rather than whoever ran the import",
+			captured.CreatedByAccountID, sourceAuthorID,
+		)
+	}
+
+	if captured.Origin == nil {
+		t.Fatal("the origin never reached the repository, so the row would be dated the moment the import ran")
+	}
+
+	gotCreated, gotUpdated := entity.OriginStamp(captured.Origin, time.Now().UTC())
+
+	if !gotCreated.Equal(createdAt) || !gotUpdated.Equal(updatedAt) {
+		t.Fatalf("stamp = (%v, %v), want (%v, %v)", gotCreated, gotUpdated, createdAt, updatedAt)
+	}
 }
 
 func TestAnIssueCanBeRaisedStraightIntoAChosenStateProjectAndLabels(t *testing.T) {

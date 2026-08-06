@@ -18,6 +18,7 @@ type CreateIssueInput struct {
 	StateID           uuid.UUID
 	ProjectID         uuid.UUID
 	LabelIDs          []uuid.UUID
+	Origin            *entity.ImportOrigin
 }
 
 type ListIssuesInput struct {

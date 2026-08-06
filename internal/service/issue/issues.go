@@ -137,7 +137,8 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		DueOn:              input.DueOn,
 		ProjectID:          input.ProjectID,
 		State:              entity.IssueState{ID: state.ID},
-		CreatedByAccountID: decision.Actor.AccountID,
+		CreatedByAccountID: entity.OriginAuthor(input.Origin, decision.Actor.AccountID),
+		Origin:             input.Origin,
 	}
 
 	if arriving.Priority == "" {

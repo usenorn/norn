@@ -146,6 +146,7 @@ func (s *labelsService) Create(ctx context.Context, input service.CreateLabelInp
 		GroupID:     input.GroupID,
 		Name:        strings.TrimSpace(input.Name),
 		Color:       input.Color,
+		Origin:      input.Origin,
 	})
 }
 
