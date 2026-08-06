@@ -105,6 +105,7 @@ type Actor struct {
 	ConnectionName string
 	Grants         APITokenGrants
 	AuthMethod     SessionAuthMethod
+	SSOWorkspaceID uuid.UUID
 	Scopes         APIScopeSet
 	InstanceAdmin  bool
 }
@@ -119,9 +120,10 @@ func (a Actor) Authority() uuid.UUID {
 
 func UserActor(session Session) Actor {
 	return Actor{
-		Kind:       ActorKindUser,
-		AccountID:  session.AccountID,
-		AuthMethod: session.AuthMethod,
+		Kind:           ActorKindUser,
+		AccountID:      session.AccountID,
+		AuthMethod:     session.AuthMethod,
+		SSOWorkspaceID: session.WorkspaceID,
 	}
 }
 

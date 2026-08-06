@@ -40,7 +40,7 @@ func (e AuthEnforcement) Permits(method SessionAuthMethod) bool {
 	}
 }
 
-func (e AuthEnforcement) PermitsActor(actor Actor) bool {
+func (e AuthEnforcement) PermitsActor(actor Actor, workspaceID uuid.UUID) bool {
 	if actor.Kind == ActorKindToken || actor.Kind == ActorKindAgent {
 		return true
 	}
@@ -49,7 +49,15 @@ func (e AuthEnforcement) PermitsActor(actor Actor) bool {
 		return e == AuthEnforcementAny
 	}
 
-	return e.Permits(actor.AuthMethod)
+	if !e.Permits(actor.AuthMethod) {
+		return false
+	}
+
+	if e == AuthEnforcementSSO && actor.SSOWorkspaceID != workspaceID {
+		return false
+	}
+
+	return true
 }
 
 type WorkspaceAuthPolicy struct {

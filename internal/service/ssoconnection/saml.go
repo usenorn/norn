@@ -355,9 +355,10 @@ func (s *connectionsService) CompleteSAML(
 	}
 
 	issued, err := s.sessions.Start(ctx, service.StartSessionInput{
-		AccountID:  account.ID,
-		AuthMethod: entity.SessionAuthMethodSSO,
-		Client:     input.Client,
+		AccountID:   account.ID,
+		WorkspaceID: workspace.ID,
+		AuthMethod:  entity.SessionAuthMethodSSO,
+		Client:      input.Client,
 	})
 	if err != nil {
 		return exchange, err

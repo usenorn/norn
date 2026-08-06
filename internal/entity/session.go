@@ -52,6 +52,7 @@ type Session struct {
 	ID                uuid.UUID
 	TokenHash         string
 	AccountID         uuid.UUID
+	WorkspaceID       uuid.UUID
 	AuthMethod        SessionAuthMethod
 	Client            SessionClient
 	IssuedAt          time.Time
