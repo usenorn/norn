@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Bot from "@lucide/svelte/icons/bot";
 	import CircleX from "@lucide/svelte/icons/circle-x";
+	import Dot from "@lucide/svelte/icons/dot";
+	import Info from "@lucide/svelte/icons/info";
 	import Reply from "@lucide/svelte/icons/reply";
 	import SmilePlus from "@lucide/svelte/icons/smile-plus";
 	import * as Alert from "$lib/components/ui/alert/index.js";
@@ -29,6 +31,9 @@
 
 	let {
 		thread,
+		events = [],
+		canEdit = true,
+		lockedLine = "",
 		members,
 		teams,
 		accountId,
@@ -48,6 +53,9 @@
 		ondismissupload,
 	}: {
 		thread: CommentThread;
+		events?: { id: string; at: string; line: string }[];
+		canEdit?: boolean;
+		lockedLine?: string;
 		members: Member[];
 		teams: Team[];
 		accountId: string;
@@ -77,6 +85,12 @@
 
 	const ready = $derived(thread.kind === "ready" ? thread : null);
 	const missed = $derived(unreachableLine(unreachable));
+	const stream = $derived(
+		[
+			...(ready?.comments ?? []).map((comment) => ({ at: comment.createdAt, comment, event: null })),
+			...events.map((event) => ({ at: event.at, comment: null, event })),
+		].sort((first, second) => first.at.localeCompare(second.at))
+	);
 
 	function editable(comment: IssueComment): boolean {
 		return !comment.deleted && comment.authorAccountId === accountId;
@@ -90,12 +104,12 @@
 {#snippet entry(comment: IssueComment, reply: boolean)}
 	<li
 		id="comment-{comment.id}"
-		class="flex scroll-mt-16 flex-col gap-2 rounded-sm target:rule-inset target:bg-accent {reply
+		class="flex scroll-mt-16 flex-col gap-1.75 rounded-sm py-3.25 target:rule-inset target:bg-accent {reply
 			? 'border-l border-line-subtle pl-4'
-			: ''}"
+			: 'border-t border-line-subtle'}"
 	>
 		<div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-			<span class="flex items-center gap-1 text-sm font-medium text-ink-900">
+			<span class="flex items-center gap-1 text-md font-medium tracking-snug text-ink-900">
 				{#if comment.authorKind === "agent"}
 					<Bot class="size-3.5 text-muted-foreground" aria-label="An agent wrote this" />
 				{/if}
@@ -229,9 +243,7 @@
 	</li>
 {/snippet}
 
-<section class="flex flex-col gap-4">
-	<h2 class="text-sm font-medium text-ink-900">Comments</h2>
-
+<div class="flex flex-col gap-2">
 	{#if failure}
 		<Alert.Root variant="destructive">
 			<CircleX aria-hidden="true" />
@@ -251,35 +263,75 @@
 		<div class="h-24 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
 	{:else if thread.kind === "unavailable"}
 		<p class="text-sm text-muted-foreground">We could not read this conversation.</p>
-	{:else if thread.kind === "empty"}
-		<p class="text-sm text-muted-foreground">Nobody has said anything yet.</p>
-	{:else if ready}
-		<ul class="flex flex-col gap-6">
-			{#each ready.comments as comment (comment.id)}
-				{@render entry(comment, false)}
-			{/each}
-		</ul>
+	{:else}
+		{#if ready?.nextCursor}
+			<button
+				type="button"
+				disabled={working}
+				onclick={onmore}
+				class="flex h-7 w-full cursor-pointer items-center justify-center rounded-md border border-line-default font-mono text-xs text-muted-foreground transition-colors duration-70 ease-out hover:bg-accent hover:text-ink-600"
+			>
+				{working ? "Loading" : "Load earlier comments"}
+			</button>
+		{/if}
 
-		{#if ready.nextCursor}
-			<div>
-				<Button variant="secondary" size="sm" disabled={working} onclick={onmore}>
-					{working ? "Loading" : "Load earlier comments"}
-				</Button>
+		{#if stream.length > 0}
+			<ul class="flex flex-col">
+				{#each stream as item (item.comment?.id ?? item.event?.id)}
+					{#if item.comment}
+						{@render entry(item.comment, false)}
+					{:else if item.event}
+						<li class="flex h-7 items-center gap-2.25">
+							<span class="inline-flex w-4 flex-none justify-center">
+								<Dot class="size-3 text-muted-foreground" aria-hidden="true" />
+							</span>
+							<span class="min-w-0 truncate text-sm text-ink-600">{item.event.line}</span>
+							<span class="min-w-2 flex-1"></span>
+							<span class="font-mono text-2xs whitespace-nowrap text-muted-foreground">
+								<time datetime={item.event.at}>{when(item.event.at)}</time>
+							</span>
+						</li>
+					{/if}
+				{/each}
+			</ul>
+		{/if}
+
+		{#if thread.kind === "empty"}
+			<div class="flex flex-col gap-1.5 border-t border-line-subtle pt-5.5 pb-4.5">
+				<span class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">
+					No comments yet
+				</span>
+				<span class="text-md text-muted-foreground">
+					Ask a question or leave what you found. Everyone watching this issue is notified.
+				</span>
 			</div>
 		{/if}
 	{/if}
 
-	<CommentComposer
-		{members}
-		{teams}
-		{working}
-		{uploads}
-		{onfiles}
-		{oncancelupload}
-		{onretryupload}
-		{ondismissupload}
-		placeholder="Leave a comment"
-		submitLabel="Comment"
-		onsubmit={(body, mentions, attachmentIds) => onpost(body, mentions, attachmentIds)}
-	/>
-</section>
+	{#if canEdit}
+		<div class="mt-1.5 flex gap-2.75 border-t border-line-default pt-4">
+			<div class="min-w-0 flex-1">
+				<CommentComposer
+					{members}
+					{teams}
+					{working}
+					{uploads}
+					{onfiles}
+					{oncancelupload}
+					{onretryupload}
+					{ondismissupload}
+					placeholder="Write a comment"
+					submitLabel="Comment"
+					onsubmit={(body, mentions, attachmentIds) => onpost(body, mentions, attachmentIds)}
+				/>
+			</div>
+		</div>
+	{:else if lockedLine}
+		<div
+			class="mt-2 flex min-h-11 items-center gap-2.25 rounded-md border border-line-default px-2.75"
+		>
+			<Info class="size-icon-row shrink-0 text-muted-foreground" aria-hidden="true" />
+			<span class="text-md text-muted-foreground">{lockedLine}</span>
+		</div>
+	{/if}
+</div>

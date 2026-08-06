@@ -1,24 +1,41 @@
 <script lang="ts">
-	import Bot from "@lucide/svelte/icons/bot";
+	import type { Snippet } from "svelte";
 	import { goto, invalidateAll } from "$app/navigation";
 	import { page } from "$app/state";
-	import ChevronDown from "@lucide/svelte/icons/chevron-down";
-	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Archive from "@lucide/svelte/icons/archive";
-	import Link2 from "@lucide/svelte/icons/link-2";
-	import ArchiveRestore from "@lucide/svelte/icons/archive-restore";
-	import Pencil from "@lucide/svelte/icons/pencil";
-	import Trash2 from "@lucide/svelte/icons/trash-2";
-	import UserRound from "@lucide/svelte/icons/user-round";
-	import Users from "@lucide/svelte/icons/users";
 	import BellOff from "@lucide/svelte/icons/bell-off";
 	import BellRing from "@lucide/svelte/icons/bell-ring";
-	import List from "@lucide/svelte/icons/list";
+	import CalendarDays from "@lucide/svelte/icons/calendar-days";
+	import ChevronDown from "@lucide/svelte/icons/chevron-down";
+	import ChevronLeft from "@lucide/svelte/icons/chevron-left";
+	import ChevronUp from "@lucide/svelte/icons/chevron-up";
+	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
+	import CircleDot from "@lucide/svelte/icons/circle-dot";
+	import CircleX from "@lucide/svelte/icons/circle-x";
+	import Copy from "@lucide/svelte/icons/copy";
+	import CornerDownLeft from "@lucide/svelte/icons/corner-down-left";
+	import Ellipsis from "@lucide/svelte/icons/ellipsis";
+	import Folder from "@lucide/svelte/icons/folder";
+	import Info from "@lucide/svelte/icons/info";
+	import Link2 from "@lucide/svelte/icons/link-2";
+	import Pencil from "@lucide/svelte/icons/pencil";
 	import Tags from "@lucide/svelte/icons/tags";
+	import Trash2 from "@lucide/svelte/icons/trash-2";
+	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
+	import UserRound from "@lucide/svelte/icons/user-round";
+	import Users from "@lucide/svelte/icons/users";
+	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
+	import Kbd from "$lib/components/norn/kbd.svelte";
+	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
+	import Toast from "$lib/components/norn/toast.svelte";
+	import IssueField from "$lib/issues/issue-field.svelte";
+	import { totalIssues } from "$lib/issues/board";
+	import { initialsOf } from "$lib/team/members";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
@@ -29,7 +46,6 @@
 		priorities,
 		priorityLabel,
 		readIssueFailure,
-		statusLabel,
 		type IssueFailure,
 		type IssuePriority,
 		type IssueRelationKind,
@@ -38,17 +54,18 @@
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import * as Form from "$lib/components/ui/form/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import Layers from "@lucide/svelte/icons/layers";
 	import Target from "@lucide/svelte/icons/target";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
-	import IssueParent from "$lib/issues/issue-parent.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import IssueRelations from "$lib/issues/issue-relations.svelte";
 	import CommentThreadView from "$lib/comments/comment-thread.svelte";
-	import ActivityFeedView from "$lib/activity/activity-feed.svelte";
-	import type { ActivityFeed } from "$lib/activity/activity";
+	import {
+		actorLabel,
+		changeLine,
+		readable,
+		type ActivityFeed,
+	} from "$lib/activity/activity";
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
@@ -114,7 +131,6 @@
 	let applied = $state<Label[] | null>(null);
 	let labelFailure = $state<LabelFailure | null>(null);
 	let failure = $state<IssueFailure | null>(null);
-	let editing = $state(false);
 	let pendingTeamId = $state("");
 	let commentFailure = $state<CommentFailure | null>(null);
 	let unreachable = $state.raw<CommentMention[]>([]);
@@ -256,14 +272,14 @@
 			if (clear.length > 0) body.clear = clear;
 
 			if (Object.keys(body).length === 0) {
-				editing = false;
+				editingField = null;
 
 				return;
 			}
 
 			if (await patch(body)) {
-				editing = false;
-				announcement = "Saved.";
+				editingField = null;
+				announcement = `Saved ${issue.reference}.`;
 
 				return;
 			}
@@ -281,7 +297,7 @@
 	const { form: formData, enhance, submitting } = form;
 
 	$effect(() => {
-		if (!issue || editing) return;
+		if (!issue || editingField) return;
 
 		const seed = {
 			title: issue.title,
@@ -837,705 +853,1185 @@
 	function when(timestamp: string): string {
 		return onDateAndTime(timestamp, data.workspace.timezone);
 	}
+
+	let editingField = $state<"title" | "description" | null>(null);
+	let parentPicking = $state(false);
+	let pickingDue = $state(false);
+	let shown = $state<"all" | "comments">("all");
+	let notice = $state("");
+	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+
+	const role = $derived(
+		ready?.members.find((member) => member.accountId === data.member.id)?.role ?? "member"
+	);
+	const canEdit = $derived(Boolean(issue) && role !== "viewer" && issue?.status === "active");
+	const closedIssue = $derived(
+		issue?.state.category === "complete" || issue?.state.category === "abandoned"
+	);
+
+	function initials(name: string): string {
+		return initialsOf(name);
+	}
+
+	async function setEstimate(points: string) {
+		if (!issue) return;
+
+		await patch(points === "" ? { clear: ["estimate"] } : { estimate: Number(points) });
+	}
+
+	async function setDue(date: string) {
+		if (!issue) return;
+
+		await patch(date === "" ? { clear: ["dueOn"] } : { dueOn: date });
+	}
+	const dirty = $derived(
+		Boolean(issue) &&
+			(($formData.title !== issue?.title && editingField === "title") ||
+				($formData.description !== issue?.description && editingField === "description"))
+	);
+
+	const reporter = $derived(
+		ready?.members.find((member) => member.accountId === issue?.createdByAccountId)?.displayName ??
+			"Someone"
+	);
+	const commentTotal = $derived(thread.kind === "ready" ? thread.comments.length : 0);
+	const lastActivity = $derived(
+		activity.kind === "ready" ? (activity.events.at(-1)?.createdAt ?? null) : null
+	);
+	const issueLink = $derived(
+		issue ? `${page.url.host}${at(`/issues/${issue.reference}`)}` : ""
+	);
+
+	const order = $derived(ready?.candidates ?? []);
+	const position = $derived(order.findIndex((candidate) => candidate.id === issue?.id));
+	const previous = $derived(position > 0 ? order[position - 1] : null);
+	const next = $derived(
+		position >= 0 && position < order.length - 1 ? order[position + 1] : null
+	);
+
+	const reopenState = $derived(
+		(ready?.states ?? []).find(
+			(state) => state.category !== "complete" && state.category !== "abandoned"
+		)
+	);
+
+	const events = $derived(
+		activity.kind === "ready"
+			? activity.events.filter((event) => readable(event)).map((event) => ({
+					id: event.id,
+					at: event.createdAt,
+					line: `${actorLabel(event)} · ${event.changes.map(changeLine).join(", ")}`,
+				}))
+			: []
+	);
+
+	async function loadEarlier() {
+		await moreComments();
+
+		if (activity.kind === "ready" && activity.nextCursor) await moreActivity();
+	}
+
+	function announce(message: string) {
+		notice = message;
+		clearTimeout(noticeTimer);
+		noticeTimer = setTimeout(() => (notice = ""), 4000);
+	}
+
+	async function copy(text: string, said: string) {
+		try {
+			await navigator.clipboard.writeText(text);
+			announce(said);
+		} catch {
+			announce("Your browser would not let us copy that");
+		}
+	}
+
+	function startEditing(field: "title" | "description") {
+		if (!canEdit || !issue) return;
+
+		formData.update(
+			(current) => ({ ...current, title: issue.title, description: issue.description }),
+			{ taint: false }
+		);
+		editingField = field;
+	}
+
+	function discard() {
+		if (!issue) return;
+
+		formData.update(
+			(current) => ({ ...current, title: issue.title, description: issue.description }),
+			{ taint: false }
+		);
+		editingField = null;
+		failure = null;
+	}
+
+	async function reopen() {
+		if (!reopenState) return;
+
+		await move(reopenState.id);
+	}
+
+	async function duplicate() {
+		if (!issue) return;
+
+		working = true;
+
+		try {
+			const { data: copied, error } = await api.POST("/workspaces/{workspaceId}/issues", {
+				params: { path: { workspaceId: data.workspace.id } },
+				body: {
+					teamId: issue.teamId,
+					title: `${issue.title} (copy)`,
+					description: issue.description,
+					priority: issue.priority,
+					labelIds: labels.map((label) => label.id),
+					...(issue.projectId ? { projectId: issue.projectId } : {}),
+				},
+			});
+
+			if (error || !copied) {
+				failure = readIssueFailure(error);
+
+				return;
+			}
+
+			await goto(at(`/issues/${copied.reference}`));
+		} finally {
+			working = false;
+		}
+	}
+
+	function onKey(event: KeyboardEvent) {
+		const target = event.target as HTMLElement | null;
+		const typing = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA";
+
+		if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+			if (!editingField) return;
+
+			event.preventDefault();
+			(document.getElementById("issue-edit-form") as HTMLFormElement | null)?.requestSubmit();
+
+			return;
+		}
+
+		if (event.key === "Escape") {
+			if (editingField) {
+				event.preventDefault();
+				discard();
+			}
+
+			return;
+		}
+
+		if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
+
+		if ((event.key === "e" || event.key === "E") && canEdit && !editingField) {
+			event.preventDefault();
+			startEditing("description");
+		}
+	}
 </script>
+
+<svelte:window onkeydown={onKey} />
+
 
 <svelte:head>
 	<title>{issue ? `${issue.reference} · ${issue.title}` : "Issue"} · Norn</title>
 </svelte:head>
 
 <div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex-none border-b border-line-default">
-		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
-			<List class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
+	<div
+		class="flex h-11 flex-none items-center gap-2 border-b border-line-default pr-2.5 pl-2.5"
+	>
+		<Button variant="outline" size="icon-sm" href={at("/issues")} aria-label="Back to the list">
+			<ChevronLeft aria-hidden="true" />
+		</Button>
+
+		<div class="flex min-w-0 flex-1 items-center gap-1.75">
 			<a
 				href={at("/issues")}
-				class="text-md font-medium tracking-snug whitespace-nowrap text-muted-foreground transition-colors duration-110 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="text-md whitespace-nowrap text-ink-600 transition-colors duration-110 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			>
 				Issues
 			</a>
 			{#if issue}
-				<span class="text-md text-muted-foreground" aria-hidden="true">/</span>
-				<span class="font-mono text-xs text-muted-foreground">{issue.reference}</span>
+				{#if issue.projectName}
+					<span class="text-sm text-text-disabled" aria-hidden="true">/</span>
+					<a
+						href={at(`/projects/${issue.projectId}`)}
+						class="hidden text-md whitespace-nowrap text-ink-600 transition-colors duration-110 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline"
+					>
+						{issue.projectName}
+					</a>
+				{/if}
+				<span class="text-sm text-text-disabled" aria-hidden="true">/</span>
+				<span class="font-mono text-sm tracking-wide text-ink-900">{issue.reference}</span>
 				<Button
-					class="ml-auto shrink-0"
-					variant={following ? "secondary" : "ghost"}
-					size="sm"
-					disabled={followWorking}
-					aria-pressed={following}
-					onclick={toggleFollow}
+					variant="ghost"
+					size="icon-xs"
+					aria-label="Copy the identifier"
+					onclick={() => copy(issue.reference, `Copied ${issue.reference}`)}
 				>
-					{#if following}
-						<BellRing class="size-icon-row" aria-hidden="true" />
-						Following
-					{:else}
-						<BellOff class="size-icon-row" aria-hidden="true" />
-						Not following
-					{/if}
+					<Copy aria-hidden="true" />
 				</Button>
 			{/if}
 		</div>
+
+		{#if issue && position >= 0}
+			<span class="hidden font-mono text-xs text-muted-foreground sm:inline">
+				{position + 1} of {order.length}
+			</span>
+			<div class="flex gap-0.5">
+				<Button
+					variant="outline"
+					size="icon-sm"
+					aria-label="Previous issue"
+					disabled={!previous}
+					href={previous ? at(`/issues/${previous.reference}`) : undefined}
+				>
+					<ChevronUp aria-hidden="true" />
+				</Button>
+				<Button
+					variant="outline"
+					size="icon-sm"
+					aria-label="Next issue"
+					disabled={!next}
+					href={next ? at(`/issues/${next.reference}`) : undefined}
+				>
+					<ChevronDown aria-hidden="true" />
+				</Button>
+			</div>
+		{/if}
+
+		{#if issue}
+			<Button
+				variant="outline"
+				size="icon-sm"
+				aria-label={following ? "Stop following this issue" : "Follow this issue"}
+				aria-pressed={following}
+				class={following ? "bg-accent text-ink-900" : ""}
+				disabled={followWorking}
+				onclick={toggleFollow}
+			>
+				{#if following}
+					<BellRing aria-hidden="true" />
+				{:else}
+					<BellOff aria-hidden="true" />
+				{/if}
+			</Button>
+
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger>
+					{#snippet child({ props })}
+						<Button {...props} variant="outline" size="icon-sm" aria-label="More on this issue">
+							<Ellipsis aria-hidden="true" />
+						</Button>
+					{/snippet}
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content align="end" class="w-53">
+					<DropdownMenu.Item
+						onSelect={() => copy(`${page.url.origin}${at(`/issues/${issue.reference}`)}`, `Copied a link to ${issue.reference}`)}
+					>
+						<Link2 aria-hidden="true" />
+						Copy link
+					</DropdownMenu.Item>
+					{#if canEdit}
+						<DropdownMenu.Item disabled={working} onSelect={duplicate}>
+							<Copy aria-hidden="true" />
+							Duplicate issue
+						</DropdownMenu.Item>
+						<DropdownMenu.Item onSelect={() => (parentPicking = true)}>
+							<CornerDownLeft aria-hidden="true" />
+							Convert to sub-issue
+						</DropdownMenu.Item>
+						<DropdownMenu.Separator />
+						<DropdownMenu.Item disabled={working} onSelect={() => setStatus("archived")}>
+							<Archive aria-hidden="true" />
+							Archive issue
+						</DropdownMenu.Item>
+						<DropdownMenu.Item
+							variant="destructive"
+							disabled={working}
+							onSelect={() => setStatus("pending_deletion")}
+						>
+							<Trash2 aria-hidden="true" />
+							Delete issue
+						</DropdownMenu.Item>
+					{/if}
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
+
+			<Button variant="outline" size="icon-sm" href={at("/issues")} aria-label="Close this issue">
+				<X aria-hidden="true" />
+			</Button>
+		{/if}
 	</div>
 
-	<div class="flex-1 overflow-auto">
+	{#snippet banner(glyph: Snippet, line: string, detail: string, action?: Snippet)}
 		<div
-			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
+			class="flex min-h-8 flex-none flex-wrap items-center gap-2 border-b border-line-strong bg-paper-2 px-3.5 py-1.5"
 		>
-			<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
+			{@render glyph()}
+			<span class="text-sm text-ink-600">{line}</span>
+			<span class="text-sm text-muted-foreground">{detail}</span>
+			<div class="flex-1"></div>
+			{@render action?.()}
+		</div>
+	{/snippet}
 
-			{#if detail.kind === "loading"}
-				<div class="h-40 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
-			{:else if detail.kind === "not_found"}
-				<div class="flex flex-col gap-2">
-					<h1 class="text-md font-medium tracking-snug text-ink-900">No issue here</h1>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						There is no issue at this address, or it belongs to a team you are not on.
-					</p>
-					<div>
-						<Button variant="secondary" size="sm" href={at("/issues")}>Back to issues</Button>
-					</div>
+	{#if issue && ready}
+		{#if closedIssue && issue.status === "active"}
+			{#snippet closedGlyph()}
+				<StatusIcon category={issue.state.category} decorative />
+			{/snippet}
+			{#snippet reopenAction()}
+				{#if canEdit && reopenState}
+					<Button variant="ghost" size="sm" disabled={working} onclick={reopen}>Reopen</Button>
+				{/if}
+			{/snippet}
+			{@render banner(
+				closedGlyph,
+				`${issue.state.name} since ${issue.completedAt ? onDate(issue.completedAt, data.workspace.timezone) : when(issue.stateEnteredAt)}`,
+				"· reopening keeps the history",
+				reopenAction
+			)}
+		{/if}
+
+		{#if issue.status !== "active"}
+			{#snippet archivedGlyph()}
+				<Archive class="size-icon-row text-muted-foreground" aria-hidden="true" />
+			{/snippet}
+			{#snippet restoreAction()}
+				{#if role !== "viewer"}
+					<Button variant="ghost" size="sm" disabled={working} onclick={() => setStatus("active")}>
+						Restore
+					</Button>
+				{/if}
+			{/snippet}
+			{@render banner(
+				archivedGlyph,
+				issue.status === "archived"
+					? `Archived ${issue.archivedAt ? onDate(issue.archivedAt, data.workspace.timezone) : ""}.`
+					: "This issue is on its way out.",
+				issue.status === "archived"
+					? "Archived issues are read-only."
+					: "It is removed for good after 30 days.",
+				restoreAction
+			)}
+		{/if}
+
+		{#if role === "viewer"}
+			{#snippet readOnlyGlyph()}
+				<Info class="size-icon-row text-muted-foreground" aria-hidden="true" />
+			{/snippet}
+			{@render banner(
+				readOnlyGlyph,
+				`You have read access to ${issue.teamKey}.`,
+				"Properties, comments and attachments are locked."
+			)}
+		{/if}
+
+		{#if issue.blocked}
+			{#snippet blockedGlyph()}
+				<Link2 class="size-icon-row text-muted-foreground" aria-hidden="true" />
+			{/snippet}
+			{@render banner(
+				blockedGlyph,
+				"Something this issue is blocked by is still open.",
+				"It cannot be started until that clears."
+			)}
+		{/if}
+	{/if}
+
+	{#if detail.kind === "loading"}
+		<div class="flex min-h-0 flex-1">
+			<div class="min-w-0 flex-1 px-8 py-6">
+				<div class="mx-auto flex max-w-192 flex-col gap-3.5" aria-busy="true">
+					<span class="h-6 w-3/5 animate-pulse rounded-xs bg-paper-3"></span>
+					<span class="h-3 w-1/3 animate-pulse rounded-xs bg-paper-2"></span>
+					<span class="my-1.5 h-px bg-line-subtle"></span>
+					{#each ["w-full", "w-11/12", "w-3/4", "w-1/2"] as width (width)}
+						<span class="h-3 {width} animate-pulse rounded-xs bg-paper-2"></span>
+					{/each}
 				</div>
-			{:else if detail.kind === "unavailable" || !issue || !ready}
-				<Alert.Root variant="destructive">
-					<CircleX aria-hidden="true" />
-					<Alert.Title>We could not load this issue</Alert.Title>
-					<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
-				</Alert.Root>
-			{:else}
-				{#if labelFailure}
-					<Alert.Root variant="destructive">
-						<CircleX aria-hidden="true" />
-						<Alert.Title>That did not work</Alert.Title>
-						<Alert.Description>{labelFailureMessage(labelFailure)}</Alert.Description>
-					</Alert.Root>
-				{/if}
+			</div>
+			<aside class="hidden w-75 flex-none flex-col gap-3 border-l border-line-default p-3.5 lg:flex">
+				{#each [1, 2, 3, 4, 5, 6] as row (row)}
+					<span class="flex items-center gap-2.5">
+						<span class="h-2.5 w-15 animate-pulse rounded-xs bg-paper-2"></span>
+						<span class="h-3 flex-1 animate-pulse rounded-xs bg-paper-3"></span>
+					</span>
+				{/each}
+			</aside>
+		</div>
+	{:else if detail.kind === "not_found"}
+		<div class="flex flex-1 items-center justify-center p-10">
+			<div class="flex max-w-95 flex-col items-center gap-2.5 text-center">
+				<CircleX class="size-4 text-muted-foreground" aria-hidden="true" />
+				<span class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">
+					{page.params.reference} is no longer available
+				</span>
+				<p class="text-md leading-normal text-muted-foreground text-pretty">
+					It was deleted, or it belongs to a team you are not on. Links to it keep resolving here.
+				</p>
+				<div class="mt-1 flex gap-2">
+					<Button size="sm" href={at("/issues")}>Back to issues</Button>
+				</div>
+			</div>
+		</div>
+	{:else if detail.kind === "unavailable" || !issue || !ready}
+		<div class="flex flex-1 items-start justify-center p-10">
+			<Alert.Root variant="destructive" class="max-w-120">
+				<CircleX aria-hidden="true" />
+				<Alert.Title>We could not load this issue</Alert.Title>
+				<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
+			</Alert.Root>
+		</div>
+	{:else}
+		<div class="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+			<div class="min-w-0 flex-1 lg:overflow-auto">
+				<div
+					class="mx-auto flex max-w-192 flex-col gap-6.5 px-4 pt-5 pb-16 sm:px-8 pb-[calc(--spacing(16)+env(safe-area-inset-bottom))]"
+				>
+					<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
 
-				{#if failure}
-					<Alert.Root variant={failure.kind === "labels_out_of_scope" ? "default" : "destructive"}>
-						<CircleX aria-hidden="true" />
-						<Alert.Title>
-							{failure.kind === "stale"
-								? "Someone got there first"
-								: failure.kind === "labels_out_of_scope"
-									? "This move drops labels"
-									: failure.kind === "children_open"
-										? "Work beneath this is unfinished"
-										: "That did not work"}
-						</Alert.Title>
-						<Alert.Description>
-							{issueFailureMessage(failure)}
-							{#if failure.kind === "labels_out_of_scope" && pendingTeamId}
-								<span class="mt-2 block">
-									<Button
-										variant="secondary"
-										size="sm"
-										disabled={working}
-										onclick={() => moveToTeam(pendingTeamId, true)}
-									>
-										Move anyway
-									</Button>
-								</span>
-							{/if}
-							{#if failure.kind === "children_open" && pendingStateId}
-								<span class="mt-2 block">
-									<Button
-										variant="secondary"
-										size="sm"
-										disabled={working}
-										onclick={completeAnyway}
-									>
-										Finish it anyway
-									</Button>
-								</span>
-							{/if}
-						</Alert.Description>
-					</Alert.Root>
-				{/if}
-
-				{#if issue.blocked}
-					<Alert.Root>
-						<Link2 aria-hidden="true" />
-						<Alert.Title>Blocked</Alert.Title>
-						<Alert.Description>
-							Something this issue is blocked by is still open. It cannot be started until that
-							clears.
-						</Alert.Description>
-					</Alert.Root>
-				{/if}
-
-				{#if issue.status !== "active"}
-					<Alert.Root>
-						<Archive aria-hidden="true" />
-						<Alert.Title>
-							{issue.status === "archived" ? "Archived" : "Deleted"}
-						</Alert.Title>
-						<Alert.Description>
-							{issue.status === "archived"
-								? `Archived ${issue.archivedAt ? when(issue.archivedAt) : ""}. It keeps its reference and stays readable.`
-								: "This issue is scheduled to be removed for good. Restore it to keep it."}
-						</Alert.Description>
-					</Alert.Root>
-				{/if}
-
-				{#if editing}
-					<form method="POST" use:enhance class="flex flex-col gap-4">
-						<Form.Field {form} name="title">
-							<Form.Control>
-								{#snippet children({ props })}
-									<Form.Label>Title</Form.Label>
-									<Input {...props} bind:value={$formData.title} disabled={$submitting} />
-								{/snippet}
-							</Form.Control>
-							<Form.FieldErrors />
-						</Form.Field>
-
-						<Form.Field {form} name="description">
-							<Form.Control>
-								{#snippet children({ props })}
-									<Form.Label>Description</Form.Label>
-									<Textarea
-										{...props}
-										bind:value={$formData.description}
-										rows={10}
-										disabled={$submitting}
-										class="font-mono text-sm"
-									/>
-								{/snippet}
-							</Form.Control>
-							<Form.Description>Markdown. Stored exactly as you type it.</Form.Description>
-							<Form.FieldErrors />
-						</Form.Field>
-
-						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							<Form.Field {form} name="estimate">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Form.Label>Estimate</Form.Label>
-										<Input
-											{...props}
-											bind:value={$formData.estimate}
-											inputmode="numeric"
-											placeholder="Points"
-											disabled={$submitting}
-										/>
-									{/snippet}
-								</Form.Control>
-								<Form.FieldErrors />
-							</Form.Field>
-
-							<Form.Field {form} name="dueOn">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Form.Label>Due date</Form.Label>
-										<Input
-											{...props}
-											type="date"
-											bind:value={$formData.dueOn}
-											disabled={$submitting}
-										/>
-									{/snippet}
-								</Form.Control>
-								<Form.FieldErrors />
-							</Form.Field>
-						</div>
-
-						<div class="flex items-center gap-2">
-							<Form.Button disabled={$submitting || working}>
-								{$submitting ? "Saving" : "Save"}
-							</Form.Button>
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								disabled={$submitting}
-								onclick={() => (editing = false)}
-							>
-								Cancel
-							</Button>
-						</div>
-					</form>
-				{:else}
-					<div class="flex flex-col gap-2">
-						<div class="flex items-start justify-between gap-3">
-							<span class="font-mono text-xs text-muted-foreground">{issue.reference}</span>
-							<Button
-								variant="ghost"
-								size="sm"
-								disabled={working}
-								onclick={() => (editing = true)}
-							>
-								<Pencil aria-hidden="true" />
-								Edit
-							</Button>
-						</div>
-						<h1 class="text-lg font-medium tracking-snug text-ink-900 text-pretty">
-							{issue.title}
-						</h1>
-					</div>
-
-					<section class="flex flex-col gap-2">
-						<h2 class="text-sm font-medium text-ink-900">Description</h2>
-						{#if issue.description.trim()}
-							<Markdown source={issue.description} />
-						{:else}
-							<p class="text-sm text-muted-foreground">No description yet.</p>
-						{/if}
-					</section>
-				{/if}
-
-				<section class="flex flex-col gap-2">
-					<h2 class="text-sm font-medium text-ink-900">State</h2>
-					<div>
-						<DropdownMenu.Root>
-							<DropdownMenu.Trigger>
-								{#snippet child({ props })}
-									<Button {...props} variant="outline" size="sm" disabled={working}>
-										<StatusIcon category={issue.state.category} decorative />
-										{issue.state.name}
-										<ChevronDown aria-hidden="true" />
-									</Button>
-								{/snippet}
-							</DropdownMenu.Trigger>
-							<DropdownMenu.Content align="start">
-								<DropdownMenu.RadioGroup
-									value={issue.state.id}
-									onValueChange={(value) => move(value)}
-								>
-									<DropdownMenu.GroupHeading>Move to</DropdownMenu.GroupHeading>
-									{#each ready.states as state (state.id)}
-										<DropdownMenu.RadioItem value={state.id}>
-											{state.name}
-										</DropdownMenu.RadioItem>
-									{/each}
-								</DropdownMenu.RadioGroup>
-							</DropdownMenu.Content>
-						</DropdownMenu.Root>
-					</div>
-				</section>
-
-				<section class="flex flex-col gap-2">
-					<h2 class="text-sm font-medium text-ink-900">Priority</h2>
-					<div>
-						<DropdownMenu.Root>
-							<DropdownMenu.Trigger>
-								{#snippet child({ props })}
-									<Button {...props} variant="outline" size="sm" disabled={working}>
-										<PriorityIcon priority={issue.priority} />
-										{priorityLabel(issue.priority)}
-										<ChevronDown aria-hidden="true" />
-									</Button>
-								{/snippet}
-							</DropdownMenu.Trigger>
-							<DropdownMenu.Content align="start">
-								<DropdownMenu.RadioGroup
-									value={issue.priority}
-									onValueChange={(value) => setPriority(value as IssuePriority)}
-								>
-									{#each priorities as choice (choice.value)}
-										<DropdownMenu.RadioItem value={choice.value}>
-											{choice.label}
-										</DropdownMenu.RadioItem>
-									{/each}
-								</DropdownMenu.RadioGroup>
-							</DropdownMenu.Content>
-						</DropdownMenu.Root>
-					</div>
-				</section>
-
-				<section class="flex flex-col gap-2">
-					<h2 class="text-sm font-medium text-ink-900">Assignee</h2>
-					<div>
-						<DropdownMenu.Root>
-							<DropdownMenu.Trigger>
-								{#snippet child({ props })}
-									<Button {...props} variant="outline" size="sm" disabled={working}>
-										<UserRound aria-hidden="true" />
-										{assigneeName || "Unassigned"}
-										<ChevronDown aria-hidden="true" />
-									</Button>
-								{/snippet}
-							</DropdownMenu.Trigger>
-							<DropdownMenu.Content align="start" class="max-h-80 overflow-auto">
-								<DropdownMenu.RadioGroup
-									value={issue.assigneeAccountId ?? ""}
-									onValueChange={(value) => setAssignee(value)}
-								>
-									<DropdownMenu.RadioItem value="">Unassigned</DropdownMenu.RadioItem>
-									<DropdownMenu.Separator />
-									{#each ready.members as member (member.accountId)}
-										<DropdownMenu.RadioItem value={member.accountId}>
-											<span class="flex items-center gap-1.5">
-												{#if member.kind === "agent"}
-													<Bot class="size-3.5 text-muted-foreground" aria-label="An agent" />
-												{/if}
-												{member.displayName || member.email}
-											</span>
-										</DropdownMenu.RadioItem>
-									{/each}
-								</DropdownMenu.RadioGroup>
-							</DropdownMenu.Content>
-						</DropdownMenu.Root>
-					</div>
-				</section>
-
-				<section class="flex flex-col gap-2">
-					<h2 class="text-sm font-medium text-ink-900">Cycle</h2>
-					<div>
-						{#if ready.cycles.length === 0}
-							<p class="text-sm leading-normal text-muted-foreground text-pretty">
-								{issue.teamKey} does not use cycles.
-							</p>
-						{:else}
-							<DropdownMenu.Root>
-								<DropdownMenu.Trigger>
-									{#snippet child({ props })}
-										<Button {...props} variant="outline" size="sm" disabled={working}>
-											<Layers aria-hidden="true" />
-											{issue.cycleNumber ? `Cycle ${issue.cycleNumber}` : "No cycle"}
-											<ChevronDown aria-hidden="true" />
-										</Button>
-									{/snippet}
-								</DropdownMenu.Trigger>
-								<DropdownMenu.Content align="start" class="max-h-80 overflow-auto">
-									<DropdownMenu.RadioGroup
-										value={issue.cycleId ?? ""}
-										onValueChange={(value) => setCycle(value)}
-									>
-										<DropdownMenu.RadioItem value="">No cycle</DropdownMenu.RadioItem>
-										<DropdownMenu.Separator />
-										{#each ready.cycles as cycle (cycle.id)}
-											<DropdownMenu.RadioItem value={cycle.id}>
-												{cycle.name} · {cycleWindow(cycle.startsOn, cycle.endsOn)}
-											</DropdownMenu.RadioItem>
-										{/each}
-									</DropdownMenu.RadioGroup>
-								</DropdownMenu.Content>
-							</DropdownMenu.Root>
-						{/if}
-					</div>
-				</section>
-
-				<section class="flex flex-col gap-2">
-					<h2 class="text-sm font-medium text-ink-900">Project</h2>
-					<div>
-						{#if ready.projects.length === 0}
-							<p class="text-sm leading-normal text-muted-foreground text-pretty">
-								{data.workspace.name} has no projects yet.
-							</p>
-						{:else}
-							<DropdownMenu.Root>
-								<DropdownMenu.Trigger>
-									{#snippet child({ props })}
-										<Button {...props} variant="outline" size="sm" disabled={working}>
-											<Target aria-hidden="true" />
-											{issue.projectName || "No project"}
-											<ChevronDown aria-hidden="true" />
-										</Button>
-									{/snippet}
-								</DropdownMenu.Trigger>
-								<DropdownMenu.Content align="start" class="max-h-80 overflow-auto">
-									<DropdownMenu.RadioGroup
-										value={issue.projectId ?? ""}
-										onValueChange={(value) => setProject(value)}
-									>
-										<DropdownMenu.RadioItem value="">No project</DropdownMenu.RadioItem>
-										<DropdownMenu.Separator />
-										{#each ready.projects as project (project.id)}
-											<DropdownMenu.RadioItem value={project.id}>
-												{project.name}
-											</DropdownMenu.RadioItem>
-										{/each}
-									</DropdownMenu.RadioGroup>
-								</DropdownMenu.Content>
-							</DropdownMenu.Root>
-						{/if}
-					</div>
-				</section>
-
-				<section class="flex flex-col gap-2">
-					<h2 class="text-sm font-medium text-ink-900">Estimate and due date</h2>
-					<dl class="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-						<div class="flex items-baseline gap-2">
-							<dt class="text-muted-foreground">Estimate</dt>
-							<dd class="font-mono text-ink-900">
-								{issue.estimate ? `${issue.estimate} ${issue.estimate === 1 ? "point" : "points"}` : "None"}
-							</dd>
-						</div>
-						<div class="flex items-baseline gap-2">
-							<dt class="text-muted-foreground">Due</dt>
-							<dd
-								class="font-mono {issue.dueOn && overdue(issue.dueOn, data.now)
-									? 'text-priority-urgent'
-									: 'text-ink-900'}"
-							>
-								{issue.dueOn ? dueLabel(issue.dueOn, data.now, data.workspace.timezone) : "No date"}
-							</dd>
-						</div>
-					</dl>
-				</section>
-
-				<section class="flex flex-col gap-2">
-					<h2 class="text-sm font-medium text-ink-900">Team</h2>
-					<div>
-						<DropdownMenu.Root>
-							<DropdownMenu.Trigger>
-								{#snippet child({ props })}
-									<Button {...props} variant="outline" size="sm" disabled={working}>
-										<Users aria-hidden="true" />
-										{issue.teamKey}
-										<ChevronDown aria-hidden="true" />
-									</Button>
-								{/snippet}
-							</DropdownMenu.Trigger>
-							<DropdownMenu.Content align="start">
-								<DropdownMenu.RadioGroup
-									value={issue.teamId}
-									onValueChange={(value) => moveToTeam(value, false)}
-								>
-									<DropdownMenu.GroupHeading>Move to</DropdownMenu.GroupHeading>
-									{#each teams as team (team.id)}
-										<DropdownMenu.RadioItem value={team.id}>
-											{team.key} · {team.name}
-										</DropdownMenu.RadioItem>
-									{/each}
-								</DropdownMenu.RadioGroup>
-							</DropdownMenu.Content>
-						</DropdownMenu.Root>
-					</div>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						{issue.reference} keeps its reference wherever it goes. Its state becomes the matching one
-						on the new team.
-					</p>
-				</section>
-
-				<IssueParent
-					{issue}
-					candidates={ready.candidates}
-					{at}
-					{working}
-					onchoose={setParent}
-				/>
-
-				<IssueChildren children={ready.children} progress={ready.childProgress} {at} />
-
-				<IssueRelations
-					{issue}
-					groups={ready.relations}
-					candidates={ready.candidates}
-					{at}
-					{working}
-					onadd={addRelation}
-					onremove={removeRelation}
-				/>
-
-				<section class="flex flex-col gap-2">
-					<h2 class="text-sm font-medium text-ink-900">Labels</h2>
-
-					<div class="flex flex-wrap items-center gap-2">
-						{#each labels as label (label.id)}
-							<Tag name={label.name} color={label.color} />
-						{/each}
-
-						{#if labels.length === 0}
-							<span class="text-sm text-muted-foreground">None yet.</span>
-						{/if}
-
-						<DropdownMenu.Root>
-							<DropdownMenu.Trigger>
-								{#snippet child({ props })}
-									<Button {...props} variant="outline" size="sm" disabled={working}>
-										<Tags aria-hidden="true" />
-										{working ? "Saving" : "Labels"}
-									</Button>
-								{/snippet}
-							</DropdownMenu.Trigger>
-							<DropdownMenu.Content align="start" class="max-h-80 overflow-auto">
-								{#if available.length === 0}
-									<DropdownMenu.Label>No labels apply to this team yet</DropdownMenu.Label>
-								{:else}
-									{#each sections as section (section.group?.id ?? "ungrouped")}
-										{#if section.group}
-											<DropdownMenu.RadioGroup
-												value={labels.find((label) => label.groupId === section.group!.id)?.id ??
-													""}
-												onValueChange={(value) => {
-													const chosen = section.labels.find((label) => label.id === value);
-													if (chosen) submit(toggled(labels, chosen));
-												}}
-											>
-												<DropdownMenu.GroupHeading>
-													{section.group.name} · one only
-												</DropdownMenu.GroupHeading>
-												{#each section.labels as label (label.id)}
-													<DropdownMenu.RadioItem value={label.id}>
-														{label.name}
-													</DropdownMenu.RadioItem>
-												{/each}
-											</DropdownMenu.RadioGroup>
-											<DropdownMenu.Separator />
-										{:else if section.labels.length > 0}
-											<DropdownMenu.Group>
-												<DropdownMenu.GroupHeading>Any number</DropdownMenu.GroupHeading>
-												{#each section.labels as label (label.id)}
-													<DropdownMenu.CheckboxItem
-														checked={labels.some((chosen) => chosen.id === label.id)}
-														onCheckedChange={() => submit(toggled(labels, label))}
-													>
-														{label.name}
-													</DropdownMenu.CheckboxItem>
-												{/each}
-											</DropdownMenu.Group>
-										{/if}
-									{/each}
-								{/if}
-							</DropdownMenu.Content>
-						</DropdownMenu.Root>
-					</div>
-
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Labels are defined in
-						<a
-							href={at("/settings/labels")}
-							class="text-link underline-offset-2 hover:text-link-hover hover:underline"
-						>
-							workspace settings
-						</a>. A label narrowed to another team does not appear here.
-					</p>
-				</section>
-
-				<section class="flex flex-col gap-2">
-					<h2 class="text-sm font-medium text-ink-900">History</h2>
-					<dl class="flex flex-col gap-1 text-sm">
-						<div class="flex flex-wrap items-baseline gap-x-2">
-							<dt class="text-muted-foreground">Raised</dt>
-							<dd class="font-mono text-xs text-ink-900">
-								<time datetime={issue.createdAt}>{when(issue.createdAt)}</time>
-							</dd>
-						</div>
-						<div class="flex flex-wrap items-baseline gap-x-2">
-							<dt class="text-muted-foreground">In {issue.state.name} since</dt>
-							<dd class="font-mono text-xs text-ink-900">
-								<time datetime={issue.stateEnteredAt}>{when(issue.stateEnteredAt)}</time>
-							</dd>
-						</div>
-						{#if issue.completedAt}
-							<div class="flex flex-wrap items-baseline gap-x-2">
-								<dt class="text-muted-foreground">Finished</dt>
-								<dd class="font-mono text-xs text-ink-900">
-									<time datetime={issue.completedAt}>{when(issue.completedAt)}</time>
-								</dd>
-							</div>
-						{/if}
-					</dl>
-				</section>
-
-				<section class="flex flex-col gap-2">
-					<h2 class="text-sm font-medium text-ink-900">This issue</h2>
-					<div class="flex flex-wrap items-center gap-2">
-						{#if issue.status === "active"}
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={working}
-								onclick={() => setStatus("archived")}
-							>
-								<Archive aria-hidden="true" />
-								Archive
-							</Button>
-						{:else}
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={working}
-								onclick={() => setStatus("active")}
-							>
-								<ArchiveRestore aria-hidden="true" />
-								{issue.status === "archived" ? "Take out of the archive" : "Restore"}
-							</Button>
-						{/if}
-
-						{#if issue.status !== "pending_deletion"}
-							<Button
-								variant="ghost"
-								size="sm"
-								disabled={working}
-								onclick={() => setStatus("pending_deletion")}
-							>
-								<Trash2 aria-hidden="true" />
-								Delete
-							</Button>
-						{/if}
-					</div>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						An archived issue is kept for good and stays readable. A deleted one is removed for
-						good after 30 days, and can be restored until then. Neither ever frees its reference.
-					</p>
-				</section>
-
-				<section class="flex flex-col gap-3">
-					<h2 class="text-sm font-medium text-ink-900">Files</h2>
-
-					{#if attachmentFailure}
+					{#if labelFailure}
 						<Alert.Root variant="destructive">
 							<CircleX aria-hidden="true" />
-							<Alert.Title>That did not stick</Alert.Title>
-							<Alert.Description>{attachmentFailureMessage(attachmentFailure)}</Alert.Description>
+							<Alert.Title>That did not work</Alert.Title>
+							<Alert.Description>{labelFailureMessage(labelFailure)}</Alert.Description>
 						</Alert.Root>
 					{/if}
 
-					<AttachmentList panel={attachments} {working} onremove={removeAttachment} />
+					{#if failure}
+						<Alert.Root variant={failure.kind === "labels_out_of_scope" ? "default" : "destructive"}>
+							<CircleX aria-hidden="true" />
+							<Alert.Title>
+								{failure.kind === "stale"
+									? "Someone got there first"
+									: failure.kind === "labels_out_of_scope"
+										? "This move drops labels"
+										: failure.kind === "children_open"
+											? "Work beneath this is unfinished"
+											: "That did not work"}
+							</Alert.Title>
+							<Alert.Description>
+								{issueFailureMessage(failure)}
+								{#if failure.kind === "labels_out_of_scope" && pendingTeamId}
+									<span class="mt-2 block">
+										<Button
+											variant="secondary"
+											size="sm"
+											disabled={working}
+											onclick={() => moveToTeam(pendingTeamId, true)}
+										>
+											Move anyway
+										</Button>
+									</span>
+								{/if}
+								{#if failure.kind === "children_open" && pendingStateId}
+									<span class="mt-2 block">
+										<Button
+											variant="secondary"
+											size="sm"
+											disabled={working}
+											onclick={completeAnyway}
+										>
+											Finish it anyway
+										</Button>
+									</span>
+								{/if}
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
 
-					<UploadList
-						uploads={attachmentPreview?.bodyUploads ?? bodyUploads}
-						oncancel={cancelUpload}
-						onretry={(taskId) => retryUpload("body", taskId)}
-						ondismiss={(taskId) => dismissUpload("body", taskId)}
-					/>
+					<form
+						id="issue-edit-form"
+						method="POST"
+						use:enhance
+						class="flex flex-col gap-2.25"
+					>
+						{#if issue.parentReference}
+							<a
+								href={at(`/issues/${issue.parentReference}`)}
+								class="-ml-1.25 inline-flex h-5.5 w-max max-w-full items-center gap-1.75 rounded-chip border border-line-default pr-1.75 pl-1.25 transition-colors duration-70 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							>
+								<CornerDownLeft class="size-3.25 text-muted-foreground" aria-hidden="true" />
+								<span class="font-mono text-xs text-muted-foreground">{issue.parentReference}</span>
+								<span class="truncate text-sm text-ink-600">Parent issue</span>
+							</a>
+						{/if}
 
-					<div>
-						<AttachmentPicker
-							disabled={working}
-							label="Attach a file"
-							onfiles={(files) => begin("body", files)}
+						{#if editingField === "title"}
+							<div class="flex flex-col gap-2.5">
+								<Form.Field {form} name="title">
+									<Form.Control>
+										{#snippet children({ props })}
+											<Form.Label class="sr-only">Title</Form.Label>
+											<input
+												{...props}
+												bind:value={$formData.title}
+												disabled={$submitting}
+												class="-mx-2.25 w-[calc(100%+1.125rem)] border-b-2 border-cyan-500 bg-transparent px-2.25 py-1.25 text-2xl leading-tight font-medium tracking-title text-ink-900 outline-none"
+											/>
+										{/snippet}
+									</Form.Control>
+									<Form.FieldErrors />
+								</Form.Field>
+								<div class="flex items-center gap-2">
+									<Button type="submit" size="sm" disabled={$submitting}>
+										{$submitting ? "Saving" : "Save title"}
+									</Button>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										disabled={$submitting}
+										onclick={discard}
+									>
+										Cancel
+									</Button>
+									<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
+										<Kbd keys="⌘ ↵" /> save
+									</span>
+								</div>
+							</div>
+						{:else}
+							<button
+								type="button"
+								disabled={!canEdit}
+								onclick={() => startEditing("title")}
+								title={canEdit ? "Click to rename" : ""}
+								class="-mx-2.25 -my-1.25 rounded-md px-2.25 py-1.25 text-left transition-colors duration-70 ease-out enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							>
+								<h1
+									class="text-2xl leading-tight font-medium tracking-title text-ink-900 text-pretty {closedIssue
+										? 'line-through decoration-line-strong'
+										: ''}"
+								>
+									{issue.title}
+								</h1>
+							</button>
+						{/if}
+
+						<div class="flex flex-wrap items-center gap-2">
+							<Avatar.Root size="xs">
+								<Avatar.Fallback>{initials(reporter)}</Avatar.Fallback>
+							</Avatar.Root>
+							<span class="text-sm text-muted-foreground">{reporter} opened this</span>
+							<span class="font-mono text-xs text-muted-foreground">
+								<time datetime={issue.createdAt}>
+									{onDate(issue.createdAt, data.workspace.timezone)}
+								</time>
+							</span>
+							<span class="text-text-disabled" aria-hidden="true">·</span>
+							<span class="font-mono text-xs text-muted-foreground">
+								{commentTotal}
+								{commentTotal === 1 ? "comment" : "comments"}
+							</span>
+						</div>
+
+						<div class="mt-3.5 flex flex-col gap-3">
+							<div class="flex items-center gap-2.5">
+								<h2
+									class="min-w-0 flex-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+								>
+									Description
+								</h2>
+								{#if canEdit && editingField !== "description"}
+									<Button variant="ghost" size="sm" onclick={() => startEditing("description")}>
+										<Pencil aria-hidden="true" />
+										Edit
+									</Button>
+								{/if}
+							</div>
+
+							{#if editingField === "description"}
+								<Form.Field {form} name="description">
+									<Form.Control>
+										{#snippet children({ props })}
+											<Form.Label class="sr-only">Description</Form.Label>
+											<div
+												class="flex flex-col overflow-hidden rounded-md border border-line-strong"
+											>
+												<div
+													class="flex h-7.5 items-center gap-0.5 border-b border-line-subtle bg-paper-0 px-1.25"
+												>
+													<span class="flex-1"></span>
+													<span class="font-mono text-2xs text-muted-foreground">Markdown</span>
+												</div>
+												<textarea
+													{...props}
+													bind:value={$formData.description}
+													disabled={$submitting}
+													rows={8}
+													class="min-h-47 w-full resize-y bg-paper-0 px-3 py-2.75 text-base leading-normal text-ink-900 outline-none"
+												></textarea>
+											</div>
+										{/snippet}
+									</Form.Control>
+									<Form.FieldErrors />
+								</Form.Field>
+
+								<UploadList
+									uploads={attachmentPreview?.bodyUploads ?? bodyUploads}
+									oncancel={cancelUpload}
+									onretry={(taskId) => retryUpload("body", taskId)}
+									ondismiss={(taskId) => dismissUpload("body", taskId)}
+								/>
+							{:else if issue.description.trim()}
+								<button
+									type="button"
+									disabled={!canEdit}
+									onclick={() => startEditing("description")}
+									class="-mx-2.25 -my-1.75 rounded-md px-2.25 py-1.75 text-left transition-colors duration-70 ease-out enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+								>
+									<Markdown source={issue.description} />
+								</button>
+							{:else}
+								<button
+									type="button"
+									disabled={!canEdit}
+									onclick={() => startEditing("description")}
+									class="-mx-2.25 -my-1.75 rounded-md px-2.25 py-1.75 text-left text-md text-muted-foreground transition-colors duration-70 ease-out enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+								>
+									{canEdit ? "Add a description" : "No description."}
+								</button>
+							{/if}
+						</div>
+					</form>
+
+					<section class="flex flex-col gap-1.5">
+						<div class="flex items-center gap-2.5">
+							<h2
+								class="min-w-0 flex-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+							>
+								Sub-issues
+							</h2>
+							{#if ready.children.length > 0}
+								<span class="inline-flex items-center gap-1.75">
+									<span class="font-mono text-xs text-muted-foreground">
+										{ready.childProgress.complete}/{totalIssues(ready.childProgress)}
+									</span>
+									<ProgressBar progress={ready.childProgress} label={false} class="w-14" />
+								</span>
+							{/if}
+						</div>
+						<IssueChildren children={ready.children} {at} />
+					</section>
+
+					<section class="flex flex-col gap-1.5">
+						<div class="flex items-center gap-2.5">
+							<h2
+								class="min-w-0 flex-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+							>
+								Links
+							</h2>
+						</div>
+						<IssueRelations
+							{issue}
+							groups={ready.relations}
+							candidates={ready.candidates}
+							{at}
+							working={working || !canEdit}
+							onadd={addRelation}
+							onremove={removeRelation}
 						/>
+					</section>
+
+					<section class="flex flex-col gap-1.5">
+						<div class="flex items-center gap-2.5">
+							<h2
+								class="min-w-0 flex-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+							>
+								Attachments
+							</h2>
+							{#if canEdit}
+								<AttachmentPicker
+									disabled={working}
+									label="Attach"
+									onfiles={(files) => begin("body", files)}
+								/>
+							{/if}
+						</div>
+
+						{#if attachmentFailure}
+							<Alert.Root variant="destructive">
+								<CircleX aria-hidden="true" />
+								<Alert.Title>That did not stick</Alert.Title>
+								<Alert.Description>{attachmentFailureMessage(attachmentFailure)}</Alert.Description>
+							</Alert.Root>
+						{/if}
+
+						<AttachmentList
+							panel={attachments}
+							working={working || !canEdit}
+							onremove={removeAttachment}
+						/>
+
+						{#if editingField !== "description"}
+							<UploadList
+								uploads={attachmentPreview?.bodyUploads ?? bodyUploads}
+								oncancel={cancelUpload}
+								onretry={(taskId) => retryUpload("body", taskId)}
+								ondismiss={(taskId) => dismissUpload("body", taskId)}
+							/>
+						{/if}
+					</section>
+
+					<section class="flex flex-col gap-0.5">
+						<div class="mb-1.5 flex items-center gap-2.5">
+							<h2
+								class="min-w-0 flex-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+							>
+								Activity
+							</h2>
+							<div class="inline-flex gap-0.5 rounded-sm border border-line-default p-0.5">
+								{#each [{ key: "all", label: "All" }, { key: "comments", label: "Comments" }] as choice (choice.key)}
+									<button
+										type="button"
+										aria-pressed={shown === choice.key}
+										onclick={() => (shown = choice.key as "all" | "comments")}
+										class="h-5 cursor-pointer rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase transition-colors duration-70 ease-out {shown ===
+										choice.key
+											? 'bg-primary text-primary-foreground'
+											: 'text-ink-600 hover:bg-accent'}"
+									>
+										{choice.label}
+									</button>
+								{/each}
+							</div>
+						</div>
+
+						<CommentThreadView
+							{thread}
+							events={shown === "all" ? events : []}
+							uploads={shownCommentUploads}
+							onfiles={(files) => begin("comment", files)}
+							oncancelupload={cancelUpload}
+							onretryupload={(taskId) => retryUpload("comment", taskId)}
+							ondismissupload={(taskId) => dismissUpload("comment", taskId)}
+							members={ready.members}
+							teams={data.teams ?? []}
+							accountId={data.member.id}
+							{when}
+							{canEdit}
+							lockedLine={issue.status === "archived"
+								? "Archived issues cannot be commented on. Restore it first."
+								: `You have read access to ${issue.teamKey}. Ask an admin to comment.`}
+							working={working || Boolean(commentPreview?.working)}
+							failure={commentFailure ?? commentPreview?.failure ?? null}
+							unreachable={commentPreview?.unreachable ?? unreachable}
+							onpost={comment}
+							onedit={editComment}
+							onremove={removeComment}
+							onreact={react}
+							onmore={loadEarlier}
+						/>
+					</section>
+				</div>
+			</div>
+
+			<aside
+				class="w-full flex-none border-t border-line-default px-3.5 pt-3.5 pb-6 lg:w-75 lg:overflow-auto lg:border-t-0 lg:border-l"
+			>
+				<div class="flex flex-col gap-0.75">
+					<IssueField
+						label="Status"
+						placeholder="Move to"
+						editable={canEdit}
+						options={ready.states.map((state) => ({
+							value: state.id,
+							label: state.name,
+							checked: state.id === issue.state.id,
+						}))}
+						onpick={move}
+					>
+						{#snippet glyph()}
+							<StatusIcon category={issue.state.category} decorative />
+						{/snippet}
+						{#snippet value()}
+							<span class="min-w-0 flex-1 truncate">{issue.state.name}</span>
+						{/snippet}
+					</IssueField>
+
+					<IssueField
+						label="Priority"
+						placeholder="Set priority"
+						editable={canEdit}
+						options={priorities.map((choice) => ({
+							value: choice.value,
+							label: choice.label,
+							checked: choice.value === issue.priority,
+						}))}
+						onpick={(picked) => setPriority(picked as IssuePriority)}
+					>
+						{#snippet glyph()}
+							<PriorityIcon priority={issue.priority} />
+						{/snippet}
+						{#snippet value()}
+							<span class="min-w-0 flex-1 truncate">{priorityLabel(issue.priority)}</span>
+						{/snippet}
+					</IssueField>
+
+					<IssueField
+						label="Assignee"
+						placeholder="Assign to"
+						editable={canEdit}
+						options={[
+							{ value: "", label: "Unassigned", checked: !issue.assigneeAccountId },
+							...ready.members.map((member) => ({
+								value: member.accountId,
+								label: member.displayName || member.email || member.accountId,
+								checked: member.accountId === issue.assigneeAccountId,
+							})),
+						]}
+						onpick={setAssignee}
+					>
+						{#snippet glyph()}
+							{#if assigneeName}
+								<Avatar.Root size="xs">
+									<Avatar.Fallback>{initials(assigneeName)}</Avatar.Fallback>
+								</Avatar.Root>
+							{:else}
+								<UserRound class="size-icon-row text-muted-foreground" aria-hidden="true" />
+							{/if}
+						{/snippet}
+						{#snippet value()}
+							<span
+								class="min-w-0 flex-1 truncate {assigneeName ? '' : 'text-muted-foreground'}"
+							>
+								{assigneeName || "Unassigned"}
+							</span>
+						{/snippet}
+					</IssueField>
+
+					<IssueField
+						label="Labels"
+						placeholder="Search labels"
+						editable={canEdit && available.length > 0}
+						closeOnPick={false}
+						empty="No labels apply to this team"
+						options={available.map((label) => ({
+							value: label.id,
+							label: label.name,
+							checked: labels.some((chosen) => chosen.id === label.id),
+						}))}
+						onpick={(labelId) => {
+							const chosen = available.find((candidate) => candidate.id === labelId);
+							if (chosen) submit(toggled(labels, chosen));
+						}}
+					>
+						{#snippet glyph()}
+							<Tags class="size-icon-row text-muted-foreground" aria-hidden="true" />
+						{/snippet}
+						{#snippet value()}
+							<span class="flex min-w-0 flex-1 flex-wrap gap-1.5">
+								{#each labels as label (label.id)}
+									<Tag name={label.name} color={label.color} />
+								{/each}
+								{#if labels.length === 0}
+									<span class="text-muted-foreground">
+										{canEdit ? "Add labels" : "None"}
+									</span>
+								{/if}
+							</span>
+						{/snippet}
+					</IssueField>
+
+					<IssueField
+						label="Project"
+						placeholder="Move to project"
+						editable={canEdit && ready.projects.length > 0}
+						options={[
+							{ value: "", label: "No project", checked: !issue.projectId },
+							...ready.projects.map((project) => ({
+								value: project.id,
+								label: project.name,
+								checked: project.id === issue.projectId,
+							})),
+						]}
+						onpick={setProject}
+					>
+						{#snippet glyph()}
+							<Folder class="size-icon-row text-muted-foreground" aria-hidden="true" />
+						{/snippet}
+						{#snippet value()}
+							<span
+								class="min-w-0 flex-1 truncate {issue.projectName ? '' : 'text-muted-foreground'}"
+							>
+								{issue.projectName || "No project"}
+							</span>
+						{/snippet}
+					</IssueField>
+
+					<IssueField
+						label="Cycle"
+						placeholder="Move to cycle"
+						editable={canEdit && ready.cycles.length > 0}
+						options={[
+							{ value: "", label: "No cycle", checked: !issue.cycleId },
+							...ready.cycles.map((cycle) => ({
+								value: cycle.id,
+								label: `${cycle.name} · ${cycleWindow(cycle.startsOn, cycle.endsOn)}`,
+								checked: cycle.id === issue.cycleId,
+							})),
+						]}
+						onpick={setCycle}
+					>
+						{#snippet glyph()}
+							<Layers class="size-icon-row text-muted-foreground" aria-hidden="true" />
+						{/snippet}
+						{#snippet value()}
+							<span
+								class="min-w-0 flex-1 truncate {issue.cycleNumber ? '' : 'text-muted-foreground'}"
+							>
+								{issue.cycleNumber ? `Cycle ${issue.cycleNumber}` : "No cycle"}
+							</span>
+						{/snippet}
+					</IssueField>
+
+					<div class="relative flex min-h-7 items-center gap-1.5">
+						<span
+							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+						>
+							Due
+						</span>
+						{#if canEdit && pickingDue}
+							<span class="flex min-w-0 flex-1 items-center gap-1.75">
+								<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
+								<!-- svelte-ignore a11y_autofocus -->
+								<input
+									type="date"
+									autofocus
+									aria-label="Due date"
+									value={issue.dueOn ?? ""}
+									disabled={working}
+									onchange={(event) => {
+										pickingDue = false;
+										setDue(event.currentTarget.value);
+									}}
+									onblur={() => (pickingDue = false)}
+									class="min-w-0 flex-1 bg-transparent text-md text-ink-900 outline-none"
+								/>
+							</span>
+						{:else if canEdit}
+							<button
+								type="button"
+								onclick={() => (pickingDue = true)}
+								class="-ml-1.75 flex min-h-6 min-w-0 flex-1 cursor-pointer items-center gap-1.75 rounded-sm px-1.75 py-0.5 text-left text-md transition-colors duration-70 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							>
+								<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
+								<span
+									class="truncate {issue.dueOn
+										? overdue(issue.dueOn, data.now)
+											? 'text-priority-urgent'
+											: 'text-ink-900'
+										: 'text-muted-foreground'}"
+								>
+									{issue.dueOn
+										? dueLabel(issue.dueOn, data.now, data.workspace.timezone)
+										: "No due date"}
+								</span>
+							</button>
+						{:else}
+							<span class="flex min-h-6 min-w-0 flex-1 items-center gap-1.75 text-md">
+								<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
+								<span class="truncate {issue.dueOn ? 'text-ink-900' : 'text-muted-foreground'}">
+									{issue.dueOn
+										? dueLabel(issue.dueOn, data.now, data.workspace.timezone)
+										: "No due date"}
+								</span>
+							</span>
+						{/if}
 					</div>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Anyone who can open this issue can open its files, and nobody else. An image is shown
-						where it is written into the description or a comment.
-					</p>
-				</section>
 
-				<CommentThreadView
-					{thread}
-					uploads={shownCommentUploads}
-					onfiles={(files) => begin("comment", files)}
-					oncancelupload={cancelUpload}
-					onretryupload={(taskId) => retryUpload("comment", taskId)}
-					ondismissupload={(taskId) => dismissUpload("comment", taskId)}
-					members={ready.members}
-					teams={data.teams ?? []}
-					accountId={data.member.id}
-					{when}
-					working={working || Boolean(commentPreview?.working)}
-					failure={commentFailure ?? commentPreview?.failure ?? null}
-					unreachable={commentPreview?.unreachable ?? unreachable}
-					onpost={comment}
-					onedit={editComment}
-					onremove={removeComment}
-					onreact={react}
-					onmore={moreComments}
-				/>
+					<IssueField
+						label="Estimate"
+						placeholder="Set an estimate"
+						editable={canEdit}
+						options={[
+							{ value: "", label: "No estimate", checked: !issue.estimate },
+							...[1, 2, 3, 5, 8].map((points) => ({
+								value: String(points),
+								label: `${points} ${points === 1 ? "point" : "points"}`,
+								checked: issue.estimate === points,
+							})),
+						]}
+						onpick={setEstimate}
+					>
+						{#snippet glyph()}
+							<Target class="size-icon-row text-muted-foreground" aria-hidden="true" />
+						{/snippet}
+						{#snippet value()}
+							<span class="min-w-0 flex-1 truncate {issue.estimate ? '' : 'text-muted-foreground'}">
+								{issue.estimate
+									? `${issue.estimate} ${issue.estimate === 1 ? "point" : "points"}`
+									: "No estimate"}
+							</span>
+						{/snippet}
+					</IssueField>
 
-				<section class="flex flex-col gap-3">
-					<h2 class="text-sm font-medium text-ink-900">Activity</h2>
-					<ActivityFeedView
-						feed={activity}
-						{when}
-						{working}
-						hideComments
-						onmore={moreActivity}
-					/>
-				</section>
-			{/if}
+					<IssueField
+						label="Parent"
+						placeholder="Search issues"
+						editable={canEdit}
+						bind:open={parentPicking}
+						options={[
+							{ value: "", label: "No parent", checked: !issue.parentId },
+							...ready.candidates
+								.filter((candidate) => candidate.id !== issue.id)
+								.slice(0, 60)
+								.map((candidate) => ({
+									value: candidate.id,
+									label: `${candidate.reference} ${candidate.title}`,
+									checked: candidate.id === issue.parentId,
+								})),
+						]}
+						onpick={(parentId) => setParent(parentId === "" ? null : parentId)}
+					>
+						{#snippet glyph()}
+							<CornerDownLeft class="size-icon-row text-muted-foreground" aria-hidden="true" />
+						{/snippet}
+						{#snippet value()}
+							<span
+								class="min-w-0 flex-1 truncate {issue.parentReference ? '' : 'text-muted-foreground'}"
+							>
+								{issue.parentReference || "No parent"}
+							</span>
+						{/snippet}
+					</IssueField>
+
+					<IssueField
+						label="Team"
+						placeholder="Move to team"
+						editable={canEdit}
+						options={teams.map((team) => ({
+							value: team.id,
+							label: `${team.key} · ${team.name}`,
+							checked: team.id === issue.teamId,
+						}))}
+						onpick={(teamId) => moveToTeam(teamId, false)}
+					>
+						{#snippet glyph()}
+							<Users class="size-icon-row text-muted-foreground" aria-hidden="true" />
+						{/snippet}
+						{#snippet value()}
+							<span class="min-w-0 flex-1 truncate">{issue.teamKey}</span>
+						{/snippet}
+					</IssueField>
+
+					<span class="my-2.5 h-px bg-line-subtle"></span>
+
+					<div class="flex min-h-7 items-center gap-2">
+						<span
+							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+						>
+							Watching
+						</span>
+						<span class="flex-1 truncate text-md text-ink-900">
+							{following ? "Watching" : "Not watching"}
+						</span>
+						<Button variant="ghost" size="sm" disabled={followWorking} onclick={toggleFollow}>
+							{following ? "Unsubscribe" : "Subscribe"}
+						</Button>
+					</div>
+
+					<span class="my-2.5 h-px bg-line-subtle"></span>
+
+					<div class="flex min-h-5.5 items-center gap-1.5">
+						<span
+							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+						>
+							Created
+						</span>
+						<span class="font-mono text-xs text-muted-foreground">
+							<time datetime={issue.createdAt}>{when(issue.createdAt)}</time>
+						</span>
+					</div>
+
+					{#if lastActivity}
+						<div class="flex min-h-5.5 items-center gap-1.5">
+							<span
+								class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+							>
+								Updated
+							</span>
+							<span class="font-mono text-xs text-muted-foreground">
+								<time datetime={lastActivity}>{when(lastActivity)}</time>
+							</span>
+						</div>
+					{/if}
+
+					<div class="flex min-h-5.5 items-center gap-1.5">
+						<span
+							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+						>
+							Link
+						</span>
+						<button
+							type="button"
+							onclick={() =>
+								copy(`${page.url.origin}${at(`/issues/${issue.reference}`)}`, `Copied a link to ${issue.reference}`)}
+							class="min-w-0 cursor-pointer truncate font-mono text-xs text-muted-foreground transition-colors duration-70 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+						>
+							{issueLink}
+						</button>
+					</div>
+				</div>
+			</aside>
 		</div>
-	</div>
+
+		{#if editingField && (dirty || $submitting)}
+			<div
+				class="flex h-10 flex-none items-center gap-2.25 border-t border-line-strong bg-paper-2 px-4"
+			>
+				{#if $submitting}
+					<CircleDashed class="size-icon-row text-muted-foreground" aria-hidden="true" />
+					<span class="text-sm text-ink-600">Saving</span>
+				{:else if failure}
+					<TriangleAlert class="size-icon-row text-destructive" aria-hidden="true" />
+					<span class="text-sm text-destructive">Could not save</span>
+					<span class="text-sm text-muted-foreground">· nothing was changed</span>
+				{:else}
+					<CircleDot class="size-icon-row text-muted-foreground" aria-hidden="true" />
+					<span class="text-sm text-ink-600">Unsaved changes</span>
+					<span class="text-sm text-muted-foreground">· ⌘↵ to save</span>
+				{/if}
+				<div class="flex-1"></div>
+				{#if !$submitting}
+					<Button variant="ghost" size="sm" onclick={discard}>Discard</Button>
+					<Button type="submit" form="issue-edit-form" size="sm">
+						{failure ? "Retry" : "Save"}
+					</Button>
+				{/if}
+			</div>
+		{/if}
+
+		<div
+			class="hidden h-7.5 flex-none items-center gap-4 border-t border-line-subtle px-3.5 lg:flex"
+		>
+			<span class="font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
+				{issue.reference}
+			</span>
+			<div class="flex-1"></div>
+			<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
+				<Kbd keys="E" /> edit description
+			</span>
+			<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
+				<Kbd keys="⌘ ↵" /> save
+			</span>
+			<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
+				<Kbd keys="Esc" /> cancel
+			</span>
+		</div>
+	{/if}
 </div>
+
+{#if notice}
+	<div class="fixed bottom-4 left-4 z-70">
+		<Toast message={notice} />
+	</div>
+{/if}
