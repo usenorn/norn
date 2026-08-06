@@ -234,6 +234,50 @@ func TestTheLeadMayChangeTheirOwnProjectAndOtherMembersMayNot(t *testing.T) {
 	})
 }
 
+func TestWhoeverStartsAProjectIsInIt(t *testing.T) {
+	h := newHarness(t)
+	founder := uuid.New()
+	h.actAs(entity.MembershipRoleMember, founder)
+
+	var joined entity.ProjectMembership
+
+	h.projects.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, project entity.Project) (entity.Project, error) {
+			project.ID = h.projectID
+
+			return project, nil
+		})
+	h.members.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, membership entity.ProjectMembership) (entity.ProjectMembership, error) {
+			joined = membership
+
+			return membership, nil
+		})
+	h.members.EXPECT().ListByProjectID(gomock.Any(), h.projectID).Return(nil, nil).AnyTimes()
+	h.projects.EXPECT().
+		HasConcealedWork(gomock.Any(), gomock.Any(), h.projectID).
+		Return(false, nil).
+		AnyTimes()
+
+	if _, err := h.service.Create(context.Background(), service.CreateProjectInput{
+		WorkspaceID: h.workspaceID,
+		Slug:        "offline-support",
+		Name:        "Offline support",
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if joined.AccountID != founder {
+		t.Fatalf("the project was left to nobody: member = %v, want the creator %v", joined.AccountID, founder)
+	}
+
+	if joined.ProjectID != h.projectID {
+		t.Fatalf("membership was filed under %v, want the new project %v", joined.ProjectID, h.projectID)
+	}
+}
+
 func TestAnArchivedProjectTakesNoFurtherChanges(t *testing.T) {
 	h := newHarness(t)
 	h.actAs(entity.MembershipRoleAdmin, uuid.New())
