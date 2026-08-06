@@ -52,13 +52,9 @@ func (c *Client) context(ctx context.Context) context.Context {
 }
 
 func (c *Client) Discover(ctx context.Context, issuer string) (entity.OIDCEndpoints, error) {
-	provider, err := oidc.NewProvider(c.context(ctx), strings.TrimRight(strings.TrimSpace(issuer), "/"))
+	provider, err := c.provider(ctx, strings.TrimSpace(issuer))
 	if err != nil {
-		return entity.OIDCEndpoints{}, entity.SSOFailure(
-			entity.SSOStageDiscovery,
-			"Norn could not read the discovery document at that issuer.",
-			err,
-		)
+		return entity.OIDCEndpoints{}, err
 	}
 
 	var document struct {
@@ -88,6 +84,42 @@ func (c *Client) Discover(ctx context.Context, issuer string) (entity.OIDCEndpoi
 	}
 
 	return endpoints, nil
+}
+
+func (c *Client) provider(ctx context.Context, issuer string) (*oidc.Provider, error) {
+	provider, err := oidc.NewProvider(c.context(ctx), issuer)
+	if err == nil {
+		return provider, nil
+	}
+
+	var mismatch *oidc.IssuerMismatchError
+	if !errors.As(err, &mismatch) {
+		return nil, unreadableDocument(err)
+	}
+
+	if strings.TrimRight(mismatch.Provided, "/") != strings.TrimRight(mismatch.Discovered, "/") {
+		return nil, entity.SSOFailure(
+			entity.SSOStageDiscovery,
+			"The discovery document at that issuer names a different issuer. Enter "+
+				mismatch.Discovered+" instead.",
+			err,
+		)
+	}
+
+	provider, err = oidc.NewProvider(c.context(ctx), mismatch.Discovered)
+	if err != nil {
+		return nil, unreadableDocument(err)
+	}
+
+	return provider, nil
+}
+
+func unreadableDocument(err error) error {
+	return entity.SSOFailure(
+		entity.SSOStageDiscovery,
+		"Norn could not read the discovery document at that issuer.",
+		err,
+	)
 }
 
 type Session struct {
