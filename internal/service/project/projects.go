@@ -126,6 +126,14 @@ func (s *projectsService) Create(
 			return err
 		}
 
+		if _, err := s.members.Create(ctx, entity.ProjectMembership{
+			WorkspaceID: created.WorkspaceID,
+			ProjectID:   created.ID,
+			AccountID:   decision.Actor.AccountID,
+		}); err != nil {
+			return err
+		}
+
 		return s.record(ctx, created, decision, entity.Activity{
 			Kind:    entity.ActivityKindCreated,
 			ToValue: created.Name,
