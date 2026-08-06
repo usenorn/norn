@@ -139,6 +139,10 @@ func RoleGrants(role MembershipRole, resource Resource, action Action) bool {
 		return false
 	}
 
+	if resource == ResourceIssue && action == ActionManage {
+		return role != MembershipRoleViewer
+	}
+
 	if resource == ResourceProject && action == ActionManage {
 		return role != MembershipRoleViewer
 	}
