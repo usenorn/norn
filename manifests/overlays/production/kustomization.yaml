@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# CI owns the deployed tag; ArgoCD rewrites these on each release.
+images:
+  - name: ghcr.io/usenorn/norn-api
+    newTag: latest
+  - name: ghcr.io/usenorn/norn-web
+    newTag: latest

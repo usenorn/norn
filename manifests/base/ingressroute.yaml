@@ -1,0 +1,79 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: norn
+  namespace: norn
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # SSE. Carries no compress middleware, and is matched before the general /v1 rule.
+    # Traefik does not buffer this: ReverseProxy flushes immediately once it sees
+    # text/event-stream, and writeTimeout on the shared entrypoint is 0 (no limit).
+    - kind: Rule
+      priority: 300
+      match: Host(`app.norn.so`) && PathRegexp(`^/v1/workspaces/[^/]+/events$`)
+      services:
+        - name: norn-api
+          namespace: norn
+          port: 8080
+          passHostHeader: true
+
+    # The Go server. Trailing slashes matter: Traefik v3 PathPrefix is a raw string prefix,
+    # so PathPrefix(`/v1`) would also match a workspace slug like "v1-team" — and [workspace]
+    # is a root-level catch-all in the SvelteKit router.
+    - kind: Rule
+      priority: 200
+      match: >-
+        Host(`app.norn.so`) && (
+          PathPrefix(`/v1/`) ||
+          Path(`/v1`) ||
+          PathPrefix(`/mcp`) ||
+          PathPrefix(`/oauth/`) ||
+          PathPrefix(`/.well-known/`)
+        )
+      middlewares:
+        - name: norn-compress
+      services:
+        - name: norn-api
+          namespace: norn
+          port: 8080
+          passHostHeader: true
+
+    # The SvelteKit server. Owns everything else, including /authorize (the MCP consent
+    # screen) and the root-level workspace slug.
+    - kind: Rule
+      priority: 100
+      match: Host(`app.norn.so`)
+      middlewares:
+        - name: norn-compress
+      services:
+        - name: norn-web
+          namespace: norn
+          port: 3000
+          passHostHeader: true
+  tls:
+    secretName: norn-edge-tls
+---
+# The shared Traefik has no entrypoint-level HTTP->HTTPS redirect — verified by request: an
+# HTTP call to an existing host is served in cleartext by the backend, not 301'd. Without this
+# route app.norn.so would answer on :80 and the session cookie would travel in the clear.
+# Done per-product rather than on the shared entrypoint so the other hosts keep their behaviour.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: norn-http-redirect
+  namespace: norn
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      priority: 100
+      match: Host(`app.norn.so`)
+      middlewares:
+        - name: norn-https-redirect
+      services:
+        - name: norn-web
+          namespace: norn
+          port: 3000
