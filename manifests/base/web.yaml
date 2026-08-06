@@ -100,11 +100,12 @@ spec:
             periodSeconds: 20
             timeoutSeconds: 3
             failureThreshold: 3
-          # Readiness exercises the full SSR path. / always ends in a 307, which kubelet
-          # counts as success without following it.
+          # Not "/": kubelet's HTTP prober follows redirects, so probing / spends one 3s budget
+          # on two SSR renders and two API round trips. A slow API would then fail readiness on
+          # every replica at once and empty the Service, turning latency into an outage.
           readinessProbe:
             httpGet:
-              path: /
+              path: /robots.txt
               port: http
             periodSeconds: 5
             timeoutSeconds: 3
