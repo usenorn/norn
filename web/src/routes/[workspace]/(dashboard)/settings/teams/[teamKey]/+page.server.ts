@@ -120,11 +120,18 @@ export const actions: Actions = {
 			return message(form, outcome, { status: 409 });
 		}
 
+		let handled = false;
+
 		for (const field of error?.errors ?? []) {
-			if (field.field === "name") setError(form, "name", teamNameMessage(field.code));
+			if (field.field === "name") {
+				setError(form, "name", teamNameMessage(field.code));
+				handled = true;
+			}
 		}
 
-		return fail(400, { form });
+		if (handled) return fail(400, { form });
+
+		return message(form, { kind: "unavailable" }, { status: 500 });
 	},
 };
 

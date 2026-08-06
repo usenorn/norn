@@ -7,7 +7,7 @@ export type WorkspaceSettings =
 	| { kind: "ready"; workspace: Workspace }
 	| { kind: "pending_deletion"; workspace: Workspace; purgeAfter: string }
 	| { kind: "saved"; workspace: Workspace }
-	| { kind: "unavailable"; workspace: Workspace };
+	| { kind: "unavailable" };
 
 type UpdateResponses = operations["updateWorkspace"]["responses"];
 type DeleteResponses = operations["deleteWorkspace"]["responses"];

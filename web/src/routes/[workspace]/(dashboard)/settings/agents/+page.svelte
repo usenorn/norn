@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
-	import { superForm } from "sveltekit-superforms";
-	import { zod4Client } from "sveltekit-superforms/adapters";
+	import { defaults, superForm } from "sveltekit-superforms";
+	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import Bot from "@lucide/svelte/icons/bot";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
@@ -48,7 +48,8 @@
 	const teams = $derived(preview?.teams ?? data.teams);
 
 	// svelte-ignore state_referenced_locally
-	const form = superForm(data.form, {
+	const form = superForm(defaults(zod4(registerAgentSchema)), {
+		id: formId,
 		validators: zod4Client(registerAgentSchema),
 		resetForm: false,
 		onSubmit: () => {

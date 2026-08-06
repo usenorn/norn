@@ -130,17 +130,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 				],
 			},
 			unavailable: {
-				settings: {
-					kind: "unavailable",
-					workspace: {
-						id: "00000000-0000-4000-8000-000000000000",
-						slug: "northwind",
-						name: "Northwind",
-						status: "active",
-						timezone: "Europe/London",
-						createdAt: "2026-01-04T09:00:00Z",
-					},
-				},
+				settings: { kind: "unavailable" },
 				teams: [
 					{
 						id: "00000000-0000-4000-8000-000000000101",

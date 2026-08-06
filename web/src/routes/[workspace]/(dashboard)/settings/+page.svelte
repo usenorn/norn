@@ -43,14 +43,14 @@
 	const settings = $derived<WorkspaceSettings>(
 		submitted?.settings ?? $message ?? preview?.settings ?? data.settings
 	);
-	const workspace = $derived(settings.workspace);
+	const workspace = $derived("workspace" in settings ? settings.workspace : data.workspace);
 	const pending = $derived(settings.kind === "pending_deletion" ? settings : null);
 	const teams = $derived(preview?.teams ?? data.teams);
 	const zones = timezones();
 
 	$effect(() => {
-		const { name, timezone } = workspace;
-		const defaultTeamId = workspace.defaultTeamId ?? "";
+		const { name, timezone } = data.workspace;
+		const defaultTeamId = data.workspace.defaultTeamId ?? "";
 		formData.update((current) => ({ ...current, name, timezone, defaultTeamId }), {
 			taint: false,
 		});
