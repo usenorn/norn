@@ -51,7 +51,12 @@
 
 	let { data }: PageProps = $props();
 
-	const linked = $derived(new Set(data.linked ?? []));
+	let unlinked = $state<string[]>([]);
+	let unlinking = $state("");
+
+	const linked = $derived(
+		new Set((data.linked ?? []).filter((accountId) => !unlinked.includes(accountId)))
+	);
 
 	const preview = $derived(
 		import.meta.env.DEV ? membersPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
@@ -304,6 +309,32 @@
 			};
 		} catch {
 			localRemoval = { kind: "unavailable", accountId };
+		}
+	}
+
+	async function unlinkProvider(member: Membership) {
+		unlinking = member.accountId;
+		localFailure = null;
+		localNotice = null;
+
+		try {
+			const { error } = await api.DELETE(
+				"/workspaces/{workspaceId}/sso/identities/{accountId}",
+				{ params: { path: { workspaceId: workspace.id, accountId: member.accountId } } }
+			);
+
+			if (error) {
+				localFailure = { kind: "unavailable" };
+
+				return;
+			}
+
+			unlinked = [...unlinked, member.accountId];
+			announcement = `${memberName(member)} was unlinked from the provider.`;
+		} catch {
+			localFailure = { kind: "unavailable" };
+		} finally {
+			unlinking = "";
 		}
 	}
 
@@ -650,6 +681,15 @@
 											{#if linked.has(member.accountId)}
 												<span aria-hidden="true">·</span>
 												<span>Linked to your provider</span>
+												<span aria-hidden="true">·</span>
+												<button
+													type="button"
+													class="text-link hover:text-link-hover hover:underline disabled:opacity-60"
+													disabled={unlinking === member.accountId}
+													onclick={() => unlinkProvider(member)}
+												>
+													{unlinking === member.accountId ? "Unlinking" : "Unlink"}
+												</button>
 											{:else if authMethodLabel(member.lastAuthMethod)}
 												<span aria-hidden="true">·</span>
 												<span>{authMethodLabel(member.lastAuthMethod)}</span>

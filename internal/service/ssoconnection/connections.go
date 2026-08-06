@@ -518,6 +518,24 @@ func (s *connectionsService) admitIdentity(
 	ctx context.Context,
 	request admission,
 ) (entity.Account, bool, error) {
+	account, provisioned, err := s.resolve(ctx, request)
+	if err != nil {
+		s.recordSSO(ctx, request, entity.AuditSSOIdentityRefused, uuid.Nil, err.Error())
+
+		return entity.Account{}, false, err
+	}
+
+	if provisioned {
+		s.recordSSO(ctx, request, entity.AuditSSOAccountOpened, account.ID, "")
+	}
+
+	return account, provisioned, nil
+}
+
+func (s *connectionsService) resolve(
+	ctx context.Context,
+	request admission,
+) (entity.Account, bool, error) {
 	linked, err := s.linkedAccount(ctx, request)
 	if err != nil {
 		return entity.Account{}, false, err
@@ -528,6 +546,27 @@ func (s *connectionsService) admitIdentity(
 	}
 
 	return s.bootstrap(ctx, request)
+}
+
+func (s *connectionsService) recordSSO(
+	ctx context.Context,
+	request admission,
+	action entity.AuditAction,
+	accountID uuid.UUID,
+	reason string,
+) {
+	detail := map[string]string{"email": request.Email, "protocol": string(request.Protocol)}
+	if reason != "" {
+		detail["reason"] = reason
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  request.WorkspaceID,
+		Action:       action,
+		ResourceKind: string(entity.ResourceAccount),
+		ResourceID:   accountID,
+		Detail:       detail,
+	})
 }
 
 func (s *connectionsService) linkedAccount(
@@ -686,6 +725,8 @@ func (s *connectionsService) link(
 
 		return err
 	}
+
+	s.recordSSO(ctx, request, entity.AuditSSOIdentityLinked, accountID, "")
 
 	return nil
 }

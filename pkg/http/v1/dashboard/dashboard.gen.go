@@ -365,9 +365,12 @@ const (
 	AuditActionSessionSignInFailed          AuditAction = "session.sign_in_failed"
 	AuditActionSessionSignedIn              AuditAction = "session.signed_in"
 	AuditActionSessionSignedOut             AuditAction = "session.signed_out"
+	AuditActionSsoAccountOpened             AuditAction = "sso.account_opened"
 	AuditActionSsoConnectionRemoved         AuditAction = "sso.connection_removed"
 	AuditActionSsoConnectionSaved           AuditAction = "sso.connection_saved"
 	AuditActionSsoEnforcementChanged        AuditAction = "sso.enforcement_changed"
+	AuditActionSsoIdentityLinked            AuditAction = "sso.identity_linked"
+	AuditActionSsoIdentityRefused           AuditAction = "sso.identity_refused"
 	AuditActionSsoIdentityUnlinked          AuditAction = "sso.identity_unlinked"
 	AuditActionSsoRecoveryCodeRedeemed      AuditAction = "sso.recovery_code_redeemed"
 	AuditActionSsoRecoveryCodesIssued       AuditAction = "sso.recovery_codes_issued"
@@ -441,11 +444,17 @@ func (e AuditAction) Valid() bool {
 		return true
 	case AuditActionSessionSignedOut:
 		return true
+	case AuditActionSsoAccountOpened:
+		return true
 	case AuditActionSsoConnectionRemoved:
 		return true
 	case AuditActionSsoConnectionSaved:
 		return true
 	case AuditActionSsoEnforcementChanged:
+		return true
+	case AuditActionSsoIdentityLinked:
+		return true
+	case AuditActionSsoIdentityRefused:
 		return true
 	case AuditActionSsoIdentityUnlinked:
 		return true
