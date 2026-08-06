@@ -60,12 +60,27 @@ function unreachable(correlationId: string): Response {
 	});
 }
 
+// adapter-node throws when ADDRESS_HEADER is configured but the header is missing, which is
+// every request that did not come through the proxy — kubelet probes above all. Such a request
+// has no client to attribute, so it forwards no chain and the Go side falls back to the peer.
+function clientAddress(event: RequestEvent): string | undefined {
+	try {
+		return event.getClientAddress();
+	} catch {
+		return undefined;
+	}
+}
+
 export function apiForEvent(event: RequestEvent): Client<paths> {
 	return createClient<paths>({
 		baseUrl: `${env.INTERNAL_API_ORIGIN || loopbackOrigin}/v1`,
 		fetch: async (request) => {
+			const address = clientAddress(event);
+
 			request.headers.set("cookie", cookieHeader(event.cookies));
-			request.headers.set("x-forwarded-for", event.getClientAddress());
+			if (address) {
+				request.headers.set("x-forwarded-for", address);
+			}
 			request.headers.set("x-forwarded-proto", event.url.protocol.slice(0, -1));
 			request.headers.set("x-forwarded-host", event.url.host);
 			request.headers.set("user-agent", event.request.headers.get("user-agent") ?? "");
