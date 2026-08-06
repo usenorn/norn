@@ -27,6 +27,7 @@ type WorkspaceSsoIdentity struct {
 	AccountID   string    `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
 	Subject     string    `boil:"subject" json:"subject" toml:"subject" yaml:"subject"`
 	LinkedAt    time.Time `boil:"linked_at" json:"linked_at" toml:"linked_at" yaml:"linked_at"`
+	Issuer      string    `boil:"issuer" json:"issuer" toml:"issuer" yaml:"issuer"`
 
 	R *workspaceSsoIdentityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSsoIdentityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -37,11 +38,13 @@ var WorkspaceSsoIdentityColumns = struct {
 	AccountID   string
 	Subject     string
 	LinkedAt    string
+	Issuer      string
 }{
 	WorkspaceID: "workspace_id",
 	AccountID:   "account_id",
 	Subject:     "subject",
 	LinkedAt:    "linked_at",
+	Issuer:      "issuer",
 }
 
 var WorkspaceSsoIdentityTableColumns = struct {
@@ -49,11 +52,13 @@ var WorkspaceSsoIdentityTableColumns = struct {
 	AccountID   string
 	Subject     string
 	LinkedAt    string
+	Issuer      string
 }{
 	WorkspaceID: "workspace_sso_identities.workspace_id",
 	AccountID:   "workspace_sso_identities.account_id",
 	Subject:     "workspace_sso_identities.subject",
 	LinkedAt:    "workspace_sso_identities.linked_at",
+	Issuer:      "workspace_sso_identities.issuer",
 }
 
 // Generated where
@@ -63,11 +68,13 @@ var WorkspaceSsoIdentityWhere = struct {
 	AccountID   whereHelperstring
 	Subject     whereHelperstring
 	LinkedAt    whereHelpertime_Time
+	Issuer      whereHelperstring
 }{
 	WorkspaceID: whereHelperstring{field: "\"workspace_sso_identities\".\"workspace_id\""},
 	AccountID:   whereHelperstring{field: "\"workspace_sso_identities\".\"account_id\""},
 	Subject:     whereHelperstring{field: "\"workspace_sso_identities\".\"subject\""},
 	LinkedAt:    whereHelpertime_Time{field: "\"workspace_sso_identities\".\"linked_at\""},
+	Issuer:      whereHelperstring{field: "\"workspace_sso_identities\".\"issuer\""},
 }
 
 // WorkspaceSsoIdentityRels is where relationship names are stored.
@@ -126,8 +133,8 @@ func (r *workspaceSsoIdentityR) GetWorkspace() *WorkspaceSsoConnection {
 type workspaceSsoIdentityL struct{}
 
 var (
-	workspaceSsoIdentityAllColumns            = []string{"workspace_id", "account_id", "subject", "linked_at"}
-	workspaceSsoIdentityColumnsWithoutDefault = []string{"workspace_id", "account_id", "subject"}
+	workspaceSsoIdentityAllColumns            = []string{"workspace_id", "account_id", "subject", "linked_at", "issuer"}
+	workspaceSsoIdentityColumnsWithoutDefault = []string{"workspace_id", "account_id", "subject", "issuer"}
 	workspaceSsoIdentityColumnsWithDefault    = []string{"linked_at"}
 	workspaceSsoIdentityPrimaryKeyColumns     = []string{"workspace_id", "account_id"}
 	workspaceSsoIdentityGeneratedColumns      = []string{}

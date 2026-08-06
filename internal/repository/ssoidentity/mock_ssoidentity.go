@@ -72,6 +72,21 @@ func (mr *MockSSOIdentityMockRecorder) Get(ctx, workspaceID, accountID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSSOIdentity)(nil).Get), ctx, workspaceID, accountID)
 }
 
+// GetBySubject mocks base method.
+func (m *MockSSOIdentity) GetBySubject(ctx context.Context, workspaceID uuid.UUID, issuer, subject string) (entity.SSOIdentity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBySubject", ctx, workspaceID, issuer, subject)
+	ret0, _ := ret[0].(entity.SSOIdentity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBySubject indicates an expected call of GetBySubject.
+func (mr *MockSSOIdentityMockRecorder) GetBySubject(ctx, workspaceID, issuer, subject any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBySubject", reflect.TypeOf((*MockSSOIdentity)(nil).GetBySubject), ctx, workspaceID, issuer, subject)
+}
+
 // Link mocks base method.
 func (m *MockSSOIdentity) Link(ctx context.Context, identity entity.SSOIdentity) error {
 	m.ctrl.T.Helper()

@@ -332,6 +332,48 @@ func TestASweepDoesNotWarnTwiceAtTheSameThreshold(t *testing.T) {
 	}
 }
 
+func TestAReturningIdentityIsMatchedBySubjectNotByTheAddressItAsserts(t *testing.T) {
+	h := newHarnessWithoutLinking(t)
+
+	workspaceID := uuid.New()
+	account := entity.Account{ID: uuid.New(), Status: entity.AccountStatusActive, Email: "ada@example.com"}
+
+	h.expectExchange(workspaceID, false, verifiedClaims("someone.else@example.com"))
+
+	h.identities.EXPECT().
+		GetBySubject(gomock.Any(), workspaceID, "https://login.example.com", "provider-subject").
+		Return(entity.SSOIdentity{
+			WorkspaceID: workspaceID,
+			AccountID:   account.ID,
+			Issuer:      "https://login.example.com",
+			Subject:     "provider-subject",
+		}, nil)
+
+	h.accounts.EXPECT().GetByID(gomock.Any(), account.ID).Return(account, nil)
+	h.memberships.EXPECT().Get(gomock.Any(), workspaceID, account.ID).Return(entity.Membership{}, nil)
+
+	h.sessions.EXPECT().
+		Start(gomock.Any(), gomock.Any()).
+		DoAndReturn(
+			func(_ context.Context, input service.StartSessionInput) (service.IssuedSession, error) {
+				if input.AccountID != account.ID {
+					t.Errorf(
+						"signed in as %s, want %s. The address a provider asserts is mutable and "+
+							"recyclable; the subject it is linked to is what decides who this is.",
+						input.AccountID,
+						account.ID,
+					)
+				}
+
+				return service.IssuedSession{Token: "session-token"}, nil
+			},
+		)
+
+	if _, err := h.complete(); err != nil {
+		t.Fatalf("Complete: %v", err)
+	}
+}
+
 func TestSigningInThroughTheProviderLinksTheAccountToThatIdentity(t *testing.T) {
 	h := newHarnessWithoutLinking(t)
 
@@ -339,6 +381,7 @@ func TestSigningInThroughTheProviderLinksTheAccountToThatIdentity(t *testing.T) 
 	account := entity.Account{ID: uuid.New(), Status: entity.AccountStatusActive, Email: "ada@example.com"}
 
 	h.expectExchange(workspaceID, false, verifiedClaims("ada@example.com"))
+	h.unlinkedSubject()
 	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(account, nil)
 	h.memberships.EXPECT().Get(gomock.Any(), workspaceID, account.ID).Return(entity.Membership{}, nil)
 	h.sessions.EXPECT().
@@ -384,6 +427,7 @@ func TestADifferentProviderIdentityIsRefusedForAnAlreadyLinkedAccount(t *testing
 	account := entity.Account{ID: uuid.New(), Status: entity.AccountStatusActive, Email: "ada@example.com"}
 
 	h.expectExchange(workspaceID, false, verifiedClaims("ada@example.com"))
+	h.unlinkedSubject()
 	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(account, nil)
 	h.memberships.EXPECT().Get(gomock.Any(), workspaceID, account.ID).Return(entity.Membership{}, nil)
 
@@ -392,6 +436,7 @@ func TestADifferentProviderIdentityIsRefusedForAnAlreadyLinkedAccount(t *testing
 		Return(entity.SSOIdentity{
 			WorkspaceID: workspaceID,
 			AccountID:   account.ID,
+			Issuer:      "https://login.example.com",
 			Subject:     "somebody-else",
 		}, nil)
 

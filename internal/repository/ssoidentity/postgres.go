@@ -7,24 +7,35 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
 )
 
+const uniqueViolationCode = "23505"
+
+const subjectUniqueConstraint = "workspace_sso_identities_subject_key"
+
 const linkQuery = `
-INSERT INTO workspace_sso_identities (workspace_id, account_id, subject)
-VALUES ($1, $2, $3)
-ON CONFLICT (workspace_id, account_id) DO UPDATE SET subject = excluded.subject`
+INSERT INTO workspace_sso_identities (workspace_id, account_id, issuer, subject)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (workspace_id, account_id)
+DO UPDATE SET issuer = excluded.issuer, subject = excluded.subject`
 
 const identityQuery = `
-SELECT workspace_id, account_id, subject, linked_at
+SELECT workspace_id, account_id, issuer, subject, linked_at
 FROM workspace_sso_identities
 WHERE workspace_id = $1 AND account_id = $2`
 
+const subjectQuery = `
+SELECT workspace_id, account_id, issuer, subject, linked_at
+FROM workspace_sso_identities
+WHERE workspace_id = $1 AND issuer = $2 AND subject = $3`
+
 const identitiesQuery = `
-SELECT workspace_id, account_id, subject, linked_at
+SELECT workspace_id, account_id, issuer, subject, linked_at
 FROM workspace_sso_identities
 WHERE workspace_id = $1
 ORDER BY linked_at`
@@ -55,12 +66,43 @@ func (r *identityRepository) Link(ctx context.Context, identity entity.SSOIdenti
 		linkQuery,
 		identity.WorkspaceID.String(),
 		identity.AccountID.String(),
+		identity.Issuer,
 		identity.Subject,
 	); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) &&
+			pgErr.Code == uniqueViolationCode &&
+			pgErr.ConstraintName == subjectUniqueConstraint {
+			return entity.ErrSSOSubjectLinked
+		}
+
 		return fmt.Errorf("link sso identity: %w", err)
 	}
 
 	return nil
+}
+
+func (r *identityRepository) GetBySubject(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	issuer, subject string,
+) (entity.SSOIdentity, error) {
+	identity, err := scan(r.db.Querier(ctx).QueryRowContext(
+		ctx,
+		subjectQuery,
+		workspaceID.String(),
+		issuer,
+		subject,
+	))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.SSOIdentity{}, entity.ErrSSOIdentityNotFound
+		}
+
+		return entity.SSOIdentity{}, fmt.Errorf("find sso identity by subject: %w", err)
+	}
+
+	return identity, nil
 }
 
 func (r *identityRepository) Get(
@@ -95,7 +137,13 @@ func scan(row scanner) (entity.SSOIdentity, error) {
 		account   string
 	)
 
-	if err := row.Scan(&workspace, &account, &identity.Subject, &identity.LinkedAt); err != nil {
+	if err := row.Scan(
+		&workspace,
+		&account,
+		&identity.Issuer,
+		&identity.Subject,
+		&identity.LinkedAt,
+	); err != nil {
 		return entity.SSOIdentity{}, err
 	}
 

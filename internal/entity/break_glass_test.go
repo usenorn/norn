@@ -91,17 +91,32 @@ func TestEachRefusalToRequireSingleSignOnSaysWhichThingIsMissing(t *testing.T) {
 }
 
 func TestALinkedIdentityOnlyMatchesItsOwnSubject(t *testing.T) {
-	linked := &entity.SSOIdentity{Subject: "provider-subject-1"}
+	const issuer = "https://login.example.com"
 
-	if err := entity.MatchLink(linked, "provider-subject-1", "ada@example.com"); err != nil {
+	linked := &entity.SSOIdentity{Issuer: issuer, Subject: "provider-subject-1"}
+
+	if err := entity.MatchLink(linked, issuer, "provider-subject-1", "ada@example.com"); err != nil {
 		t.Fatalf("the linked subject was refused: %v", err)
 	}
 
-	if err := entity.MatchLink(nil, "anything", "ada@example.com"); err != nil {
+	if err := entity.MatchLink(nil, issuer, "anything", "ada@example.com"); err != nil {
 		t.Fatalf("an account with no link yet was refused: %v", err)
 	}
 
-	err := entity.MatchLink(linked, "provider-subject-2", "Ada@Example.com")
+	if err := entity.MatchLink(
+		linked,
+		"https://login.elsewhere.example.com",
+		"provider-subject-2",
+		"ada@example.com",
+	); err != nil {
+		t.Fatalf(
+			"a link left behind by a provider this workspace no longer uses blocked the new one, "+
+				"so repointing the connection would lock everybody out: %v",
+			err,
+		)
+	}
+
+	err := entity.MatchLink(linked, issuer, "provider-subject-2", "Ada@Example.com")
 	if err == nil {
 		t.Fatal(
 			"a different provider identity was accepted for an account that is already linked. " +

@@ -57,9 +57,18 @@ func newHarness(t *testing.T) *harness {
 		Return(entity.SSOIdentity{}, entity.ErrSSOIdentityNotFound).
 		AnyTimes()
 
+	h.unlinkedSubject()
+
 	h.identities.EXPECT().Link(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	return h
+}
+
+func (h *harness) unlinkedSubject() {
+	h.identities.EXPECT().
+		GetBySubject(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(entity.SSOIdentity{}, entity.ErrSSOIdentityNotFound).
+		AnyTimes()
 }
 
 func newHarnessWithoutLinking(t *testing.T) *harness {

@@ -341,14 +341,14 @@ func (s *connectionsService) CompleteSAML(
 		return exchange, nil
 	}
 
-	account, provisioned, err := s.admitIdentity(
-		ctx,
-		workspace.ID,
-		connection.Provisioning,
-		identity.Email,
-		identity.Name,
-		identity.Subject,
-	)
+	account, provisioned, err := s.admitIdentity(ctx, admission{
+		WorkspaceID:  workspace.ID,
+		Provisioning: connection.Provisioning,
+		Issuer:       connection.Descriptor.EntityID,
+		Subject:      identity.Subject,
+		Email:        identity.Email,
+		Name:         identity.Name,
+	})
 	if err != nil {
 		return exchange, err
 	}
