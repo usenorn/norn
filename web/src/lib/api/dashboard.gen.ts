@@ -1136,6 +1136,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the endpoints this workspace sends its events to */
+        get: operations["listWorkspaceWebhooks"];
+        put?: never;
+        /** Register an endpoint, returning its signing secret for the only time */
+        post: operations["createWorkspaceWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/webhooks/{webhookId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+            };
+            cookie?: never;
+        };
+        /** Read one endpoint, its events, and how it has been behaving */
+        get: operations["getWorkspaceWebhook"];
+        put?: never;
+        post?: never;
+        /** Remove an endpoint, ending its deliveries at once */
+        delete: operations["deleteWorkspaceWebhook"];
+        options?: never;
+        head?: never;
+        /** Change where an endpoint points, what it hears, or whether it runs */
+        patch: operations["updateWorkspaceWebhook"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/webhooks/{webhookId}/secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace the signing secret, honouring the old one for a grace period */
+        post: operations["rotateWorkspaceWebhookSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/webhooks/{webhookId}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test event, to prove the endpoint receives and verifies */
+        post: operations["sendWorkspaceWebhookTest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+            };
+            cookie?: never;
+        };
+        /** Read what this endpoint was sent, and how each attempt went */
+        get: operations["listWorkspaceWebhookDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+                deliveryId: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        /** Read one delivery, its payload, and every attempt made on it */
+        get: operations["getWorkspaceWebhookDelivery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+                deliveryId: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a settled delivery again, unchanged, as a new delivery */
+        post: operations["replayWorkspaceWebhookDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents": {
         parameters: {
             query?: never;
@@ -3292,7 +3436,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "token.minted" | "token.revoked" | "agent.registered" | "agent.disabled" | "agent.proposal_decided" | "mcp_connection.authorized" | "mcp_connection.narrowed" | "mcp_connection.revoked" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "token.minted" | "token.revoked" | "agent.registered" | "agent.disabled" | "agent.proposal_decided" | "mcp_connection.authorized" | "mcp_connection.narrowed" | "mcp_connection.revoked" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -3770,6 +3914,101 @@ export interface components {
             /** @description Replaces the connection's reach; must shrink it, never widen it. */
             grants?: components["schemas"]["APITokenGrant"][];
         };
+        /** @enum {string} */
+        WebhookEventType: "issue.created" | "issue.updated" | "issue.status_changed" | "issue.deleted" | "issue.triaged" | "issue.merged" | "comment.posted" | "comment.edited" | "comment.deleted" | "project.created" | "project.updated" | "project.deleted" | "project.members_changed" | "project.status_posted" | "cycle.started" | "cycle.closed" | "cycle.cadence_changed" | "membership.added" | "membership.changed" | "membership.removed" | "team_membership.added" | "team_membership.removed";
+        /**
+         * @description Every subscribable event, plus the test event a delivery may carry.
+         * @enum {string}
+         */
+        WebhookDeliveryEventType: "issue.created" | "issue.updated" | "issue.status_changed" | "issue.deleted" | "issue.triaged" | "issue.merged" | "comment.posted" | "comment.edited" | "comment.deleted" | "project.created" | "project.updated" | "project.deleted" | "project.members_changed" | "project.status_posted" | "cycle.started" | "cycle.closed" | "cycle.cadence_changed" | "membership.added" | "membership.changed" | "membership.removed" | "team_membership.added" | "team_membership.removed" | "webhook.test";
+        /** @enum {string} */
+        WebhookDeliveryState: "pending" | "succeeded" | "failed";
+        /** @enum {string} */
+        WebhookAttemptOutcome: "succeeded" | "rejected" | "refused" | "timed_out" | "failed";
+        /** @enum {string} */
+        WebhookDisableReason: "by_owner" | "sustained_failure";
+        Webhook: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            url: string;
+            events: components["schemas"]["WebhookEventType"][];
+            secretHint: string;
+            enabled: boolean;
+            /** Format: date-time */
+            disabledAt?: string;
+            disabledReason?: components["schemas"]["WebhookDisableReason"];
+            /** Format: int32 */
+            failureStreak: number;
+            /** Format: date-time */
+            lastDeliveredAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MintedWebhook: {
+            webhook: components["schemas"]["Webhook"];
+            secret: string;
+        };
+        CreateWebhookRequest: {
+            name: string;
+            url: string;
+            events: components["schemas"]["WebhookEventType"][];
+        };
+        UpdateWebhookRequest: {
+            name?: string;
+            url?: string;
+            events?: components["schemas"]["WebhookEventType"][];
+            enabled?: boolean;
+        };
+        WebhookDelivery: {
+            /** Format: uuid */
+            id: string;
+            event: components["schemas"]["WebhookDeliveryEventType"];
+            state: components["schemas"]["WebhookDeliveryState"];
+            /** Format: int32 */
+            attempt: number;
+            subjectKind?: string;
+            /** Format: uuid */
+            subjectId?: string;
+            /** Format: uuid */
+            replayOf?: string;
+            /** Format: date-time */
+            nextAttemptAt?: string;
+            /** Format: date-time */
+            settledAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        WebhookAttempt: {
+            /** Format: int32 */
+            attempt: number;
+            requestUrl: string;
+            resolvedAddress?: string;
+            outcome: components["schemas"]["WebhookAttemptOutcome"];
+            /** Format: int32 */
+            statusCode?: number;
+            responseExcerpt?: string;
+            error?: string;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            finishedAt: string;
+            /** Format: int64 */
+            elapsedMs: number;
+        };
+        WebhookDeliveryDetail: {
+            delivery: components["schemas"]["WebhookDelivery"];
+            body: {
+                [key: string]: unknown;
+            };
+            attempts: components["schemas"]["WebhookAttempt"][];
+        };
+        WebhookDeliveryPage: {
+            deliveries: components["schemas"]["WebhookDelivery"][];
+            nextCursor?: string;
+        };
         APITokenUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "token_name_taken" | "token_scope_invalid" | "token_scope_exceeds" | "token_may_not_mint" | "token_grant_invalid" | "token_grant_missing";
@@ -3803,6 +4042,14 @@ export interface components {
         AuditUnlicensedProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "audit_unlicensed";
+        };
+        WebhookDestinationRefusedProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "webhook_destination_refused";
+        };
+        WebhookSigningUnavailableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "webhook_signing_unavailable";
         };
         MailUnavailableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -4649,6 +4896,24 @@ export interface components {
                 "application/problem+json": components["schemas"]["AuditUnlicensedProblem"];
             };
         };
+        /** @description The destination is not reachable from this instance */
+        WebhookDestinationRefused: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["WebhookDestinationRefusedProblem"];
+            };
+        };
+        /** @description This instance has no encryption key, so a webhook cannot be signed */
+        WebhookSigningUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["WebhookSigningUnavailableProblem"];
+            };
+        };
         /** @description The instance is not configured to send mail */
         MailUnavailable: {
             headers: {
@@ -4730,6 +4995,12 @@ export interface components {
         CommentId: string;
         Reaction: components["schemas"]["CommentReaction"];
         TeamId: string;
+        WebhookId: string;
+        DeliveryId: string;
+        WebhookDeliveryLimit: number;
+        WebhookDeliveryCursor: string;
+        WebhookDeliveryEventFilter: components["schemas"]["WebhookDeliveryEventType"][];
+        WebhookDeliveryStateFilter: components["schemas"]["WebhookDeliveryState"][];
         NotificationSubjectKind: components["schemas"]["NotificationSubjectKind"];
         NotificationSubjectId: string;
     };
@@ -7017,6 +7288,292 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceWebhooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workspace's webhooks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWebhookRequest"];
+            };
+        };
+        responses: {
+            /** @description The webhook, carrying its secret once */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MintedWebhook"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["WebhookDestinationRefused"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["WebhookSigningUnavailable"];
+        };
+    };
+    getWorkspaceWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The webhook */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The webhook was removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWebhookRequest"];
+            };
+        };
+        responses: {
+            /** @description The webhook after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["WebhookDestinationRefused"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    rotateWorkspaceWebhookSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The webhook, carrying its new secret once */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MintedWebhook"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["WebhookSigningUnavailable"];
+        };
+    };
+    sendWorkspaceWebhookTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The delivery that was queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDelivery"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceWebhookDeliveries: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["WebhookDeliveryLimit"];
+                cursor?: components["parameters"]["WebhookDeliveryCursor"];
+                event?: components["parameters"]["WebhookDeliveryEventFilter"];
+                state?: components["parameters"]["WebhookDeliveryStateFilter"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of deliveries, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDeliveryPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceWebhookDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+                deliveryId: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The delivery, with its attempts oldest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDeliveryDetail"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    replayWorkspaceWebhookDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                webhookId: components["parameters"]["WebhookId"];
+                deliveryId: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The replay that was queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDelivery"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

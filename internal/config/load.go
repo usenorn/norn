@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/netip"
 	"net/url"
 	"strings"
 	"time"
@@ -97,6 +98,10 @@ func validate(cfg Config) error {
 		return fmt.Errorf("audit.sweep_batch (%d) must be at least 1", cfg.Audit.SweepBatch)
 	}
 
+	if err := validateWebhooks(cfg.Webhooks); err != nil {
+		return err
+	}
+
 	if cfg.Password.BreachCheckEnabled && cfg.Password.BreachCheckTimeout <= 0 {
 		return fmt.Errorf(
 			"password.breach_check_timeout (%s) must be positive",
@@ -105,6 +110,53 @@ func validate(cfg Config) error {
 	}
 
 	return validateStorage(cfg)
+}
+
+func validateWebhooks(cfg Webhooks) error {
+	if cfg.RequestTimeout <= 0 || cfg.DialTimeout <= 0 {
+		return fmt.Errorf(
+			"webhooks.request_timeout (%s) and webhooks.dial_timeout (%s) must be positive; a delivery "+
+				"attempt has to give up rather than hold a worker against an endpoint that never answers",
+			cfg.RequestTimeout, cfg.DialTimeout,
+		)
+	}
+
+	if cfg.MaxResponseSize < 1<<10 {
+		return fmt.Errorf(
+			"webhooks.max_response_size (%d) must be at least 1024; the delivery log keeps an excerpt "+
+				"of what a receiver said, and a smaller cap would record nothing useful",
+			cfg.MaxResponseSize,
+		)
+	}
+
+	if cfg.Retention <= 0 {
+		return fmt.Errorf(
+			"webhooks.retention (%s) must be positive; the delivery log always ages out and there is "+
+				"no setting for keeping it forever",
+			cfg.Retention,
+		)
+	}
+
+	if cfg.SweepBatch < 1 || cfg.FanOutBatch < 1 {
+		return fmt.Errorf(
+			"webhooks.sweep_batch (%d) and webhooks.fan_out_batch (%d) must be at least 1",
+			cfg.SweepBatch, cfg.FanOutBatch,
+		)
+	}
+
+	for _, destination := range cfg.AllowedDestinations {
+		if _, err := netip.ParsePrefix(strings.TrimSpace(destination)); err != nil {
+			return fmt.Errorf(
+				"webhooks.allowed_destinations entry %q is not a CIDR prefix: %w. This setting exists so "+
+					"a self-hosted receiver on a private network can be reached, and every entry is a hole "+
+					"punched in the guard that refuses internal addresses, so an entry that does not parse "+
+					"would silently protect nothing",
+				destination, err,
+			)
+		}
+	}
+
+	return nil
 }
 
 func validateStorage(cfg Config) error {
@@ -239,7 +291,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("asynq.password", "")
 	v.SetDefault("asynq.db", 1)
 	v.SetDefault("asynq.concurrency", 10)
-	v.SetDefault("asynq.queues", map[string]int{"default": 6, "mail": 3})
+	v.SetDefault("asynq.queues", map[string]int{"default": 6, "mail": 3, "webhook": 3})
 	v.SetDefault("asynq.shutdown_timeout", 20*time.Second)
 	v.SetDefault("asynq.max_retry", 5)
 
@@ -286,6 +338,17 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("mcp.auth_code_ttl", 2*time.Minute)
 	v.SetDefault("mcp.requests_per_window", 300)
 	v.SetDefault("mcp.rate_window", time.Minute)
+
+	v.SetDefault("webhooks.fan_out_schedule", "* * * * *")
+	v.SetDefault("webhooks.fan_out_batch", 200)
+	v.SetDefault("webhooks.request_timeout", 10*time.Second)
+	v.SetDefault("webhooks.dial_timeout", 5*time.Second)
+	v.SetDefault("webhooks.max_response_size", int64(64<<10))
+	v.SetDefault("webhooks.secret_grace", 24*time.Hour)
+	v.SetDefault("webhooks.retention", 30*24*time.Hour)
+	v.SetDefault("webhooks.sweep_schedule", "0 5 * * *")
+	v.SetDefault("webhooks.sweep_batch", 5000)
+	v.SetDefault("webhooks.allowed_destinations", []string{})
 	v.SetDefault("attachments.reclaim_batch", 200)
 
 	v.SetDefault("session.cookie_name", "norn_session")

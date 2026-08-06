@@ -18,4 +18,7 @@ var Set = wire.NewSet(
 	NewNotificationDigestHandler,
 	NewAPITokenExpirySweepHandler,
 	NewAuditSweepHandler,
+	NewWebhookFanOutHandler,
+	NewWebhookDeliverHandler,
+	NewWebhookSweepHandler,
 )

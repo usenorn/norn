@@ -684,6 +684,49 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrMCPGrantInvalid), errors.Is(err, entity.ErrMCPScopeInvalid):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
+	case errors.Is(err, entity.ErrWebhookNotFound),
+		errors.Is(err, entity.ErrWebhookDeliveryNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrWebhookNotPermitted):
+		return newProblem(http.StatusForbidden, err.Error()), true
+
+	case errors.Is(err, entity.ErrWebhookCursorInvalid):
+		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
+
+	case errors.Is(err, entity.ErrWebhookDeliveryNotReplayable):
+		return newProblem(http.StatusConflict, err.Error()), true
+
+	case errors.Is(err, entity.ErrWebhookDestinationRefused):
+		base := baseProblem(http.StatusUnprocessableEntity, err.Error())
+
+		return problemResponse{
+			status: http.StatusUnprocessableEntity,
+			body: api.WebhookDestinationRefusedProblem{
+				Code:     api.WebhookDestinationRefusedProblemCodeWebhookDestinationRefused,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
+	case errors.Is(err, entity.ErrWebhookEncryptionKeyMissing):
+		base := baseProblem(http.StatusServiceUnavailable, err.Error())
+
+		return problemResponse{
+			status: http.StatusServiceUnavailable,
+			body: api.WebhookSigningUnavailableProblem{
+				Code:     api.WebhookSigningUnavailableProblemCodeWebhookSigningUnavailable,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
 	case errors.Is(err, entity.ErrLabelNameTaken):
 		return labelConflictProblem(api.LabelNameTaken, err), true
 
@@ -1073,6 +1116,46 @@ func (r problemResponse) VisitListWorkspaceMCPConnectionsResponse(w http.Respons
 }
 
 func (r problemResponse) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceWebhooksResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceWebhookResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDeleteWorkspaceWebhookResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRotateWorkspaceWebhookSecretResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSendWorkspaceWebhookTestResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceWebhookDeliveriesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitReplayWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

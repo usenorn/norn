@@ -38,6 +38,7 @@ type harness struct {
 	projects    *projectrepo.MockProject
 	service     service.Directories
 	recorded    []entity.DirectorySyncRun
+	emitted     []entity.WebhookOutboxEntry
 }
 
 func licensed() entity.Licence {
@@ -98,6 +99,8 @@ func newHarness(t *testing.T, licence entity.Licence) *harness {
 		h.projects,
 		authorizersvc.NewMockAuthorizer(ctrl),
 		recorder,
+		silentEvents(ctrl),
+		capturingEmitter(ctrl, &h.emitted),
 		transactor,
 		licensingsvc.New(licence, config.Licence{Grace: 30 * 24 * time.Hour}),
 	)

@@ -23,6 +23,7 @@ var Set = wire.NewSet(
 	NewRealtime,
 	NewAPITokens,
 	NewMCP,
+	NewWebhooks,
 	NewSession,
 	NewCasbin,
 	NewGeoIP,

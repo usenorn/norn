@@ -26,6 +26,8 @@ type directoriesService struct {
 	projects    repository.Project
 	authorizer  service.Authorizer
 	audit       service.Audit
+	events      service.Events
+	emitter     service.WebhookEmitter
 	transactor  repository.Transactor
 	licensing   service.Licensing
 }
@@ -42,6 +44,8 @@ func New(
 	projects repository.Project,
 	authorizer service.Authorizer,
 	audit service.Audit,
+	events service.Events,
+	emitter service.WebhookEmitter,
 	transactor repository.Transactor,
 	licensing service.Licensing,
 ) service.Directories {
@@ -57,6 +61,8 @@ func New(
 		projects:    projects,
 		authorizer:  authorizer,
 		audit:       audit,
+		events:      events,
+		emitter:     emitter,
 		transactor:  transactor,
 		licensing:   licensing,
 	}

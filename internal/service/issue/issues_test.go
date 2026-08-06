@@ -92,7 +92,8 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = issuesvc.New(
 		h.issues, h.states, h.activity, h.labels, h.accounts, h.memberships,
-		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.events, h.followers,
+		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.events,
+		silentEmitter(ctrl), h.followers,
 		h.jobs,
 		agenthold.New(agentsettingrepo.NewMockAgentSetting(ctrl), agentproposalrepo.NewMockAgentProposal(ctrl), agentrepo.NewMockAgent(ctrl)),
 		h.authorizer, h.transactor,
@@ -591,7 +592,11 @@ func TestDeletingAnIssueSchedulesItsPurgeForWhenTheGraceElapses(t *testing.T) {
 	var processAt time.Time
 
 	h.jobs.EXPECT().
-		EnqueueIssuePurge(gomock.Any(), entity.IssuePurgePayload{IssueID: issueID}, gomock.Any()).
+		EnqueueIssuePurge(
+			gomock.Any(),
+			entity.IssuePurgePayload{IssueID: issueID, WorkspaceID: workspaceID},
+			gomock.Any(),
+		).
 		DoAndReturn(func(_ context.Context, _ entity.IssuePurgePayload, at time.Time) error {
 			processAt = at
 

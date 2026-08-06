@@ -21,6 +21,7 @@ type Worker struct {
 	notifications config.Notifications
 	tokens        config.APITokens
 	audit         config.Audit
+	webhooks      config.Webhooks
 	server        *taskqueue.Server
 	scheduler     *taskqueue.Scheduler
 	mux           *asynq.ServeMux
@@ -43,6 +44,9 @@ func NewServeMux(
 	notificationDigest *job.NotificationDigestHandler,
 	tokenExpirySweep *job.APITokenExpirySweepHandler,
 	auditSweep *job.AuditSweepHandler,
+	webhookFanOut *job.WebhookFanOutHandler,
+	webhookDeliver *job.WebhookDeliverHandler,
+	webhookSweep *job.WebhookSweepHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -60,6 +64,9 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeNotificationDigest, notificationDigest)
 	mux.Handle(entity.TaskTypeAPITokenExpirySweep, tokenExpirySweep)
 	mux.Handle(entity.TaskTypeAuditSweep, auditSweep)
+	mux.Handle(entity.TaskTypeWebhookFanOut, webhookFanOut)
+	mux.Handle(entity.TaskTypeWebhookDeliver, webhookDeliver)
+	mux.Handle(entity.TaskTypeWebhookSweep, webhookSweep)
 
 	return mux
 }
@@ -71,6 +78,7 @@ func NewWorker(
 	notifications config.Notifications,
 	tokens config.APITokens,
 	audit config.Audit,
+	webhooks config.Webhooks,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	mux *asynq.ServeMux,
@@ -83,6 +91,7 @@ func NewWorker(
 		notifications: notifications,
 		tokens:        tokens,
 		audit:         audit,
+		webhooks:      webhooks,
 		server:        server,
 		scheduler:     scheduler,
 		mux:           mux,
@@ -147,6 +156,22 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueMail),
 	); err != nil {
 		return fmt.Errorf("register audit retention sweep: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.webhooks.FanOutSchedule,
+		asynq.NewTask(entity.TaskTypeWebhookFanOut, nil),
+		asynq.Queue(entity.QueueWebhook),
+	); err != nil {
+		return fmt.Errorf("register webhook fan-out: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.webhooks.SweepSchedule,
+		asynq.NewTask(entity.TaskTypeWebhookSweep, nil),
+		asynq.Queue(entity.QueueWebhook),
+	); err != nil {
+		return fmt.Errorf("register webhook retention sweep: %w", err)
 	}
 
 	if err := w.server.Start(w.mux); err != nil {

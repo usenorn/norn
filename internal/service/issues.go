@@ -20,7 +20,7 @@ type Issues interface {
 	SetParent(ctx context.Context, workspaceID, issueID uuid.UUID, input SetIssueParentInput) (entity.Issue, error)
 	Children(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Issue, entity.IssueProgress, error)
 	SetStatus(ctx context.Context, workspaceID, issueID uuid.UUID, input SetIssueStatusInput) (entity.Issue, error)
-	Purge(ctx context.Context, issueID uuid.UUID) error
+	Purge(ctx context.Context, workspaceID, issueID uuid.UUID) error
 	MoveToTeam(ctx context.Context, workspaceID, issueID uuid.UUID, input MoveIssueInput) (entity.Issue, error)
 	SetLabels(ctx context.Context, workspaceID, issueID uuid.UUID, input SetIssueLabelsInput) ([]entity.Label, error)
 	Progress(ctx context.Context, workspaceID uuid.UUID, input ProgressInput) (entity.IssueProgress, error)

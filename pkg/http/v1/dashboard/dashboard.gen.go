@@ -375,6 +375,9 @@ const (
 	AuditActionTeamMembershipRemoved        AuditAction = "team_membership.removed"
 	AuditActionTokenMinted                  AuditAction = "token.minted"
 	AuditActionTokenRevoked                 AuditAction = "token.revoked"
+	AuditActionWebhookDisabled              AuditAction = "webhook.disabled"
+	AuditActionWebhookRegistered            AuditAction = "webhook.registered"
+	AuditActionWebhookRemoved               AuditAction = "webhook.removed"
 	AuditActionWorkspaceDeletionRequested   AuditAction = "workspace.deletion_requested"
 	AuditActionWorkspacePurged              AuditAction = "workspace.purged"
 	AuditActionWorkspaceRestored            AuditAction = "workspace.restored"
@@ -457,6 +460,12 @@ func (e AuditAction) Valid() bool {
 	case AuditActionTokenMinted:
 		return true
 	case AuditActionTokenRevoked:
+		return true
+	case AuditActionWebhookDisabled:
+		return true
+	case AuditActionWebhookRegistered:
+		return true
+	case AuditActionWebhookRemoved:
 		return true
 	case AuditActionWorkspaceDeletionRequested:
 		return true
@@ -2349,6 +2358,261 @@ func (e UpdateProjectRequestClear) Valid() bool {
 	}
 }
 
+// Defines values for WebhookAttemptOutcome.
+const (
+	WebhookAttemptOutcomeFailed    WebhookAttemptOutcome = "failed"
+	WebhookAttemptOutcomeRefused   WebhookAttemptOutcome = "refused"
+	WebhookAttemptOutcomeRejected  WebhookAttemptOutcome = "rejected"
+	WebhookAttemptOutcomeSucceeded WebhookAttemptOutcome = "succeeded"
+	WebhookAttemptOutcomeTimedOut  WebhookAttemptOutcome = "timed_out"
+)
+
+// Valid indicates whether the value is a known member of the WebhookAttemptOutcome enum.
+func (e WebhookAttemptOutcome) Valid() bool {
+	switch e {
+	case WebhookAttemptOutcomeFailed:
+		return true
+	case WebhookAttemptOutcomeRefused:
+		return true
+	case WebhookAttemptOutcomeRejected:
+		return true
+	case WebhookAttemptOutcomeSucceeded:
+		return true
+	case WebhookAttemptOutcomeTimedOut:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookDeliveryEventType.
+const (
+	WebhookDeliveryEventTypeCommentDeleted        WebhookDeliveryEventType = "comment.deleted"
+	WebhookDeliveryEventTypeCommentEdited         WebhookDeliveryEventType = "comment.edited"
+	WebhookDeliveryEventTypeCommentPosted         WebhookDeliveryEventType = "comment.posted"
+	WebhookDeliveryEventTypeCycleCadenceChanged   WebhookDeliveryEventType = "cycle.cadence_changed"
+	WebhookDeliveryEventTypeCycleClosed           WebhookDeliveryEventType = "cycle.closed"
+	WebhookDeliveryEventTypeCycleStarted          WebhookDeliveryEventType = "cycle.started"
+	WebhookDeliveryEventTypeIssueCreated          WebhookDeliveryEventType = "issue.created"
+	WebhookDeliveryEventTypeIssueDeleted          WebhookDeliveryEventType = "issue.deleted"
+	WebhookDeliveryEventTypeIssueMerged           WebhookDeliveryEventType = "issue.merged"
+	WebhookDeliveryEventTypeIssueStatusChanged    WebhookDeliveryEventType = "issue.status_changed"
+	WebhookDeliveryEventTypeIssueTriaged          WebhookDeliveryEventType = "issue.triaged"
+	WebhookDeliveryEventTypeIssueUpdated          WebhookDeliveryEventType = "issue.updated"
+	WebhookDeliveryEventTypeMembershipAdded       WebhookDeliveryEventType = "membership.added"
+	WebhookDeliveryEventTypeMembershipChanged     WebhookDeliveryEventType = "membership.changed"
+	WebhookDeliveryEventTypeMembershipRemoved     WebhookDeliveryEventType = "membership.removed"
+	WebhookDeliveryEventTypeProjectCreated        WebhookDeliveryEventType = "project.created"
+	WebhookDeliveryEventTypeProjectDeleted        WebhookDeliveryEventType = "project.deleted"
+	WebhookDeliveryEventTypeProjectMembersChanged WebhookDeliveryEventType = "project.members_changed"
+	WebhookDeliveryEventTypeProjectStatusPosted   WebhookDeliveryEventType = "project.status_posted"
+	WebhookDeliveryEventTypeProjectUpdated        WebhookDeliveryEventType = "project.updated"
+	WebhookDeliveryEventTypeTeamMembershipAdded   WebhookDeliveryEventType = "team_membership.added"
+	WebhookDeliveryEventTypeTeamMembershipRemoved WebhookDeliveryEventType = "team_membership.removed"
+	WebhookDeliveryEventTypeWebhookTest           WebhookDeliveryEventType = "webhook.test"
+)
+
+// Valid indicates whether the value is a known member of the WebhookDeliveryEventType enum.
+func (e WebhookDeliveryEventType) Valid() bool {
+	switch e {
+	case WebhookDeliveryEventTypeCommentDeleted:
+		return true
+	case WebhookDeliveryEventTypeCommentEdited:
+		return true
+	case WebhookDeliveryEventTypeCommentPosted:
+		return true
+	case WebhookDeliveryEventTypeCycleCadenceChanged:
+		return true
+	case WebhookDeliveryEventTypeCycleClosed:
+		return true
+	case WebhookDeliveryEventTypeCycleStarted:
+		return true
+	case WebhookDeliveryEventTypeIssueCreated:
+		return true
+	case WebhookDeliveryEventTypeIssueDeleted:
+		return true
+	case WebhookDeliveryEventTypeIssueMerged:
+		return true
+	case WebhookDeliveryEventTypeIssueStatusChanged:
+		return true
+	case WebhookDeliveryEventTypeIssueTriaged:
+		return true
+	case WebhookDeliveryEventTypeIssueUpdated:
+		return true
+	case WebhookDeliveryEventTypeMembershipAdded:
+		return true
+	case WebhookDeliveryEventTypeMembershipChanged:
+		return true
+	case WebhookDeliveryEventTypeMembershipRemoved:
+		return true
+	case WebhookDeliveryEventTypeProjectCreated:
+		return true
+	case WebhookDeliveryEventTypeProjectDeleted:
+		return true
+	case WebhookDeliveryEventTypeProjectMembersChanged:
+		return true
+	case WebhookDeliveryEventTypeProjectStatusPosted:
+		return true
+	case WebhookDeliveryEventTypeProjectUpdated:
+		return true
+	case WebhookDeliveryEventTypeTeamMembershipAdded:
+		return true
+	case WebhookDeliveryEventTypeTeamMembershipRemoved:
+		return true
+	case WebhookDeliveryEventTypeWebhookTest:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookDeliveryState.
+const (
+	WebhookDeliveryStateFailed    WebhookDeliveryState = "failed"
+	WebhookDeliveryStatePending   WebhookDeliveryState = "pending"
+	WebhookDeliveryStateSucceeded WebhookDeliveryState = "succeeded"
+)
+
+// Valid indicates whether the value is a known member of the WebhookDeliveryState enum.
+func (e WebhookDeliveryState) Valid() bool {
+	switch e {
+	case WebhookDeliveryStateFailed:
+		return true
+	case WebhookDeliveryStatePending:
+		return true
+	case WebhookDeliveryStateSucceeded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookDestinationRefusedProblemCode.
+const (
+	WebhookDestinationRefusedProblemCodeWebhookDestinationRefused WebhookDestinationRefusedProblemCode = "webhook_destination_refused"
+)
+
+// Valid indicates whether the value is a known member of the WebhookDestinationRefusedProblemCode enum.
+func (e WebhookDestinationRefusedProblemCode) Valid() bool {
+	switch e {
+	case WebhookDestinationRefusedProblemCodeWebhookDestinationRefused:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookDisableReason.
+const (
+	ByOwner          WebhookDisableReason = "by_owner"
+	SustainedFailure WebhookDisableReason = "sustained_failure"
+)
+
+// Valid indicates whether the value is a known member of the WebhookDisableReason enum.
+func (e WebhookDisableReason) Valid() bool {
+	switch e {
+	case ByOwner:
+		return true
+	case SustainedFailure:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookEventType.
+const (
+	WebhookEventTypeCommentDeleted        WebhookEventType = "comment.deleted"
+	WebhookEventTypeCommentEdited         WebhookEventType = "comment.edited"
+	WebhookEventTypeCommentPosted         WebhookEventType = "comment.posted"
+	WebhookEventTypeCycleCadenceChanged   WebhookEventType = "cycle.cadence_changed"
+	WebhookEventTypeCycleClosed           WebhookEventType = "cycle.closed"
+	WebhookEventTypeCycleStarted          WebhookEventType = "cycle.started"
+	WebhookEventTypeIssueCreated          WebhookEventType = "issue.created"
+	WebhookEventTypeIssueDeleted          WebhookEventType = "issue.deleted"
+	WebhookEventTypeIssueMerged           WebhookEventType = "issue.merged"
+	WebhookEventTypeIssueStatusChanged    WebhookEventType = "issue.status_changed"
+	WebhookEventTypeIssueTriaged          WebhookEventType = "issue.triaged"
+	WebhookEventTypeIssueUpdated          WebhookEventType = "issue.updated"
+	WebhookEventTypeMembershipAdded       WebhookEventType = "membership.added"
+	WebhookEventTypeMembershipChanged     WebhookEventType = "membership.changed"
+	WebhookEventTypeMembershipRemoved     WebhookEventType = "membership.removed"
+	WebhookEventTypeProjectCreated        WebhookEventType = "project.created"
+	WebhookEventTypeProjectDeleted        WebhookEventType = "project.deleted"
+	WebhookEventTypeProjectMembersChanged WebhookEventType = "project.members_changed"
+	WebhookEventTypeProjectStatusPosted   WebhookEventType = "project.status_posted"
+	WebhookEventTypeProjectUpdated        WebhookEventType = "project.updated"
+	WebhookEventTypeTeamMembershipAdded   WebhookEventType = "team_membership.added"
+	WebhookEventTypeTeamMembershipRemoved WebhookEventType = "team_membership.removed"
+)
+
+// Valid indicates whether the value is a known member of the WebhookEventType enum.
+func (e WebhookEventType) Valid() bool {
+	switch e {
+	case WebhookEventTypeCommentDeleted:
+		return true
+	case WebhookEventTypeCommentEdited:
+		return true
+	case WebhookEventTypeCommentPosted:
+		return true
+	case WebhookEventTypeCycleCadenceChanged:
+		return true
+	case WebhookEventTypeCycleClosed:
+		return true
+	case WebhookEventTypeCycleStarted:
+		return true
+	case WebhookEventTypeIssueCreated:
+		return true
+	case WebhookEventTypeIssueDeleted:
+		return true
+	case WebhookEventTypeIssueMerged:
+		return true
+	case WebhookEventTypeIssueStatusChanged:
+		return true
+	case WebhookEventTypeIssueTriaged:
+		return true
+	case WebhookEventTypeIssueUpdated:
+		return true
+	case WebhookEventTypeMembershipAdded:
+		return true
+	case WebhookEventTypeMembershipChanged:
+		return true
+	case WebhookEventTypeMembershipRemoved:
+		return true
+	case WebhookEventTypeProjectCreated:
+		return true
+	case WebhookEventTypeProjectDeleted:
+		return true
+	case WebhookEventTypeProjectMembersChanged:
+		return true
+	case WebhookEventTypeProjectStatusPosted:
+		return true
+	case WebhookEventTypeProjectUpdated:
+		return true
+	case WebhookEventTypeTeamMembershipAdded:
+		return true
+	case WebhookEventTypeTeamMembershipRemoved:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookSigningUnavailableProblemCode.
+const (
+	WebhookSigningUnavailableProblemCodeWebhookSigningUnavailable WebhookSigningUnavailableProblemCode = "webhook_signing_unavailable"
+)
+
+// Valid indicates whether the value is a known member of the WebhookSigningUnavailableProblemCode enum.
+func (e WebhookSigningUnavailableProblemCode) Valid() bool {
+	switch e {
+	case WebhookSigningUnavailableProblemCodeWebhookSigningUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for WorkflowStateConflictProblemCode.
 const (
 	StateIsCompletion   WorkflowStateConflictProblemCode = "state_is_completion"
@@ -3039,6 +3303,13 @@ type CreateTeamRequest struct {
 	Key        string          `json:"key"`
 	Name       string          `json:"name"`
 	Visibility *TeamVisibility `json:"visibility,omitempty"`
+}
+
+// CreateWebhookRequest defines model for CreateWebhookRequest.
+type CreateWebhookRequest struct {
+	Events []WebhookEventType `json:"events"`
+	Name   string             `json:"name"`
+	Url    string             `json:"url"`
 }
 
 // CreateWorkflowStateRequest defines model for CreateWorkflowStateRequest.
@@ -3859,6 +4130,12 @@ type MintedAPIToken struct {
 	Value string   `json:"value"`
 }
 
+// MintedWebhook defines model for MintedWebhook.
+type MintedWebhook struct {
+	Secret  string  `json:"secret"`
+	Webhook Webhook `json:"webhook"`
+}
+
 // MoveIssueRequest defines model for MoveIssueRequest.
 type MoveIssueRequest struct {
 	AcknowledgeLabelLoss *bool              `json:"acknowledgeLabelLoss,omitempty"`
@@ -4623,6 +4900,14 @@ type UpdateTeamRequest struct {
 	Visibility *TeamVisibility `json:"visibility,omitempty"`
 }
 
+// UpdateWebhookRequest defines model for UpdateWebhookRequest.
+type UpdateWebhookRequest struct {
+	Enabled *bool               `json:"enabled,omitempty"`
+	Events  *[]WebhookEventType `json:"events,omitempty"`
+	Name    *string             `json:"name,omitempty"`
+	Url     *string             `json:"url,omitempty"`
+}
+
 // UpdateWorkflowStateRequest defines model for UpdateWorkflowStateRequest.
 type UpdateWorkflowStateRequest struct {
 	Category *StateCategory `json:"category,omitempty"`
@@ -4635,6 +4920,108 @@ type UpdateWorkspaceRequest struct {
 	Name          *string             `json:"name,omitempty"`
 	Timezone      *string             `json:"timezone,omitempty"`
 }
+
+// Webhook defines model for Webhook.
+type Webhook struct {
+	CreatedAt       time.Time             `json:"createdAt"`
+	DisabledAt      *time.Time            `json:"disabledAt,omitempty"`
+	DisabledReason  *WebhookDisableReason `json:"disabledReason,omitempty"`
+	Enabled         bool                  `json:"enabled"`
+	Events          []WebhookEventType    `json:"events"`
+	FailureStreak   int32                 `json:"failureStreak"`
+	Id              openapi_types.UUID    `json:"id"`
+	LastDeliveredAt *time.Time            `json:"lastDeliveredAt,omitempty"`
+	Name            string                `json:"name"`
+	SecretHint      string                `json:"secretHint"`
+	UpdatedAt       time.Time             `json:"updatedAt"`
+	Url             string                `json:"url"`
+}
+
+// WebhookAttempt defines model for WebhookAttempt.
+type WebhookAttempt struct {
+	Attempt         int32                 `json:"attempt"`
+	ElapsedMs       int64                 `json:"elapsedMs"`
+	Error           *string               `json:"error,omitempty"`
+	FinishedAt      time.Time             `json:"finishedAt"`
+	Outcome         WebhookAttemptOutcome `json:"outcome"`
+	RequestUrl      string                `json:"requestUrl"`
+	ResolvedAddress *string               `json:"resolvedAddress,omitempty"`
+	ResponseExcerpt *string               `json:"responseExcerpt,omitempty"`
+	StartedAt       time.Time             `json:"startedAt"`
+	StatusCode      *int32                `json:"statusCode,omitempty"`
+}
+
+// WebhookAttemptOutcome defines model for WebhookAttemptOutcome.
+type WebhookAttemptOutcome string
+
+// WebhookDelivery defines model for WebhookDelivery.
+type WebhookDelivery struct {
+	Attempt   int32     `json:"attempt"`
+	CreatedAt time.Time `json:"createdAt"`
+
+	// Event Every subscribable event, plus the test event a delivery may carry.
+	Event         WebhookDeliveryEventType `json:"event"`
+	Id            openapi_types.UUID       `json:"id"`
+	NextAttemptAt *time.Time               `json:"nextAttemptAt,omitempty"`
+	ReplayOf      *openapi_types.UUID      `json:"replayOf,omitempty"`
+	SettledAt     *time.Time               `json:"settledAt,omitempty"`
+	State         WebhookDeliveryState     `json:"state"`
+	SubjectId     *openapi_types.UUID      `json:"subjectId,omitempty"`
+	SubjectKind   *string                  `json:"subjectKind,omitempty"`
+}
+
+// WebhookDeliveryDetail defines model for WebhookDeliveryDetail.
+type WebhookDeliveryDetail struct {
+	Attempts []WebhookAttempt       `json:"attempts"`
+	Body     map[string]interface{} `json:"body"`
+	Delivery WebhookDelivery        `json:"delivery"`
+}
+
+// WebhookDeliveryEventType Every subscribable event, plus the test event a delivery may carry.
+type WebhookDeliveryEventType string
+
+// WebhookDeliveryPage defines model for WebhookDeliveryPage.
+type WebhookDeliveryPage struct {
+	Deliveries []WebhookDelivery `json:"deliveries"`
+	NextCursor *string           `json:"nextCursor,omitempty"`
+}
+
+// WebhookDeliveryState defines model for WebhookDeliveryState.
+type WebhookDeliveryState string
+
+// WebhookDestinationRefusedProblem defines model for WebhookDestinationRefusedProblem.
+type WebhookDestinationRefusedProblem struct {
+	Code     WebhookDestinationRefusedProblemCode `json:"code"`
+	Detail   *string                              `json:"detail,omitempty"`
+	Errors   *[]FieldError                        `json:"errors,omitempty"`
+	Instance *string                              `json:"instance,omitempty"`
+	Status   int32                                `json:"status"`
+	Title    string                               `json:"title"`
+	Type     string                               `json:"type"`
+}
+
+// WebhookDestinationRefusedProblemCode defines model for WebhookDestinationRefusedProblem.Code.
+type WebhookDestinationRefusedProblemCode string
+
+// WebhookDisableReason defines model for WebhookDisableReason.
+type WebhookDisableReason string
+
+// WebhookEventType defines model for WebhookEventType.
+type WebhookEventType string
+
+// WebhookSigningUnavailableProblem defines model for WebhookSigningUnavailableProblem.
+type WebhookSigningUnavailableProblem struct {
+	Code     WebhookSigningUnavailableProblemCode `json:"code"`
+	Detail   *string                              `json:"detail,omitempty"`
+	Errors   *[]FieldError                        `json:"errors,omitempty"`
+	Instance *string                              `json:"instance,omitempty"`
+	Status   int32                                `json:"status"`
+	Title    string                               `json:"title"`
+	Type     string                               `json:"type"`
+}
+
+// WebhookSigningUnavailableProblemCode defines model for WebhookSigningUnavailableProblem.Code.
+type WebhookSigningUnavailableProblemCode string
 
 // WorkflowState defines model for WorkflowState.
 type WorkflowState struct {
@@ -4836,6 +5223,9 @@ type CommentId = openapi_types.UUID
 // CycleId defines model for CycleId.
 type CycleId = openapi_types.UUID
 
+// DeliveryId defines model for DeliveryId.
+type DeliveryId = openapi_types.UUID
+
 // DirectoryCursor defines model for DirectoryCursor.
 type DirectoryCursor = time.Time
 
@@ -4886,6 +5276,21 @@ type TeamId = openapi_types.UUID
 
 // TokenId defines model for TokenId.
 type TokenId = openapi_types.UUID
+
+// WebhookDeliveryCursor defines model for WebhookDeliveryCursor.
+type WebhookDeliveryCursor = string
+
+// WebhookDeliveryEventFilter defines model for WebhookDeliveryEventFilter.
+type WebhookDeliveryEventFilter = []WebhookDeliveryEventType
+
+// WebhookDeliveryLimit defines model for WebhookDeliveryLimit.
+type WebhookDeliveryLimit = int32
+
+// WebhookDeliveryStateFilter defines model for WebhookDeliveryStateFilter.
+type WebhookDeliveryStateFilter = []WebhookDeliveryState
+
+// WebhookId defines model for WebhookId.
+type WebhookId = openapi_types.UUID
 
 // WorkspaceId defines model for WorkspaceId.
 type WorkspaceId = openapi_types.UUID
@@ -4979,6 +5384,12 @@ type TeamConflict = TeamConflictProblem
 
 // TooManyAttempts defines model for TooManyAttempts.
 type TooManyAttempts = RateLimitedProblem
+
+// WebhookDestinationRefused defines model for WebhookDestinationRefused.
+type WebhookDestinationRefused = WebhookDestinationRefusedProblem
+
+// WebhookSigningUnavailable defines model for WebhookSigningUnavailable.
+type WebhookSigningUnavailable = WebhookSigningUnavailableProblem
 
 // WorkflowStateConflict defines model for WorkflowStateConflict.
 type WorkflowStateConflict = WorkflowStateConflictProblem
@@ -5164,6 +5575,14 @@ type RemoveWorkflowStateParams struct {
 type ListWorkspaceTriageParams struct {
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListWorkspaceWebhookDeliveriesParams defines parameters for ListWorkspaceWebhookDeliveries.
+type ListWorkspaceWebhookDeliveriesParams struct {
+	Limit  *WebhookDeliveryLimit       `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *WebhookDeliveryCursor      `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Event  *WebhookDeliveryEventFilter `form:"event,omitempty" json:"event,omitempty"`
+	State  *WebhookDeliveryStateFilter `form:"state,omitempty" json:"state,omitempty"`
 }
 
 // ConfirmEmailChangeJSONRequestBody defines body for ConfirmEmailChange for application/json ContentType.
@@ -5381,6 +5800,12 @@ type MergeWorkspaceTriageIssueJSONRequestBody = MergeTriageIssueRequest
 
 // ReassignWorkspaceTriageIssueJSONRequestBody defines body for ReassignWorkspaceTriageIssue for application/json ContentType.
 type ReassignWorkspaceTriageIssueJSONRequestBody = ReassignTriageIssueRequest
+
+// CreateWorkspaceWebhookJSONRequestBody defines body for CreateWorkspaceWebhook for application/json ContentType.
+type CreateWorkspaceWebhookJSONRequestBody = CreateWebhookRequest
+
+// UpdateWorkspaceWebhookJSONRequestBody defines body for UpdateWorkspaceWebhook for application/json ContentType.
+type UpdateWorkspaceWebhookJSONRequestBody = UpdateWebhookRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -5981,6 +6406,36 @@ type ServerInterface interface {
 	// ReassignWorkspaceTriageIssue Hand an issue to another team to decide about
 	// (POST /workspaces/{workspaceId}/triage/{issueId}/reassign)
 	ReassignWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// ListWorkspaceWebhooks List the endpoints this workspace sends its events to
+	// (GET /workspaces/{workspaceId}/webhooks)
+	ListWorkspaceWebhooks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// CreateWorkspaceWebhook Register an endpoint, returning its signing secret for the only time
+	// (POST /workspaces/{workspaceId}/webhooks)
+	CreateWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// DeleteWorkspaceWebhook Remove an endpoint, ending its deliveries at once
+	// (DELETE /workspaces/{workspaceId}/webhooks/{webhookId})
+	DeleteWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId)
+	// GetWorkspaceWebhook Read one endpoint, its events, and how it has been behaving
+	// (GET /workspaces/{workspaceId}/webhooks/{webhookId})
+	GetWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId)
+	// UpdateWorkspaceWebhook Change where an endpoint points, what it hears, or whether it runs
+	// (PATCH /workspaces/{workspaceId}/webhooks/{webhookId})
+	UpdateWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId)
+	// ListWorkspaceWebhookDeliveries Read what this endpoint was sent, and how each attempt went
+	// (GET /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries)
+	ListWorkspaceWebhookDeliveries(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId, params ListWorkspaceWebhookDeliveriesParams)
+	// GetWorkspaceWebhookDelivery Read one delivery, its payload, and every attempt made on it
+	// (GET /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId})
+	GetWorkspaceWebhookDelivery(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId, deliveryId DeliveryId)
+	// ReplayWorkspaceWebhookDelivery Send a settled delivery again, unchanged, as a new delivery
+	// (POST /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}/replay)
+	ReplayWorkspaceWebhookDelivery(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId, deliveryId DeliveryId)
+	// RotateWorkspaceWebhookSecret Replace the signing secret, honouring the old one for a grace period
+	// (POST /workspaces/{workspaceId}/webhooks/{webhookId}/secret)
+	RotateWorkspaceWebhookSecret(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId)
+	// SendWorkspaceWebhookTest Send a test event, to prove the endpoint receives and verifies
+	// (POST /workspaces/{workspaceId}/webhooks/{webhookId}/test)
+	SendWorkspaceWebhookTest(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -7178,6 +7633,66 @@ func (_ Unimplemented) MergeWorkspaceTriageIssue(w http.ResponseWriter, r *http.
 // ReassignWorkspaceTriageIssue Hand an issue to another team to decide about
 // (POST /workspaces/{workspaceId}/triage/{issueId}/reassign)
 func (_ Unimplemented) ReassignWorkspaceTriageIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceWebhooks List the endpoints this workspace sends its events to
+// (GET /workspaces/{workspaceId}/webhooks)
+func (_ Unimplemented) ListWorkspaceWebhooks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateWorkspaceWebhook Register an endpoint, returning its signing secret for the only time
+// (POST /workspaces/{workspaceId}/webhooks)
+func (_ Unimplemented) CreateWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteWorkspaceWebhook Remove an endpoint, ending its deliveries at once
+// (DELETE /workspaces/{workspaceId}/webhooks/{webhookId})
+func (_ Unimplemented) DeleteWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceWebhook Read one endpoint, its events, and how it has been behaving
+// (GET /workspaces/{workspaceId}/webhooks/{webhookId})
+func (_ Unimplemented) GetWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateWorkspaceWebhook Change where an endpoint points, what it hears, or whether it runs
+// (PATCH /workspaces/{workspaceId}/webhooks/{webhookId})
+func (_ Unimplemented) UpdateWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceWebhookDeliveries Read what this endpoint was sent, and how each attempt went
+// (GET /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries)
+func (_ Unimplemented) ListWorkspaceWebhookDeliveries(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId, params ListWorkspaceWebhookDeliveriesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceWebhookDelivery Read one delivery, its payload, and every attempt made on it
+// (GET /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId})
+func (_ Unimplemented) GetWorkspaceWebhookDelivery(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId, deliveryId DeliveryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReplayWorkspaceWebhookDelivery Send a settled delivery again, unchanged, as a new delivery
+// (POST /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}/replay)
+func (_ Unimplemented) ReplayWorkspaceWebhookDelivery(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId, deliveryId DeliveryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RotateWorkspaceWebhookSecret Replace the signing secret, honouring the old one for a grace period
+// (POST /workspaces/{workspaceId}/webhooks/{webhookId}/secret)
+func (_ Unimplemented) RotateWorkspaceWebhookSecret(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SendWorkspaceWebhookTest Send a test event, to prove the endpoint receives and verifies
+// (POST /workspaces/{workspaceId}/webhooks/{webhookId}/test)
+func (_ Unimplemented) SendWorkspaceWebhookTest(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -13838,6 +14353,411 @@ func (siw *ServerInterfaceWrapper) ReassignWorkspaceTriageIssue(w http.ResponseW
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceWebhooks operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceWebhooks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceWebhooks(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateWorkspaceWebhook operation middleware
+func (siw *ServerInterfaceWrapper) CreateWorkspaceWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWorkspaceWebhook(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWorkspaceWebhook operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorkspaceWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhookId" -------------
+	var webhookId WebhookId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhookId", chi.URLParam(r, "webhookId"), &webhookId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhookId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWorkspaceWebhook(w, r, workspaceId, webhookId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceWebhook operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhookId" -------------
+	var webhookId WebhookId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhookId", chi.URLParam(r, "webhookId"), &webhookId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhookId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceWebhook(w, r, workspaceId, webhookId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateWorkspaceWebhook operation middleware
+func (siw *ServerInterfaceWrapper) UpdateWorkspaceWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhookId" -------------
+	var webhookId WebhookId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhookId", chi.URLParam(r, "webhookId"), &webhookId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhookId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateWorkspaceWebhook(w, r, workspaceId, webhookId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceWebhookDeliveries operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceWebhookDeliveries(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhookId" -------------
+	var webhookId WebhookId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhookId", chi.URLParam(r, "webhookId"), &webhookId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhookId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceWebhookDeliveriesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "event" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "event", r.URL.Query(), &params.Event, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "event"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "event", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceWebhookDeliveries(w, r, workspaceId, webhookId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceWebhookDelivery operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceWebhookDelivery(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhookId" -------------
+	var webhookId WebhookId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhookId", chi.URLParam(r, "webhookId"), &webhookId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhookId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deliveryId" -------------
+	var deliveryId DeliveryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deliveryId", chi.URLParam(r, "deliveryId"), &deliveryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deliveryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceWebhookDelivery(w, r, workspaceId, webhookId, deliveryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReplayWorkspaceWebhookDelivery operation middleware
+func (siw *ServerInterfaceWrapper) ReplayWorkspaceWebhookDelivery(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhookId" -------------
+	var webhookId WebhookId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhookId", chi.URLParam(r, "webhookId"), &webhookId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhookId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deliveryId" -------------
+	var deliveryId DeliveryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deliveryId", chi.URLParam(r, "deliveryId"), &deliveryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deliveryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReplayWorkspaceWebhookDelivery(w, r, workspaceId, webhookId, deliveryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RotateWorkspaceWebhookSecret operation middleware
+func (siw *ServerInterfaceWrapper) RotateWorkspaceWebhookSecret(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhookId" -------------
+	var webhookId WebhookId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhookId", chi.URLParam(r, "webhookId"), &webhookId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhookId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RotateWorkspaceWebhookSecret(w, r, workspaceId, webhookId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SendWorkspaceWebhookTest operation middleware
+func (siw *ServerInterfaceWrapper) SendWorkspaceWebhookTest(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhookId" -------------
+	var webhookId WebhookId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhookId", chi.URLParam(r, "webhookId"), &webhookId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhookId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SendWorkspaceWebhookTest(w, r, workspaceId, webhookId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -14205,6 +15125,36 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/mcp-connections/{connectionId}", wrapper.RevokeWorkspaceMCPConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/webhooks", wrapper.ListWorkspaceWebhooks)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/webhooks", wrapper.CreateWorkspaceWebhook)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/webhooks/{webhookId}", wrapper.DeleteWorkspaceWebhook)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/webhooks/{webhookId}", wrapper.GetWorkspaceWebhook)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/workspaces/{workspaceId}/webhooks/{webhookId}", wrapper.UpdateWorkspaceWebhook)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/webhooks/{webhookId}/secret", wrapper.RotateWorkspaceWebhookSecret)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/webhooks/{webhookId}/test", wrapper.SendWorkspaceWebhookTest)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries", wrapper.ListWorkspaceWebhookDeliveries)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}", wrapper.GetWorkspaceWebhookDelivery)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}/replay", wrapper.ReplayWorkspaceWebhookDelivery)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents", wrapper.ListWorkspaceAgents)
@@ -14620,6 +15570,10 @@ type TooManyAttemptsApplicationProblemPlusJSONResponse struct {
 
 	Headers TooManyAttemptsResponseHeaders
 }
+
+type WebhookDestinationRefusedApplicationProblemPlusJSONResponse WebhookDestinationRefusedProblem
+
+type WebhookSigningUnavailableApplicationProblemPlusJSONResponse WebhookSigningUnavailableProblem
 
 type WorkflowStateConflictApplicationProblemPlusJSONResponse WorkflowStateConflictProblem
 
@@ -32170,6 +33124,911 @@ func (response ReassignWorkspaceTriageIssue500ApplicationProblemPlusJSONResponse
 	return err
 }
 
+type ListWorkspaceWebhooksRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceWebhooksResponseObject interface {
+	VisitListWorkspaceWebhooksResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceWebhooks200JSONResponse []Webhook
+
+func (response ListWorkspaceWebhooks200JSONResponse) VisitListWorkspaceWebhooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceWebhooks401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceWebhooks401ApplicationProblemPlusJSONResponse) VisitListWorkspaceWebhooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceWebhooks403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceWebhooks403ApplicationProblemPlusJSONResponse) VisitListWorkspaceWebhooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceWebhooks500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceWebhooks500ApplicationProblemPlusJSONResponse) VisitListWorkspaceWebhooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceWebhookRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *CreateWorkspaceWebhookJSONRequestBody
+}
+
+type CreateWorkspaceWebhookResponseObject interface {
+	VisitCreateWorkspaceWebhookResponse(w http.ResponseWriter) error
+}
+
+type CreateWorkspaceWebhook201JSONResponse MintedWebhook
+
+func (response CreateWorkspaceWebhook201JSONResponse) VisitCreateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceWebhook401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceWebhook401ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceWebhook403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceWebhook403ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceWebhook422ApplicationProblemPlusJSONResponse struct {
+	WebhookDestinationRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceWebhook422ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceWebhook500ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceWebhook500ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceWebhook503ApplicationProblemPlusJSONResponse struct {
+	WebhookSigningUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceWebhook503ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceWebhookRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	WebhookId   WebhookId   `json:"webhookId"`
+}
+
+type DeleteWorkspaceWebhookResponseObject interface {
+	VisitDeleteWorkspaceWebhookResponse(w http.ResponseWriter) error
+}
+
+type DeleteWorkspaceWebhook204Response struct {
+}
+
+func (response DeleteWorkspaceWebhook204Response) VisitDeleteWorkspaceWebhookResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteWorkspaceWebhook401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceWebhook401ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceWebhook403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceWebhook403ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceWebhook404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceWebhook404ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceWebhook500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceWebhook500ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceWebhookRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	WebhookId   WebhookId   `json:"webhookId"`
+}
+
+type GetWorkspaceWebhookResponseObject interface {
+	VisitGetWorkspaceWebhookResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceWebhook200JSONResponse Webhook
+
+func (response GetWorkspaceWebhook200JSONResponse) VisitGetWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceWebhook401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceWebhook401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceWebhook403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceWebhook403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceWebhook404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceWebhook404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceWebhook500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceWebhook500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceWebhookRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	WebhookId   WebhookId   `json:"webhookId"`
+	Body        *UpdateWorkspaceWebhookJSONRequestBody
+}
+
+type UpdateWorkspaceWebhookResponseObject interface {
+	VisitUpdateWorkspaceWebhookResponse(w http.ResponseWriter) error
+}
+
+type UpdateWorkspaceWebhook200JSONResponse Webhook
+
+func (response UpdateWorkspaceWebhook200JSONResponse) VisitUpdateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceWebhook401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceWebhook401ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceWebhook403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceWebhook403ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceWebhook404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceWebhook404ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceWebhook422ApplicationProblemPlusJSONResponse struct {
+	WebhookDestinationRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceWebhook422ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceWebhook500ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceWebhook500ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceWebhookDeliveriesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	WebhookId   WebhookId   `json:"webhookId"`
+	Params      ListWorkspaceWebhookDeliveriesParams
+}
+
+type ListWorkspaceWebhookDeliveriesResponseObject interface {
+	VisitListWorkspaceWebhookDeliveriesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceWebhookDeliveries200JSONResponse WebhookDeliveryPage
+
+func (response ListWorkspaceWebhookDeliveries200JSONResponse) VisitListWorkspaceWebhookDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceWebhookDeliveries401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceWebhookDeliveries401ApplicationProblemPlusJSONResponse) VisitListWorkspaceWebhookDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceWebhookDeliveries403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceWebhookDeliveries403ApplicationProblemPlusJSONResponse) VisitListWorkspaceWebhookDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceWebhookDeliveries404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceWebhookDeliveries404ApplicationProblemPlusJSONResponse) VisitListWorkspaceWebhookDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceWebhookDeliveries422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceWebhookDeliveries422ApplicationProblemPlusJSONResponse) VisitListWorkspaceWebhookDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceWebhookDeliveries500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceWebhookDeliveries500ApplicationProblemPlusJSONResponse) VisitListWorkspaceWebhookDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceWebhookDeliveryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	WebhookId   WebhookId   `json:"webhookId"`
+	DeliveryId  DeliveryId  `json:"deliveryId"`
+}
+
+type GetWorkspaceWebhookDeliveryResponseObject interface {
+	VisitGetWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceWebhookDelivery200JSONResponse WebhookDeliveryDetail
+
+func (response GetWorkspaceWebhookDelivery200JSONResponse) VisitGetWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceWebhookDelivery401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceWebhookDelivery401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceWebhookDelivery403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceWebhookDelivery403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceWebhookDelivery404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceWebhookDelivery404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceWebhookDelivery500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceWebhookDelivery500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplayWorkspaceWebhookDeliveryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	WebhookId   WebhookId   `json:"webhookId"`
+	DeliveryId  DeliveryId  `json:"deliveryId"`
+}
+
+type ReplayWorkspaceWebhookDeliveryResponseObject interface {
+	VisitReplayWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error
+}
+
+type ReplayWorkspaceWebhookDelivery202JSONResponse WebhookDelivery
+
+func (response ReplayWorkspaceWebhookDelivery202JSONResponse) VisitReplayWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplayWorkspaceWebhookDelivery401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReplayWorkspaceWebhookDelivery401ApplicationProblemPlusJSONResponse) VisitReplayWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplayWorkspaceWebhookDelivery403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ReplayWorkspaceWebhookDelivery403ApplicationProblemPlusJSONResponse) VisitReplayWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplayWorkspaceWebhookDelivery404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReplayWorkspaceWebhookDelivery404ApplicationProblemPlusJSONResponse) VisitReplayWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplayWorkspaceWebhookDelivery409ApplicationProblemPlusJSONResponse Problem
+
+func (response ReplayWorkspaceWebhookDelivery409ApplicationProblemPlusJSONResponse) VisitReplayWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplayWorkspaceWebhookDelivery422ApplicationProblemPlusJSONResponse Problem
+
+func (response ReplayWorkspaceWebhookDelivery422ApplicationProblemPlusJSONResponse) VisitReplayWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplayWorkspaceWebhookDelivery500ApplicationProblemPlusJSONResponse Problem
+
+func (response ReplayWorkspaceWebhookDelivery500ApplicationProblemPlusJSONResponse) VisitReplayWorkspaceWebhookDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceWebhookSecretRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	WebhookId   WebhookId   `json:"webhookId"`
+}
+
+type RotateWorkspaceWebhookSecretResponseObject interface {
+	VisitRotateWorkspaceWebhookSecretResponse(w http.ResponseWriter) error
+}
+
+type RotateWorkspaceWebhookSecret200JSONResponse MintedWebhook
+
+func (response RotateWorkspaceWebhookSecret200JSONResponse) VisitRotateWorkspaceWebhookSecretResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceWebhookSecret401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RotateWorkspaceWebhookSecret401ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceWebhookSecretResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceWebhookSecret403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RotateWorkspaceWebhookSecret403ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceWebhookSecretResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceWebhookSecret404ApplicationProblemPlusJSONResponse Problem
+
+func (response RotateWorkspaceWebhookSecret404ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceWebhookSecretResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceWebhookSecret500ApplicationProblemPlusJSONResponse Problem
+
+func (response RotateWorkspaceWebhookSecret500ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceWebhookSecretResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceWebhookSecret503ApplicationProblemPlusJSONResponse struct {
+	WebhookSigningUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response RotateWorkspaceWebhookSecret503ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceWebhookSecretResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendWorkspaceWebhookTestRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	WebhookId   WebhookId   `json:"webhookId"`
+}
+
+type SendWorkspaceWebhookTestResponseObject interface {
+	VisitSendWorkspaceWebhookTestResponse(w http.ResponseWriter) error
+}
+
+type SendWorkspaceWebhookTest202JSONResponse WebhookDelivery
+
+func (response SendWorkspaceWebhookTest202JSONResponse) VisitSendWorkspaceWebhookTestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendWorkspaceWebhookTest401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SendWorkspaceWebhookTest401ApplicationProblemPlusJSONResponse) VisitSendWorkspaceWebhookTestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendWorkspaceWebhookTest403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SendWorkspaceWebhookTest403ApplicationProblemPlusJSONResponse) VisitSendWorkspaceWebhookTestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendWorkspaceWebhookTest404ApplicationProblemPlusJSONResponse Problem
+
+func (response SendWorkspaceWebhookTest404ApplicationProblemPlusJSONResponse) VisitSendWorkspaceWebhookTestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendWorkspaceWebhookTest500ApplicationProblemPlusJSONResponse Problem
+
+func (response SendWorkspaceWebhookTest500ApplicationProblemPlusJSONResponse) VisitSendWorkspaceWebhookTestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// ConfirmEmailChange Confirm a pending email change with the emailed token
@@ -32769,6 +34628,36 @@ type StrictServerInterface interface {
 	// ReassignWorkspaceTriageIssue Hand an issue to another team to decide about
 	// (POST /workspaces/{workspaceId}/triage/{issueId}/reassign)
 	ReassignWorkspaceTriageIssue(ctx context.Context, request ReassignWorkspaceTriageIssueRequestObject) (ReassignWorkspaceTriageIssueResponseObject, error)
+	// ListWorkspaceWebhooks List the endpoints this workspace sends its events to
+	// (GET /workspaces/{workspaceId}/webhooks)
+	ListWorkspaceWebhooks(ctx context.Context, request ListWorkspaceWebhooksRequestObject) (ListWorkspaceWebhooksResponseObject, error)
+	// CreateWorkspaceWebhook Register an endpoint, returning its signing secret for the only time
+	// (POST /workspaces/{workspaceId}/webhooks)
+	CreateWorkspaceWebhook(ctx context.Context, request CreateWorkspaceWebhookRequestObject) (CreateWorkspaceWebhookResponseObject, error)
+	// DeleteWorkspaceWebhook Remove an endpoint, ending its deliveries at once
+	// (DELETE /workspaces/{workspaceId}/webhooks/{webhookId})
+	DeleteWorkspaceWebhook(ctx context.Context, request DeleteWorkspaceWebhookRequestObject) (DeleteWorkspaceWebhookResponseObject, error)
+	// GetWorkspaceWebhook Read one endpoint, its events, and how it has been behaving
+	// (GET /workspaces/{workspaceId}/webhooks/{webhookId})
+	GetWorkspaceWebhook(ctx context.Context, request GetWorkspaceWebhookRequestObject) (GetWorkspaceWebhookResponseObject, error)
+	// UpdateWorkspaceWebhook Change where an endpoint points, what it hears, or whether it runs
+	// (PATCH /workspaces/{workspaceId}/webhooks/{webhookId})
+	UpdateWorkspaceWebhook(ctx context.Context, request UpdateWorkspaceWebhookRequestObject) (UpdateWorkspaceWebhookResponseObject, error)
+	// ListWorkspaceWebhookDeliveries Read what this endpoint was sent, and how each attempt went
+	// (GET /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries)
+	ListWorkspaceWebhookDeliveries(ctx context.Context, request ListWorkspaceWebhookDeliveriesRequestObject) (ListWorkspaceWebhookDeliveriesResponseObject, error)
+	// GetWorkspaceWebhookDelivery Read one delivery, its payload, and every attempt made on it
+	// (GET /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId})
+	GetWorkspaceWebhookDelivery(ctx context.Context, request GetWorkspaceWebhookDeliveryRequestObject) (GetWorkspaceWebhookDeliveryResponseObject, error)
+	// ReplayWorkspaceWebhookDelivery Send a settled delivery again, unchanged, as a new delivery
+	// (POST /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}/replay)
+	ReplayWorkspaceWebhookDelivery(ctx context.Context, request ReplayWorkspaceWebhookDeliveryRequestObject) (ReplayWorkspaceWebhookDeliveryResponseObject, error)
+	// RotateWorkspaceWebhookSecret Replace the signing secret, honouring the old one for a grace period
+	// (POST /workspaces/{workspaceId}/webhooks/{webhookId}/secret)
+	RotateWorkspaceWebhookSecret(ctx context.Context, request RotateWorkspaceWebhookSecretRequestObject) (RotateWorkspaceWebhookSecretResponseObject, error)
+	// SendWorkspaceWebhookTest Send a test event, to prove the endpoint receives and verifies
+	// (POST /workspaces/{workspaceId}/webhooks/{webhookId}/test)
+	SendWorkspaceWebhookTest(ctx context.Context, request SendWorkspaceWebhookTestRequestObject) (SendWorkspaceWebhookTestResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -38550,6 +40439,291 @@ func (sh *strictHandler) ReassignWorkspaceTriageIssue(w http.ResponseWriter, r *
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ReassignWorkspaceTriageIssueResponseObject); ok {
 		if err := validResponse.VisitReassignWorkspaceTriageIssueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceWebhooks operation middleware
+func (sh *strictHandler) ListWorkspaceWebhooks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceWebhooksRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceWebhooks(ctx, request.(ListWorkspaceWebhooksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceWebhooks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceWebhooksResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceWebhooksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateWorkspaceWebhook operation middleware
+func (sh *strictHandler) CreateWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request CreateWorkspaceWebhookRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body CreateWorkspaceWebhookJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateWorkspaceWebhook(ctx, request.(CreateWorkspaceWebhookRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateWorkspaceWebhook")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateWorkspaceWebhookResponseObject); ok {
+		if err := validResponse.VisitCreateWorkspaceWebhookResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWorkspaceWebhook operation middleware
+func (sh *strictHandler) DeleteWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId) {
+	var request DeleteWorkspaceWebhookRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.WebhookId = webhookId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWorkspaceWebhook(ctx, request.(DeleteWorkspaceWebhookRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWorkspaceWebhook")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWorkspaceWebhookResponseObject); ok {
+		if err := validResponse.VisitDeleteWorkspaceWebhookResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceWebhook operation middleware
+func (sh *strictHandler) GetWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId) {
+	var request GetWorkspaceWebhookRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.WebhookId = webhookId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceWebhook(ctx, request.(GetWorkspaceWebhookRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceWebhook")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceWebhookResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceWebhookResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateWorkspaceWebhook operation middleware
+func (sh *strictHandler) UpdateWorkspaceWebhook(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId) {
+	var request UpdateWorkspaceWebhookRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.WebhookId = webhookId
+
+	var body UpdateWorkspaceWebhookJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateWorkspaceWebhook(ctx, request.(UpdateWorkspaceWebhookRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateWorkspaceWebhook")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateWorkspaceWebhookResponseObject); ok {
+		if err := validResponse.VisitUpdateWorkspaceWebhookResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceWebhookDeliveries operation middleware
+func (sh *strictHandler) ListWorkspaceWebhookDeliveries(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId, params ListWorkspaceWebhookDeliveriesParams) {
+	var request ListWorkspaceWebhookDeliveriesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.WebhookId = webhookId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceWebhookDeliveries(ctx, request.(ListWorkspaceWebhookDeliveriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceWebhookDeliveries")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceWebhookDeliveriesResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceWebhookDeliveriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceWebhookDelivery operation middleware
+func (sh *strictHandler) GetWorkspaceWebhookDelivery(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId, deliveryId DeliveryId) {
+	var request GetWorkspaceWebhookDeliveryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.WebhookId = webhookId
+	request.DeliveryId = deliveryId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceWebhookDelivery(ctx, request.(GetWorkspaceWebhookDeliveryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceWebhookDelivery")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceWebhookDeliveryResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceWebhookDeliveryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReplayWorkspaceWebhookDelivery operation middleware
+func (sh *strictHandler) ReplayWorkspaceWebhookDelivery(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId, deliveryId DeliveryId) {
+	var request ReplayWorkspaceWebhookDeliveryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.WebhookId = webhookId
+	request.DeliveryId = deliveryId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReplayWorkspaceWebhookDelivery(ctx, request.(ReplayWorkspaceWebhookDeliveryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReplayWorkspaceWebhookDelivery")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReplayWorkspaceWebhookDeliveryResponseObject); ok {
+		if err := validResponse.VisitReplayWorkspaceWebhookDeliveryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RotateWorkspaceWebhookSecret operation middleware
+func (sh *strictHandler) RotateWorkspaceWebhookSecret(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId) {
+	var request RotateWorkspaceWebhookSecretRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.WebhookId = webhookId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RotateWorkspaceWebhookSecret(ctx, request.(RotateWorkspaceWebhookSecretRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RotateWorkspaceWebhookSecret")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RotateWorkspaceWebhookSecretResponseObject); ok {
+		if err := validResponse.VisitRotateWorkspaceWebhookSecretResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SendWorkspaceWebhookTest operation middleware
+func (sh *strictHandler) SendWorkspaceWebhookTest(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, webhookId WebhookId) {
+	var request SendWorkspaceWebhookTestRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.WebhookId = webhookId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SendWorkspaceWebhookTest(ctx, request.(SendWorkspaceWebhookTestRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SendWorkspaceWebhookTest")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SendWorkspaceWebhookTestResponseObject); ok {
+		if err := validResponse.VisitSendWorkspaceWebhookTestResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

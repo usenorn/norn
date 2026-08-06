@@ -38,6 +38,8 @@ func NewAPITokens(cfg Config) APITokens { return cfg.APITokens }
 
 func NewMCP(cfg Config) MCP { return cfg.MCP }
 
+func NewWebhooks(cfg Config) Webhooks { return cfg.Webhooks }
+
 func NewSession(cfg Config) Session { return cfg.Session }
 
 func NewCasbin(cfg Config) Casbin { return cfg.Casbin }

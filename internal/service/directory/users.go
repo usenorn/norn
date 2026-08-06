@@ -119,9 +119,10 @@ func (s *directoriesService) admit(
 	switch {
 	case err == nil:
 		if !membership.Source.Managed() {
-			if _, err := s.memberships.SetSource(
+			membership, err = s.memberships.SetSource(
 				ctx, connection.WorkspaceID, account.ID, entity.MembershipSourceDirectory,
-			); err != nil {
+			)
+			if err != nil {
 				return service.DirectoryUserView{}, err
 			}
 
@@ -129,9 +130,10 @@ func (s *directoriesService) admit(
 		}
 
 		if membership.Deactivated() {
-			if _, err := s.memberships.SetDeactivated(
+			membership, err = s.memberships.SetDeactivated(
 				ctx, connection.WorkspaceID, account.ID, nil,
-			); err != nil {
+			)
+			if err != nil {
 				return service.DirectoryUserView{}, err
 			}
 		}
@@ -139,12 +141,13 @@ func (s *directoriesService) admit(
 		role = membership.Role
 
 	case errors.Is(err, entity.ErrMembershipNotFound):
-		if _, err := s.memberships.Create(ctx, entity.Membership{
+		membership, err = s.memberships.Create(ctx, entity.Membership{
 			WorkspaceID: connection.WorkspaceID,
 			AccountID:   account.ID,
 			Role:        role,
 			Source:      entity.MembershipSourceDirectory,
-		}); err != nil {
+		})
+		if err != nil {
 			return service.DirectoryUserView{}, err
 		}
 
@@ -179,6 +182,10 @@ func (s *directoriesService) admit(
 		ResourceName: account.DisplayName,
 		Detail:       map[string]string{"role": string(role), "source": "directory"},
 	})
+
+	if err := s.emit(ctx, entity.WebhookMembershipAdded, membership); err != nil {
+		return service.DirectoryUserView{}, err
+	}
 
 	return service.DirectoryUserView{User: user}, nil
 }
@@ -237,22 +244,32 @@ func (s *directoriesService) reconcile(
 	}
 
 	if errors.Is(err, entity.ErrMembershipNotFound) {
-		if _, err := s.memberships.Create(ctx, entity.Membership{
+		created, err := s.memberships.Create(ctx, entity.Membership{
 			WorkspaceID: connection.WorkspaceID,
 			AccountID:   stored.AccountID,
 			Role:        connection.RoleFor(nil),
 			Source:      entity.MembershipSourceDirectory,
-		}); err != nil {
+		})
+		if err != nil {
+			return service.DirectoryUserView{}, err
+		}
+
+		if err := s.emit(ctx, entity.WebhookMembershipAdded, created); err != nil {
 			return service.DirectoryUserView{}, err
 		}
 	} else if membership.Deactivated() {
-		if _, err := s.memberships.SetDeactivated(
+		reactivated, err := s.memberships.SetDeactivated(
 			ctx, connection.WorkspaceID, stored.AccountID, nil,
-		); err != nil {
+		)
+		if err != nil {
 			return service.DirectoryUserView{}, err
 		}
 
 		log.note(stored.UserName, entity.DirectoryReactivated, nil)
+
+		if err := s.emit(ctx, entity.WebhookMembershipChanged, reactivated); err != nil {
+			return service.DirectoryUserView{}, err
+		}
 	}
 
 	userName := entity.NormalizeDirectoryUserName(profile.UserName)
@@ -395,9 +412,14 @@ func (s *directoriesService) retire(
 
 		stoppedAt := time.Now().UTC()
 
-		if _, err := s.memberships.SetDeactivated(
+		stopped, err := s.memberships.SetDeactivated(
 			ctx, connection.WorkspaceID, stored.AccountID, &stoppedAt,
-		); err != nil {
+		)
+		if err != nil {
+			return service.DirectoryUserView{}, err
+		}
+
+		if err := s.emit(ctx, entity.WebhookMembershipRemoved, stopped); err != nil {
 			return service.DirectoryUserView{}, err
 		}
 	}

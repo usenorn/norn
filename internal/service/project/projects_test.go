@@ -70,7 +70,8 @@ func newHarness(t *testing.T) *harness {
 	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	h.service = projectsvc.New(
-		h.projects, h.members, h.statuses, h.activity, h.accounts, h.memberships, h.notify, h.authorizer, h.transactor,
+		h.projects, h.members, h.statuses, h.activity, h.accounts, h.memberships, h.notify, h.authorizer,
+		silentEmitter(ctrl), h.transactor,
 	)
 
 	return h

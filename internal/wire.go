@@ -22,6 +22,7 @@ import (
 	"github.com/usenorn/norn/internal/pkg/geoip"
 	licencepkg "github.com/usenorn/norn/internal/pkg/licence"
 	oidcproviderpkg "github.com/usenorn/norn/internal/pkg/oidcprovider"
+	"github.com/usenorn/norn/internal/pkg/outbound"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/pkg/pwned"
 	samlproviderpkg "github.com/usenorn/norn/internal/pkg/samlprovider"
@@ -86,6 +87,8 @@ import (
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
+	webhookrepo "github.com/usenorn/norn/internal/repository/webhook"
+	webhooksenderrepo "github.com/usenorn/norn/internal/repository/webhooksender"
 	workspaceauthpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	accountsvc "github.com/usenorn/norn/internal/service/account"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
@@ -115,6 +118,7 @@ import (
 	teamsvc "github.com/usenorn/norn/internal/service/team"
 	triagesvc "github.com/usenorn/norn/internal/service/triage"
 	workflowstatesvc "github.com/usenorn/norn/internal/service/workflowstate"
+	webhooksvc "github.com/usenorn/norn/internal/service/webhook"
 	workspacesvc "github.com/usenorn/norn/internal/service/workspace"
 )
 
@@ -131,6 +135,7 @@ var baseSet = wire.NewSet(
 	pwned.Set,
 	crypter.Set,
 	licencepkg.Set,
+	outbound.Set,
 	oidcproviderpkg.Set,
 	samlproviderpkg.Set,
 
@@ -194,6 +199,8 @@ var baseSet = wire.NewSet(
 	mcptokenrepo.Set,
 	mcpauthstaterepo.Set,
 	mcpthrottlerepo.Set,
+	webhookrepo.Set,
+	webhooksenderrepo.Set,
 
 	accountsvc.Set,
 	workspacesvc.Set,
@@ -217,6 +224,7 @@ var baseSet = wire.NewSet(
 	agentholdsvc.Set,
 	apitokensvc.Set,
 	mcpconnectionsvc.Set,
+	webhooksvc.Set,
 	sessionsvc.Set,
 	authorizersvc.Set,
 	jobssvc.Set,

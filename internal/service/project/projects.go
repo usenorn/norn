@@ -22,6 +22,7 @@ type projectsService struct {
 	memberships repository.Membership
 	notify      repository.NotificationEvent
 	authorizer  service.Authorizer
+	emitter     service.WebhookEmitter
 	transactor  repository.Transactor
 }
 
@@ -34,6 +35,7 @@ func New(
 	memberships repository.Membership,
 	notify repository.NotificationEvent,
 	authorizer service.Authorizer,
+	emitter service.WebhookEmitter,
 	transactor repository.Transactor,
 ) service.Projects {
 	return &projectsService{
@@ -45,6 +47,7 @@ func New(
 		memberships: memberships,
 		notify:      notify,
 		authorizer:  authorizer,
+		emitter:     emitter,
 		transactor:  transactor,
 	}
 }
@@ -134,10 +137,14 @@ func (s *projectsService) Create(
 			return err
 		}
 
-		return s.record(ctx, created, decision, entity.Activity{
+		if err := s.record(ctx, created, decision, entity.Activity{
 			Kind:    entity.ActivityKindCreated,
 			ToValue: created.Name,
-		})
+		}); err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookProjectCreated, created, decision)
 	}); err != nil {
 		return service.ProjectView{}, err
 	}
@@ -327,7 +334,11 @@ func (s *projectsService) Update(
 			return err
 		}
 
-		return s.recordSettings(ctx, before, updated, decision)
+		if err := s.recordSettings(ctx, before, updated, decision); err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookProjectUpdated, updated, decision)
 	}); err != nil {
 		return service.ProjectView{}, err
 	}
@@ -376,11 +387,15 @@ func (s *projectsService) SetState(
 			return nil
 		}
 
-		return s.record(ctx, updated, decision, entity.Activity{
+		if err := s.record(ctx, updated, decision, entity.Activity{
 			Kind:      entity.ActivityKindStateChanged,
 			FromState: string(before.State),
 			ToState:   string(updated.State),
-		})
+		}); err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookProjectUpdated, updated, decision)
 	}); err != nil {
 		return service.ProjectView{}, err
 	}
@@ -470,7 +485,13 @@ func (s *projectsService) Archive(
 			return err
 		}
 
-		return s.record(ctx, archived, decision, entity.Activity{Kind: entity.ActivityKindArchived})
+		if err := s.record(ctx, archived, decision, entity.Activity{
+			Kind: entity.ActivityKindArchived,
+		}); err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookProjectUpdated, archived, decision)
 	}); err != nil {
 		return service.ProjectView{}, err
 	}
@@ -504,7 +525,13 @@ func (s *projectsService) Unarchive(
 			return err
 		}
 
-		return s.record(ctx, restored, decision, entity.Activity{Kind: entity.ActivityKindUnarchived})
+		if err := s.record(ctx, restored, decision, entity.Activity{
+			Kind: entity.ActivityKindUnarchived,
+		}); err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookProjectUpdated, restored, decision)
 	}); err != nil {
 		return service.ProjectView{}, err
 	}
@@ -522,11 +549,18 @@ func (s *projectsService) Remove(ctx context.Context, workspaceID, projectID uui
 		return entity.ErrProjectNotLead
 	}
 
-	if _, err := s.projects.GetByID(ctx, workspaceID, projectID); err != nil {
+	project, err := s.projects.GetByID(ctx, workspaceID, projectID)
+	if err != nil {
 		return err
 	}
 
-	return s.projects.Delete(ctx, projectID)
+	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if err := s.projects.Delete(ctx, projectID); err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookProjectDeleted, project, decision)
+	})
 }
 
 func (s *projectsService) ListMembers(
@@ -631,14 +665,18 @@ func (s *projectsService) AddMember(
 
 		attribution := decision.ActivityActor()
 
-		return s.notify.Record(ctx, entity.NotificationEvent{
+		if err := s.notify.Record(ctx, entity.NotificationEvent{
 			WorkspaceID: workspaceID,
 			Subject:     entity.NotifyProject(projectID),
 			Kind:        entity.NotificationKindMembership,
 			Actor:       attribution.AccountID,
 			ActorKind:   attribution.Kind,
 			Target:      accountID,
-		})
+		}); err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookProjectMembersEdited, project, decision)
 	}); err != nil {
 		return service.ProjectMemberView{}, err
 	}
@@ -674,11 +712,15 @@ func (s *projectsService) RemoveMember(
 			return err
 		}
 
-		return s.record(ctx, project, decision, entity.Activity{
+		if err := s.record(ctx, project, decision, entity.Activity{
 			Kind:      entity.ActivityKindMemberRemoved,
 			Field:     entity.ActivityFieldMember,
 			FromValue: account.DisplayName,
-		})
+		}); err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookProjectMembersEdited, project, decision)
 	})
 }
 
@@ -705,16 +747,30 @@ func (s *projectsService) PostStatus(
 		return entity.ProjectStatusUpdate{}, err
 	}
 
-	if _, err := s.writable(ctx, workspaceID, projectID, decision); err != nil {
+	project, err := s.writable(ctx, workspaceID, projectID, decision)
+	if err != nil {
 		return entity.ProjectStatusUpdate{}, err
 	}
 
-	return s.statuses.Record(ctx, entity.ProjectStatusUpdate{
-		ProjectID:       projectID,
-		AuthorAccountID: decision.Actor.AccountID,
-		Health:          input.Health,
-		Body:            input.Body,
-	})
+	var posted entity.ProjectStatusUpdate
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		posted, err = s.statuses.Record(ctx, entity.ProjectStatusUpdate{
+			ProjectID:       projectID,
+			AuthorAccountID: decision.Actor.AccountID,
+			Health:          input.Health,
+			Body:            input.Body,
+		})
+		if err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookProjectStatusPosted, project, decision)
+	}); err != nil {
+		return entity.ProjectStatusUpdate{}, err
+	}
+
+	return posted, nil
 }
 
 func (s *projectsService) ListStatus(

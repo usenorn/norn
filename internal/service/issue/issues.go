@@ -30,6 +30,7 @@ type issuesService struct {
 	triage       repository.Triage
 	notify       repository.NotificationEvent
 	events       service.Events
+	emitter      service.WebhookEmitter
 	followers    repository.IssueFollower
 	jobs         repository.JobProducer
 	gate         *agenthold.Gate
@@ -51,6 +52,7 @@ func New(
 	triage repository.Triage,
 	notify repository.NotificationEvent,
 	events service.Events,
+	emitter service.WebhookEmitter,
 	followers repository.IssueFollower,
 	jobs repository.JobProducer,
 	gate *agenthold.Gate,
@@ -71,6 +73,7 @@ func New(
 		triage:       triage,
 		notify:       notify,
 		events:       events,
+		emitter:      emitter,
 		followers:    followers,
 		jobs:         jobs,
 		gate:         gate,
@@ -176,6 +179,10 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		}
 
 		if err := s.notifyAssigned(ctx, created, decision, created.AssigneeAccountID, uuid.Nil); err != nil {
+			return err
+		}
+
+		if err := s.emit(ctx, entity.WebhookIssueCreated, created, decision); err != nil {
 			return err
 		}
 
@@ -511,6 +518,10 @@ func (s *issuesService) Update(
 
 		updated = refreshed
 
+		if err := s.emit(ctx, entity.WebhookIssueUpdated, refreshed, decision); err != nil {
+			return err
+		}
+
 		s.broadcast(ctx, entity.EventIssueUpdated, refreshed, decision.Actor.AccountID)
 
 		return nil
@@ -606,8 +617,9 @@ func (s *issuesService) SetLabels(
 		}
 
 		applied = labels
+		issue.Labels = labels
 
-		return nil
+		return s.emit(ctx, entity.WebhookIssueUpdated, issue, decision)
 	})
 	if err != nil {
 		return nil, err
@@ -1006,7 +1018,7 @@ func (s *issuesService) SetParent(
 
 		reparented = refreshed
 
-		return nil
+		return s.emit(ctx, entity.WebhookIssueUpdated, refreshed, decision)
 	})
 	if err != nil {
 		return entity.Issue{}, err
@@ -1139,7 +1151,9 @@ func (s *issuesService) SetStatus(
 
 		if lifecycle.Status == entity.IssueStatusPendingDeletion {
 			if err := s.jobs.EnqueueIssuePurge(
-				ctx, entity.IssuePurgePayload{IssueID: issueID}, *lifecycle.PurgeAfter,
+				ctx,
+				entity.IssuePurgePayload{IssueID: issueID, WorkspaceID: workspaceID},
+				*lifecycle.PurgeAfter,
 			); err != nil {
 				return err
 			}
@@ -1152,7 +1166,7 @@ func (s *issuesService) SetStatus(
 
 		updated = refreshed
 
-		return nil
+		return s.emit(ctx, entity.WebhookIssueStatusChanged, refreshed, decision)
 	})
 	if err != nil {
 		return entity.Issue{}, err
@@ -1161,9 +1175,26 @@ func (s *issuesService) SetStatus(
 	return updated, nil
 }
 
-func (s *issuesService) Purge(ctx context.Context, issueID uuid.UUID) error {
+func (s *issuesService) Purge(ctx context.Context, workspaceID, issueID uuid.UUID) error {
 	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		return s.issues.Purge(ctx, issueID, time.Now().UTC())
+		purged, err := s.issues.GetVisible(ctx, workspaceID, issueID, entity.TeamScope{
+			WorkspaceID:    workspaceID,
+			AllTeams:       true,
+			IncludePrivate: true,
+		})
+		if err != nil {
+			if errors.Is(err, entity.ErrIssueNotFound) {
+				return nil
+			}
+
+			return err
+		}
+
+		if err := s.issues.Purge(ctx, issueID, time.Now().UTC()); err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookIssueDeleted, purged, entity.Decision{})
 	})
 }
 
@@ -1298,7 +1329,7 @@ func (s *issuesService) MoveToTeam(
 
 		moved = refreshed
 
-		return nil
+		return s.emit(ctx, entity.WebhookIssueUpdated, refreshed, decision)
 	})
 	if err != nil {
 		return entity.Issue{}, err

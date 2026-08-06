@@ -22,6 +22,7 @@ tags:
   - name: states
   - name: tokens
   - name: connections
+  - name: webhooks
   - name: agents
   - name: sso
   - name: notifications
@@ -1631,6 +1632,201 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/webhooks:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [webhooks]
+      operationId: listWorkspaceWebhooks
+      summary: List the endpoints this workspace sends its events to
+      responses:
+        '200':
+          description: The workspace's webhooks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Webhook' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [webhooks]
+      operationId: createWorkspaceWebhook
+      summary: Register an endpoint, returning its signing secret for the only time
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateWebhookRequest' }
+      responses:
+        '201':
+          description: The webhook, carrying its secret once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MintedWebhook' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/WebhookDestinationRefused' }
+        '503': { $ref: '#/components/responses/WebhookSigningUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/webhooks/{webhookId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/WebhookId'
+    get:
+      tags: [webhooks]
+      operationId: getWorkspaceWebhook
+      summary: Read one endpoint, its events, and how it has been behaving
+      responses:
+        '200':
+          description: The webhook
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Webhook' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [webhooks]
+      operationId: updateWorkspaceWebhook
+      summary: Change where an endpoint points, what it hears, or whether it runs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateWebhookRequest' }
+      responses:
+        '200':
+          description: The webhook after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Webhook' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/WebhookDestinationRefused' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [webhooks]
+      operationId: deleteWorkspaceWebhook
+      summary: Remove an endpoint, ending its deliveries at once
+      responses:
+        '204':
+          description: The webhook was removed
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/webhooks/{webhookId}/secret:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/WebhookId'
+    post:
+      tags: [webhooks]
+      operationId: rotateWorkspaceWebhookSecret
+      summary: Replace the signing secret, honouring the old one for a grace period
+      responses:
+        '200':
+          description: The webhook, carrying its new secret once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MintedWebhook' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/WebhookSigningUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/webhooks/{webhookId}/test:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/WebhookId'
+    post:
+      tags: [webhooks]
+      operationId: sendWorkspaceWebhookTest
+      summary: Send a test event, to prove the endpoint receives and verifies
+      responses:
+        '202':
+          description: The delivery that was queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WebhookDelivery' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/WebhookId'
+    get:
+      tags: [webhooks]
+      operationId: listWorkspaceWebhookDeliveries
+      summary: Read what this endpoint was sent, and how each attempt went
+      parameters:
+        - $ref: '#/components/parameters/WebhookDeliveryLimit'
+        - $ref: '#/components/parameters/WebhookDeliveryCursor'
+        - $ref: '#/components/parameters/WebhookDeliveryEventFilter'
+        - $ref: '#/components/parameters/WebhookDeliveryStateFilter'
+      responses:
+        '200':
+          description: A page of deliveries, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WebhookDeliveryPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/WebhookId'
+      - $ref: '#/components/parameters/DeliveryId'
+    get:
+      tags: [webhooks]
+      operationId: getWorkspaceWebhookDelivery
+      summary: Read one delivery, its payload, and every attempt made on it
+      responses:
+        '200':
+          description: The delivery, with its attempts oldest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WebhookDeliveryDetail' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}/replay:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/WebhookId'
+      - $ref: '#/components/parameters/DeliveryId'
+    post:
+      tags: [webhooks]
+      operationId: replayWorkspaceWebhookDelivery
+      summary: Send a settled delivery again, unchanged, as a new delivery
+      responses:
+        '202':
+          description: The replay that was queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WebhookDelivery' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/agents:
@@ -4302,6 +4498,39 @@ components:
       required: true
       schema: { type: string, format: uuid }
 
+    WebhookId:
+      name: webhookId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    DeliveryId:
+      name: deliveryId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    WebhookDeliveryLimit:
+      name: limit
+      in: query
+      schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+    WebhookDeliveryCursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    WebhookDeliveryEventFilter:
+      name: event
+      in: query
+      explode: true
+      schema:
+        type: array
+        items: { $ref: '#/components/schemas/WebhookDeliveryEventType' }
+    WebhookDeliveryStateFilter:
+      name: state
+      in: query
+      explode: true
+      schema:
+        type: array
+        items: { $ref: '#/components/schemas/WebhookDeliveryState' }
+
     NotificationSubjectKind:
       name: subjectKind
       in: path
@@ -4482,6 +4711,16 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/AuditUnlicensedProblem' }
+    WebhookDestinationRefused:
+      description: The destination is not reachable from this instance
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/WebhookDestinationRefusedProblem' }
+    WebhookSigningUnavailable:
+      description: This instance has no encryption key, so a webhook cannot be signed
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/WebhookSigningUnavailableProblem' }
     MailUnavailable:
       description: The instance is not configured to send mail
       content:
@@ -5577,6 +5816,9 @@ components:
         - mcp_connection.authorized
         - mcp_connection.narrowed
         - mcp_connection.revoked
+        - webhook.registered
+        - webhook.removed
+        - webhook.disabled
         - workspace.updated
         - workspace.deletion_requested
         - workspace.restored
@@ -6271,6 +6513,167 @@ components:
           description: Replaces the connection's reach; must shrink it, never widen it.
           items: { $ref: '#/components/schemas/APITokenGrant' }
 
+    WebhookEventType:
+      type: string
+      enum:
+        - issue.created
+        - issue.updated
+        - issue.status_changed
+        - issue.deleted
+        - issue.triaged
+        - issue.merged
+        - comment.posted
+        - comment.edited
+        - comment.deleted
+        - project.created
+        - project.updated
+        - project.deleted
+        - project.members_changed
+        - project.status_posted
+        - cycle.started
+        - cycle.closed
+        - cycle.cadence_changed
+        - membership.added
+        - membership.changed
+        - membership.removed
+        - team_membership.added
+        - team_membership.removed
+
+    WebhookDeliveryEventType:
+      type: string
+      description: Every subscribable event, plus the test event a delivery may carry.
+      enum:
+        - issue.created
+        - issue.updated
+        - issue.status_changed
+        - issue.deleted
+        - issue.triaged
+        - issue.merged
+        - comment.posted
+        - comment.edited
+        - comment.deleted
+        - project.created
+        - project.updated
+        - project.deleted
+        - project.members_changed
+        - project.status_posted
+        - cycle.started
+        - cycle.closed
+        - cycle.cadence_changed
+        - membership.added
+        - membership.changed
+        - membership.removed
+        - team_membership.added
+        - team_membership.removed
+        - webhook.test
+
+    WebhookDeliveryState:
+      type: string
+      enum: [pending, succeeded, failed]
+
+    WebhookAttemptOutcome:
+      type: string
+      enum: [succeeded, rejected, refused, timed_out, failed]
+
+    WebhookDisableReason:
+      type: string
+      enum: [by_owner, sustained_failure]
+
+    Webhook:
+      type: object
+      required: [id, name, url, events, secretHint, enabled, failureStreak, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        url: { type: string }
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/WebhookEventType' }
+        secretHint: { type: string }
+        enabled: { type: boolean }
+        disabledAt: { type: string, format: date-time }
+        disabledReason: { $ref: '#/components/schemas/WebhookDisableReason' }
+        failureStreak: { type: integer, format: int32 }
+        lastDeliveredAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    MintedWebhook:
+      type: object
+      required: [webhook, secret]
+      properties:
+        webhook: { $ref: '#/components/schemas/Webhook' }
+        secret: { type: string }
+
+    CreateWebhookRequest:
+      type: object
+      required: [name, url, events]
+      properties:
+        name: { type: string }
+        url: { type: string }
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/WebhookEventType' }
+
+    UpdateWebhookRequest:
+      type: object
+      properties:
+        name: { type: string }
+        url: { type: string }
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/WebhookEventType' }
+        enabled: { type: boolean }
+
+    WebhookDelivery:
+      type: object
+      required: [id, event, state, attempt, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        event: { $ref: '#/components/schemas/WebhookDeliveryEventType' }
+        state: { $ref: '#/components/schemas/WebhookDeliveryState' }
+        attempt: { type: integer, format: int32 }
+        subjectKind: { type: string }
+        subjectId: { type: string, format: uuid }
+        replayOf: { type: string, format: uuid }
+        nextAttemptAt: { type: string, format: date-time }
+        settledAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    WebhookAttempt:
+      type: object
+      required: [attempt, requestUrl, outcome, startedAt, finishedAt, elapsedMs]
+      properties:
+        attempt: { type: integer, format: int32 }
+        requestUrl: { type: string }
+        resolvedAddress: { type: string }
+        outcome: { $ref: '#/components/schemas/WebhookAttemptOutcome' }
+        statusCode: { type: integer, format: int32 }
+        responseExcerpt: { type: string }
+        error: { type: string }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time }
+        elapsedMs: { type: integer, format: int64 }
+
+    WebhookDeliveryDetail:
+      type: object
+      required: [delivery, body, attempts]
+      properties:
+        delivery: { $ref: '#/components/schemas/WebhookDelivery' }
+        body: { type: object, additionalProperties: true }
+        attempts:
+          type: array
+          items: { $ref: '#/components/schemas/WebhookAttempt' }
+
+    WebhookDeliveryPage:
+      type: object
+      required: [deliveries]
+      properties:
+        deliveries:
+          type: array
+          items: { $ref: '#/components/schemas/WebhookDelivery' }
+        nextCursor: { type: string }
+
     APITokenUnusableProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -6350,6 +6753,22 @@ components:
           required: [code]
           properties:
             code: { type: string, enum: [audit_unlicensed] }
+
+    WebhookDestinationRefusedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [webhook_destination_refused] }
+
+    WebhookSigningUnavailableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [webhook_signing_unavailable] }
 
     MailUnavailableProblem:
       allOf:

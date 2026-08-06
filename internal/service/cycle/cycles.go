@@ -21,6 +21,7 @@ type cyclesService struct {
 	teams        repository.Team
 	workspaces   repository.Workspace
 	authorizer   service.Authorizer
+	emitter      service.WebhookEmitter
 	transactor   repository.Transactor
 }
 
@@ -32,6 +33,7 @@ func New(
 	teams repository.Team,
 	workspaces repository.Workspace,
 	authorizer service.Authorizer,
+	emitter service.WebhookEmitter,
 	transactor repository.Transactor,
 ) service.Cycles {
 	return &cyclesService{
@@ -42,6 +44,7 @@ func New(
 		teams:        teams,
 		workspaces:   workspaces,
 		authorizer:   authorizer,
+		emitter:      emitter,
 		transactor:   transactor,
 	}
 }
@@ -195,13 +198,16 @@ func (s *cyclesService) SetCadence(
 			return err
 		}
 
-		if err := s.fill(ctx, cadence, today); err != nil {
+		if _, err := s.fill(ctx, cadence, today); err != nil {
 			return err
 		}
 
 		view, err = s.cadenceView(ctx, cadence, today)
+		if err != nil {
+			return err
+		}
 
-		return err
+		return s.emitCadence(ctx, workspaceID, teamID, view.Upcoming, decision)
 	})
 	if err != nil {
 		return service.CadenceView{}, err
@@ -281,7 +287,11 @@ func (s *cyclesService) DisableCadence(ctx context.Context, workspaceID, teamID 
 			return err
 		}
 
-		return s.cycles.DeleteVacantFrom(ctx, teamID, today)
+		if err := s.cycles.DeleteVacantFrom(ctx, teamID, today); err != nil {
+			return err
+		}
+
+		return s.emitCadence(ctx, workspaceID, teamID, nil, decision)
 	})
 }
 
@@ -542,8 +552,11 @@ func (s *cyclesService) Close(
 		}
 
 		closed, err = s.cycles.Close(ctx, cycle.ID, time.Now().UTC(), account, rollover)
+		if err != nil {
+			return err
+		}
 
-		return err
+		return s.emit(ctx, entity.WebhookCycleClosed, closed, decision)
 	})
 	if err != nil {
 		return service.CycleView{}, err
@@ -662,7 +675,18 @@ func (s *cyclesService) Generate(ctx context.Context) error {
 				return err
 			}
 
-			return s.fill(ctx, cadence, today)
+			started, err := s.fill(ctx, cadence, today)
+			if err != nil {
+				return err
+			}
+
+			for _, cycle := range started {
+				if err := s.emit(ctx, entity.WebhookCycleStarted, cycle, entity.Decision{}); err != nil {
+					return err
+				}
+			}
+
+			return nil
 		}); err != nil {
 			logging.From(ctx).ErrorContext(
 				ctx,
@@ -680,15 +704,15 @@ func (s *cyclesService) fill(
 	ctx context.Context,
 	cadence entity.CycleCadence,
 	today string,
-) error {
+) ([]entity.Cycle, error) {
 	existing, err := s.cycles.ListByTeamID(ctx, cadence.TeamID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	number, err := s.cycles.HighestNumber(ctx, cadence.TeamID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	next := cadence.AnchorOn
@@ -701,7 +725,7 @@ func (s *cyclesService) fill(
 
 		after, err := cadence.StartAfter(cycle.EndsOn)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if after > next {
@@ -709,15 +733,17 @@ func (s *cyclesService) fill(
 		}
 	}
 
+	var created []entity.Cycle
+
 	for upcoming < entity.CycleUpcomingCount {
 		starts, ends, err := cadence.WindowFrom(next)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		next, err = cadence.StartAfter(ends)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if ends < today {
@@ -726,20 +752,23 @@ func (s *cyclesService) fill(
 
 		number++
 
-		if _, err := s.cycles.Create(ctx, entity.Cycle{
+		cycle, err := s.cycles.Create(ctx, entity.Cycle{
 			WorkspaceID: cadence.WorkspaceID,
 			TeamID:      cadence.TeamID,
 			Number:      number,
 			StartsOn:    starts,
 			EndsOn:      ends,
-		}); err != nil {
-			return err
+		})
+		if err != nil {
+			return nil, err
 		}
+
+		created = append(created, cycle)
 
 		if starts > today {
 			upcoming++
 		}
 	}
 
-	return nil
+	return created, nil
 }

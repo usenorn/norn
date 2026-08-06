@@ -165,17 +165,17 @@ func (mr *MockIssuesMockRecorder) Progress(ctx, workspaceID, input any) *gomock.
 }
 
 // Purge mocks base method.
-func (m *MockIssues) Purge(ctx context.Context, issueID uuid.UUID) error {
+func (m *MockIssues) Purge(ctx context.Context, workspaceID, issueID uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Purge", ctx, issueID)
+	ret := m.ctrl.Call(m, "Purge", ctx, workspaceID, issueID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Purge indicates an expected call of Purge.
-func (mr *MockIssuesMockRecorder) Purge(ctx, issueID any) *gomock.Call {
+func (mr *MockIssuesMockRecorder) Purge(ctx, workspaceID, issueID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Purge", reflect.TypeOf((*MockIssues)(nil).Purge), ctx, issueID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Purge", reflect.TypeOf((*MockIssues)(nil).Purge), ctx, workspaceID, issueID)
 }
 
 // Query mocks base method.

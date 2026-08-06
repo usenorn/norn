@@ -36,6 +36,7 @@ type harness struct {
 	authorizer *authorizersvc.MockAuthorizer
 	transactor *transactorrepo.MockTransactor
 	service    service.Triages
+	emitted    []entity.WebhookOutboxEntry
 
 	workspaceID uuid.UUID
 	teamID      uuid.UUID
@@ -84,7 +85,8 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = triagesvc.New(
 		h.triage, h.issues, h.states, h.activity, h.teams,
-		h.relations, h.issueMoves, h.comments, h.authorizer, h.transactor,
+		h.relations, h.issueMoves, h.comments, h.authorizer,
+		capturingEmitter(ctrl, &h.emitted), h.transactor,
 	)
 
 	return h
@@ -448,6 +450,74 @@ func TestReassigningToATeamThatTriagesLeavesItWaitingThere(t *testing.T) {
 			"handing the issue to another team recorded %+v. Passing something on is a decision "+
 				"someone made and the next team will want to know who sent it.",
 			recorded,
+		)
+	}
+}
+
+func TestAReassignBothTriagesTheIssueAndMovesIt(t *testing.T) {
+	h := newHarness(t)
+	destination := uuid.New()
+
+	moved := h.waiting()
+	moved.TeamID = destination
+
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(h.waiting(), nil)
+
+	moves := 0
+
+	h.issueMoves.EXPECT().
+		MoveToTeam(gomock.Any(), h.workspaceID, h.issueID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _, _ uuid.UUID, _ service.MoveIssueInput,
+		) (entity.Issue, error) {
+			moves++
+
+			return moved, nil
+		})
+	h.teams.EXPECT().
+		GetByID(gomock.Any(), destination).
+		Return(entity.Team{ID: destination, WorkspaceID: h.workspaceID, Name: "Platform"}, nil)
+	h.triage.EXPECT().
+		Settings(gomock.Any(), h.workspaceID, destination).
+		Return(entity.TriageSettings{TeamID: destination}, nil)
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(moved, nil)
+
+	h.captureDecision()
+
+	if _, err := h.service.Reassign(
+		context.Background(), h.workspaceID, h.issueID,
+		service.ReassignTriageInput{TeamID: destination, ExpectedVersion: 1},
+	); err != nil {
+		t.Fatalf("Reassign: %v", err)
+	}
+
+	if moves != 1 {
+		t.Fatalf(
+			"a reassign moved the issue %d times, want exactly one move carrying issue.updated. "+
+				"A reassign is deliberately two statements — the issue was triaged and the issue "+
+				"changed team — and a subscriber to both is meant to receive both.",
+			moves,
+		)
+	}
+
+	if len(h.emitted) != 1 || h.emitted[0].Event != entity.WebhookIssueTriaged {
+		t.Fatalf(
+			"triage emitted %+v, want exactly one issue.triaged. The move already announces "+
+				"itself; triage announcing the move a second time would be the same fact twice.",
+			h.emitted,
+		)
+	}
+
+	if h.emitted[0].TeamID != destination {
+		t.Fatalf(
+			"issue.triaged carries team %s, want the destination team %s. The event is delivered "+
+				"only to owners whose scope covers that team id, so naming the team the issue just "+
+				"left tells the wrong people and hides it from the ones now holding the work.",
+			h.emitted[0].TeamID, destination,
 		)
 	}
 }

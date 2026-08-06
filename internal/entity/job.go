@@ -23,11 +23,16 @@ const (
 	TaskTypeNotificationDigest      = "notification:digest"
 	TaskTypeAPITokenExpirySweep     = "api_token:expiry_sweep"
 	TaskTypeAuditSweep              = "audit:retention_sweep"
+	TaskTypeWebhookFanOut           = "webhook:fan_out"
+	TaskTypeWebhookDeliver          = "webhook:deliver"
+	TaskTypeWebhookSweep            = "webhook:retention_sweep"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
+	WebhookFanOutTaskID     = "webhook-fan-out"
 
 	QueueDefault = "default"
 	QueueMail    = "mail"
+	QueueWebhook = "webhook"
 )
 
 var ErrTaskNotFound = errors.New("task not found")
@@ -61,7 +66,8 @@ type WorkspacePurgePayload struct {
 }
 
 type IssuePurgePayload struct {
-	IssueID uuid.UUID
+	IssueID     uuid.UUID
+	WorkspaceID uuid.UUID
 }
 
 type BulkApplyPayload struct {
@@ -69,6 +75,11 @@ type BulkApplyPayload struct {
 	WorkspaceID  uuid.UUID
 	IssueIDs     []uuid.UUID
 	Filter       *BulkFilter
+}
+
+type WebhookDeliverPayload struct {
+	DeliveryID uuid.UUID
+	Attempt    int
 }
 
 type TaskState string
