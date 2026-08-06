@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: arc-runner-set
+    runs-on: norn-runner-set
     timeout-minutes: 45
     permissions:
       contents: read
@@ -60,7 +60,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: arc-runner-set
+    runs-on: norn-runner-set
     timeout-minutes: 20
 
     steps:
@@ -77,6 +77,7 @@ jobs:
             --username ${{ secrets.ARGOCD_USERNAME }}
             --password ${{ secrets.ARGOCD_PASSWORD }}
             --grpc-web
+            --plaintext
 
       - uses: clowdhaus/argo-cd-action/@main
         env:
