@@ -217,7 +217,14 @@ func (s *directoriesService) joinGroup(
 		Detail:       map[string]string{"team_id": group.TeamID.String(), "source": "directory"},
 	})
 
-	return nil
+	s.rescope(ctx, connection.WorkspaceID, member.AccountID)
+
+	team, known := s.mappedTeam(ctx, *group.TeamID)
+	if !known {
+		return nil
+	}
+
+	return s.emitTeamMembership(ctx, entity.WebhookTeamMembershipAdded, member.AccountID, team)
 }
 
 func (s *directoriesService) leaveGroup(
@@ -269,7 +276,14 @@ func (s *directoriesService) leaveGroup(
 		Detail:       map[string]string{"team_id": group.TeamID.String(), "source": "directory"},
 	})
 
-	return nil
+	s.rescope(ctx, connection.WorkspaceID, member.AccountID)
+
+	team, known := s.mappedTeam(ctx, *group.TeamID)
+	if !known {
+		return nil
+	}
+
+	return s.emitTeamMembership(ctx, entity.WebhookTeamMembershipRemoved, member.AccountID, team)
 }
 
 func (s *directoriesService) settleRole(
@@ -315,9 +329,8 @@ func (s *directoriesService) settleRole(
 		}
 	}
 
-	if _, err := s.memberships.UpdateRole(
-		ctx, connection.WorkspaceID, member.AccountID, wanted,
-	); err != nil {
+	changed, err := s.memberships.UpdateRole(ctx, connection.WorkspaceID, member.AccountID, wanted)
+	if err != nil {
 		return err
 	}
 
@@ -334,7 +347,7 @@ func (s *directoriesService) settleRole(
 		Detail:       map[string]string{"role": string(wanted), "source": "directory"},
 	})
 
-	return nil
+	return s.emit(ctx, entity.WebhookMembershipChanged, changed)
 }
 
 func (s *directoriesService) GetGroup(

@@ -160,6 +160,52 @@ func (c *Client) EnqueueAttachmentReclaim(ctx context.Context) error {
 	return nil
 }
 
+func (c *Client) EnqueueWebhookFanOut(ctx context.Context) error {
+	task := asynq.NewTask(entity.TaskTypeWebhookFanOut, nil)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueWebhook),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.TaskID(entity.WebhookFanOutTaskID),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue webhook fan-out: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) EnqueueWebhookDeliver(
+	ctx context.Context,
+	payload entity.WebhookDeliverPayload,
+	processAt time.Time,
+) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode webhook delivery payload: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeWebhookDeliver, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueWebhook),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.ProcessAt(processAt),
+		asynq.TaskID(fmt.Sprintf("%s:%d", payload.DeliveryID, payload.Attempt)),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue webhook delivery: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) EnqueueIssuePurge(ctx context.Context, payload entity.IssuePurgePayload, processAt time.Time) error {
 	encoded, err := json.Marshal(payload)
 	if err != nil {

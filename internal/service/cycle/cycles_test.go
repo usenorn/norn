@@ -64,7 +64,8 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = cyclesvc.New(
-		h.cycles, h.cadences, h.scope, h.issues, h.teams, h.workspaces, h.authorizer, h.transactor,
+		h.cycles, h.cadences, h.scope, h.issues, h.teams, h.workspaces, h.authorizer,
+		silentEmitter(ctrl), h.transactor,
 	)
 
 	return h

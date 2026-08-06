@@ -22,6 +22,7 @@ type issueCommentsService struct {
 	activity    repository.Activity
 	notify      repository.NotificationEvent
 	events      service.Events
+	emitter     service.WebhookEmitter
 	followers   repository.IssueFollower
 	gate        *agenthold.Gate
 	authorizer  service.Authorizer
@@ -36,6 +37,7 @@ func New(
 	activity repository.Activity,
 	notify repository.NotificationEvent,
 	events service.Events,
+	emitter service.WebhookEmitter,
 	followers repository.IssueFollower,
 	gate *agenthold.Gate,
 	authorizer service.Authorizer,
@@ -49,6 +51,7 @@ func New(
 		activity:    activity,
 		notify:      notify,
 		events:      events,
+		emitter:     emitter,
 		followers:   followers,
 		gate:        gate,
 		authorizer:  authorizer,
@@ -91,22 +94,22 @@ func (s *issueCommentsService) reachable(
 	ctx context.Context,
 	workspaceID, issueID, commentID uuid.UUID,
 	action entity.Action,
-) (entity.Decision, entity.IssueComment, error) {
-	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, action)
+) (entity.Decision, entity.Issue, entity.IssueComment, error) {
+	decision, issue, err := s.onVisibleIssue(ctx, workspaceID, issueID, action)
 	if err != nil {
-		return entity.Decision{}, entity.IssueComment{}, err
+		return entity.Decision{}, entity.Issue{}, entity.IssueComment{}, err
 	}
 
 	comment, err := s.comments.GetByID(ctx, workspaceID, commentID)
 	if err != nil {
-		return entity.Decision{}, entity.IssueComment{}, err
+		return entity.Decision{}, entity.Issue{}, entity.IssueComment{}, err
 	}
 
 	if comment.IssueID != issueID {
-		return entity.Decision{}, entity.IssueComment{}, entity.ErrIssueCommentNotFound
+		return entity.Decision{}, entity.Issue{}, entity.IssueComment{}, entity.ErrIssueCommentNotFound
 	}
 
-	return decision, comment, nil
+	return decision, issue, comment, nil
 }
 
 func (s *issueCommentsService) List(
@@ -239,6 +242,10 @@ func (s *issueCommentsService) Post(
 			ActorKind:   attribution.Kind,
 			CommentID:   posted.ID,
 		}); err != nil {
+			return err
+		}
+
+		if err := s.emit(ctx, entity.WebhookCommentPosted, posted, issue, decision); err != nil {
 			return err
 		}
 
@@ -395,7 +402,7 @@ func (s *issueCommentsService) Edit(
 	workspaceID, issueID, commentID uuid.UUID,
 	input service.EditCommentInput,
 ) (entity.IssueComment, error) {
-	decision, comment, err := s.reachable(ctx, workspaceID, issueID, commentID, entity.ActionManage)
+	decision, issue, comment, err := s.reachable(ctx, workspaceID, issueID, commentID, entity.ActionManage)
 	if err != nil {
 		return entity.IssueComment{}, err
 	}
@@ -414,18 +421,31 @@ func (s *issueCommentsService) Edit(
 		return entity.IssueComment{}, err
 	}
 
-	if err := s.comments.Edit(ctx, commentID, input.Body, time.Now().UTC()); err != nil {
+	var edited entity.IssueComment
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if err := s.comments.Edit(ctx, commentID, input.Body, time.Now().UTC()); err != nil {
+			return err
+		}
+
+		edited, err = s.comments.GetByID(ctx, workspaceID, commentID)
+		if err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookCommentEdited, edited, issue, decision)
+	}); err != nil {
 		return entity.IssueComment{}, err
 	}
 
-	return s.comments.GetByID(ctx, workspaceID, commentID)
+	return edited, nil
 }
 
 func (s *issueCommentsService) Remove(
 	ctx context.Context,
 	workspaceID, issueID, commentID uuid.UUID,
 ) error {
-	decision, comment, err := s.reachable(ctx, workspaceID, issueID, commentID, entity.ActionManage)
+	decision, issue, comment, err := s.reachable(ctx, workspaceID, issueID, commentID, entity.ActionManage)
 	if err != nil {
 		return err
 	}
@@ -443,12 +463,16 @@ func (s *issueCommentsService) Remove(
 			return err
 		}
 
-		return s.activity.Record(ctx, entity.Activity{
+		if err := s.activity.Record(ctx, entity.Activity{
 			WorkspaceID: workspaceID,
 			Subject:     entity.IssueSubject(comment.IssueID),
 			Actor:       decision.ActivityActor(),
 			Kind:        entity.ActivityKindCommentDeleted,
-		})
+		}); err != nil {
+			return err
+		}
+
+		return s.emit(ctx, entity.WebhookCommentDeleted, comment, issue, decision)
 	})
 }
 
@@ -474,7 +498,7 @@ func (s *issueCommentsService) reacted(
 	reaction entity.CommentReaction,
 	apply func(context.Context, uuid.UUID, uuid.UUID, entity.CommentReaction) error,
 ) (entity.IssueComment, error) {
-	decision, comment, err := s.reachable(ctx, workspaceID, issueID, commentID, entity.ActionManage)
+	decision, _, comment, err := s.reachable(ctx, workspaceID, issueID, commentID, entity.ActionManage)
 	if err != nil {
 		return entity.IssueComment{}, err
 	}

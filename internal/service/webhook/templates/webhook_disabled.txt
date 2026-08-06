@@ -1,0 +1,13 @@
+Norn has stopped sending to {{ .Name }}.
+
+{{ .URL }} failed {{ .FailureStreak }} deliveries in a row from {{ .Workspace }}, so the
+subscription is now disabled. Nothing was lost quietly: every attempt is in the delivery
+log, with the response and the error.
+{{ if .LastError }}
+The last attempt reported: {{ .LastError }}
+{{ end }}
+Fix the receiver, then turn the subscription back on:
+
+{{ .SettingsURL }}
+
+Deliveries that failed while it was disabled can be replayed from the same screen.

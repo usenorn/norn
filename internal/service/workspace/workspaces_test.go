@@ -102,6 +102,8 @@ func newHarnessWithLicence(t *testing.T, licence entity.Licence) *harness {
 		transactor,
 		config.Workspace{DeletionGracePeriod: deletionGracePeriod},
 		silentAudit(ctrl),
+		silentEvents(ctrl),
+		silentEmitter(ctrl),
 		licensingsvc.New(licence, config.Licence{Grace: 30 * 24 * time.Hour}),
 	)
 

@@ -24,6 +24,8 @@ type teamsService struct {
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
 	audit        service.Audit
+	events       service.Events
+	emitter      service.WebhookEmitter
 }
 
 func New(
@@ -38,6 +40,8 @@ func New(
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 	audit service.Audit,
+	events service.Events,
+	emitter service.WebhookEmitter,
 ) service.Teams {
 	return &teamsService{
 		teams:        teams,
@@ -51,6 +55,8 @@ func New(
 		authorizer:   authorizer,
 		transactor:   transactor,
 		audit:        audit,
+		events:       events,
+		emitter:      emitter,
 	}
 }
 
@@ -271,7 +277,8 @@ func (s *teamsService) AddMember(ctx context.Context, workspaceID, teamID, accou
 		return service.TeamMemberView{}, err
 	}
 
-	if _, err := s.liveTeam(ctx, workspaceID, teamID, decision); err != nil {
+	team, err := s.liveTeam(ctx, workspaceID, teamID, decision)
+	if err != nil {
 		return service.TeamMemberView{}, err
 	}
 
@@ -298,14 +305,20 @@ func (s *teamsService) AddMember(ctx context.Context, workspaceID, teamID, accou
 
 		attribution := decision.ActivityActor()
 
-		return s.notify.Record(ctx, entity.NotificationEvent{
+		if err := s.notify.Record(ctx, entity.NotificationEvent{
 			WorkspaceID: workspaceID,
 			Subject:     entity.NotifyTeam(teamID),
 			Kind:        entity.NotificationKindMembership,
 			Actor:       attribution.AccountID,
 			ActorKind:   attribution.Kind,
 			Target:      accountID,
-		})
+		}); err != nil {
+			return err
+		}
+
+		s.rescope(ctx, workspaceID, accountID)
+
+		return s.emit(ctx, entity.WebhookTeamMembershipAdded, accountID, team, decision)
 	}); err != nil {
 		return service.TeamMemberView{}, err
 	}
@@ -337,11 +350,20 @@ func (s *teamsService) RemoveMember(ctx context.Context, workspaceID, teamID, ac
 		return err
 	}
 
-	if _, err := s.liveTeam(ctx, workspaceID, teamID, decision); err != nil {
+	team, err := s.liveTeam(ctx, workspaceID, teamID, decision)
+	if err != nil {
 		return err
 	}
 
-	if err := s.teamMembers.Delete(ctx, teamID, accountID); err != nil {
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if err := s.teamMembers.Delete(ctx, teamID, accountID); err != nil {
+			return err
+		}
+
+		s.rescope(ctx, workspaceID, accountID)
+
+		return s.emit(ctx, entity.WebhookTeamMembershipRemoved, accountID, team, decision)
+	}); err != nil {
 		return err
 	}
 

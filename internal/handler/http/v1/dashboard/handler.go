@@ -14,35 +14,37 @@ import (
 )
 
 type handler struct {
-	accounts       service.Accounts
-	workspaces     service.Workspaces
-	teams          service.Teams
-	invitations    service.Invitations
-	issues         service.Issues
-	issueRelations service.IssueRelations
-	issueComments  service.IssueComments
-	attachments    service.Attachments
-	bulkOperations service.BulkOperations
-	workflowStates service.WorkflowStates
-	labels         service.Labels
-	apiTokens      service.APITokens
-	mcpConnections service.MCPConnections
-	agents         service.Agents
-	sessions       service.Sessions
-	ssoConnections service.SSOConnections
-	cycles         service.Cycles
-	projects       service.Projects
-	savedViews     service.SavedViews
-	triages        service.Triages
-	notifications  service.Notifications
-	searches       service.Searches
-	auditLog       service.AuditLog
-	directories    service.Directories
-	licensing      service.Licensing
-	app            config.App
-	instance       config.Instance
-	password       config.Password
-	session        config.Session
+	accounts          service.Accounts
+	workspaces        service.Workspaces
+	teams             service.Teams
+	invitations       service.Invitations
+	issues            service.Issues
+	issueRelations    service.IssueRelations
+	issueComments     service.IssueComments
+	attachments       service.Attachments
+	bulkOperations    service.BulkOperations
+	workflowStates    service.WorkflowStates
+	labels            service.Labels
+	apiTokens         service.APITokens
+	mcpConnections    service.MCPConnections
+	webhooks          service.Webhooks
+	webhookDeliveries service.WebhookDeliveries
+	agents            service.Agents
+	sessions          service.Sessions
+	ssoConnections    service.SSOConnections
+	cycles            service.Cycles
+	projects          service.Projects
+	savedViews        service.SavedViews
+	triages           service.Triages
+	notifications     service.Notifications
+	searches          service.Searches
+	auditLog          service.AuditLog
+	directories       service.Directories
+	licensing         service.Licensing
+	app               config.App
+	instance          config.Instance
+	password          config.Password
+	session           config.Session
 }
 
 func New(
@@ -59,6 +61,8 @@ func New(
 	labels service.Labels,
 	apiTokens service.APITokens,
 	mcpConnections service.MCPConnections,
+	webhooks service.Webhooks,
+	webhookDeliveries service.WebhookDeliveries,
 	agents service.Agents,
 	sessions service.Sessions,
 	ssoConnections service.SSOConnections,
@@ -77,35 +81,37 @@ func New(
 	session config.Session,
 ) api.StrictServerInterface {
 	return &handler{
-		accounts:       accounts,
-		workspaces:     workspaces,
-		teams:          teams,
-		invitations:    invitations,
-		issues:         issues,
-		issueRelations: issueRelations,
-		issueComments:  issueComments,
-		attachments:    attachments,
-		bulkOperations: bulkOperations,
-		workflowStates: workflowStates,
-		labels:         labels,
-		apiTokens:      apiTokens,
-		mcpConnections: mcpConnections,
-		agents:         agents,
-		sessions:       sessions,
-		ssoConnections: ssoConnections,
-		cycles:         cycles,
-		projects:       projects,
-		savedViews:     savedViews,
-		triages:        triages,
-		notifications:  notifications,
-		searches:       searches,
-		auditLog:       auditLog,
-		directories:    directories,
-		licensing:      licensing,
-		app:            app,
-		instance:       instance,
-		password:       password,
-		session:        session,
+		accounts:          accounts,
+		workspaces:        workspaces,
+		teams:             teams,
+		invitations:       invitations,
+		issues:            issues,
+		issueRelations:    issueRelations,
+		issueComments:     issueComments,
+		attachments:       attachments,
+		bulkOperations:    bulkOperations,
+		workflowStates:    workflowStates,
+		labels:            labels,
+		apiTokens:         apiTokens,
+		mcpConnections:    mcpConnections,
+		webhooks:          webhooks,
+		webhookDeliveries: webhookDeliveries,
+		agents:            agents,
+		sessions:          sessions,
+		ssoConnections:    ssoConnections,
+		cycles:            cycles,
+		projects:          projects,
+		savedViews:        savedViews,
+		triages:           triages,
+		notifications:     notifications,
+		searches:          searches,
+		auditLog:          auditLog,
+		directories:       directories,
+		licensing:         licensing,
+		app:               app,
+		instance:          instance,
+		password:          password,
+		session:           session,
 	}
 }
 

@@ -32,6 +32,8 @@ type workspacesService struct {
 	transactor   repository.Transactor
 	workspaceCfg config.Workspace
 	audit        service.Audit
+	events       service.Events
+	emitter      service.WebhookEmitter
 	licensing    service.Licensing
 }
 
@@ -52,6 +54,8 @@ func New(
 	transactor repository.Transactor,
 	workspaceCfg config.Workspace,
 	audit service.Audit,
+	events service.Events,
+	emitter service.WebhookEmitter,
 	licensing service.Licensing,
 ) service.Workspaces {
 	return &workspacesService{
@@ -71,6 +75,8 @@ func New(
 		transactor:   transactor,
 		workspaceCfg: workspaceCfg,
 		audit:        audit,
+		events:       events,
+		emitter:      emitter,
 		licensing:    licensing,
 	}
 }
@@ -396,7 +402,8 @@ func (s *workspacesService) ListMembers(ctx context.Context, workspaceID uuid.UU
 }
 
 func (s *workspacesService) AddMember(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.WorkspaceMember, error) {
-	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{Resource: entity.ResourceMembership, Action: entity.ActionManage, WorkspaceID: workspaceID}); err != nil {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{Resource: entity.ResourceMembership, Action: entity.ActionManage, WorkspaceID: workspaceID})
+	if err != nil {
 		return entity.WorkspaceMember{}, err
 	}
 
@@ -416,13 +423,23 @@ func (s *workspacesService) AddMember(ctx context.Context, workspaceID, accountI
 		return entity.WorkspaceMember{}, entity.ErrAccountDeactivated
 	}
 
-	created, err := s.memberships.Create(ctx, entity.Membership{
-		WorkspaceID: workspaceID,
-		AccountID:   accountID,
-		Role:        role,
-		Source:      entity.MembershipSourceManual,
-	})
-	if err != nil {
+	var created entity.Membership
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		created, err = s.memberships.Create(ctx, entity.Membership{
+			WorkspaceID: workspaceID,
+			AccountID:   accountID,
+			Role:        role,
+			Source:      entity.MembershipSourceManual,
+		})
+		if err != nil {
+			return err
+		}
+
+		s.rescope(ctx, workspaceID, accountID)
+
+		return s.emit(ctx, entity.WebhookMembershipAdded, created, decision)
+	}); err != nil {
 		return entity.WorkspaceMember{}, err
 	}
 
@@ -439,7 +456,8 @@ func (s *workspacesService) AddMember(ctx context.Context, workspaceID, accountI
 }
 
 func (s *workspacesService) ChangeMemberRole(ctx context.Context, workspaceID, accountID uuid.UUID, role entity.MembershipRole) (entity.WorkspaceMember, error) {
-	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{Resource: entity.ResourceMembership, Action: entity.ActionManage, WorkspaceID: workspaceID}); err != nil {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{Resource: entity.ResourceMembership, Action: entity.ActionManage, WorkspaceID: workspaceID})
+	if err != nil {
 		return entity.WorkspaceMember{}, err
 	}
 
@@ -461,7 +479,7 @@ func (s *workspacesService) ChangeMemberRole(ctx context.Context, workspaceID, a
 
 	var updated entity.Membership
 
-	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		current, err := s.memberships.Get(ctx, workspaceID, accountID)
 		if err != nil {
 			return err
@@ -484,7 +502,9 @@ func (s *workspacesService) ChangeMemberRole(ctx context.Context, workspaceID, a
 
 		updated = changed
 
-		return nil
+		s.rescope(ctx, workspaceID, accountID)
+
+		return s.emit(ctx, entity.WebhookMembershipChanged, updated, decision)
 	})
 	if err != nil {
 		return entity.WorkspaceMember{}, err
@@ -541,7 +561,8 @@ func (s *workspacesService) PreviewMemberRemoval(ctx context.Context, workspaceI
 }
 
 func (s *workspacesService) RemoveMember(ctx context.Context, workspaceID, accountID uuid.UUID, reassignTo *uuid.UUID) error {
-	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{Resource: entity.ResourceMembership, Action: entity.ActionManage, WorkspaceID: workspaceID}); err != nil {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{Resource: entity.ResourceMembership, Action: entity.ActionManage, WorkspaceID: workspaceID})
+	if err != nil {
 		return err
 	}
 
@@ -565,7 +586,13 @@ func (s *workspacesService) RemoveMember(ctx context.Context, workspaceID, accou
 			}
 		}
 
-		return s.memberships.Delete(ctx, workspaceID, accountID)
+		if err := s.memberships.Delete(ctx, workspaceID, accountID); err != nil {
+			return err
+		}
+
+		s.rescope(ctx, workspaceID, accountID)
+
+		return s.emit(ctx, entity.WebhookMembershipRemoved, membership, decision)
 	}); err != nil {
 		return err
 	}

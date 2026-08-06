@@ -81,7 +81,8 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = issuecommentsvc.New(
-		h.comments, h.attachments, h.issues, h.teams, h.activity, h.notify, h.events, h.followers,
+		h.comments, h.attachments, h.issues, h.teams, h.activity, h.notify, h.events,
+		silentEmitter(ctrl), h.followers,
 		agenthold.New(agentsettingrepo.NewMockAgentSetting(ctrl), agentproposalrepo.NewMockAgentProposal(ctrl), agentrepo.NewMockAgent(ctrl)),
 		h.authorizer, transactor,
 	)

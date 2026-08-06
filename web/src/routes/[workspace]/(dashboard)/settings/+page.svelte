@@ -407,6 +407,23 @@
 
 			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Webhooks</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Norn posts the events you pick to an address you own, signed so your endpoint can tell
+						the request really came from here. Every attempt is recorded, and a subscription that
+						keeps failing is retried and then turned off rather than left hammering a dead endpoint.
+					</p>
+				</div>
+
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" href={workspacePath(workspace.slug, "/settings/webhooks")}>
+						Manage webhooks
+					</Button>
+				</div>
+			</section>
+
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">API tokens</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Tokens belong to you rather than to a workspace, and can reach several at once. They

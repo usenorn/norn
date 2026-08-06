@@ -21,6 +21,7 @@ type Config struct {
 	Realtime      Realtime      `mapstructure:"realtime"`
 	APITokens     APITokens     `mapstructure:"api_tokens"`
 	MCP           MCP           `mapstructure:"mcp"`
+	Webhooks      Webhooks      `mapstructure:"webhooks"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
 	GeoIP         GeoIP         `mapstructure:"geoip"`
@@ -207,6 +208,21 @@ type Realtime struct {
 type APITokens struct {
 	ExpirySweepSchedule string `mapstructure:"expiry_sweep_schedule"`
 }
+
+type Webhooks struct {
+	FanOutSchedule      string        `mapstructure:"fan_out_schedule"`
+	FanOutBatch         int           `mapstructure:"fan_out_batch"`
+	RequestTimeout      time.Duration `mapstructure:"request_timeout"`
+	DialTimeout         time.Duration `mapstructure:"dial_timeout"`
+	MaxResponseSize     int64         `mapstructure:"max_response_size"`
+	SecretGrace         time.Duration `mapstructure:"secret_grace"`
+	Retention           time.Duration `mapstructure:"retention"`
+	SweepSchedule       string        `mapstructure:"sweep_schedule"`
+	SweepBatch          int           `mapstructure:"sweep_batch"`
+	AllowedDestinations []string      `mapstructure:"allowed_destinations"`
+}
+
+func (c Webhooks) RetentionDays() int { return int(c.Retention.Hours() / 24) }
 
 type MCP struct {
 	Enabled           bool          `mapstructure:"enabled"`

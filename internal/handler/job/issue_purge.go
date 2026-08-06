@@ -28,11 +28,11 @@ func (h *IssuePurgeHandler) ProcessTask(ctx context.Context, task *asynq.Task) e
 		return errors.Join(fmt.Errorf("decode issue purge payload: %w", err), asynq.SkipRetry)
 	}
 
-	if payload.IssueID == uuid.Nil {
+	if payload.IssueID == uuid.Nil || payload.WorkspaceID == uuid.Nil {
 		return errors.Join(errors.New("issue purge payload is incomplete"), asynq.SkipRetry)
 	}
 
-	if err := h.issues.Purge(ctx, payload.IssueID); err != nil {
+	if err := h.issues.Purge(ctx, payload.WorkspaceID, payload.IssueID); err != nil {
 		if errors.Is(err, entity.ErrIssuePurgeNotDue) {
 			return nil
 		}

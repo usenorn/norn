@@ -28,7 +28,7 @@ func neverGated() []commitment {
 		{name: "the API", words: []string{"api", "token"}, built: true},
 		{name: "data export", words: []string{"export"}, built: true},
 		{name: "the MCP server", words: []string{"mcp"}, built: true},
-		{name: "webhooks", words: []string{"webhook"}, built: false},
+		{name: "webhooks", words: []string{"webhook"}, built: true},
 	}
 }
 
@@ -124,6 +124,7 @@ func TestTheThingsPromisedFreeConsultNoLicence(t *testing.T) {
 		filepath.Join("..", "service", "mcpconnection"),
 		filepath.Join("..", "service", "ssoconnection"),
 		filepath.Join("..", "service", "apitoken"),
+		filepath.Join("..", "service", "webhook"),
 	}
 
 	for _, target := range paths {

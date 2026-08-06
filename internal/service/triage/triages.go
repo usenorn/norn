@@ -24,6 +24,7 @@ type triagesService struct {
 	issueMoves service.Issues
 	comments   service.IssueComments
 	authorizer service.Authorizer
+	emitter    service.WebhookEmitter
 	transactor repository.Transactor
 }
 
@@ -37,6 +38,7 @@ func New(
 	issueMoves service.Issues,
 	comments service.IssueComments,
 	authorizer service.Authorizer,
+	emitter service.WebhookEmitter,
 	transactor repository.Transactor,
 ) service.Triages {
 	return &triagesService{
@@ -49,6 +51,7 @@ func New(
 		issueMoves: issueMoves,
 		comments:   comments,
 		authorizer: authorizer,
+		emitter:    emitter,
 		transactor: transactor,
 	}
 }
@@ -193,8 +196,11 @@ func (s *triagesService) Accept(
 		}
 
 		accepted, err = s.decided(ctx, workspaceID, issueID, decision)
+		if err != nil {
+			return err
+		}
 
-		return err
+		return s.emit(ctx, entity.WebhookIssueTriaged, accepted, decision)
 	})
 	if err != nil {
 		return entity.Issue{}, err
@@ -237,8 +243,11 @@ func (s *triagesService) Decline(
 		}
 
 		declined, err = s.decided(ctx, workspaceID, issueID, decision)
+		if err != nil {
+			return err
+		}
 
-		return err
+		return s.emit(ctx, entity.WebhookIssueTriaged, declined, decision)
 	})
 	if err != nil {
 		return entity.Issue{}, err
@@ -360,8 +369,11 @@ func (s *triagesService) Merge(
 		}
 
 		merged, err = s.decided(ctx, workspaceID, issueID, decision)
+		if err != nil {
+			return err
+		}
 
-		return err
+		return s.emit(ctx, entity.WebhookIssueMerged, merged, decision)
 	})
 	if err != nil {
 		return entity.Issue{}, err
@@ -418,8 +430,11 @@ func (s *triagesService) Reassign(
 			}
 
 			reassigned, err = s.decided(ctx, workspaceID, issueID, decision)
+			if err != nil {
+				return err
+			}
 
-			return err
+			return s.emit(ctx, entity.WebhookIssueTriaged, reassigned, decision)
 		}
 
 		if err := s.activity.Record(ctx, entity.Activity{
@@ -435,8 +450,11 @@ func (s *triagesService) Reassign(
 		}
 
 		reassigned, err = s.decided(ctx, workspaceID, issueID, decision)
+		if err != nil {
+			return err
+		}
 
-		return err
+		return s.emit(ctx, entity.WebhookIssueTriaged, reassigned, decision)
 	})
 	if err != nil {
 		return entity.Issue{}, err

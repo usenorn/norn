@@ -154,6 +154,34 @@ func (mr *MockJobProducerMockRecorder) EnqueueSignUpVerification(ctx, payload an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueSignUpVerification", reflect.TypeOf((*MockJobProducer)(nil).EnqueueSignUpVerification), ctx, payload)
 }
 
+// EnqueueWebhookDeliver mocks base method.
+func (m *MockJobProducer) EnqueueWebhookDeliver(ctx context.Context, payload entity.WebhookDeliverPayload, processAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueWebhookDeliver", ctx, payload, processAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueWebhookDeliver indicates an expected call of EnqueueWebhookDeliver.
+func (mr *MockJobProducerMockRecorder) EnqueueWebhookDeliver(ctx, payload, processAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueWebhookDeliver", reflect.TypeOf((*MockJobProducer)(nil).EnqueueWebhookDeliver), ctx, payload, processAt)
+}
+
+// EnqueueWebhookFanOut mocks base method.
+func (m *MockJobProducer) EnqueueWebhookFanOut(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueWebhookFanOut", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueWebhookFanOut indicates an expected call of EnqueueWebhookFanOut.
+func (mr *MockJobProducerMockRecorder) EnqueueWebhookFanOut(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueWebhookFanOut", reflect.TypeOf((*MockJobProducer)(nil).EnqueueWebhookFanOut), ctx)
+}
+
 // EnqueueWorkspacePurge mocks base method.
 func (m *MockJobProducer) EnqueueWorkspacePurge(ctx context.Context, payload entity.WorkspacePurgePayload, processAt time.Time) error {
 	m.ctrl.T.Helper()

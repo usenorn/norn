@@ -19,6 +19,8 @@ type JobProducer interface {
 	EnqueueAttachmentReclaim(ctx context.Context) error
 	EnqueueIssuePurge(ctx context.Context, payload entity.IssuePurgePayload, processAt time.Time) error
 	EnqueueBulkApply(ctx context.Context, payload entity.BulkApplyPayload) error
+	EnqueueWebhookFanOut(ctx context.Context) error
+	EnqueueWebhookDeliver(ctx context.Context, payload entity.WebhookDeliverPayload, processAt time.Time) error
 }
 
 type JobInspector interface {
