@@ -3980,6 +3980,25 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/followers:
+    get:
+      tags: [notifications]
+      operationId: listWorkspaceIssueFollowers
+      summary: List the people this issue reaches
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IssueId'
+      responses:
+        '200':
+          description: Everyone following this issue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueFollowerList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/notification-settings:
     get:
       tags: [notifications]
@@ -7085,6 +7104,20 @@ components:
       required: [until]
       properties:
         until: { type: string, format: date-time }
+
+    IssueFollowerList:
+      type: object
+      required: [followers]
+      properties:
+        followers:
+          type: array
+          items: { $ref: '#/components/schemas/IssueFollower' }
+
+    IssueFollower:
+      type: object
+      required: [accountId]
+      properties:
+        accountId: { type: string, format: uuid }
 
     IssueFollow:
       type: object

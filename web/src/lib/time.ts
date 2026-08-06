@@ -49,18 +49,28 @@ export function lastActive(instant: string | undefined, now: string, timezone: s
 	return `Active ${onMonth(instant, timezone)}`;
 }
 
+export function onDayMonth(instant: string, now: string, timezone: string): string {
+	const year = { year: "numeric" } as const;
+	const sameYear = parts(instant, timezone, year) === parts(now, timezone, year);
+
+	return parts(
+		instant,
+		timezone,
+		sameYear ? { month: "short", day: "numeric" } : { year: "numeric", month: "short", day: "numeric" }
+	);
+}
+
 export function dueLabel(due: string | undefined, now: string, timezone: string): string {
 	if (!due) return "No due date";
 
 	const days = daysBetween(now, due);
 
-	if (days < -1) return `Overdue by ${Math.abs(days)} days`;
 	if (days === -1) return "Overdue by a day";
 	if (days === 0) return "Due today";
 	if (days === 1) return "Due tomorrow";
-	if (days < 30) return `Due in ${days} days`;
+	if (days < -1) return `Overdue · ${onDayMonth(due, now, timezone)}`;
 
-    return `Due ${onDate(due, timezone)}`;
+	return `Due ${onDayMonth(due, now, timezone)}`;
 }
 
 export function overdue(due: string | undefined, now: string): boolean {

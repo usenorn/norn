@@ -1699,6 +1699,10 @@ func (r problemResponse) VisitGetWorkspaceIssueFollowResponse(w http.ResponseWri
 	return r.write(w)
 }
 
+func (r problemResponse) VisitListWorkspaceIssueFollowersResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitSetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

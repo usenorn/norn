@@ -5,8 +5,14 @@
 	let {
 		disabled = false,
 		label = "Attach",
+		iconOnly = false,
 		onfiles,
-	}: { disabled?: boolean; label?: string; onfiles: (files: File[]) => void } = $props();
+	}: {
+		disabled?: boolean;
+		label?: string;
+		iconOnly?: boolean;
+		onfiles: (files: File[]) => void;
+	} = $props();
 
 	let input = $state<HTMLInputElement | null>(null);
 
@@ -18,9 +24,17 @@
 	}
 </script>
 
-<Button variant="ghost" size="sm" {disabled} onclick={() => input?.click()}>
+<Button
+	variant="ghost"
+	size={iconOnly ? "icon-xs" : "sm"}
+	aria-label={iconOnly ? label : undefined}
+	{disabled}
+	onclick={() => input?.click()}
+>
 	<Paperclip aria-hidden="true" />
-	{label}
+	{#if !iconOnly}
+		{label}
+	{/if}
 </Button>
 
 <input bind:this={input} type="file" multiple {disabled} class="sr-only" onchange={chosen} />

@@ -88,6 +88,21 @@ func (mr *MockNotificationsMockRecorder) FanOut(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FanOut", reflect.TypeOf((*MockNotifications)(nil).FanOut), ctx)
 }
 
+// Followers mocks base method.
+func (m *MockNotifications) Followers(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.IssueFollower, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Followers", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].([]entity.IssueFollower)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Followers indicates an expected call of Followers.
+func (mr *MockNotificationsMockRecorder) Followers(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Followers", reflect.TypeOf((*MockNotifications)(nil).Followers), ctx, workspaceID, issueID)
+}
+
 // Following mocks base method.
 func (m *MockNotifications) Following(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueFollower, error) {
 	m.ctrl.T.Helper()
