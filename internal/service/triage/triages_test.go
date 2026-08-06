@@ -19,6 +19,7 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
+	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	triagesvc "github.com/usenorn/norn/internal/service/triage"
 )
@@ -31,6 +32,7 @@ type harness struct {
 	teams      *teamrepo.MockTeam
 	relations  *issuerelationsvc.MockIssueRelations
 	issueMoves *issuesvc.MockIssues
+	comments   *issuecommentsvc.MockIssueComments
 	authorizer *authorizersvc.MockAuthorizer
 	transactor *transactorrepo.MockTransactor
 	service    service.Triages
@@ -62,6 +64,8 @@ func newHarness(t *testing.T) *harness {
 		actorID:     uuid.New(),
 	}
 
+	h.comments = issuecommentsvc.NewMockIssueComments(ctrl)
+
 	h.transactor.EXPECT().
 		WithTx(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
@@ -80,7 +84,7 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = triagesvc.New(
 		h.triage, h.issues, h.states, h.activity, h.teams,
-		h.relations, h.issueMoves, h.authorizer, h.transactor,
+		h.relations, h.issueMoves, h.comments, h.authorizer, h.transactor,
 	)
 
 	return h
@@ -188,7 +192,12 @@ func TestDecliningClosesTheIssueWithoutDeletingIt(t *testing.T) {
 
 	recorded := h.captureDecision()
 
-	if _, err := h.service.Decline(context.Background(), h.workspaceID, h.issueID); err != nil {
+	if _, err := h.service.Decline(
+		context.Background(),
+		h.workspaceID,
+		h.issueID,
+		service.DeclineTriageInput{Reason: entity.TriageDeclineNotReproducible},
+	); err != nil {
 		t.Fatalf("Decline: %v", err)
 	}
 
@@ -204,6 +213,78 @@ func TestDecliningClosesTheIssueWithoutDeletingIt(t *testing.T) {
 	if recorded.Field != string(entity.TriageStateDeclined) {
 		t.Errorf("the activity names the decision as %q, want declined", recorded.Field)
 	}
+
+	if recorded.ToValue != string(entity.TriageDeclineNotReproducible) {
+		t.Errorf(
+			"the activity records the reason as %q, want %q; whoever reported it is told why",
+			recorded.ToValue,
+			entity.TriageDeclineNotReproducible,
+		)
+	}
+}
+
+func TestADeclineNoteReachesTheReporterInTheThread(t *testing.T) {
+	h := newHarness(t)
+	h.holds(h.waiting())
+	h.states.EXPECT().
+		ListByTeamID(gomock.Any(), h.teamID).
+		Return([]entity.WorkflowState{h.abandonedState()}, nil)
+	h.issues.EXPECT().
+		Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+	h.expectDecided(entity.TriageStateDeclined)
+	h.captureDecision()
+
+	var posted service.PostCommentInput
+
+	h.comments.EXPECT().
+		Post(gomock.Any(), h.workspaceID, h.issueID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ uuid.UUID, _ uuid.UUID, input service.PostCommentInput,
+		) (service.CommentPosted, error) {
+			posted = input
+
+			return service.CommentPosted{}, nil
+		})
+
+	if _, err := h.service.Decline(
+		context.Background(),
+		h.workspaceID,
+		h.issueID,
+		service.DeclineTriageInput{
+			Reason: entity.TriageDeclineOutOfScope,
+			Note:   "  Billing owns VAT rates.  ",
+		},
+	); err != nil {
+		t.Fatalf("Decline: %v", err)
+	}
+
+	if posted.Body != "Billing owns VAT rates." {
+		t.Fatalf(
+			"the note reached the thread as %q; a note nobody can read is a note nobody was told",
+			posted.Body,
+		)
+	}
+}
+
+func TestDecliningNeedsAReasonTheReporterCanBeTold(t *testing.T) {
+	h := newHarness(t)
+
+	_, err := h.service.Decline(
+		context.Background(),
+		h.workspaceID,
+		h.issueID,
+		service.DeclineTriageInput{},
+	)
+
+	var validation entity.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("declining without a reason returned %v, want a validation error", err)
+	}
+
+	if len(validation.Fields) != 1 || validation.Fields[0].Field != "reason" {
+		t.Fatalf("fields = %v, want the reason named", validation.Fields)
+	}
 }
 
 func TestDecliningIsRefusedWhenTheTeamHasNowhereToPutIt(t *testing.T) {
@@ -216,7 +297,10 @@ func TestDecliningIsRefusedWhenTheTeamHasNowhereToPutIt(t *testing.T) {
 		}}, nil)
 
 	if _, err := h.service.Decline(
-		context.Background(), h.workspaceID, h.issueID,
+		context.Background(),
+		h.workspaceID,
+		h.issueID,
+		service.DeclineTriageInput{Reason: entity.TriageDeclineOutOfScope},
 	); !errors.Is(err, entity.ErrIssueDestinationIncapable) {
 		t.Fatalf(
 			"declining into a team with no abandoned state returned %v. Silently leaving it open "+

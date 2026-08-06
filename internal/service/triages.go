@@ -27,6 +27,11 @@ type ConfigureTriageInput struct {
 	RouteNonMembers   bool
 }
 
+type DeclineTriageInput struct {
+	Reason entity.TriageDeclineReason
+	Note   string
+}
+
 type ReassignTriageInput struct {
 	TeamID               uuid.UUID
 	ExpectedVersion      int
@@ -36,7 +41,11 @@ type ReassignTriageInput struct {
 type Triages interface {
 	Queue(ctx context.Context, workspaceID uuid.UUID, input TriageQueueInput) (TriageQueue, error)
 	Accept(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.Issue, error)
-	Decline(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.Issue, error)
+	Decline(
+		ctx context.Context,
+		workspaceID, issueID uuid.UUID,
+		input DeclineTriageInput,
+	) (entity.Issue, error)
 	Merge(ctx context.Context, workspaceID, issueID, duplicateOfID uuid.UUID) (entity.Issue, error)
 	Reassign(ctx context.Context, workspaceID, issueID uuid.UUID, input ReassignTriageInput) (entity.Issue, error)
 	Settings(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.TriageSettings, error)

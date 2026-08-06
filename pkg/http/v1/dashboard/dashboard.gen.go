@@ -2235,6 +2235,30 @@ func (e TeamVisibility) Valid() bool {
 	}
 }
 
+// Defines values for TriageDeclineReason.
+const (
+	NoResponse        TriageDeclineReason = "no_response"
+	NotReproducible   TriageDeclineReason = "not_reproducible"
+	OutOfScope        TriageDeclineReason = "out_of_scope"
+	WorkingAsIntended TriageDeclineReason = "working_as_intended"
+)
+
+// Valid indicates whether the value is a known member of the TriageDeclineReason enum.
+func (e TriageDeclineReason) Valid() bool {
+	switch e {
+	case NoResponse:
+		return true
+	case NotReproducible:
+		return true
+	case OutOfScope:
+		return true
+	case WorkingAsIntended:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TriageSource.
 const (
 	TriageSourceAgent TriageSource = "agent"
@@ -3111,6 +3135,13 @@ type CycleScopeChange struct {
 
 // CycleScopeChangeKind defines model for CycleScopeChangeKind.
 type CycleScopeChangeKind string
+
+// DeclineTriageIssueRequest defines model for DeclineTriageIssueRequest.
+type DeclineTriageIssueRequest struct {
+	// Note Sent to whoever reported it, and kept in the issue's history
+	Note   *string             `json:"note,omitempty"`
+	Reason TriageDeclineReason `json:"reason"`
+}
 
 // DirectoryAbsentPolicy defines model for DirectoryAbsentPolicy.
 type DirectoryAbsentPolicy string
@@ -4499,6 +4530,9 @@ type TeamStatus string
 // TeamVisibility defines model for TeamVisibility.
 type TeamVisibility string
 
+// TriageDeclineReason defines model for TriageDeclineReason.
+type TriageDeclineReason string
+
 // TriageQueue defines model for TriageQueue.
 type TriageQueue struct {
 	Issues     []Issue `json:"issues"`
@@ -5338,6 +5372,9 @@ type UpdateWorkflowStateJSONRequestBody = UpdateWorkflowStateRequest
 
 // SetTeamTriageSettingsJSONRequestBody defines body for SetTeamTriageSettings for application/json ContentType.
 type SetTeamTriageSettingsJSONRequestBody = SetTriageSettingsRequest
+
+// DeclineWorkspaceTriageIssueJSONRequestBody defines body for DeclineWorkspaceTriageIssue for application/json ContentType.
+type DeclineWorkspaceTriageIssueJSONRequestBody = DeclineTriageIssueRequest
 
 // MergeWorkspaceTriageIssueJSONRequestBody defines body for MergeWorkspaceTriageIssue for application/json ContentType.
 type MergeWorkspaceTriageIssueJSONRequestBody = MergeTriageIssueRequest
@@ -31794,6 +31831,7 @@ func (response AcceptWorkspaceTriageIssue500ApplicationProblemPlusJSONResponse) 
 type DeclineWorkspaceTriageIssueRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	IssueId     IssueId     `json:"issueId"`
+	Body        *DeclineWorkspaceTriageIssueJSONRequestBody
 }
 
 type DeclineWorkspaceTriageIssueResponseObject interface {
@@ -31872,6 +31910,20 @@ func (response DeclineWorkspaceTriageIssue409ApplicationProblemPlusJSONResponse)
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclineWorkspaceTriageIssue422ApplicationProblemPlusJSONResponse Problem
+
+func (response DeclineWorkspaceTriageIssue422ApplicationProblemPlusJSONResponse) VisitDeclineWorkspaceTriageIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -38409,6 +38461,13 @@ func (sh *strictHandler) DeclineWorkspaceTriageIssue(w http.ResponseWriter, r *h
 
 	request.WorkspaceId = workspaceId
 	request.IssueId = issueId
+
+	var body DeclineWorkspaceTriageIssueJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeclineWorkspaceTriageIssue(ctx, request.(DeclineWorkspaceTriageIssueRequestObject))

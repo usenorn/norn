@@ -21,6 +21,30 @@ const (
 	TriageStateMerged   TriageState = "merged"
 )
 
+type TriageDeclineReason string
+
+const (
+	TriageDeclineNotReproducible   TriageDeclineReason = "not_reproducible"
+	TriageDeclineWorkingAsIntended TriageDeclineReason = "working_as_intended"
+	TriageDeclineOutOfScope        TriageDeclineReason = "out_of_scope"
+	TriageDeclineNoResponse        TriageDeclineReason = "no_response"
+)
+
+const TriageDeclineNoteMaxLen = 2000
+
+func TriageDeclineReasons() []TriageDeclineReason {
+	return []TriageDeclineReason{
+		TriageDeclineNotReproducible,
+		TriageDeclineWorkingAsIntended,
+		TriageDeclineOutOfScope,
+		TriageDeclineNoResponse,
+	}
+}
+
+func (r TriageDeclineReason) Valid() bool {
+	return slices.Contains(TriageDeclineReasons(), r)
+}
+
 func TriageStates() []TriageState {
 	return []TriageState{
 		TriageStateWaiting,

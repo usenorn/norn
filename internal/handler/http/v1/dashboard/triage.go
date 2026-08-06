@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 
+	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -53,7 +54,10 @@ func (h *handler) DeclineWorkspaceTriageIssue(
 	ctx context.Context,
 	request api.DeclineWorkspaceTriageIssueRequestObject,
 ) (api.DeclineWorkspaceTriageIssueResponseObject, error) {
-	issue, err := h.triages.Decline(ctx, request.WorkspaceId, request.IssueId)
+	issue, err := h.triages.Decline(ctx, request.WorkspaceId, request.IssueId, service.DeclineTriageInput{
+		Reason: entity.TriageDeclineReason(request.Body.Reason),
+		Note:   noteOf(request.Body.Note),
+	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -158,4 +162,12 @@ func (h *handler) DeleteTeamTriageSettings(
 	}
 
 	return api.DeleteTeamTriageSettings204Response{}, nil
+}
+
+func noteOf(note *string) string {
+	if note == nil {
+		return ""
+	}
+
+	return *note
 }

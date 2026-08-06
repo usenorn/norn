@@ -30,11 +30,39 @@ export type TriageFailure =
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
 
+export type TriageDeclineReason = components["schemas"]["TriageDeclineReason"];
+
 export const sourceLabels: Record<TriageSource, string> = {
 	user: "A person",
 	token: "An integration",
 	agent: "An agent",
 };
+
+export const sourceTabs: { value: "all" | TriageSource; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "user", label: "People" },
+	{ value: "token", label: "Integrations" },
+	{ value: "agent", label: "Agents" },
+];
+
+export const declineReasons: { value: TriageDeclineReason; label: string }[] = [
+	{ value: "not_reproducible", label: "Not reproducible" },
+	{ value: "working_as_intended", label: "Working as intended" },
+	{ value: "out_of_scope", label: "Out of scope" },
+	{ value: "no_response", label: "No response from the reporter" },
+];
+
+export const declineReasonLabels: Record<TriageDeclineReason, string> = Object.fromEntries(
+	declineReasons.map((reason) => [reason.value, reason.label])
+) as Record<TriageDeclineReason, string>;
+
+export function queued(listing: TriageListing): Issue[] {
+	if (listing.kind !== "ready") return [];
+
+	return listing.groups
+		.flatMap((group) => group.issues)
+		.sort((first, second) => first.createdAt.localeCompare(second.createdAt));
+}
 
 const failureMessages: Record<TriageFailure["kind"], string> = {
 	not_waiting: "Someone else already decided about this one.",

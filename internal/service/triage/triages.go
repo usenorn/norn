@@ -3,7 +3,9 @@ package triage
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 
@@ -20,6 +22,7 @@ type triagesService struct {
 	teams      repository.Team
 	relations  service.IssueRelations
 	issueMoves service.Issues
+	comments   service.IssueComments
 	authorizer service.Authorizer
 	transactor repository.Transactor
 }
@@ -32,6 +35,7 @@ func New(
 	teams repository.Team,
 	relations service.IssueRelations,
 	issueMoves service.Issues,
+	comments service.IssueComments,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.Triages {
@@ -43,6 +47,7 @@ func New(
 		teams:      teams,
 		relations:  relations,
 		issueMoves: issueMoves,
+		comments:   comments,
 		authorizer: authorizer,
 		transactor: transactor,
 	}
@@ -201,9 +206,17 @@ func (s *triagesService) Accept(
 func (s *triagesService) Decline(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
+	input service.DeclineTriageInput,
 ) (entity.Issue, error) {
 	decision, err := s.decide(ctx, workspaceID, entity.ResourceIssue, entity.ActionManage)
 	if err != nil {
+		return entity.Issue{}, err
+	}
+
+	if err := entity.NewValidationError(
+		validateDeclineReason("reason", input.Reason),
+		validateDeclineNote("note", input.Note),
+	); err != nil {
 		return entity.Issue{}, err
 	}
 
@@ -219,7 +232,7 @@ func (s *triagesService) Decline(
 			return err
 		}
 
-		if err := s.record(ctx, issue, decision, entity.TriageStateDeclined, ""); err != nil {
+		if err := s.record(ctx, issue, decision, entity.TriageStateDeclined, string(input.Reason)); err != nil {
 			return err
 		}
 
@@ -231,7 +244,35 @@ func (s *triagesService) Decline(
 		return entity.Issue{}, err
 	}
 
+	if note := strings.TrimSpace(input.Note); note != "" {
+		if _, err := s.comments.Post(ctx, workspaceID, issueID, service.PostCommentInput{
+			Body: note,
+		}); err != nil {
+			return entity.Issue{}, err
+		}
+	}
+
 	return declined, nil
+}
+
+func validateDeclineReason(field string, reason entity.TriageDeclineReason) entity.FieldError {
+	if reason == "" {
+		return entity.FieldError{Field: field, Code: entity.ValidationCodeRequired}
+	}
+
+	if !reason.Valid() {
+		return entity.FieldError{Field: field, Code: entity.ValidationCodeUnsupportedValue}
+	}
+
+	return entity.FieldError{}
+}
+
+func validateDeclineNote(field, note string) entity.FieldError {
+	if utf8.RuneCountInString(note) > entity.TriageDeclineNoteMaxLen {
+		return entity.FieldError{Field: field, Code: entity.ValidationCodeTooLong}
+	}
+
+	return entity.FieldError{}
 }
 
 func (s *triagesService) close(

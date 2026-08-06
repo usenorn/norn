@@ -2175,6 +2175,11 @@ paths:
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
         - $ref: '#/components/parameters/IssueId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeclineTriageIssueRequest' }
       responses:
         '200':
           description: The issue, now closed
@@ -2185,6 +2190,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/triage/{issueId}/merge:
@@ -5747,6 +5753,19 @@ components:
         routeAgents: { type: boolean }
         routeIntegrations: { type: boolean }
         routeNonMembers: { type: boolean }
+
+    TriageDeclineReason:
+      type: string
+      enum: [not_reproducible, working_as_intended, out_of_scope, no_response]
+
+    DeclineTriageIssueRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { $ref: '#/components/schemas/TriageDeclineReason' }
+        note:
+          type: string
+          description: Sent to whoever reported it, and kept in the issue's history
 
     MergeTriageIssueRequest:
       type: object
