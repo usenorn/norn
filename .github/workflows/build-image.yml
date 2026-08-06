@@ -3,10 +3,17 @@ name: build-image
 on:
   push:
     branches: [main]
+    paths-ignore: [manifests/overlays/production/kustomization.yaml]
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
+
+# A newer push cancels an older run, so a slow build can never come back and pin its
+# tag over a newer one that already deployed.
+concurrency:
+  group: build-image
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -57,12 +64,68 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
-  # ArgoCD is reachable only over the NetBird mesh, which GitHub-hosted runners are not on.
-  # After a successful build, roll the deployment from an operator machine:
-  #
-  #   argocd app set norn \
-  #     --kustomize-image ghcr.io/usenorn/norn-api:sha-<short> \
-  #     --kustomize-image ghcr.io/usenorn/norn-web:sha-<short>
-  #   argocd app sync norn
-  #
-  # The sync runs the PreSync migrate+seed Job with the new image before any pod rolls.
+  # ArgoCD is reachable only over the NetBird mesh, which GitHub-hosted runners are not on,
+  # so the deploy is handed over through git instead: this job commits the built tag and
+  # ArgoCD picks it up on its own polling cycle. The push uses GITHUB_TOKEN, whose pushes
+  # never trigger another workflow run, so this cannot loop.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - id: pin
+        env:
+          BUILT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          tag="sha-${BUILT_SHA:0:7}"
+          overlay=manifests/overlays/production/kustomization.yaml
+
+          before=$(grep -c '^    newTag: ' "$overlay" || true)
+          if [ "$before" -ne 2 ]; then
+            echo "expected two newTag lines in $overlay, found $before" >&2
+            exit 1
+          fi
+
+          sed -i "s|^    newTag: .*|    newTag: ${tag}|" "$overlay"
+
+          after=$(grep -c "^    newTag: ${tag}\$" "$overlay" || true)
+          if [ "$after" -ne 2 ]; then
+            echo "rewrite did not pin both images to ${tag}" >&2
+            exit 1
+          fi
+
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - env:
+          TAG: ${{ steps.pin.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet; then
+            echo "already deploying ${TAG}"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -aqm "chore(deploy): pin norn images to ${TAG}"
+
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+
+            git pull --rebase origin main
+          done
+
+          echo "could not hand ${TAG} over to ArgoCD" >&2
+          exit 1
