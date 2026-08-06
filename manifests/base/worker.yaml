@@ -43,17 +43,42 @@ spec:
             - secretRef:
                 name: norn-app
           env:
+            - name: NORN_WORKER_HEALTH_ADDR
+              value: 0.0.0.0:8090
             - name: GOMAXPROCS
               valueFrom:
                 resourceFieldRef:
                   containerName: worker
                   resource: limits.cpu
+          ports:
+            - name: health
+              containerPort: 8090
           volumeMounts:
             - name: tmp
               mountPath: /tmp
-          # No probes: `norn worker` builds no HTTP server, so there is no port to probe and
-          # the distroless image has no shell for an exec probe. A wedged worker will not be
-          # restarted — see the deployment notes about adding a health listener.
+          # readyz round-trips to Redis, the dependency whose stall would silently stop all
+          # background work. There is no Service in front of this: readiness is what surfaces
+          # a wedged worker, and liveness restarts one whose process is up but not serving.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

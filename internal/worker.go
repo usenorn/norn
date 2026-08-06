@@ -2,8 +2,11 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/http"
 
 	"github.com/hibiken/asynq"
 
@@ -15,6 +18,7 @@ import (
 )
 
 type Worker struct {
+	cfg           config.Worker
 	saml          config.SAML
 	cycles        config.Cycles
 	attachments   config.Attachments
@@ -24,6 +28,7 @@ type Worker struct {
 	webhooks      config.Webhooks
 	server        *taskqueue.Server
 	scheduler     *taskqueue.Scheduler
+	inspector     *taskqueue.Inspector
 	mux           *asynq.ServeMux
 	logger        *slog.Logger
 }
@@ -72,6 +77,7 @@ func NewServeMux(
 }
 
 func NewWorker(
+	cfg config.Worker,
 	saml config.SAML,
 	cycles config.Cycles,
 	attachments config.Attachments,
@@ -81,10 +87,12 @@ func NewWorker(
 	webhooks config.Webhooks,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
+	inspector *taskqueue.Inspector,
 	mux *asynq.ServeMux,
 	logger *slog.Logger,
 ) *Worker {
 	return &Worker{
+		cfg:           cfg,
 		saml:          saml,
 		cycles:        cycles,
 		attachments:   attachments,
@@ -94,6 +102,7 @@ func NewWorker(
 		webhooks:      webhooks,
 		server:        server,
 		scheduler:     scheduler,
+		inspector:     inspector,
 		mux:           mux,
 		logger:        logger,
 	}
@@ -184,13 +193,73 @@ func (w *Worker) Run(ctx context.Context) error {
 		return fmt.Errorf("start scheduler: %w", err)
 	}
 
+	health := w.healthServer(ctx)
+	serving := make(chan error, 1)
+
+	go func() {
+		logging.From(ctx).InfoContext(
+			ctx, "worker health listening", slog.String("addr", w.cfg.HealthAddr),
+		)
+
+		if err := health.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serving <- fmt.Errorf("serve worker health: %w", err)
+
+			return
+		}
+
+		serving <- nil
+	}()
+
 	logging.From(ctx).InfoContext(ctx, "worker started")
 
-	<-ctx.Done()
+	var err error
+
+	select {
+	case err = <-serving:
+	case <-ctx.Done():
+	}
 
 	logging.From(ctx).InfoContext(ctx, "worker draining")
+
+	shutdownCtx, cancel := context.WithTimeout(
+		context.WithoutCancel(ctx), w.cfg.ShutdownTimeout,
+	)
+	defer cancel()
+
+	_ = health.Shutdown(shutdownCtx)
 	w.scheduler.Shutdown()
 	w.server.Shutdown()
 
-	return nil
+	return err
+}
+
+// The worker serves no application traffic, so this exists only so Kubernetes can tell a live
+// process from a wedged one: readiness round-trips to Redis, which is the dependency that
+// silently stops all background work when it stalls.
+func (w *Worker) healthServer(ctx context.Context) *http.Server {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /healthz", func(rw http.ResponseWriter, _ *http.Request) {
+		rw.WriteHeader(http.StatusOK)
+	})
+
+	mux.HandleFunc("GET /readyz", func(rw http.ResponseWriter, r *http.Request) {
+		if _, err := w.inspector.Queues(); err != nil {
+			logging.From(r.Context()).WarnContext(
+				r.Context(), "worker not ready", slog.String("error", err.Error()),
+			)
+			rw.WriteHeader(http.StatusServiceUnavailable)
+
+			return
+		}
+
+		rw.WriteHeader(http.StatusOK)
+	})
+
+	return &http.Server{
+		Addr:              w.cfg.HealthAddr,
+		Handler:           mux,
+		ReadHeaderTimeout: entity.WorkerHealthReadHeaderTimeout,
+		BaseContext:       func(net.Listener) context.Context { return ctx },
+	}
 }

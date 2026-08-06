@@ -354,6 +354,9 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("notifications.fanout_schedule", "* * * * *")
 	v.SetDefault("notifications.digest_schedule", "*/15 * * * *")
 	v.SetDefault("api_tokens.expiry_sweep_schedule", "0 9 * * *")
+
+	v.SetDefault("worker.health_addr", "127.0.0.1:8090")
+	v.SetDefault("worker.shutdown_timeout", 10*time.Second)
 	v.SetDefault("mcp.enabled", false)
 	v.SetDefault("mcp.access_token_ttl", time.Hour)
 	v.SetDefault("mcp.refresh_token_ttl", 2160*time.Hour)

@@ -42,6 +42,32 @@ func (e WorkspaceDeletedError) Unwrap() error {
 
 var workspaceSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
+// A workspace is addressed at /<slug>, so a slug equal to a first path segment the edge already
+// routes elsewhere would make that workspace permanently unreachable. These are refused as
+// taken rather than as reserved: the caller gets the same answer, and the list stays private.
+var reservedWorkspaceSlugs = map[string]struct{}{
+	"v1":                {},
+	"mcp":               {},
+	"oauth":             {},
+	"authorize":         {},
+	"accept-invitation": {},
+	"create-workspace":  {},
+	"invite-teammates":  {},
+	"reset-password":    {},
+	"settings":          {},
+	"sign-in":           {},
+	"sign-up":           {},
+	"sso":               {},
+	"privacy":           {},
+	"terms":             {},
+}
+
+func WorkspaceSlugReserved(slug string) bool {
+	_, reserved := reservedWorkspaceSlugs[slug]
+
+	return reserved
+}
+
 type WorkspaceStatus string
 
 const (

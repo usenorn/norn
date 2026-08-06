@@ -94,6 +94,10 @@ func (s *workspacesService) Create(ctx context.Context, input service.CreateWork
 		return entity.Workspace{}, err
 	}
 
+	if entity.WorkspaceSlugReserved(input.Slug) {
+		return entity.Workspace{}, entity.ErrWorkspaceSlugTaken
+	}
+
 	var workspace entity.Workspace
 
 	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {

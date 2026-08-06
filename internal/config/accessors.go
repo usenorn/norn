@@ -36,6 +36,8 @@ func NewRealtime(cfg Config) Realtime { return cfg.Realtime }
 
 func NewAPITokens(cfg Config) APITokens { return cfg.APITokens }
 
+func NewWorker(cfg Config) Worker { return cfg.Worker }
+
 func NewMCP(cfg Config) MCP { return cfg.MCP }
 
 func NewWebhooks(cfg Config) Webhooks { return cfg.Webhooks }
