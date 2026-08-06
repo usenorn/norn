@@ -148,13 +148,6 @@ func ValidateClaims(claims OIDCClaims) error {
 		)
 	}
 
-	if claims.EmailVerified != nil && !*claims.EmailVerified {
-		return NewSSOError(
-			SSOStageClaims,
-			"The provider reports "+NormalizeEmail(claims.Email)+" as unverified.",
-		)
-	}
-
 	return nil
 }
 

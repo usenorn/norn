@@ -97,9 +97,9 @@ func TestClaimsMustCarryASubjectAndAnEmail(t *testing.T) {
 			claims: entity.OIDCClaims{Subject: "abc", Email: "ada@example.com"},
 			accept: true,
 		},
-		"provider says the address is unverified": {
+		"an unverified address still carries a usable identity": {
 			claims: entity.OIDCClaims{Subject: "abc", Email: "ada@example.com", EmailVerified: &unverified},
-			accept: false,
+			accept: true,
 		},
 		"no email": {
 			claims: entity.OIDCClaims{Subject: "abc", EmailVerified: &verified},
@@ -135,13 +135,9 @@ func TestClaimsMustCarryASubjectAndAnEmail(t *testing.T) {
 func TestAnUnverifiedAddressIsNamedInTheRefusal(t *testing.T) {
 	unverified := false
 
-	err := entity.ValidateClaims(entity.OIDCClaims{
-		Subject:       "abc",
-		Email:         "Ada@Example.COM",
-		EmailVerified: &unverified,
-	})
+	err := entity.VerifiedEmailRefusal(entity.SSOProtocolOIDC, &unverified, "Ada@Example.COM")
 	if err == nil {
-		t.Fatal("an unverified address was accepted")
+		t.Fatal("an unverified address was accepted as the key to an account")
 	}
 
 	if !strings.Contains(err.Error(), "ada@example.com") {
