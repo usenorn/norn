@@ -4,7 +4,9 @@ kind: Kustomization
 resources:
   - ../../base
 
-# CI owns the deployed tag; ArgoCD rewrites these on each release.
+# CI rewrites both newTag values to sha-<short> after the images build; ArgoCD deploys
+# whatever is committed here. Nothing else may set a kustomize image override on the
+# application, or it silently wins over this file and deploys stay pinned to the override.
 images:
   - name: ghcr.io/usenorn/norn-api
     newTag: latest
