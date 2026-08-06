@@ -38,35 +38,38 @@
 	);
 </script>
 
-<section class="flex flex-col gap-3">
-	<h2 class="text-sm font-medium text-ink-900">Relations</h2>
-
+<div class="flex flex-col gap-1.5">
 	{#if groups.length === 0}
-		<p class="text-sm text-muted-foreground">Nothing is linked to this issue yet.</p>
+		<p class="text-md text-muted-foreground">Nothing is linked to this issue yet.</p>
 	{:else}
-		<div class="flex flex-col gap-3">
+		<ul class="flex flex-col">
 			{#each groups as group (group.kind)}
-				<div class="flex flex-col gap-1">
-					<h3 class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase">
-						{relationHeading(group.kind)}
-					</h3>
-					<ul class="flex flex-col rounded-lg border border-line-default">
-						{#each group.relations as relation (relation.id)}
+					{#each group.relations as relation (relation.id)}
 							<li
-								class="flex items-center gap-2 border-b border-line-subtle pr-1 last:border-b-0"
+								class="flex items-center gap-1 border-b border-line-subtle"
 							>
 								<a
 									href={at(`/issues/${relation.issue.reference}`)}
-									class="flex min-w-0 flex-1 items-center gap-2 py-2 pl-3 transition-colors duration-70 ease-out hover:bg-accent"
+									class="-mx-1 flex h-row min-w-0 flex-1 items-center gap-2.25 rounded-sm px-1 transition-colors duration-70 ease-out hover:bg-accent"
 								>
+									<span
+										class="w-19 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+									>
+										{relationHeading(group.kind)}
+									</span>
 									<StatusIcon
 										category={relation.issue.state.category}
 										name={relation.issue.state.name}
 									/>
-									<span class="w-15 flex-none font-mono text-xs text-muted-foreground">
+									<span class="font-mono text-xs text-muted-foreground">
 										{relation.issue.reference}
 									</span>
-									<span class="min-w-0 flex-1 truncate text-md tracking-snug text-ink-900">
+									<span
+										class="min-w-0 flex-1 truncate text-md {relation.issue.state.category ===
+										'abandoned'
+											? 'text-muted-foreground line-through decoration-line-strong'
+											: 'text-ink-900'}"
+									>
 										{relation.issue.title}
 									</span>
 								</a>
@@ -80,18 +83,17 @@
 									<X aria-hidden="true" />
 								</Button>
 							</li>
-						{/each}
-					</ul>
-				</div>
+					{/each}
 			{/each}
-		</div>
+		</ul>
 	{/if}
 
-	<div class="flex flex-wrap items-center gap-2">
+	{#if !working}
+	<div class="flex flex-wrap items-center gap-1.5 pt-0.5">
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				{#snippet child({ props })}
-					<Button {...props} variant="outline" size="sm" disabled={working}>
+					<Button {...props} variant="ghost" size="sm" disabled={working}>
 						<Link2 aria-hidden="true" />
 						{relationKinds.find((entry) => entry.value === chosen)?.label ?? "Link"}
 						<ChevronDown aria-hidden="true" />
@@ -114,7 +116,7 @@
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				{#snippet child({ props })}
-					<Button {...props} variant="outline" size="sm" disabled={working}>
+					<Button {...props} variant="ghost" size="sm" disabled={working}>
 						Choose an issue
 						<ChevronDown aria-hidden="true" />
 					</Button>
@@ -144,9 +146,6 @@
 			</label>
 		{/if}
 	</div>
+	{/if}
 
-	<p class="text-sm leading-normal text-muted-foreground text-pretty">
-		Linking records the opposite on the other issue too, so there is nothing to keep in step. Two
-		issues hold one relation at a time.
-	</p>
-</section>
+</div>
