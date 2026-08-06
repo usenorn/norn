@@ -1,4 +1,5 @@
 import { fail } from "@sveltejs/kit";
+import { keys } from "$lib/api/keys";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import {
@@ -18,7 +19,9 @@ type PasswordForm = Infer<typeof newPasswordSchema>;
 const requestFormId = "reset-request-form";
 const passwordFormId = "new-password-form";
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ depends, route, url }) => {
+	depends(keys.page(route.id));
+
 	const token = url.searchParams.get("token");
 
 	return {

@@ -9,11 +9,14 @@ export type TeamCyclesData = {
 
 export const load: PageServerLoad = async ({
 	depends,
+	route,
 	locals,
 	params,
 	parent,
 	url,
 }): Promise<TeamCyclesData> => {
+	depends(keys.page(route.id));
+
 	const { workspace, teams } = await parent();
 
 	depends(keys.cycles(workspace.id));

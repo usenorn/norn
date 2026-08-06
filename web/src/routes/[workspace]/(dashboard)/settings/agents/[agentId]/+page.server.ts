@@ -1,4 +1,5 @@
 import type { ActivityFeed } from "$lib/activity/activity";
+import { keys } from "$lib/api/keys";
 import type { WorkspaceAgent } from "$lib/agents/agents";
 import type { PageServerLoad } from "./$types";
 
@@ -8,10 +9,14 @@ export type AgentRecordData = {
 };
 
 export const load: PageServerLoad = async ({
+	depends,
+	route,
 	locals,
 	params,
 	parent,
 }): Promise<AgentRecordData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 
 	const [agent, activity] = await Promise.all([

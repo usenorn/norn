@@ -16,9 +16,12 @@ export type TriagePageData = {
 
 export const load: PageServerLoad = async ({
 	depends,
+	route,
 	locals,
 	parent,
 }): Promise<TriagePageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace, teams } = await parent();
 
 	depends(keys.triage(workspace.id));

@@ -1,12 +1,17 @@
 import { exchangeFrom } from "$lib/auth/sso";
+import { keys } from "$lib/api/keys";
 import { reachWorkspaceSignIn } from "$lib/auth/workspace-sign-in";
 import type { SsoExchange } from "$lib/auth/types";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({
+	depends,
+	route,
 	locals,
 	url,
 }): Promise<{ exchange: SsoExchange; workspace: string; provider: string }> => {
+	depends(keys.page(route.id));
+
 	const workspace = url.searchParams.get("workspace") ?? "";
 
 	const entry = workspace

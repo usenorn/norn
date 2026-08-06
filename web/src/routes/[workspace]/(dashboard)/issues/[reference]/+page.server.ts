@@ -47,11 +47,14 @@ export type IssuePageData = { detail: IssueDetail };
 
 export const load: PageServerLoad = async ({
 	depends,
+	route,
 	locals,
 	params,
 	parent,
 	url,
 }): Promise<IssuePageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 	const identifier = params.reference;
 

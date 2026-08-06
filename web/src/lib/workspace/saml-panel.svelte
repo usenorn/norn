@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { invalidate } from "$app/navigation";
+	import { page } from "$app/state";
+	import { keys } from "$lib/api/keys";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import Copy from "@lucide/svelte/icons/copy";
@@ -87,7 +89,7 @@
 
 				if (result) {
 					onsaved();
-					await invalidateAll();
+					await invalidate(keys.page(page.route.id));
 				}
 			} catch {
 				onfailure({ kind: "unavailable" });

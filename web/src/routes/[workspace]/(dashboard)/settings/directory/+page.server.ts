@@ -1,11 +1,14 @@
 import type { DirectoryView } from "$lib/directory/directory";
+import { keys } from "$lib/api/keys";
 import type { PageServerLoad } from "./$types";
 
 export type DirectoryPageData = {
 	view: DirectoryView;
 };
 
-export const load: PageServerLoad = async ({ locals, parent }): Promise<DirectoryPageData> => {
+export const load: PageServerLoad = async ({ depends, route, locals, parent }): Promise<DirectoryPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 
 	const availability = await locals.api.GET("/workspaces/{workspaceId}/directory/availability", {

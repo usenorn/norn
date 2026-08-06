@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
 	import { page } from "$app/state";
 	import Archive from "@lucide/svelte/icons/archive";
 	import BellOff from "@lucide/svelte/icons/bell-off";
@@ -42,6 +42,7 @@
 	import { initialsOf } from "$lib/team/members";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
+	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
 	import Markdown from "$lib/issues/markdown.svelte";
@@ -178,7 +179,7 @@
 			}
 
 			if (event.kind === "comment.edited" || event.kind === "comment.deleted") {
-				realtime.refetch();
+				realtime.refetch(keys.issue(event.issueId));
 			}
 		});
 	});
@@ -201,7 +202,7 @@
 				? `You will not be notified about ${issue.reference} unless someone names you.`
 				: `You are following ${issue.reference}.`;
 
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} finally {
 			followWorking = false;
 		}
@@ -353,14 +354,14 @@
 			if (error) {
 				labelFailure = readFailure(error);
 				applied = null;
-				await invalidateAll();
+				await invalidate(keys.page(page.route.id));
 
 				return;
 			}
 
 			applied = next ?? [];
 			announcement = `This issue now carries ${applied.length} ${applied.length === 1 ? "label" : "labels"}.`;
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			labelFailure = { kind: "unavailable" };
 		} finally {
@@ -383,12 +384,12 @@
 
 			if (error) {
 				failure = readIssueFailure(error);
-				await invalidateAll();
+				await invalidate(keys.page(page.route.id));
 
 				return false;
 			}
 
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 
 			return true;
 		} catch {
@@ -450,7 +451,7 @@
 
 			if (error) failure = readIssueFailure(error);
 
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failure = { kind: "unavailable" };
 		} finally {
@@ -476,7 +477,7 @@
 
 			if (error) failure = readIssueFailure(error);
 
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failure = { kind: "unavailable" };
 		} finally {
@@ -498,7 +499,7 @@
 
 			if (error) failure = readIssueFailure(error);
 
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failure = { kind: "unavailable" };
 		} finally {
@@ -529,7 +530,7 @@
 
 			if (error) failure = readIssueFailure(error);
 
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failure = { kind: "unavailable" };
 		} finally {
@@ -603,7 +604,7 @@
 			unreachable = posted.unreachable;
 			loadedComments = null;
 			commentUploads = [];
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		});
 	}
 
@@ -626,7 +627,7 @@
 			}
 
 			loadedComments = null;
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		});
 	}
 
@@ -646,7 +647,7 @@
 			}
 
 			loadedComments = null;
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		});
 	}
 
@@ -673,7 +674,7 @@
 			}
 
 			loadedComments = null;
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		});
 	}
 
@@ -794,7 +795,7 @@
 						$formData.description = joined($formData.description, attachmentMarkdown(next.attachment));
 					}
 
-					void invalidateAll();
+					void invalidate(keys.page(page.route.id));
 				}
 			},
 			(abort) => aborts.set(taskId, abort)
@@ -852,7 +853,7 @@
 				return;
 			}
 
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		});
 	}
 
@@ -903,7 +904,7 @@
 			if (error) failure = readIssueFailure(error);
 
 			announce(`${created.reference} is filed under ${issue.reference}`);
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failure = { kind: "unavailable" };
 		} finally {
@@ -924,7 +925,7 @@
 
 			if (error) failure = readIssueFailure(error);
 
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failure = { kind: "unavailable" };
 		} finally {

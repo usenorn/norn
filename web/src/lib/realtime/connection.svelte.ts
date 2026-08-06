@@ -1,5 +1,6 @@
 import { getContext, setContext } from "svelte";
-import { invalidateAll } from "$app/navigation";
+import { invalidate, invalidateAll } from "$app/navigation";
+import { keys } from "$lib/api/keys";
 import type { components } from "$lib/api/dashboard.gen";
 
 export type Issue = components["schemas"]["Issue"];
@@ -41,6 +42,7 @@ export class RealtimeConnection {
 	#handlers = new Set<RealtimeHandler>();
 	#staleTimer: ReturnType<typeof setTimeout> | undefined;
 	#refetchTimer: ReturnType<typeof setTimeout> | undefined;
+	#pending = new Set<string>();
 	#workspaceId = "";
 	#topics = "workspace,inbox";
 
@@ -102,6 +104,7 @@ export class RealtimeConnection {
 	close() {
 		clearTimeout(this.#staleTimer);
 		clearTimeout(this.#refetchTimer);
+		this.#pending.clear();
 		this.#source?.close();
 		this.#source = null;
 	}
@@ -112,9 +115,25 @@ export class RealtimeConnection {
 		return () => this.#handlers.delete(handler);
 	}
 
-	refetch() {
+	refetch(...invalidated: string[]) {
+		for (const key of invalidated) this.#pending.add(key);
+
 		clearTimeout(this.#refetchTimer);
-		this.#refetchTimer = setTimeout(() => void invalidateAll(), refetchWindowMs);
+		this.#refetchTimer = setTimeout(() => void this.flush(), refetchWindowMs);
+	}
+
+	flush() {
+		const invalidated = [...this.#pending];
+
+		if (invalidated.length === 0) return Promise.resolve();
+
+		if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+			return Promise.resolve();
+		}
+
+		this.#pending.clear();
+
+		return Promise.all(invalidated.map((key) => invalidate(key)));
 	}
 
 	#dispatch(kind: RealtimeEventKind, message: MessageEvent) {
@@ -127,6 +146,24 @@ export class RealtimeConnection {
 		}
 
 		for (const handler of this.#handlers) handler(event);
+	}
+}
+
+export function invalidatedBy(event: RealtimeEvent, workspaceId: string): string[] {
+	switch (event.kind) {
+		case "issue.created":
+		case "issue.deleted":
+			return [keys.issues(workspaceId), keys.triage(workspaceId), keys.workspaceScope(workspaceId)];
+		case "issue.updated":
+			return [keys.issue(event.issueId), keys.issues(workspaceId)];
+		case "comment.posted":
+		case "comment.edited":
+		case "comment.deleted":
+			return [keys.issue(event.issueId)];
+		case "notification.arrived":
+			return [keys.inbox(workspaceId), keys.workspaceScope(workspaceId)];
+		case "membership.changed":
+			return [keys.members(workspaceId), keys.workspaceScope(workspaceId)];
 	}
 }
 

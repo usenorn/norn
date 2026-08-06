@@ -1,4 +1,5 @@
 import type { ConnectionListing } from "$lib/account/connections";
+import { keys } from "$lib/api/keys";
 import type { Team } from "$lib/team/teams";
 import type { PageServerLoad } from "./$types";
 
@@ -7,7 +8,9 @@ export type ConnectionsPageData = {
 	teams: Record<string, Team[]>;
 };
 
-export const load: PageServerLoad = async ({ locals, parent }): Promise<ConnectionsPageData> => {
+export const load: PageServerLoad = async ({ depends, route, locals, parent }): Promise<ConnectionsPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspaces } = await parent();
 
 	const [connections, ...rosters] = await Promise.all([

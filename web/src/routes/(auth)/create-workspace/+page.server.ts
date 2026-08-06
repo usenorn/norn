@@ -1,4 +1,5 @@
 import { fail, redirect } from "@sveltejs/kit";
+import { keys } from "$lib/api/keys";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import {
@@ -12,7 +13,9 @@ import type { Actions, PageServerLoad } from "./$types";
 
 type CreateWorkspaceForm = Infer<typeof createWorkspaceSchema>;
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ depends, route, locals }) => {
+	depends(keys.page(route.id));
+
 	const { data } = await locals.api.GET("/workspaces");
 
 	return {

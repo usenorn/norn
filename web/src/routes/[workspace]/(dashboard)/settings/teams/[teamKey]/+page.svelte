@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
@@ -99,7 +100,7 @@
 
 				if (updated) {
 					submitted = { kind: "saved", team: updated };
-					await invalidateAll();
+					await invalidate(keys.page(page.route.id));
 
 					return;
 				}
@@ -185,7 +186,7 @@
 			if (added) {
 				submittedRoster = { kind: "added", members: [...members, added], member: added };
 				candidates = candidates.filter((candidate) => candidate.accountId !== accountId);
-				await invalidateAll();
+				await invalidate(keys.page(page.route.id));
 
 				return;
 			}
@@ -243,7 +244,7 @@
 
 			if (changed) {
 				submitted = settingsFor(changed);
-				await invalidateAll();
+				await invalidate(keys.page(page.route.id));
 
 				return;
 			}
@@ -275,7 +276,7 @@
 			}
 
 			submittedRoster = rosterFor(members.filter((member) => member.accountId !== accountId));
-			await invalidateAll();
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			memberFailure = { kind: "unavailable" };
 		} finally {

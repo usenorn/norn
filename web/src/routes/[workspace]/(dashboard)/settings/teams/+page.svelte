@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
@@ -85,7 +86,7 @@
 
 				if (created) {
 					submitted = { kind: "created", teams: [...teams, created], team: created };
-					await invalidateAll();
+					await invalidate(keys.workspaceScope(data.workspace.id));
 
 					return;
 				}

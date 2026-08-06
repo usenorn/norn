@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import Bot from "@lucide/svelte/icons/bot";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
@@ -154,7 +155,7 @@
 
 			closeFlow();
 			announce(said ?? `${issue.reference} decided`);
-			await invalidateAll();
+			await invalidate(keys.triage(data.workspace.id));
 		} catch {
 			localFailure = { kind: "unavailable" };
 		} finally {

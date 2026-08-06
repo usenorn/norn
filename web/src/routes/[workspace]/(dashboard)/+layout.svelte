@@ -16,7 +16,7 @@
 	import SearchPalette from "$lib/search/search-palette.svelte";
 	import ConnectionIndicator from "$lib/realtime/connection-indicator.svelte";
 	import StaleBanner from "$lib/realtime/stale-banner.svelte";
-	import { provideRealtime } from "$lib/realtime/connection.svelte";
+	import { invalidatedBy, provideRealtime } from "$lib/realtime/connection.svelte";
 	import KeyRound from "@lucide/svelte/icons/key-round";
 	import Network from "@lucide/svelte/icons/network";
 	import Terminal from "@lucide/svelte/icons/terminal";
@@ -69,13 +69,24 @@
 	});
 
 	$effect(() => {
-		const stop = realtime.on((event) => {
-			if (event.kind === "notification.arrived" || event.kind.startsWith("issue.")) {
-				realtime.refetch();
-			}
-		});
+		const workspaceId = data.workspace.id;
+		const self = data.member.id;
 
-		return stop;
+		return realtime.on((event) => {
+			if (event.actorId === self) return;
+
+			realtime.refetch(...invalidatedBy(event, workspaceId));
+		});
+	});
+
+	$effect(() => {
+		const wake = () => {
+			if (document.visibilityState === "visible") void realtime.flush();
+		};
+
+		document.addEventListener("visibilitychange", wake);
+
+		return () => document.removeEventListener("visibilitychange", wake);
 	});
 
 

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
@@ -67,7 +68,7 @@
 
 				if (updated) {
 					submitted = { kind: "saved", workspace: updated };
-					await invalidateAll();
+					await invalidate(keys.workspaceScope(data.workspace.id));
 
 					return;
 				}
@@ -118,7 +119,7 @@
 			if (deleted) {
 				submitted = settingsFor(deleted);
 				confirmation = "";
-				await invalidateAll();
+				await invalidate(keys.workspaceScope(data.workspace.id));
 
 				return;
 			}
@@ -141,7 +142,7 @@
 
 			if (restored) {
 				submitted = settingsFor(restored);
-				await invalidateAll();
+				await invalidate(keys.workspaceScope(data.workspace.id));
 
 				return;
 			}

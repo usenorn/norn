@@ -1,12 +1,17 @@
 import type { Client } from "openapi-fetch";
+import { keys } from "$lib/api/keys";
 import type { paths } from "$lib/api/dashboard.gen";
 import type { Enforcement, SsoProviderConfiguration } from "$lib/workspace/sso";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({
+	depends,
+	route,
 	locals,
 	parent,
 }): Promise<{ configuration: SsoProviderConfiguration; enforcement: Enforcement }> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 	const params = { path: { workspaceId: workspace.id } };
 

@@ -1,4 +1,5 @@
 import { redirect } from "@sveltejs/kit";
+import { keys } from "$lib/api/keys";
 import type { Team } from "$lib/team/teams";
 import { invitePreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
@@ -9,7 +10,9 @@ export type InviteTarget = { id: string; slug: string; name: string; defaultTeam
 
 export type InviteData = { target: InviteTarget; teams: Team[]; members: string[] };
 
-export const load: PageServerLoad = async ({ locals, url }): Promise<InviteData> => {
+export const load: PageServerLoad = async ({ depends, route, locals, url }): Promise<InviteData> => {
+	depends(keys.page(route.id));
+
 	if (import.meta.env.DEV && invitePreviewStates[url.searchParams.get("state") ?? ""]) {
 		return {
 			target: {

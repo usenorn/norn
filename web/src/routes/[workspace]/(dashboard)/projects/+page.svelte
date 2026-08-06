@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Target from "@lucide/svelte/icons/target";
@@ -86,7 +87,7 @@
 			}
 
 			dismiss();
-			await invalidateAll();
+			await invalidate(keys.projects(data.workspace.id));
 		} catch {
 			failure = { kind: "unavailable" };
 		} finally {

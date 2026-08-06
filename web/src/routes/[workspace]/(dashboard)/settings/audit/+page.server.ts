@@ -1,4 +1,5 @@
 import { noAuditFilters, type AuditFilters, type AuditRecord } from "$lib/audit/audit";
+import { keys } from "$lib/api/keys";
 import type { PageServerLoad } from "./$types";
 
 export type AuditPageData = {
@@ -6,7 +7,9 @@ export type AuditPageData = {
 	filters: AuditFilters;
 };
 
-export const load: PageServerLoad = async ({ locals, parent }): Promise<AuditPageData> => {
+export const load: PageServerLoad = async ({ depends, route, locals, parent }): Promise<AuditPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 
 	const availability = await locals.api.GET("/workspaces/{workspaceId}/audit/availability", {

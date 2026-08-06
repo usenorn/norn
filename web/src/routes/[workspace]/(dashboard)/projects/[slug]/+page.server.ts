@@ -18,11 +18,14 @@ const unavailable: ProjectPageData = {
 
 export const load: PageServerLoad = async ({
 	depends,
+	route,
 	locals,
 	params,
 	parent,
 	url,
 }): Promise<ProjectPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 
 	depends(keys.projects(workspace.id));

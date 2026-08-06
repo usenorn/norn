@@ -1,4 +1,5 @@
 import type { WorkspaceConnectionListing } from "$lib/account/connections";
+import { keys } from "$lib/api/keys";
 import type { PageServerLoad } from "./$types";
 
 export type WorkspaceConnectionsPageData = {
@@ -6,9 +7,13 @@ export type WorkspaceConnectionsPageData = {
 };
 
 export const load: PageServerLoad = async ({
+	depends,
+	route,
 	locals,
 	parent,
 }): Promise<WorkspaceConnectionsPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 
 	const connections = await locals.api.GET("/workspaces/{workspaceId}/mcp-connections", {
