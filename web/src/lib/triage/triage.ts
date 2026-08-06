@@ -45,6 +45,10 @@ export const sourceTabs: { value: "all" | TriageSource; label: string }[] = [
 	{ value: "agent", label: "Agents" },
 ];
 
+export function readSource(value: string | null): "all" | TriageSource {
+	return sourceTabs.some((tab) => tab.value === value) ? (value as "all" | TriageSource) : "all";
+}
+
 export const declineReasons: { value: TriageDeclineReason; label: string }[] = [
 	{ value: "not_reproducible", label: "Not reproducible" },
 	{ value: "working_as_intended", label: "Working as intended" },

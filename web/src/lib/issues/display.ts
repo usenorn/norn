@@ -68,6 +68,29 @@ export function readDisplay(params: URLSearchParams): Display {
 	};
 }
 
+export const displayKeys = ["group", "order", "empty", "hide", "layout"] as const;
+
+export function carriesDisplay(params: URLSearchParams): boolean {
+	return displayKeys.some((key) => params.has(key));
+}
+
+export function writeDisplay(display: Display, layout: string): URLSearchParams {
+	const hidden = rowProperties.filter((property) => !display.shown.includes(property));
+	const params = new URLSearchParams();
+
+	params.set("group", display.grouping);
+	params.set("order", display.ordering);
+	params.set("empty", display.showEmpty ? "1" : "0");
+	params.set("hide", hidden.join(","));
+	params.set("layout", layout);
+
+	return params;
+}
+
+export function displayCookie(workspaceId: string): string {
+	return `norn.issues.${workspaceId}`;
+}
+
 export function hiddenParam(shown: RowProperty[], toggled: RowProperty): string | null {
 	const next = rowProperties.filter((property) =>
 		property === toggled ? shown.includes(property) : !shown.includes(property)

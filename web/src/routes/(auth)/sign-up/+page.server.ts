@@ -4,6 +4,7 @@ import { zod4 } from "sveltekit-superforms/adapters";
 import { emailMessage, passwordMessage } from "$lib/auth/password-reset";
 import { displayNameMessage, signUpFailure, signUpSent } from "$lib/auth/sign-up";
 import { signUpSchema } from "$lib/auth/sign-up-schema";
+import { leaveIfSignedIn } from "$lib/auth/signed-in";
 import type { SignUpOutcome, SignUpResend } from "$lib/auth/types";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -13,9 +14,11 @@ export type SignUpMessage = { outcome: SignUpOutcome | null; resend: SignUpResen
 
 const fallbackTimezone = "UTC";
 
-export const load: PageServerLoad = async () => ({
-	form: await superValidate<SignUpForm, SignUpMessage>(zod4(signUpSchema)),
-});
+export const load: PageServerLoad = async ({ locals }) => {
+	await leaveIfSignedIn(locals.api);
+
+	return { form: await superValidate<SignUpForm, SignUpMessage>(zod4(signUpSchema)) };
+};
 
 async function requestSignUp(api: App.Locals["api"], body: FormData, resend: boolean) {
 	const form = await superValidate<SignUpForm, SignUpMessage>(body, zod4(signUpSchema));

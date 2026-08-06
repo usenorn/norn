@@ -2,15 +2,18 @@ import { fail, redirect } from "@sveltejs/kit";
 import { setError, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { safeReturn } from "$lib/auth/return-to";
+import { leaveIfSignedIn } from "$lib/auth/signed-in";
 import { workspaceEntrySchema } from "$lib/auth/workspace-entry-schema";
 import { reachWorkspaceSignIn, ssoEntryPoint, workspaceSlug } from "$lib/auth/workspace-sign-in";
 import type { Actions, PageServerLoad } from "./$types";
 
 const unknownWorkspace = "No workspace at that address. Check it with whoever invited you.";
 
-export const load: PageServerLoad = async () => ({
-	form: await superValidate(zod4(workspaceEntrySchema)),
-});
+export const load: PageServerLoad = async ({ locals }) => {
+	await leaveIfSignedIn(locals.api);
+
+	return { form: await superValidate(zod4(workspaceEntrySchema)) };
+};
 
 export const actions: Actions = {
 	default: async ({ locals, request, url }) => {
