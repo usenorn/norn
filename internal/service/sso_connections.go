@@ -19,6 +19,7 @@ type SSOConnections interface {
 	Save(ctx context.Context, input SaveOIDCConnectionInput) (entity.OIDCConnection, error)
 	Discover(ctx context.Context, workspaceID uuid.UUID, issuer string) (entity.OIDCEndpoints, error)
 	BeginTest(ctx context.Context, workspaceID uuid.UUID) (string, error)
+	BeginLink(ctx context.Context, workspaceID uuid.UUID) (string, error)
 	BeginLogin(ctx context.Context, input BeginOIDCLoginInput) (string, error)
 	Complete(ctx context.Context, input CompleteOIDCInput) (entity.SSOExchange, error)
 

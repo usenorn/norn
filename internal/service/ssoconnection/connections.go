@@ -232,7 +232,7 @@ func (s *connectionsService) BeginTest(ctx context.Context, workspaceID uuid.UUI
 		return "", err
 	}
 
-	return s.begin(ctx, connection, entity.SSOPurposeTest, "")
+	return s.begin(ctx, connection, entity.SSOPurposeTest, uuid.Nil, "")
 }
 
 func (s *connectionsService) BeginLogin(
@@ -253,7 +253,33 @@ func (s *connectionsService) BeginLogin(
 		return "", err
 	}
 
-	return s.begin(ctx, connection, entity.SSOPurposeLogin, input.ReturnTo)
+	return s.begin(ctx, connection, entity.SSOPurposeLogin, uuid.Nil, input.ReturnTo)
+}
+
+func (s *connectionsService) BeginLink(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceSSOConnection,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	account := decision.Actor.Authority()
+	if account == uuid.Nil {
+		return "", entity.NewSSOError(
+			entity.SSOStageMatching,
+			"Only a signed-in person can connect a provider to their own account.",
+		)
+	}
+
+	connection, err := s.connections.GetOIDC(ctx, workspaceID)
+	if err != nil {
+		return "", err
+	}
+
+	return s.begin(ctx, connection, entity.SSOPurposeLink, account, "")
 }
 
 func (s *connectionsService) SignIn(
@@ -333,6 +359,7 @@ func (s *connectionsService) begin(
 	ctx context.Context,
 	connection entity.OIDCConnection,
 	purpose entity.SSOPurpose,
+	accountID uuid.UUID,
 	returnTo string,
 ) (string, error) {
 	state, err := opaque()
@@ -353,6 +380,7 @@ func (s *connectionsService) begin(
 	if err := s.states.Put(ctx, state, entity.OIDCState{
 		Purpose:     purpose,
 		WorkspaceID: connection.WorkspaceID,
+		AccountID:   accountID,
 		Nonce:       nonce,
 		Verifier:    verifier,
 		ReturnTo:    safeReturnTo(returnTo),
@@ -420,6 +448,16 @@ func (s *connectionsService) Complete(
 		}
 
 		return exchange, nil
+	}
+
+	if attempt.Purpose == entity.SSOPurposeLink {
+		return exchange, s.link(ctx, admission{
+			Protocol:    entity.SSOProtocolOIDC,
+			WorkspaceID: attempt.WorkspaceID,
+			Issuer:      connection.Endpoints.Issuer,
+			Subject:     claims.Subject,
+			Email:       entity.NormalizeEmail(claims.Email),
+		}, attempt.AccountID)
 	}
 
 	account, provisioned, err := s.admit(ctx, connection, claims)
@@ -627,12 +665,24 @@ func (s *connectionsService) link(
 		return nil
 	}
 
-	return s.identities.Link(ctx, entity.SSOIdentity{
+	if err := s.identities.Link(ctx, entity.SSOIdentity{
 		WorkspaceID: request.WorkspaceID,
 		AccountID:   accountID,
 		Issuer:      issuer,
 		Subject:     subject,
-	})
+	}); err != nil {
+		if errors.Is(err, entity.ErrSSOSubjectLinked) {
+			return entity.NewSSOError(
+				entity.SSOStageMatching,
+				"That provider identity is already connected to a different Norn account in this "+
+					"workspace. An administrator can unlink it in Settings, Members.",
+			)
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func trimmedPair(issuer, subject string) (string, string) {

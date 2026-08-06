@@ -397,6 +397,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/sso/oidc/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Connect the signed-in account to its identity at this workspace's provider */
+        post: operations["linkWorkspaceOidcIdentity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/sso": {
         parameters: {
             query?: never;
@@ -5792,6 +5811,33 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Send the browser to this address to complete the test */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OidcAuthorization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["SsoFailed"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    linkWorkspaceOidcIdentity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Send the browser to this address to complete the connection */
             200: {
                 headers: {
                     [name: string]: unknown;

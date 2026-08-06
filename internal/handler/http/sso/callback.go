@@ -18,6 +18,7 @@ const (
 
 	exchangeScreen = "/sso"
 	settingsScreen = "/settings/authentication"
+	overviewScreen = "/settings"
 )
 
 type Callback struct {
@@ -57,6 +58,12 @@ func (c *Callback) Handle(w http.ResponseWriter, r *http.Request) {
 
 	if exchange.Purpose == entity.SSOPurposeTest {
 		redirect(w, r, workspace+settingsScreen+"?tested=1")
+
+		return
+	}
+
+	if exchange.Purpose == entity.SSOPurposeLink {
+		redirect(w, r, workspace+overviewScreen+"?linked=1")
 
 		return
 	}
