@@ -22,16 +22,13 @@ spec:
     # The Go server. Trailing slashes matter: Traefik v3 PathPrefix is a raw string prefix,
     # so PathPrefix(`/v1`) would also match a workspace slug like "v1-team" — and [workspace]
     # is a root-level catch-all in the SvelteKit router.
+    #
+    # One line on purpose. A YAML folded scalar keeps a literal newline on every more-indented
+    # line, and Traefik's rule parser rejects the result with "expected ')', found newline" —
+    # then drops the router and silently serves /v1 from the catch-all.
     - kind: Rule
       priority: 200
-      match: >-
-        Host(`app.norn.so`) && (
-          PathPrefix(`/v1/`) ||
-          Path(`/v1`) ||
-          PathPrefix(`/mcp`) ||
-          PathPrefix(`/oauth/`) ||
-          PathPrefix(`/.well-known/`)
-        )
+      match: Host(`app.norn.so`) && (PathPrefix(`/v1/`) || Path(`/v1`) || PathPrefix(`/mcp`) || PathPrefix(`/oauth/`) || PathPrefix(`/.well-known/`))
       middlewares:
         - name: norn-compress
       services:
