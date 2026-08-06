@@ -1,9 +1,7 @@
 <script lang="ts">
-	import { invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -16,14 +14,10 @@
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
-	import { api } from "$lib/api";
 	import { createTeamSchema } from "$lib/team/create-team-schema";
 	import {
 		teamKeyFromName,
-		teamKeyMessage,
-		teamKeySuggestions,
 		teamListTabs,
-		teamNameMessage,
 		teamsIn,
 		visibilityLabels,
 		visibilityNotes,
@@ -45,12 +39,26 @@
 		import.meta.env.DEV ? teamsPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	let submitted = $state<TeamListing | null>(null);
-	let submitFailure = $state<TeamCreationFailure | null>(null);
-
 	const slug = $derived(page.params.workspace ?? "");
-	const listing = $derived<TeamListing>(submitted ?? preview?.listing ?? data.listing);
-	const failure = $derived<TeamCreationFailure | null>(preview?.failure ?? submitFailure);
+
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
+		validators: zod4Client(createTeamSchema),
+		resetForm: false,
+	});
+	const { form: formData, enhance, submitting, message } = form;
+
+	const loaded = $derived<TeamListing>(preview?.listing ?? data.listing);
+	const outcome = $derived($message ?? null);
+
+	const listing = $derived<TeamListing>(
+		outcome?.kind === "created" && "teams" in loaded
+			? { kind: "created", teams: loaded.teams, team: outcome.team }
+			: loaded
+	);
+	const failure = $derived<TeamCreationFailure | null>(
+		preview?.failure ?? (outcome && outcome.kind !== "created" ? outcome : null)
+	);
 
 	const teams = $derived("teams" in listing ? listing.teams : []);
 	const tab = $derived<TeamListTab>(
@@ -63,64 +71,6 @@
 	);
 
 	let keyEdited = $state(false);
-
-	const form = superForm(defaults(zod4(createTeamSchema)), {
-		id: formId,
-		SPA: true,
-		validators: zod4Client(createTeamSchema),
-		resetForm: false,
-		onUpdate: async ({ form: pendingForm }) => {
-			if (!pendingForm.valid) return;
-
-			submitFailure = null;
-
-			try {
-				const { data: created, error } = await api.POST("/workspaces/{workspaceId}/teams", {
-					params: { path: { workspaceId: data.workspace.id } },
-					body: {
-						key: pendingForm.data.key,
-						name: pendingForm.data.name,
-						visibility: pendingForm.data.visibility,
-					},
-				});
-
-				if (created) {
-					submitted = { kind: "created", teams: [...teams, created], team: created };
-					await invalidate(keys.workspaceScope(data.workspace.id));
-
-					return;
-				}
-
-				if (error?.status === 403) {
-					submitFailure = { kind: "forbidden" };
-
-					return;
-				}
-
-				if (error?.status === 409) {
-					submitFailure = {
-						kind: "key_taken",
-						key: pendingForm.data.key,
-						suggestions: teamKeySuggestions(
-							pendingForm.data.name,
-							pendingForm.data.key,
-							teams.map((team) => team.key)
-						),
-					};
-
-					return;
-				}
-
-				for (const field of error?.errors ?? []) {
-					if (field.field === "key") setError(pendingForm, "key", teamKeyMessage(field.code));
-					if (field.field === "name") setError(pendingForm, "name", teamNameMessage(field.code));
-				}
-			} catch {
-				submitFailure = { kind: "unavailable" };
-			}
-		},
-	});
-	const { form: formData, enhance, submitting } = form;
 
 	$effect(() => {
 		const prefill = preview?.form;
@@ -222,6 +172,7 @@
 					</div>
 
 					<form id={formId} method="POST" use:enhance class="flex flex-col gap-4">
+						<input type="hidden" name="workspaceId" value={data.workspace.id} />
 						<div class="flex flex-wrap gap-3">
 							<div class="min-w-[150px] flex-[1_1_180px]">
 								<Form.Field {form} name="name">
@@ -298,6 +249,7 @@
 									<Form.Label>Who can see it</Form.Label>
 									<Select.Root
 										type="single"
+										name={props.name}
 										value={$formData.visibility}
 										disabled={busy}
 										onValueChange={(value) =>

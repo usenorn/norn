@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
-	import { defaults, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import Plug from "@lucide/svelte/icons/plug";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
@@ -33,70 +35,37 @@
 			: undefined
 	);
 
-	let replaced = $state<ConnectionListing | null>(null);
-	let failure = $state<ConnectionFailure | null>(null);
+	let revokeFailure = $state<ConnectionFailure | null>(null);
 	let revoking = $state<string | null>(null);
 	let narrowing = $state<MCPConnection | null>(null);
 
-	const listing = $derived<ConnectionListing>(replaced ?? preview?.listing ?? data.listing);
+	const listing = $derived<ConnectionListing>(preview?.listing ?? data.listing);
 	const workspaces = $derived(preview?.workspaces ?? data.workspaces);
 
 	const current = $derived(listing.kind === "ready" ? listing.connections : []);
 
-	const form = superForm(defaults(zod4(narrowConnectionSchema)), {
-		SPA: true,
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
 		validators: zod4Client(narrowConnectionSchema),
 		resetForm: false,
-		onUpdate: async ({ form: entered }) => {
-			if (!entered.valid || !narrowing) return;
-
-			failure = null;
-
-			try {
-				const { data: narrowed, error } = await api.PATCH("/mcp/connections/{connectionId}", {
-					params: { path: { connectionId: narrowing.id } },
-					body: {
-						capability: entered.data.capability,
-						grants: entered.data.followsMembership
-							? undefined
-							: entered.data.grants.map((grant) => ({
-									workspaceId: grant.workspaceId,
-									allTeams: grant.allTeams,
-									teamIds: grant.allTeams ? undefined : grant.teamIds,
-								})),
-					},
-				});
-
-				if (error || !narrowed) {
-					failure =
-						error?.status === 422
-							? { kind: "grant_invalid" }
-							: error?.status === 403
-								? { kind: "forbidden" }
-								: { kind: "unavailable" };
-
-					return;
-				}
-
-				replaced = {
-					kind: "ready",
-					connections: current.map((connection) =>
-						connection.id === narrowed.id ? narrowed : connection
-					),
-				};
-				narrowing = null;
-			} catch {
-				failure = { kind: "unavailable" };
-			}
+		dataType: "json",
+		onSubmit: () => {
+			revokeFailure = null;
+		},
+		onUpdated: ({ form: narrowed }) => {
+			if (narrowed.valid && !narrowed.message) narrowing = null;
 		},
 	});
-	const { form: formData, enhance, submitting } = form;
+	const { form: formData, enhance, submitting, message } = form;
+
+	const failure = $derived<ConnectionFailure | null>(revokeFailure ?? $message ?? null);
 
 	const busy = $derived(preview?.busy || $submitting || revoking !== null);
 
 	function beginNarrowing(connection: MCPConnection) {
 		narrowing = connection;
-		failure = null;
+		revokeFailure = null;
+		message.set(undefined);
 
 		formData.set({
 			capability: connection.capability,
@@ -165,7 +134,8 @@
 
 	async function revoke(connectionId: string) {
 		revoking = connectionId;
-		failure = null;
+		revokeFailure = null;
+		message.set(undefined);
 
 		try {
 			const { error } = await api.DELETE("/mcp/connections/{connectionId}", {
@@ -173,19 +143,16 @@
 			});
 
 			if (error) {
-				failure = error.status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
+				revokeFailure = error.status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
 
 				return;
 			}
 
-			const remaining = current.filter((connection) => connection.id !== connectionId);
+			narrowing = null;
 
-			replaced =
-				remaining.length === 0 ? { kind: "empty" } : { kind: "ready", connections: remaining };
-
-			if (narrowing?.id === connectionId) narrowing = null;
+			await invalidate(keys.page(page.route.id));
 		} catch {
-			failure = { kind: "unavailable" };
+			revokeFailure = { kind: "unavailable" };
 		} finally {
 			revoking = null;
 		}
@@ -310,6 +277,8 @@
 										use:enhance
 										class="flex flex-col gap-4 rounded-md border border-line-subtle p-3"
 									>
+										<input type="hidden" name="connectionId" value={connection.id} />
+
 										<p class="text-sm leading-normal text-muted-foreground text-pretty">
 											Narrowing only ever shrinks what {connection.clientName} reaches. To widen
 											it again, revoke and re-connect.

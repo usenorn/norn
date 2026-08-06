@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { invalidate } from "$app/navigation";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import KeyRound from "@lucide/svelte/icons/key-round";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
@@ -12,17 +13,19 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
+	import { keys } from "$lib/api/keys";
 	import { onDate } from "$lib/time";
 	import { mintTokenSchema, type GrantInput } from "$lib/account/mint-token-schema";
 	import {
 		daysUntil,
+		defaultExpiryDays,
 		expiringSoonDays,
 		failureMessage,
-		mintFailure,
 		scopeGroups,
 		scopeLabels,
 		writes,
 		type APIToken,
+		type MintOutcome,
 		type TokenFailure,
 		type TokenListing,
 	} from "$lib/account/tokens";
@@ -30,7 +33,6 @@
 	import type { PageProps } from "./$types";
 
 	const formId = "mint-token-form";
-	const defaultExpiryDays = 90;
 
 	let { data }: PageProps = $props();
 
@@ -38,76 +40,20 @@
 		import.meta.env.DEV ? tokensPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	let submitted = $state<TokenListing | null>(null);
-	let failure = $state<TokenFailure | null>(null);
-	let copied = $state(false);
+	let copiedValue = $state<string | null>(null);
 	let revoking = $state<string | null>(null);
+	let revealed = $state<Extract<MintOutcome, { kind: "minted" }> | null>(null);
 
-	const listing = $derived<TokenListing>(submitted ?? preview?.listing ?? data.listing);
+	const listing = $derived<TokenListing>(preview?.listing ?? data.listing);
 	const workspaces = $derived(preview?.workspaces ?? data.workspaces);
 
-	const form = superForm(defaults(zod4(mintTokenSchema)), {
-		SPA: true,
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
+		dataType: "json",
 		validators: zod4Client(mintTokenSchema),
 		resetForm: false,
-		onUpdate: async ({ form: entered }) => {
-			if (!entered.valid) return;
-
-			failure = null;
-			copied = false;
-
-			const expiresAt = new Date(
-				Date.parse(data.now) + entered.data.expiresInDays * 86_400_000
-			).toISOString();
-
-			try {
-				const { data: minted, error } = await api.POST("/tokens", {
-					body: {
-						name: entered.data.name,
-						scopes: entered.data.scopes,
-						grants: entered.data.grants.map((grant) => ({
-							workspaceId: grant.workspaceId,
-							allTeams: grant.allTeams,
-							teamIds: grant.allTeams ? undefined : grant.teamIds,
-						})),
-						expiresAt,
-					},
-				});
-
-				if (error) {
-					const mapped = mintFailure(error);
-
-					if (mapped.kind === "name_taken") {
-						setError(entered, "name", failureMessage(mapped));
-
-						return;
-					}
-
-					failure = mapped;
-
-					return;
-				}
-
-				if (!minted) {
-					failure = { kind: "unavailable" };
-
-					return;
-				}
-
-				submitted = {
-					kind: "minted",
-					token: minted.token,
-					value: minted.value,
-					tokens: [minted.token, ...current],
-				};
-
-				formData.set({ name: "", scopes: [], grants: [], expiresInDays: defaultExpiryDays });
-			} catch {
-				failure = { kind: "unavailable" };
-			}
-		},
 	});
-	const { form: formData, enhance, submitting } = form;
+	const { form: formData, enhance, submitting, message } = form;
 
 	$effect(() => {
 		if ($formData.expiresInDays === 0) {
@@ -115,13 +61,26 @@
 		}
 	});
 
+	const outcome = $derived($message ?? null);
+
+	const failure = $derived<TokenFailure | null>(
+		outcome && outcome.kind !== "minted" ? outcome : null
+	);
+
+	$effect(() => {
+		if (outcome?.kind === "minted") revealed = outcome;
+	});
+
+	const minted = $derived(revealed ?? (listing.kind === "minted" ? listing : null));
+
+	const copied = $derived(minted !== null && copiedValue === minted.value);
+
 	const busy = $derived(preview?.busy || $submitting || revoking !== null);
 
 	const current = $derived(
 		listing.kind === "ready" || listing.kind === "minted" ? listing.tokens : []
 	);
 
-	const minted = $derived(listing.kind === "minted" ? listing : null);
 	const showForm = $derived(listing.kind !== "forbidden" && listing.kind !== "unavailable");
 
 	function grantFor(workspaceId: string): GrantInput | undefined {
@@ -176,12 +135,11 @@
 	async function copyValue() {
 		if (!minted) return;
 		await navigator.clipboard.writeText(minted.value);
-		copied = true;
+		copiedValue = minted.value;
 	}
 
 	async function revoke(tokenId: string) {
 		revoking = tokenId;
-		failure = null;
 
 		try {
 			const { error } = await api.DELETE("/tokens/{tokenId}", {
@@ -189,16 +147,14 @@
 			});
 
 			if (error) {
-				failure = error.status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
+				message.set(error.status === 403 ? { kind: "forbidden" } : { kind: "unavailable" });
 
 				return;
 			}
 
-			const remaining = current.filter((token) => token.id !== tokenId);
-
-			submitted = remaining.length === 0 ? { kind: "empty" } : { kind: "ready", tokens: remaining };
+			await invalidate(keys.page(page.route.id));
 		} catch {
-			failure = { kind: "unavailable" };
+			message.set({ kind: "unavailable" });
 		} finally {
 			revoking = null;
 		}

@@ -1,9 +1,6 @@
 <script lang="ts">
-	import { invalidate } from "$app/navigation";
-	import { page } from "$app/state";
-	import { keys } from "$lib/api/keys";
-	import { defaults, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm, type Infer, type SuperValidated } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import Copy from "@lucide/svelte/icons/copy";
 	import ShieldAlert from "@lucide/svelte/icons/shield-alert";
 	import * as Alert from "$lib/components/ui/alert/index.js";
@@ -22,7 +19,7 @@
 		certificateUrgent,
 		saveFailure,
 		type SamlConnection,
-		type SsoFailure,
+		type SsoOutcome,
 	} from "$lib/workspace/sso";
 
 	const formId = "saml-connection-form";
@@ -30,75 +27,40 @@
 	let {
 		workspace,
 		connection,
+		form: validated,
 		busy = false,
-		onfailure,
-		onsaved,
+		onoutcome,
 		onbusy,
 	}: {
 		workspace: { id: string; name: string; slug: string; timezone: string };
 		connection: SamlConnection | null;
+		form: SuperValidated<Infer<typeof samlConnectionSchema>, SsoOutcome>;
 		busy?: boolean;
-		onfailure: (failure: SsoFailure | null) => void;
-		onsaved: () => void;
+		onoutcome: (outcome: SsoOutcome) => void;
 		onbusy: (working: boolean) => void;
 	} = $props();
 
 	let testing = $state(false);
 	let copied = $state(false);
 
-	const form = superForm(defaults(zod4(samlConnectionSchema)), {
+	// svelte-ignore state_referenced_locally
+	const form = superForm(validated, {
 		id: formId,
-		SPA: true,
 		validators: zod4Client(samlConnectionSchema),
 		resetForm: false,
-		onUpdate: async ({ form: entered }) => {
-			if (!entered.valid) return;
-
-			onfailure(null);
-
-			try {
-				const { data: result, error } = await api.PUT("/workspaces/{workspaceId}/sso/saml", {
-					params: { path: { workspaceId: workspace.id } },
-					body: {
-						metadataUrl: entered.data.source === "url" ? entered.data.metadataUrl : undefined,
-						metadata: entered.data.source === "paste" ? entered.data.metadata : undefined,
-						descriptor:
-							entered.data.source === "manual"
-								? {
-										entityId: entered.data.entityId,
-										ssoUrl: entered.data.ssoUrl,
-										certificates: [entered.data.certificate],
-										expiresAt: new Date().toISOString(),
-									}
-								: undefined,
-						allowIdpInitiated: entered.data.allowIdpInitiated,
-						provisioning: entered.data.provisioning,
-						mapping: {
-							email: entered.data.emailAttribute || undefined,
-							name: entered.data.nameAttribute || undefined,
-							groups: entered.data.groupsAttribute || undefined,
-						},
-					},
-				});
-
-				if (error) {
-					onfailure(saveFailure(error));
-
-					return;
-				}
-
-				if (result) {
-					onsaved();
-					await invalidate(keys.page(page.route.id));
-				}
-			} catch {
-				onfailure({ kind: "unavailable" });
-			}
+		onSubmit: () => {
+			onoutcome({ kind: "idle" });
 		},
 	});
-	const { form: formData, enhance, submitting } = form;
+	const { form: formData, enhance, submitting, message } = form;
 
 	const working = $derived(busy || testing || $submitting);
+
+	$effect(() => {
+		const posted = $message;
+
+		if (posted) onoutcome(posted);
+	});
 
 	$effect(() => onbusy($submitting || testing));
 
@@ -125,7 +87,7 @@
 
 	async function test() {
 		testing = true;
-		onfailure(null);
+		onoutcome({ kind: "idle" });
 
 		try {
 			const { data, error } = await api.POST("/workspaces/{workspaceId}/sso/saml/test", {
@@ -133,14 +95,14 @@
 			});
 
 			if (error) {
-				onfailure(saveFailure(error));
+				onoutcome({ kind: "failed", failure: saveFailure(error) });
 
 				return;
 			}
 
 			if (data) window.location.assign(data.authorizationUrl);
 		} catch {
-			onfailure({ kind: "unavailable" });
+			onoutcome({ kind: "failed", failure: { kind: "unavailable" } });
 		} finally {
 			testing = false;
 		}
@@ -196,7 +158,9 @@
 	</div>
 {/if}
 
-<form id={formId} method="POST" use:enhance class="flex flex-col gap-4">
+<form id={formId} method="POST" action="?/saml" use:enhance class="flex flex-col gap-4">
+	<input type="hidden" name="source" value={$formData.source} />
+
 	<Form.Field {form} name="source">
 		<Form.Control>
 			{#snippet children({ props })}

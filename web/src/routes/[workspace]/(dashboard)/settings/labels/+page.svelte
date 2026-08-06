@@ -2,8 +2,8 @@
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Merge from "@lucide/svelte/icons/merge";
 	import Plus from "@lucide/svelte/icons/plus";
@@ -47,15 +47,14 @@
 			: undefined
 	);
 
-	let submitted = $state<LabelBoard | null>(null);
-	let failure = $state<LabelFailure | null>(null);
+	let directFailure = $state<LabelFailure | null>(null);
 	let announcement = $state("");
 	let editingId = $state("");
 	let working = $state("");
 	let usage = $state<number | null>(null);
 	let mergeInto = $state("");
 
-	const board = $derived<LabelBoard>(submitted ?? preview?.board ?? data.board);
+	const board = $derived<LabelBoard>(preview?.board ?? data.board);
 	const labels = $derived(labelsOf(board));
 	const groups = $derived(groupsOf(board));
 	const sections = $derived(sectioned(labels, groups));
@@ -76,17 +75,6 @@
 	}
 
 	async function refresh() {
-		const path = { workspaceId: data.workspace.id };
-
-		const [next, nextGroups] = await Promise.all([
-			api.GET("/workspaces/{workspaceId}/labels", { params: { path } }),
-			api.GET("/workspaces/{workspaceId}/label-groups", { params: { path } }),
-		]);
-
-		if (next.data && nextGroups.data) {
-			submitted = { kind: "ready", labels: next.data, groups: nextGroups.data };
-		}
-
 		await invalidate(keys.page(page.route.id));
 	}
 
@@ -105,107 +93,57 @@
 		return { kind: "unavailable" };
 	}
 
-	const form = superForm(defaults(zod4(labelSchema)), {
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
 		id: labelFormId,
-		SPA: true,
 		validators: zod4Client(labelSchema),
 		resetForm: false,
-		onUpdate: async ({ form: pending }) => {
-			if (!pending.valid) return;
+		onSubmit: clearFailure,
+		onError: () => (directFailure = { kind: "unavailable" }),
+		onUpdated: ({ form: result }) => {
+			if (!result.valid || result.message) return;
 
-			failure = null;
-
-			const body = {
-				name: pending.data.name,
-				color: pending.data.color,
-				...(pending.data.groupId ? { groupId: pending.data.groupId } : {}),
-			};
-
-			try {
-				const result = editing
-					? await api.PATCH("/workspaces/{workspaceId}/labels/{labelId}", {
-							params: { path: { workspaceId: data.workspace.id, labelId: editing.id } },
-							body: { ...body, groupId: pending.data.groupId || null },
-						})
-					: await api.POST("/workspaces/{workspaceId}/labels", {
-							params: { path: { workspaceId: data.workspace.id } },
-							body: {
-								...body,
-								...(pending.data.teamId ? { teamId: pending.data.teamId } : {}),
-							},
-						});
-
-				if (result.data) {
-					announcement = editing
-						? `${result.data.name} was saved.`
-						: `${result.data.name} was added.`;
-					stopEditing();
-					await refresh();
-
-					return;
-				}
-
-				const conflict = readFailure(result.error);
-
-				if (conflict.kind === "name_taken") {
-					setError(pending, "name", labelFailureMessage(conflict));
-
-					return;
-				}
-
-				failure = conflict;
-			} catch {
-				failure = { kind: "unavailable" };
-			}
+			announcement = editing
+				? `${result.data.name} was saved.`
+				: `${result.data.name} was added.`;
+			stopEditing();
 		},
 	});
-	const { form: formData, enhance, submitting } = form;
+	const { form: formData, enhance, submitting, message } = form;
 
-	const groupForm = superForm(defaults(zod4(labelGroupSchema)), {
+	// svelte-ignore state_referenced_locally
+	const groupForm = superForm(data.groupForm, {
 		id: groupFormId,
-		SPA: true,
 		validators: zod4Client(labelGroupSchema),
 		resetForm: true,
-		onUpdate: async ({ form: pending }) => {
-			if (!pending.valid) return;
+		onSubmit: clearFailure,
+		onError: () => (directFailure = { kind: "unavailable" }),
+		onUpdated: ({ form: result }) => {
+			if (!result.valid || result.message) return;
 
-			failure = null;
-
-			try {
-				const { data: created, error } = await api.POST(
-					"/workspaces/{workspaceId}/label-groups",
-					{
-						params: { path: { workspaceId: data.workspace.id } },
-						body: { name: pending.data.name },
-					}
-				);
-
-				if (created) {
-					announcement = `${created.name} was added. Labels in it are mutually exclusive.`;
-					await refresh();
-
-					return;
-				}
-
-				const conflict = readFailure(error);
-
-				if (conflict.kind === "group_name_taken") {
-					setError(pending, "name", labelFailureMessage(conflict));
-
-					return;
-				}
-
-				failure = conflict;
-			} catch {
-				failure = { kind: "unavailable" };
-			}
+			announcement = `${result.data.name} was added. Labels in it are mutually exclusive.`;
 		},
 	});
-	const { form: groupData, enhance: groupEnhance, submitting: groupSubmitting } = groupForm;
+	const {
+		form: groupData,
+		enhance: groupEnhance,
+		submitting: groupSubmitting,
+		message: groupMessage,
+	} = groupForm;
+
+	const failure = $derived<LabelFailure | null>(
+		directFailure ?? $message ?? $groupMessage ?? null
+	);
+
+	function clearFailure() {
+		directFailure = null;
+		message.set(undefined);
+		groupMessage.set(undefined);
+	}
 
 	function startEditing(label: Label) {
 		editingId = label.id;
-		failure = null;
+		clearFailure();
 		formData.set(
 			{
 				name: label.name,
@@ -259,7 +197,7 @@
 				if (read) usage = read.issues;
 			})
 			.catch(() => {
-				failure = { kind: "unavailable" };
+				directFailure = { kind: "unavailable" };
 			});
 	});
 
@@ -267,7 +205,7 @@
 		if (!removing || usage === null) return;
 
 		working = removing.id;
-		failure = null;
+		clearFailure();
 
 		try {
 			const { error } = await api.DELETE("/workspaces/{workspaceId}/labels/{labelId}", {
@@ -279,7 +217,7 @@
 
 			if (error) {
 				const conflict = readFailure(error);
-				failure = conflict;
+				directFailure = conflict;
 
 				if (conflict.kind === "usage_changed") usage = conflict.issues;
 
@@ -290,7 +228,7 @@
 			await closePanels();
 			await refresh();
 		} catch {
-			failure = { kind: "unavailable" };
+			directFailure = { kind: "unavailable" };
 		} finally {
 			working = "";
 		}
@@ -300,7 +238,7 @@
 		if (!merging || !mergeInto) return;
 
 		working = merging.id;
-		failure = null;
+		clearFailure();
 
 		try {
 			const { data: kept, error } = await api.POST(
@@ -312,7 +250,7 @@
 			);
 
 			if (error) {
-				failure = readFailure(error);
+				directFailure = readFailure(error);
 
 				return;
 			}
@@ -321,7 +259,7 @@
 			await closePanels();
 			await refresh();
 		} catch {
-			failure = { kind: "unavailable" };
+			directFailure = { kind: "unavailable" };
 		} finally {
 			working = "";
 		}
@@ -329,7 +267,7 @@
 
 	async function removeGroup(id: string, name: string) {
 		working = id;
-		failure = null;
+		clearFailure();
 
 		try {
 			const { error } = await api.DELETE("/workspaces/{workspaceId}/label-groups/{groupId}", {
@@ -337,7 +275,7 @@
 			});
 
 			if (error) {
-				failure = readFailure(error);
+				directFailure = readFailure(error);
 
 				return;
 			}
@@ -345,7 +283,7 @@
 			announcement = `${name} was removed. Its labels are still here, no longer exclusive.`;
 			await refresh();
 		} catch {
-			failure = { kind: "unavailable" };
+			directFailure = { kind: "unavailable" };
 		} finally {
 			working = "";
 		}
@@ -601,7 +539,16 @@
 					{/each}
 				{/if}
 
-				<form id={labelFormId} method="POST" use:enhance class="flex flex-col gap-4">
+				<form
+					id={labelFormId}
+					method="POST"
+					action="?/label"
+					use:enhance
+					class="flex flex-col gap-4"
+				>
+					<input type="hidden" name="workspaceId" value={data.workspace.id} />
+					<input type="hidden" name="labelId" value={editingId} />
+
 					<h3 class="text-sm font-medium text-ink-900">
 						{editing ? `Edit ${editing.name}` : "Add a label"}
 					</h3>
@@ -640,6 +587,7 @@
 										</button>
 									{/each}
 								</div>
+								<input type="hidden" name={props.name} value={$formData.color} />
 							{/snippet}
 						</Form.Control>
 						<Form.Description class="text-sm text-muted-foreground">
@@ -655,6 +603,7 @@
 								<Form.Label>Group</Form.Label>
 								<Select.Root
 									type="single"
+									name={props.name}
 									value={$formData.groupId}
 									disabled={busy}
 									onValueChange={(value) => ($formData.groupId = value)}
@@ -684,6 +633,7 @@
 									<Form.Label>Scope</Form.Label>
 									<Select.Root
 										type="single"
+										name={props.name}
 										value={$formData.teamId}
 										disabled={busy}
 										onValueChange={(value) => ($formData.teamId = value)}
@@ -734,7 +684,15 @@
 					</p>
 				</div>
 
-				<form id={groupFormId} method="POST" use:groupEnhance class="flex flex-col gap-4">
+				<form
+					id={groupFormId}
+					method="POST"
+					action="?/group"
+					use:groupEnhance
+					class="flex flex-col gap-4"
+				>
+					<input type="hidden" name="workspaceId" value={data.workspace.id} />
+
 					<Form.Field form={groupForm} name="name">
 						<Form.Control>
 							{#snippet children({ props })}

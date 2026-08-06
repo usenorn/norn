@@ -30,6 +30,8 @@ export type TokenFailure =
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
 
+export type MintOutcome = { kind: "minted"; token: APIToken; value: string } | TokenFailure;
+
 export type ScopeGroup = { resource: string; title: string; scopes: APIScope[] };
 
 export const scopeGroups: ScopeGroup[] = [
@@ -127,6 +129,8 @@ export function failureMessage(failure: TokenFailure): string {
 }
 
 export const expiringSoonDays = 30;
+
+export const defaultExpiryDays = 90;
 
 export function daysUntil(expiresAt: string | undefined, now: string): number | null {
 	if (!expiresAt) return null;

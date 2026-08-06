@@ -2,8 +2,8 @@
 	import { invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import KeyRound from "@lucide/svelte/icons/key-round";
@@ -23,7 +23,6 @@
 	import {
 		failureMessage,
 		failureTitle,
-		parseScopes,
 		saveFailure,
 		scopeText,
 		stageAdvice,
@@ -31,8 +30,6 @@
 		type SamlConnection,
 		type SsoFailure,
 		type SsoOutcome,
-		type Enforcement,
-		type RecoveryCodes,
 		type SsoProtocol,
 		type SsoProviderConfiguration,
 	} from "$lib/workspace/sso";
@@ -49,7 +46,6 @@
 			: undefined
 	);
 
-	let saved = $state<SsoProviderConfiguration | null>(null);
 	let chosen = $state<SsoProtocol | null>(null);
 	let samlBusy = $state(false);
 	let policyBusy = $state(false);
@@ -61,7 +57,7 @@
 	let removing = $state(false);
 
 	const configuration = $derived<SsoProviderConfiguration>(
-		saved ?? preview?.configuration ?? data.configuration
+		preview?.configuration ?? data.configuration
 	);
 	const outcome = $derived<SsoOutcome>(preview?.outcome ?? liveOutcome);
 	const workspace = $derived(data.workspace);
@@ -85,66 +81,22 @@
 		outcome.kind === "failed" ? outcome.failure : null
 	);
 
-	const form = superForm(defaults(zod4(ssoConnectionSchema)), {
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.oidcForm, {
 		id: formId,
-		SPA: true,
 		validators: zod4Client(ssoConnectionSchema),
 		resetForm: false,
-		onUpdate: async ({ form: entered }) => {
-			if (!entered.valid) return;
-
+		onSubmit: () => {
 			liveOutcome = { kind: "idle" };
-
-			try {
-				const { data: result, error } = await api.PUT("/workspaces/{workspaceId}/sso/oidc", {
-					params: { path: { workspaceId: workspace.id } },
-					body: {
-						issuer: entered.data.issuer,
-						endpoints: entered.data.manual
-							? {
-									issuer: entered.data.issuer,
-									authorizationEndpoint: entered.data.authorizationEndpoint,
-									tokenEndpoint: entered.data.tokenEndpoint,
-									jwksUri: entered.data.jwksUri,
-									userinfoEndpoint: entered.data.userinfoEndpoint || undefined,
-								}
-							: undefined,
-						clientId: entered.data.clientId,
-						clientSecret: entered.data.clientSecret || undefined,
-						scopes: parseScopes(entered.data.scopes),
-						groupsClaim: entered.data.groupsClaim || undefined,
-						provisioning: entered.data.provisioning,
-					},
-				});
-
-				if (error) {
-					const mapped = saveFailure(error);
-
-					if (mapped.kind === "stage" && mapped.stage === "discovery") {
-						setError(entered, "issuer", failureMessage(mapped));
-					}
-
-					liveOutcome = { kind: "failed", failure: mapped };
-
-					return;
-				}
-
-				if (!result) {
-					liveOutcome = { kind: "failed", failure: { kind: "unavailable" } };
-
-					return;
-				}
-
-				saved = { kind: "oidc", connection: result };
-				liveOutcome = { kind: "saved" };
-				formData.update((current) => ({ ...current, clientSecret: "" }), { taint: false });
-				await invalidate(keys.page(page.route.id));
-			} catch {
-				liveOutcome = { kind: "failed", failure: { kind: "unavailable" } };
-			}
 		},
 	});
-	const { form: formData, errors, enhance, submitting } = form;
+	const { form: formData, errors, enhance, submitting, message } = form;
+
+	$effect(() => {
+		const posted = $message;
+
+		if (posted) liveOutcome = posted;
+	});
 
 	const busy = $derived(
 		discovering || testing || removing || samlBusy || policyBusy || (preview?.discovering ?? false) || $submitting
@@ -253,9 +205,8 @@
 				return;
 			}
 
-			saved = { kind: "unconfigured" };
-			liveOutcome = { kind: "removed" };
 			await invalidate(keys.page(page.route.id));
+			liveOutcome = { kind: "removed" };
 		} catch {
 			liveOutcome = { kind: "failed", failure: { kind: "unavailable" } };
 		} finally {
@@ -421,16 +372,19 @@
 					<SamlPanel
 						{workspace}
 						connection={samlConnection}
-						busy={busy}
-						onfailure={(f) => (liveOutcome = f ? { kind: "failed", failure: f } : { kind: "idle" })}
-						onsaved={() => {
-							chosen = null;
-							liveOutcome = { kind: "saved" };
-						}}
+						form={data.samlForm}
+						{busy}
+						onoutcome={(next) => (liveOutcome = next)}
 						onbusy={(working) => (samlBusy = working)}
 					/>
 				{:else}
-				<form id={formId} method="POST" use:enhance class="flex flex-col gap-4">
+					<form
+						id={formId}
+						method="POST"
+						action="?/oidc"
+						use:enhance
+						class="flex flex-col gap-4"
+					>
 						<Form.Field {form} name="issuer">
 							<Form.Control>
 								{#snippet children({ props })}
