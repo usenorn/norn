@@ -400,6 +400,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	worker := config.NewWorker(configConfig)
 	saml := config.NewSAML(configConfig)
 	cycles := config.NewCycles(configConfig)
 	attachments := config.NewAttachments(configConfig)
@@ -415,9 +416,14 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	}
 	server := taskqueue.NewServer(asynq, logger)
 	scheduler := taskqueue.NewScheduler(asynq, logger)
-	configPostgres := config.NewPostgres(configConfig)
-	client, cleanup, err := postgres.New(configPostgres)
+	inspector, cleanup, err := taskqueue.NewInspector(asynq)
 	if err != nil {
+		return nil, nil, err
+	}
+	configPostgres := config.NewPostgres(configConfig)
+	client, cleanup2, err := postgres.New(configPostgres)
+	if err != nil {
+		cleanup()
 		return nil, nil, err
 	}
 	repositoryAccount := account.New(client)
@@ -432,8 +438,9 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	pwnedClient := pwned.New(password)
 	breachCheck := breachcheck.New(pwnedClient)
 	configValkey := config.NewValkey(configConfig)
-	valkeyClient, cleanup2, err := valkey.New(configValkey)
+	valkeyClient, cleanup3, err := valkey.New(configValkey)
 	if err != nil {
+		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
@@ -442,26 +449,21 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	blobGrant := blobgrant.New(valkeyClient)
 	repositoryBlob, err := blob.New(storage, attachments, blobGrant)
 	if err != nil {
+		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
 	configSMTP := config.NewSMTP(configConfig)
-	smtpClient, cleanup3, err := smtp.New(configSMTP)
-	if err != nil {
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	repositoryMailer := mailer.New(smtpClient)
-	taskqueueClient, cleanup4, err := taskqueue.NewClient(asynq)
+	smtpClient, cleanup4, err := smtp.New(configSMTP)
 	if err != nil {
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	inspector, cleanup5, err := taskqueue.NewInspector(asynq)
+	repositoryMailer := mailer.New(smtpClient)
+	taskqueueClient, cleanup5, err := taskqueue.NewClient(asynq)
 	if err != nil {
 		cleanup4()
 		cleanup3()
@@ -627,8 +629,8 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	serviceWebhookRetention := webhook2.NewSweeper(webhookRetention, webhooks)
 	webhookSweepHandler := job.NewWebhookSweepHandler(serviceWebhookRetention)
 	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler)
-	worker := NewWorker(saml, cycles, attachments, notifications, apiTokens, configAudit, webhooks, server, scheduler, serveMux, logger)
-	return worker, func() {
+	internalWorker := NewWorker(worker, saml, cycles, attachments, notifications, apiTokens, configAudit, webhooks, server, scheduler, inspector, serveMux, logger)
+	return internalWorker, func() {
 		cleanup8()
 		cleanup7()
 		cleanup6()
