@@ -3518,6 +3518,16 @@ type IssueFollow struct {
 	State FollowState `json:"state"`
 }
 
+// IssueFollower defines model for IssueFollower.
+type IssueFollower struct {
+	AccountId openapi_types.UUID `json:"accountId"`
+}
+
+// IssueFollowerList defines model for IssueFollowerList.
+type IssueFollowerList struct {
+	Followers []IssueFollower `json:"followers"`
+}
+
 // IssueGroupBy defines model for IssueGroupBy.
 type IssueGroupBy string
 
@@ -5631,6 +5641,9 @@ type ServerInterface interface {
 	// SetWorkspaceIssueFollow Follow this issue, or unsubscribe from it without being made unreachable
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/follow)
 	SetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// ListWorkspaceIssueFollowers List the people this issue reaches
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/followers)
+	ListWorkspaceIssueFollowers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 	SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -6522,6 +6535,12 @@ func (_ Unimplemented) GetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Re
 // SetWorkspaceIssueFollow Follow this issue, or unsubscribe from it without being made unreachable
 // (PUT /workspaces/{workspaceId}/issues/{issueId}/follow)
 func (_ Unimplemented) SetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueFollowers List the people this issue reaches
+// (GET /workspaces/{workspaceId}/issues/{issueId}/followers)
+func (_ Unimplemented) ListWorkspaceIssueFollowers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -10153,6 +10172,41 @@ func (siw *ServerInterfaceWrapper) SetWorkspaceIssueFollow(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetWorkspaceIssueFollow(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueFollowers operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueFollowers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueFollowers(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -14435,6 +14489,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/follow", wrapper.SetWorkspaceIssueFollow)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/followers", wrapper.ListWorkspaceIssueFollowers)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/notification-settings", wrapper.GetWorkspaceNotificationSettings)
@@ -22788,6 +22845,89 @@ func (response SetWorkspaceIssueFollow422ApplicationProblemPlusJSONResponse) Vis
 type SetWorkspaceIssueFollow500ApplicationProblemPlusJSONResponse Problem
 
 func (response SetWorkspaceIssueFollow500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueFollowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueFollowersRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueFollowersResponseObject interface {
+	VisitListWorkspaceIssueFollowersResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueFollowers200JSONResponse IssueFollowerList
+
+func (response ListWorkspaceIssueFollowers200JSONResponse) VisitListWorkspaceIssueFollowersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueFollowers401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueFollowers401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueFollowersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueFollowers403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueFollowers403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueFollowersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueFollowers404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueFollowers404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueFollowersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueFollowers500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueFollowers500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueFollowersResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -32274,6 +32414,9 @@ type StrictServerInterface interface {
 	// SetWorkspaceIssueFollow Follow this issue, or unsubscribe from it without being made unreachable
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/follow)
 	SetWorkspaceIssueFollow(ctx context.Context, request SetWorkspaceIssueFollowRequestObject) (SetWorkspaceIssueFollowResponseObject, error)
+	// ListWorkspaceIssueFollowers List the people this issue reaches
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/followers)
+	ListWorkspaceIssueFollowers(ctx context.Context, request ListWorkspaceIssueFollowersRequestObject) (ListWorkspaceIssueFollowersResponseObject, error)
 	// SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 	SetWorkspaceIssueLabels(ctx context.Context, request SetWorkspaceIssueLabelsRequestObject) (SetWorkspaceIssueLabelsResponseObject, error)
@@ -35370,6 +35513,33 @@ func (sh *strictHandler) SetWorkspaceIssueFollow(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetWorkspaceIssueFollowResponseObject); ok {
 		if err := validResponse.VisitSetWorkspaceIssueFollowResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueFollowers operation middleware
+func (sh *strictHandler) ListWorkspaceIssueFollowers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueFollowersRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueFollowers(ctx, request.(ListWorkspaceIssueFollowersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueFollowers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueFollowersResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueFollowersResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

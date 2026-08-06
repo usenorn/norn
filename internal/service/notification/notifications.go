@@ -193,6 +193,34 @@ func (s *notificationsService) Following(
 	return follower, nil
 }
 
+func (s *notificationsService) Followers(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) ([]entity.IssueFollower, error) {
+	_, issue, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionRead)
+	if err != nil {
+		return nil, err
+	}
+
+	followers, err := s.followers.List(ctx, issue.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	watching := make([]entity.IssueFollower, 0, len(followers))
+
+	for _, follower := range followers {
+		if follower.State != entity.FollowStateFollowing {
+			continue
+		}
+
+		follower.WorkspaceID = workspaceID
+		watching = append(watching, follower)
+	}
+
+	return watching, nil
+}
+
 func (s *notificationsService) SetFollowing(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,

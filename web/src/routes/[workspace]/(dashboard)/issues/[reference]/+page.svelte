@@ -19,6 +19,7 @@
 	import Info from "@lucide/svelte/icons/info";
 	import Link2 from "@lucide/svelte/icons/link-2";
 	import Pencil from "@lucide/svelte/icons/pencil";
+	import Plus from "@lucide/svelte/icons/plus";
 	import Tags from "@lucide/svelte/icons/tags";
 	import Trash2 from "@lucide/svelte/icons/trash-2";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
@@ -27,19 +28,22 @@
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import * as Popover from "$lib/components/ui/popover/index.js";
+	import { Calendar } from "$lib/components/ui/calendar/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import Toast from "$lib/components/norn/toast.svelte";
+	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueField from "$lib/issues/issue-field.svelte";
 	import { totalIssues } from "$lib/issues/board";
 	import { initialsOf } from "$lib/team/members";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
-	import { cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
+	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import {
 		issueFailureMessage,
@@ -58,6 +62,7 @@
 	import Target from "@lucide/svelte/icons/target";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
+	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import IssueRelations from "$lib/issues/issue-relations.svelte";
 	import CommentThreadView from "$lib/comments/comment-thread.svelte";
 	import {
@@ -94,6 +99,7 @@
 		type Label,
 		type LabelFailure,
 	} from "$lib/labels/labels";
+	import { parseDate } from "@internationalized/date";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import {
 		activityPreviewStates,
@@ -857,6 +863,8 @@
 	let editingField = $state<"title" | "description" | null>(null);
 	let parentPicking = $state(false);
 	let pickingDue = $state(false);
+	let addingChild = $state(false);
+	const due = $derived(issue?.dueOn ? parseDate(issue.dueOn) : undefined);
 	let shown = $state<"all" | "comments">("all");
 	let notice = $state("");
 	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -871,6 +879,57 @@
 
 	function initials(name: string): string {
 		return initialsOf(name);
+	}
+
+	function nameOf(accountId: string | undefined): string {
+		if (!accountId) return "";
+
+		const member = ready?.members.find((candidate) => candidate.accountId === accountId);
+
+		return member?.displayName || member?.email || "";
+	}
+
+	async function fileUnderThis(created: { id: string; reference: string; version: number }) {
+		if (!issue) return;
+
+		working = true;
+
+		try {
+			const { error } = await api.POST("/workspaces/{workspaceId}/issues/{issueId}/parent", {
+				params: { path: { workspaceId: data.workspace.id, issueId: created.id } },
+				body: { expectedVersion: created.version, parentId: issue.id },
+			});
+
+			if (error) failure = readIssueFailure(error);
+
+			announce(`${created.reference} is filed under ${issue.reference}`);
+			await invalidateAll();
+		} catch {
+			failure = { kind: "unavailable" };
+		} finally {
+			working = false;
+		}
+	}
+
+	async function moveChild(child: Issue, stateId: string) {
+		if (child.state.id === stateId) return;
+
+		working = true;
+
+		try {
+			const { error } = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
+				params: { path: { workspaceId: data.workspace.id, issueId: child.id } },
+				body: { expectedVersion: child.version, stateId },
+			});
+
+			if (error) failure = readIssueFailure(error);
+
+			await invalidateAll();
+		} catch {
+			failure = { kind: "unavailable" };
+		} finally {
+			working = false;
+		}
 	}
 
 	async function setEstimate(points: string) {
@@ -888,6 +947,12 @@
 		Boolean(issue) &&
 			(($formData.title !== issue?.title && editingField === "title") ||
 				($formData.description !== issue?.description && editingField === "description"))
+	);
+
+	const watchers = $derived(
+		(ready?.watchers ?? [])
+			.map((accountId) => ({ accountId, name: nameOf(accountId) }))
+			.filter((watcher) => watcher.name)
 	);
 
 	const reporter = $derived(
@@ -1003,6 +1068,22 @@
 		}
 	}
 
+	function onPointerDown(event: PointerEvent) {
+		if (editingField !== "description") return;
+
+		const target = event.target as HTMLElement | null;
+
+		if (target?.closest("[data-editing-region]")) return;
+
+		if (dirty) {
+			(document.getElementById("issue-edit-form") as HTMLFormElement | null)?.requestSubmit();
+
+			return;
+		}
+
+		editingField = null;
+	}
+
 	function onKey(event: KeyboardEvent) {
 		const target = event.target as HTMLElement | null;
 		const typing = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA";
@@ -1034,7 +1115,7 @@
 	}
 </script>
 
-<svelte:window onkeydown={onKey} />
+<svelte:window onkeydown={onKey} onpointerdown={onPointerDown} />
 
 
 <svelte:head>
@@ -1435,10 +1516,8 @@
 
 						<div class="mt-3.5 flex flex-col gap-3">
 							<div class="flex items-center gap-2.5">
-								<h2
-									class="min-w-0 flex-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
-								>
-									Description
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">Description</Eyebrow>
 								</h2>
 								{#if canEdit && editingField !== "description"}
 									<Button variant="ghost" size="sm" onclick={() => startEditing("description")}>
@@ -1505,10 +1584,10 @@
 
 					<section class="flex flex-col gap-1.5">
 						<div class="flex items-center gap-2.5">
-							<h2
-								class="min-w-0 flex-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
-							>
-								Sub-issues
+							<h2 class="min-w-0 flex-1">
+								<Eyebrow rule class="text-ink-600">
+									Sub-issues
+								</Eyebrow>
 							</h2>
 							{#if ready.children.length > 0}
 								<span class="inline-flex items-center gap-1.75">
@@ -1518,16 +1597,35 @@
 									<ProgressBar progress={ready.childProgress} label={false} class="w-14" />
 								</span>
 							{/if}
+							{#if canEdit}
+								<Button
+									variant="ghost"
+									size="icon-xs"
+									aria-label="Add a sub-issue"
+									onclick={() => (addingChild = true)}
+								>
+									<Plus aria-hidden="true" />
+								</Button>
+							{/if}
 						</div>
-						<IssueChildren children={ready.children} {at} />
+						<IssueChildren
+							children={ready.children}
+							{at}
+							states={canEdit ? ready.states : []}
+							now={data.now}
+							timezone={data.workspace.timezone}
+							nameOf={nameOf}
+							{working}
+							onstate={moveChild}
+						/>
 					</section>
 
 					<section class="flex flex-col gap-1.5">
 						<div class="flex items-center gap-2.5">
-							<h2
-								class="min-w-0 flex-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
-							>
-								Links
+							<h2 class="min-w-0 flex-1">
+								<Eyebrow rule class="text-ink-600">
+									Links
+								</Eyebrow>
 							</h2>
 						</div>
 						<IssueRelations
@@ -1543,10 +1641,10 @@
 
 					<section class="flex flex-col gap-1.5">
 						<div class="flex items-center gap-2.5">
-							<h2
-								class="min-w-0 flex-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
-							>
-								Attachments
+							<h2 class="min-w-0 flex-1">
+								<Eyebrow rule class="text-ink-600">
+									Attachments
+								</Eyebrow>
 							</h2>
 							{#if canEdit}
 								<AttachmentPicker
@@ -1583,10 +1681,10 @@
 
 					<section class="flex flex-col gap-0.5">
 						<div class="mb-1.5 flex items-center gap-2.5">
-							<h2
-								class="min-w-0 flex-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
-							>
-								Activity
+							<h2 class="min-w-0 flex-1">
+								<Eyebrow rule class="text-ink-600">
+									Activity
+								</Eyebrow>
 							</h2>
 							<div class="inline-flex gap-0.5 rounded-sm border border-line-default p-0.5">
 								{#each [{ key: "all", label: "All" }, { key: "comments", label: "Comments" }] as choice (choice.key)}
@@ -1744,7 +1842,8 @@
 					<IssueField
 						label="Project"
 						placeholder="Move to project"
-						editable={canEdit && ready.projects.length > 0}
+						editable={canEdit}
+						empty="No projects in this workspace yet"
 						options={[
 							{ value: "", label: "No project", checked: !issue.projectId },
 							...ready.projects.map((project) => ({
@@ -1770,7 +1869,8 @@
 					<IssueField
 						label="Cycle"
 						placeholder="Move to cycle"
-						editable={canEdit && ready.cycles.length > 0}
+						editable={canEdit}
+						empty="This team runs no cycles"
 						options={[
 							{ value: "", label: "No cycle", checked: !issue.cycleId },
 							...ready.cycles.map((cycle) => ({
@@ -1799,43 +1899,57 @@
 						>
 							Due
 						</span>
-						{#if canEdit && pickingDue}
-							<span class="flex min-w-0 flex-1 items-center gap-1.75">
-								<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
-								<!-- svelte-ignore a11y_autofocus -->
-								<input
-									type="date"
-									autofocus
-									aria-label="Due date"
-									value={issue.dueOn ?? ""}
-									disabled={working}
-									onchange={(event) => {
-										pickingDue = false;
-										setDue(event.currentTarget.value);
-									}}
-									onblur={() => (pickingDue = false)}
-									class="min-w-0 flex-1 bg-transparent text-md text-ink-900 outline-none"
-								/>
-							</span>
-						{:else if canEdit}
-							<button
-								type="button"
-								onclick={() => (pickingDue = true)}
-								class="-ml-1.75 flex min-h-6 min-w-0 flex-1 cursor-pointer items-center gap-1.75 rounded-sm px-1.75 py-0.5 text-left text-md transition-colors duration-70 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-							>
-								<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
-								<span
-									class="truncate {issue.dueOn
-										? overdue(issue.dueOn, data.now)
-											? 'text-priority-urgent'
-											: 'text-ink-900'
-										: 'text-muted-foreground'}"
-								>
-									{issue.dueOn
-										? dueLabel(issue.dueOn, data.now, data.workspace.timezone)
-										: "No due date"}
-								</span>
-							</button>
+						{#if canEdit}
+							<Popover.Root bind:open={pickingDue}>
+								<Popover.Trigger>
+									{#snippet child({ props })}
+										<button
+											{...props}
+											type="button"
+											aria-label="Due date: change"
+											class="-ml-1.75 flex min-h-6 min-w-0 flex-1 cursor-pointer items-center gap-1.75 rounded-sm px-1.75 py-0.5 text-left text-md transition-colors duration-70 ease-out hover:bg-accent aria-expanded:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+										>
+											<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
+											<span
+												class="truncate {issue.dueOn
+													? overdue(issue.dueOn, data.now)
+														? 'text-priority-urgent'
+														: 'text-ink-900'
+													: 'text-muted-foreground'}"
+											>
+												{issue.dueOn
+													? dueLabel(issue.dueOn, data.now, data.workspace.timezone)
+													: "No due date"}
+											</span>
+										</button>
+									{/snippet}
+								</Popover.Trigger>
+								<Popover.Content align="start" class="w-auto p-0">
+									<Calendar
+										type="single"
+										value={due}
+										onValueChange={(picked) => {
+											pickingDue = false;
+											setDue(picked ? picked.toString() : "");
+										}}
+									/>
+									{#if issue.dueOn}
+										<div class="border-t border-line-subtle p-1.5">
+											<Button
+												variant="ghost"
+												size="sm"
+												class="w-full"
+												onclick={() => {
+													pickingDue = false;
+													setDue("");
+												}}
+											>
+												Clear the due date
+											</Button>
+										</div>
+									{/if}
+								</Popover.Content>
+							</Popover.Root>
 						{:else}
 							<span class="flex min-h-6 min-w-0 flex-1 items-center gap-1.75 text-md">
 								<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
@@ -1931,9 +2045,24 @@
 						>
 							Watching
 						</span>
-						<span class="flex-1 truncate text-md text-ink-900">
-							{following ? "Watching" : "Not watching"}
-						</span>
+						{#if watchers.length > 0}
+							<span class="flex min-w-0 flex-1 -space-x-1.5">
+								{#each watchers.slice(0, 5) as watcher (watcher.accountId)}
+									<Avatar.Root size="xs" class="ring-1 ring-card" title={watcher.name}>
+										<Avatar.Fallback>{initials(watcher.name)}</Avatar.Fallback>
+									</Avatar.Root>
+								{/each}
+								{#if watchers.length > 5}
+									<span
+										class="inline-flex size-icon-row items-center justify-center rounded-full bg-paper-2 font-mono text-2xs text-muted-foreground ring-1 ring-card"
+									>
+										+{watchers.length - 5}
+									</span>
+								{/if}
+							</span>
+						{:else}
+							<span class="flex-1 truncate text-md text-muted-foreground">Nobody yet</span>
+						{/if}
 						<Button variant="ghost" size="sm" disabled={followWorking} onclick={toggleFollow}>
 							{following ? "Unsubscribe" : "Subscribe"}
 						</Button>
@@ -1973,11 +2102,14 @@
 						</span>
 						<button
 							type="button"
+							aria-label="Copy the link to {issue.reference}"
+							title="Copy"
 							onclick={() =>
 								copy(`${page.url.origin}${at(`/issues/${issue.reference}`)}`, `Copied a link to ${issue.reference}`)}
-							class="min-w-0 cursor-pointer truncate font-mono text-xs text-muted-foreground transition-colors duration-70 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							class="flex min-w-0 cursor-pointer items-center gap-1.5 font-mono text-xs text-muted-foreground transition-colors duration-70 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 						>
-							{issueLink}
+							<span class="min-w-0 truncate">{issueLink}</span>
+							<Copy class="size-3 flex-none" aria-hidden="true" />
 						</button>
 					</div>
 				</div>
@@ -1986,6 +2118,7 @@
 
 		{#if editingField && (dirty || $submitting)}
 			<div
+				data-editing-region
 				class="flex h-10 flex-none items-center gap-2.25 border-t border-line-strong bg-paper-2 px-4"
 			>
 				{#if $submitting}
@@ -2029,6 +2162,24 @@
 		</div>
 	{/if}
 </div>
+
+{#if ready && issue}
+	<NewIssueDialog
+		bind:open={addingChild}
+		workspaceId={data.workspace.id}
+		teams={data.teams ?? []}
+		states={{ [issue.teamId]: ready.states }}
+		members={ready.members.map((member) => ({
+			accountId: member.accountId,
+			displayName: member.displayName,
+		}))}
+		labels={ready.labels}
+		projects={ready.projects}
+		today={calendarDate(data.now, data.workspace.timezone)}
+		prefill={{ teamId: issue.teamId, projectId: issue.projectId ?? "" }}
+		oncreated={fileUnderThis}
+	/>
+{/if}
 
 {#if notice}
 	<div class="fixed bottom-4 left-4 z-70">

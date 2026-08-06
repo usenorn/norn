@@ -113,6 +113,27 @@ func (h *handler) GetWorkspaceIssueFollow(
 	return api.GetWorkspaceIssueFollow200JSONResponse(issueFollowDTO(follower)), nil
 }
 
+func (h *handler) ListWorkspaceIssueFollowers(
+	ctx context.Context,
+	request api.ListWorkspaceIssueFollowersRequestObject,
+) (api.ListWorkspaceIssueFollowersResponseObject, error) {
+	followers, err := h.notifications.Followers(ctx, request.WorkspaceId, request.IssueId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	watching := make([]api.IssueFollower, len(followers))
+	for i, follower := range followers {
+		watching[i] = api.IssueFollower{AccountId: follower.AccountID}
+	}
+
+	return api.ListWorkspaceIssueFollowers200JSONResponse{Followers: watching}, nil
+}
+
 func (h *handler) SetWorkspaceIssueFollow(
 	ctx context.Context,
 	request api.SetWorkspaceIssueFollowRequestObject,

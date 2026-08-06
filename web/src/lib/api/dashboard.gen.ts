@@ -2513,6 +2513,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/followers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the people this issue reaches */
+        get: operations["listWorkspaceIssueFollowers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/notification-settings": {
         parameters: {
             query?: never;
@@ -4311,6 +4328,13 @@ export interface components {
         SnoozeNotificationRequest: {
             /** Format: date-time */
             until: string;
+        };
+        IssueFollowerList: {
+            followers: components["schemas"]["IssueFollower"][];
+        };
+        IssueFollower: {
+            /** Format: uuid */
+            accountId: string;
         };
         IssueFollow: {
             state: components["schemas"]["FollowState"];
@@ -10131,6 +10155,33 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueFollowers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Everyone following this issue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueFollowerList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

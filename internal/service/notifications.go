@@ -42,6 +42,7 @@ type Notifications interface {
 		until time.Time,
 	) error
 	Following(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueFollower, error)
+	Followers(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.IssueFollower, error)
 	SetFollowing(
 		ctx context.Context,
 		workspaceID, issueID uuid.UUID,

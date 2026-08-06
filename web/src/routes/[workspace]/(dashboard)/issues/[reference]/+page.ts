@@ -36,6 +36,7 @@ export type IssueDetail =
 			projects: Project[];
 			comments: CommentThread;
 			follow: FollowState;
+			watchers: string[];
 			attachments: AttachmentPanel;
 	  }
 	| { kind: "unavailable" };
@@ -82,6 +83,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url }): Promise<Is
 		comments,
 		attachments,
 		follow,
+		watchers,
 	] = await Promise.all([
 		api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			fetch,
@@ -123,6 +125,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url }): Promise<Is
 		}),
 		api.GET("/workspaces/{workspaceId}/issues/{issueId}/attachments", { fetch, params: { path } }),
 		api.GET("/workspaces/{workspaceId}/issues/{issueId}/follow", { fetch, params: { path } }),
+		api.GET("/workspaces/{workspaceId}/issues/{issueId}/followers", { fetch, params: { path } }),
 	]);
 
 	if (
@@ -155,6 +158,7 @@ export const load: PageLoad = async ({ fetch, params, parent, url }): Promise<Is
 			comments: readThread(comments.data),
 			attachments: readAttachments(attachments.data),
 			follow: follow.data?.state ?? "muted",
+			watchers: (watchers.data?.followers ?? []).map((watcher) => watcher.accountId),
 		},
 	};
 };

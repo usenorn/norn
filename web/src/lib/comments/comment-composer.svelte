@@ -8,6 +8,7 @@
 	import { Label } from "$lib/components/ui/label/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
+	import Kbd from "$lib/components/norn/kbd.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
 	import { attachmentMarkdown } from "$lib/attachments/attachments";
 	import { settled, type UploadTask } from "$lib/attachments/upload";
@@ -169,14 +170,18 @@
 		id="comment-{id}"
 		bind:value={draft}
 		{placeholder}
-		rows={4}
+		rows={3}
 		disabled={working}
-		class="font-mono text-sm"
+		class="min-h-17.5 text-base leading-normal"
+		onkeydown={(event) => {
+			if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+				event.preventDefault();
+				event.stopPropagation();
+				send();
+			}
+		}}
 		onpaste={pasted}
 	/>
-	<p class="text-xs text-muted-foreground">
-		Markdown. Stored exactly as you type it.{onfiles ? " Drop or paste a file to attach it." : ""}
-	</p>
 
 	{#if uploads && uploads.length > 0}
 		<UploadList
@@ -207,12 +212,8 @@
 	{/if}
 
 	<div class="flex flex-wrap items-center gap-2">
-		<Button size="sm" disabled={working || empty || inFlight} onclick={send}>
-			{working ? "Working" : inFlight ? "Uploading" : submitLabel}
-		</Button>
-
 		{#if onfiles}
-			<AttachmentPicker disabled={working} onfiles={take} />
+			<AttachmentPicker disabled={working} onfiles={take} iconOnly />
 		{/if}
 
 		<DropdownMenu.Root>
@@ -243,8 +244,18 @@
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 
+		<div class="flex-1"></div>
+
 		{#if oncancel}
 			<Button variant="ghost" size="sm" disabled={working} onclick={oncancel}>Cancel</Button>
 		{/if}
+
+		<span class="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex">
+			<Kbd keys="⌘ ↵" /> {submitLabel.toLowerCase()}
+		</span>
+
+		<Button size="sm" disabled={working || empty || inFlight} onclick={send}>
+			{working ? "Working" : inFlight ? "Uploading" : submitLabel}
+		</Button>
 	</div>
 </div>
