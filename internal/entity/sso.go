@@ -194,11 +194,12 @@ type SSOPurpose string
 const (
 	SSOPurposeLogin SSOPurpose = "login"
 	SSOPurposeTest  SSOPurpose = "test"
+	SSOPurposeLink  SSOPurpose = "link"
 )
 
 func (p SSOPurpose) Valid() bool {
 	switch p {
-	case SSOPurposeLogin, SSOPurposeTest:
+	case SSOPurposeLogin, SSOPurposeTest, SSOPurposeLink:
 		return true
 	default:
 		return false

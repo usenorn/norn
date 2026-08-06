@@ -596,6 +596,25 @@ paths:
         '422': { $ref: '#/components/responses/SsoFailed' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/sso/oidc/link:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [sso]
+      operationId: linkWorkspaceOidcIdentity
+      summary: Connect the signed-in account to its identity at this workspace's provider
+      responses:
+        '200':
+          description: Send the browser to this address to complete the connection
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OidcAuthorization' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/SsoFailed' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/sso:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'

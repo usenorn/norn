@@ -117,6 +117,22 @@ func (h *handler) TestWorkspaceOidcConnection(
 	return api.TestWorkspaceOidcConnection200JSONResponse{AuthorizationUrl: target}, nil
 }
 
+func (h *handler) LinkWorkspaceOidcIdentity(
+	ctx context.Context,
+	request api.LinkWorkspaceOidcIdentityRequestObject,
+) (api.LinkWorkspaceOidcIdentityResponseObject, error) {
+	target, err := h.ssoConnections.BeginLink(ctx, request.WorkspaceId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.LinkWorkspaceOidcIdentity200JSONResponse{AuthorizationUrl: target}, nil
+}
+
 func (h *handler) GetWorkspaceSignIn(
 	ctx context.Context,
 	request api.GetWorkspaceSignInRequestObject,
@@ -247,6 +263,10 @@ func (r problemResponse) VisitDiscoverOidcEndpointsResponse(w http.ResponseWrite
 }
 
 func (r problemResponse) VisitTestWorkspaceOidcConnectionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

@@ -13,6 +13,7 @@
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { api } from "$lib/api";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { workspaceSettingsSchema } from "$lib/workspace/settings-schema";
 	import { purgeDate, timezones, type WorkspaceSettings } from "$lib/workspace/settings";
@@ -31,6 +32,28 @@
 
 	let confirmation = $state("");
 	let changing = $state(false);
+	let connecting = $state(false);
+
+	const justLinked = $derived(page.url.searchParams.get("linked") === "1");
+
+	async function connectProvider() {
+		connecting = true;
+
+		try {
+			const { data: authorization } = await api.POST(
+				"/workspaces/{workspaceId}/sso/oidc/link",
+				{ params: { path: { workspaceId: data.workspace.id } } }
+			);
+
+			if (authorization) {
+				window.location.href = authorization.authorizationUrl;
+
+				return;
+			}
+		} finally {
+			connecting = false;
+		}
+	}
 
 	// svelte-ignore state_referenced_locally
 	const form = superForm(data.form, {
@@ -345,6 +368,32 @@
 					</Button>
 				</div>
 			</section>
+
+			{#if data.provider.configured}
+				<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+					<div class="flex flex-col gap-1">
+						<h2 class="text-md font-medium tracking-snug text-ink-900">Your provider</h2>
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							Connecting binds your Norn account to the identity {workspace.name}'s provider
+							issues you. Until you do, an account that has its own password, or that belongs to
+							other workspaces, will not be signed in by that provider on address alone.
+						</p>
+					</div>
+
+					{#if data.provider.linked || justLinked}
+						<p class="flex items-center gap-2 text-sm text-ink-900">
+							<CircleCheck class="size-icon-row shrink-0 text-success" aria-hidden="true" />
+							Connected to {workspace.name}'s provider.
+						</p>
+					{:else}
+						<div class="flex flex-wrap gap-2">
+							<Button variant="secondary" disabled={connecting} onclick={connectProvider}>
+								{connecting ? "Connecting" : "Connect your provider"}
+							</Button>
+						</div>
+					{/if}
+				</section>
+			{/if}
 
 			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">

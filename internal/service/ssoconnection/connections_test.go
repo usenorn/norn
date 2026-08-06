@@ -224,6 +224,71 @@ func TestAnAddressTheProviderWillNotVouchForNeverReachesAnAccount(t *testing.T) 
 	}
 }
 
+func TestConnectingAProviderBindsTheSignedInAccountAndMintsNoSession(t *testing.T) {
+	h := newHarnessWithoutLinking(t)
+
+	workspaceID := uuid.New()
+	accountID := uuid.New()
+
+	h.states.EXPECT().
+		Take(gomock.Any(), "the-state").
+		Return(entity.OIDCState{
+			Purpose:     entity.SSOPurposeLink,
+			WorkspaceID: workspaceID,
+			AccountID:   accountID,
+			Nonce:       "the-nonce",
+			Verifier:    "the-verifier",
+		}, nil)
+
+	h.workspaces.EXPECT().
+		GetByID(gomock.Any(), workspaceID).
+		Return(entity.Workspace{ID: workspaceID, Slug: "northwind"}, nil)
+
+	h.connections.EXPECT().GetOIDC(gomock.Any(), workspaceID).Return(connection(workspaceID, false), nil)
+	h.provider.EXPECT().
+		Exchange(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(verifiedClaims("ada@example.com"), nil)
+
+	h.identities.EXPECT().
+		Get(gomock.Any(), workspaceID, accountID).
+		Return(entity.SSOIdentity{}, entity.ErrSSOIdentityNotFound)
+
+	var linked entity.SSOIdentity
+
+	h.identities.EXPECT().
+		Link(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, identity entity.SSOIdentity) error {
+			linked = identity
+
+			return nil
+		})
+
+	exchange, err := h.complete()
+	if err != nil {
+		t.Fatalf("Complete: %v", err)
+	}
+
+	if linked.AccountID != accountID {
+		t.Fatalf(
+			"connected %s rather than the account that asked for it, %s. The point of connecting "+
+				"deliberately is that the address the provider asserts decides nothing.",
+			linked.AccountID,
+			accountID,
+		)
+	}
+
+	if linked.Issuer != "https://login.example.com" || linked.Subject != "provider-subject" {
+		t.Fatalf("recorded issuer %q and subject %q", linked.Issuer, linked.Subject)
+	}
+
+	if exchange.Token != "" {
+		t.Fatal(
+			"connecting a provider handed back a session token. It runs while already signed in, " +
+				"so it must not be a second way to mint a session.",
+		)
+	}
+}
+
 func TestAnUnknownAddressIsRefusedWhenProvisioningIsOff(t *testing.T) {
 	h := newHarness(t)
 

@@ -43,6 +43,21 @@ func (m *MockSSOConnections) EXPECT() *MockSSOConnectionsMockRecorder {
 	return m.recorder
 }
 
+// BeginLink mocks base method.
+func (m *MockSSOConnections) BeginLink(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BeginLink", ctx, workspaceID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BeginLink indicates an expected call of BeginLink.
+func (mr *MockSSOConnectionsMockRecorder) BeginLink(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginLink", reflect.TypeOf((*MockSSOConnections)(nil).BeginLink), ctx, workspaceID)
+}
+
 // BeginLogin mocks base method.
 func (m *MockSSOConnections) BeginLogin(ctx context.Context, input service.BeginOIDCLoginInput) (string, error) {
 	m.ctrl.T.Helper()

@@ -21,6 +21,7 @@ const stateKeyPrefix = "oidc-state:"
 type storedState struct {
 	Purpose     string    `json:"purpose"`
 	WorkspaceID uuid.UUID `json:"workspace_id"`
+	AccountID   uuid.UUID `json:"account_id"`
 	Nonce       string    `json:"nonce"`
 	Verifier    string    `json:"verifier"`
 	ReturnTo    string    `json:"return_to"`
@@ -42,6 +43,7 @@ func (r *stateRepository) Put(ctx context.Context, state string, attempt entity.
 	payload, err := json.Marshal(storedState{
 		Purpose:     string(attempt.Purpose),
 		WorkspaceID: attempt.WorkspaceID,
+		AccountID:   attempt.AccountID,
 		Nonce:       attempt.Nonce,
 		Verifier:    attempt.Verifier,
 		ReturnTo:    attempt.ReturnTo,
@@ -76,6 +78,7 @@ func (r *stateRepository) Take(ctx context.Context, state string) (entity.OIDCSt
 	return entity.OIDCState{
 		Purpose:     entity.SSOPurpose(stored.Purpose),
 		WorkspaceID: stored.WorkspaceID,
+		AccountID:   stored.AccountID,
 		Nonce:       stored.Nonce,
 		Verifier:    stored.Verifier,
 		ReturnTo:    stored.ReturnTo,

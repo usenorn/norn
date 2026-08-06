@@ -6286,6 +6286,9 @@ type ServerInterface interface {
 	// DiscoverOidcEndpoints Read the endpoints a provider advertises, without saving anything
 	// (POST /workspaces/{workspaceId}/sso/oidc/discover)
 	DiscoverOidcEndpoints(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// LinkWorkspaceOidcIdentity Connect the signed-in account to its identity at this workspace's provider
+	// (POST /workspaces/{workspaceId}/sso/oidc/link)
+	LinkWorkspaceOidcIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// TestWorkspaceOidcConnection Start a real round trip to the provider that records verification
 	// (POST /workspaces/{workspaceId}/sso/oidc/test)
 	TestWorkspaceOidcConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -7393,6 +7396,12 @@ func (_ Unimplemented) SetWorkspaceOidcConnection(w http.ResponseWriter, r *http
 // DiscoverOidcEndpoints Read the endpoints a provider advertises, without saving anything
 // (POST /workspaces/{workspaceId}/sso/oidc/discover)
 func (_ Unimplemented) DiscoverOidcEndpoints(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// LinkWorkspaceOidcIdentity Connect the signed-in account to its identity at this workspace's provider
+// (POST /workspaces/{workspaceId}/sso/oidc/link)
+func (_ Unimplemented) LinkWorkspaceOidcIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -12937,6 +12946,32 @@ func (siw *ServerInterfaceWrapper) DiscoverOidcEndpoints(w http.ResponseWriter, 
 	handler.ServeHTTP(w, r)
 }
 
+// LinkWorkspaceOidcIdentity operation middleware
+func (siw *ServerInterfaceWrapper) LinkWorkspaceOidcIdentity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LinkWorkspaceOidcIdentity(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // TestWorkspaceOidcConnection operation middleware
 func (siw *ServerInterfaceWrapper) TestWorkspaceOidcConnection(w http.ResponseWriter, r *http.Request) {
 
@@ -14963,6 +14998,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/sso/oidc/test", wrapper.TestWorkspaceOidcConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/sso/oidc/link", wrapper.LinkWorkspaceOidcIdentity)
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/sso", wrapper.RemoveWorkspaceSsoConnection)
@@ -29401,6 +29439,104 @@ func (response DiscoverOidcEndpoints500ApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
+type LinkWorkspaceOidcIdentityRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type LinkWorkspaceOidcIdentityResponseObject interface {
+	VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error
+}
+
+type LinkWorkspaceOidcIdentity200JSONResponse OidcAuthorization
+
+func (response LinkWorkspaceOidcIdentity200JSONResponse) VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceOidcIdentity401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response LinkWorkspaceOidcIdentity401ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceOidcIdentity403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response LinkWorkspaceOidcIdentity403ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceOidcIdentity404ApplicationProblemPlusJSONResponse Problem
+
+func (response LinkWorkspaceOidcIdentity404ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceOidcIdentity422ApplicationProblemPlusJSONResponse struct {
+	SsoFailedApplicationProblemPlusJSONResponse
+}
+
+func (response LinkWorkspaceOidcIdentity422ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceOidcIdentity500ApplicationProblemPlusJSONResponse Problem
+
+func (response LinkWorkspaceOidcIdentity500ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type TestWorkspaceOidcConnectionRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -34508,6 +34644,9 @@ type StrictServerInterface interface {
 	// DiscoverOidcEndpoints Read the endpoints a provider advertises, without saving anything
 	// (POST /workspaces/{workspaceId}/sso/oidc/discover)
 	DiscoverOidcEndpoints(ctx context.Context, request DiscoverOidcEndpointsRequestObject) (DiscoverOidcEndpointsResponseObject, error)
+	// LinkWorkspaceOidcIdentity Connect the signed-in account to its identity at this workspace's provider
+	// (POST /workspaces/{workspaceId}/sso/oidc/link)
+	LinkWorkspaceOidcIdentity(ctx context.Context, request LinkWorkspaceOidcIdentityRequestObject) (LinkWorkspaceOidcIdentityResponseObject, error)
 	// TestWorkspaceOidcConnection Start a real round trip to the provider that records verification
 	// (POST /workspaces/{workspaceId}/sso/oidc/test)
 	TestWorkspaceOidcConnection(ctx context.Context, request TestWorkspaceOidcConnectionRequestObject) (TestWorkspaceOidcConnectionResponseObject, error)
@@ -39256,6 +39395,32 @@ func (sh *strictHandler) DiscoverOidcEndpoints(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DiscoverOidcEndpointsResponseObject); ok {
 		if err := validResponse.VisitDiscoverOidcEndpointsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// LinkWorkspaceOidcIdentity operation middleware
+func (sh *strictHandler) LinkWorkspaceOidcIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request LinkWorkspaceOidcIdentityRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LinkWorkspaceOidcIdentity(ctx, request.(LinkWorkspaceOidcIdentityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LinkWorkspaceOidcIdentity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LinkWorkspaceOidcIdentityResponseObject); ok {
+		if err := validResponse.VisitLinkWorkspaceOidcIdentityResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

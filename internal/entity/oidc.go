@@ -161,6 +161,7 @@ func ValidateClaims(claims OIDCClaims) error {
 type OIDCState struct {
 	Purpose     SSOPurpose
 	WorkspaceID uuid.UUID
+	AccountID   uuid.UUID
 	Nonce       string
 	Verifier    string
 	ReturnTo    string
