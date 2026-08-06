@@ -39,7 +39,7 @@
 		type TriageListing,
 		type TriageSource,
 	} from "$lib/triage/triage";
-	import type { Issue } from "$lib/issues/issues";
+	import type { Issue, IssueCandidate } from "$lib/issues/issues";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { triagePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -57,7 +57,7 @@
 	let flow = $state<"accept" | "decline" | "merge" | null>(null);
 	let reason = $state<TriageDeclineReason | null>(null);
 	let note = $state("");
-	let duplicateOf = $state<Issue | null>(null);
+	let duplicateOf = $state<IssueCandidate | null>(null);
 	let notice = $state("");
 	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
 	let announcement = $state("");

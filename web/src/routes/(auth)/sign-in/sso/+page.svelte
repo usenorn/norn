@@ -7,6 +7,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import InstanceLine from "$lib/components/norn/instance-line.svelte";
+	import { api } from "$lib/api";
 	import { workspaceEntrySchema } from "$lib/auth/workspace-entry-schema";
 	import { reachWorkspaceSignIn, ssoEntryPoint, workspaceSlug } from "$lib/auth/workspace-sign-in";
 	import type { PageProps } from "./$types";
@@ -35,7 +36,7 @@
 				return;
 			}
 
-			const entry = await reachWorkspaceSignIn(fetch, page.url, slug);
+			const entry = await reachWorkspaceSignIn(api, slug);
 
 			if (entry.kind !== "ready") {
 				setError(

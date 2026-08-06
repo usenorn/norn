@@ -20,6 +20,8 @@ export type Task = {
 	cycle: string | null;
 };
 
+export type TaskBucket = { key: string; label: string; emphasis: boolean; tasks: Task[] };
+
 export const priorityLabels: Record<TaskPriority, string> = {
 	urgent: "Urgent",
 	high: "High",

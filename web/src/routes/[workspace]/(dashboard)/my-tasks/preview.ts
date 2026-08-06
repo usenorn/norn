@@ -1,6 +1,4 @@
-import type { Task } from "$lib/tasks/types";
-
-export type TaskBucket = { key: string; label: string; emphasis: boolean; tasks: Task[] };
+import type { TaskBucket } from "$lib/tasks/types";
 
 export type MyTasksPreview = { buckets: TaskBucket[] };
 

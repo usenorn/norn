@@ -44,6 +44,7 @@
 	"dependencies": {
 		"isomorphic-dompurify": "^3.21.0",
 		"marked": "^18.0.7",
-		"openapi-fetch": "^0.17.0"
+		"openapi-fetch": "^0.17.0",
+		"set-cookie-parser": "^3.1.2"
 	}
 }

@@ -1,4 +1,4 @@
-import type { NotificationSettingsPanel } from "./+page";
+import type { NotificationSettingsPanel } from "./+page.server";
 
 export type NotificationSettingsPreview = { panel: NotificationSettingsPanel; saved?: boolean };
 

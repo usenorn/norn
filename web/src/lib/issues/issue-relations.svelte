@@ -7,7 +7,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import { relationKinds, relationHeading, type IssueRelationGroup } from "$lib/issues/issues";
-	import type { Issue, IssueRelationKind } from "$lib/issues/issues";
+	import type { Issue, IssueCandidate, IssueRelationKind } from "$lib/issues/issues";
 
 	let {
 		issue,
@@ -20,7 +20,7 @@
 	}: {
 		issue: Issue;
 		groups: IssueRelationGroup[];
-		candidates: Issue[];
+		candidates: IssueCandidate[];
 		at: (path: string) => string;
 		working?: boolean;
 		onadd: (kind: IssueRelationKind, counterpartId: string, closeDuplicate: boolean) => void;

@@ -6,7 +6,7 @@ import type {
 import type { ActivityFeed } from "$lib/activity/activity";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type { UploadTask } from "$lib/attachments/upload";
-import type { IssueDetail } from "./+page";
+import type { IssueDetail } from "./+page.server";
 
 export type IssueDetailPreview = { detail: IssueDetail };
 

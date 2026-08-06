@@ -9,19 +9,19 @@
 	import TaskRow from "$lib/components/norn/task-row.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { workspacePath } from "$lib/workspace/navigation";
-	import { myTasksPreviewStates, type TaskBucket } from "./preview";
+	import type { TaskBucket } from "$lib/tasks/types";
+	import { myTasksPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();
 
 	const preview = $derived(
 		import.meta.env.DEV
-			? (myTasksPreviewStates[page.url.searchParams.get("state") ?? "default"] ??
-					myTasksPreviewStates.default)
+			? myTasksPreviewStates[page.url.searchParams.get("state") ?? ""]
 			: undefined
 	);
 
-	const buckets = $derived<TaskBucket[]>(preview?.buckets ?? []);
+	const buckets = $derived<TaskBucket[]>(preview?.buckets ?? data.buckets);
 	const total = $derived(buckets.reduce((sum, bucket) => sum + bucket.tasks.length, 0));
 
 	let cursor = $state(0);
