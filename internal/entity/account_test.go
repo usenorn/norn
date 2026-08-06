@@ -100,6 +100,31 @@ func TestValidateEmail(t *testing.T) {
 	}
 }
 
+func TestValidateWorkEmail(t *testing.T) {
+	cases := []struct {
+		name  string
+		email string
+		code  string
+	}{
+		{"company domain", "ada@northwind.co", ""},
+		{"company domain that merely contains a provider name", "ada@gmailer.co", ""},
+		{"subdomain of a company domain", "ada@mail.northwind.co", ""},
+		{"gmail", "ada@gmail.com", entity.ValidationCodePersonalEmail},
+		{"yahoo on a country domain", "ada@yahoo.co.uk", entity.ValidationCodePersonalEmail},
+		{"proton", "ada@proton.me", entity.ValidationCodePersonalEmail},
+		{"mixed case", "Ada@ICloud.com", entity.ValidationCodePersonalEmail},
+		{"malformed is still malformed", "ada.gmail.com", entity.ValidationCodeMalformed},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := entity.ValidateWorkEmail("email", c.email).Code; got != c.code {
+				t.Errorf("ValidateWorkEmail(%q) code = %q, want %q", c.email, got, c.code)
+			}
+		})
+	}
+}
+
 func TestValidateDisplayName(t *testing.T) {
 	cases := []struct {
 		name  string

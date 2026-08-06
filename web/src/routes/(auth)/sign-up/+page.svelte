@@ -18,12 +18,14 @@
 	import { emailMessage, passwordMessage } from "$lib/auth/password-reset";
 	import {
 		displayNameMessage,
+		personalEmail,
 		signUpFailure,
 		signUpSent,
 		type SignUpProblem,
 	} from "$lib/auth/sign-up";
 	import { minPasswordLength, signUpSchema, type SignUpInput } from "$lib/auth/sign-up-schema";
 	import type { SignUpOutcome, SignUpResend } from "$lib/auth/types";
+	import { atClock } from "$lib/time";
 	import { signUpPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -113,7 +115,8 @@
 	});
 
 	const busy = $derived(preview?.busy || $submitting || resending);
-	const valid = $derived(signUpSchema.safeParse($formData).success);
+	const blocked = $derived(personalEmail($formData.email));
+	const valid = $derived(!blocked && signUpSchema.safeParse($formData).success);
 
 	const verification = $derived(
 		outcome?.kind === "verification_sent" || outcome?.kind === "link_only" ? outcome : null
@@ -192,7 +195,7 @@
 					: ssoDomain
 						? "Your domain is already set up with an identity provider."
 						: busy
-							? "Checking the address and reserving your account."
+							? "Checking the address and reserving your workspace."
 							: "Free for up to 10 people. You name your workspace next."
 	);
 
@@ -219,6 +222,22 @@
 				icon: CircleAlert,
 				title: "An account already exists for this email",
 				body: "Sign in instead, or reset the password from the sign-in screen.",
+			};
+		}
+		if (blocked) {
+			return {
+				variant: "muted" as const,
+				icon: Info,
+				title: "Norn needs a work email",
+				body: "Personal addresses cannot start a workspace. Use the address your team uses.",
+			};
+		}
+		if (outcome?.kind === "undeliverable") {
+			return {
+				variant: "destructive" as const,
+				icon: TriangleAlert,
+				title: "Could not create the account",
+				body: "Email delivery is down, so the confirmation link cannot be sent. Nothing was created.",
 			};
 		}
 		if (outcome?.kind === "rate_limited") {
@@ -248,11 +267,21 @@
 		return null;
 	});
 
+	const facts = $derived(
+		verification
+			? [
+					["sent to", verification.email],
+					["sent at", `${atClock(verification.requestedAt, "UTC")} UTC`],
+					["expires", `${atClock(verification.expiresAt, "UTC")} UTC · one use`],
+				]
+			: []
+	);
+
 	const passwordRules = $derived.by(() => {
 		const password = $formData.password;
 		const confirm = $formData.passwordConfirm;
 		const longEnough = password.length >= minPasswordLength;
-		return [
+		const rules = [
 			{
 				met: longEnough,
 				label:
@@ -261,8 +290,13 @@
 						: `At least ${minPasswordLength} characters`,
 			},
 			{ met: longEnough && confirm.length > 0 && password === confirm, label: "Both fields match" },
-			{ met: false, label: "Checked against known breaches on submit" },
 		];
+
+		if (auth.breachCheck) {
+			rules.push({ met: false, label: "Checked against known breaches on submit" });
+		}
+
+		return rules;
 	});
 
 	const action = $derived.by(() => {
@@ -277,11 +311,10 @@
 			return { label: "Sign in instead", href: "/sign-in", onclick: null };
 		}
 		if (verification) {
-			return {
-				label: busy ? "Sending" : "Send another link",
-				href: null,
-				onclick: resendLink,
-			};
+			return { label: "I have confirmed, continue", href: "/create-workspace", onclick: null };
+		}
+		if (outcome?.kind === "undeliverable") {
+			return { label: "Try again", href: null, onclick: null };
 		}
 		return {
 			label: busy ? "Creating account" : "Create account",
@@ -303,8 +336,8 @@
 
 	const note = $derived(
 		verification
-			? "Opening the link creates your account and signs you in."
-			: showForm && !outcome && !busy && !valid
+			? "The link opens the workspace step."
+			: showForm && !notice && !busy && !valid
 				? "A workspace is created for you. You can invite people right after."
 				: null
 	);
@@ -314,12 +347,16 @@
 
 <div class="my-auto flex w-full flex-col items-center gap-4">
 	<div class="notch w-full max-w-98">
-		<div class="flex flex-col gap-4 p-5 sm:p-6">
+		<div class="flex flex-col gap-4.5 p-6.5 pb-5.5">
 			<div class="flex flex-col gap-1.5">
 				{#if eyebrow}
 					<Eyebrow>{eyebrow}</Eyebrow>
 				{/if}
-				<h1 bind:this={heading} tabindex="-1" class="text-2xl font-medium tracking-title text-ink-900">
+				<h1
+					bind:this={heading}
+					tabindex="-1"
+					class="text-2xl font-medium tracking-title text-ink-900 focus:outline-none"
+				>
 					{title}
 				</h1>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
@@ -358,7 +395,7 @@
 			{#if verification}
 				<div class="flex flex-col gap-3">
 					<dl class="flex flex-col gap-1 rounded-lg border border-line-strong bg-paper-0 px-3 py-2.5">
-						{#each [["sent to", verification.email], ["expires", verification.expiresAt]] as [key, value] (key)}
+						{#each facts as [key, value] (key)}
 							<div class="flex gap-2 font-mono text-xs leading-normal">
 								<dt class="w-18 flex-none text-muted-foreground">{key}</dt>
 								<dd class="min-w-0 flex-1 break-all text-ink-600">{value}</dd>
@@ -392,6 +429,14 @@
 							class="text-link hover:text-link-hover hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 						>
 							Start again
+						</button>. Nothing arrived?
+						<button
+							type="button"
+							onclick={resendLink}
+							disabled={busy}
+							class="text-link hover:text-link-hover hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-40"
+						>
+							{resending ? "Sending" : "Send another link"}
 						</button>.
 					</p>
 				</div>
@@ -428,13 +473,16 @@
 									spellcheck="false"
 									placeholder="you@company.com"
 									disabled={busy}
+									aria-invalid={blocked ? "true" : undefined}
 									bind:value={$formData.email}
 								/>
 							{/snippet}
 						</Form.Control>
-						<Form.Description class="text-sm text-muted-foreground">
-							Used for sign-in and notifications.
-						</Form.Description>
+						{#if !blocked}
+							<Form.Description class="text-sm text-muted-foreground">
+								Used for sign-in and notifications.
+							</Form.Description>
+						{/if}
 						<Form.FieldErrors />
 					</Form.Field>
 
@@ -497,11 +545,16 @@
 					<Form.Field {form} name="terms">
 						<Form.Control>
 							{#snippet children({ props })}
-								<div class="flex items-start gap-2">
-									<Checkbox {...props} disabled={busy} bind:checked={$formData.terms} />
-									<Form.Label
-										class="font-sans text-sm leading-normal tracking-normal text-ink-600 normal-case text-pretty"
-									>
+								<label
+									class="flex cursor-pointer items-start gap-2.25 text-sm leading-normal text-ink-600 text-pretty"
+								>
+									<Checkbox
+										{...props}
+										bind:checked={$formData.terms}
+										disabled={busy}
+										class="mt-px flex-none"
+									/>
+									<span>
 										I agree to the
 										<a href="/terms" class="text-link hover:text-link-hover hover:underline">
 											terms of service
@@ -510,8 +563,8 @@
 										<a href="/privacy" class="text-link hover:text-link-hover hover:underline">
 											privacy notice
 										</a>.
-									</Form.Label>
-								</div>
+									</span>
+								</label>
 							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
@@ -519,7 +572,7 @@
 				</form>
 			{/if}
 
-			<div class="flex flex-col gap-2">
+			<div class="flex flex-col gap-2.5">
 				{#if action.href}
 					<Button href={action.href} class="w-full">{action.label}</Button>
 				{:else if action.onclick}

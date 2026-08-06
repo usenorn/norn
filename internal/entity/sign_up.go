@@ -22,6 +22,7 @@ var (
 	ErrSignUpAlreadyConfirmed = errors.New("sign-up link already used")
 	ErrSignUpTokenInvalid     = errors.New("sign-up token is invalid")
 	ErrSignUpsClosed          = errors.New("this instance does not accept sign-ups")
+	ErrSignUpUndeliverable    = errors.New("sign-up verification link could not be sent")
 )
 
 type SignUpDelivery string

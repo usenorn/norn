@@ -41,6 +41,7 @@ type handler struct {
 	licensing      service.Licensing
 	app            config.App
 	instance       config.Instance
+	password       config.Password
 	session        config.Session
 }
 
@@ -72,6 +73,7 @@ func New(
 	licensing service.Licensing,
 	app config.App,
 	instance config.Instance,
+	password config.Password,
 	session config.Session,
 ) api.StrictServerInterface {
 	return &handler{
@@ -102,6 +104,7 @@ func New(
 		licensing:      licensing,
 		app:            app,
 		instance:       instance,
+		password:       password,
 		session:        session,
 	}
 }
@@ -114,6 +117,7 @@ func (h *handler) GetInstance(_ context.Context, _ api.GetInstanceRequestObject)
 	return api.GetInstance200JSONResponse{
 		SignupsOpen: h.instance.SignupsOpen,
 		Password:    h.instance.PasswordAuth,
+		BreachCheck: h.password.BreachCheckEnabled,
 		SelfHosted:  h.instance.SelfHosted,
 		Host:        h.app.Host(),
 		Version:     h.app.Version,

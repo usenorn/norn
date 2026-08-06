@@ -200,6 +200,72 @@ func TestSigningUpWithATakenAddressIsRefusedBeforeAnythingIsStored(t *testing.T)
 	}
 }
 
+func TestSigningUpWithAPersonalAddressIsRefusedBeforeAnythingIsStored(t *testing.T) {
+	h := newHarness(t)
+
+	h.expectAddressAllowed()
+
+	input := signUpInput()
+	input.Email = "rae@gmail.com"
+
+	_, err := h.service.RequestSignUp(context.Background(), input)
+
+	var validation entity.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("RequestSignUp error = %v, want a validation error", err)
+	}
+
+	if len(validation.Fields) != 1 || validation.Fields[0] != (entity.FieldError{
+		Field: "email",
+		Code:  entity.ValidationCodePersonalEmail,
+	}) {
+		t.Fatalf("fields = %v, want email: %s", validation.Fields, entity.ValidationCodePersonalEmail)
+	}
+}
+
+func TestASignUpThatCannotBeMailedSaysSoRatherThanLookingSent(t *testing.T) {
+	h := newHarness(t)
+
+	var stored entity.SignUp
+
+	h.expectAddressAllowed()
+	h.expectAddressFree()
+	h.breaches.EXPECT().Compromised(gomock.Any(), signUpPassword).Return(false, nil)
+	h.expectSignUpStored(&stored)
+	h.producer.EXPECT().
+		EnqueueSignUpVerification(gomock.Any(), gomock.Any()).
+		Return(errors.New("the queue is unreachable"))
+
+	if _, err := h.service.RequestSignUp(context.Background(), signUpInput()); !errors.Is(err, entity.ErrSignUpUndeliverable) {
+		t.Fatalf("RequestSignUp error = %v, want %v", err, entity.ErrSignUpUndeliverable)
+	}
+}
+
+func TestARequestedSignUpCarriesWhenItWasAskedForAndWhenItLapses(t *testing.T) {
+	h := newHarness(t)
+
+	var stored entity.SignUp
+
+	h.expectAddressAllowed()
+	h.expectAddressFree()
+	h.breaches.EXPECT().Compromised(gomock.Any(), signUpPassword).Return(false, nil)
+	h.expectSignUpStored(&stored)
+	h.producer.EXPECT().EnqueueSignUpVerification(gomock.Any(), gomock.Any()).Return(nil)
+
+	requested, err := h.service.RequestSignUp(context.Background(), signUpInput())
+	if err != nil {
+		t.Fatalf("RequestSignUp: %v", err)
+	}
+
+	if !requested.RequestedAt.Equal(stored.RequestedAt) {
+		t.Fatalf("requested at = %s, want the stored %s", requested.RequestedAt, stored.RequestedAt)
+	}
+
+	if !requested.ExpiresAt.Equal(stored.ExpiresAt) {
+		t.Fatalf("expires at = %s, want the stored %s", requested.ExpiresAt, stored.ExpiresAt)
+	}
+}
+
 func TestSigningUpIsRefusedWhenTheInstanceHasSignUpsClosed(t *testing.T) {
 	h := newHarness(t)
 	svc := newServiceWithInstance(h, config.Instance{SignupsOpen: false, PasswordAuth: true})

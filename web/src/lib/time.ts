@@ -19,6 +19,10 @@ export function onDateAndTime(instant: string, timezone: string): string {
 	});
 }
 
+export function atClock(instant: string, timezone: string): string {
+	return parts(instant, timezone, { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
 export function onMonth(instant: string, timezone: string): string {
 	return parts(instant, timezone, { year: "numeric", month: "short" });
 }

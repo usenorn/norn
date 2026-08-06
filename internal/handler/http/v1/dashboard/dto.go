@@ -314,9 +314,10 @@ func invitationPreviewDTO(preview service.InvitationPreview) api.InvitationPrevi
 
 func signUpRequestedDTO(requested service.RequestedSignUp) api.SignUpRequested {
 	dto := api.SignUpRequested{
-		Email:     requested.Email,
-		Delivery:  api.SignUpDelivery(requested.Delivery),
-		ExpiresAt: requested.ExpiresAt,
+		Email:       requested.Email,
+		Delivery:    api.SignUpDelivery(requested.Delivery),
+		RequestedAt: requested.RequestedAt,
+		ExpiresAt:   requested.ExpiresAt,
 	}
 
 	if requested.URL != "" {

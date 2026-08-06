@@ -10,6 +10,7 @@ const (
 	ValidationCodeTooShort         = "too_short"
 	ValidationCodeTooLong          = "too_long"
 	ValidationCodeMalformed        = "malformed"
+	ValidationCodePersonalEmail    = "personal_email"
 	ValidationCodeUnknownTimezone  = "unknown_timezone"
 	ValidationCodeUnsupportedValue = "unsupported_value"
 	ValidationCodeOutOfRange       = "out_of_range"
