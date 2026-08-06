@@ -13,12 +13,27 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 )
 
+// created_at_recorded is written from the row the import made rather than left to the
+// column default. now() is the transaction's start time, and the rows of that same
+// transaction were stamped from a Go clock read after it began, so a defaulted ledger row
+// is always a shade earlier than everything it names — and every one of them then reads as
+// edited-since to a revert. The default stays for rows recorded without a timestamp.
 const recordLedgerQuery = `
 INSERT INTO workspace_import_ledger (
-    run_id, workspace_id, resource, created_id, external_id, reference, version_at_create
+    run_id, workspace_id, resource, created_id, external_id, reference, version_at_create,
+    created_at_recorded
 )
-SELECT $1, unnest($2::uuid[]), unnest($3::text[]), unnest($4::uuid[]), unnest($5::text[]),
-       unnest($6::text[]), unnest($7::integer[])
+SELECT $1, d.workspace_id, d.resource, d.created_id, d.external_id, d.reference,
+       d.version_at_create, coalesce(d.created_at_recorded, now())
+FROM (
+    SELECT unnest($2::uuid[]) AS workspace_id,
+           unnest($3::text[]) AS resource,
+           unnest($4::uuid[]) AS created_id,
+           unnest($5::text[]) AS external_id,
+           unnest($6::text[]) AS reference,
+           unnest($7::integer[]) AS version_at_create,
+           unnest($8::timestamptz[]) AS created_at_recorded
+) d
 ON CONFLICT (run_id, resource, created_id) DO NOTHING`
 
 const walkLedgerQuery = `
@@ -83,6 +98,7 @@ func (r *ledgerRepository) Record(
 	externalIDs := make([]string, 0, len(entries))
 	references := make([]string, 0, len(entries))
 	versions := make([]int, 0, len(entries))
+	stamps := make([]*time.Time, 0, len(entries))
 
 	for _, entry := range entries {
 		workspaces = append(workspaces, entry.WorkspaceID.String())
@@ -91,18 +107,29 @@ func (r *ledgerRepository) Record(
 		externalIDs = append(externalIDs, entry.ExternalID)
 		references = append(references, entry.Reference)
 		versions = append(versions, entry.VersionAtCreate)
+		stamps = append(stamps, stampOf(entry))
 	}
 
 	if _, err := r.db.Querier(ctx).ExecContext(
 		ctx,
 		recordLedgerQuery,
 		runID.String(),
-		workspaces, resources, created, externalIDs, references, versions,
+		workspaces, resources, created, externalIDs, references, versions, stamps,
 	); err != nil {
 		return fmt.Errorf("record import ledger entries: %w", err)
 	}
 
 	return nil
+}
+
+func stampOf(entry entity.ImportLedgerEntry) *time.Time {
+	if entry.CreatedAtRecorded.IsZero() {
+		return nil
+	}
+
+	stamped := entry.CreatedAtRecorded.UTC()
+
+	return &stamped
 }
 
 func (r *ledgerRepository) Walk(

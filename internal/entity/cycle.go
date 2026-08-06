@@ -16,14 +16,15 @@ const (
 )
 
 var (
-	ErrCycleNotFound         = errors.New("cycle not found")
-	ErrCycleClosed           = errors.New("cycle is closed")
-	ErrCycleOverlaps         = errors.New("cycle overlaps another cycle in this team")
-	ErrCycleTeamMismatch     = errors.New("cycle belongs to another team")
-	ErrCycleRolloverRequired = errors.New("cycle has unfinished issues and no rollover decision")
-	ErrCycleNotEnded         = errors.New("cycle has not ended yet")
-	ErrCycleCadenceNotFound  = errors.New("team does not use cycles")
-	ErrCycleNoNextCycle      = errors.New("team has no later cycle to move issues to")
+	ErrCycleNotFound             = errors.New("cycle not found")
+	ErrCycleClosed               = errors.New("cycle is closed")
+	ErrCycleCreateRequiresOrigin = errors.New("cycle creation is reserved for an import")
+	ErrCycleOverlaps             = errors.New("cycle overlaps another cycle in this team")
+	ErrCycleTeamMismatch         = errors.New("cycle belongs to another team")
+	ErrCycleRolloverRequired     = errors.New("cycle has unfinished issues and no rollover decision")
+	ErrCycleNotEnded             = errors.New("cycle has not ended yet")
+	ErrCycleCadenceNotFound      = errors.New("team does not use cycles")
+	ErrCycleNoNextCycle          = errors.New("team has no later cycle to move issues to")
 )
 
 type CyclePhase string
@@ -68,6 +69,7 @@ type Cycle struct {
 	Rollover          CycleRollover
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
+	Origin            *ImportOrigin
 }
 
 func (c Cycle) Closed() bool {
@@ -141,6 +143,36 @@ func ValidateCycleWeekday(weekday int) error {
 	}
 
 	return nil
+}
+
+func ValidateCycleDate(field, date string) FieldError {
+	if date == "" {
+		return FieldError{Field: field, Code: ValidationCodeRequired}
+	}
+
+	if _, err := time.Parse(time.DateOnly, date); err != nil {
+		return FieldError{Field: field, Code: ValidationCodeMalformed}
+	}
+
+	return FieldError{}
+}
+
+func ValidateCycleWindow(startsOn, endsOn string) FieldError {
+	start, err := time.Parse(time.DateOnly, startsOn)
+	if err != nil {
+		return FieldError{}
+	}
+
+	end, err := time.Parse(time.DateOnly, endsOn)
+	if err != nil {
+		return FieldError{}
+	}
+
+	if end.Before(start) {
+		return FieldError{Field: "endsOn", Code: ValidationCodeOutOfRange}
+	}
+
+	return FieldError{}
 }
 
 func NextWeekdayOnOrAfter(date string, weekday time.Weekday) (string, error) {

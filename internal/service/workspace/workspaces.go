@@ -343,6 +343,10 @@ func (s *workspacesService) Purge(ctx context.Context, workspaceID uuid.UUID) er
 			return err
 		}
 
+		if err := s.blobs.RemoveAll(ctx, entity.ImportBlobPrefix(workspaceID)); err != nil {
+			return err
+		}
+
 		return s.workspaces.Purge(ctx, workspaceID)
 	}); err != nil {
 		return err

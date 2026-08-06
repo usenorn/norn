@@ -64,7 +64,12 @@ func (s *importsService) RunStage(ctx context.Context, payload entity.ImportStag
 		return s.fail(ctx, run.ID, err)
 	}
 
-	pause, err := s.fetchWhileLeased(ctx, run, token, source)
+	config, err := s.sourceConfig(ctx, run.ID)
+	if err != nil {
+		return s.fail(ctx, run.ID, err)
+	}
+
+	pause, err := s.fetchWhileLeased(ctx, run, token, source, config)
 	if err != nil {
 		return s.settleStaging(ctx, run, token, err)
 	}
@@ -82,11 +87,24 @@ type stagingPause struct {
 	rateLimited bool
 }
 
+func (s *importsService) sourceConfig(
+	ctx context.Context,
+	runID uuid.UUID,
+) (service.ImportSourceConfig, error) {
+	held, err := s.runs.SourceConfigForStaging(ctx, runID)
+	if err != nil {
+		return service.ImportSourceConfig{}, err
+	}
+
+	return service.ImportSourceConfig{Secret: held.Secret, Settings: held.Settings}, nil
+}
+
 func (s *importsService) fetchWhileLeased(
 	ctx context.Context,
 	run entity.ImportRun,
 	token uuid.UUID,
 	source service.ImportSource,
+	config service.ImportSourceConfig,
 ) (*stagingPause, error) {
 	reached, err := s.cursors.List(ctx, run.ID)
 	if err != nil {
@@ -131,6 +149,7 @@ func (s *importsService) fetchWhileLeased(
 				Resource: resource,
 				Cursor:   cursor.Cursor,
 				PageHint: s.cfg.PageSize,
+				Config:   config,
 			})
 			if err != nil {
 				var limited entity.ImportRateLimitedError
@@ -164,7 +183,14 @@ func (s *importsService) fetchWhileLeased(
 				return nil, err
 			}
 
-			if err := s.recordPage(ctx, run, cursor, append(staging, linked...)); err != nil {
+			marked, err := embedLinks(run.ID, staging)
+			if err != nil {
+				return nil, err
+			}
+
+			derived := append(append(staging, linked...), marked...)
+
+			if err := s.recordPage(ctx, run, cursor, derived); err != nil {
 				return nil, err
 			}
 		}
@@ -273,6 +299,61 @@ func parentLinks(runID uuid.UUID, records []entity.ImportRecord) ([]entity.Impor
 	}
 
 	return links, nil
+}
+
+// embedLinks turns the inline files a page carries into the rewrite each of their bodies
+// needs, so that the phase which puts a stored path into a description exists without an
+// adapter having to send the same fact twice. The record is addressed by the row whose body
+// holds the markers rather than by any one file, which is both why a row with three pictures
+// is one rewrite and why a page read again upserts onto the record it already derived.
+func embedLinks(runID uuid.UUID, records []entity.ImportRecord) ([]entity.ImportRecord, error) {
+	order := make([]string, 0, len(records))
+	held := make(map[string]service.ImportEmbedPayload, len(records))
+
+	for _, record := range records {
+		if record.Resource != entity.ImportAttachment {
+			continue
+		}
+
+		payload, err := decodePayload[service.ImportAttachmentPayload](record)
+		if err != nil {
+			return nil, err
+		}
+
+		if !payload.Inline {
+			continue
+		}
+
+		owner := named(payload.Comment, payload.Issue)
+
+		embed, derived := held[owner]
+		if !derived {
+			order = append(order, owner)
+			embed = service.ImportEmbedPayload{Issue: payload.Issue, Comment: payload.Comment}
+		}
+
+		embed.Attachments = append(embed.Attachments, record.ExternalID)
+		held[owner] = embed
+	}
+
+	marked := make([]entity.ImportRecord, 0, len(order))
+
+	for _, owner := range order {
+		payload, err := json.Marshal(held[owner])
+		if err != nil {
+			return nil, fmt.Errorf("encode embed for %q: %w", owner, err)
+		}
+
+		marked = append(marked, entity.ImportRecord{
+			RunID:      runID,
+			Resource:   entity.ImportEmbed,
+			ExternalID: owner,
+			Payload:    payload,
+			State:      entity.ImportRecordStaged,
+		})
+	}
+
+	return marked, nil
 }
 
 func addressed(

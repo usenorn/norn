@@ -16,6 +16,7 @@ type CreateIssueInput struct {
 	Estimate          int
 	DueOn             string
 	StateID           uuid.UUID
+	CycleID           uuid.UUID
 	ProjectID         uuid.UUID
 	LabelIDs          []uuid.UUID
 	Origin            *entity.ImportOrigin

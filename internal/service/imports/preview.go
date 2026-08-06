@@ -18,9 +18,41 @@ const (
 	reasonAlreadyHere    = "mapped onto something this workspace already has"
 	reasonLeftBehind     = "this source concept was marked to be left behind"
 	reasonIssueMissing   = "the issue this belongs to was not imported"
-	reasonCycleDropped   = "cycles are generated on a team's own cadence and cannot be back-dated, " +
-		"so this issue arrives without the one its source recorded"
+	reasonCommentMissing = "the comment this belongs to was not imported"
+	reasonEmbedUnstored  = "the file this points at was not stored, " +
+		"so the body still names where it came from"
+	reasonEmbedUnmarked    = "the body no longer points at this file"
+	reasonCycleNameDropped = "a cycle here is known by its number rather than a name, " +
+		"so the name the source gave this one is not carried"
+	reasonCycleRenumbered = "cycles here are numbered in the order the team runs them, " +
+		"so this one is renumbered rather than keeping the number the source gave it"
+
+	referenceState    = "workflow state"
+	referenceProject  = "project"
+	referenceCycle    = "cycle"
+	referenceLabel    = "label"
+	referenceAssignee = "assignee"
 )
+
+func unknownAssignee(plan entity.MappingPlan, person service.ImportUser) bool {
+	if !person.Named() {
+		return false
+	}
+
+	mapping, found := plan.Lookup(entity.ImportMapUser, person.Key)
+	if !found {
+		return false
+	}
+
+	switch mapping.Decision {
+	case entity.ImportDecisionCreate:
+		return true
+	case entity.ImportDecisionMap:
+		return mapping.TargetID == uuid.Nil
+	default:
+		return false
+	}
+}
 
 type sourceChoice struct {
 	decision entity.ImportDecision
@@ -53,20 +85,38 @@ func personNamed(person service.ImportUser) string {
 }
 
 type previewWalk struct {
-	plan    entity.MappingPlan
-	scope   entity.TeamScope
-	log     *recorder
-	targets map[uuid.UUID]bool
-	carried map[string]string
+	plan     entity.MappingPlan
+	scope    entity.TeamScope
+	policy   entity.ImportUnknownPolicy
+	log      *recorder
+	targets  map[uuid.UUID]bool
+	carried  map[string]string
+	states   map[string]bool
+	projects map[string]bool
+	labels   map[string]bool
+	cycles   map[string]bool
+	said     map[string]bool
+	files    map[string]bool
 }
 
-func newPreviewWalk(plan entity.MappingPlan, scope entity.TeamScope) *previewWalk {
+func newPreviewWalk(
+	plan entity.MappingPlan,
+	scope entity.TeamScope,
+	policy entity.ImportUnknownPolicy,
+) *previewWalk {
 	return &previewWalk{
-		plan:    plan,
-		scope:   scope,
-		log:     newRecorder(entity.ImportPhaseExecute),
-		targets: make(map[uuid.UUID]bool),
-		carried: make(map[string]string),
+		plan:     plan,
+		scope:    scope,
+		policy:   policy,
+		log:      newRecorder(entity.ImportPhaseExecute),
+		targets:  make(map[uuid.UUID]bool),
+		carried:  make(map[string]string),
+		states:   make(map[string]bool),
+		projects: make(map[string]bool),
+		labels:   make(map[string]bool),
+		cycles:   make(map[string]bool),
+		said:     make(map[string]bool),
+		files:    make(map[string]bool),
 	}
 }
 
@@ -102,6 +152,8 @@ func (w *previewWalk) consider(record entity.ImportRecord) error {
 		return w.label(record)
 	case entity.ImportProject:
 		return w.project(record)
+	case entity.ImportCycle:
+		return w.cycle(record)
 	case entity.ImportIssue:
 		return w.issue(record)
 	case entity.ImportIssueParent:
@@ -110,6 +162,10 @@ func (w *previewWalk) consider(record entity.ImportRecord) error {
 		return w.relation(record)
 	case entity.ImportComment:
 		return w.comment(record)
+	case entity.ImportAttachment:
+		return w.attachment(record)
+	case entity.ImportEmbed:
+		return w.embed(record)
 	default:
 		return nil
 	}
@@ -160,6 +216,8 @@ func (w *previewWalk) state(record entity.ImportRecord) error {
 	case entity.ImportDecisionMap:
 		w.log.skipped(record.Resource, record.ExternalID, payload.Name, reasonAlreadyHere)
 	default:
+		w.states[record.ExternalID] = true
+
 		w.created(record, payload.Name)
 
 		if !entity.StateCategory(payload.Category).Valid() {
@@ -204,6 +262,8 @@ func (w *previewWalk) label(record entity.ImportRecord) error {
 	case entity.ImportDecisionMap:
 		w.log.skipped(record.Resource, record.ExternalID, payload.Name, reasonAlreadyHere)
 	default:
+		w.labels[record.ExternalID] = true
+
 		w.created(record, payload.Name)
 
 		nearest := string(entity.NearestLabelColor(payload.Color))
@@ -231,6 +291,8 @@ func (w *previewWalk) project(record entity.ImportRecord) error {
 	case entity.ImportDecisionMap:
 		w.log.skipped(record.Resource, record.ExternalID, subject, reasonAlreadyHere)
 	default:
+		w.projects[record.ExternalID] = true
+
 		w.created(record, subject)
 		w.attribution(record, subject, payload.Lead)
 	}
@@ -238,17 +300,56 @@ func (w *previewWalk) project(record entity.ImportRecord) error {
 	return nil
 }
 
+func (w *previewWalk) cycle(record entity.ImportRecord) error {
+	payload, err := decodePayload[service.ImportCyclePayload](record)
+	if err != nil {
+		return err
+	}
+
+	subject := cycleNamed(payload)
+
+	if _, refused := w.teamReachable(payload.Team); refused != "" {
+		w.log.skipped(record.Resource, record.ExternalID, subject, refused)
+
+		return nil
+	}
+
+	w.cycles[record.ExternalID] = true
+
+	w.created(record, subject)
+
+	if strings.TrimSpace(payload.Name) != "" {
+		w.log.dropped(record.Resource, record.ExternalID, subject, reasonCycleNameDropped)
+	}
+
+	if payload.Number != 0 {
+		w.log.dropped(record.Resource, record.ExternalID, subject, reasonCycleRenumbered)
+	}
+
+	return nil
+}
+
+// attribution reports every person a row would arrive without, once each. Both ends are
+// named because a row arriving with nobody on it is the loss the mapping stage exists to make
+// deliberate, and a source that names only an assignee — a file of rows usually does — would
+// otherwise drop that person with the report saying nothing at all.
 func (w *previewWalk) attribution(
 	record entity.ImportRecord,
 	subject string,
-	person service.ImportUser,
+	people ...service.ImportUser,
 ) {
-	if !person.Named() {
-		return
-	}
+	said := make(map[string]bool, len(people))
 
-	if w.unattributed(person.Key) {
-		w.log.unattributed(record.Resource, record.ExternalID, subject, personNamed(person))
+	for _, person := range people {
+		if !person.Named() || said[person.Key] {
+			continue
+		}
+
+		said[person.Key] = true
+
+		if w.unattributed(person.Key) {
+			w.log.unattributed(record.Resource, record.ExternalID, subject, personNamed(person))
+		}
 	}
 }
 
@@ -264,11 +365,33 @@ func (w *previewWalk) issue(record entity.ImportRecord) error {
 		return err
 	}
 
+	if payload.Defect != "" {
+		w.log.skipped(record.Resource, record.ExternalID, payload.Title, payload.Defect)
+
+		return nil
+	}
+
 	targetID, refused := w.teamReachable(payload.Team)
 	if refused != "" {
 		w.log.skipped(record.Resource, record.ExternalID, payload.Title, refused)
 
 		return nil
+	}
+
+	lost := w.unknownIn(payload)
+
+	if len(lost) > 0 {
+		switch w.policy {
+		case entity.ImportUnknownSkip:
+			w.log.skipped(record.Resource, record.ExternalID, payload.Title, lost[0].Error())
+
+			return nil
+
+		case entity.ImportUnknownFail:
+			w.log.failed(record.Resource, record.ExternalID, payload.Title, lost[0].Error())
+
+			return nil
+		}
 	}
 
 	w.carried[record.ExternalID] = payload.Title
@@ -278,13 +401,66 @@ func (w *previewWalk) issue(record entity.ImportRecord) error {
 		w.targets[targetID] = true
 	}
 
-	w.attribution(record, payload.Title, payload.Author)
-
-	if strings.TrimSpace(payload.Cycle) != "" {
-		w.log.dropped(record.Resource, record.ExternalID, payload.Title, reasonCycleDropped)
+	for _, unknown := range lost {
+		w.log.dropped(record.Resource, record.ExternalID, payload.Title, unknown.Error())
 	}
 
+	w.attribution(record, payload.Title, payload.Author, payload.Assignee)
+
 	return nil
+}
+
+func (w *previewWalk) unknownIn(
+	payload service.ImportIssuePayload,
+) []entity.ImportUnknownReferenceError {
+	lost := make([]entity.ImportUnknownReferenceError, 0, len(payload.Labels))
+
+	lost = w.unresolved(lost, entity.ImportMapState, w.states, referenceState, payload.State)
+	lost = w.unresolved(lost, entity.ImportMapProject, w.projects, referenceProject, payload.Project)
+
+	if key := strings.TrimSpace(payload.Cycle); key != "" && !w.cycles[key] {
+		lost = append(lost, entity.ImportUnknownReferenceError{
+			Kind: referenceCycle, Reference: key,
+		})
+	}
+
+	if unknownAssignee(w.plan, payload.Assignee) {
+		lost = append(lost, entity.ImportUnknownReferenceError{
+			Kind: referenceAssignee, Reference: payload.Assignee.Key,
+		})
+	}
+
+	for _, key := range payload.Labels {
+		lost = w.unresolved(lost, entity.ImportMapLabel, w.labels, referenceLabel, key)
+	}
+
+	return lost
+}
+
+func (w *previewWalk) unresolved(
+	lost []entity.ImportUnknownReferenceError,
+	kind entity.ImportMappingKind,
+	made map[string]bool,
+	names, key string,
+) []entity.ImportUnknownReferenceError {
+	if strings.TrimSpace(key) == "" || w.plan.Skips(kind, key) {
+		return lost
+	}
+
+	if mapping, found := w.plan.Lookup(kind, key); found &&
+		mapping.Decision == entity.ImportDecisionMap {
+		if mapping.TargetID != uuid.Nil {
+			return lost
+		}
+
+		return append(lost, entity.ImportUnknownReferenceError{Kind: names, Reference: key})
+	}
+
+	if made[key] {
+		return lost
+	}
+
+	return append(lost, entity.ImportUnknownReferenceError{Kind: names, Reference: key})
 }
 
 func (w *previewWalk) parent(record entity.ImportRecord) error {
@@ -344,8 +520,68 @@ func (w *previewWalk) comment(record entity.ImportRecord) error {
 		return nil
 	}
 
+	w.said[record.ExternalID] = true
+
 	w.created(record, payload.Body)
 	w.attribution(record, payload.Body, payload.Author)
+
+	return nil
+}
+
+func (w *previewWalk) attachment(record entity.ImportRecord) error {
+	payload, err := decodePayload[service.ImportAttachmentPayload](record)
+	if err != nil {
+		return err
+	}
+
+	subject := named(payload.FileName, payload.SourceURL)
+
+	if _, carried := w.carried[payload.Issue]; !carried {
+		w.log.skipped(record.Resource, record.ExternalID, subject, reasonIssueMissing)
+
+		return nil
+	}
+
+	if key := strings.TrimSpace(payload.Comment); key != "" && !w.said[key] {
+		w.log.skipped(record.Resource, record.ExternalID, subject, reasonCommentMissing)
+
+		return nil
+	}
+
+	w.files[record.ExternalID] = true
+
+	w.created(record, subject)
+
+	return nil
+}
+
+func (w *previewWalk) embed(record entity.ImportRecord) error {
+	payload, err := decodePayload[service.ImportEmbedPayload](record)
+	if err != nil {
+		return err
+	}
+
+	subject := strings.Join(payload.Attachments, ", ")
+
+	placed := 0
+
+	for _, key := range payload.Attachments {
+		if w.files[key] {
+			placed++
+		}
+	}
+
+	if placed == 0 {
+		w.log.skipped(record.Resource, record.ExternalID, subject, reasonEmbedUnstored)
+
+		return nil
+	}
+
+	w.created(record, subject)
+
+	if placed < len(payload.Attachments) {
+		w.log.dropped(record.Resource, record.ExternalID, subject, reasonEmbedUnstored)
+	}
 
 	return nil
 }
@@ -404,7 +640,11 @@ func (s *importsService) Preview(
 		return entity.ImportPreview{}, err
 	}
 
-	walk := newPreviewWalk(entity.MappingPlan{Mappings: saved}, decision.Scope)
+	walk := newPreviewWalk(
+		entity.MappingPlan{Mappings: saved},
+		decision.Scope,
+		run.UnknownReferences.Or(entity.ImportUnknownSkip),
+	)
 
 	for _, resource := range entity.ImportPhases() {
 		if err := s.eachRecord(ctx, run.ID, resource, walk.consider); err != nil {

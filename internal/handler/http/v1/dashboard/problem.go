@@ -309,6 +309,56 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	var wouldTriage entity.ImportWouldTriageError
+	if errors.As(err, &wouldTriage) {
+		problem := importConflictProblem(api.ImportWouldTriage, wouldTriage)
+
+		body, ok := problem.body.(api.ImportConflictProblem)
+		if ok {
+			teams := wouldTriage.Teams
+			body.Teams = &teams
+			problem.body = body
+		}
+
+		return problem, true
+	}
+
+	var sourceRefused entity.ImportSourceRefusedError
+	if errors.As(err, &sourceRefused) {
+		base := baseProblem(http.StatusBadGateway, sourceRefused.Error())
+
+		return problemResponse{
+			status: http.StatusBadGateway,
+			body: api.ImportSourceRefusedProblem{
+				Code:     api.ImportSourceRefusedProblemCodeImportSourceRefused,
+				Reason:   nilIfEmpty(sourceRefused.Reason),
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+	}
+
+	var throttled entity.ImportRateLimitedError
+	if errors.As(err, &throttled) {
+		base := baseProblem(http.StatusTooManyRequests, throttled.Error())
+
+		return problemResponse{
+			status: http.StatusTooManyRequests,
+			body: api.RateLimitedProblem{
+				Code:     api.RateLimited,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+			retryAfter: int(throttled.RetryAfter.Seconds()),
+		}, true
+	}
+
 	switch {
 	case errors.Is(err, entity.ErrIssueAlreadyOnTeam):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueAlreadyOnTeam, err), true
@@ -731,6 +781,47 @@ func problemFor(err error) (problemResponse, bool) {
 			},
 		}, true
 
+	case errors.Is(err, entity.ErrImportRunNotFound),
+		errors.Is(err, entity.ErrImportSourceUnknown):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrImportStatusTransition):
+		return importConflictProblem(api.ImportStatusTransition, err), true
+
+	case errors.Is(err, entity.ErrImportRunLeased):
+		return importConflictProblem(api.ImportRunLeased, err), true
+
+	case errors.Is(err, entity.ErrImportNotRevertible):
+		return importConflictProblem(api.ImportNotRevertible, err), true
+
+	case errors.Is(err, entity.ErrImportPreviewStale):
+		return importConflictProblem(api.ImportPreviewStale, err), true
+
+	case errors.Is(err, entity.ErrImportUnmapped),
+		errors.Is(err, entity.ErrImportPreviewRequired),
+		errors.Is(err, entity.ErrImportMappingNotMember),
+		errors.Is(err, entity.ErrImportMappingUnknownKind),
+		errors.Is(err, entity.ErrImportCursorInvalid):
+		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
+
+	case errors.Is(err, entity.ErrImportTeamMappingRequired):
+		return newProblem(http.StatusForbidden, err.Error()), true
+
+	case errors.Is(err, entity.ErrImportEncryptionKeyMissing):
+		base := baseProblem(http.StatusServiceUnavailable, err.Error())
+
+		return problemResponse{
+			status: http.StatusServiceUnavailable,
+			body: api.ImportSigningUnavailableProblem{
+				Code:     api.ImportSigningUnavailableProblemCodeImportSigningUnavailable,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
 	case errors.Is(err, entity.ErrLabelNameTaken):
 		return labelConflictProblem(api.LabelNameTaken, err), true
 
@@ -836,6 +927,22 @@ func teamConflictProblem(code api.TeamConflictProblemCode, err error) problemRes
 	return problemResponse{
 		status: http.StatusConflict,
 		body: api.TeamConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func importConflictProblem(code api.ImportConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.ImportConflictProblem{
 			Code:     code,
 			Detail:   base.Detail,
 			Instance: base.Instance,
@@ -1815,5 +1922,61 @@ func (r problemResponse) VisitClearWorkspaceTeamNotificationSettingsResponse(w h
 }
 
 func (r problemResponse) VisitSearchWorkspaceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListImportSourcesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceImportsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceImportResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceImportResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitConfigureWorkspaceImportResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceImportCatalogueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitStageWorkspaceImportResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDecideWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitPreviewWorkspaceImportResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitExecuteWorkspaceImportResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRevertWorkspaceImportResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceImportReportResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

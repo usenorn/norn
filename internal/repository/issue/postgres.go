@@ -88,11 +88,11 @@ WITH allocated AS (
     INSERT INTO workspace_issues (
         id, workspace_id, team_id, reference_key, number, title, state_id,
         created_by_account_id, description, priority, assignee_account_id,
-        estimate, due_on, project_id, triage_state, triage_source, created_at, updated_at
+        estimate, due_on, cycle_id, project_id, triage_state, triage_source, created_at, updated_at
     )
     SELECT $1, $2, $3, t.key, allocated.number, $4, $5, $6,
            $8, $9, nullif($10, '')::uuid, nullif($11, 0), nullif($12, '')::date,
-           nullif($15, '')::uuid, nullif($13, ''), nullif($14, ''), $7, $16
+           nullif($17, '')::uuid, nullif($15, '')::uuid, nullif($13, ''), nullif($14, ''), $7, $16
     FROM allocated
     JOIN workspace_teams t ON t.id = $3
     RETURNING id, workspace_id, team_id, reference_key, number, title, state_id,
@@ -218,6 +218,12 @@ WHERE i.id = s.id`
 const purgeIssueQuery = `
 DELETE FROM workspace_issues
 WHERE id = $1 AND status = 'pending_deletion' AND purge_after <= $2`
+
+const purgeImportedIssuesQuery = `
+DELETE FROM workspace_issues
+WHERE workspace_id = $1
+  AND id = ANY($2::uuid[])
+  AND status = 'active'`
 
 const stampLabelsQuery = `
 UPDATE workspace_issues
@@ -566,6 +572,7 @@ func (r *issueRepository) Create(ctx context.Context, issue entity.Issue) (entit
 		string(issue.TriageSource),
 		text(issue.ProjectID),
 		updatedAt,
+		text(issue.CycleID),
 	))
 	if err != nil {
 		if translated := translateWriteError(err); !errors.Is(translated, err) {
@@ -1107,6 +1114,43 @@ func (r *issueRepository) Purge(ctx context.Context, issueID uuid.UUID, due time
 	}
 
 	return nil
+}
+
+// PurgeImported is the revert's own delete, and it exists because Purge cannot serve it:
+// Purge finishes the delayed deletion a person asked for, so it refuses anything that is
+// not already soft-deleted with its grace period spent. An imported row was never
+// soft-deleted and has no purge deadline, and putting one through the grace period instead
+// would leave a reverted import as thousands of issues pending deletion for a month. The
+// ledger has already named these rows and the caller has already proven they are untouched,
+// so the only guard left here is the one a caller cannot check without racing: an issue
+// somebody has since archived or queued for deletion is no longer the import's to remove.
+func (r *issueRepository) PurgeImported(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	ids []uuid.UUID,
+) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+
+	raw := make([]string, 0, len(ids))
+	for _, id := range ids {
+		raw = append(raw, id.String())
+	}
+
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx, purgeImportedIssuesQuery, workspaceID.String(), raw,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("purge imported issues: %w", err)
+	}
+
+	purged, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("read purged imported issue count: %w", err)
+	}
+
+	return int(purged), nil
 }
 
 func (r *issueRepository) StampLabels(

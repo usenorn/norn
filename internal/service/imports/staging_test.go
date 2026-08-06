@@ -73,7 +73,7 @@ func TestEveryPageAStagingSliceReadsIsSavedBeforeItAsksForTheNext(t *testing.T) 
 		)
 	}
 
-	carried := source.fetchedCount() + source.parentedCount()
+	carried := source.fetchedCount() + source.parentedCount() + source.embeddedCount()
 
 	if len(h.world.records) != carried {
 		t.Errorf("staged %d records, want %d", len(h.world.records), carried)

@@ -463,3 +463,255 @@ func TestNavigationFallsBackToTheNextCycleWhenNoneIsRunning(t *testing.T) {
 		t.Errorf("the cycle is labelled %q, want upcoming", current[0].View.Phase)
 	}
 }
+
+func importOrigin() entity.ImportOrigin {
+	created := time.Date(2023, time.March, 6, 8, 0, 0, 0, time.UTC)
+
+	return entity.NewImportOrigin(created, created.AddDate(0, 0, 20), uuid.New())
+}
+
+func TestCreatingACycleWithoutAnAttributedOriginIsRefused(t *testing.T) {
+	decoded := entity.ImportOrigin{
+		CreatedAt:       time.Date(2023, time.March, 6, 8, 0, 0, 0, time.UTC),
+		UpdatedAt:       time.Date(2023, time.March, 26, 8, 0, 0, 0, time.UTC),
+		AuthorAccountID: uuid.New(),
+	}
+
+	cases := map[string]*entity.ImportOrigin{
+		"no origin":                          nil,
+		"an origin filled in from a request": &decoded,
+	}
+
+	for name, origin := range cases {
+		t.Run(name, func(t *testing.T) {
+			h := newHarness(t)
+			h.allowAnything()
+
+			h.cycles.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(_ context.Context, cycle entity.Cycle) (entity.Cycle, error) {
+					return cycle, nil
+				}).
+				AnyTimes()
+
+			_, err := h.service.Create(context.Background(), service.CreateCycleInput{
+				WorkspaceID: h.workspaceID,
+				TeamID:      h.teamID,
+				Number:      1,
+				StartsOn:    "2023-03-06",
+				EndsOn:      "2023-03-19",
+				Origin:      origin,
+			})
+
+			if !errors.Is(err, entity.ErrCycleCreateRequiresOrigin) {
+				t.Fatalf(
+					"creating a cycle with %s returned %v, want ErrCycleCreateRequiresOrigin; cycles "+
+						"are generated from a cadence, and this method exists only so an import can "+
+						"carry finished ones across",
+					name, err,
+				)
+			}
+		})
+	}
+}
+
+func TestAnImportedCycleReachesTheStoreClosedAndDatedFromItsSource(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	origin := importOrigin()
+	closedAt := time.Date(2023, time.March, 20, 17, 0, 0, 0, time.UTC)
+
+	var captured entity.Cycle
+
+	h.cycles.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, cycle entity.Cycle) (entity.Cycle, error) {
+			captured = cycle
+			cycle.ID = uuid.New()
+
+			return cycle, nil
+		})
+
+	view, err := h.service.Create(context.Background(), service.CreateCycleInput{
+		WorkspaceID: h.workspaceID,
+		TeamID:      h.teamID,
+		Number:      7,
+		StartsOn:    "2023-03-06",
+		EndsOn:      "2023-03-19",
+		ClosedAt:    &closedAt,
+		Origin:      &origin,
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if captured.Number != 7 || captured.StartsOn != "2023-03-06" || captured.EndsOn != "2023-03-19" {
+		t.Errorf(
+			"cycle %d ran %s to %s, want cycle 7 running 2023-03-06 to 2023-03-19",
+			captured.Number, captured.StartsOn, captured.EndsOn,
+		)
+	}
+
+	if captured.ClosedAt == nil || !captured.ClosedAt.Equal(closedAt) {
+		t.Fatalf(
+			"the cycle reached the store closed at %v, want %v; an imported cycle left open becomes "+
+				"the team's current cycle on every dashboard",
+			captured.ClosedAt, closedAt,
+		)
+	}
+
+	gotCreated, gotUpdated := entity.OriginStamp(captured.Origin, time.Now().UTC())
+
+	if !gotCreated.Equal(origin.CreatedAt) || !gotUpdated.Equal(origin.UpdatedAt) {
+		t.Errorf(
+			"stamp = (%v, %v), want (%v, %v); without the origin the row is dated the moment the "+
+				"import ran",
+			gotCreated, gotUpdated, origin.CreatedAt, origin.UpdatedAt,
+		)
+	}
+
+	if view.Phase != entity.CyclePhaseClosed {
+		t.Errorf("the imported cycle is shown as %q, want closed", view.Phase)
+	}
+}
+
+func TestAnImportedCycleWithoutANumberContinuesTheTeamsNumbering(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	origin := importOrigin()
+
+	h.cycles.EXPECT().HighestNumber(gomock.Any(), h.teamID).Return(12, nil)
+
+	var captured entity.Cycle
+
+	h.cycles.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, cycle entity.Cycle) (entity.Cycle, error) {
+			captured = cycle
+
+			return cycle, nil
+		})
+
+	if _, err := h.service.Create(context.Background(), service.CreateCycleInput{
+		WorkspaceID: h.workspaceID,
+		TeamID:      h.teamID,
+		StartsOn:    "2023-03-06",
+		EndsOn:      "2023-03-19",
+		Origin:      &origin,
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if captured.Number != 13 {
+		t.Fatalf(
+			"the imported cycle was numbered %d, want 13; a team that already generates cycles has "+
+				"the source's 1..N taken, and the unique (team_id, number) index refuses the second one",
+			captured.Number,
+		)
+	}
+}
+
+func TestACycleEndingBeforeItStartsIsRefused(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	origin := importOrigin()
+
+	h.cycles.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, cycle entity.Cycle) (entity.Cycle, error) {
+			return cycle, nil
+		}).
+		AnyTimes()
+
+	_, err := h.service.Create(context.Background(), service.CreateCycleInput{
+		WorkspaceID: h.workspaceID,
+		TeamID:      h.teamID,
+		Number:      1,
+		StartsOn:    "2023-03-19",
+		EndsOn:      "2023-03-06",
+		Origin:      &origin,
+	})
+
+	var validation entity.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf(
+			"an inverted window returned %v, want a ValidationError naming endsOn; the table's "+
+				"window check would otherwise refuse it as an opaque write failure",
+			err,
+		)
+	}
+}
+
+func TestOnlyAClosingDateKeepsAnImportedCycleOutOfTheCurrentSlot(t *testing.T) {
+	historicalStart, historicalEnd := "2023-03-06", "2023-03-19"
+
+	current := func(t *testing.T, historical entity.Cycle) []service.TeamCycle {
+		t.Helper()
+
+		h := newHarness(t)
+		h.allowAnything()
+
+		historical.ID = uuid.New()
+		historical.WorkspaceID = h.workspaceID
+		historical.TeamID = h.teamID
+		running := h.cycle(40, yesterday(), entity.Today(time.Now().UTC().AddDate(0, 0, 12), "UTC"))
+
+		h.cadences.EXPECT().ListByWorkspaceID(gomock.Any(), h.workspaceID).
+			Return([]entity.CycleCadence{{
+				TeamID:      h.teamID,
+				WorkspaceID: h.workspaceID,
+				LengthWeeks: 2,
+				AnchorOn:    running.StartsOn,
+			}}, nil)
+		h.cycles.EXPECT().ListVisible(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return([]entity.Cycle{historical, running}, nil)
+
+		views, err := h.service.Current(context.Background(), h.workspaceID)
+		if err != nil {
+			t.Fatalf("Current: %v", err)
+		}
+
+		if len(views) != 1 {
+			t.Fatalf("the team showed %d cycles, want exactly one", len(views))
+		}
+
+		return views
+	}
+
+	t.Run("closed, so the running cycle is the one on show", func(t *testing.T) {
+		closedAt := time.Date(2023, time.March, 20, 17, 0, 0, 0, time.UTC)
+		views := current(t, entity.Cycle{
+			Number:   1,
+			StartsOn: historicalStart,
+			EndsOn:   historicalEnd,
+			ClosedAt: &closedAt,
+		})
+
+		if views[0].View.Cycle.StartsOn == historicalStart {
+			t.Fatal(
+				"the 2023 cycle is on show even though it is closed; Current must reach the cycle " +
+					"the team is actually working in",
+			)
+		}
+	})
+
+	t.Run("left open, so it takes the slot from the running cycle", func(t *testing.T) {
+		views := current(t, entity.Cycle{
+			Number:   1,
+			StartsOn: historicalStart,
+			EndsOn:   historicalEnd,
+		})
+
+		if views[0].View.Cycle.StartsOn != historicalStart {
+			t.Fatalf(
+				"an imported cycle from %s with no closed_at was not the one on show; this test "+
+					"pins why the import must write closed_at — such a cycle is phase %q, which is "+
+					"what Current picks first, so it would sit on the team's dashboard forever",
+				historicalStart, entity.CyclePhaseEnded,
+			)
+		}
+	})
+}

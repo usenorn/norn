@@ -21,6 +21,16 @@ type TeamCycle struct {
 	View   CycleView
 }
 
+type CreateCycleInput struct {
+	WorkspaceID uuid.UUID
+	TeamID      uuid.UUID
+	Number      int
+	StartsOn    string
+	EndsOn      string
+	ClosedAt    *time.Time
+	Origin      *entity.ImportOrigin
+}
+
 type ListCyclesInput struct {
 	TeamID *uuid.UUID
 	Phase  entity.CyclePhase
@@ -56,6 +66,7 @@ type Cycles interface {
 	Cadence(ctx context.Context, workspaceID, teamID uuid.UUID) (CadenceView, error)
 	SetCadence(ctx context.Context, workspaceID, teamID uuid.UUID, input SetCadenceInput) (CadenceView, error)
 	DisableCadence(ctx context.Context, workspaceID, teamID uuid.UUID) error
+	Create(ctx context.Context, input CreateCycleInput) (CycleView, error)
 	List(ctx context.Context, workspaceID uuid.UUID, input ListCyclesInput) ([]CycleView, error)
 	Get(ctx context.Context, workspaceID, cycleID uuid.UUID) (CycleView, error)
 	Current(ctx context.Context, workspaceID uuid.UUID) ([]TeamCycle, error)

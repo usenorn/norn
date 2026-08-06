@@ -20,20 +20,137 @@ type applied struct {
 	states   []service.CreateWorkflowStateInput
 	labels   []service.CreateLabelInput
 	projects []service.CreateProjectInput
+	cycles   []service.CreateCycleInput
 	issues   []service.CreateIssueInput
 	comments []service.PostCommentInput
-	held     map[uuid.UUID]entity.Issue
+	files    []service.AdoptAttachmentInput
+
+	held   map[uuid.UUID]entity.Issue
+	said   map[uuid.UUID]entity.IssueComment
+	stored map[uuid.UUID]entity.Attachment
+
+	standingTeams     map[string]entity.Team
+	standingStates    map[uuid.UUID]entity.WorkflowState
+	standingGroups    map[uuid.UUID]entity.LabelGroup
+	standingLabels    map[uuid.UUID]entity.Label
+	standingProjects  map[uuid.UUID]entity.Project
+	standingCycles    map[uuid.UUID]entity.Cycle
+	standingRelations map[uuid.UUID]entity.IssueRelation
+
+	purged []uuid.UUID
+	refuse error
+}
+
+// The refusals below are the ones a workspace produces by already holding something: every one
+// of them reaches the apply path as a translated unique or exclusion violation, and every one
+// of them is a statement Postgres has rejected, so the transaction carrying it is aborted from
+// that point on. A workspace with anything in it, or a source imported twice, produces them on
+// ordinary data.
+func (s *applied) refuseTeam(key string) error {
+	if _, standing := s.standingTeams[key]; standing {
+		return entity.ErrTeamKeyTaken
+	}
+
+	return nil
+}
+
+func (s *applied) refuseState(teamID uuid.UUID, name string) error {
+	for _, standing := range s.standingStates {
+		if standing.TeamID == teamID && standing.Name == name {
+			return entity.ErrWorkflowStateNameTaken
+		}
+	}
+
+	return nil
+}
+
+func (s *applied) refuseGroup(name string) error {
+	for _, standing := range s.standingGroups {
+		if standing.Name == name {
+			return entity.ErrLabelGroupNameTaken
+		}
+	}
+
+	return nil
+}
+
+func (s *applied) refuseLabel(teamID uuid.UUID, name string) error {
+	for _, standing := range s.standingLabels {
+		if standing.TeamID == teamID && standing.Name == name {
+			return entity.ErrLabelNameTaken
+		}
+	}
+
+	return nil
+}
+
+func (s *applied) refuseProject(slug string) error {
+	if slug == "" {
+		return nil
+	}
+
+	for _, standing := range s.standingProjects {
+		if standing.Slug == slug {
+			return entity.ErrProjectSlugTaken
+		}
+	}
+
+	return nil
+}
+
+func (s *applied) refuseCycle(teamID uuid.UUID, startsOn, endsOn string) error {
+	for _, standing := range s.standingCycles {
+		if standing.TeamID == teamID && standing.StartsOn <= endsOn && startsOn <= standing.EndsOn {
+			return entity.ErrCycleOverlaps
+		}
+	}
+
+	return nil
+}
+
+// rowStamp is what every repository does to a row on the way in, and the fakes here have to
+// do the same: a row carries the source's dates when the origin is attributed and the clock
+// read inside the transaction when it is not. A fake that leaves a created row's timestamps
+// at zero can never notice a ledger entry that dates itself rather than the row it names.
+func rowStamp(origin *entity.ImportOrigin) (time.Time, time.Time) {
+	return entity.OriginStamp(origin, time.Now().UTC())
 }
 
 func applying(h *harness, team entity.Team) *applied {
-	made := &applied{held: map[uuid.UUID]entity.Issue{}}
+	return applyingInto(h, team, newWorkspace())
+}
 
+func newWorkspace() *applied {
+	return &applied{
+		held:              map[uuid.UUID]entity.Issue{},
+		said:              map[uuid.UUID]entity.IssueComment{},
+		stored:            map[uuid.UUID]entity.Attachment{},
+		standingTeams:     map[string]entity.Team{},
+		standingStates:    map[uuid.UUID]entity.WorkflowState{},
+		standingGroups:    map[uuid.UUID]entity.LabelGroup{},
+		standingLabels:    map[uuid.UUID]entity.Label{},
+		standingProjects:  map[uuid.UUID]entity.Project{},
+		standingCycles:    map[uuid.UUID]entity.Cycle{},
+		standingRelations: map[uuid.UUID]entity.IssueRelation{},
+	}
+}
+
+func applyingInto(h *harness, team entity.Team, made *applied) *applied {
 	h.teamWriter.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, input service.CreateTeamInput) (entity.Team, error) {
+			if err := h.statement(made.refuseTeam(input.Key)); err != nil {
+				return entity.Team{}, err
+			}
+
 			made.teams = append(made.teams, input)
 
-			return team, nil
+			standing := team
+			standing.CreatedAt, standing.UpdatedAt = rowStamp(nil)
+
+			made.standingTeams[input.Key] = standing
+
+			return standing, nil
 		}).
 		AnyTimes()
 
@@ -43,42 +160,120 @@ func applying(h *harness, team entity.Team) *applied {
 			_ context.Context,
 			input service.CreateWorkflowStateInput,
 		) (entity.WorkflowState, error) {
+			if err := h.statement(made.refuseState(input.TeamID, input.Name)); err != nil {
+				return entity.WorkflowState{}, err
+			}
+
 			made.states = append(made.states, input)
 
-			return entity.WorkflowState{ID: uuid.New(), Name: input.Name, TeamID: input.TeamID}, nil
+			state := entity.WorkflowState{
+				ID: uuid.New(), Name: input.Name, TeamID: input.TeamID, Category: input.Category,
+			}
+			state.CreatedAt, state.UpdatedAt = rowStamp(input.Origin)
+
+			made.standingStates[state.ID] = state
+
+			return state, nil
 		}).
 		AnyTimes()
 
 	h.labelWriter.EXPECT().
 		CreateGroup(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ uuid.UUID, name string) (entity.LabelGroup, error) {
-			return entity.LabelGroup{ID: uuid.New(), Name: name}, nil
+		DoAndReturn(func(_ context.Context, workspaceID uuid.UUID, name string) (entity.LabelGroup, error) {
+			if err := h.statement(made.refuseGroup(name)); err != nil {
+				return entity.LabelGroup{}, err
+			}
+
+			group := entity.LabelGroup{ID: uuid.New(), WorkspaceID: workspaceID, Name: name}
+			group.CreatedAt, group.UpdatedAt = rowStamp(nil)
+
+			made.standingGroups[group.ID] = group
+
+			return group, nil
 		}).
 		AnyTimes()
 
 	h.labelWriter.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, input service.CreateLabelInput) (entity.Label, error) {
+			if err := h.statement(made.refuseLabel(input.TeamID, input.Name)); err != nil {
+				return entity.Label{}, err
+			}
+
 			made.labels = append(made.labels, input)
 
-			return entity.Label{ID: uuid.New(), Name: input.Name, Color: input.Color}, nil
+			label := entity.Label{
+				ID: uuid.New(), WorkspaceID: input.WorkspaceID, TeamID: input.TeamID,
+				GroupID: input.GroupID, Name: input.Name, Color: input.Color, Origin: input.Origin,
+			}
+			label.CreatedAt, label.UpdatedAt = rowStamp(input.Origin)
+
+			made.standingLabels[label.ID] = label
+
+			return label, nil
 		}).
 		AnyTimes()
 
 	h.projectWriter.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, input service.CreateProjectInput) (service.ProjectView, error) {
+			if err := h.statement(made.refuseProject(input.Slug)); err != nil {
+				return service.ProjectView{}, err
+			}
+
 			made.projects = append(made.projects, input)
 
-			return service.ProjectView{Project: entity.Project{
-				ID: uuid.New(), Slug: input.Slug, Name: input.Name,
-			}}, nil
+			project := entity.Project{
+				ID: uuid.New(), WorkspaceID: input.WorkspaceID, Slug: input.Slug, Name: input.Name,
+			}
+			project.CreatedAt, project.UpdatedAt = rowStamp(input.Origin)
+
+			made.standingProjects[project.ID] = project
+
+			return service.ProjectView{Project: project}, nil
+		}).
+		AnyTimes()
+
+	h.cycleWriter.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, input service.CreateCycleInput) (service.CycleView, error) {
+			if !entity.OriginAttributed(input.Origin) {
+				return service.CycleView{}, entity.ErrCycleCreateRequiresOrigin
+			}
+
+			refusal := made.refuseCycle(input.TeamID, input.StartsOn, input.EndsOn)
+
+			if err := h.statement(refusal); err != nil {
+				return service.CycleView{}, err
+			}
+
+			made.cycles = append(made.cycles, input)
+
+			cycle := entity.Cycle{
+				ID:          uuid.New(),
+				WorkspaceID: input.WorkspaceID,
+				TeamID:      input.TeamID,
+				TeamKey:     team.Key,
+				Number:      len(made.cycles),
+				StartsOn:    input.StartsOn,
+				EndsOn:      input.EndsOn,
+				ClosedAt:    input.ClosedAt,
+			}
+			cycle.CreatedAt, cycle.UpdatedAt = rowStamp(input.Origin)
+
+			made.standingCycles[cycle.ID] = cycle
+
+			return service.CycleView{Cycle: cycle, Phase: entity.CyclePhaseEnded}, nil
 		}).
 		AnyTimes()
 
 	h.issueWriter.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, input service.CreateIssueInput) (entity.Issue, error) {
+			if err := h.statement(nil); err != nil {
+				return entity.Issue{}, err
+			}
+
 			made.issues = append(made.issues, input)
 
 			issue := entity.Issue{
@@ -89,8 +284,14 @@ func applying(h *harness, team entity.Team) *applied {
 				Number:       len(made.issues),
 				Version:      1,
 				Title:        input.Title,
+				Description:  input.Description,
 				Status:       entity.IssueStatusActive,
+				State:        entity.IssueState{ID: input.StateID},
+				CycleID:      input.CycleID,
+				ProjectID:    input.ProjectID,
+				Labels:       wearing(input.LabelIDs),
 			}
+			issue.CreatedAt, issue.UpdatedAt = rowStamp(input.Origin)
 
 			made.held[issue.ID] = issue
 
@@ -105,12 +306,146 @@ func applying(h *harness, team entity.Team) *applied {
 			_, issueID uuid.UUID,
 			input service.SetIssueParentInput,
 		) (entity.Issue, error) {
+			if err := h.statement(nil); err != nil {
+				return entity.Issue{}, err
+			}
+
 			issue := made.held[issueID]
 			issue.Version++
 			issue.ParentIssueID = *input.ParentID
+			issue.UpdatedAt = time.Now().UTC()
 			made.held[issueID] = issue
 
 			return issue, nil
+		}).
+		AnyTimes()
+
+	h.issueWriter.EXPECT().
+		Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_, issueID uuid.UUID,
+			input service.UpdateIssueInput,
+		) (entity.Issue, error) {
+			issue := made.held[issueID]
+
+			if input.ExpectedVersion != issue.Version {
+				return entity.Issue{}, entity.IssueStaleError{
+					Version:   issue.Version,
+					Conflicts: []string{entity.IssueFieldDescription},
+				}
+			}
+
+			if input.Description != nil {
+				issue.Description = *input.Description
+			}
+
+			issue.Version++
+			issue.UpdatedAt = time.Now().UTC()
+			made.held[issueID] = issue
+
+			h.followed("rewrite " + issue.Reference())
+
+			return issue, nil
+		}).
+		AnyTimes()
+
+	h.fileWriter.EXPECT().
+		Adopt(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			workspaceID, issueID uuid.UUID,
+			input service.AdoptAttachmentInput,
+		) (entity.Attachment, error) {
+			if err := h.statement(made.refuse); err != nil {
+				return entity.Attachment{}, err
+			}
+
+			made.files = append(made.files, input)
+
+			file := entity.Attachment{
+				ID:          uuid.New(),
+				WorkspaceID: workspaceID,
+				IssueID:     issueID,
+				CommentID:   input.CommentID,
+				ObjectKey:   input.ObjectKey,
+				FileName:    input.FileName,
+				ContentType: entity.AttachmentServedType(input.ContentType),
+				SizeBytes:   input.SizeBytes,
+				Status:      entity.AttachmentStatusStored,
+				Origin:      input.Origin,
+			}
+			file.CreatedAt, file.UpdatedAt = rowStamp(input.Origin)
+
+			made.stored[file.ID] = file
+
+			return file, nil
+		}).
+		AnyTimes()
+
+	h.files.EXPECT().
+		GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_, fileID uuid.UUID,
+		) (entity.Attachment, error) {
+			file, kept := made.stored[fileID]
+			if !kept {
+				return entity.Attachment{}, entity.ErrAttachmentNotFound
+			}
+
+			return file, nil
+		}).
+		AnyTimes()
+
+	h.fileWriter.EXPECT().
+		Remove(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _, fileID uuid.UUID) error {
+			h.followed("discard " + made.stored[fileID].FileName)
+
+			delete(made.stored, fileID)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.comments.EXPECT().
+		GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_, commentID uuid.UUID,
+		) (entity.IssueComment, error) {
+			comment, kept := made.said[commentID]
+			if !kept {
+				return entity.IssueComment{}, entity.ErrIssueCommentNotFound
+			}
+
+			return comment, nil
+		}).
+		AnyTimes()
+
+	h.commentWriter.EXPECT().
+		Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_, _, commentID uuid.UUID,
+			input service.EditCommentInput,
+		) (entity.IssueComment, error) {
+			comment := made.said[commentID]
+
+			if !comment.EditableBy(h.run().RequestedByAccount) {
+				return entity.IssueComment{}, entity.ErrIssueCommentNotAuthor
+			}
+
+			edited := time.Now().UTC()
+			comment.Body = input.Body
+			comment.EditedAt = &edited
+			comment.UpdatedAt = edited
+			made.said[commentID] = comment
+
+			h.followed("rewrite comment " + commentID.String())
+
+			return comment, nil
 		}).
 		AnyTimes()
 
@@ -121,7 +456,17 @@ func applying(h *harness, team entity.Team) *applied {
 			_, _ uuid.UUID,
 			input service.AddIssueRelationInput,
 		) (entity.IssueRelation, error) {
-			return entity.IssueRelation{ID: uuid.New(), Kind: input.Kind}, nil
+			if err := h.statement(nil); err != nil {
+				return entity.IssueRelation{}, err
+			}
+
+			relation := entity.IssueRelation{
+				ID: uuid.New(), Kind: input.Kind, CreatedAt: time.Now().UTC(),
+			}
+
+			made.standingRelations[relation.ID] = relation
+
+			return relation, nil
 		}).
 		AnyTimes()
 
@@ -129,12 +474,29 @@ func applying(h *harness, team entity.Team) *applied {
 		Post(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
 			_ context.Context,
-			_, _ uuid.UUID,
+			workspaceID, issueID uuid.UUID,
 			input service.PostCommentInput,
 		) (service.CommentPosted, error) {
+			if err := h.statement(nil); err != nil {
+				return service.CommentPosted{}, err
+			}
+
 			made.comments = append(made.comments, input)
 
-			return service.CommentPosted{Comment: entity.IssueComment{ID: uuid.New(), Body: input.Body}}, nil
+			comment := entity.IssueComment{
+				ID:              uuid.New(),
+				WorkspaceID:     workspaceID,
+				IssueID:         issueID,
+				ParentCommentID: input.ParentCommentID,
+				AuthorAccountID: entity.OriginAuthor(input.Origin, h.run().RequestedByAccount),
+				Body:            input.Body,
+				Origin:          input.Origin,
+			}
+			comment.CreatedAt, comment.UpdatedAt = rowStamp(input.Origin)
+
+			made.said[comment.ID] = comment
+
+			return service.CommentPosted{Comment: comment}, nil
 		}).
 		AnyTimes()
 
@@ -176,27 +538,89 @@ func applying(h *harness, team entity.Team) *applied {
 		}).
 		AnyTimes()
 
+	purging(h, made.held, &made.purged)
+
+	return made
+}
+
+func wearing(labelIDs []uuid.UUID) []entity.Label {
+	worn := make([]entity.Label, 0, len(labelIDs))
+
+	for _, id := range labelIDs {
+		worn = append(worn, entity.Label{ID: id})
+	}
+
+	return worn
+}
+
+// purging answers for both ways out of an issue, because which one the revert reaches for is
+// the whole question. Purge finishes a deletion somebody asked for and its WHERE clause takes
+// only a row already pending deletion with its grace period spent, so an imported issue —
+// active, with no deadline on it — is refused every single time. PurgeImported is the revert's
+// own delete and takes the rows the ledger names, subject to the one thing the database will
+// not do quietly: workspace_issues clears a child's parent on delete and then refuses the
+// child for having a depth with no parent.
+func purging(h *harness, issues map[uuid.UUID]entity.Issue, purged *[]uuid.UUID) {
 	h.issues.EXPECT().
 		Purge(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, issueID uuid.UUID, _ time.Time) error {
-			for _, standing := range made.held {
-				if standing.ParentIssueID == issueID {
-					return fmt.Errorf(
-						"delete issue %s: %s is left at depth with no parent",
-						made.held[issueID].Reference(), standing.Reference(),
-					)
-				}
+			if issues[issueID].Status != entity.IssueStatusPendingDeletion {
+				return entity.ErrIssuePurgeNotDue
 			}
 
-			h.followed("delete " + made.held[issueID].Reference())
+			h.followed("delete " + issues[issueID].Reference())
 
-			delete(made.held, issueID)
+			delete(issues, issueID)
 
 			return nil
 		}).
 		AnyTimes()
 
-	return made
+	h.issues.EXPECT().
+		PurgeImported(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			workspaceID uuid.UUID,
+			ids []uuid.UUID,
+		) (int, error) {
+			if workspaceID != h.run().WorkspaceID {
+				h.t.Errorf(
+					"the revert purged in workspace %s, want %s. A delete this direct is safe only "+
+						"because it is fenced to the workspace the ledger belongs to.",
+					workspaceID, h.run().WorkspaceID,
+				)
+			}
+
+			removed := 0
+
+			for _, id := range ids {
+				issue, standing := issues[id]
+
+				if !standing || issue.Status != entity.IssueStatusActive {
+					continue
+				}
+
+				for _, child := range issues {
+					if child.ParentIssueID == id {
+						return 0, fmt.Errorf(
+							"delete issue %s: %s is left at depth with no parent",
+							issue.Reference(), child.Reference(),
+						)
+					}
+				}
+
+				h.followed("delete " + issue.Reference())
+
+				*purged = append(*purged, id)
+
+				delete(issues, id)
+
+				removed++
+			}
+
+			return removed, nil
+		}).
+		AnyTimes()
 }
 
 func executePayload(h *harness) entity.ImportExecutePayload {
@@ -763,12 +1187,23 @@ func TestAParentTheExportLeftBehindIsSkippedRatherThanFatal(t *testing.T) {
 	}
 }
 
-func TestTheLedgerRemembersTheOrderTheImportBuiltThingsIn(t *testing.T) {
-	h := newHarness(t).backed()
+func (s *applied) issueCreated(t *testing.T, title string) service.CreateIssueInput {
+	t.Helper()
 
-	team := teamNamed("Core")
+	for _, input := range s.issues {
+		if input.Title == title {
+			return input
+		}
+	}
 
-	h.scopedTo(team.ID)
+	t.Fatalf("nothing created an issue titled %q", title)
+
+	return service.CreateIssueInput{}
+}
+
+func importedFully(t *testing.T, h *harness, team entity.Team) *applied {
+	t.Helper()
+
 	h.offering(newStaticSource(t))
 
 	if err := h.runner.RunStage(context.Background(), stagePayload(h)); err != nil {
@@ -780,13 +1215,155 @@ func TestTheLedgerRemembersTheOrderTheImportBuiltThingsIn(t *testing.T) {
 		ida.Key: uuid.New(),
 	}})
 
-	applying(h, team)
+	made := applying(h, team)
 
 	h.at(entity.ImportMapped)
 
 	if err := h.runner.RunExecute(context.Background(), executePayload(h)); err != nil {
 		t.Fatalf("run execute: %v", err)
 	}
+
+	return made
+}
+
+func TestACycleTheSourceRanArrivesWithTheIssueThatWasPlannedIntoIt(t *testing.T) {
+	h := newHarness(t).backed()
+	team := teamNamed("Core")
+
+	h.scopedTo(team.ID)
+
+	made := importedFully(t, h, team)
+
+	if len(made.cycles) != 1 {
+		t.Fatalf("the import created %d cycles, want the one the source ran", len(made.cycles))
+	}
+
+	window := made.cycles[0]
+
+	if window.StartsOn != sourceCycleStartsOn || window.EndsOn != sourceCycleEndsOn {
+		t.Errorf(
+			"the cycle was created over %s → %s, want the source's own %s → %s. The window is the "+
+				"whole of what a cycle is; moved by a day it no longer holds the work that was "+
+				"planned into it.",
+			window.StartsOn, window.EndsOn, sourceCycleStartsOn, sourceCycleEndsOn,
+		)
+	}
+
+	if window.Number != 0 {
+		t.Errorf(
+			"the import asked for cycle number %d. A team numbers its cycles in the order it runs "+
+				"them, so carrying the source's number over collides with the numbers this team "+
+				"already has.",
+			window.Number,
+		)
+	}
+
+	entries := h.ledgerFor(entity.ImportCycle)
+
+	if len(entries) != 1 {
+		t.Fatalf("the ledger holds %d cycles, want the one that was created", len(entries))
+	}
+
+	planned := made.issueCreated(t, "Set the cadence").CycleID
+
+	if planned != entries[0].CreatedID {
+		t.Fatalf(
+			"the issue that belonged to the source's cycle arrived in cycle %v, want the cycle "+
+				"this run made (%v). Carrying the cycle and then filing its issues outside it "+
+				"leaves the team an empty sprint and a backlog it has to replan by hand.",
+			planned, entries[0].CreatedID,
+		)
+	}
+
+	if loose := made.issueCreated(t, "Rework the hub").CycleID; loose != uuid.Nil {
+		t.Errorf("an issue the source left out of every cycle arrived in cycle %v", loose)
+	}
+}
+
+func TestACycleWhoseWindowHasAlreadyRunOutArrivesClosed(t *testing.T) {
+	h := newHarness(t).backed()
+	team := teamNamed("Core")
+
+	h.scopedTo(team.ID)
+
+	made := importedFully(t, h, team)
+
+	if len(made.cycles) != 1 {
+		t.Fatalf("the import created %d cycles, want the one the source ran", len(made.cycles))
+	}
+
+	closed := made.cycles[0].ClosedAt
+
+	if closed == nil {
+		t.Fatalf(
+			"a cycle that ended on %s was created open. A team is shown its current cycle, and an "+
+				"open cycle whose window is in the past answers that question forever: every "+
+				"dashboard on the team would sit on a sprint the source finished, and nothing "+
+				"generated afterwards would ever take its place.",
+			sourceCycleEndsOn,
+		)
+	}
+
+	if entity.FormatCalendarDate(*closed) <= sourceCycleEndsOn {
+		t.Errorf(
+			"the cycle was closed at %s, on or before the last day it covered (%s). Closing it "+
+				"inside its own window reads as a sprint abandoned early rather than one that ran "+
+				"its course.",
+			closed, sourceCycleEndsOn,
+		)
+	}
+}
+
+func TestAnIssueKeepsItsPlaceWhenOnlyItsCycleCannotBeCarried(t *testing.T) {
+	h := newHarness(t).backed().resolving(entity.ImportUnknownCreate)
+	team := teamNamed("Core")
+
+	h.scopedTo(team.ID)
+	h.stage(entity.ImportIssue, fetched(t, sourceIssueCadence, "", service.ImportIssuePayload{
+		Title: "Set the cadence", Team: sourceTeam, Cycle: "cycle-never-exported",
+	}))
+	onlyTheTeamIsDecided(h, team.ID)
+
+	made := applying(h, team)
+
+	h.at(entity.ImportMapped)
+
+	if err := h.runner.RunExecute(context.Background(), executePayload(h)); err != nil {
+		t.Fatalf("run execute: %v", err)
+	}
+
+	if len(made.issues) != 1 {
+		t.Fatalf(
+			"the import created %d issues. An issue is worth more than the cycle it sat in: a "+
+				"cycle the export left behind drops the membership, not the work.",
+			len(made.issues),
+		)
+	}
+
+	if planned := made.issues[0].CycleID; planned != uuid.Nil {
+		t.Errorf("the issue arrived in cycle %v, want no cycle at all", planned)
+	}
+
+	line, found := h.lineOf(entity.ImportIssue, sourceIssueCadence)
+
+	if !found || line.Outcome != entity.ImportOutcomeDropped {
+		t.Fatalf(
+			"the report says %q about an issue that lost its cycle. Nothing else records that it "+
+				"was ever in one, so a line here is the only chance anybody has of noticing before "+
+				"they go looking for a sprint that never came over.",
+			line.Outcome,
+		)
+	}
+}
+
+func TestTheLedgerRemembersTheOrderTheImportBuiltThingsIn(t *testing.T) {
+	h := newHarness(t).backed()
+
+	team := teamNamed("Core")
+
+	h.scopedTo(team.ID)
+
+	importedFully(t, h, team)
 
 	if h.run().Status != entity.ImportImported {
 		t.Fatalf("run ended %q, want imported", h.run().Status)
@@ -832,4 +1409,52 @@ func indexOfPhase(t *testing.T, resource entity.ImportResource) int {
 	t.Fatalf("%q is not a phase", resource)
 
 	return 0
+}
+
+func TestACycleTheSourceNeverDatedIsCarriedFromTheDayItBegan(t *testing.T) {
+	h := newHarness(t).backed()
+	team := teamNamed("Core")
+
+	h.scopedTo(team.ID)
+	h.stage(entity.ImportCycle, entity.ImportRecord{
+		ExternalID: sourceCycle,
+		Payload: payloadOf(t, service.ImportCyclePayload{
+			Team: sourceTeam, StartsOn: sourceCycleStartsOn, EndsOn: sourceCycleEndsOn,
+		}),
+	})
+	onlyTheTeamIsDecided(h, team.ID)
+
+	made := applying(h, team)
+
+	h.at(entity.ImportMapped)
+
+	if err := h.runner.RunExecute(context.Background(), executePayload(h)); err != nil {
+		t.Fatalf("run execute: %v", err)
+	}
+
+	if len(made.cycles) != 1 {
+		t.Fatalf(
+			"a cycle carrying its window but no paperwork was not created. Creating a cycle is "+
+				"reserved for an import and refuses an unattributed origin, and "+
+				"ErrCycleCreateRequiresOrigin is not something a run recovers from: the record "+
+				"settles failed rather than skipped, so a CSV — which carries a sprint's dates and "+
+				"nothing else — would never import a cycle at all. Report state: %q.",
+			h.run().Status,
+		)
+	}
+
+	origin := made.cycles[0].Origin
+
+	if origin == nil || !origin.Attributed() {
+		t.Fatalf("the cycle was created with %#v, want an attributed origin", origin)
+	}
+
+	if entity.FormatCalendarDate(origin.CreatedAt) != sourceCycleStartsOn {
+		t.Errorf(
+			"the cycle is dated %s, want the day it started (%s). A cycle existed no later than "+
+				"the day it began, so that date is derived rather than invented; stamping it with "+
+				"the hour the import ran would file a sprint from 2024 as this week's work.",
+			entity.FormatCalendarDate(origin.CreatedAt), sourceCycleStartsOn,
+		)
+	}
 }

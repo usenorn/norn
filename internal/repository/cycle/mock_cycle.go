@@ -74,6 +74,20 @@ func (mr *MockCycleMockRecorder) Create(ctx, cycle any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCycle)(nil).Create), ctx, cycle)
 }
 
+// Delete mocks base method.
+func (m *MockCycle) Delete(ctx context.Context, cycleID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, cycleID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockCycleMockRecorder) Delete(ctx, cycleID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCycle)(nil).Delete), ctx, cycleID)
+}
+
 // DeleteVacantFrom mocks base method.
 func (m *MockCycle) DeleteVacantFrom(ctx context.Context, teamID uuid.UUID, from string) error {
 	m.ctrl.T.Helper()

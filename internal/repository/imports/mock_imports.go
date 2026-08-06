@@ -11,6 +11,7 @@ package imports
 
 import (
 	context "context"
+	json "encoding/json"
 	reflect "reflect"
 	time "time"
 
@@ -131,6 +132,21 @@ func (mr *MockImportRunMockRecorder) Heartbeat(ctx, runID, token, expires any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Heartbeat", reflect.TypeOf((*MockImportRun)(nil).Heartbeat), ctx, runID, token, expires)
 }
 
+// ListByWorkspace mocks base method.
+func (m *MockImportRun) ListByWorkspace(ctx context.Context, workspaceID uuid.UUID, page entity.ImportRunPage) ([]entity.ImportRun, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByWorkspace", ctx, workspaceID, page)
+	ret0, _ := ret[0].([]entity.ImportRun)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByWorkspace indicates an expected call of ListByWorkspace.
+func (mr *MockImportRunMockRecorder) ListByWorkspace(ctx, workspaceID, page any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByWorkspace", reflect.TypeOf((*MockImportRun)(nil).ListByWorkspace), ctx, workspaceID, page)
+}
+
 // ListLeaseExpired mocks base method.
 func (m *MockImportRun) ListLeaseExpired(ctx context.Context, at, idleSince time.Time, limit int) ([]entity.ImportRun, error) {
 	m.ctrl.T.Helper()
@@ -174,6 +190,20 @@ func (mr *MockImportRunMockRecorder) Release(ctx, runID, token, at any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Release", reflect.TypeOf((*MockImportRun)(nil).Release), ctx, runID, token, at)
 }
 
+// SaveSourceConfig mocks base method.
+func (m *MockImportRun) SaveSourceConfig(ctx context.Context, runID uuid.UUID, secret string, settings json.RawMessage, policy entity.ImportUnknownPolicy) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveSourceConfig", ctx, runID, secret, settings, policy)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveSourceConfig indicates an expected call of SaveSourceConfig.
+func (mr *MockImportRunMockRecorder) SaveSourceConfig(ctx, runID, secret, settings, policy any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSourceConfig", reflect.TypeOf((*MockImportRun)(nil).SaveSourceConfig), ctx, runID, secret, settings, policy)
+}
+
 // Settle mocks base method.
 func (m *MockImportRun) Settle(ctx context.Context, runID uuid.UUID, status entity.ImportStatus, detail string, at time.Time) error {
 	m.ctrl.T.Helper()
@@ -186,6 +216,21 @@ func (m *MockImportRun) Settle(ctx context.Context, runID uuid.UUID, status enti
 func (mr *MockImportRunMockRecorder) Settle(ctx, runID, status, detail, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Settle", reflect.TypeOf((*MockImportRun)(nil).Settle), ctx, runID, status, detail, at)
+}
+
+// SourceConfigForStaging mocks base method.
+func (m *MockImportRun) SourceConfigForStaging(ctx context.Context, runID uuid.UUID) (repository.ImportSourceSecret, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SourceConfigForStaging", ctx, runID)
+	ret0, _ := ret[0].(repository.ImportSourceSecret)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SourceConfigForStaging indicates an expected call of SourceConfigForStaging.
+func (mr *MockImportRunMockRecorder) SourceConfigForStaging(ctx, runID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SourceConfigForStaging", reflect.TypeOf((*MockImportRun)(nil).SourceConfigForStaging), ctx, runID)
 }
 
 // MockImportCursor is a mock of ImportCursor interface.

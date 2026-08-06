@@ -30,6 +30,7 @@ tags:
   - name: audit
   - name: directory
   - name: licence
+  - name: imports
 
 paths:
   /health:
@@ -1846,6 +1847,314 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/sources:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [imports]
+      operationId: listImportSources
+      summary: List the trackers this instance can import a backlog from
+      responses:
+        '200':
+          description: The sources an import may be started against
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ImportSource' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [imports]
+      operationId: listWorkspaceImports
+      summary: List what this workspace has imported, newest first
+      parameters:
+        - $ref: '#/components/parameters/ImportRunLimit'
+        - $ref: '#/components/parameters/ImportRunCursor'
+      responses:
+        '200':
+          description: A page of import runs, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportRunPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [imports]
+      operationId: createWorkspaceImport
+      summary: Start an import against one of the sources this instance carries
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateImportRequest' }
+      responses:
+        '201':
+          description: The run, waiting to be told where to read from
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportRun' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/{importRunId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ImportRunId'
+    get:
+      tags: [imports]
+      operationId: getWorkspaceImport
+      summary: Read one import, where it has got to, and how much it has moved
+      responses:
+        '200':
+          description: The import run
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportRun' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/{importRunId}/source:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ImportRunId'
+    put:
+      tags: [imports]
+      operationId: configureWorkspaceImport
+      summary: Give the run its source key and the selection it reads under
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfigureImportRequest' }
+      responses:
+        '200':
+          description: The run, saying a key is held without carrying it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportRun' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ImportConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/ImportSigningUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/{importRunId}/file:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ImportRunId'
+    post:
+      tags: [imports]
+      operationId: uploadWorkspaceImportFile
+      summary: Upload the file a run reads its rows from
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Where the file was stored, to configure the run with
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportFile' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ImportConflict' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/{importRunId}/catalogue:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ImportRunId'
+    get:
+      tags: [imports]
+      operationId: getWorkspaceImportCatalogue
+      summary: Ask the source what it holds, before anything is staged
+      responses:
+        '200':
+          description: What the source can be asked for, and what its columns read
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportCatalogue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/ImportSourceRateLimited' }
+        '502': { $ref: '#/components/responses/ImportSourceRefused' }
+        '503': { $ref: '#/components/responses/ImportSigningUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/{importRunId}/stage:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ImportRunId'
+    post:
+      tags: [imports]
+      operationId: stageWorkspaceImport
+      summary: Start draining the source into this run's staged copy
+      responses:
+        '202':
+          description: The run, now queued to stage
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportRun' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ImportConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/{importRunId}/mappings:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ImportRunId'
+    get:
+      tags: [imports]
+      operationId: getWorkspaceImportMappings
+      summary: Every source concept this run found, and what it suggests for each
+      responses:
+        '200':
+          description: The mapping plan, with a suggestion where one could be made
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportMappingPlan' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [imports]
+      operationId: decideWorkspaceImportMappings
+      summary: Answer the mapping plan, one decision per source concept
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DecideImportMappingsRequest' }
+      responses:
+        '200':
+          description: The mapping plan after the decisions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportMappingPlan' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ImportConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/{importRunId}/preview:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ImportRunId'
+    get:
+      tags: [imports]
+      operationId: previewWorkspaceImport
+      summary: What this run would create, change, skip and leave unattributed
+      responses:
+        '200':
+          description: The preview, and the digest an execute is held to
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportPreview' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/{importRunId}/execute:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ImportRunId'
+    post:
+      tags: [imports]
+      operationId: executeWorkspaceImport
+      summary: Run the import the requester previewed, and nothing else
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExecuteImportRequest' }
+      responses:
+        '202':
+          description: The run, now queued to apply what the preview described
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportRun' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ImportConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/{importRunId}/revert:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ImportRunId'
+    post:
+      tags: [imports]
+      operationId: revertWorkspaceImport
+      summary: Take back what this import created, in the order it created it
+      responses:
+        '202':
+          description: The run, now queued to unwind
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportRun' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ImportConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/imports/{importRunId}/report:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ImportRunId'
+    get:
+      tags: [imports]
+      operationId: getWorkspaceImportReport
+      summary: What this import made, and what it could not carry across
+      responses:
+        '200':
+          description: The run, what it created, and every line it recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportReport' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/agents:
@@ -4550,6 +4859,20 @@ components:
         type: array
         items: { $ref: '#/components/schemas/WebhookDeliveryState' }
 
+    ImportRunId:
+      name: importRunId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ImportRunLimit:
+      name: limit
+      in: query
+      schema: { type: integer, format: int32, minimum: 1, maximum: 100 }
+    ImportRunCursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+
     NotificationSubjectKind:
       name: subjectKind
       in: path
@@ -4740,6 +5063,29 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/WebhookSigningUnavailableProblem' }
+    ImportConflict:
+      description: The run cannot take this step from where it stands
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ImportConflictProblem' }
+    ImportSourceRefused:
+      description: The source refused to hand over what the import asked it for
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ImportSourceRefusedProblem' }
+    ImportSourceRateLimited:
+      description: The source is throttling this instance
+      headers:
+        Retry-After:
+          schema: { type: integer, format: int32 }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/RateLimitedProblem' }
+    ImportSigningUnavailable:
+      description: This instance has no encryption key, so a source key cannot be stored or read
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ImportSigningUnavailableProblem' }
     MailUnavailable:
       description: The instance is not configured to send mail
       content:
@@ -6695,6 +7041,333 @@ components:
           type: array
           items: { $ref: '#/components/schemas/WebhookDelivery' }
         nextCursor: { type: string }
+
+    ImportStatus:
+      type: string
+      enum: [draft, staging, staged, mapped, executing, imported, reverting, reverted, failed]
+
+    ImportUnknownPolicy:
+      type: string
+      enum: [create, skip, fail]
+
+    ImportResource:
+      type: string
+      enum:
+        - team
+        - workflow_state
+        - label_group
+        - label
+        - project
+        - cycle
+        - issue
+        - issue_parent
+        - issue_relation
+        - comment
+        - attachment
+        - embed
+
+    ImportOutcome:
+      type: string
+      enum:
+        - created
+        - skipped
+        - unattributed
+        - adjusted
+        - dropped
+        - failed
+        - deleted
+        - archived
+        - retained
+        - skipped_modified
+        - skipped_in_use
+
+    ImportPhase:
+      type: string
+      enum: [execute, revert]
+
+    ImportMappingKind:
+      type: string
+      enum: [user, state, priority, label, project, team]
+
+    ImportDecision:
+      type: string
+      enum: [map, create, unattributed, skip]
+
+    ImportSource:
+      type: object
+      required: [kind]
+      properties:
+        kind: { type: string }
+
+    ImportRun:
+      type: object
+      description: >-
+        Staged and processed are counters and nothing here says how many there will be.
+        A source is asked for its backlog a page at a time and never for its size.
+      required:
+        - id
+        - sourceKind
+        - status
+        - sourceSecretSet
+        - unknownReferences
+        - acknowledgeTriage
+        - attempt
+        - staged
+        - processed
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string, format: uuid }
+        sourceKind: { type: string }
+        sourceLabel: { type: string }
+        status: { $ref: '#/components/schemas/ImportStatus' }
+        requestedBy: { type: string, format: uuid }
+        revertedBy: { type: string, format: uuid }
+        phaseError: { type: string }
+        previewDigest: { type: string }
+        acknowledgeTriage: { type: boolean }
+        settings: { type: object, additionalProperties: true }
+        unknownReferences: { $ref: '#/components/schemas/ImportUnknownPolicy' }
+        sourceSecretSet: { type: boolean }
+        attempt: { type: integer, format: int32 }
+        staged: { type: integer, format: int32 }
+        processed: { type: integer, format: int32 }
+        stagedAt: { type: string, format: date-time }
+        mappedAt: { type: string, format: date-time }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time }
+        revertedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ImportRunPage:
+      type: object
+      required: [runs]
+      properties:
+        runs:
+          type: array
+          items: { $ref: '#/components/schemas/ImportRun' }
+        nextCursor: { type: string }
+
+    CreateImportRequest:
+      type: object
+      required: [sourceKind]
+      properties:
+        sourceKind: { type: string }
+        sourceLabel: { type: string }
+
+    ConfigureImportRequest:
+      type: object
+      properties:
+        apiKey: { type: string, writeOnly: true }
+        settings: { type: object, additionalProperties: true }
+        unknownReferences: { $ref: '#/components/schemas/ImportUnknownPolicy' }
+
+    ImportFile:
+      type: object
+      required: [objectKey, fileName]
+      properties:
+        objectKey: { type: string }
+        fileName: { type: string }
+
+    ImportScope:
+      type: object
+      required: [key, name]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        detail: { type: string }
+
+    ImportColumn:
+      type: object
+      required: [index, header]
+      properties:
+        index: { type: integer, format: int32 }
+        header: { type: string }
+        proposed: { type: string }
+        confidence: { type: string }
+
+    ImportCatalogue:
+      type: object
+      required: [scopes, columns, notes]
+      properties:
+        scopes:
+          type: array
+          items: { $ref: '#/components/schemas/ImportScope' }
+        columns:
+          type: array
+          items: { $ref: '#/components/schemas/ImportColumn' }
+        notes:
+          type: array
+          items: { type: string }
+
+    ImportMapping:
+      type: object
+      required: [kind, sourceKey]
+      properties:
+        kind: { $ref: '#/components/schemas/ImportMappingKind' }
+        sourceKey: { type: string }
+        sourceLabel: { type: string }
+        sourceEmail: { type: string }
+        decision: { $ref: '#/components/schemas/ImportDecision' }
+        targetId: { type: string, format: uuid }
+        targetValue: { type: string }
+        suggestedTargetId: { type: string, format: uuid }
+        suggestedReason: { type: string }
+        decidedBy: { type: string, format: uuid }
+        decidedAt: { type: string, format: date-time }
+
+    ImportMappingPlan:
+      type: object
+      required: [mappings, complete]
+      properties:
+        mappings:
+          type: array
+          items: { $ref: '#/components/schemas/ImportMapping' }
+        complete: { type: boolean }
+
+    ImportMappingDecision:
+      type: object
+      required: [kind, sourceKey, decision]
+      properties:
+        kind: { $ref: '#/components/schemas/ImportMappingKind' }
+        sourceKey: { type: string }
+        decision: { $ref: '#/components/schemas/ImportDecision' }
+        targetId: { type: string, format: uuid }
+        targetValue: { type: string }
+
+    DecideImportMappingsRequest:
+      type: object
+      required: [decisions]
+      properties:
+        decisions:
+          type: array
+          items: { $ref: '#/components/schemas/ImportMappingDecision' }
+
+    ImportPreviewLine:
+      type: object
+      required: [resource, outcome]
+      properties:
+        resource: { $ref: '#/components/schemas/ImportResource' }
+        subject: { type: string }
+        externalId: { type: string }
+        outcome: { $ref: '#/components/schemas/ImportOutcome' }
+        detail: { type: string }
+
+    ImportPreview:
+      type: object
+      required: [digest, created, changed, skipped, unattributed, warnings, triageTeams]
+      properties:
+        digest: { type: string }
+        created:
+          type: array
+          items: { $ref: '#/components/schemas/ImportPreviewLine' }
+        changed:
+          type: array
+          items: { $ref: '#/components/schemas/ImportPreviewLine' }
+        skipped:
+          type: array
+          items: { $ref: '#/components/schemas/ImportPreviewLine' }
+        unattributed:
+          type: array
+          items: { $ref: '#/components/schemas/ImportPreviewLine' }
+        warnings:
+          type: array
+          items: { $ref: '#/components/schemas/ImportPreviewLine' }
+        triageTeams:
+          type: array
+          items: { type: string }
+
+    ExecuteImportRequest:
+      type: object
+      required: [previewDigest]
+      properties:
+        previewDigest: { type: string }
+        acknowledgeTriage: { type: boolean }
+
+    ImportLedgerEntry:
+      type: object
+      required: [resource, createdId, externalId, reference, orderSeq, createdAt]
+      properties:
+        resource: { $ref: '#/components/schemas/ImportResource' }
+        createdId: { type: string, format: uuid }
+        externalId: { type: string }
+        reference: { type: string }
+        orderSeq: { type: integer, format: int64 }
+        createdAt: { type: string, format: date-time }
+        revertedAt: { type: string, format: date-time }
+        revertOutcome: { $ref: '#/components/schemas/ImportOutcome' }
+
+    ImportReportLine:
+      type: object
+      required: [id, phase, resource, outcome, recordedAt]
+      properties:
+        id: { type: string, format: uuid }
+        phase: { $ref: '#/components/schemas/ImportPhase' }
+        resource: { $ref: '#/components/schemas/ImportResource' }
+        subject: { type: string }
+        externalId: { type: string }
+        outcome: { $ref: '#/components/schemas/ImportOutcome' }
+        detail:
+          type: object
+          additionalProperties: { type: string }
+        recordedAt: { type: string, format: date-time }
+
+    ImportReportCursor:
+      type: object
+      required: [recordedAt, id]
+      properties:
+        recordedAt: { type: string, format: date-time }
+        id: { type: string, format: uuid }
+
+    ImportReport:
+      type: object
+      required: [run, created, lines]
+      properties:
+        run: { $ref: '#/components/schemas/ImportRun' }
+        created:
+          type: array
+          items: { $ref: '#/components/schemas/ImportLedgerEntry' }
+        lines:
+          type: array
+          items: { $ref: '#/components/schemas/ImportReportLine' }
+        nextCreatedCursor: { type: integer, format: int64 }
+        nextLineCursor: { $ref: '#/components/schemas/ImportReportCursor' }
+
+    ImportConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - import_status_transition
+                - import_run_leased
+                - import_not_revertible
+                - import_preview_stale
+                - import_would_triage
+            teams:
+              type: array
+              items: { type: string }
+
+    ImportSourceRefusedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [import_source_refused] }
+            reason: { type: string }
+
+    ImportSigningUnavailableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [import_signing_unavailable] }
 
     APITokenUnusableProblem:
       allOf:

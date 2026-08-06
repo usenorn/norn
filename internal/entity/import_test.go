@@ -2,6 +2,7 @@ package entity_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -119,9 +120,15 @@ func TestEveryImportPhaseIsADistinctResourceInDependencyOrder(t *testing.T) {
 		{entity.ImportLabelGroup, entity.ImportLabel},
 		{entity.ImportWorkflowState, entity.ImportIssue},
 		{entity.ImportProject, entity.ImportIssue},
+		{entity.ImportTeam, entity.ImportCycle},
+		{entity.ImportCycle, entity.ImportIssue},
 		{entity.ImportIssue, entity.ImportIssueParent},
 		{entity.ImportIssue, entity.ImportIssueRelation},
 		{entity.ImportIssue, entity.ImportComment},
+		{entity.ImportIssue, entity.ImportAttachment},
+		{entity.ImportComment, entity.ImportAttachment},
+		{entity.ImportAttachment, entity.ImportEmbed},
+		{entity.ImportComment, entity.ImportEmbed},
 	} {
 		if seen[ordering[0]] >= seen[ordering[1]] {
 			t.Errorf(
@@ -168,6 +175,53 @@ func TestIssueLinksAreTheirOwnPhaseSoARevertCanUnpickThemFirst(t *testing.T) {
 			"parent links are recorded before the issues they join. workspace_issues clears a " +
 				"parent on delete and then refuses the row for having depth without one, so a " +
 				"revert walking the ledger backwards must reach every link before any issue.",
+		)
+	}
+}
+
+func TestAnInlineImageIsDerivedFromTheFileRecordRatherThanAskedForAgain(t *testing.T) {
+	if entity.ImportEmbed.Fetched() {
+		t.Error(
+			"an embed is fetched from the source as a resource of its own. The file record " +
+				"already says which body points at it, so asking a source to describe the same " +
+				"link a second time doubles the traffic and lets a page and its rewrites disagree.",
+		)
+	}
+
+	if !entity.ImportAttachment.Fetched() {
+		t.Error(
+			"a file is not fetched, so nothing can ever stage one. The bytes are pulled while " +
+				"the source's signed URL is alive, which only the staging pass is in a position " +
+				"to do.",
+		)
+	}
+}
+
+func TestAnEmbedMarkerSurvivesBeingWrittenIntoAMarkdownLink(t *testing.T) {
+	marker := entity.ImportEmbedMarker("att-7")
+
+	body := "Before\n\n![The hub](" + marker + ")\n\nAfter"
+
+	if !entity.ImportEmbedded(body) {
+		t.Fatal("a body carrying a marker does not read as carrying one")
+	}
+
+	rewritten := strings.ReplaceAll(body, marker, "/v1/whatever")
+
+	if entity.ImportEmbedded(rewritten) {
+		t.Fatalf(
+			"replacing the marker left %q still reading as embedded. The marker is the whole of "+
+				"what an adapter puts in a body in place of a signed URL, so anything the rewrite "+
+				"cannot take back out is a link that expires in the middle of somebody's issue.",
+			rewritten,
+		)
+	}
+
+	if strings.Contains(marker, " ") || strings.Contains(marker, ")") {
+		t.Errorf(
+			"the marker %q contains a character that ends a markdown link, so the link it stands "+
+				"in for would break the moment an adapter wrote it",
+			marker,
 		)
 	}
 }
@@ -247,6 +301,123 @@ func TestARefusedRowIsSkippedAndABrokenOneFails(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			if outcome := entity.OutcomeForImport(testCase.err); outcome != testCase.outcome {
 				t.Errorf("outcome = %q, want %q", outcome, testCase.outcome)
+			}
+		})
+	}
+}
+
+func TestWhatASourceLegitimatelyHoldsCostsTheRowRatherThanTheRun(t *testing.T) {
+	cases := []struct {
+		name    string
+		err     error
+		why     string
+		wrapped error
+	}{
+		{
+			name: "two issues already hold a relation",
+			err:  entity.ErrIssueRelationExists,
+			why: "Norn allows one relation per pair in either direction and other trackers " +
+				"allow several, so a mature workspace produces this on ordinary data",
+		},
+		{
+			name: "an issue relates to itself",
+			err:  entity.ErrIssueRelationSelf,
+			why:  "an export can carry a self-relation that its own product tolerated",
+		},
+		{
+			name: "two projects slugify the same",
+			err:  entity.ErrProjectSlugTaken,
+			why:  "distinct source names can collapse onto one address here",
+		},
+		{
+			name: "an imported cycle overlaps one the team already generated",
+			err:  entity.ErrCycleOverlaps,
+			why: "a team that already runs cycles here will overlap its own history, and " +
+				"the exclusion constraint is the database saying so",
+		},
+		{
+			name: "a cycle belongs to another team",
+			err:  entity.ErrCycleTeamMismatch,
+			why:  "a source can reference a cycle across the team boundary Norn draws",
+		},
+		{
+			name:    "the workspace ran out of storage",
+			err:     entity.ErrStorageExhausted,
+			wrapped: entity.StorageExhaustedError{SizeBytes: 1 << 20, StoredBytes: 9, MaxBytes: 10},
+			why: "rows are unbounded and bytes are not, so a full workspace must cost the " +
+				"file and keep the backlog",
+		},
+		{
+			name: "the import may not edit a comment it attributed to somebody else",
+			err:  entity.ErrIssueCommentNotAuthor,
+			why: "only an author edits their own comment here, and an import writes comments as " +
+				"whoever the source said wrote them, so a body it wanted to rewrite is one it is " +
+				"routinely refused",
+		},
+		{
+			name:    "one file is larger than this instance accepts",
+			err:     entity.ErrAttachmentTooLarge,
+			wrapped: entity.AttachmentTooLargeError{SizeBytes: 1 << 30, MaxBytes: 1 << 20},
+			why:     "one oversized attachment says nothing about the three years around it",
+		},
+		{
+			name: "the workspace already holds a team with that key",
+			err:  entity.ErrTeamKeyTaken,
+			why: "a second import of the same source, and any import into a workspace somebody " +
+				"has already set up, arrives at the keys that are there",
+		},
+		{
+			name: "the team already holds a state with that name",
+			err:  entity.ErrWorkflowStateNameTaken,
+			why: "every tracker ships Todo, In progress and Done, so a team that exists here at " +
+				"all collides with the source's own workflow",
+		},
+		{
+			name: "the workspace already holds a label with that name",
+			err:  entity.ErrLabelNameTaken,
+			why: "labels are the shortest names in the product and the ones most likely to have " +
+				"been created already, by hand or by an earlier run of this same import",
+		},
+		{
+			name: "the workspace already holds a label group with that name",
+			err:  entity.ErrLabelGroupNameTaken,
+			why:  "a group is created before the labels in it and collides for the same reasons",
+		},
+		{
+			name: "an issue carries two labels from one group",
+			err:  entity.ErrLabelGroupExclusive,
+			why: "grouped labels are exclusive here and not everywhere, so a source can carry a " +
+				"row wearing two of them",
+		},
+		{
+			name: "the reference an issue was given is already used",
+			err:  entity.ErrIssueReferenceTaken,
+			why: "the team's counter is shared with everybody working in it while the import " +
+				"runs, and one row losing that race is not the backlog behind it going wrong",
+		},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if outcome := entity.OutcomeForImport(testCase.err); outcome != entity.ImportOutcomeSkipped {
+				t.Errorf(
+					"outcome = %q, want skipped. This is not a broken import, it is %s. "+
+						"Recorded as failed it settles the record failed and, once the run has "+
+						"retried its way to the attempt limit, abandons everything after it.",
+					outcome, testCase.why,
+				)
+			}
+
+			if testCase.wrapped == nil {
+				return
+			}
+
+			if outcome := entity.OutcomeForImport(testCase.wrapped); outcome != entity.ImportOutcomeSkipped {
+				t.Errorf(
+					"the detailed error carrying the sizes is %q rather than skipped, so the "+
+						"outcome would depend on which of the two forms happened to reach it",
+					outcome,
+				)
 			}
 		})
 	}

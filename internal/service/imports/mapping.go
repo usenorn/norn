@@ -185,6 +185,16 @@ func (s *importsService) conceptsIn(
 
 			return nil
 		},
+		entity.ImportCycle: func(record entity.ImportRecord) error {
+			payload, err := decodePayload[service.ImportCyclePayload](record)
+			if err != nil {
+				return err
+			}
+
+			found.add(entity.ImportMapTeam, payload.Team, "", "")
+
+			return nil
+		},
 		entity.ImportProject: func(record entity.ImportRecord) error {
 			payload, err := decodePayload[service.ImportProjectPayload](record)
 			if err != nil {

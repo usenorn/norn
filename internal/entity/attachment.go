@@ -14,6 +14,9 @@ import (
 
 const (
 	AttachmentKeyPrefix     = "attachments"
+	AttachmentContentBase   = "/v1/workspaces"
+	ImportKeyPrefix         = "imports"
+	ImportBlobUnnamed       = "object"
 	AttachmentSniffLength   = 512
 	AttachmentNameMaxLen    = 255
 	AttachmentStorageUnset  = 0
@@ -23,11 +26,12 @@ const (
 )
 
 var (
-	ErrAttachmentNotFound   = errors.New("attachment not found")
-	ErrAttachmentNotPending = errors.New("attachment has already been settled")
-	ErrAttachmentMissing    = errors.New("no file was uploaded for this attachment")
-	ErrAttachmentTooLarge   = errors.New("file exceeds the maximum size")
-	ErrStorageExhausted     = errors.New("workspace storage is full")
+	ErrAttachmentNotFound         = errors.New("attachment not found")
+	ErrAttachmentNotPending       = errors.New("attachment has already been settled")
+	ErrAttachmentMissing          = errors.New("no file was uploaded for this attachment")
+	ErrAttachmentTooLarge         = errors.New("file exceeds the maximum size")
+	ErrAttachmentAdoptNeedsOrigin = errors.New("adopting a stored object is reserved for an import")
+	ErrStorageExhausted           = errors.New("workspace storage is full")
 )
 
 type AttachmentTooLargeError struct {
@@ -92,6 +96,7 @@ type Attachment struct {
 	ReclaimAfter *time.Time
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	Origin       *ImportOrigin
 }
 
 func (a Attachment) Stored() bool {
@@ -137,6 +142,46 @@ func AttachmentKey(workspaceID, attachmentID uuid.UUID) string {
 
 func AttachmentPrefix(workspaceID uuid.UUID) string {
 	return AttachmentKeyPrefix + "/" + workspaceID.String()
+}
+
+// AttachmentContentPath is the address a body links a stored file by. It sits beside the
+// object key rather than in the handler that serves it because an import writes this path
+// into an issue description months before anybody opens that issue: the markdown and the
+// route have to be one decision, and a handler cannot be imported by the service that
+// rewrites the body.
+func AttachmentContentPath(workspaceID, attachmentID uuid.UUID) string {
+	return AttachmentContentBase + "/" + workspaceID.String() +
+		"/attachments/" + attachmentID.String() + "/content"
+}
+
+// ImportBlobPrefix nests an import's objects under the workspace before the run, because
+// purging a workspace sweeps by workspace prefix: a run-first key would survive the
+// workspace it belonged to with nothing left that names it.
+func ImportBlobPrefix(workspaceID uuid.UUID) string {
+	return ImportKeyPrefix + "/" + workspaceID.String()
+}
+
+func ImportBlobKey(workspaceID, runID uuid.UUID, name string) string {
+	return ImportBlobPrefix(workspaceID) + "/" + runID.String() + "/" + importBlobName(name)
+}
+
+func importBlobName(name string) string {
+	safe := strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			return r
+		case r == '.' || r == '_' || r == '-':
+			return r
+		default:
+			return '-'
+		}
+	}, AttachmentFileName(name))
+
+	if trimmed := strings.TrimLeft(safe, "._-"); trimmed != "" {
+		return trimmed
+	}
+
+	return ImportBlobUnnamed
 }
 
 func ValidateAttachmentName(field, name string) FieldError {

@@ -40,6 +40,20 @@ func (m *MockTransactor) EXPECT() *MockTransactorMockRecorder {
 	return m.recorder
 }
 
+// WithSavepoint mocks base method.
+func (m *MockTransactor) WithSavepoint(ctx context.Context, fn func(context.Context) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WithSavepoint", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WithSavepoint indicates an expected call of WithSavepoint.
+func (mr *MockTransactorMockRecorder) WithSavepoint(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithSavepoint", reflect.TypeOf((*MockTransactor)(nil).WithSavepoint), ctx, fn)
+}
+
 // WithTx mocks base method.
 func (m *MockTransactor) WithTx(ctx context.Context, fn func(context.Context) error) error {
 	m.ctrl.T.Helper()

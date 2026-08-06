@@ -134,6 +134,56 @@ func TestABlobKeyCannotClimbOutOfItsRoot(t *testing.T) {
 	}
 }
 
+func TestAnImportKeyIsStillAKeyWhateverTheSourceCalledTheFile(t *testing.T) {
+	workspace, run := uuid.New(), uuid.New()
+
+	for name, sent := range map[string]string{
+		"an ordinary name": "screenshot.png",
+		"a bare dotdot":    "..",
+		"a traversal":      "../../etc/passwd",
+		"a posix path":     "/etc/passwd",
+		"a windows path":   `C:\Users\rae\shot.png`,
+		"empty":            "",
+		"only dots":        "...",
+		"a space":          "quarterly report.csv",
+		"a leading dash":   "-rf",
+		"not ascii":        "отчёт.csv",
+	} {
+		t.Run(name, func(t *testing.T) {
+			key := entity.ImportBlobKey(workspace, run, sent)
+
+			if !entity.ValidBlobKey(key) {
+				t.Fatalf(
+					"a file the source called %q produced the key %q, which the storage guard "+
+						"refuses. A name arrives from somebody else's system and is never a key; "+
+						"minting one from it has to survive whatever they called it.",
+					sent, key,
+				)
+			}
+		})
+	}
+}
+
+func TestAnImportsObjectsNestUnderTheWorkspaceThatWillSweepThem(t *testing.T) {
+	workspace, run := uuid.New(), uuid.New()
+
+	prefix := entity.ImportBlobPrefix(workspace)
+	key := entity.ImportBlobKey(workspace, run, "shot.png")
+
+	if !strings.HasPrefix(key, prefix+"/") {
+		t.Fatalf(
+			"an import's object does not sit under %q. Purging a workspace removes by workspace "+
+				"prefix, so a run-first key would outlive the workspace it belonged to with "+
+				"nothing left that names it.",
+			prefix,
+		)
+	}
+
+	if strings.Index(key, workspace.String()) > strings.Index(key, run.String()) {
+		t.Fatal("the run identifier precedes the workspace, so the workspace sweep cannot reach it")
+	}
+}
+
 func TestAnUnlimitedWorkspaceReportsNoRemainingRatherThanANegativeOne(t *testing.T) {
 	unlimited := entity.WorkspaceStorage{StoredBytes: 5_000_000}
 

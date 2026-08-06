@@ -2,6 +2,7 @@ package imports
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,15 +18,24 @@ type references struct {
 	groups   map[string]uuid.UUID
 	labels   map[string]uuid.UUID
 	projects map[string]uuid.UUID
+	cycles   map[string]uuid.UUID
 	issues   map[string]uuid.UUID
 	comments map[string]uuid.UUID
+	files    map[string]uuid.UUID
 }
 
+// stamped is the timestamp the created row itself carries, and the ledger keeps it so a
+// revert can tell an edit somebody made afterwards from the row as this run left it. It has
+// to be read back off the row rather than defaulted in the database: an import writes its
+// rows with a Go clock read inside the transaction, and now() is the transaction's start
+// time, so a ledger row that dates itself makes every row it names look edited a moment
+// later by somebody who was never there.
 type outcome struct {
 	subject   string
 	id        uuid.UUID
 	reference string
 	version   int
+	stamped   time.Time
 	reason    string
 }
 
@@ -52,6 +62,10 @@ func (s *importsService) applyChunk(
 
 		for _, record := range records {
 			s.applyRecord(ctx, run, decision, plan, found, record, log)
+		}
+
+		if err := s.ledger.Restamp(ctx, run.ID, log.restamped); err != nil {
+			return err
 		}
 
 		if err := s.ledger.Record(ctx, run.ID, log.ledger); err != nil {
@@ -103,6 +117,12 @@ func (s *importsService) settleChunk(
 	return processed, nil
 }
 
+// applyRecord treats what one row costs as an outcome rather than an error, and that only
+// holds while the transaction the chunk runs in survives the row. Postgres refuses every
+// command after a failed statement until it is rolled back, so a name the workspace already
+// holds would otherwise take the ledger, the settlement and the counter down with it and leave
+// the whole chunk to be retried into the same collision. The savepoint is what makes the rest
+// of the chunk reachable.
 func (s *importsService) applyRecord(
 	ctx context.Context,
 	run entity.ImportRun,
@@ -112,7 +132,15 @@ func (s *importsService) applyRecord(
 	record entity.ImportRecord,
 	log *recorder,
 ) {
-	made, err := s.create(ctx, run, decision, plan, found, record, log)
+	var made outcome
+
+	err := s.transactor.WithSavepoint(ctx, func(ctx context.Context) error {
+		var err error
+
+		made, err = s.create(ctx, run, decision, plan, found, record, log)
+
+		return err
+	})
 
 	switch {
 	case err != nil:
@@ -137,12 +165,13 @@ func (s *importsService) applyRecord(
 	default:
 		log.note(record.Resource, record.ExternalID, made.subject, entity.ImportOutcomeCreated, nil)
 		log.created(entity.ImportLedgerEntry{
-			WorkspaceID:     run.WorkspaceID,
-			Resource:        record.Resource,
-			CreatedID:       made.id,
-			ExternalID:      record.ExternalID,
-			Reference:       made.reference,
-			VersionAtCreate: made.version,
+			WorkspaceID:       run.WorkspaceID,
+			Resource:          record.Resource,
+			CreatedID:         made.id,
+			ExternalID:        record.ExternalID,
+			Reference:         made.reference,
+			VersionAtCreate:   made.version,
+			CreatedAtRecorded: made.stamped,
 		})
 		log.settled(entity.ImportRecord{
 			ExternalID: record.ExternalID,
@@ -182,6 +211,8 @@ func (s *importsService) create(
 		return s.createLabel(ctx, run, plan, found, record, log)
 	case entity.ImportProject:
 		return s.createProject(ctx, run, plan, record, log)
+	case entity.ImportCycle:
+		return s.createCycle(ctx, run, plan, found, record, log)
 	case entity.ImportIssue:
 		return s.createIssue(ctx, run, decision, plan, found, record, log)
 	case entity.ImportIssueParent:
@@ -190,6 +221,10 @@ func (s *importsService) create(
 		return s.linkRelation(ctx, run, found, record)
 	case entity.ImportComment:
 		return s.postComment(ctx, run, plan, found, record, log)
+	case entity.ImportAttachment:
+		return s.createAttachment(ctx, run, found, record)
+	case entity.ImportEmbed:
+		return s.applyEmbed(ctx, run, decision, found, record, log)
 	default:
 		return outcome{reason: reasonLeftBehind}, nil
 	}
@@ -225,6 +260,7 @@ func (s *importsService) createTeam(
 
 	made.id = team.ID
 	made.reference = team.Key
+	made.stamped = team.UpdatedAt
 
 	return made, nil
 }
@@ -281,6 +317,7 @@ func (s *importsService) createState(
 
 	made.id = state.ID
 	made.reference = state.Name
+	made.stamped = state.UpdatedAt
 
 	return made, nil
 }
@@ -304,6 +341,7 @@ func (s *importsService) createLabelGroup(
 
 	made.id = group.ID
 	made.reference = group.Name
+	made.stamped = group.UpdatedAt
 
 	return made, nil
 }
@@ -363,6 +401,7 @@ func (s *importsService) createLabel(
 
 	made.id = label.ID
 	made.reference = label.Name
+	made.stamped = label.UpdatedAt
 
 	return made, nil
 }
@@ -414,8 +453,117 @@ func (s *importsService) createProject(
 
 	made.id = view.Project.ID
 	made.reference = view.Project.Slug
+	made.stamped = view.Project.UpdatedAt
 
 	return made, nil
+}
+
+func (s *importsService) createCycle(
+	ctx context.Context,
+	run entity.ImportRun,
+	plan entity.MappingPlan,
+	found *references,
+	record entity.ImportRecord,
+	log *recorder,
+) (outcome, error) {
+	payload, err := decodePayload[service.ImportCyclePayload](record)
+	if err != nil {
+		return outcome{}, err
+	}
+
+	made := outcome{subject: cycleNamed(payload)}
+
+	teamID, reachable := target(plan, entity.ImportMapTeam, found.teams, payload.Team)
+	if !reachable {
+		made.reason = reasonTeamLeftBehind
+
+		return made, nil
+	}
+
+	origin := cycleOrigin(record, payload)
+
+	view, err := s.cycleWriter.Create(ctx, service.CreateCycleInput{
+		WorkspaceID: run.WorkspaceID,
+		TeamID:      teamID,
+		StartsOn:    payload.StartsOn,
+		EndsOn:      payload.EndsOn,
+		ClosedAt:    closedAt(payload, time.Now().UTC()),
+		Origin:      &origin,
+	})
+	if err != nil {
+		return made, err
+	}
+
+	if strings.TrimSpace(payload.Name) != "" {
+		log.dropped(record.Resource, record.ExternalID, made.subject, reasonCycleNameDropped)
+	}
+
+	if payload.Number != 0 && payload.Number != view.Cycle.Number {
+		log.adjusted(record.Resource, record.ExternalID, made.subject,
+			strconv.Itoa(payload.Number), strconv.Itoa(view.Cycle.Number))
+	}
+
+	made.id = view.Cycle.ID
+	made.reference = made.subject
+	made.stamped = view.Cycle.UpdatedAt
+
+	return made, nil
+}
+
+// closedAt keeps a cycle whose window has already run out from arriving open. A team is
+// shown its current cycle, and an open cycle with a past end date answers that question
+// forever, so every dashboard would sit on a sprint the source finished years ago.
+// cycleOrigin falls back to the day the cycle started when the source did not say when it
+// was created. Creating a cycle needs an attributed origin, and plenty of sources — a CSV
+// above all — carry a sprint's window without carrying its paperwork; refusing those would
+// mean a team's cycles arrive only if their exporter happened to include a field nobody
+// looks at. A cycle existed no later than the day it began, so this is derived rather than
+// invented.
+func cycleOrigin(record entity.ImportRecord, payload service.ImportCyclePayload) entity.ImportOrigin {
+	created, updated := at(record.SourceCreatedAt), at(record.SourceUpdatedAt)
+
+	if created.IsZero() {
+		if started, err := entity.ParseCalendarDate(payload.StartsOn); err == nil {
+			created = started
+		}
+	}
+
+	return entity.NewImportOrigin(created, updated, uuid.Nil)
+}
+
+func closedAt(payload service.ImportCyclePayload, now time.Time) *time.Time {
+	day := payload.ClosedOn
+
+	if strings.TrimSpace(day) == "" {
+		if payload.EndsOn >= entity.FormatCalendarDate(now) {
+			return nil
+		}
+
+		day = payload.EndsOn
+	}
+
+	ended, err := entity.ParseCalendarDate(day)
+	if err != nil {
+		return nil
+	}
+
+	closed := ended.AddDate(0, 0, 1)
+
+	return &closed
+}
+
+func cycleNamed(payload service.ImportCyclePayload) string {
+	return named(payload.Name, payload.StartsOn+" → "+payload.EndsOn)
+}
+
+// leftUnattributed is true only where somebody decided to leave this person off. A person
+// nobody decided about is a reference that did not arrive, and the unknown-reference policy
+// has already said what that costs — reporting it twice would tell the requester a row lost
+// its owner deliberately when in fact nothing about them was ever answered.
+func leftUnattributed(plan entity.MappingPlan, person service.ImportUser) bool {
+	mapping, found := plan.Lookup(entity.ImportMapUser, person.Key)
+
+	return found && mapping.Decision == entity.ImportDecisionUnattributed
 }
 
 func (s *importsService) createIssue(
@@ -434,6 +582,12 @@ func (s *importsService) createIssue(
 
 	made := outcome{subject: payload.Title}
 
+	if payload.Defect != "" {
+		made.reason = payload.Defect
+
+		return made, nil
+	}
+
 	teamID, reachable := target(plan, entity.ImportMapTeam, found.teams, payload.Team)
 	if !reachable {
 		made.reason = reasonTeamLeftBehind
@@ -447,25 +601,73 @@ func (s *importsService) createIssue(
 		return made, nil
 	}
 
-	author := accountFor(plan, payload.Author)
-
-	if payload.Author.Named() && author == uuid.Nil {
-		log.unattributed(record.Resource, record.ExternalID, payload.Title, personNamed(payload.Author))
-	}
-
-	if strings.TrimSpace(payload.Cycle) != "" {
-		log.dropped(record.Resource, record.ExternalID, payload.Title, reasonCycleDropped)
-	}
-
 	stateID, _ := target(plan, entity.ImportMapState, found.states, payload.State)
 	projectID, _ := target(plan, entity.ImportMapProject, found.projects, payload.Project)
+	cycleID := found.cycles[payload.Cycle]
+	assignee := accountFor(plan, payload.Assignee)
 
 	labelIDs := make([]uuid.UUID, 0, len(payload.Labels))
+	lost := make([]entity.ImportUnknownReferenceError, 0, len(payload.Labels))
+
+	lost = missing(lost, plan, entity.ImportMapState, referenceState, payload.State, stateID)
+	lost = missing(lost, plan, entity.ImportMapProject, referenceProject, payload.Project, projectID)
+
+	if strings.TrimSpace(payload.Cycle) != "" && cycleID == uuid.Nil {
+		lost = append(lost, entity.ImportUnknownReferenceError{
+			Kind: referenceCycle, Reference: payload.Cycle,
+		})
+	}
+
+	if unknownAssignee(plan, payload.Assignee) {
+		lost = append(lost, entity.ImportUnknownReferenceError{
+			Kind: referenceAssignee, Reference: payload.Assignee.Key,
+		})
+	}
 
 	for _, key := range payload.Labels {
-		if labelID, carried := target(plan, entity.ImportMapLabel, found.labels, key); carried {
+		labelID, carried := target(plan, entity.ImportMapLabel, found.labels, key)
+		if carried {
 			labelIDs = append(labelIDs, labelID)
+
+			continue
 		}
+
+		lost = missing(lost, plan, entity.ImportMapLabel, referenceLabel, key, uuid.Nil)
+	}
+
+	if len(lost) > 0 {
+		switch run.UnknownReferences.Or(entity.ImportUnknownSkip) {
+		case entity.ImportUnknownSkip:
+			made.reason = lost[0].Error()
+
+			return made, nil
+
+		case entity.ImportUnknownFail:
+			return made, lost[0]
+
+		default:
+			for _, unknown := range lost {
+				log.dropped(record.Resource, record.ExternalID, payload.Title, unknown.Error())
+			}
+		}
+	}
+
+	author := accountFor(plan, payload.Author)
+
+	// Both ends are reported, once each, because an issue arriving with nobody on it is the
+	// loss the mapping stage exists to make deliberate. A source that names only an assignee —
+	// a file of rows usually does — would otherwise drop that person with the report silent.
+	// The preview says exactly this too; a line one of them writes the other has to write.
+	said := make(map[string]bool, 2)
+
+	for _, absent := range []service.ImportUser{payload.Author, payload.Assignee} {
+		if !absent.Named() || said[absent.Key] || !leftUnattributed(plan, absent) {
+			continue
+		}
+
+		said[absent.Key] = true
+
+		log.unattributed(record.Resource, record.ExternalID, payload.Title, personNamed(absent))
 	}
 
 	origin := entity.NewImportOrigin(at(record.SourceCreatedAt), at(record.SourceUpdatedAt), author)
@@ -476,10 +678,11 @@ func (s *importsService) createIssue(
 		Title:             payload.Title,
 		Description:       payload.Description,
 		Priority:          priorityFor(plan, payload.Priority),
-		AssigneeAccountID: accountFor(plan, payload.Assignee),
+		AssigneeAccountID: assignee,
 		Estimate:          payload.Estimate,
 		DueOn:             payload.DueOn,
 		StateID:           stateID,
+		CycleID:           cycleID,
 		ProjectID:         projectID,
 		LabelIDs:          labelIDs,
 		Origin:            &origin,
@@ -491,6 +694,7 @@ func (s *importsService) createIssue(
 	made.id = issue.ID
 	made.reference = issue.Reference()
 	made.version = issue.Version
+	made.stamped = issue.UpdatedAt
 
 	return made, nil
 }
@@ -534,6 +738,7 @@ func (s *importsService) linkParent(
 	made.id = reparented.ID
 	made.reference = reparented.Reference()
 	made.version = reparented.Version
+	made.stamped = reparented.UpdatedAt
 
 	return made, nil
 }
@@ -570,6 +775,7 @@ func (s *importsService) linkRelation(
 
 	made.id = relation.ID
 	made.reference = made.subject
+	made.stamped = relation.CreatedAt
 
 	return made, nil
 }
@@ -615,8 +821,224 @@ func (s *importsService) postComment(
 
 	made.id = posted.Comment.ID
 	made.reference = posted.Comment.ID.String()
+	made.stamped = posted.Comment.UpdatedAt
 
 	return made, nil
+}
+
+func (s *importsService) createAttachment(
+	ctx context.Context,
+	run entity.ImportRun,
+	found *references,
+	record entity.ImportRecord,
+) (outcome, error) {
+	payload, err := decodePayload[service.ImportAttachmentPayload](record)
+	if err != nil {
+		return outcome{}, err
+	}
+
+	made := outcome{subject: named(payload.FileName, payload.SourceURL)}
+
+	issueID, carried := found.issues[payload.Issue]
+	if !carried {
+		made.reason = reasonIssueMissing
+
+		return made, nil
+	}
+
+	commentID := uuid.Nil
+
+	if strings.TrimSpace(payload.Comment) != "" {
+		if commentID, carried = found.comments[payload.Comment]; !carried {
+			made.reason = reasonCommentMissing
+
+			return made, nil
+		}
+	}
+
+	origin := entity.NewImportOrigin(at(record.SourceCreatedAt), at(record.SourceUpdatedAt), uuid.Nil)
+
+	stored, err := s.fileWriter.Adopt(ctx, run.WorkspaceID, issueID, service.AdoptAttachmentInput{
+		ObjectKey:   payload.ObjectKey,
+		FileName:    payload.FileName,
+		ContentType: payload.ContentType,
+		SizeBytes:   payload.SizeBytes,
+		CommentID:   commentID,
+		Origin:      &origin,
+	})
+	if err != nil {
+		return made, err
+	}
+
+	made.id = stored.ID
+	made.reference = stored.ObjectKey
+	made.stamped = stored.UpdatedAt
+
+	return made, nil
+}
+
+func (s *importsService) applyEmbed(
+	ctx context.Context,
+	run entity.ImportRun,
+	decision entity.Decision,
+	found *references,
+	record entity.ImportRecord,
+	log *recorder,
+) (outcome, error) {
+	payload, err := decodePayload[service.ImportEmbedPayload](record)
+	if err != nil {
+		return outcome{}, err
+	}
+
+	made := outcome{subject: strings.Join(payload.Attachments, ", ")}
+
+	placed := make(map[string]string, len(payload.Attachments))
+	lost := 0
+
+	for _, key := range payload.Attachments {
+		fileID, stored := found.files[key]
+		if !stored {
+			lost++
+
+			continue
+		}
+
+		placed[entity.ImportEmbedMarker(key)] = entity.AttachmentContentPath(run.WorkspaceID, fileID)
+	}
+
+	if len(placed) == 0 {
+		made.reason = reasonEmbedUnstored
+
+		return made, nil
+	}
+
+	if strings.TrimSpace(payload.Comment) != "" {
+		return s.embedInComment(ctx, run, found, payload, made, lost, placed, record, log)
+	}
+
+	return s.embedInIssue(ctx, run, decision, found, payload, made, lost, placed, record, log)
+}
+
+// embedInIssue restamps the issue's own ledger entry at the version this rewrite left it at.
+// A revert reads that number to tell a person's edit from the import's, and an issue whose
+// description the import rewrote after creating it is a version ahead of what the issue phase
+// recorded: without the restamp the revert would refuse to remove rows nobody but the import
+// had ever touched.
+func (s *importsService) embedInIssue(
+	ctx context.Context,
+	run entity.ImportRun,
+	decision entity.Decision,
+	found *references,
+	payload service.ImportEmbedPayload,
+	made outcome,
+	lost int,
+	placed map[string]string,
+	record entity.ImportRecord,
+	log *recorder,
+) (outcome, error) {
+	issueID, carried := found.issues[payload.Issue]
+	if !carried {
+		made.reason = reasonIssueMissing
+
+		return made, nil
+	}
+
+	issue, err := s.issues.GetVisible(ctx, run.WorkspaceID, issueID, decision.Scope)
+	if err != nil {
+		return made, err
+	}
+
+	body := rewritten(issue.Description, placed)
+
+	if body == issue.Description {
+		made.reason = reasonEmbedUnmarked
+
+		return made, nil
+	}
+
+	updated, err := s.issueWriter.Update(ctx, run.WorkspaceID, issueID, service.UpdateIssueInput{
+		ExpectedVersion: issue.Version,
+		Description:     &body,
+	})
+	if err != nil {
+		return made, err
+	}
+
+	if lost > 0 {
+		log.dropped(record.Resource, record.ExternalID, made.subject, reasonEmbedUnstored)
+	}
+
+	log.restamp(entity.ImportLedgerEntry{
+		Resource:        entity.ImportIssue,
+		CreatedID:       updated.ID,
+		VersionAtCreate: updated.Version,
+	})
+
+	made.id = updated.ID
+	made.reference = updated.Reference()
+	made.version = updated.Version
+	made.stamped = updated.UpdatedAt
+
+	return made, nil
+}
+
+func (s *importsService) embedInComment(
+	ctx context.Context,
+	run entity.ImportRun,
+	found *references,
+	payload service.ImportEmbedPayload,
+	made outcome,
+	lost int,
+	placed map[string]string,
+	record entity.ImportRecord,
+	log *recorder,
+) (outcome, error) {
+	issueID, carried := found.issues[payload.Issue]
+	commentID, said := found.comments[payload.Comment]
+
+	if !carried || !said {
+		made.reason = reasonCommentMissing
+
+		return made, nil
+	}
+
+	comment, err := s.comments.GetByID(ctx, run.WorkspaceID, commentID)
+	if err != nil {
+		return made, err
+	}
+
+	body := rewritten(comment.Body, placed)
+
+	if body == comment.Body {
+		made.reason = reasonEmbedUnmarked
+
+		return made, nil
+	}
+
+	edited, err := s.commentWriter.Edit(ctx, run.WorkspaceID, issueID, commentID, service.EditCommentInput{
+		Body: body,
+	})
+	if err != nil {
+		return made, err
+	}
+
+	if lost > 0 {
+		log.dropped(record.Resource, record.ExternalID, made.subject, reasonEmbedUnstored)
+	}
+
+	made.id = edited.ID
+	made.reference = edited.ID.String()
+	made.stamped = edited.UpdatedAt
+
+	return made, nil
+}
+
+func rewritten(body string, placed map[string]string) string {
+	for marker, path := range placed {
+		body = strings.ReplaceAll(body, marker, path)
+	}
+
+	return body
 }
 
 func (s *importsService) referenced(
@@ -668,8 +1090,10 @@ func (s *importsService) referenced(
 		groups:   orEmpty(resolved[entity.ImportLabelGroup]),
 		labels:   orEmpty(resolved[entity.ImportLabel]),
 		projects: orEmpty(resolved[entity.ImportProject]),
+		cycles:   orEmpty(resolved[entity.ImportCycle]),
 		issues:   orEmpty(resolved[entity.ImportIssue]),
 		comments: orEmpty(resolved[entity.ImportComment]),
+		files:    orEmpty(resolved[entity.ImportAttachment]),
 	}, nil
 }
 
@@ -693,10 +1117,14 @@ func (r *references) remember(resource entity.ImportResource, externalID string,
 		r.labels[externalID] = id
 	case entity.ImportProject:
 		r.projects[externalID] = id
+	case entity.ImportCycle:
+		r.cycles[externalID] = id
 	case entity.ImportIssue:
 		r.issues[externalID] = id
 	case entity.ImportComment:
 		r.comments[externalID] = id
+	case entity.ImportAttachment:
+		r.files[externalID] = id
 	}
 }
 
@@ -719,6 +1147,14 @@ func collect(record entity.ImportRecord, want func(entity.ImportResource, ...str
 		want(entity.ImportTeam, payload.Team)
 		want(entity.ImportLabelGroup, payload.Group)
 
+	case entity.ImportCycle:
+		payload, err := decodePayload[service.ImportCyclePayload](record)
+		if err != nil {
+			return err
+		}
+
+		want(entity.ImportTeam, payload.Team)
+
 	case entity.ImportIssue:
 		payload, err := decodePayload[service.ImportIssuePayload](record)
 		if err != nil {
@@ -728,6 +1164,7 @@ func collect(record entity.ImportRecord, want func(entity.ImportResource, ...str
 		want(entity.ImportTeam, payload.Team)
 		want(entity.ImportWorkflowState, payload.State)
 		want(entity.ImportProject, payload.Project)
+		want(entity.ImportCycle, payload.Cycle)
 		want(entity.ImportLabel, payload.Labels...)
 
 	case entity.ImportIssueParent:
@@ -754,6 +1191,25 @@ func collect(record entity.ImportRecord, want func(entity.ImportResource, ...str
 
 		want(entity.ImportIssue, payload.Issue)
 		want(entity.ImportComment, payload.Parent)
+
+	case entity.ImportAttachment:
+		payload, err := decodePayload[service.ImportAttachmentPayload](record)
+		if err != nil {
+			return err
+		}
+
+		want(entity.ImportIssue, payload.Issue)
+		want(entity.ImportComment, payload.Comment)
+
+	case entity.ImportEmbed:
+		payload, err := decodePayload[service.ImportEmbedPayload](record)
+		if err != nil {
+			return err
+		}
+
+		want(entity.ImportIssue, payload.Issue)
+		want(entity.ImportComment, payload.Comment)
+		want(entity.ImportAttachment, payload.Attachments...)
 	}
 
 	return nil
@@ -797,6 +1253,20 @@ func target(
 	id, made := created[key]
 
 	return id, made
+}
+
+func missing(
+	lost []entity.ImportUnknownReferenceError,
+	plan entity.MappingPlan,
+	kind entity.ImportMappingKind,
+	names, key string,
+	resolved uuid.UUID,
+) []entity.ImportUnknownReferenceError {
+	if strings.TrimSpace(key) == "" || resolved != uuid.Nil || plan.Skips(kind, key) {
+		return lost
+	}
+
+	return append(lost, entity.ImportUnknownReferenceError{Kind: names, Reference: key})
 }
 
 func priorityFor(plan entity.MappingPlan, key string) entity.IssuePriority {

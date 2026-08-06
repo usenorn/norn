@@ -28,6 +28,7 @@ type Config struct {
 	MCP           MCP           `mapstructure:"mcp"`
 	Webhooks      Webhooks      `mapstructure:"webhooks"`
 	Imports       Imports       `mapstructure:"imports"`
+	Linear        Linear        `mapstructure:"linear"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
 	GeoIP         GeoIP         `mapstructure:"geoip"`
@@ -272,16 +273,25 @@ type Worker struct {
 }
 
 type Imports struct {
-	ChunkSize       int           `mapstructure:"chunk_size"`
+	ChunkSize          int           `mapstructure:"chunk_size"`
+	PageSize           int           `mapstructure:"page_size"`
+	SliceBudget        time.Duration `mapstructure:"slice_budget"`
+	LeaseTTL           time.Duration `mapstructure:"lease_ttl"`
+	RescueSchedule     string        `mapstructure:"rescue_schedule"`
+	RescueBatch        int           `mapstructure:"rescue_batch"`
+	MaxAttempts        int           `mapstructure:"max_attempts"`
+	MinBackoff         time.Duration `mapstructure:"min_backoff"`
+	MaxBackoff         time.Duration `mapstructure:"max_backoff"`
+	RecordRetention    time.Duration `mapstructure:"record_retention"`
+	MaxAttachmentBytes int64         `mapstructure:"max_attachment_bytes"`
+	MaxUploadBytes     int64         `mapstructure:"max_upload_bytes"`
+}
+
+type Linear struct {
+	Endpoint        string        `mapstructure:"endpoint"`
+	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
+	MaxResponseSize int64         `mapstructure:"max_response_size"`
 	PageSize        int           `mapstructure:"page_size"`
-	SliceBudget     time.Duration `mapstructure:"slice_budget"`
-	LeaseTTL        time.Duration `mapstructure:"lease_ttl"`
-	RescueSchedule  string        `mapstructure:"rescue_schedule"`
-	RescueBatch     int           `mapstructure:"rescue_batch"`
-	MaxAttempts     int           `mapstructure:"max_attempts"`
-	MinBackoff      time.Duration `mapstructure:"min_backoff"`
-	MaxBackoff      time.Duration `mapstructure:"max_backoff"`
-	RecordRetention time.Duration `mapstructure:"record_retention"`
 }
 
 type MCP struct {

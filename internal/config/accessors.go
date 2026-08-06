@@ -44,6 +44,8 @@ func NewWebhooks(cfg Config) Webhooks { return cfg.Webhooks }
 
 func NewImports(cfg Config) Imports { return cfg.Imports }
 
+func NewLinear(cfg Config) Linear { return cfg.Linear }
+
 func NewSession(cfg Config) Session { return cfg.Session }
 
 func NewCasbin(cfg Config) Casbin { return cfg.Casbin }

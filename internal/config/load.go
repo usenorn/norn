@@ -106,6 +106,21 @@ func validate(cfg Config) error {
 		return err
 	}
 
+	if cfg.Imports.MaxUploadBytes > cfg.HTTP.MaxRequestBytes {
+		return fmt.Errorf(
+			"imports.max_upload_bytes (%d) is above http.max_request_bytes (%d). Every dashboard "+
+				"route is capped by the second, so the first would be a promise the server refuses "+
+				"to keep: an operator told their file may be that big would watch it rejected at the "+
+				"smaller number with nothing naming which limit did it. Raise http.max_request_bytes "+
+				"to carry larger imports",
+			cfg.Imports.MaxUploadBytes, cfg.HTTP.MaxRequestBytes,
+		)
+	}
+
+	if err := validateLinear(cfg.Linear); err != nil {
+		return err
+	}
+
 	if cfg.Password.BreachCheckEnabled && cfg.Password.BreachCheckTimeout <= 0 {
 		return fmt.Errorf(
 			"password.breach_check_timeout (%s) must be positive",
@@ -224,6 +239,50 @@ func validateImports(cfg Imports) error {
 			"imports.record_retention (%s) must be positive; the staged copy of a source's rows is "+
 				"working state and always ages out, while the ledger and the report do not",
 			cfg.RecordRetention,
+		)
+	}
+
+	if cfg.MaxAttachmentBytes < 1 || cfg.MaxUploadBytes < 1 {
+		return fmt.Errorf(
+			"imports.max_attachment_bytes (%d) and imports.max_upload_bytes (%d) must be positive. "+
+				"Each bounds one object an import moves in a single read, and a worker that would "+
+				"hold an unbounded body in memory has no way to refuse it",
+			cfg.MaxAttachmentBytes, cfg.MaxUploadBytes,
+		)
+	}
+
+	return nil
+}
+
+func validateLinear(cfg Linear) error {
+	if strings.TrimSpace(cfg.Endpoint) == "" {
+		return fmt.Errorf(
+			"linear.endpoint is required; it is where an import reads a Linear workspace from, and " +
+				"it is settable so an instance can be pointed at a test double without one",
+		)
+	}
+
+	if cfg.RequestTimeout <= 0 {
+		return fmt.Errorf(
+			"linear.request_timeout (%s) must be positive; a page of issues that never answers "+
+				"must give the worker back rather than hold its slot",
+			cfg.RequestTimeout,
+		)
+	}
+
+	if cfg.MaxResponseSize < 1<<20 {
+		return fmt.Errorf(
+			"linear.max_response_size (%d) must be at least 1048576. A page of issues carrying "+
+				"descriptions is megabytes, and a cap below that refuses ordinary data rather than "+
+				"protecting anything",
+			cfg.MaxResponseSize,
+		)
+	}
+
+	if cfg.PageSize < 1 || cfg.PageSize > 250 {
+		return fmt.Errorf(
+			"linear.page_size (%d) must be between 1 and 250, which is what the source itself accepts",
+			cfg.PageSize,
 		)
 	}
 
@@ -436,6 +495,13 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("imports.min_backoff", time.Second)
 	v.SetDefault("imports.max_backoff", 15*time.Minute)
 	v.SetDefault("imports.record_retention", 30*24*time.Hour)
+	v.SetDefault("imports.max_attachment_bytes", int64(25<<20))
+	v.SetDefault("imports.max_upload_bytes", int64(4<<20))
+
+	v.SetDefault("linear.endpoint", "https://api.linear.app/graphql")
+	v.SetDefault("linear.request_timeout", 30*time.Second)
+	v.SetDefault("linear.max_response_size", int64(32<<20))
+	v.SetDefault("linear.page_size", 100)
 	v.SetDefault("attachments.reclaim_batch", 200)
 
 	v.SetDefault("session.cookie_name", "norn_session")

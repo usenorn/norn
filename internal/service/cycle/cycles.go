@@ -295,6 +295,66 @@ func (s *cyclesService) DisableCadence(ctx context.Context, workspaceID, teamID 
 	})
 }
 
+func (s *cyclesService) Create(
+	ctx context.Context,
+	input service.CreateCycleInput,
+) (service.CycleView, error) {
+	// Cycles come from a cadence; creating one by hand is a product decision nobody has taken.
+	// Refusing an origin that no request body can forge keeps this an import-only entry point,
+	// so widening the repository to write a whole cycle does not quietly become a new capability.
+	if !entity.OriginAttributed(input.Origin) {
+		return service.CycleView{}, entity.ErrCycleCreateRequiresOrigin
+	}
+
+	decision, err := s.decide(ctx, input.WorkspaceID, entity.ActionManage)
+	if err != nil {
+		return service.CycleView{}, err
+	}
+
+	if err := entity.NewValidationError(
+		entity.ValidateCycleDate("startsOn", input.StartsOn),
+		entity.ValidateCycleDate("endsOn", input.EndsOn),
+		entity.ValidateCycleWindow(input.StartsOn, input.EndsOn),
+	); err != nil {
+		return service.CycleView{}, err
+	}
+
+	if _, err := s.liveTeam(ctx, input.WorkspaceID, input.TeamID, decision); err != nil {
+		return service.CycleView{}, err
+	}
+
+	number := input.Number
+
+	if number == 0 {
+		highest, err := s.cycles.HighestNumber(ctx, input.TeamID)
+		if err != nil {
+			return service.CycleView{}, err
+		}
+
+		number = highest + 1
+	}
+
+	today, err := s.today(ctx, input.WorkspaceID)
+	if err != nil {
+		return service.CycleView{}, err
+	}
+
+	created, err := s.cycles.Create(ctx, entity.Cycle{
+		WorkspaceID: input.WorkspaceID,
+		TeamID:      input.TeamID,
+		Number:      number,
+		StartsOn:    input.StartsOn,
+		EndsOn:      input.EndsOn,
+		ClosedAt:    input.ClosedAt,
+		Origin:      input.Origin,
+	})
+	if err != nil {
+		return service.CycleView{}, err
+	}
+
+	return service.CycleView{Cycle: created, Phase: created.PhaseOn(today)}, nil
+}
+
 func (s *cyclesService) List(
 	ctx context.Context,
 	workspaceID uuid.UUID,

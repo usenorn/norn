@@ -14,6 +14,9 @@ import (
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
+	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
+	blobrepo "github.com/usenorn/norn/internal/repository/blob"
+	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	importsrepo "github.com/usenorn/norn/internal/repository/imports"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
@@ -29,7 +32,9 @@ import (
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
+	attachmentsvc "github.com/usenorn/norn/internal/service/attachment"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	importssvc "github.com/usenorn/norn/internal/service/imports"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
@@ -46,6 +51,14 @@ const (
 )
 
 var errLostCommit = errors.New("the connection died before the chunk committed")
+
+// errTransactionAborted is what Postgres answers with SQLSTATE 25P02 to every command that
+// follows a failed one, until the transaction is rolled back to a savepoint or ended. A fake
+// that lets the next write through after refusing one cannot see a chunk poisoned by a single
+// colliding row, which is the whole of what a savepoint is here to prevent.
+var errTransactionAborted = errors.New(
+	"current transaction is aborted, commands ignored until end of transaction block",
+)
 
 func testImportConfig() config.Imports {
 	return config.Imports{
@@ -72,7 +85,10 @@ type parking struct {
 }
 
 type world struct {
-	run      entity.ImportRun
+	run        entity.ImportRun
+	secret     string
+	keyMissing bool
+
 	cursors  []entity.ImportCursor
 	records  []entity.ImportRecord
 	ledger   []entity.ImportLedgerEntry
@@ -177,7 +193,16 @@ func (w *world) settleRecords(
 	return settled
 }
 
-func (w *world) recordLedger(runID uuid.UUID, entries []entity.ImportLedgerEntry) {
+// recordLedger defaults created_at_recorded exactly as the column does — to the moment the
+// transaction opened — and never overwrites a stamp the apply pass carried in. Stamping every
+// entry here instead would hide the whole of what this field is for: in Postgres now() is
+// frozen at the start of the transaction, so a defaulted stamp sits a shade before the rows
+// written inside it and makes each one read as edited by somebody afterwards.
+func (w *world) recordLedger(
+	runID uuid.UUID,
+	entries []entity.ImportLedgerEntry,
+	opened time.Time,
+) {
 	for _, entry := range entries {
 		held := slices.ContainsFunc(w.ledger, func(kept entity.ImportLedgerEntry) bool {
 			return kept.Resource == entry.Resource && kept.CreatedID == entry.CreatedID
@@ -190,7 +215,10 @@ func (w *world) recordLedger(runID uuid.UUID, entries []entity.ImportLedgerEntry
 
 		entry.RunID = runID
 		entry.OrderSeq = w.order
-		entry.CreatedAtRecorded = time.Now().UTC()
+
+		if entry.CreatedAtRecorded.IsZero() {
+			entry.CreatedAtRecorded = opened
+		}
 
 		w.ledger = append(w.ledger, entry)
 	}
@@ -394,20 +422,25 @@ type harness struct {
 	states      *workflowstaterepo.MockWorkflowState
 	labels      *labelrepo.MockLabel
 	projects    *projectrepo.MockProject
+	cycles      *cyclerepo.MockCycle
 	issues      *issuerepo.MockIssue
 	comments    *issuecommentrepo.MockIssueComment
 	relations   *issuerelationrepo.MockIssueRelation
 	groups      *labelgrouprepo.MockLabelGroup
 	teamMembers *teammemberrepo.MockTeamMember
 	triage      *triagerepo.MockTriage
+	files       *attachmentrepo.MockAttachment
+	blobs       *blobrepo.MockBlob
 
 	issueWriter    *issuesvc.MockIssues
 	projectWriter  *projectsvc.MockProjects
+	cycleWriter    *cyclesvc.MockCycles
 	labelWriter    *labelsvc.MockLabels
 	stateWriter    *workflowstatesvc.MockWorkflowStates
 	commentWriter  *issuecommentsvc.MockIssueComments
 	teamWriter     *teamsvc.MockTeams
 	relationWriter *issuerelationsvc.MockIssueRelations
+	fileWriter     *attachmentsvc.MockAttachments
 
 	sources    *importssvc.MockImportSources
 	authorizer *authorizersvc.MockAuthorizer
@@ -419,7 +452,14 @@ type harness struct {
 	rescue  service.ImportRescue
 
 	transactions int
+	depth        int
+	aborted      bool
+	savepoints   int
+	released     int
+	unwound      int
+	opened       time.Time
 	doomed       int
+	refusedBook  error
 	heartbeat    func() error
 	trace        []string
 	committing   map[string]int
@@ -460,19 +500,24 @@ func newTunedHarness(t *testing.T, cfg config.Imports) *harness {
 		states:         workflowstaterepo.NewMockWorkflowState(ctrl),
 		labels:         labelrepo.NewMockLabel(ctrl),
 		projects:       projectrepo.NewMockProject(ctrl),
+		cycles:         cyclerepo.NewMockCycle(ctrl),
 		issues:         issuerepo.NewMockIssue(ctrl),
 		comments:       issuecommentrepo.NewMockIssueComment(ctrl),
 		relations:      issuerelationrepo.NewMockIssueRelation(ctrl),
 		groups:         labelgrouprepo.NewMockLabelGroup(ctrl),
 		teamMembers:    teammemberrepo.NewMockTeamMember(ctrl),
 		triage:         triagerepo.NewMockTriage(ctrl),
+		files:          attachmentrepo.NewMockAttachment(ctrl),
+		blobs:          blobrepo.NewMockBlob(ctrl),
 		issueWriter:    issuesvc.NewMockIssues(ctrl),
 		projectWriter:  projectsvc.NewMockProjects(ctrl),
+		cycleWriter:    cyclesvc.NewMockCycles(ctrl),
 		labelWriter:    labelsvc.NewMockLabels(ctrl),
 		stateWriter:    workflowstatesvc.NewMockWorkflowStates(ctrl),
 		commentWriter:  issuecommentsvc.NewMockIssueComments(ctrl),
 		teamWriter:     teamsvc.NewMockTeams(ctrl),
 		relationWriter: issuerelationsvc.NewMockIssueRelations(ctrl),
+		fileWriter:     attachmentsvc.NewMockAttachments(ctrl),
 		sources:        importssvc.NewMockImportSources(ctrl),
 		authorizer:     authorizersvc.NewMockAuthorizer(ctrl),
 		jobs:           jobqueuerepo.NewMockJobProducer(ctrl),
@@ -484,12 +529,17 @@ func newTunedHarness(t *testing.T, cfg config.Imports) *harness {
 		DoAndReturn(h.commit).
 		AnyTimes()
 
+	h.transactor.EXPECT().
+		WithSavepoint(gomock.Any(), gomock.Any()).
+		DoAndReturn(h.savepoint).
+		AnyTimes()
+
 	built := importssvc.New(
 		h.runs, h.cursors, h.records, h.mappings, h.ledger, h.report,
-		h.members, h.teams, h.states, h.labels, h.projects, h.issues, h.comments,
-		h.relations, h.groups, h.teamMembers, h.triage,
-		h.issueWriter, h.projectWriter, h.labelWriter, h.stateWriter,
-		h.commentWriter, h.teamWriter, h.relationWriter,
+		h.members, h.teams, h.states, h.labels, h.projects, h.cycles, h.issues, h.comments,
+		h.relations, h.groups, h.teamMembers, h.triage, h.files, h.blobs,
+		h.issueWriter, h.projectWriter, h.cycleWriter, h.labelWriter, h.stateWriter,
+		h.commentWriter, h.teamWriter, h.relationWriter, h.fileWriter,
 		h.sources, h.authorizer, h.jobs, h.transactor,
 		cfg,
 	)
@@ -503,10 +553,15 @@ func newTunedHarness(t *testing.T, cfg config.Imports) *harness {
 
 func (h *harness) commit(ctx context.Context, fn func(context.Context) error) error {
 	h.transactions++
+	h.opened = time.Now().UTC()
+	h.depth++
 
 	kept := h.world.snapshot()
 
 	err := fn(ctx)
+
+	h.depth--
+	h.aborted = false
 
 	if err == nil && h.transactions == h.doomed {
 		err = errLostCommit
@@ -519,6 +574,43 @@ func (h *harness) commit(ctx context.Context, fn func(context.Context) error) er
 	}
 
 	return nil
+}
+
+func (h *harness) savepoint(ctx context.Context, fn func(context.Context) error) error {
+	if h.depth == 0 {
+		return fn(ctx)
+	}
+
+	h.savepoints++
+
+	kept := h.world.snapshot()
+
+	if err := fn(ctx); err != nil {
+		h.world.restore(kept)
+		h.aborted = false
+		h.unwound++
+
+		return err
+	}
+
+	h.released++
+
+	return nil
+}
+
+// statement is what every mocked command inside a chunk answers through, because the thing that
+// decides whether the chunk survives a refused row is not the refusal itself but what the
+// database says to the command after it.
+func (h *harness) statement(err error) error {
+	if h.aborted {
+		return errTransactionAborted
+	}
+
+	if err != nil && h.depth > 0 {
+		h.aborted = true
+	}
+
+	return err
 }
 
 func (h *harness) run() entity.ImportRun { return h.world.run }
@@ -537,6 +629,10 @@ func (h *harness) backed() *harness {
 	h.report.EXPECT().
 		Record(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, runID uuid.UUID, lines []entity.ImportReportLine) error {
+			if err := h.statement(nil); err != nil {
+				return err
+			}
+
 			h.world.note(runID, lines)
 
 			return nil
@@ -555,6 +651,45 @@ func (h *harness) backRuns() {
 			}
 
 			return h.world.run, nil
+		}).
+		AnyTimes()
+
+	h.runs.EXPECT().
+		SaveSourceConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_ uuid.UUID,
+			secret string,
+			settings json.RawMessage,
+			policy entity.ImportUnknownPolicy,
+		) error {
+			if h.world.keyMissing && secret != "" {
+				return entity.ErrImportEncryptionKeyMissing
+			}
+
+			if secret != "" {
+				h.world.secret = secret
+				h.world.run.SourceSecretSet = true
+			}
+
+			h.world.run.Settings = settings
+			h.world.run.UnknownReferences = policy
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.runs.EXPECT().
+		SourceConfigForStaging(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID) (repository.ImportSourceSecret, error) {
+			if h.world.keyMissing {
+				return repository.ImportSourceSecret{}, entity.ErrImportEncryptionKeyMissing
+			}
+
+			return repository.ImportSourceSecret{
+				Secret:   h.world.secret,
+				Settings: h.world.run.Settings,
+			}, nil
 		}).
 		AnyTimes()
 
@@ -622,6 +757,10 @@ func (h *harness) backRuns() {
 	h.runs.EXPECT().
 		Advance(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ uuid.UUID, staged, processed int) error {
+			if err := h.statement(nil); err != nil {
+				return err
+			}
+
 			h.world.advances = append(h.world.advances, advance{staged: staged, processed: processed})
 			h.world.run.Staged += staged
 			h.world.run.Processed += processed
@@ -740,6 +879,10 @@ func (h *harness) backRecords() {
 			state entity.ImportRecordState,
 			outcomes []entity.ImportRecord,
 		) ([]string, error) {
+			if err := h.statement(nil); err != nil {
+				return nil, err
+			}
+
 			return h.world.settleRecords(resource, state, outcomes), nil
 		}).
 		AnyTimes()
@@ -782,7 +925,11 @@ func (h *harness) backLedger() {
 	h.ledger.EXPECT().
 		Record(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, runID uuid.UUID, entries []entity.ImportLedgerEntry) error {
-			h.world.recordLedger(runID, entries)
+			if err := h.statement(h.refusedBook); err != nil {
+				return err
+			}
+
+			h.world.recordLedger(runID, entries, h.opened)
 
 			return nil
 		}).
@@ -814,6 +961,10 @@ func (h *harness) backLedger() {
 	h.ledger.EXPECT().
 		Restamp(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ uuid.UUID, entries []entity.ImportLedgerEntry) error {
+			if err := h.statement(nil); err != nil {
+				return err
+			}
+
 			h.world.restampLedger(entries)
 
 			return nil
@@ -866,6 +1017,26 @@ func (h *harness) scopedTo(teamIDs ...uuid.UUID) *harness {
 		IncludePrivate: true,
 		TeamIDs:        teamIDs,
 	}})
+}
+
+func (h *harness) configured(secret string, settings json.RawMessage) *harness {
+	h.world.secret = secret
+	h.world.run.SourceSecretSet = secret != ""
+	h.world.run.Settings = settings
+
+	return h
+}
+
+func (h *harness) withoutAnEncryptionKey() *harness {
+	h.world.keyMissing = true
+
+	return h
+}
+
+func (h *harness) resolving(policy entity.ImportUnknownPolicy) *harness {
+	h.world.run.UnknownReferences = policy
+
+	return h
 }
 
 func (h *harness) at(status entity.ImportStatus) *harness {
@@ -954,7 +1125,7 @@ func (h *harness) alreadyMade(entries ...entity.ImportLedgerEntry) *harness {
 		entries[index].WorkspaceID = h.world.run.WorkspaceID
 	}
 
-	h.world.recordLedger(h.world.run.ID, entries)
+	h.world.recordLedger(h.world.run.ID, entries, time.Now().UTC())
 
 	return h
 }
@@ -967,6 +1138,9 @@ func (h *harness) decided(mappings ...entity.ImportMapping) *harness {
 
 func (h *harness) forget() *harness {
 	h.transactions = 0
+	h.savepoints = 0
+	h.released = 0
+	h.unwound = 0
 	h.trace = nil
 	h.world.advances = nil
 	h.world.saves = nil

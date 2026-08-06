@@ -115,6 +115,12 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		}
 	}
 
+	if input.CycleID != uuid.Nil {
+		if err := s.cycleAccepts(ctx, input, decision); err != nil {
+			return entity.Issue{}, err
+		}
+	}
+
 	if input.ProjectID != uuid.Nil {
 		project, err := s.projects.GetByID(ctx, input.WorkspaceID, input.ProjectID)
 		if err != nil {
@@ -135,6 +141,7 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		AssigneeAccountID:  input.AssigneeAccountID,
 		Estimate:           input.Estimate,
 		DueOn:              input.DueOn,
+		CycleID:            input.CycleID,
 		ProjectID:          input.ProjectID,
 		State:              entity.IssueState{ID: state.ID},
 		CreatedByAccountID: entity.OriginAuthor(input.Origin, decision.Actor.AccountID),
@@ -825,6 +832,31 @@ func (s *issuesService) joinable(
 	}
 
 	return cycle, nil
+}
+
+func (s *issuesService) cycleAccepts(
+	ctx context.Context,
+	input service.CreateIssueInput,
+	decision entity.Decision,
+) error {
+	cycle, err := s.cycles.GetVisible(ctx, input.WorkspaceID, input.CycleID, decision.Scope)
+	if err != nil {
+		return err
+	}
+
+	if cycle.TeamID != input.TeamID {
+		return entity.ErrCycleTeamMismatch
+	}
+
+	// An import carries a team's finished cycles, and finished is exactly the state a historical
+	// cycle must be in, so refusing a closed one here would mean importing cycles with nothing in
+	// them. The test is attribution rather than presence: an origin decoded from a request body
+	// is non-nil and inert, so a nil check would hand this concession to any caller.
+	if cycle.Closed() && !entity.OriginAttributed(input.Origin) {
+		return entity.ErrCycleClosed
+	}
+
+	return nil
 }
 
 func (s *issuesService) projectOpen(

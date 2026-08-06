@@ -40,8 +40,9 @@ JOIN workspace_teams t ON t.id = c.team_id`
 
 const insertCycleQuery = `
 WITH inserted AS (
-    INSERT INTO workspace_cycles (workspace_id, team_id, number, starts_on, ends_on)
-    VALUES ($1, $2, $3, $4::date, $5::date)
+    INSERT INTO workspace_cycles (workspace_id, team_id, number, starts_on, ends_on,
+                                  closed_at, closed_by, rollover, created_at, updated_at)
+    VALUES ($1, $2, $3, $4::date, $5::date, $6, $7::uuid, $8, $9, $10)
     RETURNING id, workspace_id, team_id, number, starts_on, ends_on,
               closed_at, closed_by, rollover, created_at, updated_at
 )
@@ -104,6 +105,8 @@ LIMIT 1`
 
 const highestCycleNumberQuery = `
 SELECT coalesce(max(number), 0) FROM workspace_cycles WHERE team_id = $1`
+
+const deleteCycleQuery = `DELETE FROM workspace_cycles WHERE id = $1`
 
 const deleteVacantCyclesQuery = `
 DELETE FROM workspace_cycles c
@@ -220,6 +223,26 @@ func collectCycles(rows *sql.Rows) ([]entity.Cycle, error) {
 }
 
 func (r *cycleRepository) Create(ctx context.Context, cycle entity.Cycle) (entity.Cycle, error) {
+	createdAt, updatedAt := entity.OriginStamp(cycle.Origin, time.Now().UTC())
+
+	var (
+		closedAt any
+		closedBy any
+	)
+
+	if cycle.ClosedAt != nil {
+		closedAt = *cycle.ClosedAt
+	}
+
+	if cycle.ClosedByAccountID != uuid.Nil {
+		closedBy = cycle.ClosedByAccountID.String()
+	}
+
+	rollover := entity.CycleRolloverNone
+	if cycle.Closed() {
+		rollover = cycle.Rollover
+	}
+
 	created, err := scanCycle(r.db.Querier(ctx).QueryRowContext(
 		ctx,
 		insertCycleQuery,
@@ -228,6 +251,11 @@ func (r *cycleRepository) Create(ctx context.Context, cycle entity.Cycle) (entit
 		cycle.Number,
 		cycle.StartsOn,
 		cycle.EndsOn,
+		closedAt,
+		closedBy,
+		string(rollover),
+		createdAt,
+		updatedAt,
 	))
 	if err != nil {
 		if translated := translateWriteError(err); !errors.Is(translated, err) {
@@ -407,6 +435,24 @@ func (r *cycleRepository) HighestNumber(ctx context.Context, teamID uuid.UUID) (
 	}
 
 	return highest, nil
+}
+
+func (r *cycleRepository) Delete(ctx context.Context, cycleID uuid.UUID) error {
+	result, err := r.db.Querier(ctx).ExecContext(ctx, deleteCycleQuery, cycleID.String())
+	if err != nil {
+		return fmt.Errorf("delete cycle: %w", err)
+	}
+
+	removed, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read removed cycle rows: %w", err)
+	}
+
+	if removed == 0 {
+		return entity.ErrCycleNotFound
+	}
+
+	return nil
 }
 
 func (r *cycleRepository) DeleteVacantFrom(

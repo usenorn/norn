@@ -43,6 +43,21 @@ func (m *MockAttachments) EXPECT() *MockAttachmentsMockRecorder {
 	return m.recorder
 }
 
+// Adopt mocks base method.
+func (m *MockAttachments) Adopt(ctx context.Context, workspaceID, issueID uuid.UUID, input service.AdoptAttachmentInput) (entity.Attachment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Adopt", ctx, workspaceID, issueID, input)
+	ret0, _ := ret[0].(entity.Attachment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Adopt indicates an expected call of Adopt.
+func (mr *MockAttachmentsMockRecorder) Adopt(ctx, workspaceID, issueID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Adopt", reflect.TypeOf((*MockAttachments)(nil).Adopt), ctx, workspaceID, issueID, input)
+}
+
 // Content mocks base method.
 func (m *MockAttachments) Content(ctx context.Context, workspaceID, attachmentID uuid.UUID) (string, error) {
 	m.ctrl.T.Helper()
