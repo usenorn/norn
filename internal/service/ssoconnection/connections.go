@@ -444,12 +444,14 @@ func (s *connectionsService) Complete(
 }
 
 type admission struct {
-	WorkspaceID  uuid.UUID
-	Provisioning bool
-	Issuer       string
-	Subject      string
-	Email        string
-	Name         string
+	Protocol      entity.SSOProtocol
+	WorkspaceID   uuid.UUID
+	Provisioning  bool
+	Issuer        string
+	Subject       string
+	Email         string
+	Name          string
+	EmailVerified *bool
 }
 
 func (s *connectionsService) admit(
@@ -458,12 +460,14 @@ func (s *connectionsService) admit(
 	claims entity.OIDCClaims,
 ) (entity.Account, bool, error) {
 	return s.admitIdentity(ctx, admission{
-		WorkspaceID:  connection.WorkspaceID,
-		Provisioning: connection.Provisioning,
-		Issuer:       connection.Endpoints.Issuer,
-		Subject:      claims.Subject,
-		Email:        entity.NormalizeEmail(claims.Email),
-		Name:         claims.Name,
+		Protocol:      entity.SSOProtocolOIDC,
+		WorkspaceID:   connection.WorkspaceID,
+		Provisioning:  connection.Provisioning,
+		Issuer:        connection.Endpoints.Issuer,
+		Subject:       claims.Subject,
+		Email:         entity.NormalizeEmail(claims.Email),
+		Name:          claims.Name,
+		EmailVerified: claims.EmailVerified,
 	})
 }
 
@@ -528,6 +532,14 @@ func (s *connectionsService) bootstrap(
 	ctx context.Context,
 	request admission,
 ) (entity.Account, bool, error) {
+	if err := entity.VerifiedEmailRefusal(
+		request.Protocol,
+		request.EmailVerified,
+		request.Email,
+	); err != nil {
+		return entity.Account{}, false, err
+	}
+
 	account, err := s.accounts.GetByEmail(ctx, request.Email)
 	if err != nil && !errors.Is(err, entity.ErrAccountNotFound) {
 		return entity.Account{}, false, err
@@ -559,6 +571,15 @@ func (s *connectionsService) bootstrap(
 	}
 
 	if outcome == entity.MatchOutcomeSignIn {
+		elsewhere, err := s.memberships.ExistsOutside(ctx, account.ID, request.WorkspaceID)
+		if err != nil {
+			return entity.Account{}, false, err
+		}
+
+		if err := entity.EmailClaimRefusal(account, elsewhere); err != nil {
+			return entity.Account{}, false, err
+		}
+
 		if err := s.link(ctx, request, account.ID); err != nil {
 			return entity.Account{}, false, err
 		}

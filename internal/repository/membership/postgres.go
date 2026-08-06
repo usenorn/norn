@@ -29,6 +29,13 @@ FROM workspace_memberships
 WHERE account_id = $1 AND role = $2
 ORDER BY workspace_id`
 
+const membershipElsewhereQuery = `
+SELECT EXISTS (
+    SELECT 1
+    FROM workspace_memberships
+    WHERE account_id = $1 AND workspace_id <> $2
+)`
+
 const soleAdminWorkspaceIDsQuery = `
 SELECT held.workspace_id
 FROM workspace_memberships held
@@ -448,6 +455,24 @@ func (r *membershipRepository) DeleteByAccountID(ctx context.Context, accountID 
 	}
 
 	return nil
+}
+
+func (r *membershipRepository) ExistsOutside(
+	ctx context.Context,
+	accountID, workspaceID uuid.UUID,
+) (bool, error) {
+	var elsewhere bool
+
+	if err := r.db.Querier(ctx).QueryRowContext(
+		ctx,
+		membershipElsewhereQuery,
+		accountID.String(),
+		workspaceID.String(),
+	).Scan(&elsewhere); err != nil {
+		return false, fmt.Errorf("check for a membership elsewhere: %w", err)
+	}
+
+	return elsewhere, nil
 }
 
 func (r *membershipRepository) ListAdminWorkspaceIDs(ctx context.Context, accountID uuid.UUID) ([]uuid.UUID, error) {

@@ -382,6 +382,7 @@ func TestSigningInThroughTheProviderLinksTheAccountToThatIdentity(t *testing.T) 
 
 	h.expectExchange(workspaceID, false, verifiedClaims("ada@example.com"))
 	h.unlinkedSubject()
+	h.accountBelongsOnlyHere()
 	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(account, nil)
 	h.memberships.EXPECT().Get(gomock.Any(), workspaceID, account.ID).Return(entity.Membership{}, nil)
 	h.sessions.EXPECT().
@@ -428,6 +429,7 @@ func TestADifferentProviderIdentityIsRefusedForAnAlreadyLinkedAccount(t *testing
 
 	h.expectExchange(workspaceID, false, verifiedClaims("ada@example.com"))
 	h.unlinkedSubject()
+	h.accountBelongsOnlyHere()
 	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(account, nil)
 	h.memberships.EXPECT().Get(gomock.Any(), workspaceID, account.ID).Return(entity.Membership{}, nil)
 

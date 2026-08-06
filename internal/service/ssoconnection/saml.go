@@ -342,6 +342,7 @@ func (s *connectionsService) CompleteSAML(
 	}
 
 	account, provisioned, err := s.admitIdentity(ctx, admission{
+		Protocol:     entity.SSOProtocolSAML,
 		WorkspaceID:  workspace.ID,
 		Provisioning: connection.Provisioning,
 		Issuer:       connection.Descriptor.EntityID,
