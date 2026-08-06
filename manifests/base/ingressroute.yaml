@@ -28,7 +28,7 @@ spec:
     # then drops the router and silently serves /v1 from the catch-all.
     - kind: Rule
       priority: 200
-      match: Host(`app.norn.so`) && (PathPrefix(`/v1/`) || Path(`/v1`) || PathPrefix(`/mcp`) || PathPrefix(`/oauth/`) || PathPrefix(`/.well-known/`))
+      match: Host(`app.norn.so`) && (PathPrefix(`/v1/`) || Path(`/v1`) || PathPrefix(`/mcp/`) || Path(`/mcp`) || PathPrefix(`/oauth/`) || PathPrefix(`/.well-known/`))
       middlewares:
         - name: norn-compress
       services:

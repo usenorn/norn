@@ -62,6 +62,7 @@ func TestSlugsRoutedElsewhereAreReserved(t *testing.T) {
 		{"shadowed by a sign-in route", "sign-in", true},
 		{"shadowed by account settings", "settings", true},
 		{"merely prefixed by a reserved word", "v1-team", false},
+		{"merely prefixed by the mcp edge", "mcp-team", false},
 		{"ordinary slug", "acme-labs", false},
 	}
 
