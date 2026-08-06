@@ -27,6 +27,25 @@ func TestEveryIssueColumnTheInsertSelectsIsAlsoReturnedByIt(t *testing.T) {
 	}
 }
 
+func TestAnImportedIssueKeepsItsOwnTwoTimestamps(t *testing.T) {
+	written := insertIssueQuery[strings.Index(insertIssueQuery, "SELECT $1"):]
+	written = written[:strings.Index(written, "FROM allocated")]
+
+	stamps := regexp.MustCompile(`\$(\d+), \$(\d+)\s*$`).FindStringSubmatch(strings.TrimSpace(written))
+	if stamps == nil {
+		t.Fatal("could not find the pair the insert binds to created_at and updated_at")
+	}
+
+	if stamps[1] == stamps[2] {
+		t.Fatalf(
+			"created_at and updated_at are both bound to $%s. An issue imported from elsewhere "+
+				"arrives with two dates that differ, and collapsing them rewrites its history to "+
+				"claim it was never touched after it was filed.",
+			stamps[1],
+		)
+	}
+}
+
 func TestProgressCountsOnlyLiveWork(t *testing.T) {
 	if !strings.Contains(progressQuery, "i.status = 'active'") {
 		t.Fatal(

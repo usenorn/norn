@@ -25,6 +25,7 @@ var Set = wire.NewSet(
 	NewWorker,
 	NewMCP,
 	NewWebhooks,
+	NewImports,
 	NewSession,
 	NewCasbin,
 	NewGeoIP,

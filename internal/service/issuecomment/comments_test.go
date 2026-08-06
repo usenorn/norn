@@ -193,6 +193,92 @@ func TestAViewerMayCommentEvenThoughTheyMayNotTouchTheIssue(t *testing.T) {
 	}
 }
 
+func TestAnImportedCommentReachesTheRepositoryWithTheDatesItsSourceRecorded(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(h.authorID, entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	var captured entity.IssueComment
+
+	h.comments.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, comment entity.IssueComment) (entity.IssueComment, error) {
+			captured = comment
+			comment.ID = h.commentID
+
+			return comment, nil
+		})
+
+	h.accepts()
+	h.comments.EXPECT().RecordMentions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	createdAt := time.Date(2019, time.April, 2, 9, 15, 0, 0, time.UTC)
+	updatedAt := createdAt.Add(72 * time.Hour)
+	author := uuid.New()
+	origin := entity.NewImportOrigin(createdAt, updatedAt, author)
+
+	if _, err := h.service.Post(context.Background(), h.workspaceID, h.issueID, service.PostCommentInput{
+		Body:   "this reproduces on my machine too",
+		Origin: &origin,
+	}); err != nil {
+		t.Fatalf("Post: %v", err)
+	}
+
+	if captured.Origin == nil {
+		t.Fatal("the origin stopped at the service, so the comment would be dated the moment the import ran")
+	}
+
+	gotCreated, gotUpdated := captured.Origin.Stamp(time.Now().UTC())
+
+	if !gotCreated.Equal(createdAt) || !gotUpdated.Equal(updatedAt) {
+		t.Fatalf("stamp = (%v, %v), want (%v, %v)", gotCreated, gotUpdated, createdAt, updatedAt)
+	}
+
+	if captured.AuthorAccountID != author {
+		t.Fatalf(
+			"the comment was authored by %v rather than the member its source author was mapped "+
+				"onto. Dating a comment three years ago and then signing it with whoever ran the "+
+				"import is worse than not importing it: the thread reads as though one person "+
+				"held every side of the conversation.",
+			captured.AuthorAccountID,
+		)
+	}
+}
+
+func TestACommentWithNoImportBehindItIsStillAuthoredByWhoeverPostedIt(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(h.authorID, entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	var captured entity.IssueComment
+
+	h.comments.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, comment entity.IssueComment) (entity.IssueComment, error) {
+			captured = comment
+			comment.ID = h.commentID
+
+			return comment, nil
+		})
+
+	h.accepts()
+	h.comments.EXPECT().RecordMentions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	if _, err := h.service.Post(context.Background(), h.workspaceID, h.issueID, service.PostCommentInput{
+		Body: "still broken",
+	}); err != nil {
+		t.Fatalf("Post: %v", err)
+	}
+
+	if captured.AuthorAccountID != h.authorID {
+		t.Errorf("author = %v, want the actor %v", captured.AuthorAccountID, h.authorID)
+	}
+
+	if captured.Origin != nil {
+		t.Error("an ordinary comment arrived carrying an import origin")
+	}
+}
+
 func TestAMentionOfSomeoneWhoCannotSeeTheIssueIsRecordedAndReportedButNotNotifiable(t *testing.T) {
 	h := newHarness(t)
 	h.actAs(h.authorID, entity.MembershipRoleMember)

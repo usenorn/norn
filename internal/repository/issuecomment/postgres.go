@@ -43,8 +43,9 @@ LEFT JOIN accounts a ON a.id = c.author_account_id`
 const createCommentQuery = `
 WITH created AS (
     INSERT INTO workspace_issue_comments
-        (workspace_id, issue_id, parent_comment_id, author_account_id, author_kind, body)
-    SELECT $1, $2, nullif($3, '')::uuid, author.id, author.kind, $5
+        (workspace_id, issue_id, parent_comment_id, author_account_id, author_kind, body,
+         created_at, updated_at)
+    SELECT $1, $2, nullif($3, '')::uuid, author.id, author.kind, $5, $6, $7
     FROM accounts author
     WHERE author.id = $4::uuid
     RETURNING *
@@ -132,6 +133,13 @@ const tombstoneCommentQuery = `
 UPDATE workspace_issue_comments
 SET body = '', edited_at = NULL, deleted_at = $2, updated_at = $2
 WHERE id = $1 AND deleted_at IS NULL`
+
+const purgeImportedCommentsQuery = `
+DELETE FROM workspace_issue_comments
+WHERE workspace_id = $1
+  AND id = ANY($2::uuid[])
+  AND deleted_at IS NULL
+  AND edited_at IS NULL`
 
 const reactQuery = `
 INSERT INTO workspace_issue_comment_reactions (comment_id, account_id, reaction)
@@ -280,6 +288,8 @@ func (r *issueCommentRepository) Create(
 	ctx context.Context,
 	comment entity.IssueComment,
 ) (entity.IssueComment, error) {
+	createdAt, updatedAt := entity.OriginStamp(comment.Origin, time.Now().UTC())
+
 	created, err := scanComment(r.db.Querier(ctx).QueryRowContext(
 		ctx, createCommentQuery,
 		comment.WorkspaceID.String(),
@@ -287,6 +297,8 @@ func (r *issueCommentRepository) Create(
 		text(comment.ParentCommentID),
 		comment.AuthorAccountID.String(),
 		comment.Body,
+		createdAt,
+		updatedAt,
 	))
 	if err != nil {
 		return entity.IssueComment{}, fmt.Errorf("create comment: %w", err)
@@ -537,6 +549,24 @@ func (r *issueCommentRepository) Tombstone(
 	at time.Time,
 ) error {
 	return r.write(ctx, "delete comment", tombstoneCommentQuery, commentID.String(), at)
+}
+
+func (r *issueCommentRepository) PurgeImported(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	ids []uuid.UUID,
+) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, purgeImportedCommentsQuery, workspaceID.String(), identifiers(ids),
+	); err != nil {
+		return fmt.Errorf("purge imported comments: %w", err)
+	}
+
+	return nil
 }
 
 func (r *issueCommentRepository) write(

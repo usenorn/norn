@@ -5,6 +5,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
@@ -76,6 +77,47 @@ func TestCreatingALabelOnAnArchivedTeamIsRefused(t *testing.T) {
 
 	if !errors.Is(err, entity.ErrTeamArchived) {
 		t.Fatalf("Create error = %v, want ErrTeamArchived", err)
+	}
+}
+
+func TestAnImportedLabelReachesTheRepositoryWithTheDatesItsSourceRecorded(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+
+	h.actorSeesEveryTeam(workspaceID)
+
+	var captured entity.Label
+
+	h.labels.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, label entity.Label) (entity.Label, error) {
+			captured = label
+
+			return label, nil
+		})
+
+	createdAt := time.Date(2019, time.April, 2, 9, 15, 0, 0, time.UTC)
+	updatedAt := createdAt.Add(72 * time.Hour)
+	origin := entity.NewImportOrigin(createdAt, updatedAt, uuid.New())
+
+	if _, err := h.service.Create(context.Background(), service.CreateLabelInput{
+		WorkspaceID: workspaceID,
+		Name:        "Crash",
+		Color:       entity.LabelColorCyan,
+		Origin:      &origin,
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if captured.Origin == nil {
+		t.Fatal("the origin stopped at the service, so the label would be dated the moment the import ran")
+	}
+
+	gotCreated, gotUpdated := captured.Origin.Stamp(time.Now().UTC())
+
+	if !gotCreated.Equal(createdAt) || !gotUpdated.Equal(updatedAt) {
+		t.Fatalf("stamp = (%v, %v), want (%v, %v)", gotCreated, gotUpdated, createdAt, updatedAt)
 	}
 }
 

@@ -159,6 +159,7 @@ func (s *workflowStatesService) Create(
 			Name:        input.Name,
 			Category:    input.Category,
 			Position:    len(existing) + 1,
+			Origin:      input.Origin,
 		})
 
 		return err

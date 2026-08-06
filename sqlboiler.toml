@@ -12,6 +12,12 @@ blacklist = [
   "webhook_outbox",
   "webhook_deliveries",
   "webhook_attempts",
+  "workspace_import_runs",
+  "workspace_import_cursors",
+  "workspace_import_records",
+  "workspace_import_mappings",
+  "workspace_import_ledger",
+  "workspace_import_report_lines",
 ]
 host = "127.0.0.1"
 port = 5433

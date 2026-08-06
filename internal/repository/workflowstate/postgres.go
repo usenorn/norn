@@ -105,9 +105,7 @@ func (r *workflowStateRepository) insert(ctx context.Context, state entity.Workf
 		state.ID = uuid.New()
 	}
 
-	now := time.Now().UTC()
-	state.CreatedAt = now
-	state.UpdatedAt = now
+	state.CreatedAt, state.UpdatedAt = entity.OriginStamp(state.Origin, time.Now().UTC())
 
 	model := toModel(state)
 

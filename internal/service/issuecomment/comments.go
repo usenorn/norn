@@ -196,8 +196,9 @@ func (s *issueCommentsService) Post(
 			WorkspaceID:     workspaceID,
 			IssueID:         issueID,
 			ParentCommentID: input.ParentCommentID,
-			AuthorAccountID: decision.Actor.AccountID,
+			AuthorAccountID: entity.OriginAuthor(input.Origin, decision.Actor.AccountID),
 			Body:            input.Body,
+			Origin:          input.Origin,
 		})
 		if err != nil {
 			return err

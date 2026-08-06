@@ -71,6 +71,7 @@ type Label struct {
 	Color       LabelColor
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	Origin      *ImportOrigin
 }
 
 func (l Label) AppliesTo(teamID uuid.UUID) bool {

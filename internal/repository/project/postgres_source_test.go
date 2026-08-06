@@ -53,6 +53,36 @@ func TestNoProjectQueryCountsIssues(t *testing.T) {
 	}
 }
 
+func TestAnImportedProjectKeepsItsOwnTwoTimestamps(t *testing.T) {
+	if !strings.Contains(insertProjectQuery, "created_at") || !strings.Contains(insertProjectQuery, "updated_at") {
+		t.Fatal(
+			"insertProjectQuery leaves created_at or updated_at to the column default, so a " +
+				"project imported from elsewhere is dated the moment the import ran",
+		)
+	}
+
+	values := regexp.MustCompile(`(?s)VALUES \((.*?)\)`).FindStringSubmatch(insertProjectQuery)
+	if values == nil {
+		t.Fatal("could not read insertProjectQuery's bound values")
+	}
+
+	bound := strings.Split(values[1], ",")
+	if len(bound) < 2 {
+		t.Fatal("insertProjectQuery binds fewer values than it names columns")
+	}
+
+	created := strings.TrimSpace(bound[len(bound)-2])
+	updated := strings.TrimSpace(bound[len(bound)-1])
+
+	if created == updated {
+		t.Fatalf(
+			"created_at and updated_at are both bound to %s. A project imported with a later "+
+				"revision date would report that nobody has touched it since it was created.",
+			created,
+		)
+	}
+}
+
 func TestConcealedWorkAsksWhetherAnyExistsRatherThanHowMuch(t *testing.T) {
 	if !strings.Contains(concealedWorkQuery, "SELECT EXISTS") {
 		t.Fatal(

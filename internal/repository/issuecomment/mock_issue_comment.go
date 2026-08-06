@@ -163,6 +163,20 @@ func (mr *MockIssueCommentMockRecorder) Mentioned(ctx, commentID any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mentioned", reflect.TypeOf((*MockIssueComment)(nil).Mentioned), ctx, commentID)
 }
 
+// PurgeImported mocks base method.
+func (m *MockIssueComment) PurgeImported(ctx context.Context, workspaceID uuid.UUID, ids []uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PurgeImported", ctx, workspaceID, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PurgeImported indicates an expected call of PurgeImported.
+func (mr *MockIssueCommentMockRecorder) PurgeImported(ctx, workspaceID, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgeImported", reflect.TypeOf((*MockIssueComment)(nil).PurgeImported), ctx, workspaceID, ids)
+}
+
 // React mocks base method.
 func (m *MockIssueComment) React(ctx context.Context, commentID, accountID uuid.UUID, reaction entity.CommentReaction) error {
 	m.ctrl.T.Helper()

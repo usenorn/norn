@@ -29,6 +29,7 @@ type CreateProjectInput struct {
 	Description   string
 	LeadAccountID *uuid.UUID
 	TargetOn      string
+	Origin        *entity.ImportOrigin
 }
 
 type UpdateProjectInput struct {

@@ -32,6 +32,7 @@ type PostCommentInput struct {
 	Body            string
 	Mentions        []CommentMentionInput
 	AttachmentIDs   []uuid.UUID
+	Origin          *entity.ImportOrigin
 }
 
 type CommentPosted struct {

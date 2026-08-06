@@ -16,13 +16,24 @@ import (
 )
 
 type Client struct {
-	producer  *taskqueue.Client
-	inspector *taskqueue.Inspector
-	maxRetry  int
+	producer      *taskqueue.Client
+	inspector     *taskqueue.Inspector
+	maxRetry      int
+	importTimeout time.Duration
 }
 
-func NewClient(producer *taskqueue.Client, inspector *taskqueue.Inspector, cfg config.Asynq) *Client {
-	return &Client{producer: producer, inspector: inspector, maxRetry: cfg.MaxRetry}
+func NewClient(
+	producer *taskqueue.Client,
+	inspector *taskqueue.Inspector,
+	cfg config.Asynq,
+	imports config.Imports,
+) *Client {
+	return &Client{
+		producer:      producer,
+		inspector:     inspector,
+		maxRetry:      cfg.MaxRetry,
+		importTimeout: 2 * imports.SliceBudget,
+	}
 }
 
 func AsProducer(client *Client) repository.JobProducer {
@@ -243,6 +254,88 @@ func (c *Client) EnqueueBulkApply(ctx context.Context, payload entity.BulkApplyP
 		}
 
 		return fmt.Errorf("enqueue bulk apply: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) EnqueueImportStage(
+	ctx context.Context,
+	payload entity.ImportStagePayload,
+	processAt time.Time,
+) error {
+	return c.enqueueImportSlice(
+		ctx, entity.TaskTypeImportStage, "import stage", payload,
+		fmt.Sprintf("import-stage:%s:%d", payload.ImportRunID, payload.Attempt), processAt,
+	)
+}
+
+func (c *Client) EnqueueImportExecute(
+	ctx context.Context,
+	payload entity.ImportExecutePayload,
+	processAt time.Time,
+) error {
+	return c.enqueueImportSlice(
+		ctx, entity.TaskTypeImportExecute, "import execute", payload,
+		fmt.Sprintf("import-execute:%s:%d", payload.ImportRunID, payload.Attempt), processAt,
+	)
+}
+
+func (c *Client) EnqueueImportRevert(
+	ctx context.Context,
+	payload entity.ImportRevertPayload,
+	processAt time.Time,
+) error {
+	return c.enqueueImportSlice(
+		ctx, entity.TaskTypeImportRevert, "import revert", payload,
+		fmt.Sprintf("import-revert:%s:%d", payload.ImportRunID, payload.Attempt), processAt,
+	)
+}
+
+func (c *Client) enqueueImportSlice(
+	ctx context.Context,
+	taskType, action string,
+	payload any,
+	taskID string,
+	processAt time.Time,
+) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode %s payload: %w", action, err)
+	}
+
+	task := asynq.NewTask(taskType, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueImport),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.ProcessAt(processAt),
+		asynq.TaskID(taskID),
+		asynq.Timeout(c.importTimeout),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue %s: %w", action, err)
+	}
+
+	return nil
+}
+
+func (c *Client) EnqueueImportRescue(ctx context.Context) error {
+	task := asynq.NewTask(entity.TaskTypeImportRescue, nil)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueImport),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.TaskID(entity.ImportRescueTaskID),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue import rescue: %w", err)
 	}
 
 	return nil

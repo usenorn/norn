@@ -111,6 +111,7 @@ type IssueComment struct {
 	Replies         []IssueComment
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	Origin          *ImportOrigin
 }
 
 func (c IssueComment) Deleted() bool {

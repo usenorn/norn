@@ -91,6 +91,7 @@ type Project struct {
 	Health        ProjectHealth
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	Origin        *ImportOrigin
 }
 
 func (p Project) Archived() bool {

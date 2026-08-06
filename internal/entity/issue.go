@@ -94,6 +94,7 @@ type Issue struct {
 	TriageDecidedAt    *time.Time
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
+	Origin             *ImportOrigin
 }
 
 func (i Issue) Waiting() bool {

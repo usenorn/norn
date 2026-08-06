@@ -26,6 +26,7 @@ type Worker struct {
 	tokens        config.APITokens
 	audit         config.Audit
 	webhooks      config.Webhooks
+	imports       config.Imports
 	server        *taskqueue.Server
 	scheduler     *taskqueue.Scheduler
 	inspector     *taskqueue.Inspector
@@ -52,6 +53,10 @@ func NewServeMux(
 	webhookFanOut *job.WebhookFanOutHandler,
 	webhookDeliver *job.WebhookDeliverHandler,
 	webhookSweep *job.WebhookSweepHandler,
+	importStage *job.ImportStageHandler,
+	importExecute *job.ImportExecuteHandler,
+	importRevert *job.ImportRevertHandler,
+	importRescue *job.ImportRescueHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -72,6 +77,10 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeWebhookFanOut, webhookFanOut)
 	mux.Handle(entity.TaskTypeWebhookDeliver, webhookDeliver)
 	mux.Handle(entity.TaskTypeWebhookSweep, webhookSweep)
+	mux.Handle(entity.TaskTypeImportStage, importStage)
+	mux.Handle(entity.TaskTypeImportExecute, importExecute)
+	mux.Handle(entity.TaskTypeImportRevert, importRevert)
+	mux.Handle(entity.TaskTypeImportRescue, importRescue)
 
 	return mux
 }
@@ -85,6 +94,7 @@ func NewWorker(
 	tokens config.APITokens,
 	audit config.Audit,
 	webhooks config.Webhooks,
+	imports config.Imports,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	inspector *taskqueue.Inspector,
@@ -100,6 +110,7 @@ func NewWorker(
 		tokens:        tokens,
 		audit:         audit,
 		webhooks:      webhooks,
+		imports:       imports,
 		server:        server,
 		scheduler:     scheduler,
 		inspector:     inspector,
@@ -181,6 +192,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueWebhook),
 	); err != nil {
 		return fmt.Errorf("register webhook retention sweep: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.imports.RescueSchedule,
+		asynq.NewTask(entity.TaskTypeImportRescue, nil),
+		asynq.Queue(entity.QueueImport),
+	); err != nil {
+		return fmt.Errorf("register import rescue: %w", err)
 	}
 
 	if err := w.server.Start(w.mux); err != nil {
