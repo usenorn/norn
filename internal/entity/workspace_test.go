@@ -39,12 +39,36 @@ func TestValidateWorkspaceSlug(t *testing.T) {
 		{"double dash", "acme--labs", entity.ValidationCodeMalformed},
 		{"underscore", "acme_labs", entity.ValidationCodeMalformed},
 		{"too long", strings.Repeat("a", entity.WorkspaceSlugMaxLen+1), entity.ValidationCodeTooLong},
+		{"a reserved slug is well formed", "v1", ""},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			if got := entity.ValidateWorkspaceSlug("slug", c.value).Code; got != c.code {
 				t.Errorf("ValidateWorkspaceSlug(%q) code = %q, want %q", c.value, got, c.code)
+			}
+		})
+	}
+}
+
+func TestSlugsRoutedElsewhereAreReserved(t *testing.T) {
+	cases := []struct {
+		name     string
+		slug     string
+		reserved bool
+	}{
+		{"routed to the api", "v1", true},
+		{"routed to the mcp edge", "oauth", true},
+		{"shadowed by a sign-in route", "sign-in", true},
+		{"shadowed by account settings", "settings", true},
+		{"merely prefixed by a reserved word", "v1-team", false},
+		{"ordinary slug", "acme-labs", false},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := entity.WorkspaceSlugReserved(c.slug); got != c.reserved {
+				t.Errorf("WorkspaceSlugReserved(%q) = %v, want %v", c.slug, got, c.reserved)
 			}
 		})
 	}

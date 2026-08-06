@@ -30,6 +30,8 @@ const (
 	AttachmentReclaimTaskID = "attachment-reclaim"
 	WebhookFanOutTaskID     = "webhook-fan-out"
 
+	WorkerHealthReadHeaderTimeout = 5 * time.Second
+
 	QueueDefault = "default"
 	QueueMail    = "mail"
 	QueueWebhook = "webhook"

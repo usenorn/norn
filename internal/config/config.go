@@ -24,6 +24,7 @@ type Config struct {
 	Notifications Notifications `mapstructure:"notifications"`
 	Realtime      Realtime      `mapstructure:"realtime"`
 	APITokens     APITokens     `mapstructure:"api_tokens"`
+	Worker        Worker        `mapstructure:"worker"`
 	MCP           MCP           `mapstructure:"mcp"`
 	Webhooks      Webhooks      `mapstructure:"webhooks"`
 	Session       Session       `mapstructure:"session"`
@@ -263,6 +264,11 @@ type Webhooks struct {
 }
 
 func (c Webhooks) RetentionDays() int { return int(c.Retention.Hours() / 24) }
+
+type Worker struct {
+	HealthAddr      string        `mapstructure:"health_addr"`
+	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout"`
+}
 
 type MCP struct {
 	Enabled           bool          `mapstructure:"enabled"`
