@@ -13,11 +13,13 @@ import (
 )
 
 func ClientCapture(cfg config.HTTP) func(http.Handler) http.Handler {
+	trusted, _ := cfg.TrustedPrefixes()
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			client := entity.SessionClient{
 				UserAgent: entity.TruncateUserAgent(r.UserAgent()),
-				IP:        clientIP(r, cfg.ClientIPHeader),
+				IP:        clientIP(r, cfg.ClientIPHeader, trusted),
 			}
 
 			next.ServeHTTP(w, r.WithContext(identity.WithClient(r.Context(), client)))
@@ -29,17 +31,40 @@ func ClientFrom(ctx context.Context) entity.SessionClient {
 	return identity.Client(ctx)
 }
 
-func clientIP(r *http.Request, header string) netip.Addr {
-	if header != "" {
-		if forwarded := r.Header.Get(header); forwarded != "" {
-			first, _, _ := strings.Cut(forwarded, ",")
+func clientIP(r *http.Request, header string, trusted []netip.Prefix) netip.Addr {
+	peer := peerIP(r)
 
-			if ip, err := netip.ParseAddr(strings.TrimSpace(first)); err == nil {
-				return normalizeIP(ip)
-			}
+	if header == "" || !within(peer, trusted) {
+		return peer
+	}
+
+	hops := strings.Split(r.Header.Get(header), ",")
+
+	for i := len(hops) - 1; i >= 0; i-- {
+		hop, err := netip.ParseAddr(strings.TrimSpace(hops[i]))
+		if err != nil {
+			return peer
+		}
+
+		if forwarded := normalizeIP(hop); !within(forwarded, trusted) {
+			return forwarded
 		}
 	}
 
+	return peer
+}
+
+func within(ip netip.Addr, prefixes []netip.Prefix) bool {
+	for _, prefix := range prefixes {
+		if prefix.Contains(ip) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func peerIP(r *http.Request) netip.Addr {
 	if addrPort, err := netip.ParseAddrPort(r.RemoteAddr); err == nil {
 		return normalizeIP(addrPort.Addr())
 	}
