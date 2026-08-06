@@ -229,7 +229,9 @@
 			label: `At least ${minPasswordLength} characters`,
 		},
 		{ met: false, label: "Not a password you've used here" },
-		{ met: false, label: "Checked against known breaches on submit" },
+		...(auth.breachCheck
+			? [{ met: false, label: "Checked against known breaches on submit" }]
+			: []),
 	]);
 
 	const action = $derived.by(() => {

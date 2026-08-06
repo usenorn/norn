@@ -1992,6 +1992,24 @@ func (e SignUpExpiredProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for SignUpUnavailableProblemCode.
+const (
+	SignUpUnavailableProblemCodeBreachCheckUnavailable SignUpUnavailableProblemCode = "breach_check_unavailable"
+	SignUpUnavailableProblemCodeSignUpUndeliverable    SignUpUnavailableProblemCode = "sign_up_undeliverable"
+)
+
+// Valid indicates whether the value is a known member of the SignUpUnavailableProblemCode enum.
+func (e SignUpUnavailableProblemCode) Valid() bool {
+	switch e {
+	case SignUpUnavailableProblemCodeBreachCheckUnavailable:
+		return true
+	case SignUpUnavailableProblemCodeSignUpUndeliverable:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SignUpUnusableProblemCode.
 const (
 	SignUpEmailTaken SignUpUnusableProblemCode = "sign_up_email_taken"
@@ -3240,6 +3258,7 @@ type HealthStatus string
 
 // Instance defines model for Instance.
 type Instance struct {
+	BreachCheck bool         `json:"breachCheck"`
 	Host        string       `json:"host"`
 	Password    bool         `json:"password"`
 	SelfHosted  bool         `json:"selfHosted"`
@@ -4333,11 +4352,26 @@ type SignUpExpiredProblemCode string
 
 // SignUpRequested defines model for SignUpRequested.
 type SignUpRequested struct {
-	Delivery  SignUpDelivery `json:"delivery"`
-	Email     string         `json:"email"`
-	ExpiresAt time.Time      `json:"expiresAt"`
-	Url       *string        `json:"url,omitempty"`
+	Delivery    SignUpDelivery `json:"delivery"`
+	Email       string         `json:"email"`
+	ExpiresAt   time.Time      `json:"expiresAt"`
+	RequestedAt time.Time      `json:"requestedAt"`
+	Url         *string        `json:"url,omitempty"`
 }
+
+// SignUpUnavailableProblem defines model for SignUpUnavailableProblem.
+type SignUpUnavailableProblem struct {
+	Code     SignUpUnavailableProblemCode `json:"code"`
+	Detail   *string                      `json:"detail,omitempty"`
+	Errors   *[]FieldError                `json:"errors,omitempty"`
+	Instance *string                      `json:"instance,omitempty"`
+	Status   int32                        `json:"status"`
+	Title    string                       `json:"title"`
+	Type     string                       `json:"type"`
+}
+
+// SignUpUnavailableProblemCode defines model for SignUpUnavailableProblem.Code.
+type SignUpUnavailableProblemCode string
 
 // SignUpUnusableProblem defines model for SignUpUnusableProblem.
 type SignUpUnusableProblem struct {
@@ -4883,6 +4917,9 @@ type SignUpLinkExpired = SignUpExpiredProblem
 
 // SignUpLinkUnusable defines model for SignUpLinkUnusable.
 type SignUpLinkUnusable = SignUpUnusableProblem
+
+// SignUpNotProcessable defines model for SignUpNotProcessable.
+type SignUpNotProcessable = SignUpUnavailableProblem
 
 // SignUpUnavailable defines model for SignUpUnavailable.
 type SignUpUnavailable = SignUpClosedProblem
@@ -14471,6 +14508,8 @@ type SignUpLinkExpiredApplicationProblemPlusJSONResponse SignUpExpiredProblem
 
 type SignUpLinkUnusableApplicationProblemPlusJSONResponse SignUpUnusableProblem
 
+type SignUpNotProcessableApplicationProblemPlusJSONResponse SignUpUnavailableProblem
+
 type SignUpUnavailableApplicationProblemPlusJSONResponse SignUpClosedProblem
 
 type SsoFailedApplicationProblemPlusJSONResponse SsoProblem
@@ -15817,7 +15856,7 @@ func (response RequestSignUp500ApplicationProblemPlusJSONResponse) VisitRequestS
 }
 
 type RequestSignUp503ApplicationProblemPlusJSONResponse struct {
-	BreachCheckUnavailableApplicationProblemPlusJSONResponse
+	SignUpNotProcessableApplicationProblemPlusJSONResponse
 }
 
 func (response RequestSignUp503ApplicationProblemPlusJSONResponse) VisitRequestSignUpResponse(w http.ResponseWriter) error {

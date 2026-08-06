@@ -12,7 +12,8 @@ export type SignUpPreview = {
 
 export const signUpPreviewStates: Record<string, SignUpPreview> = import.meta.env.DEV
 	? {
-			default: { auth: { sso: { name: "Okta" } } },
+			default: { auth: { sso: { name: "Okta" }, breachCheck: true } },
+			no_breach_check: { auth: { breachCheck: false } },
 			weak: {
 				form: {
 					name: "Rae Okafor",
@@ -30,6 +31,25 @@ export const signUpPreviewStates: Record<string, SignUpPreview> = import.meta.en
 					passwordConfirm: "northwind-cycle-2",
 					terms: true,
 				},
+			},
+			blocked: {
+				form: {
+					name: "Rae Okafor",
+					email: "rae@gmail.com",
+					password: "northwind-cycle-24",
+					passwordConfirm: "northwind-cycle-24",
+					terms: true,
+				},
+			},
+			failed: {
+				form: {
+					name: "Rae Okafor",
+					email: "rae@northwind.co",
+					password: "northwind-cycle-24",
+					passwordConfirm: "northwind-cycle-24",
+					terms: true,
+				},
+				outcome: { kind: "undeliverable" },
 			},
 			creating: {
 				form: {
@@ -49,7 +69,12 @@ export const signUpPreviewStates: Record<string, SignUpPreview> = import.meta.en
 					passwordConfirm: "northwind-cycle-24",
 					terms: true,
 				},
-				outcome: { kind: "verification_sent", email: "rae@northwind.co", expiresAt: "15:22" },
+				outcome: {
+					kind: "verification_sent",
+					email: "rae@northwind.co",
+					requestedAt: "2026-08-05T14:22:00Z",
+					expiresAt: "2026-08-05T15:22:00Z",
+				},
 			},
 			verify_sending: {
 				form: {
@@ -59,7 +84,12 @@ export const signUpPreviewStates: Record<string, SignUpPreview> = import.meta.en
 					passwordConfirm: "northwind-cycle-24",
 					terms: true,
 				},
-				outcome: { kind: "verification_sent", email: "rae@northwind.co", expiresAt: "15:22" },
+				outcome: {
+					kind: "verification_sent",
+					email: "rae@northwind.co",
+					requestedAt: "2026-08-05T14:22:00Z",
+					expiresAt: "2026-08-05T15:22:00Z",
+				},
 				busy: true,
 			},
 			resend_limited: {
@@ -70,7 +100,12 @@ export const signUpPreviewStates: Record<string, SignUpPreview> = import.meta.en
 					passwordConfirm: "northwind-cycle-24",
 					terms: true,
 				},
-				outcome: { kind: "verification_sent", email: "rae@northwind.co", expiresAt: "15:22" },
+				outcome: {
+					kind: "verification_sent",
+					email: "rae@northwind.co",
+					requestedAt: "2026-08-05T14:22:00Z",
+					expiresAt: "2026-08-05T15:22:00Z",
+				},
 				resend: "limited",
 			},
 			resend_unavailable: {
@@ -81,7 +116,12 @@ export const signUpPreviewStates: Record<string, SignUpPreview> = import.meta.en
 					passwordConfirm: "northwind-cycle-24",
 					terms: true,
 				},
-				outcome: { kind: "verification_sent", email: "rae@northwind.co", expiresAt: "15:22" },
+				outcome: {
+					kind: "verification_sent",
+					email: "rae@northwind.co",
+					requestedAt: "2026-08-05T14:22:00Z",
+					expiresAt: "2026-08-05T15:22:00Z",
+				},
 				resend: "unavailable",
 			},
 			linkonly: {
@@ -95,7 +135,8 @@ export const signUpPreviewStates: Record<string, SignUpPreview> = import.meta.en
 				outcome: {
 					kind: "link_only",
 					email: "rae@northwind.co",
-					expiresAt: "15:22",
+					requestedAt: "2026-08-05T14:22:00Z",
+					expiresAt: "2026-08-05T15:22:00Z",
 					url: "https://norn.northwind.internal/sign-up/confirm?token=zk4p9w2m",
 				},
 			},

@@ -32,13 +32,14 @@ export type SsoFailure =
 	  };
 
 export type SignUpOutcome =
-	| { kind: "verification_sent"; email: string; expiresAt: string }
-	| { kind: "link_only"; email: string; expiresAt: string; url: string }
+	| { kind: "verification_sent"; email: string; requestedAt: string; expiresAt: string }
+	| { kind: "link_only"; email: string; requestedAt: string; expiresAt: string; url: string }
 	| { kind: "email_taken" }
 	| { kind: "domain_uses_sso"; organization: string; provider: string }
 	| { kind: "closed" }
 	| { kind: "rate_limited" }
 	| { kind: "breach_check_unavailable" }
+	| { kind: "undeliverable" }
 	| { kind: "unavailable" };
 
 export type SignUpResend = "idle" | "limited" | "unavailable";

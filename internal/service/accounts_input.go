@@ -38,10 +38,11 @@ type RequestSignUpInput struct {
 }
 
 type RequestedSignUp struct {
-	Email     string
-	ExpiresAt time.Time
-	Delivery  entity.SignUpDelivery
-	URL       string
+	Email       string
+	RequestedAt time.Time
+	ExpiresAt   time.Time
+	Delivery    entity.SignUpDelivery
+	URL         string
 }
 
 type ConfirmSignUpInput struct {

@@ -31,6 +31,17 @@ var (
 	ErrAccountStatusTransition   = errors.New("account status transition not allowed")
 )
 
+var personalEmailProviders = map[string]bool{
+	"aol":     true,
+	"gmail":   true,
+	"hotmail": true,
+	"icloud":  true,
+	"live":    true,
+	"outlook": true,
+	"proton":  true,
+	"yahoo":   true,
+}
+
 type LastWorkspaceAdminError struct {
 	WorkspaceIDs []uuid.UUID
 }
@@ -132,6 +143,30 @@ func ValidateEmail(field, email string) FieldError {
 	address, err := mail.ParseAddress(email)
 	if err != nil || address.Address != email || strings.Count(email, "@") != 1 {
 		return FieldError{Field: field, Code: ValidationCodeMalformed}
+	}
+
+	return FieldError{}
+}
+
+func PersonalEmail(email string) bool {
+	at := strings.LastIndex(email, "@")
+	if at < 0 {
+		return false
+	}
+
+	domain := strings.ToLower(email[at+1:])
+	label, _, found := strings.Cut(domain, ".")
+
+	return found && personalEmailProviders[label]
+}
+
+func ValidateWorkEmail(field, email string) FieldError {
+	if problem := ValidateEmail(field, email); problem.Code != "" {
+		return problem
+	}
+
+	if PersonalEmail(email) {
+		return FieldError{Field: field, Code: ValidationCodePersonalEmail}
 	}
 
 	return FieldError{}

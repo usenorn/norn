@@ -7,6 +7,7 @@ export function fallbackInstance(url: URL): Instance {
 	return {
 		signupsOpen: true,
 		password: true,
+		breachCheck: false,
 		selfHosted: false,
 		host: url.host,
 		version: "",

@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,7 +42,7 @@ func (s *accountsService) RequestSignUp(ctx context.Context, input service.Reque
 	}
 
 	if err := entity.NewValidationError(
-		entity.ValidateEmail("email", email),
+		entity.ValidateWorkEmail("email", email),
 		entity.ValidateDisplayName("display_name", input.DisplayName),
 		entity.ValidateTimezone("timezone", timezone),
 		entity.ValidatePassword("password", input.Password),
@@ -100,9 +101,10 @@ func (s *accountsService) RequestSignUp(ctx context.Context, input service.Reque
 	}
 
 	requested := service.RequestedSignUp{
-		Email:     signUp.Email,
-		ExpiresAt: signUp.ExpiresAt,
-		Delivery:  s.signUpDelivery(),
+		Email:       signUp.Email,
+		RequestedAt: signUp.RequestedAt,
+		ExpiresAt:   signUp.ExpiresAt,
+		Delivery:    s.signUpDelivery(),
 	}
 
 	if requested.Delivery == entity.SignUpDeliveryLinkOnly {
@@ -115,7 +117,7 @@ func (s *accountsService) RequestSignUp(ctx context.Context, input service.Reque
 		SignUpID: signUp.ID,
 		Token:    token,
 	}); err != nil {
-		return service.RequestedSignUp{}, err
+		return service.RequestedSignUp{}, fmt.Errorf("%w: %w", entity.ErrSignUpUndeliverable, err)
 	}
 
 	return requested, nil

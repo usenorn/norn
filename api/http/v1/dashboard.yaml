@@ -79,7 +79,7 @@ paths:
         '409': { $ref: '#/components/responses/SignUpLinkUnusable' }
         '422': { $ref: '#/components/responses/Problem' }
         '429': { $ref: '#/components/responses/TooManyAttempts' }
-        '503': { $ref: '#/components/responses/BreachCheckUnavailable' }
+        '503': { $ref: '#/components/responses/SignUpNotProcessable' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /auth/sign-up/confirm:
@@ -4429,6 +4429,12 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/SignUpClosedProblem' }
 
+    SignUpNotProcessable:
+      description: The password could not be screened, or the link could not be sent
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/SignUpUnavailableProblem' }
+
     SignUpLinkExpired:
       description: The sign-up link expired or is unrecognised
       content:
@@ -6283,6 +6289,14 @@ components:
           properties:
             code: { type: string, enum: [sign_up_used, sign_up_email_taken] }
 
+    SignUpUnavailableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [breach_check_unavailable, sign_up_undeliverable] }
+
     DirectoryUnlicensedProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -6787,10 +6801,11 @@ components:
 
     Instance:
       type: object
-      required: [signupsOpen, password, selfHosted, host, version]
+      required: [signupsOpen, password, breachCheck, selfHosted, host, version]
       properties:
         signupsOpen: { type: boolean }
         password: { type: boolean }
+        breachCheck: { type: boolean }
         selfHosted: { type: boolean }
         host: { type: string }
         version: { type: string }
@@ -6817,10 +6832,11 @@ components:
 
     SignUpRequested:
       type: object
-      required: [email, delivery, expiresAt]
+      required: [email, delivery, requestedAt, expiresAt]
       properties:
         email: { type: string }
         delivery: { $ref: '#/components/schemas/SignUpDelivery' }
+        requestedAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
         url: { type: string }
 

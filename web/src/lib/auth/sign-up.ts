@@ -1,5 +1,4 @@
 import type { operations } from "$lib/api/dashboard.gen";
-import { clockTime } from "./sign-in";
 import type { SignUpConfirmation, SignUpOutcome } from "./types";
 
 type RequestResponses = operations["requestSignUp"]["responses"];
@@ -26,11 +25,36 @@ function codedConfirm(problem: SignUpConfirmProblem): problem is CodedConfirmPro
 }
 
 export function signUpSent(requested: SignUpRequested): SignUpOutcome {
-	const expiresAt = clockTime(requested.expiresAt);
+	const sent = {
+		email: requested.email,
+		requestedAt: requested.requestedAt,
+		expiresAt: requested.expiresAt,
+	};
 
 	return requested.delivery === "link_only" && requested.url
-		? { kind: "link_only", email: requested.email, expiresAt, url: requested.url }
-		: { kind: "verification_sent", email: requested.email, expiresAt };
+		? { kind: "link_only", ...sent, url: requested.url }
+		: { kind: "verification_sent", ...sent };
+}
+
+const personalEmailProviders = new Set([
+	"aol",
+	"gmail",
+	"hotmail",
+	"icloud",
+	"live",
+	"outlook",
+	"proton",
+	"yahoo",
+]);
+
+export function personalEmail(email: string): boolean {
+	const at = email.lastIndexOf("@");
+
+	if (at < 0) return false;
+
+	const [label, ...rest] = email.slice(at + 1).toLowerCase().split(".");
+
+	return rest.length > 0 && personalEmailProviders.has(label);
 }
 
 export function signUpFailure(problem: SignUpProblem): SignUpOutcome | null {
@@ -46,6 +70,8 @@ export function signUpFailure(problem: SignUpProblem): SignUpOutcome | null {
 			return { kind: "rate_limited" };
 		case "breach_check_unavailable":
 			return { kind: "breach_check_unavailable" };
+		case "sign_up_undeliverable":
+			return { kind: "undeliverable" };
 	}
 }
 

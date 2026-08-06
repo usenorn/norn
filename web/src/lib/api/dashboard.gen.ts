@@ -3768,6 +3768,10 @@ export interface components {
             /** @enum {string} */
             code: "sign_up_used" | "sign_up_email_taken";
         };
+        SignUpUnavailableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "breach_check_unavailable" | "sign_up_undeliverable";
+        };
         DirectoryUnlicensedProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "directory_unlicensed";
@@ -4124,6 +4128,7 @@ export interface components {
         Instance: {
             signupsOpen: boolean;
             password: boolean;
+            breachCheck: boolean;
             selfHosted: boolean;
             host: string;
             version: string;
@@ -4143,6 +4148,8 @@ export interface components {
         SignUpRequested: {
             email: string;
             delivery: components["schemas"]["SignUpDelivery"];
+            /** Format: date-time */
+            requestedAt: string;
             /** Format: date-time */
             expiresAt: string;
             url?: string;
@@ -4566,6 +4573,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["SignUpClosedProblem"];
             };
         };
+        /** @description The password could not be screened, or the link could not be sent */
+        SignUpNotProcessable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["SignUpUnavailableProblem"];
+            };
+        };
         /** @description The sign-up link expired or is unrecognised */
         SignUpLinkExpired: {
             headers: {
@@ -4760,7 +4776,7 @@ export interface operations {
             422: components["responses"]["Problem"];
             429: components["responses"]["TooManyAttempts"];
             500: components["responses"]["Problem"];
-            503: components["responses"]["BreachCheckUnavailable"];
+            503: components["responses"]["SignUpNotProcessable"];
         };
     };
     confirmSignUp: {

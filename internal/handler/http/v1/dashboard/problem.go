@@ -547,6 +547,21 @@ func problemFor(err error) (problemResponse, bool) {
 			},
 		}, true
 
+	case errors.Is(err, entity.ErrSignUpUndeliverable):
+		base := baseProblem(http.StatusServiceUnavailable, entity.ErrSignUpUndeliverable.Error())
+
+		return problemResponse{
+			status: http.StatusServiceUnavailable,
+			body: api.SignUpUnavailableProblem{
+				Code:     api.SignUpUnavailableProblemCodeSignUpUndeliverable,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
 	case errors.Is(err, entity.ErrPasswordBreachCheckUnavailable):
 		base := baseProblem(http.StatusServiceUnavailable, entity.ErrPasswordBreachCheckUnavailable.Error())
 

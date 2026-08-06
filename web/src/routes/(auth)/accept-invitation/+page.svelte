@@ -272,14 +272,6 @@
 
 	const showForm = $derived(invitation.kind === "create_account");
 
-	const passwordRules = $derived([
-		{
-			met: $formData.password.length >= minPasswordLength,
-			label: `At least ${minPasswordLength} characters`,
-		},
-		{ met: false, label: "Checked against known breaches on submit" },
-	]);
-
 	const action = $derived.by(() => {
 		switch (invitation.kind) {
 			case "create_account":
