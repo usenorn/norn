@@ -35,3 +35,18 @@ spec:
   redirectScheme:
     scheme: https
     permanent: true
+---
+# norn-https-redirect only rewrites a request that already reached the edge in cleartext, so the
+# first navigation to a typed host is still interceptable. HSTS is what removes that round trip,
+# and it is applied at the edge so both backends inherit it from one object. Safe on the SSE
+# route: a response header does not buffer the stream the way norn-compress would.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: norn-hsts
+  namespace: norn
+spec:
+  headers:
+    stsSeconds: 31536000
+    stsIncludeSubdomains: true
+    stsPreload: true
