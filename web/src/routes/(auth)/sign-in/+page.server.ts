@@ -22,10 +22,14 @@ export const actions: Actions = {
 	default: async ({ locals, request, url }) => {
 		const form = await superValidate<SignInForm, SignInFailure>(request, zod4(signInSchema));
 
+		const password = form.data.password;
+
+		form.data.password = "";
+
 		if (!form.valid) return fail(400, { form });
 
 		const { error } = await locals.api.POST("/auth/login", {
-			body: { email: form.data.email, password: form.data.password },
+			body: { email: form.data.email, password },
 		});
 
 		if (error) {
