@@ -5827,6 +5827,9 @@ components:
         - sso.recovery_codes_issued
         - sso.recovery_code_redeemed
         - sso.identity_unlinked
+        - sso.identity_linked
+        - sso.identity_refused
+        - sso.account_opened
         - token.minted
         - token.revoked
         - agent.registered
