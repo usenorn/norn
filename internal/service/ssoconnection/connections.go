@@ -443,28 +443,92 @@ func (s *connectionsService) Complete(
 	return exchange, nil
 }
 
+type admission struct {
+	WorkspaceID  uuid.UUID
+	Provisioning bool
+	Issuer       string
+	Subject      string
+	Email        string
+	Name         string
+}
+
 func (s *connectionsService) admit(
 	ctx context.Context,
 	connection entity.OIDCConnection,
 	claims entity.OIDCClaims,
 ) (entity.Account, bool, error) {
-	return s.admitIdentity(
-		ctx,
-		connection.WorkspaceID,
-		connection.Provisioning,
-		entity.NormalizeEmail(claims.Email),
-		claims.Name,
-		claims.Subject,
-	)
+	return s.admitIdentity(ctx, admission{
+		WorkspaceID:  connection.WorkspaceID,
+		Provisioning: connection.Provisioning,
+		Issuer:       connection.Endpoints.Issuer,
+		Subject:      claims.Subject,
+		Email:        entity.NormalizeEmail(claims.Email),
+		Name:         claims.Name,
+	})
 }
 
 func (s *connectionsService) admitIdentity(
 	ctx context.Context,
-	workspaceID uuid.UUID,
-	provisioning bool,
-	email, name, subject string,
+	request admission,
 ) (entity.Account, bool, error) {
-	account, err := s.accounts.GetByEmail(ctx, email)
+	linked, err := s.linkedAccount(ctx, request)
+	if err != nil {
+		return entity.Account{}, false, err
+	}
+
+	if linked != nil {
+		return *linked, false, nil
+	}
+
+	return s.bootstrap(ctx, request)
+}
+
+func (s *connectionsService) linkedAccount(
+	ctx context.Context,
+	request admission,
+) (*entity.Account, error) {
+	issuer, subject := trimmedPair(request.Issuer, request.Subject)
+	if issuer == "" || subject == "" {
+		return nil, nil
+	}
+
+	identity, err := s.identities.GetBySubject(ctx, request.WorkspaceID, issuer, subject)
+	if err != nil {
+		if errors.Is(err, entity.ErrSSOIdentityNotFound) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	account, err := s.accounts.GetByID(ctx, identity.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	if account.Status != entity.AccountStatusActive {
+		return nil, entity.NewSSOError(
+			entity.SSOStageMatching,
+			"The Norn account for "+account.Email+" is not active.",
+		)
+	}
+
+	if _, err := s.memberships.Get(ctx, request.WorkspaceID, account.ID); err != nil {
+		if errors.Is(err, entity.ErrMembershipNotFound) {
+			return nil, entity.MatchOutcomeNotMember.Refusal(account.Email)
+		}
+
+		return nil, err
+	}
+
+	return &account, nil
+}
+
+func (s *connectionsService) bootstrap(
+	ctx context.Context,
+	request admission,
+) (entity.Account, bool, error) {
+	account, err := s.accounts.GetByEmail(ctx, request.Email)
 	if err != nil && !errors.Is(err, entity.ErrAccountNotFound) {
 		return entity.Account{}, false, err
 	}
@@ -476,11 +540,11 @@ func (s *connectionsService) admitIdentity(
 		if account.Status != entity.AccountStatusActive {
 			return entity.Account{}, false, entity.NewSSOError(
 				entity.SSOStageMatching,
-				"The Norn account for "+email+" is not active.",
+				"The Norn account for "+request.Email+" is not active.",
 			)
 		}
 
-		if _, err := s.memberships.Get(ctx, workspaceID, account.ID); err != nil {
+		if _, err := s.memberships.Get(ctx, request.WorkspaceID, account.ID); err != nil {
 			if !errors.Is(err, entity.ErrMembershipNotFound) {
 				return entity.Account{}, false, err
 			}
@@ -489,25 +553,25 @@ func (s *connectionsService) admitIdentity(
 		}
 	}
 
-	outcome := entity.ResolveMatch(exists, member, provisioning)
+	outcome := entity.ResolveMatch(exists, member, request.Provisioning)
 	if !outcome.Admits() {
-		return entity.Account{}, false, outcome.Refusal(email)
+		return entity.Account{}, false, outcome.Refusal(request.Email)
 	}
 
 	if outcome == entity.MatchOutcomeSignIn {
-		if err := s.link(ctx, workspaceID, account.ID, subject, email); err != nil {
+		if err := s.link(ctx, request, account.ID); err != nil {
 			return entity.Account{}, false, err
 		}
 
 		return account, false, nil
 	}
 
-	provisioned, err := s.provision(ctx, workspaceID, email, name)
+	provisioned, err := s.provision(ctx, request.WorkspaceID, request.Email, request.Name)
 	if err != nil {
 		return entity.Account{}, false, err
 	}
 
-	if err := s.link(ctx, workspaceID, provisioned.ID, subject, email); err != nil {
+	if err := s.link(ctx, request, provisioned.ID); err != nil {
 		return entity.Account{}, false, err
 	}
 
@@ -516,14 +580,15 @@ func (s *connectionsService) admitIdentity(
 
 func (s *connectionsService) link(
 	ctx context.Context,
-	workspaceID, accountID uuid.UUID,
-	subject, email string,
+	request admission,
+	accountID uuid.UUID,
 ) error {
-	if strings.TrimSpace(subject) == "" {
+	issuer, subject := trimmedPair(request.Issuer, request.Subject)
+	if issuer == "" || subject == "" {
 		return nil
 	}
 
-	existing, err := s.identities.Get(ctx, workspaceID, accountID)
+	existing, err := s.identities.Get(ctx, request.WorkspaceID, accountID)
 	if err != nil && !errors.Is(err, entity.ErrSSOIdentityNotFound) {
 		return err
 	}
@@ -533,19 +598,24 @@ func (s *connectionsService) link(
 		linked = &existing
 	}
 
-	if err := entity.MatchLink(linked, subject, email); err != nil {
+	if err := entity.MatchLink(linked, issuer, subject, request.Email); err != nil {
 		return err
 	}
 
-	if linked != nil {
+	if linked != nil && linked.Issuer == issuer && linked.Subject == subject {
 		return nil
 	}
 
 	return s.identities.Link(ctx, entity.SSOIdentity{
-		WorkspaceID: workspaceID,
+		WorkspaceID: request.WorkspaceID,
 		AccountID:   accountID,
-		Subject:     strings.TrimSpace(subject),
+		Issuer:      issuer,
+		Subject:     subject,
 	})
+}
+
+func trimmedPair(issuer, subject string) (string, string) {
+	return strings.TrimSpace(issuer), strings.TrimSpace(subject)
 }
 
 func (s *connectionsService) provision(

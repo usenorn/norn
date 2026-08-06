@@ -13,6 +13,7 @@ import (
 type SSOIdentity interface {
 	Link(ctx context.Context, identity entity.SSOIdentity) error
 	Get(ctx context.Context, workspaceID, accountID uuid.UUID) (entity.SSOIdentity, error)
+	GetBySubject(ctx context.Context, workspaceID uuid.UUID, issuer, subject string) (entity.SSOIdentity, error)
 	ListByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]entity.SSOIdentity, error)
 	Unlink(ctx context.Context, workspaceID, accountID uuid.UUID) error
 	AnyLinkedAdmin(ctx context.Context, workspaceID uuid.UUID) (bool, error)
