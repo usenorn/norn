@@ -466,9 +466,10 @@ func (s *connectionsService) Complete(
 	}
 
 	issued, err := s.sessions.Start(ctx, service.StartSessionInput{
-		AccountID:  account.ID,
-		AuthMethod: entity.SessionAuthMethodSSO,
-		Client:     input.Client,
+		AccountID:   account.ID,
+		WorkspaceID: attempt.WorkspaceID,
+		AuthMethod:  entity.SessionAuthMethodSSO,
+		Client:      input.Client,
 	})
 	if err != nil {
 		return exchange, err

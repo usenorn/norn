@@ -110,7 +110,7 @@ func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput)
 		return service.IssuedSession{}, err
 	}
 
-	return s.issue(ctx, account.ID, entity.SessionAuthMethodPassword, input.Client)
+	return s.issue(ctx, account.ID, uuid.Nil, entity.SessionAuthMethodPassword, input.Client)
 }
 
 func (s *sessionsService) Start(ctx context.Context, input service.StartSessionInput) (service.IssuedSession, error) {
@@ -118,7 +118,7 @@ func (s *sessionsService) Start(ctx context.Context, input service.StartSessionI
 		return service.IssuedSession{}, entity.ErrSessionAuthMethodUnknown
 	}
 
-	return s.issue(ctx, input.AccountID, input.AuthMethod, input.Client)
+	return s.issue(ctx, input.AccountID, input.WorkspaceID, input.AuthMethod, input.Client)
 }
 
 func (s *sessionsService) recordFailure(
@@ -169,7 +169,7 @@ func pause(ctx context.Context, delay time.Duration) error {
 
 func (s *sessionsService) issue(
 	ctx context.Context,
-	accountID uuid.UUID,
+	accountID, workspaceID uuid.UUID,
 	method entity.SessionAuthMethod,
 	client entity.SessionClient,
 ) (service.IssuedSession, error) {
@@ -192,6 +192,7 @@ func (s *sessionsService) issue(
 		ID:                uuid.New(),
 		TokenHash:         tokenHash,
 		AccountID:         accountID,
+		WorkspaceID:       workspaceID,
 		AuthMethod:        method,
 		Client:            client,
 		IssuedAt:          now,
@@ -357,5 +358,5 @@ func (s *sessionsService) RotateAfterCredentialChange(ctx context.Context, accou
 		return service.IssuedSession{}, nil
 	}
 
-	return s.issue(ctx, accountID, current.AuthMethod, current.Client)
+	return s.issue(ctx, accountID, current.WorkspaceID, current.AuthMethod, current.Client)
 }

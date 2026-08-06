@@ -30,6 +30,8 @@ func TestSSOIsEnforcedEverywhereOnlyWhenEveryWorkspaceSaysSo(t *testing.T) {
 }
 
 func TestOnlyMachineActorsSkipTheEnforcementCheck(t *testing.T) {
+	workspaceID := uuid.New()
+
 	for name, tc := range map[string]struct {
 		actor   entity.Actor
 		permits bool
@@ -47,25 +49,34 @@ func TestOnlyMachineActorsSkipTheEnforcementCheck(t *testing.T) {
 				AuthMethod: entity.SessionAuthMethodPassword,
 			}, false,
 		},
-		"an SSO session is admitted": {
+		"an SSO session from this workspace is admitted": {
 			entity.Actor{
-				Kind:       entity.ActorKindUser,
-				AccountID:  uuid.New(),
-				AuthMethod: entity.SessionAuthMethodSSO,
+				Kind:           entity.ActorKindUser,
+				AccountID:      uuid.New(),
+				AuthMethod:     entity.SessionAuthMethodSSO,
+				SSOWorkspaceID: workspaceID,
 			}, true,
+		},
+		"an SSO session from another workspace is refused": {
+			entity.Actor{
+				Kind:           entity.ActorKindUser,
+				AccountID:      uuid.New(),
+				AuthMethod:     entity.SessionAuthMethodSSO,
+				SSOWorkspaceID: uuid.New(),
+			}, false,
 		},
 		"somebody joining anonymously is refused": {
 			entity.Actor{}, false,
 		},
 	} {
-		if got := entity.AuthEnforcementSSO.PermitsActor(tc.actor); got != tc.permits {
+		if got := entity.AuthEnforcementSSO.PermitsActor(tc.actor, workspaceID); got != tc.permits {
 			t.Errorf("%s: PermitsActor = %v, want %v", name, got, tc.permits)
 		}
 	}
 }
 
 func TestSomebodyJoiningAnonymouslyIsStillAdmittedWhereAnyMethodIsAccepted(t *testing.T) {
-	if !entity.AuthEnforcementAny.PermitsActor(entity.Actor{}) {
+	if !entity.AuthEnforcementAny.PermitsActor(entity.Actor{}, uuid.New()) {
 		t.Fatal(
 			"an anonymous invitee was refused by a workspace that accepts any method. Accepting " +
 				"an invitation is the one flow that legitimately has no actor yet.",

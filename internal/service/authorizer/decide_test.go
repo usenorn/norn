@@ -36,6 +36,15 @@ func actingAs(accountID uuid.UUID, method entity.SessionAuthMethod) context.Cont
 	})
 }
 
+func actingAsSSOFrom(accountID, workspaceID uuid.UUID) context.Context {
+	return identity.WithActor(context.Background(), entity.Actor{
+		Kind:           entity.ActorKindUser,
+		AccountID:      accountID,
+		AuthMethod:     entity.SessionAuthMethodSSO,
+		SSOWorkspaceID: workspaceID,
+	})
+}
+
 func TestAnActionWithNoExplicitRuleIsDenied(t *testing.T) {
 	enforcer := &stubEnforcer{allow: false}
 	harness := newDecider(t, enforcer, entity.MembershipRoleAdmin, entity.AuthEnforcementAny)
@@ -229,15 +238,37 @@ func TestAPasswordActorIsRefusedByAnSSOEnforcingWorkspace(t *testing.T) {
 	}
 }
 
-func TestAnSSOActorIsAdmittedByAnSSOEnforcingWorkspace(t *testing.T) {
+func TestAnSSOActorIsAdmittedByTheWorkspaceWhoseProviderSignedItIn(t *testing.T) {
 	harness := newDecider(t, &stubEnforcer{allow: true}, entity.MembershipRoleAdmin, entity.AuthEnforcementSSO)
 
-	if _, err := harness.Decide(actingAs(uuid.New(), entity.SessionAuthMethodSSO), entity.AccessRequest{
+	workspaceID := uuid.New()
+
+	if _, err := harness.Decide(actingAsSSOFrom(uuid.New(), workspaceID), entity.AccessRequest{
+		Resource:    entity.ResourceMembership,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+	}); err != nil {
+		t.Fatalf("Decide: %v", err)
+	}
+}
+
+func TestAnSSOSessionFromAnotherWorkspaceDoesNotSatisfyThisOne(t *testing.T) {
+	harness := newDecider(t, &stubEnforcer{allow: true}, entity.MembershipRoleAdmin, entity.AuthEnforcementSSO)
+
+	_, err := harness.Decide(actingAsSSOFrom(uuid.New(), uuid.New()), entity.AccessRequest{
 		Resource:    entity.ResourceMembership,
 		Action:      entity.ActionRead,
 		WorkspaceID: uuid.New(),
-	}); err != nil {
-		t.Fatalf("Decide: %v", err)
+	})
+
+	var denied entity.AccessDeniedError
+	if !errors.As(err, &denied) || denied.Reason != entity.DenyReasonAuthMethodNotPermitted {
+		t.Fatalf(
+			"Decide error = %v, want an auth_method_not_permitted denial. Requiring the string "+
+				"\"sso\" without asking whose provider issued it lets anyone who administers one "+
+				"workspace satisfy another workspace's requirement.",
+			err,
+		)
 	}
 }
 

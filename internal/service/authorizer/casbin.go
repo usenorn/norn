@@ -274,7 +274,7 @@ func (a *casbinAuthorizer) decideInWorkspace(
 			return entity.Decision{}, err
 		}
 
-		if !policy.Enforcement.PermitsActor(actor) {
+		if !policy.Enforcement.PermitsActor(actor, request.WorkspaceID) {
 			return entity.Decision{}, a.deny(ctx, actor, request, entity.DenyReasonAuthMethodNotPermitted)
 		}
 	}
