@@ -46,11 +46,18 @@ export function mobileNav(workspace: string): NavEntry[] {
 
 export function isCurrent(pathname: string, search: URLSearchParams, href: string): boolean {
 	const [path, query] = href.split("?");
+
+	if (!query) return pathname === path || pathname.startsWith(`${path}/`);
 	if (pathname !== path) return false;
-	if (!query) return search.size === 0;
+
 	const wanted = new URLSearchParams(query);
 	for (const [key, value] of wanted) {
 		if (search.get(key) !== value) return false;
 	}
+
 	return true;
+}
+
+export function isExactly(pathname: string, href: string): boolean {
+	return pathname === href.split("?")[0];
 }

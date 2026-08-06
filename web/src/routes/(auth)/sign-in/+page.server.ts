@@ -4,19 +4,24 @@ import { zod4 } from "sveltekit-superforms/adapters";
 import { signInSchema } from "$lib/auth/sign-in-schema";
 import { signInFailure } from "$lib/auth/sign-in";
 import { safeReturn } from "$lib/auth/return-to";
+import { leaveIfSignedIn } from "$lib/auth/signed-in";
 import { reachWorkspaceSignIn, type WorkspaceEntry } from "$lib/auth/workspace-sign-in";
 import type { SignInFailure } from "$lib/auth/types";
 import type { Actions, PageServerLoad } from "./$types";
 
 type SignInForm = Infer<typeof signInSchema>;
 
-export const load: PageServerLoad = async ({ locals, url }) => ({
-	entry: (await reachWorkspaceSignIn(
-		locals.api,
-		url.searchParams.get("workspace") ?? ""
-	)) as WorkspaceEntry,
-	form: await superValidate<SignInForm, SignInFailure>(zod4(signInSchema)),
-});
+export const load: PageServerLoad = async ({ locals, url }) => {
+	await leaveIfSignedIn(locals.api);
+
+	return {
+		entry: (await reachWorkspaceSignIn(
+			locals.api,
+			url.searchParams.get("workspace") ?? ""
+		)) as WorkspaceEntry,
+		form: await superValidate<SignInForm, SignInFailure>(zod4(signInSchema)),
+	};
+};
 
 export const actions: Actions = {
 	default: async ({ locals, request, url }) => {

@@ -7,7 +7,13 @@ import {
 } from "$lib/issues/board";
 import { keys } from "$lib/api/keys";
 import type { Issue, IssueProgress } from "$lib/issues/board";
-import { readDisplay, type Display } from "$lib/issues/display";
+import {
+	carriesDisplay,
+	displayCookie,
+	readDisplay,
+	writeDisplay,
+	type Display,
+} from "$lib/issues/display";
 import { facetFilters, readFacets, type Facets } from "$lib/issues/facets";
 import type { IssueGroupTally, IssueQueryBody } from "$lib/issues/filter";
 import type { Label } from "$lib/labels/labels";
@@ -49,6 +55,7 @@ export const load: PageServerLoad = async ({
 	route,
 	locals,
 	url,
+	cookies,
 	parent,
 }): Promise<IssuesPageData> => {
 	depends(keys.page(route.id));
@@ -58,14 +65,26 @@ export const load: PageServerLoad = async ({
 	depends(keys.issues(workspace.id));
 
 	const q = url.searchParams;
+	const remembered = displayCookie(workspace.id);
+	const chosen = carriesDisplay(q) ? q : new URLSearchParams(cookies.get(remembered) ?? "");
 
 	const facets = readFacets(q);
-	const display = readDisplay(q);
+	const display = readDisplay(chosen);
+	const layout = pick(chosen.get("layout"), issueLayouts, "list");
 	const today = calendarDate(now, workspace.timezone);
+
+	if (carriesDisplay(q)) {
+		cookies.set(remembered, writeDisplay(display, layout).toString(), {
+			path: "/",
+			httpOnly: true,
+			sameSite: "lax",
+			maxAge: 60 * 60 * 24 * 365,
+		});
+	}
 
 	const options = {
 		tab: pick(q.get("tab"), issueTabs, "active"),
-		layout: pick(q.get("layout"), issueLayouts, "list"),
+		layout,
 		facets,
 		display,
 		today,

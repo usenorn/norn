@@ -33,6 +33,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import {
 		isCurrent,
+		isExactly,
 		mobileNav,
 		primaryNav,
 		workspacePath,
@@ -53,10 +54,13 @@
 				: data.narrowed)
 	);
 
+	const signOutFormId = "sign-out-form";
+
 	const slug = $derived(data.workspace.slug);
 	const pathname = $derived(page.url.pathname);
 	const search = $derived(page.url.searchParams);
 	const current = $derived((href: string) => isCurrent(pathname, search, href));
+	const exactly = $derived((href: string) => isExactly(pathname, href));
 
 	let searching = $state(false);
 
@@ -239,14 +243,16 @@
 				</DropdownMenu.Item>
 				<DropdownMenu.Item variant="destructive">
 					{#snippet child({ props })}
-						<a href="/sign-in" {...props}>
+						<button type="submit" form={signOutFormId} {...props}>
 							<LogOut aria-hidden="true" />
 							Sign out
-						</a>
+						</button>
 					{/snippet}
 				</DropdownMenu.Item>
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
+
+		<form id={signOutFormId} method="POST" action="/sign-out" class="hidden"></form>
 
 		<button
 			type="button"
@@ -337,7 +343,7 @@
 				label={data.projects.length === 0 ? "Start a project" : "All projects"}
 				icon={data.projects.length === 0 ? Plus : List}
 				indent
-				active={current(projectsPath(slug))}
+				active={exactly(projectsPath(slug))}
 			/>
 
 			<SidebarSection label="Views">
@@ -366,7 +372,7 @@
 				label={views.length === 0 ? "Save a view" : "All views"}
 				icon={views.length === 0 ? Plus : List}
 				indent
-				active={current(viewsPath(slug))}
+				active={exactly(viewsPath(slug))}
 			/>
 		</nav>
 

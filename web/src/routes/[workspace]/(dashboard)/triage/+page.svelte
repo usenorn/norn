@@ -33,6 +33,7 @@
 		queued,
 		readTriageFailure,
 		sourceLabels,
+		readSource,
 		sourceTabs,
 		triageFailureMessage,
 		type TriageDeclineReason,
@@ -54,7 +55,7 @@
 	let localFailure = $state<TriageFailure | null>(null);
 	let working = $state(false);
 	let cursor = $state(0);
-	let tab = $state<"all" | TriageSource>("all");
+	const tab = $derived(readSource(page.url.searchParams.get("source")));
 	let flow = $state<"accept" | "decline" | "merge" | null>(null);
 	let reason = $state<TriageDeclineReason | null>(null);
 	let note = $state("");
@@ -66,6 +67,9 @@
 
 	const slug = $derived(data.workspace.slug);
 	const at = $derived((path: string) => workspacePath(slug, path));
+	const sourcePath = $derived((source: "all" | TriageSource) =>
+		at(source === "all" ? "/triage" : `/triage?source=${source}`)
+	);
 	const listing = $derived<TriageListing>(preview?.listing ?? data.listing);
 	const failure = $derived<TriageFailure | null>(preview?.failure ?? localFailure);
 	const teams = $derived(preview?.teams ?? data.teams);
@@ -108,6 +112,12 @@
 		clearTimeout(noticeTimer);
 		noticeTimer = setTimeout(() => (notice = ""), 5000);
 	}
+
+	$effect(() => {
+		tab;
+		cursor = 0;
+		closeFlow();
+	});
 
 	function closeFlow() {
 		flow = null;
@@ -286,14 +296,9 @@
 				class="flex min-w-0 gap-0.5 overflow-x-auto rounded-sm border border-line-default p-0.5"
 			>
 				{#each sourceTabs as choice (choice.value)}
-					<button
-						type="button"
-						aria-pressed={tab === choice.value}
-						onclick={() => {
-							tab = choice.value;
-							cursor = 0;
-							closeFlow();
-						}}
+					<a
+						href={sourcePath(choice.value)}
+						aria-current={tab === choice.value ? "page" : undefined}
 						class="inline-flex h-5.5 flex-none cursor-pointer items-center gap-1.5 rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase transition-colors duration-70 ease-out {tab ===
 						choice.value
 							? 'bg-primary text-primary-foreground'
@@ -301,7 +306,7 @@
 					>
 						{choice.label}
 						<span class="tabular-nums opacity-70">{counts[choice.value]}</span>
-					</button>
+					</a>
 				{/each}
 			</div>
 			<div class="flex-1"></div>

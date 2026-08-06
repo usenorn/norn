@@ -61,6 +61,7 @@
 		orderings,
 		rowProperties,
 		rowPropertyLabels,
+		writeDisplay,
 	} from "$lib/issues/display";
 	import {
 		dueWindowLabels,
@@ -164,13 +165,8 @@
 		for (const [kind, value] of Object.entries(facets)) if (value) q.set(kind, value);
 
 		if (data.tab !== "active") q.set("tab", data.tab);
-		if (data.layout !== "list") q.set("layout", data.layout);
-		if (display.showEmpty) q.set("empty", "1");
-		if (display.grouping !== "state") q.set("group", display.grouping);
-		if (display.ordering !== "manual") q.set("order", display.ordering);
 
-		const hidden = rowProperties.filter((property) => !display.shown.includes(property));
-		if (hidden.length > 0) q.set("hide", hidden.join(","));
+		for (const [key, value] of writeDisplay(display, data.layout)) q.set(key, value);
 
 		return q;
 	});
