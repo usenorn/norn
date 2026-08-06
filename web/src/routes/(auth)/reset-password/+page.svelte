@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -11,15 +11,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import InstanceLine from "$lib/components/norn/instance-line.svelte";
-	import { api } from "$lib/api";
 	import { newPasswordSchema, resetRequestSchema } from "$lib/auth/reset-password-schema";
-	import {
-		emailMessage,
-		passwordMessage,
-		resetLinkFailure,
-		resetRequestFailure,
-		resetSent,
-	} from "$lib/auth/password-reset";
 	import { minPasswordLength } from "$lib/auth/sign-up-schema";
 	import type { PasswordReset } from "$lib/auth/types";
 	import { resetPasswordPreviewStates } from "./preview";
@@ -36,98 +28,37 @@
 			: undefined
 	);
 
-	let submitReset = $state<PasswordReset | null>(null);
-
 	const auth = $derived({ ...data.auth, ...preview?.auth });
-	const reset = $derived<PasswordReset>(submitReset ?? preview?.reset ?? data.reset);
 
-	const requestForm = superForm(defaults(zod4(resetRequestSchema)), {
+	// svelte-ignore state_referenced_locally
+	const requestForm = superForm(data.requestForm, {
 		id: requestFormId,
-		SPA: true,
 		validators: zod4Client(resetRequestSchema),
 		resetForm: false,
-		onUpdate: async ({ form: submitted }) => {
-			if (!submitted.valid) return;
-
-			try {
-				const { data: accepted, error } = await api.POST("/auth/password-reset", {
-					body: { email: submitted.data.email },
-				});
-
-				if (error) {
-					const failure = resetRequestFailure(error);
-
-					if (failure) {
-						submitReset = failure;
-
-						return;
-					}
-
-					for (const field of error.errors ?? []) {
-						if (field.field === "email") {
-							setError(submitted, "email", emailMessage(field.code));
-						}
-					}
-
-					return;
-				}
-
-				submitReset = resetSent(submitted.data.email, accepted, new Date());
-			} catch {
-				submitReset = { kind: "unavailable" };
-			}
-		},
 	});
-	const { form: requestData, enhance: requestEnhance, submitting: requestSubmitting } = requestForm;
+	const {
+		form: requestData,
+		enhance: requestEnhance,
+		submitting: requestSubmitting,
+		message: requestMessage,
+	} = requestForm;
 
-	const passwordForm = superForm(defaults(zod4(newPasswordSchema)), {
+	// svelte-ignore state_referenced_locally
+	const passwordForm = superForm(data.passwordForm, {
 		id: passwordFormId,
-		SPA: true,
 		validators: zod4Client(newPasswordSchema),
 		resetForm: false,
-		onUpdate: async ({ form: submitted }) => {
-			if (!submitted.valid) return;
-
-			if (!data.token) {
-				submitReset = { kind: "link_expired" };
-
-				return;
-			}
-
-			try {
-				const { error } = await api.POST("/auth/password-reset/confirm", {
-					body: { token: data.token, password: submitted.data.password },
-				});
-
-				if (!error) {
-					submitReset = { kind: "changed" };
-
-					return;
-				}
-
-				const outcome = resetLinkFailure(error);
-
-				if (outcome) {
-					submitReset = outcome;
-
-					return;
-				}
-
-				for (const field of error.errors ?? []) {
-					if (field.field === "password") {
-						setError(submitted, "password", passwordMessage(field.code));
-					}
-				}
-			} catch {
-				submitReset = { kind: "unavailable" };
-			}
-		},
 	});
 	const {
 		form: passwordData,
 		enhance: passwordEnhance,
 		submitting: passwordSubmitting,
+		message: passwordMessageStore,
 	} = passwordForm;
+
+	const reset = $derived<PasswordReset>(
+		$passwordMessageStore ?? $requestMessage ?? preview?.reset ?? data.reset
+	);
 
 	$effect(() => {
 		if (reset.kind !== "sent") return;
@@ -285,7 +216,7 @@
 			{/if}
 
 			{#if showRequestForm}
-				<form id={requestFormId} method="POST" use:requestEnhance>
+				<form id={requestFormId} method="POST" action="?/request" use:requestEnhance>
 					{#if reset.kind === "sent"}
 						<div class="flex flex-col gap-2.5 rounded-lg border border-line-default bg-paper-1 p-3">
 							<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -323,7 +254,14 @@
 			{/if}
 
 			{#if showPasswordForm}
-				<form id={passwordFormId} method="POST" use:passwordEnhance class="flex flex-col gap-4">
+				<form
+					id={passwordFormId}
+					method="POST"
+					action="?/reset"
+					use:passwordEnhance
+					class="flex flex-col gap-4"
+				>
+					<input type="hidden" name="token" value={data.token ?? ""} />
 					<Form.Field form={passwordForm} name="password">
 						<Form.Control>
 							{#snippet children({ props })}

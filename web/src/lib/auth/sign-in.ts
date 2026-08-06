@@ -27,7 +27,7 @@ export function signInFailure(problem: SignInProblem): SignInFailure | null {
 		case "invalid_credentials":
 			return { kind: "invalid_credentials", attemptsLeft: problem.attemptsLeft };
 		case "account_locked":
-			return { kind: "account_locked", unlocksAt: clockTime(problem.unlocksAt) };
+			return { kind: "account_locked", unlocksAt: problem.unlocksAt };
 		case "rate_limited":
 			return { kind: "rate_limited" };
 	}
