@@ -1,17 +1,17 @@
-import { apiFor } from "$lib/api";
 import type { WebhooksView } from "$lib/webhooks/webhooks";
-import type { PageLoad } from "./$types";
+import { keys } from "$lib/api/keys";
+import type { PageServerLoad } from "./$types";
 
 export type WebhooksPageData = {
 	view: WebhooksView;
 };
 
-export const load: PageLoad = async ({ fetch, parent, url }): Promise<WebhooksPageData> => {
-	const api = apiFor(url);
+export const load: PageServerLoad = async ({ depends, route, locals, parent }): Promise<WebhooksPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 
-	const listing = await api.GET("/workspaces/{workspaceId}/webhooks", {
-		fetch,
+	const listing = await locals.api.GET("/workspaces/{workspaceId}/webhooks", {
 		params: { path: { workspaceId: workspace.id } },
 	});
 

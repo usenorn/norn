@@ -1,6 +1,6 @@
-import { apiFor } from "$lib/api";
 import type { WebhookDetailView } from "$lib/webhooks/webhooks";
-import type { PageLoad } from "./$types";
+import { keys } from "$lib/api/keys";
+import type { PageServerLoad } from "./$types";
 
 const pageSize = 25;
 
@@ -8,21 +8,16 @@ export type WebhookDetailPageData = {
 	view: WebhookDetailView;
 };
 
-export const load: PageLoad = async ({
-	fetch,
-	params,
-	parent,
-	url,
-}): Promise<WebhookDetailPageData> => {
-	const api = apiFor(url);
+export const load: PageServerLoad = async ({ depends, route, locals, params, parent }): Promise<WebhookDetailPageData> => {
+	depends(keys.page(route.id));
+
 	const { workspace } = await parent();
 
 	const path = { workspaceId: workspace.id, webhookId: params.webhookId };
 
 	const [webhook, deliveries] = await Promise.all([
-		api.GET("/workspaces/{workspaceId}/webhooks/{webhookId}", { fetch, params: { path } }),
-		api.GET("/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries", {
-			fetch,
+		locals.api.GET("/workspaces/{workspaceId}/webhooks/{webhookId}", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries", {
 			params: { path, query: { limit: pageSize } },
 		}),
 	]);
@@ -41,8 +36,7 @@ export const load: PageLoad = async ({
 	const failure =
 		webhook.data.enabled || !settled
 			? undefined
-			: await api.GET("/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}", {
-					fetch,
+			: await locals.api.GET("/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}", {
 					params: { path: { ...path, deliveryId: settled.id } },
 				});
 
