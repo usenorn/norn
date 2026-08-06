@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
@@ -10,14 +9,8 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Progress } from "$lib/components/ui/progress/index.js";
-	import { api } from "$lib/api";
-	import {
-		createWorkspaceSchema,
-		slugMessage,
-		slugSuggestions,
-		slugFromName,
-	} from "$lib/workspace/create-workspace-schema";
-	import { teamKeyFromName, teamKeyMessage, teamKeySuggestions } from "$lib/team/teams";
+	import { createWorkspaceSchema, slugFromName } from "$lib/workspace/create-workspace-schema";
+	import { teamKeyFromName } from "$lib/team/teams";
 	import type { WorkspaceCreationFailure } from "$lib/workspace/types";
 	import { createWorkspacePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -30,69 +23,20 @@
 			: undefined
 	);
 
-	let submitFailure = $state<WorkspaceCreationFailure | null>(null);
 	let slugEdited = $state(false);
 	let keyEdited = $state(false);
 
 	const auth = $derived(data.auth);
 	const workspace = $derived({ ...data.workspace, ...preview?.workspace });
-	const failure = $derived<WorkspaceCreationFailure | null>(preview?.failure ?? submitFailure);
 
-	const form = superForm(defaults(zod4(createWorkspaceSchema)), {
-		SPA: true,
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
 		validators: zod4Client(createWorkspaceSchema),
 		resetForm: false,
-		onUpdate: async ({ form: submitted }) => {
-			if (!submitted.valid) return;
-
-			submitFailure = null;
-
-			try {
-				const { data: created, error } = await api.POST("/workspaces", {
-					body: {
-						slug: submitted.data.slug,
-						name: submitted.data.name,
-						team: { key: submitted.data.teamKey, name: submitted.data.teamName },
-					},
-				});
-
-				if (created) {
-					await goto(`/invite-teammates?workspace=${created.slug}`);
-
-					return;
-				}
-
-				if (error && "code" in error && error.code === "team_key_taken") {
-					submitFailure = {
-						kind: "team_key_taken",
-						key: submitted.data.teamKey,
-						suggestions: teamKeySuggestions(submitted.data.teamName, submitted.data.teamKey, []),
-					};
-
-					return;
-				}
-
-				if (error?.status === 409) {
-					submitFailure = {
-						kind: "slug_taken",
-						slug: submitted.data.slug,
-						suggestions: slugSuggestions(submitted.data.slug),
-					};
-
-					return;
-				}
-
-				for (const field of error?.errors ?? []) {
-					if (field.field === "slug") setError(submitted, "slug", slugMessage(field.code));
-					if (field.field === "name") setError(submitted, "name", "Enter a workspace name.");
-					if (field.field === "key") setError(submitted, "teamKey", teamKeyMessage(field.code));
-				}
-			} catch {
-				setError(submitted, "name", "We could not reach the server. Try again in a moment.");
-			}
-		},
 	});
-	const { form: formData, enhance, submitting } = form;
+	const { form: formData, enhance, submitting, message } = form;
+
+	const failure = $derived<WorkspaceCreationFailure | null>(preview?.failure ?? $message ?? null);
 
 	$effect(() => {
 		const prefill = preview?.form;
@@ -134,13 +78,13 @@
 	function pickSuggestion(slug: string) {
 		slugEdited = true;
 		formData.update((current) => ({ ...current, slug }));
-		submitFailure = null;
+		message.set(undefined);
 	}
 
 	function pickKey(teamKey: string) {
 		keyEdited = true;
 		formData.update((current) => ({ ...current, teamKey }));
-		submitFailure = null;
+		message.set(undefined);
 	}
 
 	function fieldValue(event: Event) {

@@ -1,59 +1,20 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
-	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import InstanceLine from "$lib/components/norn/instance-line.svelte";
-	import { api } from "$lib/api";
 	import { workspaceEntrySchema } from "$lib/auth/workspace-entry-schema";
-	import { reachWorkspaceSignIn, ssoEntryPoint, workspaceSlug } from "$lib/auth/workspace-sign-in";
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();
 
-	const returnTo = $derived.by(() => {
-		const requested = page.url.searchParams.get("return") ?? "";
-
-		return requested.startsWith("/") && !requested.startsWith("//") ? requested : "/";
-	});
-
-	const form = superForm(defaults(zod4(workspaceEntrySchema)), {
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
 		id: "workspace-entry",
-		SPA: true,
 		validators: zod4Client(workspaceEntrySchema),
 		resetForm: false,
-		onUpdate: async ({ form: asked }) => {
-			const slug = workspaceSlug(asked.data.workspace);
-
-			if (!asked.valid) return;
-
-			if (!slug) {
-				setError(asked, "workspace", "Enter the workspace address you sign in at.");
-
-				return;
-			}
-
-			const entry = await reachWorkspaceSignIn(api, slug);
-
-			if (entry.kind !== "ready") {
-				setError(
-					asked,
-					"workspace",
-					"No workspace at that address. Check it with whoever invited you."
-				);
-
-				return;
-			}
-
-			await goto(
-				entry.signIn.sso
-					? ssoEntryPoint(entry.signIn.workspace, returnTo)
-					: `/sign-in?workspace=${entry.signIn.workspace}`
-			);
-		},
 	});
 
 	const { form: formData, enhance, submitting } = form;

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { defaults, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -13,10 +13,9 @@
 	import InstanceLine from "$lib/components/norn/instance-line.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
-	import { goto } from "$app/navigation";
-	import { api } from "$lib/api";
 	import { signInSchema } from "$lib/auth/sign-in-schema";
-	import { signInFailure } from "$lib/auth/sign-in";
+	import { clockTime } from "$lib/auth/sign-in";
+	import { safeReturn } from "$lib/auth/return-to";
 	import type { SignInFailure } from "$lib/auth/types";
 	import { ssoEntryPoint } from "$lib/auth/workspace-sign-in";
 	import { signInPreviewStates } from "./preview";
@@ -28,13 +27,7 @@
 		import.meta.env.DEV ? signInPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	let submitFailure = $state<SignInFailure | null>(null);
-
-	const returnTo = $derived.by(() => {
-		const requested = page.url.searchParams.get("return") ?? "";
-
-		return requested.startsWith("/") && !requested.startsWith("//") ? requested : "/";
-	});
+	const returnTo = $derived(safeReturn(page.url.searchParams.get("return")));
 
 	const auth = $derived({ ...data.auth, ...preview?.auth });
 	const entry = $derived(preview?.entry ?? data.entry);
@@ -42,35 +35,14 @@
 	const provider = $derived(
 		auth.sso?.name ?? (workspace?.sso ? (workspace.host ?? "single sign-on") : "")
 	);
-	const failure = $derived<SignInFailure | null>(submitFailure ?? preview?.failure ?? null);
-
-	const form = superForm(defaults(zod4(signInSchema)), {
-		SPA: true,
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
 		validators: zod4Client(signInSchema),
 		resetForm: false,
-		onUpdate: async ({ form: submitted }) => {
-			if (!submitted.valid) return;
-
-			submitFailure = null;
-
-			try {
-				const { error } = await api.POST("/auth/login", {
-					body: { email: submitted.data.email, password: submitted.data.password },
-				});
-
-				if (error) {
-					submitFailure = signInFailure(error);
-
-					return;
-				}
-
-				await goto(returnTo, { invalidateAll: true });
-			} catch {
-				submitFailure = { kind: "unavailable" };
-			}
-		},
 	});
-	const { form: formData, enhance, submitting } = form;
+	const { form: formData, enhance, submitting, message } = form;
+
+	const failure = $derived<SignInFailure | null>($message ?? preview?.failure ?? null);
 
 	const showSso = $derived(workspace ? workspace.sso : Boolean(auth.sso));
 	const showPassword = $derived(workspace ? workspace.password : auth.password);
@@ -96,7 +68,7 @@
 				variant: "destructive" as const,
 				icon: CircleX,
 				title: "Account locked",
-				body: `Ten failed sign-ins in a row. It unlocks at ${failure.unlocksAt}, or an admin can unlock it now.`,
+				body: `Ten failed sign-ins in a row. It unlocks at ${clockTime(failure.unlocksAt)}, or an admin can unlock it now.`,
 			};
 		}
 		if (failure?.kind === "rate_limited") {

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { enhance as confirmEnhance } from "$app/forms";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -14,8 +15,6 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import InstanceLine from "$lib/components/norn/instance-line.svelte";
-	import { api } from "$lib/api";
-	import { passwordMessage } from "$lib/auth/password-reset";
 	import { minPasswordLength } from "$lib/auth/sign-up-schema";
 	import { acceptInvitationSchema } from "$lib/workspace/accept-invitation-schema";
 	import {
@@ -32,6 +31,7 @@
 	import type { PageProps } from "./$types";
 
 	const formId = "accept-invitation-form";
+	const confirmFormId = "confirm-invitation-form";
 
 	let { data }: PageProps = $props();
 
@@ -41,11 +41,23 @@
 			: undefined
 	);
 
-	let submitted = $state<AcceptInvitation | null>(null);
-	let joining = $state(false);
+	let timezone = $state("UTC");
 
 	const auth = $derived(data.auth);
-	const invitation = $derived<AcceptInvitation>(submitted ?? preview ?? data.invitation);
+
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
+		id: formId,
+		validators: zod4Client(acceptInvitationSchema),
+		resetForm: false,
+	});
+	const { form: formData, enhance, submitting, message } = form;
+
+	$effect(() => {
+		timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+	});
+
+	const invitation = $derived<AcceptInvitation>($message ?? preview ?? data.invitation);
 
 	const detail = $derived<InvitationDetail | undefined>(
 		invitation.kind === "create_account" ||
@@ -93,86 +105,7 @@
 		return null;
 	});
 
-	async function join(displayName?: string, password?: string) {
-		if (!data.token) {
-			submitted = { kind: "invalid" };
-
-			return null;
-		}
-
-		const { data: accepted, error } = await api.POST("/invitations/accept", {
-			body: {
-				token: data.token,
-				displayName,
-				password,
-				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-			},
-		});
-
-		if (error) return error;
-
-		if (accepted) {
-			submitted = {
-				kind: "joined",
-				workspace: { slug: accepted.workspace.slug, name: accepted.workspace.name },
-			};
-		}
-
-		return null;
-	}
-
-	const form = superForm(defaults(zod4(acceptInvitationSchema)), {
-		id: formId,
-		SPA: true,
-		validators: zod4Client(acceptInvitationSchema),
-		resetForm: false,
-		onUpdate: async ({ form: pending }) => {
-			if (!pending.valid) return;
-
-			try {
-				const error = await join(pending.data.name, pending.data.password);
-
-				if (!error) return;
-
-				const failure = linkFailure(error, context);
-
-				if (failure.kind !== "unavailable" || !error.errors?.length) {
-					submitted = failure;
-
-					return;
-				}
-
-				for (const field of error.errors) {
-					if (field.field === "password") {
-						setError(pending, "password", passwordMessage(field.code));
-					}
-
-					if (field.field === "display_name") {
-						setError(pending, "name", "Enter your name.");
-					}
-				}
-			} catch {
-				submitted = { kind: "unavailable" };
-			}
-		},
-	});
-	const { form: formData, enhance, submitting } = form;
-
-	async function confirmJoin() {
-		joining = true;
-
-		try {
-			const error = await join();
-
-			if (error) submitted = linkFailure(error, context);
-		} catch {
-			submitted = { kind: "unavailable" };
-		} finally {
-			joining = false;
-		}
-	}
-
-	const busy = $derived($submitting || joining);
+	const busy = $derived($submitting);
 
 	const passwordHint = $derived(
 		$formData.password.length > 0 && $formData.password.length < minPasswordLength
@@ -285,8 +218,8 @@
 				return {
 					label: busy ? "Joining" : `Join ${invitation.workspace.name}`,
 					href: null,
-					form: null,
-					onclick: confirmJoin,
+					form: confirmFormId,
+					onclick: null,
 				};
 			case "sso_required":
 				return { label: "Continue with single sign-on", href: "/sso", form: null, onclick: null };
@@ -364,7 +297,12 @@
 			{/if}
 
 			{#if showForm}
-				<form id={formId} method="POST" use:enhance class="flex flex-col gap-4">
+				<form id={formId} method="POST" action="?/join" use:enhance class="flex flex-col gap-4">
+					<input type="hidden" name="timezone" value={timezone} />
+					<input type="hidden" name="token" value={data.token ?? ""} />
+					{#if $formData.terms}
+						<input type="hidden" name="terms" value="true" />
+					{/if}
 					<Form.Field {form} name="name">
 						<Form.Control>
 							{#snippet children({ props })}
@@ -475,14 +413,19 @@
 					</Form.Field>
 				{/if}
 
+				{#if invitation.kind === "confirm"}
+					<form id={confirmFormId} method="POST" action="?/confirm" use:confirmEnhance>
+						<input type="hidden" name="timezone" value={timezone} />
+						<input type="hidden" name="token" value={data.token ?? ""} />
+					</form>
+				{/if}
+
 				{#if action.href}
 					<Button href={action.href} class="w-full">{action.label}</Button>
 				{:else if action.form}
 					<Button type="submit" form={action.form} class="w-full" disabled={busy}>
 						{action.label}
 					</Button>
-				{:else}
-					<Button class="w-full" disabled={busy} onclick={action.onclick}>{action.label}</Button>
 				{/if}
 
 				{#if note}

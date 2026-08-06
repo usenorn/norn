@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-	import { goto } from "$app/navigation";
+	import { enhance } from "$app/forms";
 	import { page } from "$app/state";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
@@ -13,13 +12,11 @@
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import InstanceLine from "$lib/components/norn/instance-line.svelte";
 	import StepList, { type Step } from "$lib/components/norn/step-list.svelte";
-	import { api } from "$lib/api";
-	import { signUpConfirmFailure } from "$lib/auth/sign-up";
 	import type { SignUpConfirmation } from "$lib/auth/types";
 	import { signUpConfirmPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
-	let { data }: PageProps = $props();
+	let { data, form: submitted }: PageProps = $props();
 
 	const preview = $derived(
 		import.meta.env.DEV
@@ -27,49 +24,21 @@
 			: undefined
 	);
 
-	let submitted = $state<SignUpConfirmation | null>(null);
 	let heading = $state<HTMLHeadingElement | null>(null);
+	let confirming = $state<HTMLFormElement | null>(null);
 
 	const auth = $derived(data.auth);
-	const confirmation = $derived<SignUpConfirmation>(submitted ?? preview ?? data.confirmation);
+	const confirmation = $derived<SignUpConfirmation>(
+		submitted?.confirmation ?? preview ?? data.confirmation
+	);
 
-	async function confirm() {
-		if (!data.token) {
-			submitted = { kind: "no_token" };
+	let started = false;
 
-			return;
-		}
+	$effect(() => {
+		if (preview || submitted || started || data.confirmation.kind !== "confirming") return;
 
-		submitted = { kind: "confirming" };
-
-		try {
-			const { data: account, error } = await api.POST("/auth/sign-up/confirm", {
-				body: { token: data.token },
-			});
-
-			if (error) {
-				submitted = signUpConfirmFailure(error);
-
-				return;
-			}
-
-			if (!account) {
-				submitted = { kind: "unavailable" };
-
-				return;
-			}
-
-			submitted = { kind: "confirmed", email: account.email };
-
-			await goto("/", { invalidateAll: true });
-		} catch {
-			submitted = { kind: "unavailable" };
-		}
-	}
-
-	onMount(() => {
-		if (preview || data.confirmation.kind !== "confirming") return;
-		confirm();
+		started = true;
+		confirming?.requestSubmit();
 	});
 
 	$effect(() => {
@@ -172,7 +141,7 @@
 			case "email_taken":
 				return { label: "Sign in", href: "/sign-in", onclick: null };
 			case "unavailable":
-				return { label: "Try again", href: null, onclick: confirm };
+				return { label: "Try again", href: null, onclick: null };
 			default:
 				return null;
 		}
@@ -227,15 +196,23 @@
 				</Alert.Root>
 			{/if}
 
-			{#if action}
-				<div class="flex flex-col gap-2">
-					{#if action.href}
-						<Button href={action.href} class="w-full">{action.label}</Button>
-					{:else if action.onclick}
-						<Button class="w-full" onclick={action.onclick}>{action.label}</Button>
-					{/if}
-				</div>
-			{/if}
+			<form bind:this={confirming} method="POST" use:enhance class="contents">
+				<input type="hidden" name="token" value={data.token ?? ""} />
+
+				{#if action}
+					<div class="flex flex-col gap-2">
+						{#if action.href}
+							<Button href={action.href} class="w-full">{action.label}</Button>
+						{:else}
+							<Button type="submit" class="w-full">{action.label}</Button>
+						{/if}
+					</div>
+				{:else if confirmation.kind === "confirming"}
+					<noscript>
+						<Button type="submit" class="w-full">Confirm your email</Button>
+					</noscript>
+				{/if}
+			</form>
 		</div>
 	</div>
 

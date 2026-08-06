@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { enhance as resendEnhance } from "$app/forms";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
@@ -14,17 +15,9 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import InstanceLine from "$lib/components/norn/instance-line.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { api } from "$lib/api";
-	import { emailMessage, passwordMessage } from "$lib/auth/password-reset";
-	import {
-		displayNameMessage,
-		personalEmail,
-		signUpFailure,
-		signUpSent,
-		type SignUpProblem,
-	} from "$lib/auth/sign-up";
-	import { minPasswordLength, signUpSchema, type SignUpInput } from "$lib/auth/sign-up-schema";
-	import type { SignUpOutcome, SignUpResend } from "$lib/auth/types";
+	import { personalEmail } from "$lib/auth/sign-up";
+	import { minPasswordLength, signUpSchema } from "$lib/auth/sign-up-schema";
+	import type { SignUpOutcome } from "$lib/auth/types";
 	import { atClock } from "$lib/time";
 	import { signUpPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -35,86 +28,41 @@
 		import.meta.env.DEV ? signUpPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	let submitOutcome = $state<SignUpOutcome | null>(null);
-	let submitResend = $state<SignUpResend | null>(null);
-	let resending = $state(false);
 	let copied = $state(false);
 	let heading = $state<HTMLHeadingElement | null>(null);
+	let sent = $state<SignUpOutcome | null>(null);
+	let timezone = $state("UTC");
+	let secret = $state("");
 
 	const auth = $derived({ ...data.auth, ...preview?.auth });
-	const outcome = $derived<SignUpOutcome | null>(submitOutcome ?? preview?.outcome ?? null);
-	const resend = $derived<SignUpResend>(submitResend ?? preview?.resend ?? "idle");
 
-	async function requestSignUp(input: SignUpInput): Promise<SignUpProblem | null> {
-		const { data: requested, error } = await api.POST("/auth/sign-up", {
-			body: {
-				email: input.email,
-				displayName: input.name,
-				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-				password: input.password,
-			},
-		});
-
-		if (error) return error;
-		if (requested) submitOutcome = signUpSent(requested);
-
-		return null;
-	}
-
-	const form = superForm(defaults(zod4(signUpSchema)), {
-		SPA: true,
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
 		validators: zod4Client(signUpSchema),
 		resetForm: false,
-		onUpdate: async ({ form: submitted }) => {
-			if (!submitted.valid) return;
-
-			submitOutcome = null;
-			submitResend = null;
-
-			try {
-				const error = await requestSignUp(submitted.data);
-
-				if (!error) return;
-
-				const failure = signUpFailure(error);
-
-				if (failure) {
-					submitOutcome = failure;
-
-					return;
-				}
-
-				let handled = false;
-
-				for (const field of error.errors ?? []) {
-					if (field.field === "email") {
-						setError(submitted, "email", emailMessage(field.code));
-						handled = true;
-					}
-					if (field.field === "display_name") {
-						setError(submitted, "name", displayNameMessage(field.code));
-						handled = true;
-					}
-					if (field.field === "password") {
-						setError(submitted, "password", passwordMessage(field.code));
-						handled = true;
-					}
-				}
-
-				if (!handled) submitOutcome = { kind: "unavailable" };
-			} catch {
-				submitOutcome = { kind: "unavailable" };
-			}
+		onSubmit: () => {
+			secret = $formData.password;
 		},
 	});
-	const { form: formData, enhance, submitting } = form;
+	const { form: formData, enhance, submitting, message } = form;
+
+	$effect(() => {
+		timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+	});
+
+	$effect(() => {
+		if ($message?.outcome) sent = $message.outcome;
+	});
+
+	const outcome = $derived<SignUpOutcome | null>(sent ?? preview?.outcome ?? null);
+	const resend = $derived($message?.resend ?? preview?.resend ?? "idle");
 
 	$effect(() => {
 		const prefill = preview?.form;
 		if (prefill) formData.update((current) => ({ ...current, ...prefill }), { taint: false });
 	});
 
-	const busy = $derived(preview?.busy || $submitting || resending);
+	const busy = $derived(Boolean(preview?.busy) || $submitting);
 	const blocked = $derived(personalEmail($formData.email));
 	const valid = $derived(!blocked && signUpSchema.safeParse($formData).success);
 
@@ -128,37 +76,6 @@
 	const passwordMismatch = $derived(
 		$formData.passwordConfirm.length > 0 && $formData.password !== $formData.passwordConfirm
 	);
-
-	async function resendLink() {
-		resending = true;
-		submitResend = null;
-
-		try {
-			const error = await requestSignUp($formData);
-
-			if (!error) return;
-
-			const failure = signUpFailure(error);
-
-			if (failure?.kind === "rate_limited") {
-				submitResend = "limited";
-
-				return;
-			}
-
-			if (failure) {
-				submitOutcome = failure;
-
-				return;
-			}
-
-			submitResend = "unavailable";
-		} catch {
-			submitResend = "unavailable";
-		} finally {
-			resending = false;
-		}
-	}
 
 	async function copyLink() {
 		if (!linkOnly) return;
@@ -328,8 +245,7 @@
 	);
 
 	function startAgain() {
-		submitOutcome = null;
-		submitResend = null;
+		sent = null;
 		copied = false;
 		formData.update((current) => ({ ...current, password: "", passwordConfirm: "", terms: false }));
 	}
@@ -421,29 +337,43 @@
 							</Alert.Root>
 						{/if}
 					</div>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Nothing is created until you open the link. Wrong address?
-						<button
-							type="button"
-							onclick={startAgain}
-							class="text-link hover:text-link-hover hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-						>
-							Start again
-						</button>. Nothing arrived?
-						<button
-							type="button"
-							onclick={resendLink}
-							disabled={busy}
-							class="text-link hover:text-link-hover hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-40"
-						>
-							{resending ? "Sending" : "Send another link"}
-						</button>.
-					</p>
+					<form method="POST" action="?/resend" use:resendEnhance>
+						<input type="hidden" name="name" value={$formData.name} />
+						<input type="hidden" name="email" value={$formData.email} />
+						<input type="hidden" name="password" value={secret} />
+						<input type="hidden" name="passwordConfirm" value={secret} />
+						<input type="hidden" name="terms" value="true" />
+						<input type="hidden" name="timezone" value={timezone} />
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							Nothing is created until you open the link. Wrong address?
+							<button
+								type="button"
+								onclick={startAgain}
+								class="text-link hover:text-link-hover hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							>
+								Start again
+							</button>. Nothing arrived?
+							<button
+								type="submit"
+								disabled={busy}
+								class="text-link hover:text-link-hover hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-40"
+							>
+								{busy ? "Sending" : "Send another link"}
+							</button>.
+						</p>
+					</form>
 				</div>
 			{/if}
 
 			{#if showForm}
-				<form id="sign-up-form" method="POST" use:enhance class="flex flex-col gap-4">
+				<form
+					id="sign-up-form"
+					method="POST"
+					action="?/signUp"
+					use:enhance
+					class="flex flex-col gap-4"
+				>
+					<input type="hidden" name="timezone" value={timezone} />
 					<Form.Field {form} name="name">
 						<Form.Control>
 							{#snippet children({ props })}
