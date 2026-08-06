@@ -25,6 +25,7 @@ type Cycle interface {
 	Close(ctx context.Context, cycleID uuid.UUID, closedAt time.Time, closedBy *uuid.UUID, rollover entity.CycleRollover) (entity.Cycle, error)
 	NextAfter(ctx context.Context, teamID uuid.UUID, endsOn string) (entity.Cycle, error)
 	HighestNumber(ctx context.Context, teamID uuid.UUID) (int, error)
+	Delete(ctx context.Context, cycleID uuid.UUID) error
 	DeleteVacantFrom(ctx context.Context, teamID uuid.UUID, from string) error
 }
 

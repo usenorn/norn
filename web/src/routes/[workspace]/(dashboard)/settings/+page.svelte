@@ -397,6 +397,23 @@
 
 			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Imports</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Bring a backlog across from Linear or a file of rows. Norn reads the source into a copy
+						of its own first, shows you exactly what it would create, and applies nothing until you
+						approve it. Everything a run creates is recorded, so it can be taken back afterwards.
+					</p>
+				</div>
+
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" href={workspacePath(workspace.slug, "/settings/imports")}>
+						Import a backlog
+					</Button>
+				</div>
+			</section>
+
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">API tokens</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Tokens belong to you rather than to a workspace, and can reach several at once. They

@@ -10,6 +10,7 @@ import (
 	"github.com/hibiken/asynq"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/importrun"
 	"github.com/usenorn/norn/internal/service"
 )
 
@@ -32,5 +33,10 @@ func (h *ImportStageHandler) ProcessTask(ctx context.Context, task *asynq.Task) 
 		return errors.Join(errors.New("import stage payload is incomplete"), asynq.SkipRetry)
 	}
 
-	return h.imports.RunStage(ctx, payload)
+	staging := importrun.With(ctx, importrun.Run{
+		WorkspaceID: payload.WorkspaceID,
+		RunID:       payload.ImportRunID,
+	})
+
+	return h.imports.RunStage(staging, payload)
 }

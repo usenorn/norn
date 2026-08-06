@@ -109,3 +109,25 @@ func TestProgressLeavesOutWorkNobodyHasDecidedOn(t *testing.T) {
 		)
 	}
 }
+
+func TestTheImportDeleteIsFencedToTheRowsItWasHandedInOneWorkspace(t *testing.T) {
+	for _, fence := range []string{"workspace_id = $1", "id = ANY($2::uuid[])"} {
+		if !strings.Contains(purgeImportedIssuesQuery, fence) {
+			t.Errorf(
+				"the revert's delete is missing %q. This is the one delete in the repository that "+
+					"removes a live issue outright, with no soft delete and no grace period in "+
+					"front of it, so the ledger's own ids and the workspace they belong to are the "+
+					"whole of what keeps it off somebody else's work.",
+				fence,
+			)
+		}
+	}
+
+	if !strings.Contains(purgeImportedIssuesQuery, "status = 'active'") {
+		t.Error(
+			"the revert's delete will take an issue in any status. An issue somebody archived or " +
+				"queued for deletion after the import is no longer the import's to take back out, " +
+				"and the caller cannot check that without racing the delete.",
+		)
+	}
+}

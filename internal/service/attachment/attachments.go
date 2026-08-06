@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -147,6 +148,80 @@ func (s *attachmentsService) Reserve(
 	}
 
 	return service.AttachmentReservation{Attachment: created, Transfer: ticket}, nil
+}
+
+// Reserve mints a presigned PUT for a browser and settles the row only once the bytes have
+// arrived. A worker that already holds the object has neither a browser to hand a ticket to
+// nor a second phase to drive, so adoption is its own entry point rather than a flag on the
+// reservation. The origin is tested for attribution rather than presence: one decoded from a
+// request body is non-nil and inert, so a nil check would open this to any caller.
+func (s *attachmentsService) Adopt(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	input service.AdoptAttachmentInput,
+) (entity.Attachment, error) {
+	if !entity.OriginAttributed(input.Origin) {
+		return entity.Attachment{}, entity.ErrAttachmentAdoptNeedsOrigin
+	}
+
+	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
+	if err != nil {
+		return entity.Attachment{}, err
+	}
+
+	name := entity.AttachmentFileName(input.FileName)
+
+	if err := entity.NewValidationError(
+		entity.ValidateAttachmentName("fileName", name),
+	); err != nil {
+		return entity.Attachment{}, err
+	}
+
+	// The key must name an object this workspace's own import wrote. Adopting takes ownership
+	// of whatever it is handed, and a revert later deletes it: a key pointing into another
+	// workspace's stored files would have this import take one and the undo destroy it.
+	if !entity.ValidBlobKey(input.ObjectKey) ||
+		!strings.HasPrefix(input.ObjectKey, entity.ImportBlobPrefix(workspaceID)+"/") {
+		return entity.Attachment{}, entity.NewValidationError(entity.FieldError{
+			Field: "objectKey",
+			Code:  entity.ValidationCodeMalformed,
+		})
+	}
+
+	// The row is written stored, on its issue and with no reclaim deadline, because the sweep
+	// collects on reclaim_after IS NULL AND issue_id IS NULL: a row that passed through pending
+	// would be the file of a live import, deleted out from under it within the sweep interval.
+	adopted := entity.Attachment{
+		ID:          uuid.New(),
+		WorkspaceID: workspaceID,
+		IssueID:     issueID,
+		CommentID:   input.CommentID,
+		UploaderID:  entity.OriginAuthor(input.Origin, decision.Actor.AccountID),
+		ObjectKey:   input.ObjectKey,
+		FileName:    name,
+		ContentType: entity.AttachmentServedType(input.ContentType),
+		SizeBytes:   input.SizeBytes,
+		Status:      entity.AttachmentStatusStored,
+		Origin:      input.Origin,
+	}
+
+	var created entity.Attachment
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if _, err := s.attachments.Admit(
+			ctx, workspaceID, input.SizeBytes, s.cfg.MaxWorkspaceBytes,
+		); err != nil {
+			return s.exhausted(ctx, workspaceID, input.SizeBytes, err)
+		}
+
+		created, err = s.attachments.Create(ctx, adopted)
+
+		return err
+	}); err != nil {
+		return entity.Attachment{}, err
+	}
+
+	return created, nil
 }
 
 func (s *attachmentsService) exhausted(

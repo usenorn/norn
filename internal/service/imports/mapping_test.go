@@ -347,3 +347,25 @@ func TestADecisionSurvivesTheNextTimeThePlanIsDerived(t *testing.T) {
 }
 
 func pointer[T any](value T) *T { return &value }
+
+func TestATeamNamedOnlyByItsCyclesIsStillSomethingToDecide(t *testing.T) {
+	h := newHarness(t).backed()
+
+	h.stage(entity.ImportCycle, fetched(t, sourceCycle, "", service.ImportCyclePayload{
+		Team: sourceTeam, Name: "Sprint 7", Number: 7,
+		StartsOn: sourceCycleStartsOn, EndsOn: sourceCycleEndsOn,
+	}))
+
+	workspaceKnowing(t, h)
+
+	plan, err := h.imports.Mappings(context.Background(), h.run().WorkspaceID, h.run().ID)
+	if err != nil {
+		t.Fatalf("derive mappings: %v", err)
+	}
+
+	mapping := mappingFor(plan, entity.ImportMapTeam, sourceTeam, t)
+
+	if !mapping.Undecided() {
+		t.Errorf("the derived team concept arrived already decided as %q", mapping.Decision)
+	}
+}

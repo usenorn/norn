@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,9 +19,16 @@ type ImportLease struct {
 	Expires time.Time
 }
 
+type ImportSourceSecret struct {
+	Secret   string
+	Settings json.RawMessage
+}
+
 type ImportRun interface {
 	Create(ctx context.Context, run entity.ImportRun) (entity.ImportRun, error)
 	GetByID(ctx context.Context, workspaceID, runID uuid.UUID) (entity.ImportRun, error)
+	SaveSourceConfig(ctx context.Context, runID uuid.UUID, secret string, settings json.RawMessage, policy entity.ImportUnknownPolicy) error
+	SourceConfigForStaging(ctx context.Context, runID uuid.UUID) (ImportSourceSecret, error)
 	Claim(ctx context.Context, runID uuid.UUID, from, to entity.ImportStatus, lease ImportLease, at time.Time) (uuid.UUID, error)
 	Heartbeat(ctx context.Context, runID, token uuid.UUID, expires time.Time) error
 	Release(ctx context.Context, runID, token uuid.UUID, at time.Time) error
@@ -28,6 +36,7 @@ type ImportRun interface {
 	Settle(ctx context.Context, runID uuid.UUID, status entity.ImportStatus, detail string, at time.Time) error
 	AcceptPreview(ctx context.Context, runID uuid.UUID, digest string, acknowledgeTriage bool, at time.Time) error
 	RecordReverter(ctx context.Context, runID uuid.UUID, actor entity.Actor, at time.Time) error
+	ListByWorkspace(ctx context.Context, workspaceID uuid.UUID, page entity.ImportRunPage) ([]entity.ImportRun, error)
 	ListLeaseExpired(ctx context.Context, at, idleSince time.Time, limit int) ([]entity.ImportRun, error)
 }
 

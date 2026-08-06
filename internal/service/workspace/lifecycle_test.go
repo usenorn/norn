@@ -378,12 +378,13 @@ func TestPurgeDestroysTheWorkspaceOnlyOnceItsWindowHasElapsed(t *testing.T) {
 
 	h.workspaces.EXPECT().GetByID(gomock.Any(), workspaceID).Return(pending, nil)
 	h.blobs.EXPECT().
-		RemoveAll(gomock.Any(), entity.AttachmentPrefix(workspaceID)).
+		RemoveAll(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(context.Context, string) error {
 			emptied = true
 
 			return nil
-		})
+		}).
+		AnyTimes()
 	h.workspaces.EXPECT().
 		Purge(gomock.Any(), workspaceID).
 		DoAndReturn(func(context.Context, uuid.UUID) error {
@@ -400,6 +401,44 @@ func TestPurgeDestroysTheWorkspaceOnlyOnceItsWindowHasElapsed(t *testing.T) {
 
 	if err := h.service.Purge(context.Background(), workspaceID); err != nil {
 		t.Fatalf("Purge: %v", err)
+	}
+}
+
+func TestPurgeEmptiesEveryPrefixTheWorkspaceEverWroteTo(t *testing.T) {
+	h := newHarness(t)
+	workspaceID := uuid.New()
+
+	pending := pendingWorkspace(workspaceID, time.Now().UTC().Add(-2*deletionGracePeriod))
+
+	swept := make(map[string]bool)
+
+	h.workspaces.EXPECT().GetByID(gomock.Any(), workspaceID).Return(pending, nil)
+	h.blobs.EXPECT().
+		RemoveAll(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, prefix string) error {
+			swept[prefix] = true
+
+			return nil
+		}).
+		AnyTimes()
+	h.workspaces.EXPECT().Purge(gomock.Any(), workspaceID).Return(nil).AnyTimes()
+
+	if err := h.service.Purge(context.Background(), workspaceID); err != nil {
+		t.Fatalf("Purge: %v", err)
+	}
+
+	for name, prefix := range map[string]string{
+		"the files people attached to issues": entity.AttachmentPrefix(workspaceID),
+		"the files an import carried across":  entity.ImportBlobPrefix(workspaceID),
+	} {
+		if !swept[prefix] {
+			t.Errorf(
+				"purging left %s behind: nothing removed %q. Object storage is not reached by a "+
+					"cascade, so a prefix the purge does not name is one whose bytes outlive the "+
+					"workspace forever, with every row that knew their keys already deleted.",
+				name, prefix,
+			)
+		}
 	}
 }
 

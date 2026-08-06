@@ -1316,8 +1316,7 @@ func attachmentDTO(attachment entity.Attachment) api.Attachment {
 }
 
 func attachmentContentPath(attachment entity.Attachment) string {
-	return "/v1/workspaces/" + attachment.WorkspaceID.String() +
-		"/attachments/" + attachment.ID.String() + "/content"
+	return entity.AttachmentContentPath(attachment.WorkspaceID, attachment.ID)
 }
 
 func attachmentDTOs(attachments []entity.Attachment) []api.Attachment {

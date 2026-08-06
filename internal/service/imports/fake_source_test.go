@@ -39,9 +39,19 @@ const (
 	sourceComment = "comment-first"
 	sourceReply   = "comment-reply"
 
+	sourceShot    = "file-shot"
+	sourceSpec    = "file-spec"
+	sourceShotKey = "imports/northwind/hub-shot.png"
+	sourceSpecKey = "imports/northwind/hub-spec.pdf"
+	sourceShotURL = "https://files.northwind.co/hub-shot.png?signature=expiring"
+	sourceSpecURL = "https://files.northwind.co/hub-spec.pdf?signature=expiring"
+
 	sourcePriority = "P2"
-	sourceCycle    = "cycle-7"
 	sourceOffPalet = "#ff0044"
+
+	sourceCycle         = "cycle-7"
+	sourceCycleStartsOn = "2024-03-04"
+	sourceCycleEndsOn   = "2024-03-15"
 
 	hostileTeamless  = "issue-hidden"
 	hostileDuplicate = "issue-dupe"
@@ -131,6 +141,62 @@ func fetched(
 	}
 }
 
+// undated is the shape a CSV arrives in: a row carrying no dates of its own. Nothing in it
+// attributes an origin, so every row it creates is stamped by the repository from the clock
+// of the run importing it rather than from anything the source said.
+func undated(t *testing.T, externalID string, payload any) entity.ImportRecord {
+	t.Helper()
+
+	return entity.ImportRecord{ExternalID: externalID, Payload: payloadOf(t, payload)}
+}
+
+func newUndatedSource(t *testing.T) *staticSource {
+	t.Helper()
+
+	return &staticSource{
+		kind: "undated",
+		held: map[entity.ImportResource][]entity.ImportRecord{
+			entity.ImportWorkflowState: {
+				undated(t, sourceStateTodo, service.ImportWorkflowStatePayload{
+					Name: "Todo", Category: string(entity.StateCategoryNotStarted), Team: sourceTeam,
+				}),
+			},
+			entity.ImportLabelGroup: {
+				undated(t, sourceGroup, service.ImportLabelGroupPayload{Name: "Area"}),
+			},
+			entity.ImportLabel: {
+				undated(t, sourceLabelBug, service.ImportLabelPayload{
+					Name: "Bug", Group: sourceGroup, Team: sourceTeam,
+				}),
+				undated(t, sourceLabelWork, service.ImportLabelPayload{
+					Name: "Chore", Group: sourceGroup, Team: sourceTeam,
+				}),
+			},
+			entity.ImportProject: {
+				undated(t, sourceProject, service.ImportProjectPayload{Slug: "atlas", Name: "Atlas"}),
+			},
+			entity.ImportCycle: {
+				undated(t, sourceCycle, service.ImportCyclePayload{
+					Team: sourceTeam, StartsOn: sourceCycleStartsOn, EndsOn: sourceCycleEndsOn,
+				}),
+			},
+			entity.ImportIssue: {
+				undated(t, sourceIssueHub, service.ImportIssuePayload{
+					Title: "Rework the hub", Team: sourceTeam, State: sourceStateTodo,
+					Project: sourceProject, Cycle: sourceCycle, Labels: []string{sourceLabelBug},
+				}),
+				undated(t, sourceIssueKin, service.ImportIssuePayload{
+					Title: "Retire the old hub", Team: sourceTeam, State: sourceStateTodo,
+					Labels: []string{sourceLabelWork},
+				}),
+				undated(t, sourceIssueLoose, service.ImportIssuePayload{
+					Title: "Tidy the loose ends", Team: sourceTeam, State: sourceStateTodo,
+				}),
+			},
+		},
+	}
+}
+
 func newStaticSource(t *testing.T) *staticSource {
 	t.Helper()
 
@@ -168,10 +234,17 @@ func newStaticSource(t *testing.T) *staticSource {
 					Slug: "atlas", Name: "Atlas", Description: "The rewrite", Lead: rae,
 				}),
 			},
+			entity.ImportCycle: {
+				fetched(t, sourceCycle, "", service.ImportCyclePayload{
+					Team: sourceTeam, Name: "Sprint 7", Number: 7,
+					StartsOn: sourceCycleStartsOn, EndsOn: sourceCycleEndsOn,
+				}),
+			},
 			entity.ImportIssue: {
 				fetched(t, sourceIssueHub, "", service.ImportIssuePayload{
-					Title: "Rework the hub", Description: "It sags in the middle",
-					Team: sourceTeam, State: sourceStateTodo, Priority: sourcePriority,
+					Title:       "Rework the hub",
+					Description: "It sags in the middle\n\n![The hub](" + entity.ImportEmbedMarker(sourceShot) + ")",
+					Team:        sourceTeam, State: sourceStateTodo, Priority: sourcePriority,
 					Project: sourceProject, Labels: []string{sourceLabelBug},
 					Assignee: rae, Author: rae, Estimate: 3, DueOn: "2024-06-01",
 				}),
@@ -211,6 +284,26 @@ func newStaticSource(t *testing.T) *staticSource {
 					Author: rae, Parent: sourceComment,
 				}),
 			},
+			entity.ImportAttachment: {
+				fetched(t, sourceShot, "", service.ImportAttachmentPayload{
+					Issue: sourceIssueHub, FileName: "hub-shot.png", ContentType: "image/png",
+					SizeBytes: 24_812, ObjectKey: sourceShotKey, SourceURL: sourceShotURL,
+					Inline: true,
+				}),
+				fetched(t, sourceSpec, "", service.ImportAttachmentPayload{
+					Issue: sourceIssueHub, Comment: sourceComment, FileName: "hub-spec.pdf",
+					ContentType: "application/pdf", SizeBytes: 91_003, ObjectKey: sourceSpecKey,
+					SourceURL: sourceSpecURL,
+				}),
+			},
+			entity.ImportEmbed: {
+				{
+					ExternalID: sourceIssueHub,
+					Payload: payloadOf(t, service.ImportEmbedPayload{
+						Issue: sourceIssueHub, Attachments: []string{sourceShot},
+					}),
+				},
+			},
 		},
 	}
 }
@@ -229,6 +322,10 @@ func (s *staticSource) fetchedCount() int {
 	}
 
 	return total
+}
+
+func (s *staticSource) embeddedCount() int {
+	return len(s.held[entity.ImportEmbed])
 }
 
 func (s *staticSource) parentedCount() int {
@@ -356,6 +453,27 @@ func newHostileSource(t *testing.T) *hostileSource {
 			},
 		},
 	}}
+}
+
+type probingSource struct {
+	*staticSource
+
+	asked     []service.ImportSourceConfig
+	catalogue entity.ImportCatalogue
+	refusal   error
+}
+
+func (s *probingSource) Probe(
+	_ context.Context,
+	config service.ImportSourceConfig,
+) (entity.ImportCatalogue, error) {
+	s.asked = append(s.asked, config)
+
+	if s.refusal != nil {
+		return entity.ImportCatalogue{}, s.refusal
+	}
+
+	return s.catalogue, nil
 }
 
 type scriptedSource struct {

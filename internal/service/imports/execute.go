@@ -3,7 +3,6 @@ package imports
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -57,9 +56,7 @@ func (s *importsService) Execute(
 	}
 
 	if preview.WouldTriage() && !input.AcknowledgeTriage {
-		return entity.ImportRun{}, fmt.Errorf(
-			"%w: %s", entity.ErrImportWouldTriage, strings.Join(preview.TriageTeams, ", "),
-		)
+		return entity.ImportRun{}, entity.ImportWouldTriageError{Teams: preview.TriageTeams}
 	}
 
 	now := time.Now().UTC()

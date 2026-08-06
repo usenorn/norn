@@ -1299,6 +1299,246 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/imports/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the trackers this instance can import a backlog from */
+        get: operations["listImportSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List what this workspace has imported, newest first */
+        get: operations["listWorkspaceImports"];
+        put?: never;
+        /** Start an import against one of the sources this instance carries */
+        post: operations["createWorkspaceImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports/{importRunId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        /** Read one import, where it has got to, and how much it has moved */
+        get: operations["getWorkspaceImport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports/{importRunId}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Give the run its source key and the selection it reads under */
+        put: operations["configureWorkspaceImport"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports/{importRunId}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload the file a run reads its rows from */
+        post: operations["uploadWorkspaceImportFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports/{importRunId}/catalogue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        /** Ask the source what it holds, before anything is staged */
+        get: operations["getWorkspaceImportCatalogue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports/{importRunId}/stage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start draining the source into this run's staged copy */
+        post: operations["stageWorkspaceImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports/{importRunId}/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        /** Every source concept this run found, and what it suggests for each */
+        get: operations["getWorkspaceImportMappings"];
+        /** Answer the mapping plan, one decision per source concept */
+        put: operations["decideWorkspaceImportMappings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports/{importRunId}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        /** What this run would create, change, skip and leave unattributed */
+        get: operations["previewWorkspaceImport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports/{importRunId}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run the import the requester previewed, and nothing else */
+        post: operations["executeWorkspaceImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports/{importRunId}/revert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take back what this import created, in the order it created it */
+        post: operations["revertWorkspaceImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/imports/{importRunId}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        /** What this import made, and what it could not carry across */
+        get: operations["getWorkspaceImportReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents": {
         parameters: {
             query?: never;
@@ -4028,6 +4268,207 @@ export interface components {
             deliveries: components["schemas"]["WebhookDelivery"][];
             nextCursor?: string;
         };
+        /** @enum {string} */
+        ImportStatus: "draft" | "staging" | "staged" | "mapped" | "executing" | "imported" | "reverting" | "reverted" | "failed";
+        /** @enum {string} */
+        ImportUnknownPolicy: "create" | "skip" | "fail";
+        /** @enum {string} */
+        ImportResource: "team" | "workflow_state" | "label_group" | "label" | "project" | "cycle" | "issue" | "issue_parent" | "issue_relation" | "comment" | "attachment" | "embed";
+        /** @enum {string} */
+        ImportOutcome: "created" | "skipped" | "unattributed" | "adjusted" | "dropped" | "failed" | "deleted" | "archived" | "retained" | "skipped_modified" | "skipped_in_use";
+        /** @enum {string} */
+        ImportPhase: "execute" | "revert";
+        /** @enum {string} */
+        ImportMappingKind: "user" | "state" | "priority" | "label" | "project" | "team";
+        /** @enum {string} */
+        ImportDecision: "map" | "create" | "unattributed" | "skip";
+        ImportSource: {
+            kind: string;
+        };
+        /** @description Staged and processed are counters and nothing here says how many there will be. A source is asked for its backlog a page at a time and never for its size. */
+        ImportRun: {
+            /** Format: uuid */
+            id: string;
+            sourceKind: string;
+            sourceLabel?: string;
+            status: components["schemas"]["ImportStatus"];
+            /** Format: uuid */
+            requestedBy?: string;
+            /** Format: uuid */
+            revertedBy?: string;
+            phaseError?: string;
+            previewDigest?: string;
+            acknowledgeTriage: boolean;
+            settings?: {
+                [key: string]: unknown;
+            };
+            unknownReferences: components["schemas"]["ImportUnknownPolicy"];
+            sourceSecretSet: boolean;
+            /** Format: int32 */
+            attempt: number;
+            /** Format: int32 */
+            staged: number;
+            /** Format: int32 */
+            processed: number;
+            /** Format: date-time */
+            stagedAt?: string;
+            /** Format: date-time */
+            mappedAt?: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            finishedAt?: string;
+            /** Format: date-time */
+            revertedAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ImportRunPage: {
+            runs: components["schemas"]["ImportRun"][];
+            nextCursor?: string;
+        };
+        CreateImportRequest: {
+            sourceKind: string;
+            sourceLabel?: string;
+        };
+        ConfigureImportRequest: {
+            apiKey?: string;
+            settings?: {
+                [key: string]: unknown;
+            };
+            unknownReferences?: components["schemas"]["ImportUnknownPolicy"];
+        };
+        ImportFile: {
+            objectKey: string;
+            fileName: string;
+        };
+        ImportScope: {
+            key: string;
+            name: string;
+            detail?: string;
+        };
+        ImportColumn: {
+            /** Format: int32 */
+            index: number;
+            header: string;
+            proposed?: string;
+            confidence?: string;
+        };
+        ImportCatalogue: {
+            scopes: components["schemas"]["ImportScope"][];
+            columns: components["schemas"]["ImportColumn"][];
+            notes: string[];
+        };
+        ImportMapping: {
+            kind: components["schemas"]["ImportMappingKind"];
+            sourceKey: string;
+            sourceLabel?: string;
+            sourceEmail?: string;
+            decision?: components["schemas"]["ImportDecision"];
+            /** Format: uuid */
+            targetId?: string;
+            targetValue?: string;
+            /** Format: uuid */
+            suggestedTargetId?: string;
+            suggestedReason?: string;
+            /** Format: uuid */
+            decidedBy?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+        };
+        ImportMappingPlan: {
+            mappings: components["schemas"]["ImportMapping"][];
+            complete: boolean;
+        };
+        ImportMappingDecision: {
+            kind: components["schemas"]["ImportMappingKind"];
+            sourceKey: string;
+            decision: components["schemas"]["ImportDecision"];
+            /** Format: uuid */
+            targetId?: string;
+            targetValue?: string;
+        };
+        DecideImportMappingsRequest: {
+            decisions: components["schemas"]["ImportMappingDecision"][];
+        };
+        ImportPreviewLine: {
+            resource: components["schemas"]["ImportResource"];
+            subject?: string;
+            externalId?: string;
+            outcome: components["schemas"]["ImportOutcome"];
+            detail?: string;
+        };
+        ImportPreview: {
+            digest: string;
+            created: components["schemas"]["ImportPreviewLine"][];
+            changed: components["schemas"]["ImportPreviewLine"][];
+            skipped: components["schemas"]["ImportPreviewLine"][];
+            unattributed: components["schemas"]["ImportPreviewLine"][];
+            warnings: components["schemas"]["ImportPreviewLine"][];
+            triageTeams: string[];
+        };
+        ExecuteImportRequest: {
+            previewDigest: string;
+            acknowledgeTriage?: boolean;
+        };
+        ImportLedgerEntry: {
+            resource: components["schemas"]["ImportResource"];
+            /** Format: uuid */
+            createdId: string;
+            externalId: string;
+            reference: string;
+            /** Format: int64 */
+            orderSeq: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            revertedAt?: string;
+            revertOutcome?: components["schemas"]["ImportOutcome"];
+        };
+        ImportReportLine: {
+            /** Format: uuid */
+            id: string;
+            phase: components["schemas"]["ImportPhase"];
+            resource: components["schemas"]["ImportResource"];
+            subject?: string;
+            externalId?: string;
+            outcome: components["schemas"]["ImportOutcome"];
+            detail?: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            recordedAt: string;
+        };
+        ImportReportCursor: {
+            /** Format: date-time */
+            recordedAt: string;
+            /** Format: uuid */
+            id: string;
+        };
+        ImportReport: {
+            run: components["schemas"]["ImportRun"];
+            created: components["schemas"]["ImportLedgerEntry"][];
+            lines: components["schemas"]["ImportReportLine"][];
+            /** Format: int64 */
+            nextCreatedCursor?: number;
+            nextLineCursor?: components["schemas"]["ImportReportCursor"];
+        };
+        ImportConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "import_status_transition" | "import_run_leased" | "import_not_revertible" | "import_preview_stale" | "import_would_triage";
+            teams?: string[];
+        };
+        ImportSourceRefusedProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "import_source_refused";
+            reason?: string;
+        };
+        ImportSigningUnavailableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "import_signing_unavailable";
+        };
         APITokenUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "token_name_taken" | "token_scope_invalid" | "token_scope_exceeds" | "token_may_not_mint" | "token_grant_invalid" | "token_grant_missing";
@@ -4933,6 +5374,43 @@ export interface components {
                 "application/problem+json": components["schemas"]["WebhookSigningUnavailableProblem"];
             };
         };
+        /** @description The run cannot take this step from where it stands */
+        ImportConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ImportConflictProblem"];
+            };
+        };
+        /** @description The source refused to hand over what the import asked it for */
+        ImportSourceRefused: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ImportSourceRefusedProblem"];
+            };
+        };
+        /** @description The source is throttling this instance */
+        ImportSourceRateLimited: {
+            headers: {
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["RateLimitedProblem"];
+            };
+        };
+        /** @description This instance has no encryption key, so a source key cannot be stored or read */
+        ImportSigningUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ImportSigningUnavailableProblem"];
+            };
+        };
         /** @description The instance is not configured to send mail */
         MailUnavailable: {
             headers: {
@@ -5020,6 +5498,9 @@ export interface components {
         WebhookDeliveryCursor: string;
         WebhookDeliveryEventFilter: components["schemas"]["WebhookDeliveryEventType"][];
         WebhookDeliveryStateFilter: components["schemas"]["WebhookDeliveryState"][];
+        ImportRunId: string;
+        ImportRunLimit: number;
+        ImportRunCursor: string;
         NotificationSubjectKind: components["schemas"]["NotificationSubjectKind"];
         NotificationSubjectId: string;
     };
@@ -7620,6 +8101,425 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listImportSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The sources an import may be started against */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportSource"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceImports: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["ImportRunLimit"];
+                cursor?: components["parameters"]["ImportRunCursor"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of import runs, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRunPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateImportRequest"];
+            };
+        };
+        responses: {
+            /** @description The run, waiting to be told where to read from */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRun"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The import run */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRun"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    configureWorkspaceImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigureImportRequest"];
+            };
+        };
+        responses: {
+            /** @description The run, saying a key is held without carrying it */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRun"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ImportConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["ImportSigningUnavailable"];
+        };
+    };
+    uploadWorkspaceImportFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Where the file was stored, to configure the run with */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportFile"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ImportConflict"];
+            413: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceImportCatalogue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What the source can be asked for, and what its columns read */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportCatalogue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            429: components["responses"]["ImportSourceRateLimited"];
+            500: components["responses"]["Problem"];
+            502: components["responses"]["ImportSourceRefused"];
+            503: components["responses"]["ImportSigningUnavailable"];
+        };
+    };
+    stageWorkspaceImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run, now queued to stage */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRun"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ImportConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceImportMappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The mapping plan, with a suggestion where one could be made */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportMappingPlan"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    decideWorkspaceImportMappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecideImportMappingsRequest"];
+            };
+        };
+        responses: {
+            /** @description The mapping plan after the decisions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportMappingPlan"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ImportConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    previewWorkspaceImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The preview, and the digest an execute is held to */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPreview"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    executeWorkspaceImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecuteImportRequest"];
+            };
+        };
+        responses: {
+            /** @description The run, now queued to apply what the preview described */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRun"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ImportConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    revertWorkspaceImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run, now queued to unwind */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRun"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ImportConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceImportReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                importRunId: components["parameters"]["ImportRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run, what it created, and every line it recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportReport"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

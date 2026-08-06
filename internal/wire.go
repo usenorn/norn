@@ -21,6 +21,7 @@ import (
 	"github.com/usenorn/norn/internal/pkg/crypter"
 	"github.com/usenorn/norn/internal/pkg/geoip"
 	licencepkg "github.com/usenorn/norn/internal/pkg/licence"
+	"github.com/usenorn/norn/internal/pkg/lineargraph"
 	oidcproviderpkg "github.com/usenorn/norn/internal/pkg/oidcprovider"
 	"github.com/usenorn/norn/internal/pkg/outbound"
 	"github.com/usenorn/norn/internal/pkg/postgres"
@@ -103,6 +104,8 @@ import (
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	importssvc "github.com/usenorn/norn/internal/service/imports"
+	csvfilesvc "github.com/usenorn/norn/internal/service/imports/csvfile"
+	linearsvc "github.com/usenorn/norn/internal/service/imports/linear"
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
@@ -137,6 +140,7 @@ var baseSet = wire.NewSet(
 	pwned.Set,
 	crypter.Set,
 	licencepkg.Set,
+	lineargraph.Set,
 	outbound.Set,
 	oidcproviderpkg.Set,
 	samlproviderpkg.Set,
@@ -236,6 +240,8 @@ var baseSet = wire.NewSet(
 	licensingsvc.Set,
 	directorysvc.Set,
 	importssvc.Set,
+	linearsvc.Set,
+	csvfilesvc.Set,
 
 	dashboardhandler.Set,
 	ssohandler.Set,

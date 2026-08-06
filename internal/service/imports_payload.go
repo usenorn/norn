@@ -35,7 +35,25 @@ type ImportProjectPayload struct {
 	Lead        ImportUser `json:"lead"`
 }
 
+// ImportCyclePayload carries Name and Number so the report can say what was lost: a Norn
+// cycle has no name, and its number is the team's own running count rather than anything a
+// source chooses. EndsOn is the last day the cycle covers — an adapter whose source ends a
+// cycle on the day after converts it, because workspace_cycles excludes overlaps on
+// daterange(starts_on, ends_on, '[]') and one day of slack makes consecutive cycles collide.
+type ImportCyclePayload struct {
+	Team     string `json:"team"`
+	Name     string `json:"name"`
+	Number   int    `json:"number"`
+	StartsOn string `json:"startsOn"`
+	EndsOn   string `json:"endsOn"`
+	ClosedOn string `json:"closedOn"`
+}
+
+// Defect is how an adapter hands over a row it could not read. Fetch returning an error kills
+// the whole run, so a row a source cannot parse is staged carrying its own explanation instead
+// and costs nothing but itself.
 type ImportIssuePayload struct {
+	Defect      string     `json:"defect"`
 	Title       string     `json:"title"`
 	Description string     `json:"description"`
 	Team        string     `json:"team"`
@@ -66,6 +84,29 @@ type ImportCommentPayload struct {
 	Body   string     `json:"body"`
 	Author ImportUser `json:"author"`
 	Parent string     `json:"parent"`
+}
+
+// ImportAttachmentPayload names an object the adapter has already put in blob storage under
+// entity.ImportBlobKey, while the source's signed URL was still alive. The apply pass adopts
+// the object it names and fetches nothing, which is why the size and the type travel with it;
+// SourceURL is kept so the report can say where a file that could not be stored came from.
+// Inline marks a file a body points at rather than one hanging off the row, and it is what
+// the staging pass derives an embed record from.
+type ImportAttachmentPayload struct {
+	Issue       string `json:"issue"`
+	Comment     string `json:"comment"`
+	FileName    string `json:"fileName"`
+	ContentType string `json:"contentType"`
+	SizeBytes   int64  `json:"sizeBytes"`
+	ObjectKey   string `json:"objectKey"`
+	SourceURL   string `json:"sourceUrl"`
+	Inline      bool   `json:"inline"`
+}
+
+type ImportEmbedPayload struct {
+	Issue       string   `json:"issue"`
+	Comment     string   `json:"comment"`
+	Attachments []string `json:"attachments"`
 }
 
 // ImportUser travels with every reference to a person rather than being staged as a

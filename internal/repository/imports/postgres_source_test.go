@@ -256,3 +256,25 @@ func TestEveryInsertWritesEveryColumnItNames(t *testing.T) {
 		}
 	}
 }
+
+func TestTheLedgerDatesAnEntryFromTheRowRatherThanFromTheTransaction(t *testing.T) {
+	if !strings.Contains(recordLedgerQuery, "created_at_recorded") {
+		t.Fatal(
+			"the ledger insert never names created_at_recorded, so the column falls back to its " +
+				"default of now(). In Postgres now() is the moment the transaction began, and the " +
+				"rows this same transaction created were stamped from a Go clock read after that, " +
+				"so every entry ends up dated a shade before the row it names. A revert reads those " +
+				"two timestamps to tell an edit from the import's own work: it would find every " +
+				"single row modified, refuse all of them, and report the import undone with " +
+				"nothing removed.",
+		)
+	}
+
+	if !regexp.MustCompile(`unnest\(\$\d+::timestamptz\[\]\)`).MatchString(recordLedgerQuery) {
+		t.Error(
+			"created_at_recorded is written from something other than a bound parameter. The one " +
+				"timestamp that means anything here is the one the created row itself carries, and " +
+				"only the caller holding that row can supply it.",
+		)
+	}
+}

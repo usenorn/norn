@@ -187,20 +187,52 @@ func TestAColourNornDoesNotHaveIsShownAsTheOneItWillBecome(t *testing.T) {
 	}
 }
 
-func TestACycleIsNamedAsSomethingTheImportCannotCarry(t *testing.T) {
+func TestThePreviewNamesTheCycleNameNornWillNotKeep(t *testing.T) {
 	h := newHarness(t).backed().scopedTo()
 
 	h.stageEverything(newStaticSource(t))
 
-	line := previewLine(t, previewed(t, h).Warnings, sourceIssueCadence)
+	view := previewed(t, h)
 
-	if line.Outcome != entity.ImportOutcomeDropped {
+	created := previewLineOf(t, view.Created, entity.ImportCycle, sourceCycle)
+
+	if !strings.Contains(created.Subject, "Sprint 7") {
 		t.Fatalf(
-			"an issue that belonged to a cycle previewed as %q. Cycles run on a team's own cadence "+
-				"and cannot be back-dated, so the issue arrives without one — silently dropping it "+
-				"would leave somebody hunting for a sprint that never came over.",
-			line.Outcome,
+			"the cycle previews as %q. It is the only line the requester can recognise the sprint "+
+				"by, because the cycle it becomes here is known by a number this run has not "+
+				"handed out yet.",
+			created.Subject,
 		)
+	}
+
+	lost := ""
+
+	for _, line := range view.Warnings {
+		if line.Resource == entity.ImportCycle && line.ExternalID == sourceCycle {
+			lost += line.Detail
+		}
+	}
+
+	for _, named := range []string{"name", "number"} {
+		if !strings.Contains(lost, named) {
+			t.Errorf(
+				"nothing in the preview's warnings says the %s is lost: %q. A cycle called Sprint 7 "+
+					"arriving as an unnamed cycle 3 is the sort of thing somebody only notices "+
+					"once they are looking for it.",
+				named, lost,
+			)
+		}
+	}
+
+	for _, line := range view.Warnings {
+		if line.Resource == entity.ImportIssue && line.ExternalID == sourceIssueCadence {
+			t.Errorf(
+				"the preview warns that an issue is losing its cycle (%q). The cycle is carried "+
+					"now and the issue lands in it, so the warning sends the requester looking "+
+					"for work that is exactly where they left it.",
+				line.Detail,
+			)
+		}
 	}
 }
 

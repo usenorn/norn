@@ -1002,6 +1002,288 @@ func (e HealthStatus) Valid() bool {
 	}
 }
 
+// Defines values for ImportConflictProblemCode.
+const (
+	ImportNotRevertible    ImportConflictProblemCode = "import_not_revertible"
+	ImportPreviewStale     ImportConflictProblemCode = "import_preview_stale"
+	ImportRunLeased        ImportConflictProblemCode = "import_run_leased"
+	ImportStatusTransition ImportConflictProblemCode = "import_status_transition"
+	ImportWouldTriage      ImportConflictProblemCode = "import_would_triage"
+)
+
+// Valid indicates whether the value is a known member of the ImportConflictProblemCode enum.
+func (e ImportConflictProblemCode) Valid() bool {
+	switch e {
+	case ImportNotRevertible:
+		return true
+	case ImportPreviewStale:
+		return true
+	case ImportRunLeased:
+		return true
+	case ImportStatusTransition:
+		return true
+	case ImportWouldTriage:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportDecision.
+const (
+	ImportDecisionCreate       ImportDecision = "create"
+	ImportDecisionMap          ImportDecision = "map"
+	ImportDecisionSkip         ImportDecision = "skip"
+	ImportDecisionUnattributed ImportDecision = "unattributed"
+)
+
+// Valid indicates whether the value is a known member of the ImportDecision enum.
+func (e ImportDecision) Valid() bool {
+	switch e {
+	case ImportDecisionCreate:
+		return true
+	case ImportDecisionMap:
+		return true
+	case ImportDecisionSkip:
+		return true
+	case ImportDecisionUnattributed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportMappingKind.
+const (
+	ImportMappingKindLabel    ImportMappingKind = "label"
+	ImportMappingKindPriority ImportMappingKind = "priority"
+	ImportMappingKindProject  ImportMappingKind = "project"
+	ImportMappingKindState    ImportMappingKind = "state"
+	ImportMappingKindTeam     ImportMappingKind = "team"
+	ImportMappingKindUser     ImportMappingKind = "user"
+)
+
+// Valid indicates whether the value is a known member of the ImportMappingKind enum.
+func (e ImportMappingKind) Valid() bool {
+	switch e {
+	case ImportMappingKindLabel:
+		return true
+	case ImportMappingKindPriority:
+		return true
+	case ImportMappingKindProject:
+		return true
+	case ImportMappingKindState:
+		return true
+	case ImportMappingKindTeam:
+		return true
+	case ImportMappingKindUser:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportOutcome.
+const (
+	ImportOutcomeAdjusted        ImportOutcome = "adjusted"
+	ImportOutcomeArchived        ImportOutcome = "archived"
+	ImportOutcomeCreated         ImportOutcome = "created"
+	ImportOutcomeDeleted         ImportOutcome = "deleted"
+	ImportOutcomeDropped         ImportOutcome = "dropped"
+	ImportOutcomeFailed          ImportOutcome = "failed"
+	ImportOutcomeRetained        ImportOutcome = "retained"
+	ImportOutcomeSkipped         ImportOutcome = "skipped"
+	ImportOutcomeSkippedInUse    ImportOutcome = "skipped_in_use"
+	ImportOutcomeSkippedModified ImportOutcome = "skipped_modified"
+	ImportOutcomeUnattributed    ImportOutcome = "unattributed"
+)
+
+// Valid indicates whether the value is a known member of the ImportOutcome enum.
+func (e ImportOutcome) Valid() bool {
+	switch e {
+	case ImportOutcomeAdjusted:
+		return true
+	case ImportOutcomeArchived:
+		return true
+	case ImportOutcomeCreated:
+		return true
+	case ImportOutcomeDeleted:
+		return true
+	case ImportOutcomeDropped:
+		return true
+	case ImportOutcomeFailed:
+		return true
+	case ImportOutcomeRetained:
+		return true
+	case ImportOutcomeSkipped:
+		return true
+	case ImportOutcomeSkippedInUse:
+		return true
+	case ImportOutcomeSkippedModified:
+		return true
+	case ImportOutcomeUnattributed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportPhase.
+const (
+	Execute ImportPhase = "execute"
+	Revert  ImportPhase = "revert"
+)
+
+// Valid indicates whether the value is a known member of the ImportPhase enum.
+func (e ImportPhase) Valid() bool {
+	switch e {
+	case Execute:
+		return true
+	case Revert:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportResource.
+const (
+	ImportResourceAttachment    ImportResource = "attachment"
+	ImportResourceComment       ImportResource = "comment"
+	ImportResourceCycle         ImportResource = "cycle"
+	ImportResourceEmbed         ImportResource = "embed"
+	ImportResourceIssue         ImportResource = "issue"
+	ImportResourceIssueParent   ImportResource = "issue_parent"
+	ImportResourceIssueRelation ImportResource = "issue_relation"
+	ImportResourceLabel         ImportResource = "label"
+	ImportResourceLabelGroup    ImportResource = "label_group"
+	ImportResourceProject       ImportResource = "project"
+	ImportResourceTeam          ImportResource = "team"
+	ImportResourceWorkflowState ImportResource = "workflow_state"
+)
+
+// Valid indicates whether the value is a known member of the ImportResource enum.
+func (e ImportResource) Valid() bool {
+	switch e {
+	case ImportResourceAttachment:
+		return true
+	case ImportResourceComment:
+		return true
+	case ImportResourceCycle:
+		return true
+	case ImportResourceEmbed:
+		return true
+	case ImportResourceIssue:
+		return true
+	case ImportResourceIssueParent:
+		return true
+	case ImportResourceIssueRelation:
+		return true
+	case ImportResourceLabel:
+		return true
+	case ImportResourceLabelGroup:
+		return true
+	case ImportResourceProject:
+		return true
+	case ImportResourceTeam:
+		return true
+	case ImportResourceWorkflowState:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportSigningUnavailableProblemCode.
+const (
+	ImportSigningUnavailableProblemCodeImportSigningUnavailable ImportSigningUnavailableProblemCode = "import_signing_unavailable"
+)
+
+// Valid indicates whether the value is a known member of the ImportSigningUnavailableProblemCode enum.
+func (e ImportSigningUnavailableProblemCode) Valid() bool {
+	switch e {
+	case ImportSigningUnavailableProblemCodeImportSigningUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportSourceRefusedProblemCode.
+const (
+	ImportSourceRefusedProblemCodeImportSourceRefused ImportSourceRefusedProblemCode = "import_source_refused"
+)
+
+// Valid indicates whether the value is a known member of the ImportSourceRefusedProblemCode enum.
+func (e ImportSourceRefusedProblemCode) Valid() bool {
+	switch e {
+	case ImportSourceRefusedProblemCodeImportSourceRefused:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportStatus.
+const (
+	ImportStatusDraft     ImportStatus = "draft"
+	ImportStatusExecuting ImportStatus = "executing"
+	ImportStatusFailed    ImportStatus = "failed"
+	ImportStatusImported  ImportStatus = "imported"
+	ImportStatusMapped    ImportStatus = "mapped"
+	ImportStatusReverted  ImportStatus = "reverted"
+	ImportStatusReverting ImportStatus = "reverting"
+	ImportStatusStaged    ImportStatus = "staged"
+	ImportStatusStaging   ImportStatus = "staging"
+)
+
+// Valid indicates whether the value is a known member of the ImportStatus enum.
+func (e ImportStatus) Valid() bool {
+	switch e {
+	case ImportStatusDraft:
+		return true
+	case ImportStatusExecuting:
+		return true
+	case ImportStatusFailed:
+		return true
+	case ImportStatusImported:
+		return true
+	case ImportStatusMapped:
+		return true
+	case ImportStatusReverted:
+		return true
+	case ImportStatusReverting:
+		return true
+	case ImportStatusStaged:
+		return true
+	case ImportStatusStaging:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportUnknownPolicy.
+const (
+	ImportUnknownPolicyCreate ImportUnknownPolicy = "create"
+	ImportUnknownPolicyFail   ImportUnknownPolicy = "fail"
+	ImportUnknownPolicySkip   ImportUnknownPolicy = "skip"
+)
+
+// Valid indicates whether the value is a known member of the ImportUnknownPolicy enum.
+func (e ImportUnknownPolicy) Valid() bool {
+	switch e {
+	case ImportUnknownPolicyCreate:
+		return true
+	case ImportUnknownPolicyFail:
+		return true
+	case ImportUnknownPolicySkip:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InvalidCredentialsProblemCode.
 const (
 	InvalidCredentials InvalidCredentialsProblemCode = "invalid_credentials"
@@ -3242,6 +3524,13 @@ type ConfigureDirectoryRequest struct {
 	OnUnknown  DirectoryUnknownPolicy `json:"onUnknown"`
 }
 
+// ConfigureImportRequest defines model for ConfigureImportRequest.
+type ConfigureImportRequest struct {
+	ApiKey            *string                 `json:"apiKey,omitempty"`
+	Settings          *map[string]interface{} `json:"settings,omitempty"`
+	UnknownReferences *ImportUnknownPolicy    `json:"unknownReferences,omitempty"`
+}
+
 // ConfirmEmailChangeRequest defines model for ConfirmEmailChangeRequest.
 type ConfirmEmailChangeRequest struct {
 	Token string `json:"token"`
@@ -3256,6 +3545,12 @@ type ConfirmPasswordResetRequest struct {
 // ConfirmSignUpRequest defines model for ConfirmSignUpRequest.
 type ConfirmSignUpRequest struct {
 	Token string `json:"token"`
+}
+
+// CreateImportRequest defines model for CreateImportRequest.
+type CreateImportRequest struct {
+	SourceKind  string  `json:"sourceKind"`
+	SourceLabel *string `json:"sourceLabel,omitempty"`
 }
 
 // CreateInvitationsRequest defines model for CreateInvitationsRequest.
@@ -3416,6 +3711,11 @@ type CycleScopeChange struct {
 // CycleScopeChangeKind defines model for CycleScopeChangeKind.
 type CycleScopeChangeKind string
 
+// DecideImportMappingsRequest defines model for DecideImportMappingsRequest.
+type DecideImportMappingsRequest struct {
+	Decisions []ImportMappingDecision `json:"decisions"`
+}
+
 // DeclineTriageIssueRequest defines model for DeclineTriageIssueRequest.
 type DeclineTriageIssueRequest struct {
 	// Note Sent to whoever reported it, and kept in the issue's history
@@ -3531,6 +3831,12 @@ type EnforcementRefusedProblem struct {
 // EnforcementRefusedProblemCode defines model for EnforcementRefusedProblem.Code.
 type EnforcementRefusedProblemCode string
 
+// ExecuteImportRequest defines model for ExecuteImportRequest.
+type ExecuteImportRequest struct {
+	AcknowledgeTriage *bool  `json:"acknowledgeTriage,omitempty"`
+	PreviewDigest     string `json:"previewDigest"`
+}
+
 // FieldError defines model for FieldError.
 type FieldError struct {
 	Code  string `json:"code"`
@@ -3566,6 +3872,227 @@ type Health struct {
 
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
+
+// ImportCatalogue defines model for ImportCatalogue.
+type ImportCatalogue struct {
+	Columns []ImportColumn `json:"columns"`
+	Notes   []string       `json:"notes"`
+	Scopes  []ImportScope  `json:"scopes"`
+}
+
+// ImportColumn defines model for ImportColumn.
+type ImportColumn struct {
+	Confidence *string `json:"confidence,omitempty"`
+	Header     string  `json:"header"`
+	Index      int32   `json:"index"`
+	Proposed   *string `json:"proposed,omitempty"`
+}
+
+// ImportConflictProblem defines model for ImportConflictProblem.
+type ImportConflictProblem struct {
+	Code     ImportConflictProblemCode `json:"code"`
+	Detail   *string                   `json:"detail,omitempty"`
+	Errors   *[]FieldError             `json:"errors,omitempty"`
+	Instance *string                   `json:"instance,omitempty"`
+	Status   int32                     `json:"status"`
+	Teams    *[]string                 `json:"teams,omitempty"`
+	Title    string                    `json:"title"`
+	Type     string                    `json:"type"`
+}
+
+// ImportConflictProblemCode defines model for ImportConflictProblem.Code.
+type ImportConflictProblemCode string
+
+// ImportDecision defines model for ImportDecision.
+type ImportDecision string
+
+// ImportFile defines model for ImportFile.
+type ImportFile struct {
+	FileName  string `json:"fileName"`
+	ObjectKey string `json:"objectKey"`
+}
+
+// ImportLedgerEntry defines model for ImportLedgerEntry.
+type ImportLedgerEntry struct {
+	CreatedAt     time.Time          `json:"createdAt"`
+	CreatedId     openapi_types.UUID `json:"createdId"`
+	ExternalId    string             `json:"externalId"`
+	OrderSeq      int64              `json:"orderSeq"`
+	Reference     string             `json:"reference"`
+	Resource      ImportResource     `json:"resource"`
+	RevertOutcome *ImportOutcome     `json:"revertOutcome,omitempty"`
+	RevertedAt    *time.Time         `json:"revertedAt,omitempty"`
+}
+
+// ImportMapping defines model for ImportMapping.
+type ImportMapping struct {
+	DecidedAt         *time.Time          `json:"decidedAt,omitempty"`
+	DecidedBy         *openapi_types.UUID `json:"decidedBy,omitempty"`
+	Decision          *ImportDecision     `json:"decision,omitempty"`
+	Kind              ImportMappingKind   `json:"kind"`
+	SourceEmail       *string             `json:"sourceEmail,omitempty"`
+	SourceKey         string              `json:"sourceKey"`
+	SourceLabel       *string             `json:"sourceLabel,omitempty"`
+	SuggestedReason   *string             `json:"suggestedReason,omitempty"`
+	SuggestedTargetId *openapi_types.UUID `json:"suggestedTargetId,omitempty"`
+	TargetId          *openapi_types.UUID `json:"targetId,omitempty"`
+	TargetValue       *string             `json:"targetValue,omitempty"`
+}
+
+// ImportMappingDecision defines model for ImportMappingDecision.
+type ImportMappingDecision struct {
+	Decision    ImportDecision      `json:"decision"`
+	Kind        ImportMappingKind   `json:"kind"`
+	SourceKey   string              `json:"sourceKey"`
+	TargetId    *openapi_types.UUID `json:"targetId,omitempty"`
+	TargetValue *string             `json:"targetValue,omitempty"`
+}
+
+// ImportMappingKind defines model for ImportMappingKind.
+type ImportMappingKind string
+
+// ImportMappingPlan defines model for ImportMappingPlan.
+type ImportMappingPlan struct {
+	Complete bool            `json:"complete"`
+	Mappings []ImportMapping `json:"mappings"`
+}
+
+// ImportOutcome defines model for ImportOutcome.
+type ImportOutcome string
+
+// ImportPhase defines model for ImportPhase.
+type ImportPhase string
+
+// ImportPreview defines model for ImportPreview.
+type ImportPreview struct {
+	Changed      []ImportPreviewLine `json:"changed"`
+	Created      []ImportPreviewLine `json:"created"`
+	Digest       string              `json:"digest"`
+	Skipped      []ImportPreviewLine `json:"skipped"`
+	TriageTeams  []string            `json:"triageTeams"`
+	Unattributed []ImportPreviewLine `json:"unattributed"`
+	Warnings     []ImportPreviewLine `json:"warnings"`
+}
+
+// ImportPreviewLine defines model for ImportPreviewLine.
+type ImportPreviewLine struct {
+	Detail     *string        `json:"detail,omitempty"`
+	ExternalId *string        `json:"externalId,omitempty"`
+	Outcome    ImportOutcome  `json:"outcome"`
+	Resource   ImportResource `json:"resource"`
+	Subject    *string        `json:"subject,omitempty"`
+}
+
+// ImportReport defines model for ImportReport.
+type ImportReport struct {
+	Created           []ImportLedgerEntry `json:"created"`
+	Lines             []ImportReportLine  `json:"lines"`
+	NextCreatedCursor *int64              `json:"nextCreatedCursor,omitempty"`
+	NextLineCursor    *ImportReportCursor `json:"nextLineCursor,omitempty"`
+
+	// Run Staged and processed are counters and nothing here says how many there will be. A source is asked for its backlog a page at a time and never for its size.
+	Run ImportRun `json:"run"`
+}
+
+// ImportReportCursor defines model for ImportReportCursor.
+type ImportReportCursor struct {
+	Id         openapi_types.UUID `json:"id"`
+	RecordedAt time.Time          `json:"recordedAt"`
+}
+
+// ImportReportLine defines model for ImportReportLine.
+type ImportReportLine struct {
+	Detail     *map[string]string `json:"detail,omitempty"`
+	ExternalId *string            `json:"externalId,omitempty"`
+	Id         openapi_types.UUID `json:"id"`
+	Outcome    ImportOutcome      `json:"outcome"`
+	Phase      ImportPhase        `json:"phase"`
+	RecordedAt time.Time          `json:"recordedAt"`
+	Resource   ImportResource     `json:"resource"`
+	Subject    *string            `json:"subject,omitempty"`
+}
+
+// ImportResource defines model for ImportResource.
+type ImportResource string
+
+// ImportRun Staged and processed are counters and nothing here says how many there will be. A source is asked for its backlog a page at a time and never for its size.
+type ImportRun struct {
+	AcknowledgeTriage bool                    `json:"acknowledgeTriage"`
+	Attempt           int32                   `json:"attempt"`
+	CreatedAt         time.Time               `json:"createdAt"`
+	FinishedAt        *time.Time              `json:"finishedAt,omitempty"`
+	Id                openapi_types.UUID      `json:"id"`
+	MappedAt          *time.Time              `json:"mappedAt,omitempty"`
+	PhaseError        *string                 `json:"phaseError,omitempty"`
+	PreviewDigest     *string                 `json:"previewDigest,omitempty"`
+	Processed         int32                   `json:"processed"`
+	RequestedBy       *openapi_types.UUID     `json:"requestedBy,omitempty"`
+	RevertedAt        *time.Time              `json:"revertedAt,omitempty"`
+	RevertedBy        *openapi_types.UUID     `json:"revertedBy,omitempty"`
+	Settings          *map[string]interface{} `json:"settings,omitempty"`
+	SourceKind        string                  `json:"sourceKind"`
+	SourceLabel       *string                 `json:"sourceLabel,omitempty"`
+	SourceSecretSet   bool                    `json:"sourceSecretSet"`
+	Staged            int32                   `json:"staged"`
+	StagedAt          *time.Time              `json:"stagedAt,omitempty"`
+	StartedAt         *time.Time              `json:"startedAt,omitempty"`
+	Status            ImportStatus            `json:"status"`
+	UnknownReferences ImportUnknownPolicy     `json:"unknownReferences"`
+	UpdatedAt         time.Time               `json:"updatedAt"`
+}
+
+// ImportRunPage defines model for ImportRunPage.
+type ImportRunPage struct {
+	NextCursor *string     `json:"nextCursor,omitempty"`
+	Runs       []ImportRun `json:"runs"`
+}
+
+// ImportScope defines model for ImportScope.
+type ImportScope struct {
+	Detail *string `json:"detail,omitempty"`
+	Key    string  `json:"key"`
+	Name   string  `json:"name"`
+}
+
+// ImportSigningUnavailableProblem defines model for ImportSigningUnavailableProblem.
+type ImportSigningUnavailableProblem struct {
+	Code     ImportSigningUnavailableProblemCode `json:"code"`
+	Detail   *string                             `json:"detail,omitempty"`
+	Errors   *[]FieldError                       `json:"errors,omitempty"`
+	Instance *string                             `json:"instance,omitempty"`
+	Status   int32                               `json:"status"`
+	Title    string                              `json:"title"`
+	Type     string                              `json:"type"`
+}
+
+// ImportSigningUnavailableProblemCode defines model for ImportSigningUnavailableProblem.Code.
+type ImportSigningUnavailableProblemCode string
+
+// ImportSource defines model for ImportSource.
+type ImportSource struct {
+	Kind string `json:"kind"`
+}
+
+// ImportSourceRefusedProblem defines model for ImportSourceRefusedProblem.
+type ImportSourceRefusedProblem struct {
+	Code     ImportSourceRefusedProblemCode `json:"code"`
+	Detail   *string                        `json:"detail,omitempty"`
+	Errors   *[]FieldError                  `json:"errors,omitempty"`
+	Instance *string                        `json:"instance,omitempty"`
+	Reason   *string                        `json:"reason,omitempty"`
+	Status   int32                          `json:"status"`
+	Title    string                         `json:"title"`
+	Type     string                         `json:"type"`
+}
+
+// ImportSourceRefusedProblemCode defines model for ImportSourceRefusedProblem.Code.
+type ImportSourceRefusedProblemCode string
+
+// ImportStatus defines model for ImportStatus.
+type ImportStatus string
+
+// ImportUnknownPolicy defines model for ImportUnknownPolicy.
+type ImportUnknownPolicy string
 
 // Instance defines model for Instance.
 type Instance struct {
@@ -5244,6 +5771,15 @@ type DirectoryLimit = int32
 // GroupId defines model for GroupId.
 type GroupId = openapi_types.UUID
 
+// ImportRunCursor defines model for ImportRunCursor.
+type ImportRunCursor = string
+
+// ImportRunId defines model for ImportRunId.
+type ImportRunId = openapi_types.UUID
+
+// ImportRunLimit defines model for ImportRunLimit.
+type ImportRunLimit = int32
+
 // InvitationId defines model for InvitationId.
 type InvitationId = openapi_types.UUID
 
@@ -5336,6 +5872,18 @@ type EnforcementRefused = EnforcementRefusedProblem
 
 // Forbidden defines model for Forbidden.
 type Forbidden = ForbiddenProblem
+
+// ImportConflict defines model for ImportConflict.
+type ImportConflict = ImportConflictProblem
+
+// ImportSigningUnavailable defines model for ImportSigningUnavailable.
+type ImportSigningUnavailable = ImportSigningUnavailableProblem
+
+// ImportSourceRateLimited defines model for ImportSourceRateLimited.
+type ImportSourceRateLimited = RateLimitedProblem
+
+// ImportSourceRefused defines model for ImportSourceRefused.
+type ImportSourceRefused = ImportSourceRefusedProblem
 
 // InvitationLinkExpired defines model for InvitationLinkExpired.
 type InvitationLinkExpired = InvitationExpiredProblem
@@ -5456,6 +6004,17 @@ type ListWorkspaceCyclesParams struct {
 type ListWorkspaceDirectoryRunsParams struct {
 	Limit  *DirectoryLimit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *DirectoryCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListWorkspaceImportsParams defines parameters for ListWorkspaceImports.
+type ListWorkspaceImportsParams struct {
+	Limit  *ImportRunLimit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *ImportRunCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// UploadWorkspaceImportFileMultipartBody defines parameters for UploadWorkspaceImportFile.
+type UploadWorkspaceImportFileMultipartBody struct {
+	File openapi_types.File `json:"file"`
 }
 
 // ListWorkspaceInvitationsParams defines parameters for ListWorkspaceInvitations.
@@ -5665,6 +6224,21 @@ type CloseWorkspaceCycleJSONRequestBody = CloseCycleRequest
 
 // ConfigureWorkspaceDirectoryJSONRequestBody defines body for ConfigureWorkspaceDirectory for application/json ContentType.
 type ConfigureWorkspaceDirectoryJSONRequestBody = ConfigureDirectoryRequest
+
+// CreateWorkspaceImportJSONRequestBody defines body for CreateWorkspaceImport for application/json ContentType.
+type CreateWorkspaceImportJSONRequestBody = CreateImportRequest
+
+// ExecuteWorkspaceImportJSONRequestBody defines body for ExecuteWorkspaceImport for application/json ContentType.
+type ExecuteWorkspaceImportJSONRequestBody = ExecuteImportRequest
+
+// UploadWorkspaceImportFileMultipartRequestBody defines body for UploadWorkspaceImportFile for multipart/form-data ContentType.
+type UploadWorkspaceImportFileMultipartRequestBody UploadWorkspaceImportFileMultipartBody
+
+// DecideWorkspaceImportMappingsJSONRequestBody defines body for DecideWorkspaceImportMappings for application/json ContentType.
+type DecideWorkspaceImportMappingsJSONRequestBody = DecideImportMappingsRequest
+
+// ConfigureWorkspaceImportJSONRequestBody defines body for ConfigureWorkspaceImport for application/json ContentType.
+type ConfigureWorkspaceImportJSONRequestBody = ConfigureImportRequest
 
 // CreateWorkspaceInvitationsJSONRequestBody defines body for CreateWorkspaceInvitations for application/json ContentType.
 type CreateWorkspaceInvitationsJSONRequestBody = CreateInvitationsRequest
@@ -6034,6 +6608,48 @@ type ServerInterface interface {
 	// RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
 	// (POST /workspaces/{workspaceId}/directory/token)
 	RotateWorkspaceDirectoryToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListWorkspaceImports List what this workspace has imported, newest first
+	// (GET /workspaces/{workspaceId}/imports)
+	ListWorkspaceImports(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceImportsParams)
+	// CreateWorkspaceImport Start an import against one of the sources this instance carries
+	// (POST /workspaces/{workspaceId}/imports)
+	CreateWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListImportSources List the trackers this instance can import a backlog from
+	// (GET /workspaces/{workspaceId}/imports/sources)
+	ListImportSources(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceImport Read one import, where it has got to, and how much it has moved
+	// (GET /workspaces/{workspaceId}/imports/{importRunId})
+	GetWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
+	// GetWorkspaceImportCatalogue Ask the source what it holds, before anything is staged
+	// (GET /workspaces/{workspaceId}/imports/{importRunId}/catalogue)
+	GetWorkspaceImportCatalogue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
+	// ExecuteWorkspaceImport Run the import the requester previewed, and nothing else
+	// (POST /workspaces/{workspaceId}/imports/{importRunId}/execute)
+	ExecuteWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
+	// UploadWorkspaceImportFile Upload the file a run reads its rows from
+	// (POST /workspaces/{workspaceId}/imports/{importRunId}/file)
+	UploadWorkspaceImportFile(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
+	// GetWorkspaceImportMappings Every source concept this run found, and what it suggests for each
+	// (GET /workspaces/{workspaceId}/imports/{importRunId}/mappings)
+	GetWorkspaceImportMappings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
+	// DecideWorkspaceImportMappings Answer the mapping plan, one decision per source concept
+	// (PUT /workspaces/{workspaceId}/imports/{importRunId}/mappings)
+	DecideWorkspaceImportMappings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
+	// PreviewWorkspaceImport What this run would create, change, skip and leave unattributed
+	// (GET /workspaces/{workspaceId}/imports/{importRunId}/preview)
+	PreviewWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
+	// GetWorkspaceImportReport What this import made, and what it could not carry across
+	// (GET /workspaces/{workspaceId}/imports/{importRunId}/report)
+	GetWorkspaceImportReport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
+	// RevertWorkspaceImport Take back what this import created, in the order it created it
+	// (POST /workspaces/{workspaceId}/imports/{importRunId}/revert)
+	RevertWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
+	// ConfigureWorkspaceImport Give the run its source key and the selection it reads under
+	// (PUT /workspaces/{workspaceId}/imports/{importRunId}/source)
+	ConfigureWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
+	// StageWorkspaceImport Start draining the source into this run's staged copy
+	// (POST /workspaces/{workspaceId}/imports/{importRunId}/stage)
+	StageWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId)
 	// ListWorkspaceInvitations List the workspace invitations administrators see beside members
 	// (GET /workspaces/{workspaceId}/invitations)
 	ListWorkspaceInvitations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceInvitationsParams)
@@ -6883,6 +7499,90 @@ func (_ Unimplemented) ListWorkspaceDirectoryChanges(w http.ResponseWriter, r *h
 // RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
 // (POST /workspaces/{workspaceId}/directory/token)
 func (_ Unimplemented) RotateWorkspaceDirectoryToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceImports List what this workspace has imported, newest first
+// (GET /workspaces/{workspaceId}/imports)
+func (_ Unimplemented) ListWorkspaceImports(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceImportsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateWorkspaceImport Start an import against one of the sources this instance carries
+// (POST /workspaces/{workspaceId}/imports)
+func (_ Unimplemented) CreateWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListImportSources List the trackers this instance can import a backlog from
+// (GET /workspaces/{workspaceId}/imports/sources)
+func (_ Unimplemented) ListImportSources(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceImport Read one import, where it has got to, and how much it has moved
+// (GET /workspaces/{workspaceId}/imports/{importRunId})
+func (_ Unimplemented) GetWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceImportCatalogue Ask the source what it holds, before anything is staged
+// (GET /workspaces/{workspaceId}/imports/{importRunId}/catalogue)
+func (_ Unimplemented) GetWorkspaceImportCatalogue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ExecuteWorkspaceImport Run the import the requester previewed, and nothing else
+// (POST /workspaces/{workspaceId}/imports/{importRunId}/execute)
+func (_ Unimplemented) ExecuteWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UploadWorkspaceImportFile Upload the file a run reads its rows from
+// (POST /workspaces/{workspaceId}/imports/{importRunId}/file)
+func (_ Unimplemented) UploadWorkspaceImportFile(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceImportMappings Every source concept this run found, and what it suggests for each
+// (GET /workspaces/{workspaceId}/imports/{importRunId}/mappings)
+func (_ Unimplemented) GetWorkspaceImportMappings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DecideWorkspaceImportMappings Answer the mapping plan, one decision per source concept
+// (PUT /workspaces/{workspaceId}/imports/{importRunId}/mappings)
+func (_ Unimplemented) DecideWorkspaceImportMappings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PreviewWorkspaceImport What this run would create, change, skip and leave unattributed
+// (GET /workspaces/{workspaceId}/imports/{importRunId}/preview)
+func (_ Unimplemented) PreviewWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceImportReport What this import made, and what it could not carry across
+// (GET /workspaces/{workspaceId}/imports/{importRunId}/report)
+func (_ Unimplemented) GetWorkspaceImportReport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RevertWorkspaceImport Take back what this import created, in the order it created it
+// (POST /workspaces/{workspaceId}/imports/{importRunId}/revert)
+func (_ Unimplemented) RevertWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ConfigureWorkspaceImport Give the run its source key and the selection it reads under
+// (PUT /workspaces/{workspaceId}/imports/{importRunId}/source)
+func (_ Unimplemented) ConfigureWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// StageWorkspaceImport Start draining the source into this run's staged copy
+// (POST /workspaces/{workspaceId}/imports/{importRunId}/stage)
+func (_ Unimplemented) StageWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -9600,6 +10300,498 @@ func (siw *ServerInterfaceWrapper) RotateWorkspaceDirectoryToken(w http.Response
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RotateWorkspaceDirectoryToken(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceImports operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceImports(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceImportsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceImports(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateWorkspaceImport operation middleware
+func (siw *ServerInterfaceWrapper) CreateWorkspaceImport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWorkspaceImport(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListImportSources operation middleware
+func (siw *ServerInterfaceWrapper) ListImportSources(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListImportSources(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceImport operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceImport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceImport(w, r, workspaceId, importRunId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceImportCatalogue operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceImportCatalogue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceImportCatalogue(w, r, workspaceId, importRunId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ExecuteWorkspaceImport operation middleware
+func (siw *ServerInterfaceWrapper) ExecuteWorkspaceImport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ExecuteWorkspaceImport(w, r, workspaceId, importRunId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UploadWorkspaceImportFile operation middleware
+func (siw *ServerInterfaceWrapper) UploadWorkspaceImportFile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadWorkspaceImportFile(w, r, workspaceId, importRunId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceImportMappings operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceImportMappings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceImportMappings(w, r, workspaceId, importRunId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DecideWorkspaceImportMappings operation middleware
+func (siw *ServerInterfaceWrapper) DecideWorkspaceImportMappings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DecideWorkspaceImportMappings(w, r, workspaceId, importRunId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PreviewWorkspaceImport operation middleware
+func (siw *ServerInterfaceWrapper) PreviewWorkspaceImport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PreviewWorkspaceImport(w, r, workspaceId, importRunId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceImportReport operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceImportReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceImportReport(w, r, workspaceId, importRunId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevertWorkspaceImport operation middleware
+func (siw *ServerInterfaceWrapper) RevertWorkspaceImport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevertWorkspaceImport(w, r, workspaceId, importRunId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConfigureWorkspaceImport operation middleware
+func (siw *ServerInterfaceWrapper) ConfigureWorkspaceImport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfigureWorkspaceImport(w, r, workspaceId, importRunId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StageWorkspaceImport operation middleware
+func (siw *ServerInterfaceWrapper) StageWorkspaceImport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "importRunId" -------------
+	var importRunId ImportRunId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "importRunId", chi.URLParam(r, "importRunId"), &importRunId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "importRunId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StageWorkspaceImport(w, r, workspaceId, importRunId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -15204,6 +16396,48 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/webhooks/{webhookId}/deliveries/{deliveryId}/replay", wrapper.ReplayWorkspaceWebhookDelivery)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/imports/sources", wrapper.ListImportSources)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/imports", wrapper.ListWorkspaceImports)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/imports", wrapper.CreateWorkspaceImport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}", wrapper.GetWorkspaceImport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}/source", wrapper.ConfigureWorkspaceImport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}/file", wrapper.UploadWorkspaceImportFile)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}/catalogue", wrapper.GetWorkspaceImportCatalogue)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}/stage", wrapper.StageWorkspaceImport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}/mappings", wrapper.GetWorkspaceImportMappings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}/mappings", wrapper.DecideWorkspaceImportMappings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}/preview", wrapper.PreviewWorkspaceImport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}/execute", wrapper.ExecuteWorkspaceImport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}/revert", wrapper.RevertWorkspaceImport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/imports/{importRunId}/report", wrapper.GetWorkspaceImportReport)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents", wrapper.ListWorkspaceAgents)
 	})
 	r.Group(func(r chi.Router) {
@@ -15570,6 +16804,21 @@ type DirectoryUnlicensedApplicationProblemPlusJSONResponse DirectoryUnlicensedPr
 type EnforcementRefusedApplicationProblemPlusJSONResponse EnforcementRefusedProblem
 
 type ForbiddenApplicationProblemPlusJSONResponse ForbiddenProblem
+
+type ImportConflictApplicationProblemPlusJSONResponse ImportConflictProblem
+
+type ImportSigningUnavailableApplicationProblemPlusJSONResponse ImportSigningUnavailableProblem
+
+type ImportSourceRateLimitedResponseHeaders struct {
+	RetryAfter *int32
+}
+type ImportSourceRateLimitedApplicationProblemPlusJSONResponse struct {
+	Body RateLimitedProblem
+
+	Headers ImportSourceRateLimitedResponseHeaders
+}
+
+type ImportSourceRefusedApplicationProblemPlusJSONResponse ImportSourceRefusedProblem
 
 type InvitationLinkExpiredApplicationProblemPlusJSONResponse InvitationExpiredProblem
 
@@ -21365,6 +22614,1446 @@ func (response RotateWorkspaceDirectoryToken503ApplicationProblemPlusJSONRespons
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceImportsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceImportsParams
+}
+
+type ListWorkspaceImportsResponseObject interface {
+	VisitListWorkspaceImportsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceImports200JSONResponse ImportRunPage
+
+func (response ListWorkspaceImports200JSONResponse) VisitListWorkspaceImportsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceImports401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceImports401ApplicationProblemPlusJSONResponse) VisitListWorkspaceImportsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceImports403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceImports403ApplicationProblemPlusJSONResponse) VisitListWorkspaceImportsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceImports404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceImports404ApplicationProblemPlusJSONResponse) VisitListWorkspaceImportsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceImports422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceImports422ApplicationProblemPlusJSONResponse) VisitListWorkspaceImportsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceImports500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceImports500ApplicationProblemPlusJSONResponse) VisitListWorkspaceImportsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceImportRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *CreateWorkspaceImportJSONRequestBody
+}
+
+type CreateWorkspaceImportResponseObject interface {
+	VisitCreateWorkspaceImportResponse(w http.ResponseWriter) error
+}
+
+type CreateWorkspaceImport201JSONResponse ImportRun
+
+func (response CreateWorkspaceImport201JSONResponse) VisitCreateWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceImport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceImport401ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceImport403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceImport403ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceImport404ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceImport404ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceImport422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceImport422ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceImport500ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceImport500ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListImportSourcesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListImportSourcesResponseObject interface {
+	VisitListImportSourcesResponse(w http.ResponseWriter) error
+}
+
+type ListImportSources200JSONResponse []ImportSource
+
+func (response ListImportSources200JSONResponse) VisitListImportSourcesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListImportSources401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListImportSources401ApplicationProblemPlusJSONResponse) VisitListImportSourcesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListImportSources403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListImportSources403ApplicationProblemPlusJSONResponse) VisitListImportSourcesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListImportSources404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListImportSources404ApplicationProblemPlusJSONResponse) VisitListImportSourcesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListImportSources500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListImportSources500ApplicationProblemPlusJSONResponse) VisitListImportSourcesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+}
+
+type GetWorkspaceImportResponseObject interface {
+	VisitGetWorkspaceImportResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceImport200JSONResponse ImportRun
+
+func (response GetWorkspaceImport200JSONResponse) VisitGetWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImport401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImport403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImport403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImport404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceImport404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImport500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceImport500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportCatalogueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+}
+
+type GetWorkspaceImportCatalogueResponseObject interface {
+	VisitGetWorkspaceImportCatalogueResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceImportCatalogue200JSONResponse ImportCatalogue
+
+func (response GetWorkspaceImportCatalogue200JSONResponse) VisitGetWorkspaceImportCatalogueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportCatalogue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImportCatalogue401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportCatalogueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportCatalogue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImportCatalogue403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportCatalogueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportCatalogue404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceImportCatalogue404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportCatalogueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportCatalogue429ApplicationProblemPlusJSONResponse struct {
+	ImportSourceRateLimitedApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImportCatalogue429ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportCatalogueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportCatalogue500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceImportCatalogue500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportCatalogueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportCatalogue502ApplicationProblemPlusJSONResponse struct {
+	ImportSourceRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImportCatalogue502ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportCatalogueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportCatalogue503ApplicationProblemPlusJSONResponse struct {
+	ImportSigningUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImportCatalogue503ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportCatalogueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExecuteWorkspaceImportRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+	Body        *ExecuteWorkspaceImportJSONRequestBody
+}
+
+type ExecuteWorkspaceImportResponseObject interface {
+	VisitExecuteWorkspaceImportResponse(w http.ResponseWriter) error
+}
+
+type ExecuteWorkspaceImport202JSONResponse ImportRun
+
+func (response ExecuteWorkspaceImport202JSONResponse) VisitExecuteWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExecuteWorkspaceImport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ExecuteWorkspaceImport401ApplicationProblemPlusJSONResponse) VisitExecuteWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExecuteWorkspaceImport403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ExecuteWorkspaceImport403ApplicationProblemPlusJSONResponse) VisitExecuteWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExecuteWorkspaceImport404ApplicationProblemPlusJSONResponse Problem
+
+func (response ExecuteWorkspaceImport404ApplicationProblemPlusJSONResponse) VisitExecuteWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExecuteWorkspaceImport409ApplicationProblemPlusJSONResponse struct {
+	ImportConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ExecuteWorkspaceImport409ApplicationProblemPlusJSONResponse) VisitExecuteWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExecuteWorkspaceImport422ApplicationProblemPlusJSONResponse Problem
+
+func (response ExecuteWorkspaceImport422ApplicationProblemPlusJSONResponse) VisitExecuteWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExecuteWorkspaceImport500ApplicationProblemPlusJSONResponse Problem
+
+func (response ExecuteWorkspaceImport500ApplicationProblemPlusJSONResponse) VisitExecuteWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceImportFileRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+	Body        *multipart.Reader
+}
+
+type UploadWorkspaceImportFileResponseObject interface {
+	VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error
+}
+
+type UploadWorkspaceImportFile200JSONResponse ImportFile
+
+func (response UploadWorkspaceImportFile200JSONResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceImportFile400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UploadWorkspaceImportFile400ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceImportFile401ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceImportFile401ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceImportFile403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UploadWorkspaceImportFile403ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceImportFile404ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceImportFile404ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceImportFile409ApplicationProblemPlusJSONResponse struct {
+	ImportConflictApplicationProblemPlusJSONResponse
+}
+
+func (response UploadWorkspaceImportFile409ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceImportFile413ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceImportFile413ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceImportFile422ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceImportFile422ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceImportFile500ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceImportFile500ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportMappingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+}
+
+type GetWorkspaceImportMappingsResponseObject interface {
+	VisitGetWorkspaceImportMappingsResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceImportMappings200JSONResponse ImportMappingPlan
+
+func (response GetWorkspaceImportMappings200JSONResponse) VisitGetWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportMappings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImportMappings401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportMappings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImportMappings403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportMappings404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceImportMappings404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportMappings500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceImportMappings500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceImportMappingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+	Body        *DecideWorkspaceImportMappingsJSONRequestBody
+}
+
+type DecideWorkspaceImportMappingsResponseObject interface {
+	VisitDecideWorkspaceImportMappingsResponse(w http.ResponseWriter) error
+}
+
+type DecideWorkspaceImportMappings200JSONResponse ImportMappingPlan
+
+func (response DecideWorkspaceImportMappings200JSONResponse) VisitDecideWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceImportMappings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DecideWorkspaceImportMappings401ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceImportMappings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DecideWorkspaceImportMappings403ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceImportMappings404ApplicationProblemPlusJSONResponse Problem
+
+func (response DecideWorkspaceImportMappings404ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceImportMappings409ApplicationProblemPlusJSONResponse struct {
+	ImportConflictApplicationProblemPlusJSONResponse
+}
+
+func (response DecideWorkspaceImportMappings409ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceImportMappings422ApplicationProblemPlusJSONResponse Problem
+
+func (response DecideWorkspaceImportMappings422ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceImportMappings500ApplicationProblemPlusJSONResponse Problem
+
+func (response DecideWorkspaceImportMappings500ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceImportMappingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewWorkspaceImportRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+}
+
+type PreviewWorkspaceImportResponseObject interface {
+	VisitPreviewWorkspaceImportResponse(w http.ResponseWriter) error
+}
+
+type PreviewWorkspaceImport200JSONResponse ImportPreview
+
+func (response PreviewWorkspaceImport200JSONResponse) VisitPreviewWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewWorkspaceImport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PreviewWorkspaceImport401ApplicationProblemPlusJSONResponse) VisitPreviewWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewWorkspaceImport403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response PreviewWorkspaceImport403ApplicationProblemPlusJSONResponse) VisitPreviewWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewWorkspaceImport404ApplicationProblemPlusJSONResponse Problem
+
+func (response PreviewWorkspaceImport404ApplicationProblemPlusJSONResponse) VisitPreviewWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewWorkspaceImport500ApplicationProblemPlusJSONResponse Problem
+
+func (response PreviewWorkspaceImport500ApplicationProblemPlusJSONResponse) VisitPreviewWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportReportRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+}
+
+type GetWorkspaceImportReportResponseObject interface {
+	VisitGetWorkspaceImportReportResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceImportReport200JSONResponse ImportReport
+
+func (response GetWorkspaceImportReport200JSONResponse) VisitGetWorkspaceImportReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportReport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImportReport401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportReport403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceImportReport403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportReport404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceImportReport404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceImportReport500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceImportReport500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceImportReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevertWorkspaceImportRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+}
+
+type RevertWorkspaceImportResponseObject interface {
+	VisitRevertWorkspaceImportResponse(w http.ResponseWriter) error
+}
+
+type RevertWorkspaceImport202JSONResponse ImportRun
+
+func (response RevertWorkspaceImport202JSONResponse) VisitRevertWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevertWorkspaceImport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RevertWorkspaceImport401ApplicationProblemPlusJSONResponse) VisitRevertWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevertWorkspaceImport403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RevertWorkspaceImport403ApplicationProblemPlusJSONResponse) VisitRevertWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevertWorkspaceImport404ApplicationProblemPlusJSONResponse Problem
+
+func (response RevertWorkspaceImport404ApplicationProblemPlusJSONResponse) VisitRevertWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevertWorkspaceImport409ApplicationProblemPlusJSONResponse struct {
+	ImportConflictApplicationProblemPlusJSONResponse
+}
+
+func (response RevertWorkspaceImport409ApplicationProblemPlusJSONResponse) VisitRevertWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevertWorkspaceImport500ApplicationProblemPlusJSONResponse Problem
+
+func (response RevertWorkspaceImport500ApplicationProblemPlusJSONResponse) VisitRevertWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceImportRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+	Body        *ConfigureWorkspaceImportJSONRequestBody
+}
+
+type ConfigureWorkspaceImportResponseObject interface {
+	VisitConfigureWorkspaceImportResponse(w http.ResponseWriter) error
+}
+
+type ConfigureWorkspaceImport200JSONResponse ImportRun
+
+func (response ConfigureWorkspaceImport200JSONResponse) VisitConfigureWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceImport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConfigureWorkspaceImport401ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceImport403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ConfigureWorkspaceImport403ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceImport404ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfigureWorkspaceImport404ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceImport409ApplicationProblemPlusJSONResponse struct {
+	ImportConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ConfigureWorkspaceImport409ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceImport422ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfigureWorkspaceImport422ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceImport500ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfigureWorkspaceImport500ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfigureWorkspaceImport503ApplicationProblemPlusJSONResponse struct {
+	ImportSigningUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response ConfigureWorkspaceImport503ApplicationProblemPlusJSONResponse) VisitConfigureWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StageWorkspaceImportRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ImportRunId ImportRunId `json:"importRunId"`
+}
+
+type StageWorkspaceImportResponseObject interface {
+	VisitStageWorkspaceImportResponse(w http.ResponseWriter) error
+}
+
+type StageWorkspaceImport202JSONResponse ImportRun
+
+func (response StageWorkspaceImport202JSONResponse) VisitStageWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StageWorkspaceImport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response StageWorkspaceImport401ApplicationProblemPlusJSONResponse) VisitStageWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StageWorkspaceImport403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response StageWorkspaceImport403ApplicationProblemPlusJSONResponse) VisitStageWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StageWorkspaceImport404ApplicationProblemPlusJSONResponse Problem
+
+func (response StageWorkspaceImport404ApplicationProblemPlusJSONResponse) VisitStageWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StageWorkspaceImport409ApplicationProblemPlusJSONResponse struct {
+	ImportConflictApplicationProblemPlusJSONResponse
+}
+
+func (response StageWorkspaceImport409ApplicationProblemPlusJSONResponse) VisitStageWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StageWorkspaceImport500ApplicationProblemPlusJSONResponse Problem
+
+func (response StageWorkspaceImport500ApplicationProblemPlusJSONResponse) VisitStageWorkspaceImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -34392,6 +37081,48 @@ type StrictServerInterface interface {
 	// RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
 	// (POST /workspaces/{workspaceId}/directory/token)
 	RotateWorkspaceDirectoryToken(ctx context.Context, request RotateWorkspaceDirectoryTokenRequestObject) (RotateWorkspaceDirectoryTokenResponseObject, error)
+	// ListWorkspaceImports List what this workspace has imported, newest first
+	// (GET /workspaces/{workspaceId}/imports)
+	ListWorkspaceImports(ctx context.Context, request ListWorkspaceImportsRequestObject) (ListWorkspaceImportsResponseObject, error)
+	// CreateWorkspaceImport Start an import against one of the sources this instance carries
+	// (POST /workspaces/{workspaceId}/imports)
+	CreateWorkspaceImport(ctx context.Context, request CreateWorkspaceImportRequestObject) (CreateWorkspaceImportResponseObject, error)
+	// ListImportSources List the trackers this instance can import a backlog from
+	// (GET /workspaces/{workspaceId}/imports/sources)
+	ListImportSources(ctx context.Context, request ListImportSourcesRequestObject) (ListImportSourcesResponseObject, error)
+	// GetWorkspaceImport Read one import, where it has got to, and how much it has moved
+	// (GET /workspaces/{workspaceId}/imports/{importRunId})
+	GetWorkspaceImport(ctx context.Context, request GetWorkspaceImportRequestObject) (GetWorkspaceImportResponseObject, error)
+	// GetWorkspaceImportCatalogue Ask the source what it holds, before anything is staged
+	// (GET /workspaces/{workspaceId}/imports/{importRunId}/catalogue)
+	GetWorkspaceImportCatalogue(ctx context.Context, request GetWorkspaceImportCatalogueRequestObject) (GetWorkspaceImportCatalogueResponseObject, error)
+	// ExecuteWorkspaceImport Run the import the requester previewed, and nothing else
+	// (POST /workspaces/{workspaceId}/imports/{importRunId}/execute)
+	ExecuteWorkspaceImport(ctx context.Context, request ExecuteWorkspaceImportRequestObject) (ExecuteWorkspaceImportResponseObject, error)
+	// UploadWorkspaceImportFile Upload the file a run reads its rows from
+	// (POST /workspaces/{workspaceId}/imports/{importRunId}/file)
+	UploadWorkspaceImportFile(ctx context.Context, request UploadWorkspaceImportFileRequestObject) (UploadWorkspaceImportFileResponseObject, error)
+	// GetWorkspaceImportMappings Every source concept this run found, and what it suggests for each
+	// (GET /workspaces/{workspaceId}/imports/{importRunId}/mappings)
+	GetWorkspaceImportMappings(ctx context.Context, request GetWorkspaceImportMappingsRequestObject) (GetWorkspaceImportMappingsResponseObject, error)
+	// DecideWorkspaceImportMappings Answer the mapping plan, one decision per source concept
+	// (PUT /workspaces/{workspaceId}/imports/{importRunId}/mappings)
+	DecideWorkspaceImportMappings(ctx context.Context, request DecideWorkspaceImportMappingsRequestObject) (DecideWorkspaceImportMappingsResponseObject, error)
+	// PreviewWorkspaceImport What this run would create, change, skip and leave unattributed
+	// (GET /workspaces/{workspaceId}/imports/{importRunId}/preview)
+	PreviewWorkspaceImport(ctx context.Context, request PreviewWorkspaceImportRequestObject) (PreviewWorkspaceImportResponseObject, error)
+	// GetWorkspaceImportReport What this import made, and what it could not carry across
+	// (GET /workspaces/{workspaceId}/imports/{importRunId}/report)
+	GetWorkspaceImportReport(ctx context.Context, request GetWorkspaceImportReportRequestObject) (GetWorkspaceImportReportResponseObject, error)
+	// RevertWorkspaceImport Take back what this import created, in the order it created it
+	// (POST /workspaces/{workspaceId}/imports/{importRunId}/revert)
+	RevertWorkspaceImport(ctx context.Context, request RevertWorkspaceImportRequestObject) (RevertWorkspaceImportResponseObject, error)
+	// ConfigureWorkspaceImport Give the run its source key and the selection it reads under
+	// (PUT /workspaces/{workspaceId}/imports/{importRunId}/source)
+	ConfigureWorkspaceImport(ctx context.Context, request ConfigureWorkspaceImportRequestObject) (ConfigureWorkspaceImportResponseObject, error)
+	// StageWorkspaceImport Start draining the source into this run's staged copy
+	// (POST /workspaces/{workspaceId}/imports/{importRunId}/stage)
+	StageWorkspaceImport(ctx context.Context, request StageWorkspaceImportRequestObject) (StageWorkspaceImportResponseObject, error)
 	// ListWorkspaceInvitations List the workspace invitations administrators see beside members
 	// (GET /workspaces/{workspaceId}/invitations)
 	ListWorkspaceInvitations(ctx context.Context, request ListWorkspaceInvitationsRequestObject) (ListWorkspaceInvitationsResponseObject, error)
@@ -36831,6 +39562,417 @@ func (sh *strictHandler) RotateWorkspaceDirectoryToken(w http.ResponseWriter, r 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RotateWorkspaceDirectoryTokenResponseObject); ok {
 		if err := validResponse.VisitRotateWorkspaceDirectoryTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceImports operation middleware
+func (sh *strictHandler) ListWorkspaceImports(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceImportsParams) {
+	var request ListWorkspaceImportsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceImports(ctx, request.(ListWorkspaceImportsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceImports")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceImportsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceImportsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateWorkspaceImport operation middleware
+func (sh *strictHandler) CreateWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request CreateWorkspaceImportRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body CreateWorkspaceImportJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateWorkspaceImport(ctx, request.(CreateWorkspaceImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateWorkspaceImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateWorkspaceImportResponseObject); ok {
+		if err := validResponse.VisitCreateWorkspaceImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListImportSources operation middleware
+func (sh *strictHandler) ListImportSources(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListImportSourcesRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListImportSources(ctx, request.(ListImportSourcesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListImportSources")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListImportSourcesResponseObject); ok {
+		if err := validResponse.VisitListImportSourcesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceImport operation middleware
+func (sh *strictHandler) GetWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request GetWorkspaceImportRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceImport(ctx, request.(GetWorkspaceImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceImportResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceImportCatalogue operation middleware
+func (sh *strictHandler) GetWorkspaceImportCatalogue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request GetWorkspaceImportCatalogueRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceImportCatalogue(ctx, request.(GetWorkspaceImportCatalogueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceImportCatalogue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceImportCatalogueResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceImportCatalogueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ExecuteWorkspaceImport operation middleware
+func (sh *strictHandler) ExecuteWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request ExecuteWorkspaceImportRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	var body ExecuteWorkspaceImportJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ExecuteWorkspaceImport(ctx, request.(ExecuteWorkspaceImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ExecuteWorkspaceImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ExecuteWorkspaceImportResponseObject); ok {
+		if err := validResponse.VisitExecuteWorkspaceImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UploadWorkspaceImportFile operation middleware
+func (sh *strictHandler) UploadWorkspaceImportFile(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request UploadWorkspaceImportFileRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UploadWorkspaceImportFile(ctx, request.(UploadWorkspaceImportFileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UploadWorkspaceImportFile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UploadWorkspaceImportFileResponseObject); ok {
+		if err := validResponse.VisitUploadWorkspaceImportFileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceImportMappings operation middleware
+func (sh *strictHandler) GetWorkspaceImportMappings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request GetWorkspaceImportMappingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceImportMappings(ctx, request.(GetWorkspaceImportMappingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceImportMappings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceImportMappingsResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceImportMappingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DecideWorkspaceImportMappings operation middleware
+func (sh *strictHandler) DecideWorkspaceImportMappings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request DecideWorkspaceImportMappingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	var body DecideWorkspaceImportMappingsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DecideWorkspaceImportMappings(ctx, request.(DecideWorkspaceImportMappingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DecideWorkspaceImportMappings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DecideWorkspaceImportMappingsResponseObject); ok {
+		if err := validResponse.VisitDecideWorkspaceImportMappingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PreviewWorkspaceImport operation middleware
+func (sh *strictHandler) PreviewWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request PreviewWorkspaceImportRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PreviewWorkspaceImport(ctx, request.(PreviewWorkspaceImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PreviewWorkspaceImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PreviewWorkspaceImportResponseObject); ok {
+		if err := validResponse.VisitPreviewWorkspaceImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceImportReport operation middleware
+func (sh *strictHandler) GetWorkspaceImportReport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request GetWorkspaceImportReportRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceImportReport(ctx, request.(GetWorkspaceImportReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceImportReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceImportReportResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceImportReportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevertWorkspaceImport operation middleware
+func (sh *strictHandler) RevertWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request RevertWorkspaceImportRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevertWorkspaceImport(ctx, request.(RevertWorkspaceImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevertWorkspaceImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevertWorkspaceImportResponseObject); ok {
+		if err := validResponse.VisitRevertWorkspaceImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfigureWorkspaceImport operation middleware
+func (sh *strictHandler) ConfigureWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request ConfigureWorkspaceImportRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	var body ConfigureWorkspaceImportJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfigureWorkspaceImport(ctx, request.(ConfigureWorkspaceImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfigureWorkspaceImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfigureWorkspaceImportResponseObject); ok {
+		if err := validResponse.VisitConfigureWorkspaceImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// StageWorkspaceImport operation middleware
+func (sh *strictHandler) StageWorkspaceImport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, importRunId ImportRunId) {
+	var request StageWorkspaceImportRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ImportRunId = importRunId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.StageWorkspaceImport(ctx, request.(StageWorkspaceImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StageWorkspaceImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(StageWorkspaceImportResponseObject); ok {
+		if err := validResponse.VisitStageWorkspaceImportResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

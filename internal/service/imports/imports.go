@@ -30,20 +30,25 @@ type importsService struct {
 	states      repository.WorkflowState
 	labels      repository.Label
 	projects    repository.Project
+	cycles      repository.Cycle
 	issues      repository.Issue
 	comments    repository.IssueComment
 	relations   repository.IssueRelation
 	groups      repository.LabelGroup
 	teamMembers repository.TeamMember
 	triage      repository.Triage
+	files       repository.Attachment
+	blobs       repository.Blob
 
 	issueWriter    service.Issues
 	projectWriter  service.Projects
+	cycleWriter    service.Cycles
 	labelWriter    service.Labels
 	stateWriter    service.WorkflowStates
 	commentWriter  service.IssueComments
 	teamWriter     service.Teams
 	relationWriter service.IssueRelations
+	fileWriter     service.Attachments
 
 	sources    service.ImportSources
 	authorizer service.Authorizer
@@ -64,19 +69,24 @@ func New(
 	states repository.WorkflowState,
 	labels repository.Label,
 	projects repository.Project,
+	cycles repository.Cycle,
 	issues repository.Issue,
 	comments repository.IssueComment,
 	relations repository.IssueRelation,
 	groups repository.LabelGroup,
 	teamMembers repository.TeamMember,
 	triage repository.Triage,
+	files repository.Attachment,
+	blobs repository.Blob,
 	issueWriter service.Issues,
 	projectWriter service.Projects,
+	cycleWriter service.Cycles,
 	labelWriter service.Labels,
 	stateWriter service.WorkflowStates,
 	commentWriter service.IssueComments,
 	teamWriter service.Teams,
 	relationWriter service.IssueRelations,
+	fileWriter service.Attachments,
 	sources service.ImportSources,
 	authorizer service.Authorizer,
 	jobs repository.JobProducer,
@@ -95,19 +105,24 @@ func New(
 		states:         states,
 		labels:         labels,
 		projects:       projects,
+		cycles:         cycles,
 		issues:         issues,
 		comments:       comments,
 		relations:      relations,
 		groups:         groups,
 		teamMembers:    teamMembers,
 		triage:         triage,
+		files:          files,
+		blobs:          blobs,
 		issueWriter:    issueWriter,
 		projectWriter:  projectWriter,
+		cycleWriter:    cycleWriter,
 		labelWriter:    labelWriter,
 		stateWriter:    stateWriter,
 		commentWriter:  commentWriter,
 		teamWriter:     teamWriter,
 		relationWriter: relationWriter,
+		fileWriter:     fileWriter,
 		sources:        sources,
 		authorizer:     authorizer,
 		jobs:           jobs,
@@ -166,12 +181,73 @@ func (s *importsService) Connect(ctx context.Context, input service.CreateImport
 	return run, nil
 }
 
+func (s *importsService) Configure(
+	ctx context.Context,
+	workspaceID, runID uuid.UUID,
+	input service.ConfigureImportInput,
+) (entity.ImportRun, error) {
+	if _, err := s.decide(ctx, workspaceID); err != nil {
+		return entity.ImportRun{}, err
+	}
+
+	run, err := s.runs.GetByID(ctx, workspaceID, runID)
+	if err != nil {
+		return entity.ImportRun{}, err
+	}
+
+	if !run.Status.Configurable() {
+		return entity.ImportRun{}, entity.ErrImportStatusTransition
+	}
+
+	if len(input.Settings) > 0 && !json.Valid(input.Settings) {
+		return entity.ImportRun{}, entity.NewValidationError(entity.FieldError{
+			Field: "settings",
+			Code:  entity.ValidationCodeMalformed,
+		})
+	}
+
+	policy := input.UnknownReferences.Or(entity.ImportUnknownSkip)
+
+	if !policy.Valid() {
+		return entity.ImportRun{}, entity.NewValidationError(entity.FieldError{
+			Field: "unknownReferences",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
+	if err := s.runs.SaveSourceConfig(ctx, run.ID, input.Secret, input.Settings, policy); err != nil {
+		return entity.ImportRun{}, err
+	}
+
+	return s.runs.GetByID(ctx, workspaceID, runID)
+}
+
 func (s *importsService) Get(ctx context.Context, workspaceID, runID uuid.UUID) (entity.ImportRun, error) {
 	if _, err := s.decide(ctx, workspaceID); err != nil {
 		return entity.ImportRun{}, err
 	}
 
 	return s.runs.GetByID(ctx, workspaceID, runID)
+}
+
+func (s *importsService) List(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	page entity.ImportRunPage,
+) ([]entity.ImportRun, error) {
+	if _, err := s.decide(ctx, workspaceID); err != nil {
+		return nil, err
+	}
+
+	return s.runs.ListByWorkspace(ctx, workspaceID, page)
+}
+
+func (s *importsService) Sources(ctx context.Context, workspaceID uuid.UUID) ([]string, error) {
+	if _, err := s.decide(ctx, workspaceID); err != nil {
+		return nil, err
+	}
+
+	return s.sources.Kinds(), nil
 }
 
 func (s *importsService) Report(

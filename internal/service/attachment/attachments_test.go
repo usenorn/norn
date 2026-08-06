@@ -2,6 +2,7 @@ package attachment_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -236,6 +237,200 @@ func TestRoomIsTakenBeforeTheRowExistsSoTwoUploadsCannotBothFit(t *testing.T) {
 
 	if reservation.Transfer.URL == "" || reservation.Transfer.Method == "" {
 		t.Fatal("the reservation did not describe where to send the bytes")
+	}
+}
+
+func (h *harness) carried(origin *entity.ImportOrigin) service.AdoptAttachmentInput {
+	return service.AdoptAttachmentInput{
+		ObjectKey:   entity.ImportBlobKey(h.workspaceID, uuid.New(), "shot.png"),
+		FileName:    "shot.png",
+		ContentType: "image/png",
+		SizeBytes:   500,
+		Origin:      origin,
+	}
+}
+
+func decodedOrigin(t *testing.T, author uuid.UUID) *entity.ImportOrigin {
+	t.Helper()
+
+	body := `{"CreatedAt":"2021-03-04T05:06:07Z","UpdatedAt":"2021-03-04T05:06:07Z",` +
+		`"AuthorAccountID":"` + author.String() + `"}`
+
+	var decoded entity.ImportOrigin
+
+	if err := json.Unmarshal([]byte(body), &decoded); err != nil {
+		t.Fatalf("unmarshal origin: %v", err)
+	}
+
+	return &decoded
+}
+
+func TestAdoptingAnObjectAsksWhetherTheOriginIsAttributedRatherThanPresent(t *testing.T) {
+	for name, origin := range map[string]func(*testing.T, *harness) *entity.ImportOrigin{
+		"no origin at all": func(*testing.T, *harness) *entity.ImportOrigin { return nil },
+		"one decoded from a request body": func(t *testing.T, h *harness) *entity.ImportOrigin {
+			return decodedOrigin(t, h.accountID)
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := newHarness(t, maxWorkspaceBytes)
+			h.actAs(entity.MembershipRoleMember)
+			h.seesTheIssue()
+
+			_, err := h.service.Adopt(
+				context.Background(), h.workspaceID, h.issueID, h.carried(origin(t, h)),
+			)
+
+			if !errors.Is(err, entity.ErrAttachmentAdoptNeedsOrigin) {
+				t.Fatalf(
+					"adopting with %s returned %v. Adopt writes a row that is stored on arrival and "+
+						"never passes the sweep, so it is reachable only by an import: an origin the "+
+						"constructor never made is inert however its fields are filled, and testing "+
+						"the pointer for presence would hand that to anyone who named the field.",
+					name, err,
+				)
+			}
+		})
+	}
+}
+
+func TestAnAdoptedFileIsStoredOnItsIssueBeforeAnySweepCouldSeeIt(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	source := time.Date(2021, time.March, 4, 5, 6, 7, 0, time.UTC)
+	origin := entity.NewImportOrigin(source, source, h.accountID)
+
+	h.attachments.EXPECT().
+		Admit(gomock.Any(), h.workspaceID, int64(500), int64(maxWorkspaceBytes)).
+		Return(int64(500), nil)
+	h.attachments.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, adopted entity.Attachment) (entity.Attachment, error) {
+			if adopted.Status != entity.AttachmentStatusStored {
+				t.Fatalf(
+					"the row was created %q. The bytes are already in storage, and a row that has "+
+						"to be settled afterwards means a crash mid-import leaves a file nothing owns.",
+					adopted.Status,
+				)
+			}
+
+			if adopted.IssueID != h.issueID || adopted.ReclaimAfter != nil {
+				t.Fatalf(
+					"the row was created with issue %v and reclaim deadline %v. MarkOrphans discards "+
+						"everything where reclaim_after IS NULL AND issue_id IS NULL, so either of "+
+						"those wrong deletes a live import's file on the next five-minute sweep.",
+					adopted.IssueID, adopted.ReclaimAfter,
+				)
+			}
+
+			createdAt, updatedAt := entity.OriginStamp(adopted.Origin, time.Now().UTC())
+			if !createdAt.Equal(source) || !updatedAt.Equal(source) {
+				t.Fatalf(
+					"the row would be stamped %s/%s rather than %s. A file carried across keeps the "+
+						"time it was attached at the source, or the issue's history reads as though "+
+						"every attachment arrived on migration day.",
+					createdAt, updatedAt, source,
+				)
+			}
+
+			return adopted, nil
+		})
+
+	adopted := h.carried(&origin)
+
+	if _, err := h.service.Adopt(
+		context.Background(), h.workspaceID, h.issueID, adopted,
+	); err != nil {
+		t.Fatalf("Adopt: %v", err)
+	}
+}
+
+func TestAnImportsFileIsRefusedByAFullWorkspaceLikeAnyOtherUpload(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	source := time.Date(2021, time.March, 4, 5, 6, 7, 0, time.UTC)
+	origin := entity.NewImportOrigin(source, source, h.accountID)
+
+	h.attachments.EXPECT().
+		Admit(gomock.Any(), h.workspaceID, int64(500), int64(maxWorkspaceBytes)).
+		Return(int64(0), entity.ErrStorageExhausted)
+	h.attachments.EXPECT().
+		Ledger(gomock.Any(), h.workspaceID).
+		Return(entity.WorkspaceStorage{StoredBytes: 9_900}, nil)
+
+	_, err := h.service.Adopt(context.Background(), h.workspaceID, h.issueID, h.carried(&origin))
+
+	if !errors.Is(err, entity.ErrStorageExhausted) {
+		t.Fatalf(
+			"a file carried into a full workspace returned %v. An import is unbounded in how many "+
+				"records it may carry, but its files are charged against the same quota as anything "+
+				"else, and the run has to be told to stop rather than to keep going and be dropped.",
+			err,
+		)
+	}
+}
+
+func TestAKeyThisInstanceCouldNotHaveMintedIsNeverAdopted(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	source := time.Date(2021, time.March, 4, 5, 6, 7, 0, time.UTC)
+	origin := entity.NewImportOrigin(source, source, h.accountID)
+
+	carried := h.carried(&origin)
+	carried.ObjectKey = "imports/../attachments/somebody-elses-workspace/secret"
+
+	var refused entity.ValidationError
+
+	if _, err := h.service.Adopt(
+		context.Background(), h.workspaceID, h.issueID, carried,
+	); !errors.As(err, &refused) {
+		t.Fatalf(
+			"a key that climbs out of its prefix was adopted with %v. Adopt is the one place a key "+
+				"arrives from a caller rather than being minted here, so the guard that has never "+
+				"had to fire is exactly the one that has to hold now.",
+			err,
+		)
+	}
+}
+
+func TestAnAdoptedFileIsServedByWhatItIsRatherThanWhatTheSourceSaid(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	source := time.Date(2021, time.March, 4, 5, 6, 7, 0, time.UTC)
+	origin := entity.NewImportOrigin(source, source, h.accountID)
+
+	carried := h.carried(&origin)
+	carried.ContentType = "image/svg+xml"
+
+	h.attachments.EXPECT().Admit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(int64(500), nil)
+	h.attachments.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, adopted entity.Attachment) (entity.Attachment, error) {
+			if adopted.ContentType != entity.AttachmentGenericType {
+				t.Fatalf(
+					"a file the source described as %q would be served as %q. The type on the row "+
+						"decides the disposition of every later download, and a type another system "+
+						"asserted is no more trustworthy than one a browser declared.",
+					carried.ContentType, adopted.ContentType,
+				)
+			}
+
+			return adopted, nil
+		})
+
+	if _, err := h.service.Adopt(
+		context.Background(), h.workspaceID, h.issueID, carried,
+	); err != nil {
+		t.Fatalf("Adopt: %v", err)
 	}
 }
 
@@ -579,5 +774,57 @@ func TestAnUnlimitedWorkspaceStillReportsWhatItIsStoring(t *testing.T) {
 				"metered; they simply are not stopped.",
 			ledger.StoredBytes, ledger.MaxBytes,
 		)
+	}
+}
+
+func TestAKeyPointingOutsideThisWorkspacesOwnImportIsRefused(t *testing.T) {
+	other := uuid.New()
+
+	cases := []struct {
+		name string
+		key  string
+	}{
+		{
+			"another workspace's import",
+			entity.ImportBlobKey(other, uuid.New(), "shot.png"),
+		},
+		{
+			"a live attachment of this workspace",
+			entity.AttachmentKey(uuid.New(), uuid.New()),
+		},
+		{
+			"the import prefix of another workspace by string alone",
+			entity.ImportKeyPrefix + "/" + other.String() + "/run/shot.png",
+		},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			h := newHarness(t, maxWorkspaceBytes)
+			h.actAs(entity.MembershipRoleMember)
+			h.seesTheIssue()
+
+			source := time.Date(2021, time.March, 4, 5, 6, 7, 0, time.UTC)
+			origin := entity.NewImportOrigin(source, source, h.accountID)
+
+			adopted := h.carried(&origin)
+			adopted.ObjectKey = testCase.key
+
+			_, err := h.service.Adopt(context.Background(), h.workspaceID, h.issueID, adopted)
+
+			var validation entity.ValidationError
+
+			if !errors.As(err, &validation) {
+				t.Fatalf(
+					"Adopt accepted the key %q (%v). Adoption takes ownership of whatever object it "+
+						"is handed and a later revert deletes it, so a key naming somebody else's "+
+						"stored file would have this import claim it and the undo destroy it. An "+
+						"adapter is ordinary code that will one day be written by somebody in a "+
+						"hurry, and this is the only thing standing between a typo and another "+
+						"workspace losing a file.",
+					testCase.key, err,
+				)
+			}
+		})
 	}
 }

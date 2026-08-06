@@ -16,15 +16,20 @@ const (
 	reasonTouchedSince = "this has changed since the import created it"
 	reasonStillInUse   = "work that did not come from this import still depends on it"
 	reasonLeftStanding = "this is no longer the import's to take back out"
+	reasonBodyGoesWith = "the rewritten body goes out with the row it was written on"
 )
 
-func revertDetail(outcome entity.ImportOutcome) map[string]string {
+func revertDetail(resource entity.ImportResource, outcome entity.ImportOutcome) map[string]string {
 	switch outcome {
 	case entity.ImportOutcomeSkippedModified:
 		return map[string]string{"reason": reasonTouchedSince}
 	case entity.ImportOutcomeSkippedInUse:
 		return map[string]string{"reason": reasonStillInUse}
 	case entity.ImportOutcomeRetained:
+		if resource == entity.ImportEmbed {
+			return map[string]string{"reason": reasonBodyGoesWith}
+		}
+
 		return map[string]string{"reason": reasonLeftStanding}
 	default:
 		return nil
@@ -179,7 +184,8 @@ func (s *importsService) unwindChunk(
 
 			log.failed(entry.Resource, entry.ExternalID, entry.Reference, err.Error())
 		} else {
-			log.note(entry.Resource, entry.ExternalID, entry.Reference, outcome, revertDetail(outcome))
+			log.note(entry.Resource, entry.ExternalID, entry.Reference, outcome,
+				revertDetail(entry.Resource, outcome))
 		}
 
 		entry.RevertOutcome = outcome
@@ -219,6 +225,13 @@ func (s *importsService) unwind(
 	log *recorder,
 ) (entity.ImportOutcome, error) {
 	switch entry.Resource {
+	// An embed made nothing of its own: it rewrote a description that the issue entry beside
+	// it will delete outright. Saying so in its own case rather than letting it fall through
+	// keeps the default arm meaning "a resource nothing here knows how to undo".
+	case entity.ImportEmbed:
+		return entity.ImportOutcomeRetained, nil
+	case entity.ImportAttachment:
+		return s.removeAttachment(ctx, run, entry)
 	case entity.ImportIssueParent:
 		return s.unlinkParent(ctx, run, decision, entry, log)
 	case entity.ImportIssueRelation:
@@ -227,6 +240,8 @@ func (s *importsService) unwind(
 		return s.removeComment(ctx, run, entry)
 	case entity.ImportIssue:
 		return s.removeIssue(ctx, run, decision, entry, log)
+	case entity.ImportCycle:
+		return s.removeCycle(ctx, run, decision, entry)
 	case entity.ImportLabel:
 		return s.removeLabel(ctx, run, decision, entry)
 	case entity.ImportLabelGroup:
@@ -301,6 +316,31 @@ func (s *importsService) unlinkRelation(
 	}
 
 	if err := s.relations.Delete(ctx, entry.CreatedID); err != nil {
+		return "", err
+	}
+
+	return entity.ImportOutcomeDeleted, nil
+}
+
+func (s *importsService) removeAttachment(
+	ctx context.Context,
+	run entity.ImportRun,
+	entry entity.ImportLedgerEntry,
+) (entity.ImportOutcome, error) {
+	file, err := s.files.GetByID(ctx, run.WorkspaceID, entry.CreatedID)
+	if err != nil {
+		if errors.Is(err, entity.ErrAttachmentNotFound) {
+			return entity.ImportOutcomeRetained, nil
+		}
+
+		return "", err
+	}
+
+	if !file.Stored() {
+		return entity.ImportOutcomeRetained, nil
+	}
+
+	if err := s.fileWriter.Remove(ctx, run.WorkspaceID, file.IssueID, file.ID); err != nil {
 		return "", err
 	}
 
@@ -400,7 +440,59 @@ func (s *importsService) removeIssue(
 		return entity.ImportOutcomeRetained, nil
 	}
 
-	if err := s.issues.Purge(ctx, issue.ID, time.Now().UTC()); err != nil {
+	// The delayed purge is no use here: it finishes a deletion somebody asked for and refuses
+	// an issue that is not already soft-deleted with its grace period spent, which an imported
+	// issue never is. Sending the import back through that lifecycle instead would leave a
+	// reverted backlog sitting pending deletion for the whole grace period, which is worse than
+	// the import it was meant to undo.
+	purged, err := s.issues.PurgeImported(ctx, run.WorkspaceID, []uuid.UUID{issue.ID})
+	if err != nil {
+		return "", err
+	}
+
+	if purged == 0 {
+		return entity.ImportOutcomeRetained, nil
+	}
+
+	return entity.ImportOutcomeDeleted, nil
+}
+
+func (s *importsService) removeCycle(
+	ctx context.Context,
+	run entity.ImportRun,
+	decision entity.Decision,
+	entry entity.ImportLedgerEntry,
+) (entity.ImportOutcome, error) {
+	cycle, err := s.cycles.GetVisible(ctx, run.WorkspaceID, entry.CreatedID, decision.Scope)
+	if err != nil {
+		if errors.Is(err, entity.ErrCycleNotFound) {
+			return entity.ImportOutcomeRetained, nil
+		}
+
+		return "", err
+	}
+
+	if cycle.UpdatedAt.After(entry.CreatedAtRecorded) {
+		return entity.ImportOutcomeSkippedModified, nil
+	}
+
+	// workspace_issues.cycle_id is ON DELETE SET NULL, so nothing in the database refuses
+	// this delete: an issue somebody planned into the cycle after the import would simply
+	// come out of it, with no record of where it had been put.
+	carried, err := s.issues.ListVisible(ctx, decision.Scope, entity.IssuePage{
+		Limit:    1,
+		Statuses: entity.IssueStatuses(),
+		CycleID:  &cycle.ID,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if len(carried) > 0 {
+		return entity.ImportOutcomeSkippedInUse, nil
+	}
+
+	if err := s.cycles.Delete(ctx, cycle.ID); err != nil {
 		return "", err
 	}
 

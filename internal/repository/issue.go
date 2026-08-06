@@ -21,6 +21,7 @@ type Issue interface {
 	MoveToTeam(ctx context.Context, issueID uuid.UUID, expectedVersion int, teamID, stateID uuid.UUID, timestamps entity.StateTimestamps, changedAt time.Time) error
 	SetStatus(ctx context.Context, issueID uuid.UUID, expectedVersion int, lifecycle entity.IssueLifecycle, changedAt time.Time) error
 	Purge(ctx context.Context, issueID uuid.UUID, due time.Time) error
+	PurgeImported(ctx context.Context, workspaceID uuid.UUID, ids []uuid.UUID) (int, error)
 	StampLabels(ctx context.Context, issueID uuid.UUID, expectedVersion int, changedAt time.Time) error
 	ReassignState(ctx context.Context, fromStateID, toStateID uuid.UUID) error
 	Ancestors(ctx context.Context, issueID uuid.UUID) ([]uuid.UUID, error)

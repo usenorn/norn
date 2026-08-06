@@ -250,6 +250,21 @@ func (mr *MockIssueMockRecorder) Purge(ctx, issueID, due any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Purge", reflect.TypeOf((*MockIssue)(nil).Purge), ctx, issueID, due)
 }
 
+// PurgeImported mocks base method.
+func (m *MockIssue) PurgeImported(ctx context.Context, workspaceID uuid.UUID, ids []uuid.UUID) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PurgeImported", ctx, workspaceID, ids)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PurgeImported indicates an expected call of PurgeImported.
+func (mr *MockIssueMockRecorder) PurgeImported(ctx, workspaceID, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgeImported", reflect.TypeOf((*MockIssue)(nil).PurgeImported), ctx, workspaceID, ids)
+}
+
 // ReassignState mocks base method.
 func (m *MockIssue) ReassignState(ctx context.Context, fromStateID, toStateID uuid.UUID) error {
 	m.ctrl.T.Helper()

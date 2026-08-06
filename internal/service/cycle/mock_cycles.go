@@ -72,6 +72,21 @@ func (mr *MockCyclesMockRecorder) Close(ctx, workspaceID, cycleID, input any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockCycles)(nil).Close), ctx, workspaceID, cycleID, input)
 }
 
+// Create mocks base method.
+func (m *MockCycles) Create(ctx context.Context, input service.CreateCycleInput) (service.CycleView, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Create", ctx, input)
+	ret0, _ := ret[0].(service.CycleView)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Create indicates an expected call of Create.
+func (mr *MockCyclesMockRecorder) Create(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCycles)(nil).Create), ctx, input)
+}
+
 // Current mocks base method.
 func (m *MockCycles) Current(ctx context.Context, workspaceID uuid.UUID) ([]service.TeamCycle, error) {
 	m.ctrl.T.Helper()

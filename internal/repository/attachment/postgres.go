@@ -46,9 +46,10 @@ const createAttachmentQuery = `
 WITH created AS (
     INSERT INTO workspace_issue_attachments
         (id, workspace_id, issue_id, comment_id, uploaded_by_account_id,
-         object_key, file_name, content_type, size_bytes, status, reclaim_after)
+         object_key, file_name, content_type, size_bytes, status, reclaim_after,
+         created_at, updated_at)
     VALUES ($1, $2, nullif($3, '')::uuid, nullif($4, '')::uuid, nullif($5, '')::uuid,
-            $6, $7, $8, $9, $10, $11)
+            $6, $7, $8, $9, $10, $11, $12, $13)
     RETURNING *
 )
 SELECT` + attachmentColumns + `
@@ -211,6 +212,8 @@ func (r *attachmentRepository) Create(
 		reclaimAfter = *attachment.ReclaimAfter
 	}
 
+	createdAt, updatedAt := entity.OriginStamp(attachment.Origin, time.Now().UTC())
+
 	created, err := scanAttachment(r.db.Querier(ctx).QueryRowContext(
 		ctx, createAttachmentQuery,
 		attachment.ID.String(),
@@ -224,6 +227,8 @@ func (r *attachmentRepository) Create(
 		attachment.SizeBytes,
 		string(attachment.Status),
 		reclaimAfter,
+		createdAt,
+		updatedAt,
 	))
 	if err != nil {
 		return entity.Attachment{}, fmt.Errorf("create attachment: %w", err)

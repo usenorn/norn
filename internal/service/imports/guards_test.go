@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/usenorn/norn/internal/entity"
 )
 
 func importSources(t *testing.T) map[string]string {
@@ -35,6 +37,67 @@ func importSources(t *testing.T) map[string]string {
 	}
 
 	return sources
+}
+
+func bodyOf(t *testing.T, name, signature string) string {
+	t.Helper()
+
+	body := importSources(t)[name]
+
+	at := strings.Index(body, signature)
+	if at < 0 {
+		t.Fatalf("%s no longer holds %s, so this guard is protecting nothing", name, signature)
+	}
+
+	body = body[at+len(signature):]
+
+	if end := strings.Index(body, "\nfunc "); end >= 0 {
+		body = body[:end]
+	}
+
+	return body
+}
+
+func caseLabelFor(resource entity.ImportResource) string {
+	label := "case entity.Import"
+
+	for _, part := range strings.Split(string(resource), "_") {
+		label += strings.ToUpper(part[:1]) + part[1:]
+	}
+
+	return label + ":"
+}
+
+func TestAResourceNoRevertNamesIsSilentlyUnrevertible(t *testing.T) {
+	body := bodyOf(t, "revert.go", "func (s *importsService) unwind(")
+
+	for _, resource := range entity.ImportPhases() {
+		if !strings.Contains(body, caseLabelFor(resource)) {
+			t.Errorf(
+				"unwind has no arm for %q, so its default arm answers retained and no error. The "+
+					"revert reports every row of that resource as left standing on purpose, the run "+
+					"settles as reverted, and nothing anywhere says the workspace still holds what "+
+					"the import made.",
+				resource,
+			)
+		}
+	}
+}
+
+func TestAResourceNoPreviewNamesIsSilentlyInvisible(t *testing.T) {
+	body := bodyOf(t, "preview.go", "func (w *previewWalk) consider(")
+
+	for _, resource := range entity.ImportPhases() {
+		if !strings.Contains(body, caseLabelFor(resource)) {
+			t.Errorf(
+				"consider has no arm for %q, so its default arm returns nil. The preview shows "+
+					"nothing of that resource, the requester accepts an import smaller than the one "+
+					"that runs, and the first they hear of it is rows appearing that no page ever "+
+					"named.",
+				resource,
+			)
+		}
+	}
 }
 
 func TestApplyingAChunkOpensExactlyOneTransaction(t *testing.T) {

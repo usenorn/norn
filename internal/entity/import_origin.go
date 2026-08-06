@@ -51,6 +51,14 @@ func (o ImportOrigin) Stamp(fallback time.Time) (time.Time, time.Time) {
 	return o.CreatedAt, o.UpdatedAt
 }
 
+// OriginAttributed is the nil-safe form of Attributed, and it is what every concession
+// granted to an import must test. A pointer merely being non-nil is not enough: a value
+// decoded from a request body is non-nil and inert, so a nil check would hand the
+// concession to any caller who named the field.
+func OriginAttributed(origin *ImportOrigin) bool {
+	return origin != nil && origin.attributed
+}
+
 func OriginStamp(origin *ImportOrigin, fallback time.Time) (time.Time, time.Time) {
 	if origin == nil {
 		return fallback, fallback

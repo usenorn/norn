@@ -3,7 +3,9 @@ package imports_test
 import (
 	"context"
 	"errors"
+	"maps"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -17,6 +19,7 @@ import (
 
 type standing struct {
 	issues map[uuid.UUID]entity.Issue
+	purged []uuid.UUID
 }
 
 func unwinding(h *harness) *standing {
@@ -58,16 +61,7 @@ func unwinding(h *harness) *standing {
 		}).
 		AnyTimes()
 
-	h.issues.EXPECT().
-		Purge(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, issueID uuid.UUID, _ time.Time) error {
-			h.followed("delete " + held.issues[issueID].Reference())
-
-			delete(held.issues, issueID)
-
-			return nil
-		}).
-		AnyTimes()
+	purging(h, held.issues, &held.purged)
 
 	return held
 }
@@ -474,39 +468,99 @@ func TestAnIssueSomebodyHasWorkedOnSinceIsLeftWhereItIs(t *testing.T) {
 	}
 }
 
-func TestALabelSomebodyElseHasPutToUseSurvivesTheRevert(t *testing.T) {
-	h := newHarness(t).backed().scopedTo()
+func cycleReverting(h *harness, issues []entity.Issue) entity.Cycle {
+	cycle := entity.Cycle{
+		ID:        uuid.New(),
+		TeamKey:   "CORE",
+		Number:    7,
+		StartsOn:  sourceCycleStartsOn,
+		EndsOn:    sourceCycleEndsOn,
+		UpdatedAt: time.Now().UTC().Add(-time.Hour),
+	}
 
-	label := entity.Label{ID: uuid.New(), Name: "Bug", UpdatedAt: time.Now().UTC().Add(-time.Hour)}
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), h.run().WorkspaceID, cycle.ID, gomock.Any()).
+		Return(cycle, nil)
 
-	h.labels.EXPECT().
-		GetByID(gomock.Any(), h.run().WorkspaceID, label.ID).
-		Return(label, nil)
-	h.labels.EXPECT().
-		Usage(gomock.Any(), label.ID, gomock.Any()).
-		Return(entity.LabelUsage{Issues: 3}, nil)
+	h.issues.EXPECT().
+		ListVisible(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ entity.TeamScope, page entity.IssuePage) ([]entity.Issue, error) {
+			if page.CycleID == nil || *page.CycleID != cycle.ID {
+				return nil, nil
+			}
+
+			return issues, nil
+		}).
+		AnyTimes()
+
+	h.cycles.EXPECT().
+		Delete(gomock.Any(), cycle.ID).
+		DoAndReturn(func(_ context.Context, id uuid.UUID) error {
+			h.followed("delete cycle " + id.String())
+
+			return nil
+		}).
+		AnyTimes()
 
 	h.alreadyMade(entity.ImportLedgerEntry{
-		Resource:          entity.ImportLabel,
-		CreatedID:         label.ID,
-		ExternalID:        sourceLabelBug,
-		Reference:         label.Name,
+		Resource:          entity.ImportCycle,
+		CreatedID:         cycle.ID,
+		ExternalID:        sourceCycle,
+		Reference:         "Sprint 7",
 		CreatedAtRecorded: time.Now().UTC(),
 	})
 
 	h.at(entity.ImportImported)
 
+	return cycle
+}
+
+func TestACycleTheImportMadeIsTakenBackOutWithIt(t *testing.T) {
+	h := newHarness(t).backed().scopedTo()
+
+	cycle := cycleReverting(h, nil)
+
 	if err := h.runner.RunRevert(context.Background(), revertPayload(h)); err != nil {
 		t.Fatalf("run revert: %v", err)
 	}
 
-	if outcome := outcomeOf(t, h, sourceLabelBug); outcome != entity.ImportOutcomeSkippedInUse {
+	if outcome := outcomeOf(t, h, sourceCycle); outcome != entity.ImportOutcomeDeleted {
 		t.Fatalf(
-			"a label with three issues on it was recorded as %q on the way out. The label came "+
-				"from the import but the work wearing it did not, and deleting it strips those "+
-				"issues of a label somebody chose deliberately.",
+			"a cycle the import made and nothing has been planned into was recorded as %q. A "+
+				"revert that leaves the sprints behind leaves the team a cadence of empty windows "+
+				"nobody asked for.",
 			outcome,
 		)
+	}
+
+	if !slices.Contains(h.trace, "delete cycle "+cycle.ID.String()) {
+		t.Errorf("the cycle was never deleted: %v", h.trace)
+	}
+}
+
+func TestACycleSomebodyHasPlannedWorkIntoSurvivesTheRevert(t *testing.T) {
+	h := newHarness(t).backed().scopedTo()
+
+	cycle := cycleReverting(h, []entity.Issue{{
+		ID: uuid.New(), ReferenceKey: "CORE", Number: 12, Status: entity.IssueStatusActive,
+	}})
+
+	if err := h.runner.RunRevert(context.Background(), revertPayload(h)); err != nil {
+		t.Fatalf("run revert: %v", err)
+	}
+
+	if outcome := outcomeOf(t, h, sourceCycle); outcome != entity.ImportOutcomeSkippedInUse {
+		t.Fatalf(
+			"a cycle with an issue still planned into it was recorded as %q on the way out. "+
+				"workspace_issues.cycle_id clears itself on delete, so nothing in the database "+
+				"refuses this: the issue somebody moved in after the import would simply come out "+
+				"of the sprint, with no record that it had ever been in one.",
+			outcome,
+		)
+	}
+
+	if slices.Contains(h.trace, "delete cycle "+cycle.ID.String()) {
+		t.Errorf("the cycle was deleted anyway: %v", h.trace)
 	}
 }
 
@@ -777,5 +831,453 @@ func TestAnImportStillRunningCannotBeReverted(t *testing.T) {
 				status, err,
 			)
 		}
+	}
+}
+
+func (s *applied) matching(page entity.IssuePage) []entity.Issue {
+	found := make([]entity.Issue, 0, len(s.held))
+
+	for _, issue := range s.held {
+		if page.CycleID != nil && issue.CycleID != *page.CycleID {
+			continue
+		}
+
+		if page.ProjectID != nil && issue.ProjectID != *page.ProjectID {
+			continue
+		}
+
+		if page.Filter != nil && !filterHolds(*page.Filter, issue) {
+			continue
+		}
+
+		found = append(found, issue)
+	}
+
+	if page.Limit > 0 && len(found) > page.Limit {
+		found = found[:page.Limit]
+	}
+
+	return found
+}
+
+func filterHolds(filter entity.IssueFilter, issue entity.Issue) bool {
+	if filter.Field != entity.IssueFilterFieldState || filter.Op != entity.IssueFilterOpIs {
+		return true
+	}
+
+	return slices.Contains(filter.Values, issue.State.ID.String())
+}
+
+func (s *applied) wearers(labelID uuid.UUID) int {
+	worn := 0
+
+	for _, issue := range s.held {
+		for _, label := range issue.Labels {
+			if label.ID == labelID {
+				worn++
+			}
+		}
+	}
+
+	return worn
+}
+
+func (s *applied) labelNamed(t *testing.T, name string) entity.Label {
+	t.Helper()
+
+	for _, label := range s.standingLabels {
+		if label.Name == name {
+			return label
+		}
+	}
+
+	t.Fatalf("no label named %q was created", name)
+
+	return entity.Label{}
+}
+
+func (s *applied) leftStanding() []string {
+	named := make([]string, 0)
+
+	for _, issue := range s.held {
+		named = append(named, "issue "+issue.Reference())
+	}
+
+	for _, label := range s.standingLabels {
+		named = append(named, "label "+label.Name)
+	}
+
+	for _, group := range s.standingGroups {
+		named = append(named, "label group "+group.Name)
+	}
+
+	for _, project := range s.standingProjects {
+		named = append(named, "project "+project.Slug)
+	}
+
+	for _, state := range s.standingStates {
+		named = append(named, "state "+state.Name)
+	}
+
+	for _, cycle := range s.standingCycles {
+		named = append(named, "cycle "+strconv.Itoa(cycle.Number))
+	}
+
+	slices.Sort(named)
+
+	return named
+}
+
+// reverting answers the reads and deletes the walk makes on everything the apply pass built,
+// out of the same rows applying handed back. Nothing here decides whether a row may go: that
+// is what is under test, and a fake that keeps its own view of which rows are the import's
+// would answer the question for it.
+func reverting(h *harness, made *applied) {
+	h.issues.EXPECT().
+		ListVisible(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_ entity.TeamScope,
+			page entity.IssuePage,
+		) ([]entity.Issue, error) {
+			return made.matching(page), nil
+		}).
+		AnyTimes()
+
+	h.labels.EXPECT().
+		GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, labelID uuid.UUID) (entity.Label, error) {
+			label, standing := made.standingLabels[labelID]
+			if !standing {
+				return entity.Label{}, entity.ErrLabelNotFound
+			}
+
+			return label, nil
+		}).
+		AnyTimes()
+
+	h.labels.EXPECT().
+		ListByWorkspaceID(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_ uuid.UUID,
+			_ entity.TeamScope,
+		) ([]entity.Label, error) {
+			return slices.Collect(maps.Values(made.standingLabels)), nil
+		}).
+		AnyTimes()
+
+	h.labels.EXPECT().
+		Usage(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			labelID uuid.UUID,
+			_ entity.TeamScope,
+		) (entity.LabelUsage, error) {
+			return entity.LabelUsage{Issues: made.wearers(labelID)}, nil
+		}).
+		AnyTimes()
+
+	h.labels.EXPECT().
+		Delete(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, labelID uuid.UUID) error {
+			h.followed("delete label " + made.standingLabels[labelID].Name)
+
+			delete(made.standingLabels, labelID)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.groups.EXPECT().
+		GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, groupID uuid.UUID) (entity.LabelGroup, error) {
+			group, standing := made.standingGroups[groupID]
+			if !standing {
+				return entity.LabelGroup{}, entity.ErrLabelGroupNotFound
+			}
+
+			return group, nil
+		}).
+		AnyTimes()
+
+	h.groups.EXPECT().
+		Delete(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, groupID uuid.UUID) error {
+			h.followed("delete label group " + made.standingGroups[groupID].Name)
+
+			delete(made.standingGroups, groupID)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.projects.EXPECT().
+		GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, projectID uuid.UUID) (entity.Project, error) {
+			project, standing := made.standingProjects[projectID]
+			if !standing {
+				return entity.Project{}, entity.ErrProjectNotFound
+			}
+
+			return project, nil
+		}).
+		AnyTimes()
+
+	h.projects.EXPECT().
+		HasConcealedWork(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(false, nil).
+		AnyTimes()
+
+	h.projects.EXPECT().
+		Delete(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, projectID uuid.UUID) error {
+			h.followed("delete project " + made.standingProjects[projectID].Slug)
+
+			delete(made.standingProjects, projectID)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_, cycleID uuid.UUID,
+			_ entity.TeamScope,
+		) (entity.Cycle, error) {
+			cycle, standing := made.standingCycles[cycleID]
+			if !standing {
+				return entity.Cycle{}, entity.ErrCycleNotFound
+			}
+
+			return cycle, nil
+		}).
+		AnyTimes()
+
+	h.cycles.EXPECT().
+		Delete(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, cycleID uuid.UUID) error {
+			h.followed("delete cycle " + strconv.Itoa(made.standingCycles[cycleID].Number))
+
+			delete(made.standingCycles, cycleID)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.states.EXPECT().
+		Delete(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, stateID uuid.UUID) error {
+			h.followed("delete state " + made.standingStates[stateID].Name)
+
+			delete(made.standingStates, stateID)
+
+			return nil
+		}).
+		AnyTimes()
+}
+
+// importedFromCSV runs a whole import of rows that carry no dates of their own and leaves the
+// run ready to be taken back out. Every row it creates is therefore stamped by its repository
+// from a clock read inside the applying transaction, which is the one arrangement in which a
+// ledger entry dated by the database — where now() is frozen at the transaction's start —
+// lands a hair before the rows it names.
+func importedFromCSV(t *testing.T, h *harness, team entity.Team) *applied {
+	t.Helper()
+
+	h.stageEverything(newUndatedSource(t))
+	onlyTheTeamIsDecided(h, team.ID)
+
+	made := applying(h, team)
+
+	h.at(entity.ImportMapped)
+
+	if err := h.runner.RunExecute(context.Background(), executePayload(h)); err != nil {
+		t.Fatalf("run execute: %v", err)
+	}
+
+	if h.run().Status != entity.ImportImported {
+		t.Fatalf("the import ended %q, so there is nothing here to take back out", h.run().Status)
+	}
+
+	reverting(h, made)
+
+	h.trace = nil
+	h.at(entity.ImportImported)
+
+	return made
+}
+
+func TestAnImportedIssueIsDeletedOutrightRatherThanSentThroughTheDelayedPurge(t *testing.T) {
+	h := newHarness(t).backed().scopedTo()
+
+	held := unwinding(h)
+	issue := held.carrying("PLA", 1)
+
+	h.alreadyMade(issueEntry(issue, "issue-plain"))
+
+	h.at(entity.ImportImported)
+
+	if err := h.runner.RunRevert(context.Background(), revertPayload(h)); err != nil {
+		t.Fatalf("run revert: %v", err)
+	}
+
+	if outcome := outcomeOf(t, h, "issue-plain"); outcome != entity.ImportOutcomeDeleted {
+		t.Fatalf(
+			"an issue this import created and nobody has touched since came out of the revert as "+
+				"%q. The delayed purge finishes a deletion somebody asked for and takes only a row "+
+				"already soft-deleted with its grace period spent; an imported issue is active and "+
+				"has no deadline on it, so a revert routed through that path refuses every issue it "+
+				"walks and hands back a run marked reverted with the whole backlog still standing.",
+			outcome,
+		)
+	}
+
+	if !slices.Equal(held.purged, []uuid.UUID{issue.ID}) {
+		t.Fatalf(
+			"the revert deleted %v, want exactly the one id the ledger names (%v). A delete this "+
+				"direct has no grace period behind it, so the ids it is handed are the only thing "+
+				"standing between a revert and somebody else's work.",
+			held.purged, issue.ID,
+		)
+	}
+
+	if _, standing := held.issues[issue.ID]; standing {
+		t.Fatalf(
+			"%s is still there after a revert that reported success. Somebody asked for the import "+
+				"to be taken back out, was told it had been, and their workspace is unchanged.",
+			issue.Reference(),
+		)
+	}
+}
+
+func TestAnImportWhoseRowsCarriedNoDatesIsStillTakenBackOutWhole(t *testing.T) {
+	h := newHarness(t).backed()
+	team := teamNamed("Core")
+
+	h.scopedTo(team.ID)
+
+	made := importedFromCSV(t, h, team)
+
+	if err := h.runner.RunRevert(context.Background(), revertPayload(h)); err != nil {
+		t.Fatalf("run revert: %v", err)
+	}
+
+	if standing := made.leftStanding(); len(standing) != 0 {
+		t.Fatalf(
+			"the revert left %v standing. Nobody had touched any of it: the run created every one "+
+				"of these rows minutes earlier and the ledger names them all. A row is judged "+
+				"modified by comparing its own timestamp against what the ledger recorded, so a "+
+				"ledger that dates itself from the transaction clock rather than from the row "+
+				"reads every row as edited a moment later by somebody who was never there, and the "+
+				"revert hands back an untouched workspace and calls it undone.",
+			standing,
+		)
+	}
+
+	for _, entry := range h.world.ledger {
+		if entry.RevertOutcome != entity.ImportOutcomeDeleted {
+			t.Errorf(
+				"the %s %q was recorded as %q on the way out, want deleted",
+				entry.Resource, entry.Reference, entry.RevertOutcome,
+			)
+		}
+	}
+
+	if h.run().Status != entity.ImportReverted {
+		t.Errorf("run ended %q, want reverted", h.run().Status)
+	}
+}
+
+func TestALabelSomebodyRenamedAfterTheImportIsLeftAlone(t *testing.T) {
+	h := newHarness(t).backed()
+	team := teamNamed("Core")
+
+	h.scopedTo(team.ID)
+
+	made := importedFromCSV(t, h, team)
+
+	renamed := made.labelNamed(t, "Chore")
+	renamed.Name = "Housekeeping"
+	renamed.UpdatedAt = time.Now().UTC()
+	made.standingLabels[renamed.ID] = renamed
+
+	if err := h.runner.RunRevert(context.Background(), revertPayload(h)); err != nil {
+		t.Fatalf("run revert: %v", err)
+	}
+
+	if outcome := outcomeOf(t, h, sourceLabelWork); outcome != entity.ImportOutcomeSkippedModified {
+		t.Fatalf(
+			"a label somebody had renamed after the import was recorded as %q. The import made the "+
+				"label, but the name on it now is somebody's own decision, and deleting it takes "+
+				"that away along with the label from every issue wearing it.",
+			outcome,
+		)
+	}
+
+	if _, standing := made.standingLabels[renamed.ID]; !standing {
+		t.Fatalf("the renamed label was deleted anyway: %v", h.trace)
+	}
+
+	if outcome := outcomeOf(t, h, sourceLabelBug); outcome != entity.ImportOutcomeDeleted {
+		t.Errorf(
+			"the untouched label beside it was recorded as %q. One label somebody worked on does "+
+				"not make the rest of the import theirs.",
+			outcome,
+		)
+	}
+
+	if outcome := outcomeOf(t, h, sourceGroup); outcome != entity.ImportOutcomeSkippedInUse {
+		t.Errorf(
+			"the group still holding that label was recorded as %q. Deleting a group out from "+
+				"under a label somebody kept leaves their label loose in the workspace.",
+			outcome,
+		)
+	}
+}
+
+func TestALabelStillWornByWorkTheImportNeverMadeSurvivesTheRevert(t *testing.T) {
+	h := newHarness(t).backed()
+	team := teamNamed("Core")
+
+	h.scopedTo(team.ID)
+
+	made := importedFromCSV(t, h, team)
+	bug := made.labelNamed(t, "Bug")
+
+	own := entity.Issue{
+		ID:           uuid.New(),
+		WorkspaceID:  h.run().WorkspaceID,
+		TeamID:       team.ID,
+		ReferenceKey: team.Key,
+		Number:       99,
+		Version:      1,
+		Title:        "Filed here, after the import",
+		Status:       entity.IssueStatusActive,
+		Labels:       []entity.Label{{ID: bug.ID}},
+	}
+	made.held[own.ID] = own
+
+	if err := h.runner.RunRevert(context.Background(), revertPayload(h)); err != nil {
+		t.Fatalf("run revert: %v", err)
+	}
+
+	if outcome := outcomeOf(t, h, sourceLabelBug); outcome != entity.ImportOutcomeSkippedInUse {
+		t.Fatalf(
+			"a label worn by an issue this import never made was recorded as %q on the way out. "+
+				"The label came from the import but the work wearing it did not, and deleting it "+
+				"strips that issue of a label somebody chose deliberately.",
+			outcome,
+		)
+	}
+
+	if _, standing := made.standingLabels[bug.ID]; !standing {
+		t.Fatalf("the label was deleted anyway: %v", h.trace)
+	}
+
+	if _, standing := made.held[own.ID]; !standing {
+		t.Fatalf("the revert deleted %s, which no ledger entry names", own.Reference())
 	}
 }

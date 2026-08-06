@@ -41,10 +41,12 @@ type handler struct {
 	auditLog          service.AuditLog
 	directories       service.Directories
 	licensing         service.Licensing
+	imports           service.Imports
 	app               config.App
 	instance          config.Instance
 	password          config.Password
 	session           config.Session
+	importing         config.Imports
 }
 
 func New(
@@ -75,10 +77,12 @@ func New(
 	auditLog service.AuditLog,
 	directories service.Directories,
 	licensing service.Licensing,
+	imports service.Imports,
 	app config.App,
 	instance config.Instance,
 	password config.Password,
 	session config.Session,
+	importing config.Imports,
 ) api.StrictServerInterface {
 	return &handler{
 		accounts:          accounts,
@@ -108,10 +112,12 @@ func New(
 		auditLog:          auditLog,
 		directories:       directories,
 		licensing:         licensing,
+		imports:           imports,
 		app:               app,
 		instance:          instance,
 		password:          password,
 		session:           session,
+		importing:         importing,
 	}
 }
 

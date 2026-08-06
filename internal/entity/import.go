@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"slices"
 	"time"
@@ -9,10 +11,12 @@ import (
 )
 
 const (
-	ImportChunkSize     = 25
-	ImportSourceKindMax = 64
-	ImportExternalIDMax = 512
-	ImportSubjectMax    = 254
+	ImportChunkSize      = 25
+	ImportSourceKindMax  = 64
+	ImportExternalIDMax  = 512
+	ImportSubjectMax     = 254
+	ImportRunPageDefault = 25
+	ImportRunPageMax     = 100
 )
 
 var (
@@ -29,6 +33,12 @@ var (
 	ErrImportTeamMappingRequired = errors.New("every source project must map onto a team this account can reach")
 	ErrImportNotRevertible       = errors.New("only a finished import can be reverted")
 	ErrImportRecordNotStaged     = errors.New("import record is no longer staged")
+	ErrImportCursorInvalid       = errors.New("import run cursor is invalid")
+
+	ErrImportEncryptionKeyMissing = errors.New(
+		"this instance has no encryption key, so an import source key cannot be stored or read. " +
+			"Set NORN_SECURITY_ENCRYPTION_KEY to 32 base64-encoded random bytes and restart",
+	)
 )
 
 type ImportResource string
@@ -39,10 +49,13 @@ const (
 	ImportLabelGroup    ImportResource = "label_group"
 	ImportLabel         ImportResource = "label"
 	ImportProject       ImportResource = "project"
+	ImportCycle         ImportResource = "cycle"
 	ImportIssue         ImportResource = "issue"
 	ImportIssueParent   ImportResource = "issue_parent"
 	ImportIssueRelation ImportResource = "issue_relation"
 	ImportComment       ImportResource = "comment"
+	ImportAttachment    ImportResource = "attachment"
+	ImportEmbed         ImportResource = "embed"
 )
 
 func ImportPhases() []ImportResource {
@@ -52,10 +65,13 @@ func ImportPhases() []ImportResource {
 		ImportLabelGroup,
 		ImportLabel,
 		ImportProject,
+		ImportCycle,
 		ImportIssue,
 		ImportIssueParent,
 		ImportIssueRelation,
 		ImportComment,
+		ImportAttachment,
+		ImportEmbed,
 	}
 }
 
@@ -63,12 +79,14 @@ func (r ImportResource) Valid() bool {
 	return slices.Contains(ImportPhases(), r)
 }
 
-// Fetched reports whether a resource arrives from the source. Only the parent link does
-// not: every tracker models a parent as a property of the child, so it rides in on the
-// issue record and is derived as the page is staged. A relation belongs to neither of the
-// issues it joins and so has no record to ride in on, which is why it is fetched.
+// Fetched reports whether a resource arrives from the source. Two do not, and for the same
+// reason: they are already inside a row the source did send, so they are derived as the page
+// is staged. Every tracker models a parent as a property of the child, and an inline image
+// is a link inside a body that the file record beside it already names. A relation belongs
+// to neither of the issues it joins and so has no record to ride in on, which is why it is
+// fetched.
 func (r ImportResource) Fetched() bool {
-	return r != ImportIssueParent
+	return r != ImportIssueParent && r != ImportEmbed
 }
 
 type ImportStatus string
@@ -146,6 +164,37 @@ func (s ImportStatus) CanTransitionTo(target ImportStatus) bool {
 	}
 }
 
+// Configurable reports whether a run's source configuration may still be changed. Rows
+// were drained with the key and the selection the run was given, so a run that has moved
+// past staged would otherwise hold rows that its own configuration no longer explains.
+func (s ImportStatus) Configurable() bool {
+	return s == ImportDraft || s == ImportStaging || s == ImportStaged
+}
+
+type ImportUnknownPolicy string
+
+const (
+	ImportUnknownCreate ImportUnknownPolicy = "create"
+	ImportUnknownSkip   ImportUnknownPolicy = "skip"
+	ImportUnknownFail   ImportUnknownPolicy = "fail"
+)
+
+func ImportUnknownPolicies() []ImportUnknownPolicy {
+	return []ImportUnknownPolicy{ImportUnknownCreate, ImportUnknownSkip, ImportUnknownFail}
+}
+
+func (p ImportUnknownPolicy) Valid() bool {
+	return slices.Contains(ImportUnknownPolicies(), p)
+}
+
+func (p ImportUnknownPolicy) Or(fallback ImportUnknownPolicy) ImportUnknownPolicy {
+	if p == "" {
+		return fallback
+	}
+
+	return p
+}
+
 type ImportRecordState string
 
 const (
@@ -220,7 +269,25 @@ func OutcomeForImport(err error) ImportOutcome {
 		errors.Is(err, ErrProjectNotFound),
 		errors.Is(err, ErrLabelNotFound),
 		errors.Is(err, ErrWorkflowStateNotFound),
+		errors.Is(err, ErrIssueCommentNotAuthor),
 		errors.Is(err, ErrAccountForbidden):
+		return ImportOutcomeSkipped
+
+	case errors.Is(err, ErrIssueRelationExists),
+		errors.Is(err, ErrIssueRelationSelf),
+		errors.Is(err, ErrProjectSlugTaken),
+		errors.Is(err, ErrCycleOverlaps),
+		errors.Is(err, ErrCycleTeamMismatch),
+		errors.Is(err, ErrStorageExhausted),
+		errors.Is(err, ErrAttachmentTooLarge):
+		return ImportOutcomeSkipped
+
+	case errors.Is(err, ErrTeamKeyTaken),
+		errors.Is(err, ErrWorkflowStateNameTaken),
+		errors.Is(err, ErrLabelNameTaken),
+		errors.Is(err, ErrLabelGroupNameTaken),
+		errors.Is(err, ErrLabelGroupExclusive),
+		errors.Is(err, ErrIssueReferenceTaken):
 		return ImportOutcomeSkipped
 
 	case errors.As(err, &validation):
@@ -261,6 +328,9 @@ type ImportRun struct {
 	PhaseError          string
 	PreviewDigest       string
 	AcknowledgeTriage   bool
+	Settings            json.RawMessage
+	UnknownReferences   ImportUnknownPolicy
+	SourceSecretSet     bool
 	LeaseToken          uuid.UUID
 	LeaseExpiresAt      *time.Time
 	Attempt             int
@@ -348,6 +418,53 @@ type ImportReportLine struct {
 type ImportReportCursor struct {
 	RecordedAt time.Time
 	ID         uuid.UUID
+}
+
+type ImportRunCursor struct {
+	CreatedAt time.Time
+	RunID     uuid.UUID
+}
+
+func (c ImportRunCursor) Encode() string {
+	return base64.RawURLEncoding.EncodeToString(
+		[]byte(c.RunID.String() + c.CreatedAt.UTC().Format(time.RFC3339Nano)),
+	)
+}
+
+func DecodeImportRunCursor(raw string) (ImportRunCursor, error) {
+	decoded, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil || len(decoded) < ActivityCursorIDLen {
+		return ImportRunCursor{}, ErrImportCursorInvalid
+	}
+
+	runID, err := uuid.Parse(string(decoded[:ActivityCursorIDLen]))
+	if err != nil {
+		return ImportRunCursor{}, ErrImportCursorInvalid
+	}
+
+	createdAt, err := time.Parse(time.RFC3339Nano, string(decoded[ActivityCursorIDLen:]))
+	if err != nil {
+		return ImportRunCursor{}, ErrImportCursorInvalid
+	}
+
+	return ImportRunCursor{CreatedAt: createdAt, RunID: runID}, nil
+}
+
+func (r ImportRun) Cursor() ImportRunCursor {
+	return ImportRunCursor{CreatedAt: r.CreatedAt, RunID: r.ID}
+}
+
+type ImportRunPage struct {
+	Cursor *ImportRunCursor
+	Limit  int
+}
+
+func (p ImportRunPage) Normalized() ImportRunPage {
+	if p.Limit <= 0 || p.Limit > ImportRunPageMax {
+		p.Limit = ImportRunPageDefault
+	}
+
+	return p
 }
 
 type ImportWalk struct {

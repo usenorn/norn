@@ -3,6 +3,7 @@ package imports
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/crypter"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
 )
@@ -19,17 +21,38 @@ SELECT id, workspace_id, source_kind, source_label,
        coalesce(requested_by_account_id::text, ''), requested_actor_kind, requested_auth_method,
        coalesce(reverted_by_account_id::text, ''), reverted_actor_kind, reverted_auth_method,
        status, phase_error, preview_digest, acknowledge_triage,
+       source_settings, unknown_reference_policy, source_secret_sealed IS NOT NULL,
        coalesce(lease_token::text, ''), lease_expires_at, attempt, staged, processed,
        staged_at, mapped_at, started_at, finished_at, reverted_at, created_at, updated_at
 FROM workspace_import_runs`
+
+const runsByWorkspaceQuery = runColumns + `
+WHERE workspace_id = $1
+  AND ($2 = '' OR (created_at, id) < ($3::timestamptz, $2::uuid))
+ORDER BY created_at DESC, id DESC
+LIMIT $4`
 
 const insertRunQuery = `
 INSERT INTO workspace_import_runs (
     id, workspace_id, source_kind, source_label,
     requested_by_account_id, requested_actor_kind, requested_auth_method,
-    status, preview_digest, acknowledge_triage, created_at, updated_at
+    status, preview_digest, acknowledge_triage,
+    source_settings, unknown_reference_policy, created_at, updated_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
+
+const saveSourceConfigQuery = `
+UPDATE workspace_import_runs
+SET source_secret_sealed = coalesce($2, source_secret_sealed),
+    source_settings = $3,
+    unknown_reference_policy = $4,
+    updated_at = now()
+WHERE id = $1`
+
+const sourceConfigQuery = `
+SELECT source_secret_sealed, source_settings
+FROM workspace_import_runs
+WHERE id = $1`
 
 const runByIDQuery = runColumns + `
 WHERE id = $1 AND workspace_id = $2`
@@ -101,11 +124,42 @@ LIMIT $3
 FOR UPDATE SKIP LOCKED`
 
 type runRepository struct {
-	db *postgres.Client
+	db      *postgres.Client
+	crypter *crypter.Crypter
 }
 
-func NewImportRun(db *postgres.Client) repository.ImportRun {
-	return &runRepository{db: db}
+func NewImportRun(db *postgres.Client, sealer *crypter.Crypter) repository.ImportRun {
+	return &runRepository{db: db, crypter: sealer}
+}
+
+func (r *runRepository) seal(secret string) ([]byte, error) {
+	sealed, err := r.crypter.Seal([]byte(secret))
+	if err != nil {
+		if errors.Is(err, crypter.ErrKeyMissing) {
+			return nil, entity.ErrImportEncryptionKeyMissing
+		}
+
+		return nil, fmt.Errorf("seal import source key: %w", err)
+	}
+
+	return sealed, nil
+}
+
+func (r *runRepository) open(sealed []byte) (string, error) {
+	if len(sealed) == 0 {
+		return "", nil
+	}
+
+	secret, err := r.crypter.Open(sealed)
+	if err != nil {
+		if errors.Is(err, crypter.ErrKeyMissing) {
+			return "", entity.ErrImportEncryptionKeyMissing
+		}
+
+		return "", fmt.Errorf("open stored import source key: %w", err)
+	}
+
+	return string(secret), nil
 }
 
 func (r *runRepository) Create(
@@ -141,6 +195,8 @@ func (r *runRepository) Create(
 		string(run.Status),
 		run.PreviewDigest,
 		run.AcknowledgeTriage,
+		settingsOf(run.Settings),
+		string(run.UnknownReferences.Or(entity.ImportUnknownSkip)),
 		run.CreatedAt,
 		run.UpdatedAt,
 	); err != nil {
@@ -166,6 +222,113 @@ func (r *runRepository) GetByID(
 	}
 
 	return run, nil
+}
+
+func (r *runRepository) ListByWorkspace(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	page entity.ImportRunPage,
+) ([]entity.ImportRun, error) {
+	page = page.Normalized()
+
+	cursor, at := "", time.Time{}
+
+	if page.Cursor != nil {
+		cursor, at = page.Cursor.RunID.String(), page.Cursor.CreatedAt
+	}
+
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx, runsByWorkspaceQuery, workspaceID.String(), cursor, at, page.Limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list import runs: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	runs := make([]entity.ImportRun, 0, page.Limit)
+
+	for rows.Next() {
+		run, err := scanRun(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan import run: %w", err)
+		}
+
+		runs = append(runs, run)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read import runs: %w", err)
+	}
+
+	return runs, nil
+}
+
+func (r *runRepository) SaveSourceConfig(
+	ctx context.Context,
+	runID uuid.UUID,
+	secret string,
+	settings json.RawMessage,
+	policy entity.ImportUnknownPolicy,
+) error {
+	var sealed any
+
+	if secret != "" {
+		ciphertext, err := r.seal(secret)
+		if err != nil {
+			return err
+		}
+
+		sealed = ciphertext
+	}
+
+	saved, err := r.affected(
+		ctx,
+		saveSourceConfigQuery,
+		runID.String(),
+		sealed,
+		settingsOf(settings),
+		string(policy.Or(entity.ImportUnknownSkip)),
+	)
+	if err != nil {
+		return fmt.Errorf("save import source config: %w", err)
+	}
+
+	if saved == 0 {
+		return entity.ErrImportRunNotFound
+	}
+
+	return nil
+}
+
+func (r *runRepository) SourceConfigForStaging(
+	ctx context.Context,
+	runID uuid.UUID,
+) (repository.ImportSourceSecret, error) {
+	var (
+		sealed   []byte
+		settings string
+	)
+
+	if err := r.db.Querier(ctx).QueryRowContext(
+		ctx, sourceConfigQuery, runID.String(),
+	).Scan(&sealed, &settings); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return repository.ImportSourceSecret{}, entity.ErrImportRunNotFound
+		}
+
+		return repository.ImportSourceSecret{}, fmt.Errorf("read import source config: %w", err)
+	}
+
+	secret, err := r.open(sealed)
+	if err != nil {
+		return repository.ImportSourceSecret{}, err
+	}
+
+	return repository.ImportSourceSecret{
+		Secret:   secret,
+		Settings: json.RawMessage(settings),
+	}, nil
 }
 
 func (r *runRepository) Claim(
@@ -352,6 +515,7 @@ func scanRun(row scanner) (entity.ImportRun, error) {
 		requestedMethod, revertedBy     string
 		revertedKind, revertedMethod    string
 		status, leaseToken              string
+		settings, unknownReferences     string
 		leaseExpires, stagedAt          sql.NullTime
 		mappedAt, startedAt, finishedAt sql.NullTime
 		revertedAt                      sql.NullTime
@@ -362,6 +526,7 @@ func scanRun(row scanner) (entity.ImportRun, error) {
 		&requestedBy, &requestedKind, &requestedMethod,
 		&revertedBy, &revertedKind, &revertedMethod,
 		&status, &run.PhaseError, &run.PreviewDigest, &run.AcknowledgeTriage,
+		&settings, &unknownReferences, &run.SourceSecretSet,
 		&leaseToken, &leaseExpires, &run.Attempt, &run.Staged, &run.Processed,
 		&stagedAt, &mappedAt, &startedAt, &finishedAt, &revertedAt,
 		&run.CreatedAt, &run.UpdatedAt,
@@ -378,6 +543,8 @@ func scanRun(row scanner) (entity.ImportRun, error) {
 	run.RevertedActorKind = entity.ActorKind(revertedKind)
 	run.RevertedAuthMethod = entity.SessionAuthMethod(revertedMethod)
 	run.Status = entity.ImportStatus(status)
+	run.Settings = json.RawMessage(settings)
+	run.UnknownReferences = entity.ImportUnknownPolicy(unknownReferences)
 	run.LeaseToken = parseID(leaseToken)
 	run.LeaseExpiresAt = optionalTime(leaseExpires)
 	run.StagedAt = optionalTime(stagedAt)
@@ -396,6 +563,14 @@ func parseID(raw string) uuid.UUID {
 	}
 
 	return parsed
+}
+
+func settingsOf(settings json.RawMessage) string {
+	if len(settings) == 0 {
+		return "{}"
+	}
+
+	return string(settings)
 }
 
 func optionalID(id uuid.UUID) any {
