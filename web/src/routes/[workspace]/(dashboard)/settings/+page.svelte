@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { goto, invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { enhance as changeEnhance } from "$app/forms";
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Settings from "@lucide/svelte/icons/settings";
@@ -14,23 +13,15 @@
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
-	import { api } from "$lib/api";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { workspaceSettingsSchema } from "$lib/workspace/settings-schema";
-	import {
-		nameMessage,
-		purgeDate,
-		settingsFor,
-		timezoneMessage,
-		timezones,
-		type WorkspaceSettings,
-	} from "$lib/workspace/settings";
+	import { purgeDate, timezones, type WorkspaceSettings } from "$lib/workspace/settings";
 	import { workspaceSettingsPreviewStates } from "./preview";
-	import type { PageProps } from "./$types";
+	import type { PageProps, SubmitFunction } from "./$types";
 
 	const formId = "workspace-settings-form";
 
-	let { data }: PageProps = $props();
+	let { data, form: submitted }: PageProps = $props();
 
 	const preview = $derived(
 		import.meta.env.DEV
@@ -38,62 +29,24 @@
 			: undefined
 	);
 
-	let submitted = $state<WorkspaceSettings | null>(null);
 	let confirmation = $state("");
-	let deleting = $state(false);
+	let changing = $state(false);
 
-	const settings = $derived<WorkspaceSettings>(submitted ?? preview?.settings ?? data.settings);
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
+		id: formId,
+		validators: zod4Client(workspaceSettingsSchema),
+		resetForm: false,
+	});
+	const { form: formData, enhance, submitting, message } = form;
+
+	const settings = $derived<WorkspaceSettings>(
+		submitted?.settings ?? $message ?? preview?.settings ?? data.settings
+	);
 	const workspace = $derived(settings.workspace);
 	const pending = $derived(settings.kind === "pending_deletion" ? settings : null);
 	const teams = $derived(preview?.teams ?? data.teams);
 	const zones = timezones();
-
-	const form = superForm(defaults(zod4(workspaceSettingsSchema)), {
-		id: formId,
-		SPA: true,
-		validators: zod4Client(workspaceSettingsSchema),
-		resetForm: false,
-		onUpdate: async ({ form: pendingForm }) => {
-			if (!pendingForm.valid) return;
-
-			try {
-				const { data: updated, error } = await api.PATCH("/workspaces/{workspaceId}", {
-					params: { path: { workspaceId: workspace.id } },
-					body: {
-						name: pendingForm.data.name,
-						timezone: pendingForm.data.timezone,
-						defaultTeamId: pendingForm.data.defaultTeamId || undefined,
-					},
-				});
-
-				if (updated) {
-					submitted = { kind: "saved", workspace: updated };
-					await invalidate(keys.workspaceScope(data.workspace.id));
-
-					return;
-				}
-
-				if (error && "code" in error && error.code === "workspace_deleted") {
-					submitted = settingsFor({ ...workspace, status: "pending_deletion" });
-
-					return;
-				}
-
-				for (const field of error?.errors ?? []) {
-					if (field.field === "name") setError(pendingForm, "name", nameMessage(field.code));
-					if (field.field === "timezone") {
-						setError(pendingForm, "timezone", timezoneMessage(field.code));
-					}
-					if (field.field === "defaultTeamId") {
-						setError(pendingForm, "defaultTeamId", "That team cannot be the default.");
-					}
-				}
-			} catch {
-				submitted = { kind: "unavailable", workspace };
-			}
-		},
-	});
-	const { form: formData, enhance, submitting } = form;
 
 	$effect(() => {
 		const { name, timezone } = workspace;
@@ -103,57 +56,20 @@
 		});
 	});
 
-	const busy = $derived($submitting || deleting);
+	const busy = $derived($submitting || changing);
 	const confirmed = $derived(confirmation.trim() === workspace.slug);
 
-	async function remove() {
-		if (!confirmed) return;
+	const trackChange: SubmitFunction = () => {
+		changing = true;
 
-		deleting = true;
+		return async ({ result, update }) => {
+			await update();
 
-		try {
-			const { data: deleted, error } = await api.DELETE("/workspaces/{workspaceId}", {
-				params: { path: { workspaceId: workspace.id } },
-			});
+			if (result.type === "success") confirmation = "";
 
-			if (deleted) {
-				submitted = settingsFor(deleted);
-				confirmation = "";
-				await invalidate(keys.workspaceScope(data.workspace.id));
-
-				return;
-			}
-
-			if (error) submitted = { kind: "unavailable", workspace };
-		} catch {
-			submitted = { kind: "unavailable", workspace };
-		} finally {
-			deleting = false;
-		}
-	}
-
-	async function restore() {
-		deleting = true;
-
-		try {
-			const { data: restored, error } = await api.POST("/workspaces/{workspaceId}/restore", {
-				params: { path: { workspaceId: workspace.id } },
-			});
-
-			if (restored) {
-				submitted = settingsFor(restored);
-				await invalidate(keys.workspaceScope(data.workspace.id));
-
-				return;
-			}
-
-			if (error) submitted = { kind: "unavailable", workspace };
-		} catch {
-			submitted = { kind: "unavailable", workspace };
-		} finally {
-			deleting = false;
-		}
-	}
+			changing = false;
+		};
+	};
 </script>
 
 <svelte:head><title>Settings · {workspace.name} · Norn</title></svelte:head>
@@ -179,9 +95,12 @@
 						Until then an administrator can bring it back, and nobody can change anything in it.
 					</Alert.Description>
 					<Alert.Action>
-						<Button variant="secondary" size="sm" disabled={busy} onclick={restore}>
-							{deleting ? "Restoring" : "Restore this workspace"}
-						</Button>
+						<form method="POST" action="?/restore" use:changeEnhance={trackChange}>
+							<input type="hidden" name="workspaceId" value={workspace.id} />
+							<Button type="submit" variant="secondary" size="sm" disabled={busy}>
+								{changing ? "Restoring" : "Restore this workspace"}
+							</Button>
+						</form>
 					</Alert.Action>
 				</Alert.Root>
 			{/if}
@@ -212,7 +131,11 @@
 					</p>
 				</div>
 
-				<form id={formId} method="POST" use:enhance class="flex flex-col gap-4">
+				<form id={formId} method="POST" action="?/save" use:enhance class="flex flex-col gap-4">
+					<input type="hidden" name="workspaceId" value={workspace.id} />
+					<input type="hidden" name="timezone" value={$formData.timezone} />
+					<input type="hidden" name="defaultTeamId" value={$formData.defaultTeamId} />
+
 					<Form.Field {form} name="name">
 						<Form.Control>
 							{#snippet children({ props })}
@@ -502,11 +425,12 @@
 						/>
 					</div>
 
-					<div>
-						<Button variant="destructive" disabled={busy || !confirmed} onclick={remove}>
-							{deleting ? "Deleting" : "Delete workspace"}
+					<form method="POST" action="?/delete" use:changeEnhance={trackChange}>
+						<input type="hidden" name="workspaceId" value={workspace.id} />
+						<Button type="submit" variant="destructive" disabled={busy || !confirmed}>
+							{changing ? "Deleting" : "Delete workspace"}
 						</Button>
-					</div>
+					</form>
 				</section>
 			{/if}
 		</div>

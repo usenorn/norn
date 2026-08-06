@@ -2,8 +2,8 @@
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
-	import { defaults, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import ChevronUp from "@lucide/svelte/icons/chevron-up";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -16,7 +16,6 @@
 	import { api } from "$lib/api";
 	import { viewSchema } from "$lib/views/view-schema";
 	import {
-		listingFor,
 		reordered,
 		scopeOf,
 		sharingLabels,
@@ -27,7 +26,6 @@
 		viewsOf,
 		readViewFailure,
 		type SavedView,
-		type SavedViewSharing,
 		type ViewFailure,
 		type ViewListing,
 	} from "$lib/views/views";
@@ -43,16 +41,14 @@
 		import.meta.env.DEV ? viewsPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	let submitted = $state<ViewListing | null>(null);
 	let localFailure = $state<ViewFailure | null>(null);
 	let localWorking = $state("");
 	let announcement = $state("");
 
 	const slug = $derived(data.workspace.slug);
-	const listing = $derived<ViewListing>(submitted ?? preview?.listing ?? data.listing);
+	const listing = $derived<ViewListing>(preview?.listing ?? data.listing);
 	const views = $derived(viewsOf(listing));
 	const teams = $derived(preview?.teams ?? data.teams);
-	const failure = $derived<ViewFailure | null>(preview?.failure ?? localFailure);
 	const working = $derived(preview?.working ?? localWorking);
 
 	const removalId = $derived(preview?.removing ?? page.url.searchParams.get("remove") ?? "");
@@ -60,20 +56,34 @@
 	const editingId = $derived(preview?.editing ?? page.url.searchParams.get("edit") ?? "");
 	const editing = $derived(views.find((view) => view.id === editingId) ?? null);
 
-	async function refresh() {
-		const { data: fresh } = await api.GET("/workspaces/{workspaceId}/saved-views", {
-			params: { path: { workspaceId: data.workspace.id } },
-		});
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
+		id: formId,
+		validators: zod4Client(viewSchema),
+		resetForm: false,
+		onSubmit: () => {
+			localFailure = null;
+		},
+		onResult: ({ result }) => {
+			if (result.type === "redirect") announcement = `${$formData.name} was saved.`;
+		},
+	});
 
-		submitted = listingFor(fresh);
-		await invalidate(keys.views(data.workspace.id));
+	const { form: formData, enhance, submitting, message } = form;
+
+	const failure = $derived<ViewFailure | null>(preview?.failure ?? $message ?? localFailure);
+	const busy = $derived(working !== "" || $submitting);
+
+	function clearFailure() {
+		localFailure = null;
+		message.set(undefined);
 	}
 
 	async function closePanels() {
 		const next = new URL(page.url);
 		next.searchParams.delete("remove");
 		next.searchParams.delete("edit");
-		localFailure = null;
+		clearFailure();
 
 		await goto(next, { replaceState: true, noScroll: true, keepFocus: true });
 	}
@@ -85,50 +95,6 @@
 
 		return `${next.pathname}${next.search}`;
 	}
-
-	const form = superForm(defaults(zod4(viewSchema)), {
-		id: formId,
-		SPA: true,
-		validators: zod4Client(viewSchema),
-		resetForm: false,
-		onUpdate: async ({ form: pending }) => {
-			if (!pending.valid || !editing) return;
-
-			localFailure = null;
-
-			const body = {
-				name: pending.data.name,
-				sharing: pending.data.sharing as SavedViewSharing,
-				...(pending.data.sharing === "team" ? { teamId: pending.data.teamId } : {}),
-			};
-
-			try {
-				const { data: saved, error } = await api.PATCH(
-					"/workspaces/{workspaceId}/saved-views/{savedViewId}",
-					{
-						params: { path: { workspaceId: data.workspace.id, savedViewId: editing.id } },
-						body,
-					}
-				);
-
-				if (error || !saved) {
-					localFailure = readViewFailure(error);
-
-					return;
-				}
-
-				announcement = `${saved.name} was saved.`;
-				await closePanels();
-				await refresh();
-			} catch {
-				localFailure = { kind: "unavailable" };
-			}
-		},
-	});
-
-	const { form: formData, enhance, submitting } = form;
-
-	const busy = $derived(working !== "" || $submitting);
 
 	$effect(() => {
 		const view = editing;
@@ -144,7 +110,7 @@
 		if (!removing) return;
 
 		localWorking = removing.id;
-		localFailure = null;
+		clearFailure();
 
 		try {
 			const { error } = await api.DELETE(
@@ -165,7 +131,7 @@
 
 			announcement = `${removing.name} was removed.`;
 			await closePanels();
-			await refresh();
+			await invalidate(keys.views(data.workspace.id));
 		} catch {
 			localFailure = { kind: "unavailable" };
 		} finally {
@@ -178,7 +144,7 @@
 		if (savedViewIds.every((id, index) => id === views[index].id)) return;
 
 		localWorking = view.id;
-		localFailure = null;
+		clearFailure();
 
 		try {
 			const { data: ordered, error } = await api.PUT(
@@ -192,7 +158,6 @@
 				return;
 			}
 
-			submitted = listingFor(ordered);
 			announcement = `${view.name} moved to position ${savedViewIds.indexOf(view.id) + 1} of ${savedViewIds.length}.`;
 			await invalidate(keys.views(data.workspace.id));
 		} catch {
@@ -318,6 +283,8 @@
 							{#if editing?.id === view.id}
 								<div class="flex flex-col gap-4 border-t border-line-subtle bg-paper-2 px-3 py-4">
 									<form method="POST" id={formId} use:enhance class="flex flex-col gap-4">
+										<input type="hidden" name="workspaceId" value={data.workspace.id} />
+										<input type="hidden" name="savedViewId" value={view.id} />
 										<Form.Field {form} name="name">
 											<Form.Control>
 												{#snippet children({ props })}
@@ -332,7 +299,12 @@
 											<Form.Control>
 												{#snippet children({ props })}
 													<Form.Label>Who sees it</Form.Label>
-													<Select.Root type="single" bind:value={$formData.sharing} disabled={busy}>
+													<Select.Root
+														type="single"
+														name={props.name}
+														bind:value={$formData.sharing}
+														disabled={busy}
+													>
 														<Select.Trigger {...props}>
 															{sharingLabels[$formData.sharing]}
 														</Select.Trigger>
@@ -357,6 +329,7 @@
 														<Form.Label>Team</Form.Label>
 														<Select.Root
 															type="single"
+															name={props.name}
 															bind:value={$formData.teamId}
 															disabled={busy}
 														>

@@ -1,7 +1,8 @@
 <script lang="ts">
+	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import Bot from "@lucide/svelte/icons/bot";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
@@ -13,6 +14,7 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
+	import { keys } from "$lib/api/keys";
 	import { onDate } from "$lib/time";
 	import { registerAgentSchema } from "$lib/agents/register-agent-schema";
 	import {
@@ -21,7 +23,6 @@
 		agentScopeLabels,
 		approvalsPath,
 		failureMessage,
-		registerFailure,
 		type AgentFailure,
 		type AgentListing,
 	} from "$lib/agents/agents";
@@ -37,89 +38,30 @@
 		import.meta.env.DEV ? agentsPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	let submitted = $state<AgentListing | null>(null);
-	let failure = $state<AgentFailure | null>(null);
-	let copied = $state(false);
+	let copiedValue = $state<string | null>(null);
 	let disabling = $state<string | null>(null);
+	let disableFailure = $state<AgentFailure | null>(null);
 
 	const workspace = $derived(data.workspace);
-	const listing = $derived<AgentListing>(submitted ?? preview?.listing ?? data.listing);
+	const listing = $derived<AgentListing>(preview?.listing ?? data.listing);
 	const people = $derived(preview?.people ?? data.people);
 	const teams = $derived(preview?.teams ?? data.teams);
 
-	const form = superForm(defaults(zod4(registerAgentSchema)), {
-		SPA: true,
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
 		validators: zod4Client(registerAgentSchema),
 		resetForm: false,
-		onUpdate: async ({ form: entered }) => {
-			if (!entered.valid) return;
-
-			failure = null;
-			copied = false;
-
-			try {
-				const { data: registered, error } = await api.POST("/workspaces/{workspaceId}/agents", {
-					params: { path: { workspaceId: workspace.id } },
-					body: {
-						name: entered.data.name,
-						ownerAccountId: entered.data.ownerAccountId,
-						scopes: entered.data.scopes,
-						allTeams: entered.data.allTeams,
-						teamIds: entered.data.allTeams ? undefined : entered.data.teamIds,
-						actionLimit: entered.data.actionLimit,
-					},
-				});
-
-				if (error) {
-					const mapped = registerFailure(error);
-
-					if (mapped.kind === "name_taken") {
-						setError(entered, "name", failureMessage(mapped));
-
-						return;
-					}
-
-					failure = mapped;
-
-					return;
-				}
-
-				if (!registered) {
-					failure = { kind: "unavailable" };
-
-					return;
-				}
-
-				const owner = people.find((person) => person.accountId === entered.data.ownerAccountId);
-
-				submitted = {
-					kind: "registered",
-					agent: registered.agent,
-					value: registered.value,
-					agents: [
-						{
-							agent: registered.agent,
-							ownerName: owner?.displayName ?? "",
-							ownerEmail: owner?.email ?? "",
-						},
-						...current,
-					],
-				};
-
-				formData.set({
-					name: "",
-					ownerAccountId: entered.data.ownerAccountId,
-					scopes: [],
-					allTeams: true,
-					teamIds: [],
-					actionLimit: defaultLimit,
-				});
-			} catch {
-				failure = { kind: "unavailable" };
-			}
+		onSubmit: () => {
+			disableFailure = null;
 		},
 	});
-	const { form: formData, enhance, submitting } = form;
+	const { form: formData, enhance, submitting, message } = form;
+
+	const outcome = $derived($message ?? null);
+	const issued = $derived(outcome && outcome.kind === "issued" ? outcome : null);
+	const failure = $derived<AgentFailure | null>(
+		disableFailure ?? (outcome && outcome.kind !== "issued" ? outcome : null)
+	);
 
 	$effect(() => {
 		if ($formData.actionLimit === 0) {
@@ -138,7 +80,8 @@
 		listing.kind === "ready" || listing.kind === "registered" ? listing.agents : []
 	);
 
-	const registered = $derived(listing.kind === "registered" ? listing : null);
+	const registered = $derived(listing.kind === "registered" ? listing : issued);
+	const copied = $derived(copiedValue === registered?.value);
 	const showForm = $derived(listing.kind !== "forbidden" && listing.kind !== "unavailable");
 
 	const ownerName = $derived(
@@ -173,12 +116,12 @@
 	async function copyValue() {
 		if (!registered) return;
 		await navigator.clipboard.writeText(registered.value);
-		copied = true;
+		copiedValue = registered.value;
 	}
 
 	async function disable(agentId: string) {
 		disabling = agentId;
-		failure = null;
+		disableFailure = null;
 
 		try {
 			const { error } = await api.DELETE("/workspaces/{workspaceId}/agents/{agentId}", {
@@ -186,21 +129,14 @@
 			});
 
 			if (error) {
-				failure = error.status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
+				disableFailure = error.status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
 
 				return;
 			}
 
-			submitted = {
-				kind: "ready",
-				agents: current.map((owned) =>
-					owned.agent.id === agentId
-						? { ...owned, agent: { ...owned.agent, status: "disabled" as const } }
-						: owned
-				),
-			};
+			await invalidate(keys.page(page.route.id));
 		} catch {
-			failure = { kind: "unavailable" };
+			disableFailure = { kind: "unavailable" };
 		} finally {
 			disabling = null;
 		}
@@ -276,6 +212,16 @@
 
 			{#if showForm}
 				<form method="POST" id={formId} use:enhance class="flex flex-col gap-5">
+					<input type="hidden" name="workspaceId" value={workspace.id} />
+					{#if $formData.allTeams}
+						<input type="hidden" name="allTeams" value="true" />
+					{/if}
+					{#each $formData.scopes as scope (scope)}
+						<input type="hidden" name="scopes" value={scope} />
+					{/each}
+					{#each $formData.teamIds as teamId (teamId)}
+						<input type="hidden" name="teamIds" value={teamId} />
+					{/each}
 					<div class="flex flex-col gap-1">
 						<h2 class="text-md font-medium tracking-snug text-ink-900">Register an agent</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -304,7 +250,12 @@
 						<Form.Control>
 							{#snippet children({ props })}
 								<Form.Label>Acts for</Form.Label>
-								<Select.Root type="single" bind:value={$formData.ownerAccountId} disabled={busy}>
+								<Select.Root
+									type="single"
+									name={props.name}
+									bind:value={$formData.ownerAccountId}
+									disabled={busy}
+								>
 									<Select.Trigger {...props}>{ownerName}</Select.Trigger>
 									<Select.Content>
 										{#each people as person (person.accountId)}

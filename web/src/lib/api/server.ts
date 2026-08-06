@@ -45,6 +45,21 @@ function relaySetCookie(cookies: Cookies, response: Response) {
 	}
 }
 
+function unreachable(correlationId: string): Response {
+	const problem = {
+		type: "about:blank",
+		title: "Service Unavailable",
+		status: 503,
+		detail: "the api could not be reached",
+		instance: correlationId,
+	};
+
+	return new Response(JSON.stringify(problem), {
+		status: 503,
+		headers: { "content-type": "application/problem+json" },
+	});
+}
+
 export function apiForEvent(event: RequestEvent): Client<paths> {
 	return createClient<paths>({
 		baseUrl: `${env.INTERNAL_API_ORIGIN || loopbackOrigin}/v1`,
@@ -56,7 +71,13 @@ export function apiForEvent(event: RequestEvent): Client<paths> {
 			request.headers.set("user-agent", event.request.headers.get("user-agent") ?? "");
 			request.headers.set(correlationHeader, event.locals.correlationId);
 
-			const response = await fetch(request);
+			let response: Response;
+
+			try {
+				response = await fetch(request);
+			} catch {
+				return unreachable(event.locals.correlationId);
+			}
 
 			relaySetCookie(event.cookies, response);
 

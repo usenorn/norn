@@ -2,8 +2,8 @@
 	import { invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
-	import { defaults, setError, superForm } from "sveltekit-superforms";
-	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { superForm } from "sveltekit-superforms";
+	import { zod4Client } from "sveltekit-superforms/adapters";
 	import Archive from "@lucide/svelte/icons/archive";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -34,12 +34,7 @@
 	import type { StateList } from "$lib/team/states";
 	import { settingsFor, teamOf, type TeamSettings } from "$lib/team/team-settings";
 	import { teamSettingsSchema } from "$lib/team/team-settings-schema";
-	import {
-		teamNameMessage,
-		visibilityLabels,
-		visibilityNotes,
-		type TeamVisibility,
-	} from "$lib/team/teams";
+	import { visibilityLabels, visibilityNotes, type TeamVisibility } from "$lib/team/teams";
 	import {
 		memberName,
 		searchDebounceMs,
@@ -66,8 +61,21 @@
 	let archiving = $state(false);
 	let removing = $state("");
 
+	// svelte-ignore state_referenced_locally
+	const form = superForm(data.form, {
+		id: settingsFormId,
+		validators: zod4Client(teamSettingsSchema),
+		resetForm: false,
+		onUpdated: ({ form: result }) => {
+			if (result.message) submitted = null;
+		},
+	});
+	const { form: formData, enhance, submitting, message } = form;
+
 	const slug = $derived(page.params.workspace ?? "");
-	const settings = $derived<TeamSettings>(submitted ?? preview?.settings ?? data.settings);
+	const settings = $derived<TeamSettings>(
+		submitted ?? $message ?? preview?.settings ?? data.settings
+	);
 	const roster = $derived<TeamRoster>(submittedRoster ?? preview?.roster ?? data.roster);
 	const states = $derived<StateList>(preview?.states ?? data.states);
 	const cadence = $derived<CadenceSetting>(preview?.cadence ?? data.cadence);
@@ -80,52 +88,6 @@
 
 	const members = $derived(membersOf(roster));
 	const visibilities: TeamVisibility[] = ["public", "private"];
-
-	const form = superForm(defaults(zod4(teamSettingsSchema)), {
-		id: settingsFormId,
-		SPA: true,
-		validators: zod4Client(teamSettingsSchema),
-		resetForm: false,
-		onUpdate: async ({ form: pendingForm }) => {
-			if (!pendingForm.valid || !team) return;
-
-			try {
-				const { data: updated, error } = await api.PATCH(
-					"/workspaces/{workspaceId}/teams/{teamId}",
-					{
-						params: { path: { workspaceId: data.workspace.id, teamId: team.id } },
-						body: { name: pendingForm.data.name, visibility: pendingForm.data.visibility },
-					}
-				);
-
-				if (updated) {
-					submitted = { kind: "saved", team: updated };
-					await invalidate(keys.page(page.route.id));
-
-					return;
-				}
-
-				if (error?.status === 403) {
-					submitted = { kind: "read_only", team };
-
-					return;
-				}
-
-				if (error && "code" in error && error.code === "team_archived") {
-					submitted = { kind: "archived", team };
-
-					return;
-				}
-
-				for (const field of error?.errors ?? []) {
-					if (field.field === "name") setError(pendingForm, "name", teamNameMessage(field.code));
-				}
-			} catch {
-				submitted = { kind: "unavailable" };
-			}
-		},
-	});
-	const { form: formData, enhance, submitting } = form;
 
 	let candidateQuery = $state("");
 	let candidates = $state<Membership[]>([]);
@@ -375,6 +337,9 @@
 					</div>
 
 					<form id={settingsFormId} method="POST" use:enhance class="flex flex-col gap-4">
+						<input type="hidden" name="workspaceId" value={data.workspace.id} />
+						<input type="hidden" name="teamId" value={team.id} />
+
 						<Form.Field {form} name="name">
 							<Form.Control>
 								{#snippet children({ props })}
@@ -401,6 +366,7 @@
 									<Form.Label>Who can see it</Form.Label>
 									<Select.Root
 										type="single"
+										name={props.name}
 										value={$formData.visibility}
 										disabled={locked}
 										onValueChange={(value) => ($formData.visibility = value as TeamVisibility)}
