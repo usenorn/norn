@@ -397,6 +397,27 @@
 
 			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Source control</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Connect a GitHub or GitLab repository and Norn ties the branches, commits and pull
+						requests that name an issue to that issue, and shows whether they are open, in
+						review, merged or closed. A team can have a merged change move its issue on, and a
+						platform issue carrying your label is kept in step with a Norn one both ways.
+					</p>
+				</div>
+
+				<div class="flex flex-wrap gap-2">
+					<Button
+						variant="secondary"
+						href={workspacePath(workspace.slug, "/settings/source-control")}
+					>
+						Connect a repository
+					</Button>
+				</div>
+			</section>
+
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">Imports</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Bring a backlog across from Linear or a file of rows. Norn reads the source into a copy

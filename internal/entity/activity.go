@@ -39,6 +39,8 @@ const (
 	ActivityKindMemberRemoved     ActivityKind = "member_removed"
 	ActivityKindAttachmentAdded   ActivityKind = "attachment_added"
 	ActivityKindAttachmentRemoved ActivityKind = "attachment_removed"
+	ActivityKindCodeLinked        ActivityKind = "code_linked"
+	ActivityKindCodeUnlinked      ActivityKind = "code_unlinked"
 )
 
 func ActivityKinds() []ActivityKind {
@@ -62,6 +64,8 @@ func ActivityKinds() []ActivityKind {
 		ActivityKindMemberRemoved,
 		ActivityKindAttachmentAdded,
 		ActivityKindAttachmentRemoved,
+		ActivityKindCodeLinked,
+		ActivityKindCodeUnlinked,
 	}
 }
 

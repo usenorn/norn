@@ -2987,6 +2987,173 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/source-control/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the repositories this workspace is connected to */
+        get: operations["listWorkspaceSourceControlConnections"];
+        put?: never;
+        /** Connect a repository, returning the webhook address and secret for the only time */
+        post: operations["connectWorkspaceSourceControl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/source-control/connections/{connectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        /** Read one connection, its health and what it is attached to */
+        get: operations["getWorkspaceSourceControlConnection"];
+        put?: never;
+        post?: never;
+        /** Disconnect a repository, keeping every link it has already made */
+        delete: operations["disconnectWorkspaceSourceControl"];
+        options?: never;
+        head?: never;
+        /** Change which team a connection serves, and the label it watches for */
+        patch: operations["updateWorkspaceSourceControlConnection"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/source-control/connections/{connectionId}/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace the token behind a connection, proving it before it is kept */
+        put: operations["replaceWorkspaceSourceControlToken"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/source-control/connections/{connectionId}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask the forge whether this connection still works */
+        post: operations["verifyWorkspaceSourceControlConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/source-control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        /** Read what this team does when a linked change merges */
+        get: operations["getTeamSourceControlSettings"];
+        /** Choose whether a merged change moves an issue, and where it moves it to */
+        put: operations["setTeamSourceControlSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/code-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** List the branches, commits and changes linked to this issue */
+        get: operations["listWorkspaceIssueCodeLinks"];
+        put?: never;
+        /** Link a change to this issue by pasting its address */
+        post: operations["linkWorkspaceIssueCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/code-links/{linkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                linkId: components["parameters"]["CodeLinkId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a link somebody made or a scan got wrong */
+        delete: operations["unlinkWorkspaceIssueCode"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/mirror": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Read the platform issue this one is kept in step with */
+        get: operations["getWorkspaceIssueMirror"];
+        /** Pair this issue with one that already exists on the platform */
+        put: operations["mirrorWorkspaceIssue"];
+        post?: never;
+        /** Stop keeping this issue in step, leaving both where they are */
+        delete: operations["unmirrorWorkspaceIssue"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4186,6 +4353,144 @@ export interface components {
         WebhookAttemptOutcome: "succeeded" | "rejected" | "refused" | "timed_out" | "failed";
         /** @enum {string} */
         WebhookDisableReason: "by_owner" | "sustained_failure";
+        /** @enum {string} */
+        SourceControlProvider: "github" | "gitlab";
+        /** @enum {string} */
+        SourceControlStatus: "connected" | "broken";
+        /** @enum {string} */
+        SourceControlBrokenReason: "credentials_rejected" | "repository_unreachable" | "hook_missing";
+        /** @enum {string} */
+        CodeLinkKind: "branch" | "commit" | "change";
+        /** @enum {string} */
+        CodeChangeState: "open" | "draft" | "in_review" | "merged" | "closed";
+        /** @description A connected repository. The token is never returned; tokenSet says whether one is held and tokenHint carries its last few characters so a person can tell which is installed. verifiedAt is when the forge last answered, which is separate from updatedAt because a connection can be edited without being proved. */
+        SourceControlConnection: {
+            /** Format: uuid */
+            id: string;
+            provider: components["schemas"]["SourceControlProvider"];
+            baseUrl?: string;
+            repository: string;
+            /** Format: uuid */
+            teamId?: string;
+            tokenSet: boolean;
+            tokenHint: string;
+            identityLogin?: string;
+            hookInstalled?: boolean;
+            mirrorLabel: string;
+            status: components["schemas"]["SourceControlStatus"];
+            brokenReason?: components["schemas"]["SourceControlBrokenReason"];
+            brokenDetail?: string;
+            /** Format: date-time */
+            brokenAt?: string;
+            /** Format: date-time */
+            verifiedAt?: string;
+            /** Format: date-time */
+            lastSeenAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MintedSourceControlConnection: {
+            connection: components["schemas"]["SourceControlConnection"];
+            webhookUrl: string;
+            webhookSecret: string;
+        };
+        ConnectSourceControlRequest: {
+            provider: components["schemas"]["SourceControlProvider"];
+            baseUrl?: string;
+            repository: string;
+            /** Format: uuid */
+            teamId?: string;
+            mirrorLabel?: string;
+            token: string;
+        };
+        UpdateSourceControlRequest: {
+            /** Format: uuid */
+            teamId?: string;
+            clearTeam?: boolean;
+            mirrorLabel?: string;
+        };
+        ReplaceSourceControlTokenRequest: {
+            token: string;
+        };
+        /** @description targetResolved is false when the team chose a state that has since been deleted. The setting still reads as on, so without this a team would look configured and quietly do nothing. */
+        TeamSourceControlSettings: {
+            /** Format: uuid */
+            teamId: string;
+            advanceOnMerge: boolean;
+            /** Format: uuid */
+            mergedStateId?: string;
+            targetResolved: boolean;
+            targetName?: string;
+        };
+        SetTeamSourceControlRequest: {
+            advanceOnMerge: boolean;
+            /** Format: uuid */
+            mergedStateId?: string;
+            clearState?: boolean;
+        };
+        /** @description Everything needed to render the link is on the link itself, so it survives the connection being removed. connected is false once that has happened. */
+        CodeLink: {
+            /** Format: uuid */
+            id: string;
+            provider: components["schemas"]["SourceControlProvider"];
+            repository: string;
+            kind: components["schemas"]["CodeLinkKind"];
+            externalId: string;
+            /** Format: int32 */
+            number?: number;
+            title?: string;
+            url: string;
+            state: components["schemas"]["CodeChangeState"];
+            author?: string;
+            detectedIn?: string;
+            advancedIssue?: boolean;
+            connected: boolean;
+            /** Format: date-time */
+            mergedAt?: string;
+            /** Format: date-time */
+            closedAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        LinkIssueCodeRequest: {
+            url: string;
+        };
+        IssueMirror: {
+            /** Format: uuid */
+            id: string;
+            provider: components["schemas"]["SourceControlProvider"];
+            repository: string;
+            externalId: string;
+            /** Format: int32 */
+            externalNumber: number;
+            url: string;
+            /** @enum {string} */
+            origin: "platform" | "norn";
+            connected: boolean;
+            /** Format: date-time */
+            pulledAt?: string;
+            /** Format: date-time */
+            pushedAt?: string;
+        };
+        MirrorIssueRequest: {
+            /** Format: uuid */
+            connectionId: string;
+            reference: string;
+        };
+        SourceControlRefusedProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "source_control_credentials_rejected" | "source_control_repository_unreachable" | "source_control_destination_refused" | "source_control_provider_unsupported";
+        };
+        SourceControlConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "source_control_already_connected" | "source_control_already_mirrored" | "source_control_team_outside_connection";
+        };
+        SourceControlSealingUnavailableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "source_control_sealing_unavailable";
+        };
         Webhook: {
             /** Format: uuid */
             id: string;
@@ -5374,6 +5679,42 @@ export interface components {
                 "application/problem+json": components["schemas"]["WebhookSigningUnavailableProblem"];
             };
         };
+        /** @description The forge refused the credentials, or could not reach the repository */
+        SourceControlRefused: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["SourceControlRefusedProblem"];
+            };
+        };
+        /** @description The repository is already connected, or the issue is already mirrored */
+        SourceControlConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["SourceControlConflictProblem"];
+            };
+        };
+        /** @description The forge is rate limiting this instance */
+        SourceControlRateLimited: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description This instance has no encryption key, so a token cannot be sealed */
+        SourceControlSealingUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["SourceControlSealingUnavailableProblem"];
+            };
+        };
         /** @description The run cannot take this step from where it stands */
         ImportConflict: {
             headers: {
@@ -5498,6 +5839,8 @@ export interface components {
         WebhookDeliveryCursor: string;
         WebhookDeliveryEventFilter: components["schemas"]["WebhookDeliveryEventType"][];
         WebhookDeliveryStateFilter: components["schemas"]["WebhookDeliveryState"][];
+        SourceControlConnectionId: string;
+        CodeLinkId: string;
         ImportRunId: string;
         ImportRunLimit: number;
         ImportRunCursor: string;
@@ -11869,6 +12212,442 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceSourceControlConnections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workspace's source control connections */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceControlConnection"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    connectWorkspaceSourceControl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectSourceControlRequest"];
+            };
+        };
+        responses: {
+            /** @description The connection, carrying what the forge needs once */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MintedSourceControlConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["SourceControlConflict"];
+            422: components["responses"]["SourceControlRefused"];
+            429: components["responses"]["SourceControlRateLimited"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["SourceControlSealingUnavailable"];
+        };
+    };
+    getWorkspaceSourceControlConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceControlConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    disconnectWorkspaceSourceControl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connection is gone and its links remain */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceSourceControlConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSourceControlRequest"];
+            };
+        };
+        responses: {
+            /** @description The connection as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceControlConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    replaceWorkspaceSourceControlToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplaceSourceControlTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description The connection, working again */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceControlConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["SourceControlRefused"];
+            429: components["responses"]["SourceControlRateLimited"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["SourceControlSealingUnavailable"];
+        };
+    };
+    verifyWorkspaceSourceControlConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connection, with when it was last proved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceControlConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["SourceControlRefused"];
+            429: components["responses"]["SourceControlRateLimited"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getTeamSourceControlSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team's setting, and whether the state it names still exists */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamSourceControlSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setTeamSourceControlSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTeamSourceControlRequest"];
+            };
+        };
+        responses: {
+            /** @description The setting as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamSourceControlSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueCodeLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What code is attached to the issue, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeLink"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    linkWorkspaceIssueCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkIssueCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description The link */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeLink"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unlinkWorkspaceIssueCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                linkId: components["parameters"]["CodeLinkId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The link is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceIssueMirror: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The mirror */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueMirror"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    mirrorWorkspaceIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MirrorIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description The mirror */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueMirror"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["SourceControlConflict"];
+            422: components["responses"]["Problem"];
+            429: components["responses"]["SourceControlRateLimited"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unmirrorWorkspaceIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The pairing is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

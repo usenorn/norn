@@ -13,6 +13,7 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/mcpauth"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/handler/http/scim"
+	"github.com/usenorn/norn/internal/handler/http/sourcecontrol"
 	"github.com/usenorn/norn/internal/handler/http/sso"
 	"github.com/usenorn/norn/internal/handler/mcpserver"
 	"github.com/usenorn/norn/internal/observability/logging"
@@ -40,6 +41,7 @@ func New(
 	eventsEdge *events.Edge,
 	auditEdge *auditexport.Edge,
 	scimEdge *scim.Edge,
+	sourceControlEdge *sourcecontrol.Edge,
 	mcpAuth *mcpauth.Edge,
 	mcpEdge *mcpserver.Edge,
 ) http.Handler {
@@ -67,6 +69,11 @@ func New(
 	bounded.Get(mcpauth.AuthorizePath, mcpAuth.Authorize)
 	bounded.Post(mcpauth.TokenPath, mcpAuth.Token)
 	bounded.Post(mcpauth.RevokePath, mcpAuth.Revoke)
+
+	// A forge chooses its own payload size and its own timeout, so this route carries its
+	// own byte cap rather than the dashboard's, which is sized for a form.
+	deliveries := base.With(chimiddleware.Timeout(cfg.RequestTimeout))
+	deliveries.Post(sourcecontrol.DeliveryPath, sourceControlEdge.Deliver)
 
 	transfers := base.With(chimiddleware.Timeout(attachmentCfg.TransferTimeout))
 	transfers.Put(blob.UploadPath, blobEdge.Receive)

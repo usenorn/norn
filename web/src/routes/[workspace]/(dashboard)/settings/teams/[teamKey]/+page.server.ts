@@ -9,6 +9,7 @@ import { settingsFor, type TeamSettings } from "$lib/team/team-settings";
 import { teamSettingsSchema } from "$lib/team/team-settings-schema";
 import { teamNameMessage, type Team } from "$lib/team/teams";
 import { settingFor, type TriageSetting, type TriageSettings } from "$lib/triage/triage";
+import type { TeamSourceControlSettings } from "$lib/source-control/source-control";
 import type { AgentSettings } from "$lib/agents/agents";
 import type { TeamNotificationSetting } from "$lib/notifications/notifications";
 import type { Actions, PageServerLoad } from "./$types";
@@ -24,6 +25,7 @@ export type TeamPageData = {
 	states: StateList;
 	cadence: CadenceSetting;
 	triage: TriageSetting;
+	sourceControl: TeamSourceControlSettings | null;
 	agents: AgentSettings | null;
 	notifications: TeamNotificationSetting;
 };
@@ -34,6 +36,7 @@ const unavailable: TeamPageData = {
 	states: { kind: "unavailable" },
 	cadence: { kind: "unavailable" },
 	triage: { kind: "unavailable" },
+	sourceControl: null,
 	agents: null,
 	notifications: { kind: "unavailable" },
 };
@@ -55,7 +58,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 
 	const path = { workspaceId: workspace.id, teamId: team.id };
 
-	const [members, states, cadence, triage, agents, notifications] = await Promise.all([
+	const [members, states, cadence, triage, agents, notifications, sourceControl] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/members", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/cycle-cadence", { params: { path } }),
@@ -64,6 +67,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/notification-settings", {
 			params: { path },
 		}),
+		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/source-control", { params: { path } }),
 	]);
 
 	return {
@@ -72,6 +76,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 		states: statesFor(states.data),
 		cadence: cadenceFor(cadence.data, cadence.response.status),
 		triage: settingFor(triage.data, triage.response.status),
+		sourceControl: sourceControl.data ?? null,
 		agents: agents.data ?? null,
 		notifications: (notifications.data
 			? { kind: "ready", settings: notifications.data }

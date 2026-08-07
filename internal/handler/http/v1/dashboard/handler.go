@@ -42,6 +42,7 @@ type handler struct {
 	directories       service.Directories
 	licensing         service.Licensing
 	imports           service.Imports
+	sourceControl     service.SourceControl
 	app               config.App
 	instance          config.Instance
 	password          config.Password
@@ -78,6 +79,7 @@ func New(
 	directories service.Directories,
 	licensing service.Licensing,
 	imports service.Imports,
+	sourceControl service.SourceControl,
 	app config.App,
 	instance config.Instance,
 	password config.Password,
@@ -113,6 +115,7 @@ func New(
 		directories:       directories,
 		licensing:         licensing,
 		imports:           imports,
+		sourceControl:     sourceControl,
 		app:               app,
 		instance:          instance,
 		password:          password,

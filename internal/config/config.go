@@ -29,6 +29,7 @@ type Config struct {
 	Webhooks      Webhooks      `mapstructure:"webhooks"`
 	Imports       Imports       `mapstructure:"imports"`
 	Linear        Linear        `mapstructure:"linear"`
+	SourceControl SourceControl `mapstructure:"source_control"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
 	GeoIP         GeoIP         `mapstructure:"geoip"`
@@ -292,6 +293,25 @@ type Linear struct {
 	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
 	MaxResponseSize int64         `mapstructure:"max_response_size"`
 	PageSize        int           `mapstructure:"page_size"`
+}
+
+type SourceControl struct {
+	GitHubEndpoint      string        `mapstructure:"github_endpoint"`
+	GitLabEndpoint      string        `mapstructure:"gitlab_endpoint"`
+	RequestTimeout      time.Duration `mapstructure:"request_timeout"`
+	DialTimeout         time.Duration `mapstructure:"dial_timeout"`
+	MaxResponseSize     int64         `mapstructure:"max_response_size"`
+	MaxDeliveryBytes    int64         `mapstructure:"max_delivery_bytes"`
+	PageSize            int           `mapstructure:"page_size"`
+	ReconcileSchedule   string        `mapstructure:"reconcile_schedule"`
+	ReconcileBatch      int           `mapstructure:"reconcile_batch"`
+	CallsPerCycle       int           `mapstructure:"calls_per_cycle"`
+	MaxCatchUp          time.Duration `mapstructure:"max_catch_up"`
+	MaxAttempts         int           `mapstructure:"max_attempts"`
+	MinBackoff          time.Duration `mapstructure:"min_backoff"`
+	MaxBackoff          time.Duration `mapstructure:"max_backoff"`
+	DeliveryRetention   time.Duration `mapstructure:"delivery_retention"`
+	AllowedDestinations []string      `mapstructure:"allowed_destinations"`
 }
 
 type MCP struct {

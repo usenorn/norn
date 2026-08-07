@@ -25,6 +25,8 @@ type JobProducer interface {
 	EnqueueImportExecute(ctx context.Context, payload entity.ImportExecutePayload, processAt time.Time) error
 	EnqueueImportRevert(ctx context.Context, payload entity.ImportRevertPayload, processAt time.Time) error
 	EnqueueImportRescue(ctx context.Context) error
+	EnqueueSCMDelivery(ctx context.Context, payload entity.SCMDeliveryPayload) error
+	EnqueueSCMReconcile(ctx context.Context) error
 }
 
 type JobInspector interface {

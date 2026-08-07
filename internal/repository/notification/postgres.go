@@ -134,7 +134,7 @@ JOIN workspace_notification_events e ON e.id = d.event_id
 JOIN accounts a
     ON a.id = d.account_id
    AND a.status = 'active'
-   AND a.kind <> 'agent'
+   AND a.kind = 'person'
    AND coalesce(a.email, '') <> ''
 LEFT JOIN workspace_notification_reads r
     ON r.workspace_id = d.workspace_id

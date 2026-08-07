@@ -12,6 +12,7 @@ import (
 	mcpauthedge "github.com/usenorn/norn/internal/handler/http/mcpauth"
 	"github.com/usenorn/norn/internal/handler/http/router"
 	scimedge "github.com/usenorn/norn/internal/handler/http/scim"
+	sourcecontroledge "github.com/usenorn/norn/internal/handler/http/sourcecontrol"
 	ssohandler "github.com/usenorn/norn/internal/handler/http/sso"
 	dashboardhandler "github.com/usenorn/norn/internal/handler/http/v1/dashboard"
 	"github.com/usenorn/norn/internal/handler/job"
@@ -19,6 +20,7 @@ import (
 	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/pkg/authz"
 	"github.com/usenorn/norn/internal/pkg/crypter"
+	"github.com/usenorn/norn/internal/pkg/forge"
 	"github.com/usenorn/norn/internal/pkg/geoip"
 	licencepkg "github.com/usenorn/norn/internal/pkg/licence"
 	"github.com/usenorn/norn/internal/pkg/lineargraph"
@@ -78,6 +80,7 @@ import (
 	samlreplayrepo "github.com/usenorn/norn/internal/repository/samlreplay"
 	samlrequestrepo "github.com/usenorn/norn/internal/repository/samlrequest"
 	savedviewrepo "github.com/usenorn/norn/internal/repository/savedview"
+	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	searchrepo "github.com/usenorn/norn/internal/repository/search"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
@@ -117,6 +120,9 @@ import (
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
+	scmsvc "github.com/usenorn/norn/internal/service/scm"
+	githubsvc "github.com/usenorn/norn/internal/service/scm/github"
+	gitlabsvc "github.com/usenorn/norn/internal/service/scm/gitlab"
 	searchsvc "github.com/usenorn/norn/internal/service/search"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
@@ -141,6 +147,7 @@ var baseSet = wire.NewSet(
 	crypter.Set,
 	licencepkg.Set,
 	lineargraph.Set,
+	forge.Set,
 	outbound.Set,
 	oidcproviderpkg.Set,
 	samlproviderpkg.Set,
@@ -208,6 +215,7 @@ var baseSet = wire.NewSet(
 	webhookrepo.Set,
 	webhooksenderrepo.Set,
 	importsrepo.Set,
+	scmrepo.Set,
 
 	accountsvc.Set,
 	workspacesvc.Set,
@@ -242,6 +250,9 @@ var baseSet = wire.NewSet(
 	importssvc.Set,
 	linearsvc.Set,
 	csvfilesvc.Set,
+	scmsvc.Set,
+	githubsvc.Set,
+	gitlabsvc.Set,
 
 	dashboardhandler.Set,
 	ssohandler.Set,
@@ -249,6 +260,7 @@ var baseSet = wire.NewSet(
 	eventsedge.Set,
 	auditexportedge.Set,
 	scimedge.Set,
+	sourcecontroledge.Set,
 	mcpauthedge.Set,
 	mcpserveredge.Set,
 	router.Set,

@@ -75,6 +75,11 @@ const (
 	AuditWorkspaceRestored AuditAction = "workspace.restored"
 	AuditWorkspacePurged   AuditAction = "workspace.purged"
 
+	AuditSourceControlConnected     AuditAction = "source_control.connected"
+	AuditSourceControlDisconnected  AuditAction = "source_control.disconnected"
+	AuditSourceControlTokenReplaced AuditAction = "source_control.token_replaced"
+	AuditSourceControlBroken        AuditAction = "source_control.broken"
+
 	AuditDirectoryConnected    AuditAction = "directory.connected"
 	AuditDirectoryDisconnected AuditAction = "directory.disconnected"
 	AuditDirectoryTokenRotated AuditAction = "directory.token_rotated"
@@ -100,6 +105,8 @@ func AuditActions() []AuditAction {
 		AuditWebhookRegistered, AuditWebhookRemoved, AuditWebhookDisabled,
 		AuditWorkspaceUpdated, AuditWorkspaceDeletion, AuditWorkspaceRestored, AuditWorkspacePurged,
 		AuditDirectoryConnected, AuditDirectoryDisconnected, AuditDirectoryTokenRotated,
+		AuditSourceControlConnected, AuditSourceControlDisconnected,
+		AuditSourceControlTokenReplaced, AuditSourceControlBroken,
 		AuditExported, AuditAccessDenied,
 	}
 }

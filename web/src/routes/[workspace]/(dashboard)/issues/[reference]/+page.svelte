@@ -73,6 +73,8 @@
 		type ActivityFeed,
 	} from "$lib/activity/activity";
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
+	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
+	import { sourceControlFailure, failureMessage as codeFailureMessage, type CodeLink, type SourceControlFailure } from "$lib/source-control/source-control";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
 	import {
@@ -146,6 +148,9 @@
 	let commentUploads = $state.raw<UploadTask[]>([]);
 	let bodyUploads = $state.raw<UploadTask[]>([]);
 	let attachmentFailure = $state<AttachmentFailure | null>(null);
+	let codeLinkFailure = $state<SourceControlFailure | null>(null);
+	let removedCodeLinks = $state.raw<string[]>([]);
+	let unlinking = $state(false);
 	let uploadSequence = 0;
 
 	const aborts = new Map<string, () => void>();
@@ -229,10 +234,39 @@
 		attachmentPreview?.panel ??
 			(ready ? ready.attachments : ({ kind: "loading" } as AttachmentPanel))
 	);
+	const codeLinks = $derived<CodeLink[]>(
+		(ready?.codeLinks ?? []).filter((link) => !removedCodeLinks.includes(link.id))
+	);
 	const activity = $derived<ActivityFeed>(
 		activityPreview?.feed ?? loadedActivity ?? ready?.activity ?? { kind: "loading" }
 	);
 	const shownCommentUploads = $derived(attachmentPreview?.uploads ?? commentUploads);
+
+	async function unlinkCode(link: CodeLink) {
+		if (!issue) return;
+
+		unlinking = true;
+		codeLinkFailure = null;
+
+		const { error } = await api.DELETE(
+			"/workspaces/{workspaceId}/issues/{issueId}/code-links/{linkId}",
+			{
+				params: {
+					path: { workspaceId: data.workspace.id, issueId: issue.id, linkId: link.id },
+				},
+			}
+		);
+
+		unlinking = false;
+
+		if (error) {
+			codeLinkFailure = sourceControlFailure(error);
+
+			return;
+		}
+
+		removedCodeLinks = [...removedCodeLinks, link.id];
+	}
 
 	const thread = $derived<CommentThread>(
 		withPushed(commentPreview?.thread ?? loadedComments ?? ready?.comments ?? { kind: "loading" })
@@ -1678,6 +1712,30 @@
 								ondismiss={(taskId) => dismissUpload("body", taskId)}
 							/>
 						{/if}
+				</section>
+
+					<section class="flex flex-col gap-0.5">
+						<div class="mb-1.5 flex items-center gap-2.5">
+							<h2 class="min-w-0 flex-1">
+								<Eyebrow rule class="text-ink-600">
+									Linked changes
+								</Eyebrow>
+							</h2>
+						</div>
+
+						{#if codeLinkFailure}
+							<Alert.Root variant="destructive">
+								<CircleX aria-hidden="true" />
+								<Alert.Title>That did not stick</Alert.Title>
+								<Alert.Description>{codeFailureMessage(codeLinkFailure)}</Alert.Description>
+							</Alert.Root>
+						{/if}
+
+						<CodeLinkPanel
+							links={codeLinks}
+							busy={unlinking}
+							onunlink={canEdit ? unlinkCode : undefined}
+						/>
 					</section>
 
 					<section class="flex flex-col gap-0.5">

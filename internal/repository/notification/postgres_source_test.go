@@ -86,7 +86,7 @@ func TestEveryReadJoinsLiveVisibilityRatherThanTrustingTheDeliveryRow(t *testing
 }
 
 func TestAnAgentIsToldInTheAppAndNeverByMail(t *testing.T) {
-	if strings.Contains(audienceQuery, "a.kind <> 'agent'") {
+	if strings.Contains(audienceQuery, "a.kind = 'person'") {
 		t.Fatal(
 			"the in-app audience excludes agents, so assigning an issue to one or mentioning it " +
 				"records the intent and then drops it. Being addressable has to reach the agent " +
@@ -94,7 +94,7 @@ func TestAnAgentIsToldInTheAppAndNeverByMail(t *testing.T) {
 		)
 	}
 
-	if !strings.Contains(digestRecipientsQuery, "a.kind <> 'agent'") {
+	if !strings.Contains(digestRecipientsQuery, "a.kind = 'person'") {
 		t.Fatal(
 			"the digest would mail an agent. An agent reads its inbox over the API; sending it " +
 				"email delivers to whatever address the account happens to carry, which is a " +
@@ -106,7 +106,7 @@ func TestAnAgentIsToldInTheAppAndNeverByMail(t *testing.T) {
 func TestTheDigestNeverMailsSomethingAlreadyReadOrAnAgent(t *testing.T) {
 	for _, rule := range []string{
 		"a.status = 'active'",
-		"a.kind <> 'agent'",
+		"a.kind = 'person'",
 		"r.read_through IS NULL OR e.created_at > r.read_through",
 	} {
 		if !strings.Contains(digestRecipientsQuery, rule) {

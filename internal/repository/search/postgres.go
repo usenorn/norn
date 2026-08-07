@@ -143,7 +143,7 @@ FROM workspace_memberships m
 JOIN accounts a
     ON a.id = m.account_id
    AND a.status = 'active'
-   AND a.kind <> 'agent'
+   AND a.kind = 'person'
    AND coalesce(a.display_name, '') <> ''
 JOIN workspace_memberships viewer
     ON viewer.workspace_id = m.workspace_id AND viewer.account_id = $2

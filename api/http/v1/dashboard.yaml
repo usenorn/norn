@@ -31,6 +31,7 @@ tags:
   - name: directory
   - name: licence
   - name: imports
+  - name: source-control
 
 paths:
   /health:
@@ -4658,6 +4659,292 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/source-control/connections:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [source-control]
+      operationId: listWorkspaceSourceControlConnections
+      summary: List the repositories this workspace is connected to
+      responses:
+        '200':
+          description: The workspace's source control connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SourceControlConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [source-control]
+      operationId: connectWorkspaceSourceControl
+      summary: Connect a repository, returning the webhook address and secret for the only time
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConnectSourceControlRequest' }
+      responses:
+        '201':
+          description: The connection, carrying what the forge needs once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MintedSourceControlConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/SourceControlConflict' }
+        '422': { $ref: '#/components/responses/SourceControlRefused' }
+        '429': { $ref: '#/components/responses/SourceControlRateLimited' }
+        '503': { $ref: '#/components/responses/SourceControlSealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/connections/{connectionId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/SourceControlConnectionId'
+    get:
+      tags: [source-control]
+      operationId: getWorkspaceSourceControlConnection
+      summary: Read one connection, its health and what it is attached to
+      responses:
+        '200':
+          description: The connection
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceControlConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [source-control]
+      operationId: updateWorkspaceSourceControlConnection
+      summary: Change which team a connection serves, and the label it watches for
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateSourceControlRequest' }
+      responses:
+        '200':
+          description: The connection as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceControlConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [source-control]
+      operationId: disconnectWorkspaceSourceControl
+      summary: Disconnect a repository, keeping every link it has already made
+      responses:
+        '204': { description: The connection is gone and its links remain }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/connections/{connectionId}/token:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/SourceControlConnectionId'
+    put:
+      tags: [source-control]
+      operationId: replaceWorkspaceSourceControlToken
+      summary: Replace the token behind a connection, proving it before it is kept
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReplaceSourceControlTokenRequest' }
+      responses:
+        '200':
+          description: The connection, working again
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceControlConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/SourceControlRefused' }
+        '429': { $ref: '#/components/responses/SourceControlRateLimited' }
+        '503': { $ref: '#/components/responses/SourceControlSealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/connections/{connectionId}/verify:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/SourceControlConnectionId'
+    post:
+      tags: [source-control]
+      operationId: verifyWorkspaceSourceControlConnection
+      summary: Ask the forge whether this connection still works
+      responses:
+        '200':
+          description: The connection, with when it was last proved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceControlConnection' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/SourceControlRefused' }
+        '429': { $ref: '#/components/responses/SourceControlRateLimited' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/source-control:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/TeamId'
+    get:
+      tags: [source-control]
+      operationId: getTeamSourceControlSettings
+      summary: Read what this team does when a linked change merges
+      responses:
+        '200':
+          description: The team's setting, and whether the state it names still exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamSourceControlSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [source-control]
+      operationId: setTeamSourceControlSettings
+      summary: Choose whether a merged change moves an issue, and where it moves it to
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetTeamSourceControlRequest' }
+      responses:
+        '200':
+          description: The setting as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamSourceControlSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/code-links:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [source-control]
+      operationId: listWorkspaceIssueCodeLinks
+      summary: List the branches, commits and changes linked to this issue
+      responses:
+        '200':
+          description: What code is attached to the issue, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CodeLink' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [source-control]
+      operationId: linkWorkspaceIssueCode
+      summary: Link a change to this issue by pasting its address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LinkIssueCodeRequest' }
+      responses:
+        '201':
+          description: The link
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeLink' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/code-links/{linkId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+      - $ref: '#/components/parameters/CodeLinkId'
+    delete:
+      tags: [source-control]
+      operationId: unlinkWorkspaceIssueCode
+      summary: Remove a link somebody made or a scan got wrong
+      responses:
+        '204': { description: The link is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/mirror:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [source-control]
+      operationId: getWorkspaceIssueMirror
+      summary: Read the platform issue this one is kept in step with
+      responses:
+        '200':
+          description: The mirror
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueMirror' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [source-control]
+      operationId: mirrorWorkspaceIssue
+      summary: Pair this issue with one that already exists on the platform
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MirrorIssueRequest' }
+      responses:
+        '200':
+          description: The mirror
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueMirror' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/SourceControlConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/SourceControlRateLimited' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [source-control]
+      operationId: unmirrorWorkspaceIssue
+      summary: Stop keeping this issue in step, leaving both where they are
+      responses:
+        '204': { description: The pairing is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
     bearerToken:
@@ -4859,6 +5146,16 @@ components:
         type: array
         items: { $ref: '#/components/schemas/WebhookDeliveryState' }
 
+    SourceControlConnectionId:
+      name: connectionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    CodeLinkId:
+      name: linkId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     ImportRunId:
       name: importRunId
       in: path
@@ -5063,6 +5360,26 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/WebhookSigningUnavailableProblem' }
+    SourceControlRefused:
+      description: The forge refused the credentials, or could not reach the repository
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/SourceControlRefusedProblem' }
+    SourceControlConflict:
+      description: The repository is already connected, or the issue is already mirrored
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/SourceControlConflictProblem' }
+    SourceControlRateLimited:
+      description: The forge is rate limiting this instance
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    SourceControlSealingUnavailable:
+      description: This instance has no encryption key, so a token cannot be sealed
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/SourceControlSealingUnavailableProblem' }
     ImportConflict:
       description: The run cannot take this step from where it stands
       content:
@@ -6946,6 +7263,196 @@ components:
     WebhookDisableReason:
       type: string
       enum: [by_owner, sustained_failure]
+
+    SourceControlProvider:
+      type: string
+      enum: [github, gitlab]
+
+    SourceControlStatus:
+      type: string
+      enum: [connected, broken]
+
+    SourceControlBrokenReason:
+      type: string
+      enum: [credentials_rejected, repository_unreachable, hook_missing]
+
+    CodeLinkKind:
+      type: string
+      enum: [branch, commit, change]
+
+    CodeChangeState:
+      type: string
+      enum: [open, draft, in_review, merged, closed]
+
+    SourceControlConnection:
+      type: object
+      description: >-
+        A connected repository. The token is never returned; tokenSet says whether one is
+        held and tokenHint carries its last few characters so a person can tell which is
+        installed. verifiedAt is when the forge last answered, which is separate from
+        updatedAt because a connection can be edited without being proved.
+      required:
+        [id, provider, repository, tokenSet, tokenHint, mirrorLabel, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        provider: { $ref: '#/components/schemas/SourceControlProvider' }
+        baseUrl: { type: string }
+        repository: { type: string }
+        teamId: { type: string, format: uuid }
+        tokenSet: { type: boolean }
+        tokenHint: { type: string }
+        identityLogin: { type: string }
+        hookInstalled: { type: boolean }
+        mirrorLabel: { type: string }
+        status: { $ref: '#/components/schemas/SourceControlStatus' }
+        brokenReason: { $ref: '#/components/schemas/SourceControlBrokenReason' }
+        brokenDetail: { type: string }
+        brokenAt: { type: string, format: date-time }
+        verifiedAt: { type: string, format: date-time }
+        lastSeenAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    MintedSourceControlConnection:
+      type: object
+      required: [connection, webhookUrl, webhookSecret]
+      properties:
+        connection: { $ref: '#/components/schemas/SourceControlConnection' }
+        webhookUrl: { type: string }
+        webhookSecret: { type: string }
+
+    ConnectSourceControlRequest:
+      type: object
+      required: [provider, repository, token]
+      properties:
+        provider: { $ref: '#/components/schemas/SourceControlProvider' }
+        baseUrl: { type: string }
+        repository: { type: string }
+        teamId: { type: string, format: uuid }
+        mirrorLabel: { type: string }
+        token: { type: string, writeOnly: true }
+
+    UpdateSourceControlRequest:
+      type: object
+      properties:
+        teamId: { type: string, format: uuid }
+        clearTeam: { type: boolean }
+        mirrorLabel: { type: string }
+
+    ReplaceSourceControlTokenRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, writeOnly: true }
+
+    TeamSourceControlSettings:
+      type: object
+      description: >-
+        targetResolved is false when the team chose a state that has since been deleted. The
+        setting still reads as on, so without this a team would look configured and quietly
+        do nothing.
+      required: [teamId, advanceOnMerge, targetResolved]
+      properties:
+        teamId: { type: string, format: uuid }
+        advanceOnMerge: { type: boolean }
+        mergedStateId: { type: string, format: uuid }
+        targetResolved: { type: boolean }
+        targetName: { type: string }
+
+    SetTeamSourceControlRequest:
+      type: object
+      required: [advanceOnMerge]
+      properties:
+        advanceOnMerge: { type: boolean }
+        mergedStateId: { type: string, format: uuid }
+        clearState: { type: boolean }
+
+    CodeLink:
+      type: object
+      description: >-
+        Everything needed to render the link is on the link itself, so it survives the
+        connection being removed. connected is false once that has happened.
+      required: [id, provider, repository, kind, externalId, url, state, connected, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        provider: { $ref: '#/components/schemas/SourceControlProvider' }
+        repository: { type: string }
+        kind: { $ref: '#/components/schemas/CodeLinkKind' }
+        externalId: { type: string }
+        number: { type: integer, format: int32 }
+        title: { type: string }
+        url: { type: string }
+        state: { $ref: '#/components/schemas/CodeChangeState' }
+        author: { type: string }
+        detectedIn: { type: string }
+        advancedIssue: { type: boolean }
+        connected: { type: boolean }
+        mergedAt: { type: string, format: date-time }
+        closedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    LinkIssueCodeRequest:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
+
+    IssueMirror:
+      type: object
+      required: [id, provider, repository, externalId, externalNumber, url, origin, connected]
+      properties:
+        id: { type: string, format: uuid }
+        provider: { $ref: '#/components/schemas/SourceControlProvider' }
+        repository: { type: string }
+        externalId: { type: string }
+        externalNumber: { type: integer, format: int32 }
+        url: { type: string }
+        origin: { type: string, enum: [platform, norn] }
+        connected: { type: boolean }
+        pulledAt: { type: string, format: date-time }
+        pushedAt: { type: string, format: date-time }
+
+    MirrorIssueRequest:
+      type: object
+      required: [connectionId, reference]
+      properties:
+        connectionId: { type: string, format: uuid }
+        reference: { type: string }
+
+    SourceControlRefusedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - source_control_credentials_rejected
+                - source_control_repository_unreachable
+                - source_control_destination_refused
+                - source_control_provider_unsupported
+
+    SourceControlConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - source_control_already_connected
+                - source_control_already_mirrored
+                - source_control_team_outside_connection
+
+    SourceControlSealingUnavailableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [source_control_sealing_unavailable] }
 
     Webhook:
       type: object

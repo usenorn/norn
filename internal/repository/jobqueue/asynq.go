@@ -341,6 +341,50 @@ func (c *Client) EnqueueImportRescue(ctx context.Context) error {
 	return nil
 }
 
+// EnqueueSCMDelivery keys a task by the delivery and the attempt, so a forge redelivering
+// the same event while the first attempt is still queued adds nothing, and a genuine retry
+// after a rate limit is a different task rather than a conflict.
+func (c *Client) EnqueueSCMDelivery(ctx context.Context, payload entity.SCMDeliveryPayload) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode source control delivery payload: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeSCMDelivery, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueSCM),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.TaskID(fmt.Sprintf("scm-delivery:%s:%d", payload.DeliveryID, payload.Attempt)),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue source control delivery: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) EnqueueSCMReconcile(ctx context.Context) error {
+	task := asynq.NewTask(entity.TaskTypeSCMReconcile, nil)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueSCM),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.TaskID(entity.SCMReconcileTaskID),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue source control reconcile: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) Queues(_ context.Context) ([]entity.QueueStat, error) {
 	names, err := c.inspector.Queues()
 	if err != nil {
