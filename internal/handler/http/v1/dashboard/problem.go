@@ -67,6 +67,29 @@ func problemFor(err error) (problemResponse, bool) {
 		return problemResponse{status: http.StatusUnprocessableEntity, body: problem}, true
 	}
 
+	var rejected entity.SCMCredentialsRejectedError
+	if errors.As(err, &rejected) {
+		return sourceControlRefused(api.SourceControlCredentialsRejected, err), true
+	}
+
+	var unreachable entity.SCMRepositoryUnreachableError
+	if errors.As(err, &unreachable) {
+		return sourceControlRefused(api.SourceControlRepositoryUnreachable, err), true
+	}
+
+	// A forge asking to be left alone is passed on with how long to wait, so the screen can
+	// say when to try again rather than only that something went wrong.
+	var limited entity.SCMRateLimitedError
+	if errors.As(err, &limited) {
+		base := baseProblem(http.StatusTooManyRequests, err.Error())
+
+		return problemResponse{
+			status:     http.StatusTooManyRequests,
+			body:       base,
+			retryAfter: int(limited.RetryAfter.Seconds()),
+		}, true
+	}
+
 	var stale entity.IssueStaleError
 	if errors.As(err, &stale) {
 		base := baseProblem(http.StatusConflict, stale.Error())
@@ -773,6 +796,39 @@ func problemFor(err error) (problemResponse, bool) {
 			status: http.StatusServiceUnavailable,
 			body: api.WebhookSigningUnavailableProblem{
 				Code:     api.WebhookSigningUnavailableProblemCodeWebhookSigningUnavailable,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
+	case errors.Is(err, entity.ErrSCMConnectionNotFound),
+		errors.Is(err, entity.ErrCodeLinkNotFound),
+		errors.Is(err, entity.ErrIssueMirrorNotFound),
+		errors.Is(err, entity.ErrSCMTeamSettingsNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrSCMConnectionExists):
+		return sourceControlConflict(api.SourceControlAlreadyConnected, err), true
+
+	case errors.Is(err, entity.ErrIssueMirrorExists):
+		return sourceControlConflict(api.SourceControlAlreadyMirrored, err), true
+
+	case errors.Is(err, entity.ErrSCMTeamOutsideConnection):
+		return sourceControlConflict(api.SourceControlTeamOutsideConnection, err), true
+
+	case errors.Is(err, entity.ErrSCMProviderUnsupported):
+		return sourceControlRefused(api.SourceControlProviderUnsupported, err), true
+
+	case errors.Is(err, entity.ErrSCMEncryptionKeyMissing):
+		base := baseProblem(http.StatusServiceUnavailable, err.Error())
+
+		return problemResponse{
+			status: http.StatusServiceUnavailable,
+			body: api.SourceControlSealingUnavailableProblem{
+				Code:     api.SourceControlSealingUnavailableProblemCodeSourceControlSealingUnavailable,
 				Detail:   base.Detail,
 				Instance: base.Instance,
 				Status:   base.Status,
@@ -1979,4 +2035,42 @@ func (r problemResponse) VisitRevertWorkspaceImportResponse(w http.ResponseWrite
 
 func (r problemResponse) VisitGetWorkspaceImportReportResponse(w http.ResponseWriter) error {
 	return r.write(w)
+}
+
+func sourceControlRefused(
+	code api.SourceControlRefusedProblemCode,
+	err error,
+) problemResponse {
+	base := baseProblem(http.StatusUnprocessableEntity, err.Error())
+
+	return problemResponse{
+		status: http.StatusUnprocessableEntity,
+		body: api.SourceControlRefusedProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func sourceControlConflict(
+	code api.SourceControlConflictProblemCode,
+	err error,
+) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.SourceControlConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
 }

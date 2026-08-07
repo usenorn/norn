@@ -119,7 +119,7 @@ func TestPeopleSearchNeverMatchesAnEmailAddressOrReturnsAnAgent(t *testing.T) {
 		)
 	}
 
-	for _, rule := range []string{"a.status = 'active'", "a.kind <> 'agent'"} {
+	for _, rule := range []string{"a.status = 'active'", "a.kind = 'person'"} {
 		if !strings.Contains(people, rule) {
 			t.Errorf("people search is missing %q", rule)
 		}

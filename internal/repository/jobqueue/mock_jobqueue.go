@@ -196,6 +196,34 @@ func (mr *MockJobProducerMockRecorder) EnqueuePasswordResetSSONotice(ctx, payloa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueuePasswordResetSSONotice", reflect.TypeOf((*MockJobProducer)(nil).EnqueuePasswordResetSSONotice), ctx, payload)
 }
 
+// EnqueueSCMDelivery mocks base method.
+func (m *MockJobProducer) EnqueueSCMDelivery(ctx context.Context, payload entity.SCMDeliveryPayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueSCMDelivery", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueSCMDelivery indicates an expected call of EnqueueSCMDelivery.
+func (mr *MockJobProducerMockRecorder) EnqueueSCMDelivery(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueSCMDelivery", reflect.TypeOf((*MockJobProducer)(nil).EnqueueSCMDelivery), ctx, payload)
+}
+
+// EnqueueSCMReconcile mocks base method.
+func (m *MockJobProducer) EnqueueSCMReconcile(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueSCMReconcile", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueSCMReconcile indicates an expected call of EnqueueSCMReconcile.
+func (mr *MockJobProducerMockRecorder) EnqueueSCMReconcile(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueSCMReconcile", reflect.TypeOf((*MockJobProducer)(nil).EnqueueSCMReconcile), ctx)
+}
+
 // EnqueueSignUpVerification mocks base method.
 func (m *MockJobProducer) EnqueueSignUpVerification(ctx context.Context, payload entity.SignUpVerificationPayload) error {
 	m.ctrl.T.Helper()

@@ -1,0 +1,335 @@
+package github
+
+import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/service"
+)
+
+const (
+	signatureHeader  = "X-Hub-Signature-256"
+	eventHeader      = "X-GitHub-Event"
+	deliveryHeader   = "X-GitHub-Delivery"
+	signaturePrefix  = "sha256="
+	refBranchPrefix  = "refs/heads/"
+	deletedCommitSHA = "0000000000000000000000000000000000000000"
+)
+
+// Verify recomputes the signature over the exact bytes that arrived. Nothing may decode,
+// re-encode or rewind the body first: a payload that round-trips through a decoder is no
+// longer the payload that was signed, and the mismatch reads as a wrong secret.
+func (f *Forge) Verify(secret string, header http.Header, body []byte) (entity.SCMDelivery, error) {
+	sent := strings.TrimSpace(header.Get(signatureHeader))
+	if !strings.HasPrefix(sent, signaturePrefix) {
+		return entity.SCMDelivery{}, entity.ErrSCMSignatureInvalid
+	}
+
+	sum := hmac.New(sha256.New, []byte(secret))
+	sum.Write(body)
+
+	expected := hex.EncodeToString(sum.Sum(nil))
+
+	if !hmac.Equal([]byte(strings.TrimPrefix(sent, signaturePrefix)), []byte(expected)) {
+		return entity.SCMDelivery{}, entity.ErrSCMSignatureInvalid
+	}
+
+	event := strings.TrimSpace(header.Get(eventHeader))
+	if event == "" {
+		return entity.SCMDelivery{}, entity.ErrSCMSignatureInvalid
+	}
+
+	return entity.SCMDelivery{
+		ExternalID: strings.TrimSpace(header.Get(deliveryHeader)),
+		Event:      event,
+		Payload:    body,
+	}, nil
+}
+
+type pushPayload struct {
+	Ref     string `json:"ref"`
+	After   string `json:"after"`
+	Deleted bool   `json:"deleted"`
+	Commits []struct {
+		ID        string    `json:"id"`
+		Message   string    `json:"message"`
+		URL       string    `json:"url"`
+		Timestamp time.Time `json:"timestamp"`
+		Author    struct {
+			Username string `json:"username"`
+			Name     string `json:"name"`
+		} `json:"author"`
+	} `json:"commits"`
+	Repository struct {
+		HTMLURL string `json:"html_url"`
+	} `json:"repository"`
+	Sender struct {
+		Login string `json:"login"`
+	} `json:"sender"`
+}
+
+type changePayload struct {
+	Action      string `json:"action"`
+	PullRequest struct {
+		ID                 int64      `json:"id"`
+		Number             int        `json:"number"`
+		Title              string     `json:"title"`
+		Body               string     `json:"body"`
+		HTMLURL            string     `json:"html_url"`
+		State              string     `json:"state"`
+		Draft              bool       `json:"draft"`
+		MergedAt           *time.Time `json:"merged_at"`
+		ClosedAt           *time.Time `json:"closed_at"`
+		UpdatedAt          time.Time  `json:"updated_at"`
+		RequestedReviewers []struct {
+			Login string `json:"login"`
+		} `json:"requested_reviewers"`
+		User struct {
+			Login string `json:"login"`
+		} `json:"user"`
+		Head struct {
+			Ref string `json:"ref"`
+		} `json:"head"`
+		Base struct {
+			Ref string `json:"ref"`
+		} `json:"base"`
+	} `json:"pull_request"`
+	Sender struct {
+		Login string `json:"login"`
+	} `json:"sender"`
+}
+
+type issuePayload struct {
+	Action string `json:"action"`
+	Issue  struct {
+		ID        int64     `json:"id"`
+		Number    int       `json:"number"`
+		Title     string    `json:"title"`
+		Body      string    `json:"body"`
+		HTMLURL   string    `json:"html_url"`
+		State     string    `json:"state"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		User      struct {
+			Login string `json:"login"`
+		} `json:"user"`
+		Labels []struct {
+			Name string `json:"name"`
+		} `json:"labels"`
+		PullRequest *struct{} `json:"pull_request"`
+	} `json:"issue"`
+	Comment struct {
+		ID        int64     `json:"id"`
+		Body      string    `json:"body"`
+		HTMLURL   string    `json:"html_url"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		User      struct {
+			Login string `json:"login"`
+		} `json:"user"`
+	} `json:"comment"`
+	Sender struct {
+		Login string `json:"login"`
+	} `json:"sender"`
+}
+
+func (f *Forge) Translate(delivery entity.SCMDelivery) ([]service.ForgeEvent, error) {
+	switch delivery.Event {
+	case "push":
+		return translatePush(delivery.Payload)
+	case "pull_request":
+		return translateChange(delivery.Payload)
+	case "issues":
+		return translateIssue(delivery.Payload)
+	case "issue_comment":
+		return translateComment(delivery.Payload)
+	default:
+		return nil, nil
+	}
+}
+
+func translatePush(body []byte) ([]service.ForgeEvent, error) {
+	var payload pushPayload
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, fmt.Errorf("read push delivery: %w", err)
+	}
+
+	if payload.Deleted || payload.After == deletedCommitSHA {
+		return nil, nil
+	}
+
+	events := make([]service.ForgeEvent, 0, len(payload.Commits)+1)
+
+	if branch, found := strings.CutPrefix(payload.Ref, refBranchPrefix); found {
+		events = append(events, service.ForgeEvent{
+			Kind:   service.ForgeEventBranchPushed,
+			Branch: service.ForgeBranch{Name: branch, URL: branchURL(payload.Repository.HTMLURL, branch)},
+			Author: payload.Sender.Login,
+		})
+	}
+
+	for _, commit := range payload.Commits {
+		events = append(events, service.ForgeEvent{
+			Kind: service.ForgeEventCommitPushed,
+			Commit: service.ForgeCommit{
+				SHA:     commit.ID,
+				Message: commit.Message,
+				URL:     commit.URL,
+				Author:  firstNonEmpty(commit.Author.Username, commit.Author.Name),
+				At:      commit.Timestamp,
+			},
+			Author: firstNonEmpty(commit.Author.Username, payload.Sender.Login),
+			At:     commit.Timestamp,
+		})
+	}
+
+	return events, nil
+}
+
+func translateChange(body []byte) ([]service.ForgeEvent, error) {
+	var payload changePayload
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, fmt.Errorf("read pull request delivery: %w", err)
+	}
+
+	change := payload.PullRequest
+
+	return []service.ForgeEvent{{
+		Kind: service.ForgeEventChangeChanged,
+		Change: service.ForgeChange{
+			ExternalID: strconv.FormatInt(change.ID, 10),
+			Number:     change.Number,
+			Title:      change.Title,
+			Body:       change.Body,
+			URL:        change.HTMLURL,
+			State:      changeState(change.Draft, change.State, change.MergedAt, len(change.RequestedReviewers)),
+			Author:     change.User.Login,
+			HeadBranch: change.Head.Ref,
+			BaseBranch: change.Base.Ref,
+			UpdatedAt:  change.UpdatedAt,
+			MergedAt:   change.MergedAt,
+			ClosedAt:   change.ClosedAt,
+		},
+		Author: payload.Sender.Login,
+		At:     change.UpdatedAt,
+	}}, nil
+}
+
+// changeState reads merged before closed. GitHub reports a merged pull request as state
+// "closed" with a merge timestamp, so testing the state alone records every merge as an
+// abandoned change and no issue would ever advance.
+func changeState(draft bool, state string, mergedAt *time.Time, reviewers int) entity.CodeChangeState {
+	switch {
+	case mergedAt != nil:
+		return entity.CodeChangeMerged
+	case strings.EqualFold(state, "closed"):
+		return entity.CodeChangeClosed
+	case draft:
+		return entity.CodeChangeDraft
+	case reviewers > 0:
+		return entity.CodeChangeInReview
+	default:
+		return entity.CodeChangeOpen
+	}
+}
+
+func translateIssue(body []byte) ([]service.ForgeEvent, error) {
+	var payload issuePayload
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, fmt.Errorf("read issue delivery: %w", err)
+	}
+
+	// A pull request is also an issue on GitHub's own API, and its comments arrive on the
+	// issue events. Mirroring one would create a second Norn issue for a change that is
+	// already carried as a link.
+	if payload.Issue.PullRequest != nil {
+		return nil, nil
+	}
+
+	return []service.ForgeEvent{{
+		Kind:   service.ForgeEventIssueChanged,
+		Issue:  forgeIssue(payload),
+		Author: payload.Sender.Login,
+		At:     payload.Issue.UpdatedAt,
+	}}, nil
+}
+
+func translateComment(body []byte) ([]service.ForgeEvent, error) {
+	var payload issuePayload
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, fmt.Errorf("read comment delivery: %w", err)
+	}
+
+	if payload.Issue.PullRequest != nil {
+		return nil, nil
+	}
+
+	if payload.Action == "deleted" {
+		return nil, nil
+	}
+
+	return []service.ForgeEvent{{
+		Kind:  service.ForgeEventCommented,
+		Issue: forgeIssue(payload),
+		Comment: service.ForgeComment{
+			ExternalID: strconv.FormatInt(payload.Comment.ID, 10),
+			Body:       payload.Comment.Body,
+			Author:     payload.Comment.User.Login,
+			URL:        payload.Comment.HTMLURL,
+			CreatedAt:  payload.Comment.CreatedAt,
+			UpdatedAt:  payload.Comment.UpdatedAt,
+		},
+		Author: payload.Comment.User.Login,
+		At:     payload.Comment.UpdatedAt,
+	}}, nil
+}
+
+func forgeIssue(payload issuePayload) service.ForgeIssue {
+	labels := make([]string, 0, len(payload.Issue.Labels))
+	for _, label := range payload.Issue.Labels {
+		labels = append(labels, label.Name)
+	}
+
+	return service.ForgeIssue{
+		ExternalID: strconv.FormatInt(payload.Issue.ID, 10),
+		Number:     payload.Issue.Number,
+		Title:      payload.Issue.Title,
+		Body:       payload.Issue.Body,
+		URL:        payload.Issue.HTMLURL,
+		State:      payload.Issue.State,
+		Author:     payload.Issue.User.Login,
+		Labels:     labels,
+		CreatedAt:  payload.Issue.CreatedAt,
+		UpdatedAt:  payload.Issue.UpdatedAt,
+	}
+}
+
+func branchURL(repository, branch string) string {
+	if repository == "" {
+		return ""
+	}
+
+	return repository + "/tree/" + branch
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+
+	return ""
+}

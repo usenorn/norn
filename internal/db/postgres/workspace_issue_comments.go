@@ -136,15 +136,18 @@ var WorkspaceIssueCommentWhere = struct {
 
 // WorkspaceIssueCommentRels is where relationship names are stored.
 var WorkspaceIssueCommentRels = struct {
+	CommentWorkspaceCommentMirror         string
 	CommentWorkspaceIssueCommentMentions  string
 	CommentWorkspaceIssueCommentReactions string
 }{
+	CommentWorkspaceCommentMirror:         "CommentWorkspaceCommentMirror",
 	CommentWorkspaceIssueCommentMentions:  "CommentWorkspaceIssueCommentMentions",
 	CommentWorkspaceIssueCommentReactions: "CommentWorkspaceIssueCommentReactions",
 }
 
 // workspaceIssueCommentR is where relationships are stored.
 type workspaceIssueCommentR struct {
+	CommentWorkspaceCommentMirror         *WorkspaceCommentMirror            `boil:"CommentWorkspaceCommentMirror" json:"CommentWorkspaceCommentMirror" toml:"CommentWorkspaceCommentMirror" yaml:"CommentWorkspaceCommentMirror"`
 	CommentWorkspaceIssueCommentMentions  WorkspaceIssueCommentMentionSlice  `boil:"CommentWorkspaceIssueCommentMentions" json:"CommentWorkspaceIssueCommentMentions" toml:"CommentWorkspaceIssueCommentMentions" yaml:"CommentWorkspaceIssueCommentMentions"`
 	CommentWorkspaceIssueCommentReactions WorkspaceIssueCommentReactionSlice `boil:"CommentWorkspaceIssueCommentReactions" json:"CommentWorkspaceIssueCommentReactions" toml:"CommentWorkspaceIssueCommentReactions" yaml:"CommentWorkspaceIssueCommentReactions"`
 }
@@ -152,6 +155,22 @@ type workspaceIssueCommentR struct {
 // NewStruct creates a new relationship struct
 func (*workspaceIssueCommentR) NewStruct() *workspaceIssueCommentR {
 	return &workspaceIssueCommentR{}
+}
+
+func (o *WorkspaceIssueComment) GetCommentWorkspaceCommentMirror() *WorkspaceCommentMirror {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetCommentWorkspaceCommentMirror()
+}
+
+func (r *workspaceIssueCommentR) GetCommentWorkspaceCommentMirror() *WorkspaceCommentMirror {
+	if r == nil {
+		return nil
+	}
+
+	return r.CommentWorkspaceCommentMirror
 }
 
 func (o *WorkspaceIssueComment) GetCommentWorkspaceIssueCommentMentions() WorkspaceIssueCommentMentionSlice {
@@ -502,6 +521,17 @@ func (q workspaceIssueCommentQuery) Exists(ctx context.Context, exec boil.Contex
 	return count > 0, nil
 }
 
+// CommentWorkspaceCommentMirror pointed to by the foreign key.
+func (o *WorkspaceIssueComment) CommentWorkspaceCommentMirror(mods ...qm.QueryMod) workspaceCommentMirrorQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"comment_id\" = ?", o.ID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceCommentMirrors(queryMods...)
+}
+
 // CommentWorkspaceIssueCommentMentions retrieves all the workspace_issue_comment_mention's WorkspaceIssueCommentMentions with an executor via comment_id column.
 func (o *WorkspaceIssueComment) CommentWorkspaceIssueCommentMentions(mods ...qm.QueryMod) workspaceIssueCommentMentionQuery {
 	var queryMods []qm.QueryMod
@@ -528,6 +558,123 @@ func (o *WorkspaceIssueComment) CommentWorkspaceIssueCommentReactions(mods ...qm
 	)
 
 	return WorkspaceIssueCommentReactions(queryMods...)
+}
+
+// LoadCommentWorkspaceCommentMirror allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-1 relationship.
+func (workspaceIssueCommentL) LoadCommentWorkspaceCommentMirror(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueComment any, mods queries.Applicator) error {
+	var slice []*WorkspaceIssueComment
+	var object *WorkspaceIssueComment
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceIssueComment.(*WorkspaceIssueComment)
+		if !ok {
+			object = new(WorkspaceIssueComment)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssueComment)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssueComment))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceIssueComment.(*[]*WorkspaceIssueComment)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssueComment)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssueComment))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceIssueCommentR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceIssueCommentR{}
+			}
+
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_comment_mirrors`),
+		qm.WhereIn(`workspace_comment_mirrors.comment_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceCommentMirror")
+	}
+
+	var resultSlice []*WorkspaceCommentMirror
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceCommentMirror")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_comment_mirrors")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_comment_mirrors")
+	}
+
+	if len(workspaceCommentMirrorAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.CommentWorkspaceCommentMirror = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceCommentMirrorR{}
+		}
+		foreign.R.Comment = object
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.ID == foreign.CommentID {
+				local.R.CommentWorkspaceCommentMirror = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceCommentMirrorR{}
+				}
+				foreign.R.Comment = local
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadCommentWorkspaceIssueCommentMentions allows an eager lookup of values, cached into the
@@ -753,6 +900,56 @@ func (workspaceIssueCommentL) LoadCommentWorkspaceIssueCommentReactions(ctx cont
 		}
 	}
 
+	return nil
+}
+
+// SetCommentWorkspaceCommentMirror of the workspaceIssueComment to the related item.
+// Sets o.R.CommentWorkspaceCommentMirror to related.
+// Adds o to related.R.Comment.
+func (o *WorkspaceIssueComment) SetCommentWorkspaceCommentMirror(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceCommentMirror) error {
+	var err error
+
+	if insert {
+		related.CommentID = o.ID
+
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	} else {
+		updateQuery := fmt.Sprintf(
+			"UPDATE \"workspace_comment_mirrors\" SET %s WHERE %s",
+			strmangle.SetParamNames("\"", "\"", 1, []string{"comment_id"}),
+			strmangle.WhereClause("\"", "\"", 2, workspaceCommentMirrorPrimaryKeyColumns),
+		)
+		values := []any{o.ID, related.ID}
+
+		if boil.IsDebug(ctx) {
+			writer := boil.DebugWriterFrom(ctx)
+			fmt.Fprintln(writer, updateQuery)
+			fmt.Fprintln(writer, values)
+		}
+		if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+			return errors.Wrap(err, "failed to update foreign table")
+		}
+
+		related.CommentID = o.ID
+	}
+
+	if o.R == nil {
+		o.R = &workspaceIssueCommentR{
+			CommentWorkspaceCommentMirror: related,
+		}
+	} else {
+		o.R.CommentWorkspaceCommentMirror = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceCommentMirrorR{
+			Comment: o,
+		}
+	} else {
+		related.R.Comment = o
+	}
 	return nil
 }
 

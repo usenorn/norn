@@ -639,6 +639,54 @@ func (e BulkOutcome) Valid() bool {
 	}
 }
 
+// Defines values for CodeChangeState.
+const (
+	CodeChangeStateClosed   CodeChangeState = "closed"
+	CodeChangeStateDraft    CodeChangeState = "draft"
+	CodeChangeStateInReview CodeChangeState = "in_review"
+	CodeChangeStateMerged   CodeChangeState = "merged"
+	CodeChangeStateOpen     CodeChangeState = "open"
+)
+
+// Valid indicates whether the value is a known member of the CodeChangeState enum.
+func (e CodeChangeState) Valid() bool {
+	switch e {
+	case CodeChangeStateClosed:
+		return true
+	case CodeChangeStateDraft:
+		return true
+	case CodeChangeStateInReview:
+		return true
+	case CodeChangeStateMerged:
+		return true
+	case CodeChangeStateOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CodeLinkKind.
+const (
+	Branch CodeLinkKind = "branch"
+	Change CodeLinkKind = "change"
+	Commit CodeLinkKind = "commit"
+)
+
+// Valid indicates whether the value is a known member of the CodeLinkKind enum.
+func (e CodeLinkKind) Valid() bool {
+	switch e {
+	case Branch:
+		return true
+	case Change:
+		return true
+	case Commit:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CommentAuthorKind.
 const (
 	CommentAuthorKindAgent  CommentAuthorKind = "agent"
@@ -755,22 +803,22 @@ func (e CycleConflictProblemCode) Valid() bool {
 
 // Defines values for CyclePhase.
 const (
-	Closed   CyclePhase = "closed"
-	Current  CyclePhase = "current"
-	Ended    CyclePhase = "ended"
-	Upcoming CyclePhase = "upcoming"
+	CyclePhaseClosed   CyclePhase = "closed"
+	CyclePhaseCurrent  CyclePhase = "current"
+	CyclePhaseEnded    CyclePhase = "ended"
+	CyclePhaseUpcoming CyclePhase = "upcoming"
 )
 
 // Valid indicates whether the value is a known member of the CyclePhase enum.
 func (e CyclePhase) Valid() bool {
 	switch e {
-	case Closed:
+	case CyclePhaseClosed:
 		return true
-	case Current:
+	case CyclePhaseCurrent:
 		return true
-	case Ended:
+	case CyclePhaseEnded:
 		return true
-	case Upcoming:
+	case CyclePhaseUpcoming:
 		return true
 	default:
 		return false
@@ -1656,6 +1704,24 @@ func (e IssueGroupBy) Valid() bool {
 	}
 }
 
+// Defines values for IssueMirrorOrigin.
+const (
+	Norn     IssueMirrorOrigin = "norn"
+	Platform IssueMirrorOrigin = "platform"
+)
+
+// Valid indicates whether the value is a known member of the IssueMirrorOrigin enum.
+func (e IssueMirrorOrigin) Valid() bool {
+	switch e {
+	case Norn:
+		return true
+	case Platform:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IssuePriority.
 const (
 	High   IssuePriority = "high"
@@ -2322,6 +2388,123 @@ func (e SignUpUnusableProblemCode) Valid() bool {
 	case SignUpEmailTaken:
 		return true
 	case SignUpUsed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SourceControlBrokenReason.
+const (
+	CredentialsRejected   SourceControlBrokenReason = "credentials_rejected"
+	HookMissing           SourceControlBrokenReason = "hook_missing"
+	RepositoryUnreachable SourceControlBrokenReason = "repository_unreachable"
+)
+
+// Valid indicates whether the value is a known member of the SourceControlBrokenReason enum.
+func (e SourceControlBrokenReason) Valid() bool {
+	switch e {
+	case CredentialsRejected:
+		return true
+	case HookMissing:
+		return true
+	case RepositoryUnreachable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SourceControlConflictProblemCode.
+const (
+	SourceControlAlreadyConnected      SourceControlConflictProblemCode = "source_control_already_connected"
+	SourceControlAlreadyMirrored       SourceControlConflictProblemCode = "source_control_already_mirrored"
+	SourceControlTeamOutsideConnection SourceControlConflictProblemCode = "source_control_team_outside_connection"
+)
+
+// Valid indicates whether the value is a known member of the SourceControlConflictProblemCode enum.
+func (e SourceControlConflictProblemCode) Valid() bool {
+	switch e {
+	case SourceControlAlreadyConnected:
+		return true
+	case SourceControlAlreadyMirrored:
+		return true
+	case SourceControlTeamOutsideConnection:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SourceControlProvider.
+const (
+	Github SourceControlProvider = "github"
+	Gitlab SourceControlProvider = "gitlab"
+)
+
+// Valid indicates whether the value is a known member of the SourceControlProvider enum.
+func (e SourceControlProvider) Valid() bool {
+	switch e {
+	case Github:
+		return true
+	case Gitlab:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SourceControlRefusedProblemCode.
+const (
+	SourceControlCredentialsRejected   SourceControlRefusedProblemCode = "source_control_credentials_rejected"
+	SourceControlDestinationRefused    SourceControlRefusedProblemCode = "source_control_destination_refused"
+	SourceControlProviderUnsupported   SourceControlRefusedProblemCode = "source_control_provider_unsupported"
+	SourceControlRepositoryUnreachable SourceControlRefusedProblemCode = "source_control_repository_unreachable"
+)
+
+// Valid indicates whether the value is a known member of the SourceControlRefusedProblemCode enum.
+func (e SourceControlRefusedProblemCode) Valid() bool {
+	switch e {
+	case SourceControlCredentialsRejected:
+		return true
+	case SourceControlDestinationRefused:
+		return true
+	case SourceControlProviderUnsupported:
+		return true
+	case SourceControlRepositoryUnreachable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SourceControlSealingUnavailableProblemCode.
+const (
+	SourceControlSealingUnavailableProblemCodeSourceControlSealingUnavailable SourceControlSealingUnavailableProblemCode = "source_control_sealing_unavailable"
+)
+
+// Valid indicates whether the value is a known member of the SourceControlSealingUnavailableProblemCode enum.
+func (e SourceControlSealingUnavailableProblemCode) Valid() bool {
+	switch e {
+	case SourceControlSealingUnavailableProblemCodeSourceControlSealingUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SourceControlStatus.
+const (
+	Broken    SourceControlStatus = "broken"
+	Connected SourceControlStatus = "connected"
+)
+
+// Valid indicates whether the value is a known member of the SourceControlStatus enum.
+func (e SourceControlStatus) Valid() bool {
+	switch e {
+	case Broken:
+		return true
+	case Connected:
 		return true
 	default:
 		return false
@@ -3478,6 +3661,32 @@ type CloseCycleRequest struct {
 	Rollover  *CycleRollover           `json:"rollover,omitempty"`
 }
 
+// CodeChangeState defines model for CodeChangeState.
+type CodeChangeState string
+
+// CodeLink Everything needed to render the link is on the link itself, so it survives the connection being removed. connected is false once that has happened.
+type CodeLink struct {
+	AdvancedIssue *bool                 `json:"advancedIssue,omitempty"`
+	Author        *string               `json:"author,omitempty"`
+	ClosedAt      *time.Time            `json:"closedAt,omitempty"`
+	Connected     bool                  `json:"connected"`
+	CreatedAt     time.Time             `json:"createdAt"`
+	DetectedIn    *string               `json:"detectedIn,omitempty"`
+	ExternalId    string                `json:"externalId"`
+	Id            openapi_types.UUID    `json:"id"`
+	Kind          CodeLinkKind          `json:"kind"`
+	MergedAt      *time.Time            `json:"mergedAt,omitempty"`
+	Number        *int32                `json:"number,omitempty"`
+	Provider      SourceControlProvider `json:"provider"`
+	Repository    string                `json:"repository"`
+	State         CodeChangeState       `json:"state"`
+	Title         *string               `json:"title,omitempty"`
+	Url           string                `json:"url"`
+}
+
+// CodeLinkKind defines model for CodeLinkKind.
+type CodeLinkKind string
+
 // CommentAuthorKind defines model for CommentAuthorKind.
 type CommentAuthorKind string
 
@@ -3545,6 +3754,16 @@ type ConfirmPasswordResetRequest struct {
 // ConfirmSignUpRequest defines model for ConfirmSignUpRequest.
 type ConfirmSignUpRequest struct {
 	Token string `json:"token"`
+}
+
+// ConnectSourceControlRequest defines model for ConnectSourceControlRequest.
+type ConnectSourceControlRequest struct {
+	BaseUrl     *string               `json:"baseUrl,omitempty"`
+	MirrorLabel *string               `json:"mirrorLabel,omitempty"`
+	Provider    SourceControlProvider `json:"provider"`
+	Repository  string                `json:"repository"`
+	TeamId      *openapi_types.UUID   `json:"teamId,omitempty"`
+	Token       *string               `json:"token,omitempty"`
 }
 
 // CreateImportRequest defines model for CreateImportRequest.
@@ -4377,6 +4596,23 @@ type IssueGroupTally struct {
 	Key string `json:"key"`
 }
 
+// IssueMirror defines model for IssueMirror.
+type IssueMirror struct {
+	Connected      bool                  `json:"connected"`
+	ExternalId     string                `json:"externalId"`
+	ExternalNumber int32                 `json:"externalNumber"`
+	Id             openapi_types.UUID    `json:"id"`
+	Origin         IssueMirrorOrigin     `json:"origin"`
+	Provider       SourceControlProvider `json:"provider"`
+	PulledAt       *time.Time            `json:"pulledAt,omitempty"`
+	PushedAt       *time.Time            `json:"pushedAt,omitempty"`
+	Repository     string                `json:"repository"`
+	Url            string                `json:"url"`
+}
+
+// IssueMirrorOrigin defines model for IssueMirror.Origin.
+type IssueMirrorOrigin string
+
 // IssuePage defines model for IssuePage.
 type IssuePage struct {
 	Issues     []Issue `json:"issues"`
@@ -4529,6 +4765,11 @@ type LicenceReport struct {
 // LicenceStatus defines model for LicenceStatus.
 type LicenceStatus string
 
+// LinkIssueCodeRequest defines model for LinkIssueCodeRequest.
+type LinkIssueCodeRequest struct {
+	Url string `json:"url"`
+}
+
 // MCPAuthorizationDecision defines model for MCPAuthorizationDecision.
 type MCPAuthorizationDecision struct {
 	RedirectTo string `json:"redirectTo"`
@@ -4666,10 +4907,24 @@ type MintedAPIToken struct {
 	Value string   `json:"value"`
 }
 
+// MintedSourceControlConnection defines model for MintedSourceControlConnection.
+type MintedSourceControlConnection struct {
+	// Connection A connected repository. The token is never returned; tokenSet says whether one is held and tokenHint carries its last few characters so a person can tell which is installed. verifiedAt is when the forge last answered, which is separate from updatedAt because a connection can be edited without being proved.
+	Connection    SourceControlConnection `json:"connection"`
+	WebhookSecret string                  `json:"webhookSecret"`
+	WebhookUrl    string                  `json:"webhookUrl"`
+}
+
 // MintedWebhook defines model for MintedWebhook.
 type MintedWebhook struct {
 	Secret  string  `json:"secret"`
 	Webhook Webhook `json:"webhook"`
+}
+
+// MirrorIssueRequest defines model for MirrorIssueRequest.
+type MirrorIssueRequest struct {
+	ConnectionId openapi_types.UUID `json:"connectionId"`
+	Reference    string             `json:"reference"`
 }
 
 // MoveIssueRequest defines model for MoveIssueRequest.
@@ -4923,6 +5178,11 @@ type ReorderWorkflowStatesRequest struct {
 	StateIds []openapi_types.UUID `json:"stateIds"`
 }
 
+// ReplaceSourceControlTokenRequest defines model for ReplaceSourceControlTokenRequest.
+type ReplaceSourceControlTokenRequest struct {
+	Token *string `json:"token,omitempty"`
+}
+
 // RequestEmailChangeRequest defines model for RequestEmailChangeRequest.
 type RequestEmailChangeRequest struct {
 	Email string `json:"email"`
@@ -5134,6 +5394,13 @@ type SetPasswordRequest struct {
 	Password string `json:"password"`
 }
 
+// SetTeamSourceControlRequest defines model for SetTeamSourceControlRequest.
+type SetTeamSourceControlRequest struct {
+	AdvanceOnMerge bool                `json:"advanceOnMerge"`
+	ClearState     *bool               `json:"clearState,omitempty"`
+	MergedStateId  *openapi_types.UUID `json:"mergedStateId,omitempty"`
+}
+
 // SetTriageSettingsRequest defines model for SetTriageSettingsRequest.
 type SetTriageSettingsRequest struct {
 	RouteAgents       bool `json:"routeAgents"`
@@ -5246,6 +5513,79 @@ type SnoozeNotificationRequest struct {
 	Until time.Time `json:"until"`
 }
 
+// SourceControlBrokenReason defines model for SourceControlBrokenReason.
+type SourceControlBrokenReason string
+
+// SourceControlConflictProblem defines model for SourceControlConflictProblem.
+type SourceControlConflictProblem struct {
+	Code     SourceControlConflictProblemCode `json:"code"`
+	Detail   *string                          `json:"detail,omitempty"`
+	Errors   *[]FieldError                    `json:"errors,omitempty"`
+	Instance *string                          `json:"instance,omitempty"`
+	Status   int32                            `json:"status"`
+	Title    string                           `json:"title"`
+	Type     string                           `json:"type"`
+}
+
+// SourceControlConflictProblemCode defines model for SourceControlConflictProblem.Code.
+type SourceControlConflictProblemCode string
+
+// SourceControlConnection A connected repository. The token is never returned; tokenSet says whether one is held and tokenHint carries its last few characters so a person can tell which is installed. verifiedAt is when the forge last answered, which is separate from updatedAt because a connection can be edited without being proved.
+type SourceControlConnection struct {
+	BaseUrl       *string                    `json:"baseUrl,omitempty"`
+	BrokenAt      *time.Time                 `json:"brokenAt,omitempty"`
+	BrokenDetail  *string                    `json:"brokenDetail,omitempty"`
+	BrokenReason  *SourceControlBrokenReason `json:"brokenReason,omitempty"`
+	CreatedAt     time.Time                  `json:"createdAt"`
+	HookInstalled *bool                      `json:"hookInstalled,omitempty"`
+	Id            openapi_types.UUID         `json:"id"`
+	IdentityLogin *string                    `json:"identityLogin,omitempty"`
+	LastSeenAt    *time.Time                 `json:"lastSeenAt,omitempty"`
+	MirrorLabel   string                     `json:"mirrorLabel"`
+	Provider      SourceControlProvider      `json:"provider"`
+	Repository    string                     `json:"repository"`
+	Status        SourceControlStatus        `json:"status"`
+	TeamId        *openapi_types.UUID        `json:"teamId,omitempty"`
+	TokenHint     string                     `json:"tokenHint"`
+	TokenSet      bool                       `json:"tokenSet"`
+	UpdatedAt     time.Time                  `json:"updatedAt"`
+	VerifiedAt    *time.Time                 `json:"verifiedAt,omitempty"`
+}
+
+// SourceControlProvider defines model for SourceControlProvider.
+type SourceControlProvider string
+
+// SourceControlRefusedProblem defines model for SourceControlRefusedProblem.
+type SourceControlRefusedProblem struct {
+	Code     SourceControlRefusedProblemCode `json:"code"`
+	Detail   *string                         `json:"detail,omitempty"`
+	Errors   *[]FieldError                   `json:"errors,omitempty"`
+	Instance *string                         `json:"instance,omitempty"`
+	Status   int32                           `json:"status"`
+	Title    string                          `json:"title"`
+	Type     string                          `json:"type"`
+}
+
+// SourceControlRefusedProblemCode defines model for SourceControlRefusedProblem.Code.
+type SourceControlRefusedProblemCode string
+
+// SourceControlSealingUnavailableProblem defines model for SourceControlSealingUnavailableProblem.
+type SourceControlSealingUnavailableProblem struct {
+	Code     SourceControlSealingUnavailableProblemCode `json:"code"`
+	Detail   *string                                    `json:"detail,omitempty"`
+	Errors   *[]FieldError                              `json:"errors,omitempty"`
+	Instance *string                                    `json:"instance,omitempty"`
+	Status   int32                                      `json:"status"`
+	Title    string                                     `json:"title"`
+	Type     string                                     `json:"type"`
+}
+
+// SourceControlSealingUnavailableProblemCode defines model for SourceControlSealingUnavailableProblem.Code.
+type SourceControlSealingUnavailableProblemCode string
+
+// SourceControlStatus defines model for SourceControlStatus.
+type SourceControlStatus string
+
 // SsoIdentity defines model for SsoIdentity.
 type SsoIdentity struct {
 	AccountId   openapi_types.UUID `json:"accountId"`
@@ -5335,6 +5675,15 @@ type TeamMember struct {
 	Email       string             `json:"email"`
 	JoinedAt    *time.Time         `json:"joinedAt,omitempty"`
 	TeamId      openapi_types.UUID `json:"teamId"`
+}
+
+// TeamSourceControlSettings targetResolved is false when the team chose a state that has since been deleted. The setting still reads as on, so without this a team would look configured and quietly do nothing.
+type TeamSourceControlSettings struct {
+	AdvanceOnMerge bool                `json:"advanceOnMerge"`
+	MergedStateId  *openapi_types.UUID `json:"mergedStateId,omitempty"`
+	TargetName     *string             `json:"targetName,omitempty"`
+	TargetResolved bool                `json:"targetResolved"`
+	TeamId         openapi_types.UUID  `json:"teamId"`
 }
 
 // TeamStatus defines model for TeamStatus.
@@ -5428,6 +5777,13 @@ type UpdateSavedViewRequest struct {
 	Sharing *SavedViewSharing   `json:"sharing,omitempty"`
 	Sort    *[]IssueSort        `json:"sort,omitempty"`
 	TeamId  *openapi_types.UUID `json:"teamId,omitempty"`
+}
+
+// UpdateSourceControlRequest defines model for UpdateSourceControlRequest.
+type UpdateSourceControlRequest struct {
+	ClearTeam   *bool               `json:"clearTeam,omitempty"`
+	MirrorLabel *string             `json:"mirrorLabel,omitempty"`
+	TeamId      *openapi_types.UUID `json:"teamId,omitempty"`
 }
 
 // UpdateTeamRequest defines model for UpdateTeamRequest.
@@ -5753,6 +6109,9 @@ type AuditResourceKind = string
 // AuditTo defines model for AuditTo.
 type AuditTo = time.Time
 
+// CodeLinkId defines model for CodeLinkId.
+type CodeLinkId = openapi_types.UUID
+
 // CommentId defines model for CommentId.
 type CommentId = openapi_types.UUID
 
@@ -5812,6 +6171,9 @@ type RunId = openapi_types.UUID
 
 // SavedViewId defines model for SavedViewId.
 type SavedViewId = openapi_types.UUID
+
+// SourceControlConnectionId defines model for SourceControlConnectionId.
+type SourceControlConnectionId = openapi_types.UUID
 
 // StateId defines model for StateId.
 type StateId = openapi_types.UUID
@@ -5929,6 +6291,18 @@ type SignUpNotProcessable = SignUpUnavailableProblem
 
 // SignUpUnavailable defines model for SignUpUnavailable.
 type SignUpUnavailable = SignUpClosedProblem
+
+// SourceControlConflict defines model for SourceControlConflict.
+type SourceControlConflict = SourceControlConflictProblem
+
+// SourceControlRateLimited defines model for SourceControlRateLimited.
+type SourceControlRateLimited = Problem
+
+// SourceControlRefused defines model for SourceControlRefused.
+type SourceControlRefused = SourceControlRefusedProblem
+
+// SourceControlSealingUnavailable defines model for SourceControlSealingUnavailable.
+type SourceControlSealingUnavailable = SourceControlSealingUnavailableProblem
 
 // SsoFailed defines model for SsoFailed.
 type SsoFailed = SsoProblem
@@ -6258,6 +6632,9 @@ type UpdateWorkspaceIssueJSONRequestBody = UpdateIssueRequest
 // ReserveWorkspaceIssueAttachmentJSONRequestBody defines body for ReserveWorkspaceIssueAttachment for application/json ContentType.
 type ReserveWorkspaceIssueAttachmentJSONRequestBody = ReserveAttachmentRequest
 
+// LinkWorkspaceIssueCodeJSONRequestBody defines body for LinkWorkspaceIssueCode for application/json ContentType.
+type LinkWorkspaceIssueCodeJSONRequestBody = LinkIssueCodeRequest
+
 // PostWorkspaceIssueCommentJSONRequestBody defines body for PostWorkspaceIssueComment for application/json ContentType.
 type PostWorkspaceIssueCommentJSONRequestBody = PostCommentRequest
 
@@ -6269,6 +6646,9 @@ type SetWorkspaceIssueFollowJSONRequestBody = IssueFollow
 
 // SetWorkspaceIssueLabelsJSONRequestBody defines body for SetWorkspaceIssueLabels for application/json ContentType.
 type SetWorkspaceIssueLabelsJSONRequestBody = SetIssueLabelsRequest
+
+// MirrorWorkspaceIssueJSONRequestBody defines body for MirrorWorkspaceIssue for application/json ContentType.
+type MirrorWorkspaceIssueJSONRequestBody = MirrorIssueRequest
 
 // SetWorkspaceIssueParentJSONRequestBody defines body for SetWorkspaceIssueParent for application/json ContentType.
 type SetWorkspaceIssueParentJSONRequestBody = SetIssueParentRequest
@@ -6333,6 +6713,15 @@ type ReorderWorkspaceSavedViewsJSONRequestBody = ReorderSavedViewsRequest
 // UpdateWorkspaceSavedViewJSONRequestBody defines body for UpdateWorkspaceSavedView for application/json ContentType.
 type UpdateWorkspaceSavedViewJSONRequestBody = UpdateSavedViewRequest
 
+// ConnectWorkspaceSourceControlJSONRequestBody defines body for ConnectWorkspaceSourceControl for application/json ContentType.
+type ConnectWorkspaceSourceControlJSONRequestBody = ConnectSourceControlRequest
+
+// UpdateWorkspaceSourceControlConnectionJSONRequestBody defines body for UpdateWorkspaceSourceControlConnection for application/json ContentType.
+type UpdateWorkspaceSourceControlConnectionJSONRequestBody = UpdateSourceControlRequest
+
+// ReplaceWorkspaceSourceControlTokenJSONRequestBody defines body for ReplaceWorkspaceSourceControlToken for application/json ContentType.
+type ReplaceWorkspaceSourceControlTokenJSONRequestBody = ReplaceSourceControlTokenRequest
+
 // SetWorkspaceOidcConnectionJSONRequestBody defines body for SetWorkspaceOidcConnection for application/json ContentType.
 type SetWorkspaceOidcConnectionJSONRequestBody = SetWorkspaceOidcConnectionRequest
 
@@ -6362,6 +6751,9 @@ type AddWorkspaceTeamMemberJSONRequestBody = AddTeamMemberRequest
 
 // SetWorkspaceTeamNotificationSettingsJSONRequestBody defines body for SetWorkspaceTeamNotificationSettings for application/json ContentType.
 type SetWorkspaceTeamNotificationSettingsJSONRequestBody = NotificationPreferences
+
+// SetTeamSourceControlSettingsJSONRequestBody defines body for SetTeamSourceControlSettings for application/json ContentType.
+type SetTeamSourceControlSettingsJSONRequestBody = SetTeamSourceControlRequest
 
 // CreateWorkflowStateJSONRequestBody defines body for CreateWorkflowState for application/json ContentType.
 type CreateWorkflowStateJSONRequestBody = CreateWorkflowStateRequest
@@ -6704,6 +7096,15 @@ type ServerInterface interface {
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 	ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// ListWorkspaceIssueCodeLinks List the branches, commits and changes linked to this issue
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/code-links)
+	ListWorkspaceIssueCodeLinks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// LinkWorkspaceIssueCode Link a change to this issue by pasting its address
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/code-links)
+	LinkWorkspaceIssueCode(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// UnlinkWorkspaceIssueCode Remove a link somebody made or a scan got wrong
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/code-links/{linkId})
+	UnlinkWorkspaceIssueCode(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, linkId CodeLinkId)
 	// ListWorkspaceIssueComments Read an issue's conversation, oldest first, with the replies to each comment
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/comments)
 	ListWorkspaceIssueComments(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueCommentsParams)
@@ -6734,6 +7135,15 @@ type ServerInterface interface {
 	// SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 	SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// UnmirrorWorkspaceIssue Stop keeping this issue in step, leaving both where they are
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/mirror)
+	UnmirrorWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// GetWorkspaceIssueMirror Read the platform issue this one is kept in step with
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/mirror)
+	GetWorkspaceIssueMirror(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// MirrorWorkspaceIssue Pair this issue with one that already exists on the platform
+	// (PUT /workspaces/{workspaceId}/issues/{issueId}/mirror)
+	MirrorWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// SetWorkspaceIssueParent File an issue under another, or detach it, moving its sub-tree with it
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/parent)
 	SetWorkspaceIssueParent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -6887,6 +7297,27 @@ type ServerInterface interface {
 	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
 	// (GET /workspaces/{workspaceId}/search)
 	SearchWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchWorkspaceParams)
+	// ListWorkspaceSourceControlConnections List the repositories this workspace is connected to
+	// (GET /workspaces/{workspaceId}/source-control/connections)
+	ListWorkspaceSourceControlConnections(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ConnectWorkspaceSourceControl Connect a repository, returning the webhook address and secret for the only time
+	// (POST /workspaces/{workspaceId}/source-control/connections)
+	ConnectWorkspaceSourceControl(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// DisconnectWorkspaceSourceControl Disconnect a repository, keeping every link it has already made
+	// (DELETE /workspaces/{workspaceId}/source-control/connections/{connectionId})
+	DisconnectWorkspaceSourceControl(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
+	// GetWorkspaceSourceControlConnection Read one connection, its health and what it is attached to
+	// (GET /workspaces/{workspaceId}/source-control/connections/{connectionId})
+	GetWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
+	// UpdateWorkspaceSourceControlConnection Change which team a connection serves, and the label it watches for
+	// (PATCH /workspaces/{workspaceId}/source-control/connections/{connectionId})
+	UpdateWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
+	// ReplaceWorkspaceSourceControlToken Replace the token behind a connection, proving it before it is kept
+	// (PUT /workspaces/{workspaceId}/source-control/connections/{connectionId}/token)
+	ReplaceWorkspaceSourceControlToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
+	// VerifyWorkspaceSourceControlConnection Ask the forge whether this connection still works
+	// (POST /workspaces/{workspaceId}/source-control/connections/{connectionId}/verify)
+	VerifyWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
 	// RemoveWorkspaceSsoConnection Remove the workspace single sign-on provider, whichever protocol it uses
 	// (DELETE /workspaces/{workspaceId}/sso)
 	RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -6980,6 +7411,12 @@ type ServerInterface interface {
 	// SetWorkspaceTeamNotificationSettings Override your workspace settings for this team alone
 	// (PUT /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
 	SetWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// GetTeamSourceControlSettings Read what this team does when a linked change merges
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/source-control)
+	GetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// SetTeamSourceControlSettings Choose whether a merged change moves an issue, and where it moves it to
+	// (PUT /workspaces/{workspaceId}/teams/{teamId}/source-control)
+	SetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
 	// ListWorkflowStates List a team's workflow states in order
 	// (GET /workspaces/{workspaceId}/teams/{teamId}/states)
 	ListWorkflowStates(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
@@ -7694,6 +8131,24 @@ func (_ Unimplemented) ListWorkspaceIssueChildren(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListWorkspaceIssueCodeLinks List the branches, commits and changes linked to this issue
+// (GET /workspaces/{workspaceId}/issues/{issueId}/code-links)
+func (_ Unimplemented) ListWorkspaceIssueCodeLinks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// LinkWorkspaceIssueCode Link a change to this issue by pasting its address
+// (POST /workspaces/{workspaceId}/issues/{issueId}/code-links)
+func (_ Unimplemented) LinkWorkspaceIssueCode(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UnlinkWorkspaceIssueCode Remove a link somebody made or a scan got wrong
+// (DELETE /workspaces/{workspaceId}/issues/{issueId}/code-links/{linkId})
+func (_ Unimplemented) UnlinkWorkspaceIssueCode(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, linkId CodeLinkId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceIssueComments Read an issue's conversation, oldest first, with the replies to each comment
 // (GET /workspaces/{workspaceId}/issues/{issueId}/comments)
 func (_ Unimplemented) ListWorkspaceIssueComments(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueCommentsParams) {
@@ -7751,6 +8206,24 @@ func (_ Unimplemented) ListWorkspaceIssueFollowers(w http.ResponseWriter, r *htt
 // SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 // (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 func (_ Unimplemented) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UnmirrorWorkspaceIssue Stop keeping this issue in step, leaving both where they are
+// (DELETE /workspaces/{workspaceId}/issues/{issueId}/mirror)
+func (_ Unimplemented) UnmirrorWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceIssueMirror Read the platform issue this one is kept in step with
+// (GET /workspaces/{workspaceId}/issues/{issueId}/mirror)
+func (_ Unimplemented) GetWorkspaceIssueMirror(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MirrorWorkspaceIssue Pair this issue with one that already exists on the platform
+// (PUT /workspaces/{workspaceId}/issues/{issueId}/mirror)
+func (_ Unimplemented) MirrorWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8060,6 +8533,48 @@ func (_ Unimplemented) SearchWorkspace(w http.ResponseWriter, r *http.Request, w
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListWorkspaceSourceControlConnections List the repositories this workspace is connected to
+// (GET /workspaces/{workspaceId}/source-control/connections)
+func (_ Unimplemented) ListWorkspaceSourceControlConnections(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ConnectWorkspaceSourceControl Connect a repository, returning the webhook address and secret for the only time
+// (POST /workspaces/{workspaceId}/source-control/connections)
+func (_ Unimplemented) ConnectWorkspaceSourceControl(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DisconnectWorkspaceSourceControl Disconnect a repository, keeping every link it has already made
+// (DELETE /workspaces/{workspaceId}/source-control/connections/{connectionId})
+func (_ Unimplemented) DisconnectWorkspaceSourceControl(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceSourceControlConnection Read one connection, its health and what it is attached to
+// (GET /workspaces/{workspaceId}/source-control/connections/{connectionId})
+func (_ Unimplemented) GetWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateWorkspaceSourceControlConnection Change which team a connection serves, and the label it watches for
+// (PATCH /workspaces/{workspaceId}/source-control/connections/{connectionId})
+func (_ Unimplemented) UpdateWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReplaceWorkspaceSourceControlToken Replace the token behind a connection, proving it before it is kept
+// (PUT /workspaces/{workspaceId}/source-control/connections/{connectionId}/token)
+func (_ Unimplemented) ReplaceWorkspaceSourceControlToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// VerifyWorkspaceSourceControlConnection Ask the forge whether this connection still works
+// (POST /workspaces/{workspaceId}/source-control/connections/{connectionId}/verify)
+func (_ Unimplemented) VerifyWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // RemoveWorkspaceSsoConnection Remove the workspace single sign-on provider, whichever protocol it uses
 // (DELETE /workspaces/{workspaceId}/sso)
 func (_ Unimplemented) RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
@@ -8243,6 +8758,18 @@ func (_ Unimplemented) GetWorkspaceTeamNotificationSettings(w http.ResponseWrite
 // SetWorkspaceTeamNotificationSettings Override your workspace settings for this team alone
 // (PUT /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
 func (_ Unimplemented) SetWorkspaceTeamNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetTeamSourceControlSettings Read what this team does when a linked change merges
+// (GET /workspaces/{workspaceId}/teams/{teamId}/source-control)
+func (_ Unimplemented) GetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetTeamSourceControlSettings Choose whether a merged change moves an issue, and where it moves it to
+// (PUT /workspaces/{workspaceId}/teams/{teamId}/source-control)
+func (_ Unimplemented) SetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -11567,6 +12094,120 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceIssueChildren(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceIssueCodeLinks operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueCodeLinks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueCodeLinks(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// LinkWorkspaceIssueCode operation middleware
+func (siw *ServerInterfaceWrapper) LinkWorkspaceIssueCode(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LinkWorkspaceIssueCode(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnlinkWorkspaceIssueCode operation middleware
+func (siw *ServerInterfaceWrapper) UnlinkWorkspaceIssueCode(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "linkId" -------------
+	var linkId CodeLinkId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "linkId", chi.URLParam(r, "linkId"), &linkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "linkId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnlinkWorkspaceIssueCode(w, r, workspaceId, issueId, linkId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceIssueComments operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceIssueComments(w http.ResponseWriter, r *http.Request) {
 
@@ -12004,6 +12645,111 @@ func (siw *ServerInterfaceWrapper) SetWorkspaceIssueLabels(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetWorkspaceIssueLabels(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnmirrorWorkspaceIssue operation middleware
+func (siw *ServerInterfaceWrapper) UnmirrorWorkspaceIssue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnmirrorWorkspaceIssue(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceIssueMirror operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceIssueMirror(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceIssueMirror(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MirrorWorkspaceIssue operation middleware
+func (siw *ServerInterfaceWrapper) MirrorWorkspaceIssue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MirrorWorkspaceIssue(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -13930,6 +14676,233 @@ func (siw *ServerInterfaceWrapper) SearchWorkspace(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceSourceControlConnections operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceSourceControlConnections(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceSourceControlConnections(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConnectWorkspaceSourceControl operation middleware
+func (siw *ServerInterfaceWrapper) ConnectWorkspaceSourceControl(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConnectWorkspaceSourceControl(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisconnectWorkspaceSourceControl operation middleware
+func (siw *ServerInterfaceWrapper) DisconnectWorkspaceSourceControl(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "connectionId" -------------
+	var connectionId SourceControlConnectionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisconnectWorkspaceSourceControl(w, r, workspaceId, connectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceSourceControlConnection operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "connectionId" -------------
+	var connectionId SourceControlConnectionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceSourceControlConnection(w, r, workspaceId, connectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateWorkspaceSourceControlConnection operation middleware
+func (siw *ServerInterfaceWrapper) UpdateWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "connectionId" -------------
+	var connectionId SourceControlConnectionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateWorkspaceSourceControlConnection(w, r, workspaceId, connectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReplaceWorkspaceSourceControlToken operation middleware
+func (siw *ServerInterfaceWrapper) ReplaceWorkspaceSourceControlToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "connectionId" -------------
+	var connectionId SourceControlConnectionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReplaceWorkspaceSourceControlToken(w, r, workspaceId, connectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// VerifyWorkspaceSourceControlConnection operation middleware
+func (siw *ServerInterfaceWrapper) VerifyWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "connectionId" -------------
+	var connectionId SourceControlConnectionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.VerifyWorkspaceSourceControlConnection(w, r, workspaceId, connectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RemoveWorkspaceSsoConnection operation middleware
 func (siw *ServerInterfaceWrapper) RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request) {
 
@@ -14887,6 +15860,76 @@ func (siw *ServerInterfaceWrapper) SetWorkspaceTeamNotificationSettings(w http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetWorkspaceTeamNotificationSettings(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetTeamSourceControlSettings operation middleware
+func (siw *ServerInterfaceWrapper) GetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetTeamSourceControlSettings(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetTeamSourceControlSettings operation middleware
+func (siw *ServerInterfaceWrapper) SetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetTeamSourceControlSettings(w, r, workspaceId, teamId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -16779,6 +17822,51 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/search", wrapper.SearchWorkspace)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections", wrapper.ListWorkspaceSourceControlConnections)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections", wrapper.ConnectWorkspaceSourceControl)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections/{connectionId}", wrapper.DisconnectWorkspaceSourceControl)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections/{connectionId}", wrapper.GetWorkspaceSourceControlConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections/{connectionId}", wrapper.UpdateWorkspaceSourceControlConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections/{connectionId}/token", wrapper.ReplaceWorkspaceSourceControlToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections/{connectionId}/verify", wrapper.VerifyWorkspaceSourceControlConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/source-control", wrapper.GetTeamSourceControlSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/source-control", wrapper.SetTeamSourceControlSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/code-links", wrapper.ListWorkspaceIssueCodeLinks)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/code-links", wrapper.LinkWorkspaceIssueCode)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/code-links/{linkId}", wrapper.UnlinkWorkspaceIssueCode)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/mirror", wrapper.UnmirrorWorkspaceIssue)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/mirror", wrapper.GetWorkspaceIssueMirror)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/mirror", wrapper.MirrorWorkspaceIssue)
+	})
 
 	return r
 }
@@ -16851,6 +17939,14 @@ type SignUpLinkUnusableApplicationProblemPlusJSONResponse SignUpUnusableProblem
 type SignUpNotProcessableApplicationProblemPlusJSONResponse SignUpUnavailableProblem
 
 type SignUpUnavailableApplicationProblemPlusJSONResponse SignUpClosedProblem
+
+type SourceControlConflictApplicationProblemPlusJSONResponse SourceControlConflictProblem
+
+type SourceControlRateLimitedApplicationProblemPlusJSONResponse Problem
+
+type SourceControlRefusedApplicationProblemPlusJSONResponse SourceControlRefusedProblem
+
+type SourceControlSealingUnavailableApplicationProblemPlusJSONResponse SourceControlSealingUnavailableProblem
 
 type SsoFailedApplicationProblemPlusJSONResponse SsoProblem
 
@@ -25735,6 +26831,265 @@ func (response ListWorkspaceIssueChildren500ApplicationProblemPlusJSONResponse) 
 	return err
 }
 
+type ListWorkspaceIssueCodeLinksRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueCodeLinksResponseObject interface {
+	VisitListWorkspaceIssueCodeLinksResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueCodeLinks200JSONResponse []CodeLink
+
+func (response ListWorkspaceIssueCodeLinks200JSONResponse) VisitListWorkspaceIssueCodeLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCodeLinks401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueCodeLinks401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCodeLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCodeLinks403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueCodeLinks403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCodeLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCodeLinks404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueCodeLinks404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCodeLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCodeLinks500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueCodeLinks500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCodeLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceIssueCodeRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *LinkWorkspaceIssueCodeJSONRequestBody
+}
+
+type LinkWorkspaceIssueCodeResponseObject interface {
+	VisitLinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error
+}
+
+type LinkWorkspaceIssueCode201JSONResponse CodeLink
+
+func (response LinkWorkspaceIssueCode201JSONResponse) VisitLinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceIssueCode401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response LinkWorkspaceIssueCode401ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceIssueCode403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response LinkWorkspaceIssueCode403ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceIssueCode404ApplicationProblemPlusJSONResponse Problem
+
+func (response LinkWorkspaceIssueCode404ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceIssueCode422ApplicationProblemPlusJSONResponse Problem
+
+func (response LinkWorkspaceIssueCode422ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceIssueCode500ApplicationProblemPlusJSONResponse Problem
+
+func (response LinkWorkspaceIssueCode500ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceIssueCodeRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	LinkId      CodeLinkId  `json:"linkId"`
+}
+
+type UnlinkWorkspaceIssueCodeResponseObject interface {
+	VisitUnlinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error
+}
+
+type UnlinkWorkspaceIssueCode204Response struct {
+}
+
+func (response UnlinkWorkspaceIssueCode204Response) VisitUnlinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnlinkWorkspaceIssueCode401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UnlinkWorkspaceIssueCode401ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceIssueCode403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UnlinkWorkspaceIssueCode403ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceIssueCode404ApplicationProblemPlusJSONResponse Problem
+
+func (response UnlinkWorkspaceIssueCode404ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceIssueCode500ApplicationProblemPlusJSONResponse Problem
+
+func (response UnlinkWorkspaceIssueCode500ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceIssueCommentsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	IssueId     IssueId     `json:"issueId"`
@@ -26769,6 +28124,296 @@ func (response SetWorkspaceIssueLabels422ApplicationProblemPlusJSONResponse) Vis
 type SetWorkspaceIssueLabels500ApplicationProblemPlusJSONResponse Problem
 
 func (response SetWorkspaceIssueLabels500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceIssueLabelsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmirrorWorkspaceIssueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type UnmirrorWorkspaceIssueResponseObject interface {
+	VisitUnmirrorWorkspaceIssueResponse(w http.ResponseWriter) error
+}
+
+type UnmirrorWorkspaceIssue204Response struct {
+}
+
+func (response UnmirrorWorkspaceIssue204Response) VisitUnmirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnmirrorWorkspaceIssue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UnmirrorWorkspaceIssue401ApplicationProblemPlusJSONResponse) VisitUnmirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmirrorWorkspaceIssue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UnmirrorWorkspaceIssue403ApplicationProblemPlusJSONResponse) VisitUnmirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmirrorWorkspaceIssue404ApplicationProblemPlusJSONResponse Problem
+
+func (response UnmirrorWorkspaceIssue404ApplicationProblemPlusJSONResponse) VisitUnmirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmirrorWorkspaceIssue500ApplicationProblemPlusJSONResponse Problem
+
+func (response UnmirrorWorkspaceIssue500ApplicationProblemPlusJSONResponse) VisitUnmirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueMirrorRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type GetWorkspaceIssueMirrorResponseObject interface {
+	VisitGetWorkspaceIssueMirrorResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceIssueMirror200JSONResponse IssueMirror
+
+func (response GetWorkspaceIssueMirror200JSONResponse) VisitGetWorkspaceIssueMirrorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueMirror401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueMirror401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueMirrorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueMirror403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueMirror403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueMirrorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueMirror404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueMirror404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueMirrorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueMirror500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueMirror500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueMirrorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MirrorWorkspaceIssueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *MirrorWorkspaceIssueJSONRequestBody
+}
+
+type MirrorWorkspaceIssueResponseObject interface {
+	VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter) error
+}
+
+type MirrorWorkspaceIssue200JSONResponse IssueMirror
+
+func (response MirrorWorkspaceIssue200JSONResponse) VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MirrorWorkspaceIssue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MirrorWorkspaceIssue401ApplicationProblemPlusJSONResponse) VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MirrorWorkspaceIssue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response MirrorWorkspaceIssue403ApplicationProblemPlusJSONResponse) VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MirrorWorkspaceIssue404ApplicationProblemPlusJSONResponse Problem
+
+func (response MirrorWorkspaceIssue404ApplicationProblemPlusJSONResponse) VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MirrorWorkspaceIssue409ApplicationProblemPlusJSONResponse struct {
+	SourceControlConflictApplicationProblemPlusJSONResponse
+}
+
+func (response MirrorWorkspaceIssue409ApplicationProblemPlusJSONResponse) VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MirrorWorkspaceIssue422ApplicationProblemPlusJSONResponse Problem
+
+func (response MirrorWorkspaceIssue422ApplicationProblemPlusJSONResponse) VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MirrorWorkspaceIssue429ApplicationProblemPlusJSONResponse struct {
+	SourceControlRateLimitedApplicationProblemPlusJSONResponse
+}
+
+func (response MirrorWorkspaceIssue429ApplicationProblemPlusJSONResponse) VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MirrorWorkspaceIssue500ApplicationProblemPlusJSONResponse Problem
+
+func (response MirrorWorkspaceIssue500ApplicationProblemPlusJSONResponse) VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -31506,6 +33151,726 @@ func (response SearchWorkspace500ApplicationProblemPlusJSONResponse) VisitSearch
 	return err
 }
 
+type ListWorkspaceSourceControlConnectionsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceSourceControlConnectionsResponseObject interface {
+	VisitListWorkspaceSourceControlConnectionsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceSourceControlConnections200JSONResponse []SourceControlConnection
+
+func (response ListWorkspaceSourceControlConnections200JSONResponse) VisitListWorkspaceSourceControlConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlConnections401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSourceControlConnections401ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlConnections403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSourceControlConnections403ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlConnections500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceSourceControlConnections500ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceSourceControlRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *ConnectWorkspaceSourceControlJSONRequestBody
+}
+
+type ConnectWorkspaceSourceControlResponseObject interface {
+	VisitConnectWorkspaceSourceControlResponse(w http.ResponseWriter) error
+}
+
+type ConnectWorkspaceSourceControl201JSONResponse MintedSourceControlConnection
+
+func (response ConnectWorkspaceSourceControl201JSONResponse) VisitConnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceSourceControl401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceSourceControl401ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceSourceControl403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceSourceControl403ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceSourceControl404ApplicationProblemPlusJSONResponse Problem
+
+func (response ConnectWorkspaceSourceControl404ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceSourceControl409ApplicationProblemPlusJSONResponse struct {
+	SourceControlConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceSourceControl409ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceSourceControl422ApplicationProblemPlusJSONResponse struct {
+	SourceControlRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceSourceControl422ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceSourceControl429ApplicationProblemPlusJSONResponse struct {
+	SourceControlRateLimitedApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceSourceControl429ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceSourceControl500ApplicationProblemPlusJSONResponse Problem
+
+func (response ConnectWorkspaceSourceControl500ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceSourceControl503ApplicationProblemPlusJSONResponse struct {
+	SourceControlSealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceSourceControl503ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceSourceControlRequestObject struct {
+	WorkspaceId  WorkspaceId               `json:"workspaceId"`
+	ConnectionId SourceControlConnectionId `json:"connectionId"`
+}
+
+type DisconnectWorkspaceSourceControlResponseObject interface {
+	VisitDisconnectWorkspaceSourceControlResponse(w http.ResponseWriter) error
+}
+
+type DisconnectWorkspaceSourceControl204Response struct {
+}
+
+func (response DisconnectWorkspaceSourceControl204Response) VisitDisconnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DisconnectWorkspaceSourceControl401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectWorkspaceSourceControl401ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceSourceControl403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectWorkspaceSourceControl403ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceSourceControl404ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectWorkspaceSourceControl404ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceSourceControl500ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectWorkspaceSourceControl500ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceSourceControlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSourceControlConnectionRequestObject struct {
+	WorkspaceId  WorkspaceId               `json:"workspaceId"`
+	ConnectionId SourceControlConnectionId `json:"connectionId"`
+}
+
+type GetWorkspaceSourceControlConnectionResponseObject interface {
+	VisitGetWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceSourceControlConnection200JSONResponse SourceControlConnection
+
+func (response GetWorkspaceSourceControlConnection200JSONResponse) VisitGetWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSourceControlConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSourceControlConnection401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSourceControlConnection403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSourceControlConnection403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSourceControlConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceSourceControlConnection404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSourceControlConnection500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceSourceControlConnection500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSourceControlConnectionRequestObject struct {
+	WorkspaceId  WorkspaceId               `json:"workspaceId"`
+	ConnectionId SourceControlConnectionId `json:"connectionId"`
+	Body         *UpdateWorkspaceSourceControlConnectionJSONRequestBody
+}
+
+type UpdateWorkspaceSourceControlConnectionResponseObject interface {
+	VisitUpdateWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error
+}
+
+type UpdateWorkspaceSourceControlConnection200JSONResponse SourceControlConnection
+
+func (response UpdateWorkspaceSourceControlConnection200JSONResponse) VisitUpdateWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSourceControlConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceSourceControlConnection401ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSourceControlConnection403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceSourceControlConnection403ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSourceControlConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceSourceControlConnection404ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSourceControlConnection422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceSourceControlConnection422ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceSourceControlConnection500ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceSourceControlConnection500ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplaceWorkspaceSourceControlTokenRequestObject struct {
+	WorkspaceId  WorkspaceId               `json:"workspaceId"`
+	ConnectionId SourceControlConnectionId `json:"connectionId"`
+	Body         *ReplaceWorkspaceSourceControlTokenJSONRequestBody
+}
+
+type ReplaceWorkspaceSourceControlTokenResponseObject interface {
+	VisitReplaceWorkspaceSourceControlTokenResponse(w http.ResponseWriter) error
+}
+
+type ReplaceWorkspaceSourceControlToken200JSONResponse SourceControlConnection
+
+func (response ReplaceWorkspaceSourceControlToken200JSONResponse) VisitReplaceWorkspaceSourceControlTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplaceWorkspaceSourceControlToken401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReplaceWorkspaceSourceControlToken401ApplicationProblemPlusJSONResponse) VisitReplaceWorkspaceSourceControlTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplaceWorkspaceSourceControlToken403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ReplaceWorkspaceSourceControlToken403ApplicationProblemPlusJSONResponse) VisitReplaceWorkspaceSourceControlTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplaceWorkspaceSourceControlToken404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReplaceWorkspaceSourceControlToken404ApplicationProblemPlusJSONResponse) VisitReplaceWorkspaceSourceControlTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplaceWorkspaceSourceControlToken422ApplicationProblemPlusJSONResponse struct {
+	SourceControlRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response ReplaceWorkspaceSourceControlToken422ApplicationProblemPlusJSONResponse) VisitReplaceWorkspaceSourceControlTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplaceWorkspaceSourceControlToken429ApplicationProblemPlusJSONResponse struct {
+	SourceControlRateLimitedApplicationProblemPlusJSONResponse
+}
+
+func (response ReplaceWorkspaceSourceControlToken429ApplicationProblemPlusJSONResponse) VisitReplaceWorkspaceSourceControlTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplaceWorkspaceSourceControlToken500ApplicationProblemPlusJSONResponse Problem
+
+func (response ReplaceWorkspaceSourceControlToken500ApplicationProblemPlusJSONResponse) VisitReplaceWorkspaceSourceControlTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplaceWorkspaceSourceControlToken503ApplicationProblemPlusJSONResponse struct {
+	SourceControlSealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response ReplaceWorkspaceSourceControlToken503ApplicationProblemPlusJSONResponse) VisitReplaceWorkspaceSourceControlTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceSourceControlConnectionRequestObject struct {
+	WorkspaceId  WorkspaceId               `json:"workspaceId"`
+	ConnectionId SourceControlConnectionId `json:"connectionId"`
+}
+
+type VerifyWorkspaceSourceControlConnectionResponseObject interface {
+	VisitVerifyWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error
+}
+
+type VerifyWorkspaceSourceControlConnection200JSONResponse SourceControlConnection
+
+func (response VerifyWorkspaceSourceControlConnection200JSONResponse) VisitVerifyWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceSourceControlConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response VerifyWorkspaceSourceControlConnection401ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceSourceControlConnection403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response VerifyWorkspaceSourceControlConnection403ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceSourceControlConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response VerifyWorkspaceSourceControlConnection404ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceSourceControlConnection422ApplicationProblemPlusJSONResponse struct {
+	SourceControlRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response VerifyWorkspaceSourceControlConnection422ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceSourceControlConnection429ApplicationProblemPlusJSONResponse struct {
+	SourceControlRateLimitedApplicationProblemPlusJSONResponse
+}
+
+func (response VerifyWorkspaceSourceControlConnection429ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceSourceControlConnection500ApplicationProblemPlusJSONResponse Problem
+
+func (response VerifyWorkspaceSourceControlConnection500ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RemoveWorkspaceSsoConnectionRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -34212,6 +36577,187 @@ func (response SetWorkspaceTeamNotificationSettings422ApplicationProblemPlusJSON
 type SetWorkspaceTeamNotificationSettings500ApplicationProblemPlusJSONResponse Problem
 
 func (response SetWorkspaceTeamNotificationSettings500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceTeamNotificationSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamSourceControlSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type GetTeamSourceControlSettingsResponseObject interface {
+	VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error
+}
+
+type GetTeamSourceControlSettings200JSONResponse TeamSourceControlSettings
+
+func (response GetTeamSourceControlSettings200JSONResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamSourceControlSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetTeamSourceControlSettings401ApplicationProblemPlusJSONResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamSourceControlSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetTeamSourceControlSettings403ApplicationProblemPlusJSONResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamSourceControlSettings404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetTeamSourceControlSettings404ApplicationProblemPlusJSONResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamSourceControlSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetTeamSourceControlSettings500ApplicationProblemPlusJSONResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+	Body        *SetTeamSourceControlSettingsJSONRequestBody
+}
+
+type SetTeamSourceControlSettingsResponseObject interface {
+	VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error
+}
+
+type SetTeamSourceControlSettings200JSONResponse TeamSourceControlSettings
+
+func (response SetTeamSourceControlSettings200JSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetTeamSourceControlSettings401ApplicationProblemPlusJSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetTeamSourceControlSettings403ApplicationProblemPlusJSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettings404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamSourceControlSettings404ApplicationProblemPlusJSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettings422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamSourceControlSettings422ApplicationProblemPlusJSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamSourceControlSettings500ApplicationProblemPlusJSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -37177,6 +39723,15 @@ type StrictServerInterface interface {
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 	ListWorkspaceIssueChildren(ctx context.Context, request ListWorkspaceIssueChildrenRequestObject) (ListWorkspaceIssueChildrenResponseObject, error)
+	// ListWorkspaceIssueCodeLinks List the branches, commits and changes linked to this issue
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/code-links)
+	ListWorkspaceIssueCodeLinks(ctx context.Context, request ListWorkspaceIssueCodeLinksRequestObject) (ListWorkspaceIssueCodeLinksResponseObject, error)
+	// LinkWorkspaceIssueCode Link a change to this issue by pasting its address
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/code-links)
+	LinkWorkspaceIssueCode(ctx context.Context, request LinkWorkspaceIssueCodeRequestObject) (LinkWorkspaceIssueCodeResponseObject, error)
+	// UnlinkWorkspaceIssueCode Remove a link somebody made or a scan got wrong
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/code-links/{linkId})
+	UnlinkWorkspaceIssueCode(ctx context.Context, request UnlinkWorkspaceIssueCodeRequestObject) (UnlinkWorkspaceIssueCodeResponseObject, error)
 	// ListWorkspaceIssueComments Read an issue's conversation, oldest first, with the replies to each comment
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/comments)
 	ListWorkspaceIssueComments(ctx context.Context, request ListWorkspaceIssueCommentsRequestObject) (ListWorkspaceIssueCommentsResponseObject, error)
@@ -37207,6 +39762,15 @@ type StrictServerInterface interface {
 	// SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 	SetWorkspaceIssueLabels(ctx context.Context, request SetWorkspaceIssueLabelsRequestObject) (SetWorkspaceIssueLabelsResponseObject, error)
+	// UnmirrorWorkspaceIssue Stop keeping this issue in step, leaving both where they are
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/mirror)
+	UnmirrorWorkspaceIssue(ctx context.Context, request UnmirrorWorkspaceIssueRequestObject) (UnmirrorWorkspaceIssueResponseObject, error)
+	// GetWorkspaceIssueMirror Read the platform issue this one is kept in step with
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/mirror)
+	GetWorkspaceIssueMirror(ctx context.Context, request GetWorkspaceIssueMirrorRequestObject) (GetWorkspaceIssueMirrorResponseObject, error)
+	// MirrorWorkspaceIssue Pair this issue with one that already exists on the platform
+	// (PUT /workspaces/{workspaceId}/issues/{issueId}/mirror)
+	MirrorWorkspaceIssue(ctx context.Context, request MirrorWorkspaceIssueRequestObject) (MirrorWorkspaceIssueResponseObject, error)
 	// SetWorkspaceIssueParent File an issue under another, or detach it, moving its sub-tree with it
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/parent)
 	SetWorkspaceIssueParent(ctx context.Context, request SetWorkspaceIssueParentRequestObject) (SetWorkspaceIssueParentResponseObject, error)
@@ -37360,6 +39924,27 @@ type StrictServerInterface interface {
 	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
 	// (GET /workspaces/{workspaceId}/search)
 	SearchWorkspace(ctx context.Context, request SearchWorkspaceRequestObject) (SearchWorkspaceResponseObject, error)
+	// ListWorkspaceSourceControlConnections List the repositories this workspace is connected to
+	// (GET /workspaces/{workspaceId}/source-control/connections)
+	ListWorkspaceSourceControlConnections(ctx context.Context, request ListWorkspaceSourceControlConnectionsRequestObject) (ListWorkspaceSourceControlConnectionsResponseObject, error)
+	// ConnectWorkspaceSourceControl Connect a repository, returning the webhook address and secret for the only time
+	// (POST /workspaces/{workspaceId}/source-control/connections)
+	ConnectWorkspaceSourceControl(ctx context.Context, request ConnectWorkspaceSourceControlRequestObject) (ConnectWorkspaceSourceControlResponseObject, error)
+	// DisconnectWorkspaceSourceControl Disconnect a repository, keeping every link it has already made
+	// (DELETE /workspaces/{workspaceId}/source-control/connections/{connectionId})
+	DisconnectWorkspaceSourceControl(ctx context.Context, request DisconnectWorkspaceSourceControlRequestObject) (DisconnectWorkspaceSourceControlResponseObject, error)
+	// GetWorkspaceSourceControlConnection Read one connection, its health and what it is attached to
+	// (GET /workspaces/{workspaceId}/source-control/connections/{connectionId})
+	GetWorkspaceSourceControlConnection(ctx context.Context, request GetWorkspaceSourceControlConnectionRequestObject) (GetWorkspaceSourceControlConnectionResponseObject, error)
+	// UpdateWorkspaceSourceControlConnection Change which team a connection serves, and the label it watches for
+	// (PATCH /workspaces/{workspaceId}/source-control/connections/{connectionId})
+	UpdateWorkspaceSourceControlConnection(ctx context.Context, request UpdateWorkspaceSourceControlConnectionRequestObject) (UpdateWorkspaceSourceControlConnectionResponseObject, error)
+	// ReplaceWorkspaceSourceControlToken Replace the token behind a connection, proving it before it is kept
+	// (PUT /workspaces/{workspaceId}/source-control/connections/{connectionId}/token)
+	ReplaceWorkspaceSourceControlToken(ctx context.Context, request ReplaceWorkspaceSourceControlTokenRequestObject) (ReplaceWorkspaceSourceControlTokenResponseObject, error)
+	// VerifyWorkspaceSourceControlConnection Ask the forge whether this connection still works
+	// (POST /workspaces/{workspaceId}/source-control/connections/{connectionId}/verify)
+	VerifyWorkspaceSourceControlConnection(ctx context.Context, request VerifyWorkspaceSourceControlConnectionRequestObject) (VerifyWorkspaceSourceControlConnectionResponseObject, error)
 	// RemoveWorkspaceSsoConnection Remove the workspace single sign-on provider, whichever protocol it uses
 	// (DELETE /workspaces/{workspaceId}/sso)
 	RemoveWorkspaceSsoConnection(ctx context.Context, request RemoveWorkspaceSsoConnectionRequestObject) (RemoveWorkspaceSsoConnectionResponseObject, error)
@@ -37453,6 +40038,12 @@ type StrictServerInterface interface {
 	// SetWorkspaceTeamNotificationSettings Override your workspace settings for this team alone
 	// (PUT /workspaces/{workspaceId}/teams/{teamId}/notification-settings)
 	SetWorkspaceTeamNotificationSettings(ctx context.Context, request SetWorkspaceTeamNotificationSettingsRequestObject) (SetWorkspaceTeamNotificationSettingsResponseObject, error)
+	// GetTeamSourceControlSettings Read what this team does when a linked change merges
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/source-control)
+	GetTeamSourceControlSettings(ctx context.Context, request GetTeamSourceControlSettingsRequestObject) (GetTeamSourceControlSettingsResponseObject, error)
+	// SetTeamSourceControlSettings Choose whether a merged change moves an issue, and where it moves it to
+	// (PUT /workspaces/{workspaceId}/teams/{teamId}/source-control)
+	SetTeamSourceControlSettings(ctx context.Context, request SetTeamSourceControlSettingsRequestObject) (SetTeamSourceControlSettingsResponseObject, error)
 	// ListWorkflowStates List a team's workflow states in order
 	// (GET /workspaces/{workspaceId}/teams/{teamId}/states)
 	ListWorkflowStates(ctx context.Context, request ListWorkflowStatesRequestObject) (ListWorkflowStatesResponseObject, error)
@@ -40507,6 +43098,95 @@ func (sh *strictHandler) ListWorkspaceIssueChildren(w http.ResponseWriter, r *ht
 	}
 }
 
+// ListWorkspaceIssueCodeLinks operation middleware
+func (sh *strictHandler) ListWorkspaceIssueCodeLinks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueCodeLinksRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueCodeLinks(ctx, request.(ListWorkspaceIssueCodeLinksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueCodeLinks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueCodeLinksResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueCodeLinksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// LinkWorkspaceIssueCode operation middleware
+func (sh *strictHandler) LinkWorkspaceIssueCode(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request LinkWorkspaceIssueCodeRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body LinkWorkspaceIssueCodeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LinkWorkspaceIssueCode(ctx, request.(LinkWorkspaceIssueCodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LinkWorkspaceIssueCode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LinkWorkspaceIssueCodeResponseObject); ok {
+		if err := validResponse.VisitLinkWorkspaceIssueCodeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnlinkWorkspaceIssueCode operation middleware
+func (sh *strictHandler) UnlinkWorkspaceIssueCode(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, linkId CodeLinkId) {
+	var request UnlinkWorkspaceIssueCodeRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.LinkId = linkId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnlinkWorkspaceIssueCode(ctx, request.(UnlinkWorkspaceIssueCodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnlinkWorkspaceIssueCode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnlinkWorkspaceIssueCodeResponseObject); ok {
+		if err := validResponse.VisitUnlinkWorkspaceIssueCodeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListWorkspaceIssueComments operation middleware
 func (sh *strictHandler) ListWorkspaceIssueComments(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueCommentsParams) {
 	var request ListWorkspaceIssueCommentsRequestObject
@@ -40805,6 +43485,94 @@ func (sh *strictHandler) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetWorkspaceIssueLabelsResponseObject); ok {
 		if err := validResponse.VisitSetWorkspaceIssueLabelsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnmirrorWorkspaceIssue operation middleware
+func (sh *strictHandler) UnmirrorWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request UnmirrorWorkspaceIssueRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnmirrorWorkspaceIssue(ctx, request.(UnmirrorWorkspaceIssueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnmirrorWorkspaceIssue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnmirrorWorkspaceIssueResponseObject); ok {
+		if err := validResponse.VisitUnmirrorWorkspaceIssueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceIssueMirror operation middleware
+func (sh *strictHandler) GetWorkspaceIssueMirror(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request GetWorkspaceIssueMirrorRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceIssueMirror(ctx, request.(GetWorkspaceIssueMirrorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceIssueMirror")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceIssueMirrorResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceIssueMirrorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MirrorWorkspaceIssue operation middleware
+func (sh *strictHandler) MirrorWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request MirrorWorkspaceIssueRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body MirrorWorkspaceIssueJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MirrorWorkspaceIssue(ctx, request.(MirrorWorkspaceIssueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MirrorWorkspaceIssue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MirrorWorkspaceIssueResponseObject); ok {
+		if err := validResponse.VisitMirrorWorkspaceIssueResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -42330,6 +45098,214 @@ func (sh *strictHandler) SearchWorkspace(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// ListWorkspaceSourceControlConnections operation middleware
+func (sh *strictHandler) ListWorkspaceSourceControlConnections(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceSourceControlConnectionsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceSourceControlConnections(ctx, request.(ListWorkspaceSourceControlConnectionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceSourceControlConnections")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceSourceControlConnectionsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceSourceControlConnectionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConnectWorkspaceSourceControl operation middleware
+func (sh *strictHandler) ConnectWorkspaceSourceControl(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ConnectWorkspaceSourceControlRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body ConnectWorkspaceSourceControlJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConnectWorkspaceSourceControl(ctx, request.(ConnectWorkspaceSourceControlRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConnectWorkspaceSourceControl")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConnectWorkspaceSourceControlResponseObject); ok {
+		if err := validResponse.VisitConnectWorkspaceSourceControlResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisconnectWorkspaceSourceControl operation middleware
+func (sh *strictHandler) DisconnectWorkspaceSourceControl(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	var request DisconnectWorkspaceSourceControlRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ConnectionId = connectionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisconnectWorkspaceSourceControl(ctx, request.(DisconnectWorkspaceSourceControlRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisconnectWorkspaceSourceControl")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisconnectWorkspaceSourceControlResponseObject); ok {
+		if err := validResponse.VisitDisconnectWorkspaceSourceControlResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceSourceControlConnection operation middleware
+func (sh *strictHandler) GetWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	var request GetWorkspaceSourceControlConnectionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ConnectionId = connectionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceSourceControlConnection(ctx, request.(GetWorkspaceSourceControlConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceSourceControlConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceSourceControlConnectionResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceSourceControlConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateWorkspaceSourceControlConnection operation middleware
+func (sh *strictHandler) UpdateWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	var request UpdateWorkspaceSourceControlConnectionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ConnectionId = connectionId
+
+	var body UpdateWorkspaceSourceControlConnectionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateWorkspaceSourceControlConnection(ctx, request.(UpdateWorkspaceSourceControlConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateWorkspaceSourceControlConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateWorkspaceSourceControlConnectionResponseObject); ok {
+		if err := validResponse.VisitUpdateWorkspaceSourceControlConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReplaceWorkspaceSourceControlToken operation middleware
+func (sh *strictHandler) ReplaceWorkspaceSourceControlToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	var request ReplaceWorkspaceSourceControlTokenRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ConnectionId = connectionId
+
+	var body ReplaceWorkspaceSourceControlTokenJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReplaceWorkspaceSourceControlToken(ctx, request.(ReplaceWorkspaceSourceControlTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReplaceWorkspaceSourceControlToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReplaceWorkspaceSourceControlTokenResponseObject); ok {
+		if err := validResponse.VisitReplaceWorkspaceSourceControlTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// VerifyWorkspaceSourceControlConnection operation middleware
+func (sh *strictHandler) VerifyWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	var request VerifyWorkspaceSourceControlConnectionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ConnectionId = connectionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.VerifyWorkspaceSourceControlConnection(ctx, request.(VerifyWorkspaceSourceControlConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VerifyWorkspaceSourceControlConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(VerifyWorkspaceSourceControlConnectionResponseObject); ok {
+		if err := validResponse.VisitVerifyWorkspaceSourceControlConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RemoveWorkspaceSsoConnection operation middleware
 func (sh *strictHandler) RemoveWorkspaceSsoConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	var request RemoveWorkspaceSsoConnectionRequestObject
@@ -43216,6 +46192,67 @@ func (sh *strictHandler) SetWorkspaceTeamNotificationSettings(w http.ResponseWri
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetWorkspaceTeamNotificationSettingsResponseObject); ok {
 		if err := validResponse.VisitSetWorkspaceTeamNotificationSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetTeamSourceControlSettings operation middleware
+func (sh *strictHandler) GetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request GetTeamSourceControlSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTeamSourceControlSettings(ctx, request.(GetTeamSourceControlSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTeamSourceControlSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetTeamSourceControlSettingsResponseObject); ok {
+		if err := validResponse.VisitGetTeamSourceControlSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetTeamSourceControlSettings operation middleware
+func (sh *strictHandler) SetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request SetTeamSourceControlSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	var body SetTeamSourceControlSettingsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetTeamSourceControlSettings(ctx, request.(SetTeamSourceControlSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetTeamSourceControlSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetTeamSourceControlSettingsResponseObject); ok {
+		if err := validResponse.VisitSetTeamSourceControlSettingsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

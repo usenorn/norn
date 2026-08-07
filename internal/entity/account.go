@@ -57,17 +57,22 @@ func (e LastWorkspaceAdminError) Unwrap() error {
 type AccountKind string
 
 const (
-	AccountKindPerson AccountKind = "person"
-	AccountKindAgent  AccountKind = "agent"
+	AccountKindPerson      AccountKind = "person"
+	AccountKindAgent       AccountKind = "agent"
+	AccountKindIntegration AccountKind = "integration"
 )
 
 func (k AccountKind) Valid() bool {
 	switch k {
-	case AccountKindPerson, AccountKindAgent:
+	case AccountKindPerson, AccountKindAgent, AccountKindIntegration:
 		return true
 	default:
 		return false
 	}
+}
+
+func (k AccountKind) Machine() bool {
+	return k == AccountKindAgent || k == AccountKindIntegration
 }
 
 type AccountStatus string

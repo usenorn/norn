@@ -30,10 +30,13 @@ const (
 	TaskTypeImportExecute           = "import:execute"
 	TaskTypeImportRevert            = "import:revert"
 	TaskTypeImportRescue            = "import:rescue"
+	TaskTypeSCMDelivery             = "scm:delivery"
+	TaskTypeSCMReconcile            = "scm:reconcile"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 	WebhookFanOutTaskID     = "webhook-fan-out"
 	ImportRescueTaskID      = "import-rescue"
+	SCMReconcileTaskID      = "scm-reconcile"
 
 	WorkerHealthReadHeaderTimeout = 5 * time.Second
 
@@ -41,6 +44,7 @@ const (
 	QueueMail    = "mail"
 	QueueWebhook = "webhook"
 	QueueImport  = "import"
+	QueueSCM     = "scm"
 )
 
 var ErrTaskNotFound = errors.New("task not found")
@@ -86,6 +90,11 @@ type BulkApplyPayload struct {
 }
 
 type WebhookDeliverPayload struct {
+	DeliveryID uuid.UUID
+	Attempt    int
+}
+
+type SCMDeliveryPayload struct {
 	DeliveryID uuid.UUID
 	Attempt    int
 }

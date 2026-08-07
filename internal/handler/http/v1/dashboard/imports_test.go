@@ -39,6 +39,7 @@ import (
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
+	scmsvc "github.com/usenorn/norn/internal/service/scm"
 	searchsvc "github.com/usenorn/norn/internal/service/search"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
@@ -99,6 +100,7 @@ func newImportHarness(t *testing.T) *importHarness {
 		directorysvc.NewMockDirectories(ctrl),
 		licensingsvc.NewMockLicensing(ctrl),
 		h.imports,
+		scmsvc.NewMockSourceControl(ctrl),
 		config.App{Version: "test"},
 		config.Instance{},
 		config.Password{},

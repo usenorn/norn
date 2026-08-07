@@ -8,6 +8,7 @@ import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
 import type { FollowState } from "$lib/notifications/notifications";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
+import type { CodeLink } from "$lib/source-control/source-control";
 import type { WorkflowState } from "$lib/team/states";
 import type { PageServerLoad } from "./$types";
 
@@ -40,6 +41,7 @@ export type IssueDetail =
 			follow: FollowState;
 			watchers: string[];
 			attachments: AttachmentPanel;
+			codeLinks: CodeLink[];
 	  }
 	| { kind: "unavailable" };
 
@@ -93,6 +95,7 @@ export const load: PageServerLoad = async ({
 		attachments,
 		follow,
 		watchers,
+		codeLinks,
 	] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -126,6 +129,7 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/attachments", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/follow", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/followers", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/code-links", { params: { path } }),
 	]);
 
 	if (
@@ -159,6 +163,7 @@ export const load: PageServerLoad = async ({
 			attachments: readAttachments(attachments.data),
 			follow: follow.data?.state ?? "muted",
 			watchers: (watchers.data?.followers ?? []).map((watcher) => watcher.accountId),
+			codeLinks: codeLinks.data ?? [],
 		},
 	};
 };

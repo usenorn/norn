@@ -25,4 +25,6 @@ var Set = wire.NewSet(
 	NewImportExecuteHandler,
 	NewImportRevertHandler,
 	NewImportRescueHandler,
+	NewSCMDeliveryHandler,
+	NewSCMReconcileHandler,
 )

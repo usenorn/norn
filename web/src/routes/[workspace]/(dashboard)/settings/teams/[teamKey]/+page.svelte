@@ -19,6 +19,7 @@
 	import TeamNotifications from "$lib/notifications/team-notifications.svelte";
 	import TeamAgents from "$lib/team/team-agents.svelte";
 	import TeamTriage from "$lib/team/team-triage.svelte";
+	import TeamSourceControl from "$lib/source-control/team-source-control.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { api } from "$lib/api";
@@ -527,6 +528,16 @@
 					setting={triage}
 					locked={busy || archived || readOnly}
 				/>
+
+				{#if data.sourceControl}
+					<TeamSourceControl
+						workspace={data.workspace}
+						{team}
+						settings={data.sourceControl}
+						states={states.kind === "ready" ? states.states : []}
+						locked={busy || archived || readOnly}
+					/>
+				{/if}
 
 				<TeamAgents
 					workspace={data.workspace}

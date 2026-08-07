@@ -27,6 +27,7 @@ type Worker struct {
 	audit         config.Audit
 	webhooks      config.Webhooks
 	imports       config.Imports
+	sourceControl config.SourceControl
 	server        *taskqueue.Server
 	scheduler     *taskqueue.Scheduler
 	inspector     *taskqueue.Inspector
@@ -57,6 +58,8 @@ func NewServeMux(
 	importExecute *job.ImportExecuteHandler,
 	importRevert *job.ImportRevertHandler,
 	importRescue *job.ImportRescueHandler,
+	scmDelivery *job.SCMDeliveryHandler,
+	scmReconcile *job.SCMReconcileHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -81,6 +84,8 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeImportExecute, importExecute)
 	mux.Handle(entity.TaskTypeImportRevert, importRevert)
 	mux.Handle(entity.TaskTypeImportRescue, importRescue)
+	mux.Handle(entity.TaskTypeSCMDelivery, scmDelivery)
+	mux.Handle(entity.TaskTypeSCMReconcile, scmReconcile)
 
 	return mux
 }
@@ -95,6 +100,7 @@ func NewWorker(
 	audit config.Audit,
 	webhooks config.Webhooks,
 	imports config.Imports,
+	sourceControl config.SourceControl,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	inspector *taskqueue.Inspector,
@@ -111,6 +117,7 @@ func NewWorker(
 		audit:         audit,
 		webhooks:      webhooks,
 		imports:       imports,
+		sourceControl: sourceControl,
 		server:        server,
 		scheduler:     scheduler,
 		inspector:     inspector,
@@ -200,6 +207,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueImport),
 	); err != nil {
 		return fmt.Errorf("register import rescue: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.sourceControl.ReconcileSchedule,
+		asynq.NewTask(entity.TaskTypeSCMReconcile, nil),
+		asynq.Queue(entity.QueueSCM),
+	); err != nil {
+		return fmt.Errorf("register source control reconcile: %w", err)
 	}
 
 	if err := w.server.Start(w.mux); err != nil {

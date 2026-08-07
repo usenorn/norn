@@ -121,6 +121,20 @@ func validate(cfg Config) error {
 		return err
 	}
 
+	if err := validateSourceControl(cfg.SourceControl); err != nil {
+		return err
+	}
+
+	if cfg.SourceControl.MaxDeliveryBytes > cfg.HTTP.MaxRequestBytes {
+		return fmt.Errorf(
+			"source_control.max_delivery_bytes (%d) is above http.max_request_bytes (%d). A forge "+
+				"chooses its own payload size and retries what it could not deliver, so the smaller "+
+				"limit would refuse every large delivery while the connection went on looking healthy. "+
+				"Raise http.max_request_bytes to accept larger deliveries",
+			cfg.SourceControl.MaxDeliveryBytes, cfg.HTTP.MaxRequestBytes,
+		)
+	}
+
 	if cfg.Password.BreachCheckEnabled && cfg.Password.BreachCheckTimeout <= 0 {
 		return fmt.Errorf(
 			"password.breach_check_timeout (%s) must be positive",
@@ -174,6 +188,57 @@ func validateWebhooks(cfg Webhooks) error {
 					"a self-hosted receiver on a private network can be reached, and every entry is a hole "+
 					"punched in the guard that refuses internal addresses, so an entry that does not parse "+
 					"would silently protect nothing",
+				destination, err,
+			)
+		}
+	}
+
+	return nil
+}
+
+func validateSourceControl(cfg SourceControl) error {
+	if cfg.PageSize < 1 || cfg.ReconcileBatch < 1 || cfg.CallsPerCycle < 1 || cfg.MaxAttempts < 1 {
+		return fmt.Errorf(
+			"source_control.page_size (%d), source_control.reconcile_batch (%d), "+
+				"source_control.calls_per_cycle (%d) and source_control.max_attempts (%d) must be "+
+				"at least 1. They bound the work one reconcile cycle asks of a forge, which is how "+
+				"this instance stays inside a rate limit it does not control",
+			cfg.PageSize, cfg.ReconcileBatch, cfg.CallsPerCycle, cfg.MaxAttempts,
+		)
+	}
+
+	if cfg.MaxResponseSize < 1 {
+		return fmt.Errorf(
+			"source_control.max_response_size (%d) must be positive. A forge page is refused rather "+
+				"than truncated, so a zero cap refuses every response",
+			cfg.MaxResponseSize,
+		)
+	}
+
+	if cfg.MinBackoff > cfg.MaxBackoff {
+		return fmt.Errorf(
+			"source_control.min_backoff (%s) is above source_control.max_backoff (%s), so a forge "+
+				"asking to be left alone would be clamped to a wait shorter than the floor and "+
+				"retried straight back into the limit",
+			cfg.MinBackoff, cfg.MaxBackoff,
+		)
+	}
+
+	if cfg.MaxCatchUp <= 0 {
+		return fmt.Errorf(
+			"source_control.max_catch_up (%s) must be positive. It bounds how far back a repaired "+
+				"connection reads; without it a connection broken for a year would try to read a "+
+				"year of history in one cycle",
+			cfg.MaxCatchUp,
+		)
+	}
+
+	for _, destination := range cfg.AllowedDestinations {
+		if _, err := netip.ParsePrefix(strings.TrimSpace(destination)); err != nil {
+			return fmt.Errorf(
+				"source_control.allowed_destinations entry %q is not a CIDR prefix: %w. A connection "+
+					"names its own host, so this is the allow-list that lets a self-hosted forge on a "+
+					"private network be reached, and an entry that does not parse silently protects nothing",
 				destination, err,
 			)
 		}
@@ -423,7 +488,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("asynq.password", "")
 	v.SetDefault("asynq.db", 1)
 	v.SetDefault("asynq.concurrency", 10)
-	v.SetDefault("asynq.queues", map[string]int{"default": 6, "mail": 3, "webhook": 3, "import": 1})
+	v.SetDefault("asynq.queues", map[string]int{"default": 6, "mail": 3, "webhook": 3, "import": 1, "scm": 2})
 	v.SetDefault("asynq.shutdown_timeout", 20*time.Second)
 	v.SetDefault("asynq.max_retry", 5)
 
@@ -502,6 +567,24 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("linear.request_timeout", 30*time.Second)
 	v.SetDefault("linear.max_response_size", int64(32<<20))
 	v.SetDefault("linear.page_size", 100)
+
+	v.SetDefault("source_control.github_endpoint", "https://api.github.com")
+	v.SetDefault("source_control.gitlab_endpoint", "https://gitlab.com")
+	v.SetDefault("source_control.request_timeout", 30*time.Second)
+	v.SetDefault("source_control.dial_timeout", 5*time.Second)
+	v.SetDefault("source_control.max_response_size", int64(8<<20))
+	v.SetDefault("source_control.max_delivery_bytes", int64(4<<20))
+	v.SetDefault("source_control.page_size", 100)
+	v.SetDefault("source_control.reconcile_schedule", "*/5 * * * *")
+	v.SetDefault("source_control.reconcile_batch", 20)
+	v.SetDefault("source_control.calls_per_cycle", 30)
+	v.SetDefault("source_control.max_catch_up", 168*time.Hour)
+	v.SetDefault("source_control.max_attempts", 5)
+	v.SetDefault("source_control.min_backoff", 30*time.Second)
+	v.SetDefault("source_control.max_backoff", time.Hour)
+	v.SetDefault("source_control.delivery_retention", 720*time.Hour)
+	v.SetDefault("source_control.allowed_destinations", []string{})
+
 	v.SetDefault("attachments.reclaim_batch", 200)
 
 	v.SetDefault("session.cookie_name", "norn_session")
