@@ -167,12 +167,9 @@ func connection(workspaceID uuid.UUID, provisioning bool) entity.OIDCConnection 
 }
 
 func verifiedClaims(email string) entity.OIDCClaims {
-	verified := true
-
 	return entity.OIDCClaims{
-		Subject:       "provider-subject",
-		Email:         email,
-		EmailVerified: &verified,
-		Name:          "Ada Lovelace",
+		Subject: "provider-subject",
+		Email:   email,
+		Name:    "Ada Lovelace",
 	}
 }

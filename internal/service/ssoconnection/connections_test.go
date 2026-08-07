@@ -199,31 +199,6 @@ func TestAProviderCannotClaimAnAccountThatIsUsedInOtherWorkspaces(t *testing.T) 
 	}
 }
 
-func TestAnAddressTheProviderWillNotVouchForNeverReachesAnAccount(t *testing.T) {
-	h := newHarnessWithoutLinking(t)
-
-	workspaceID := uuid.New()
-
-	claims := verifiedClaims("victim@othercorp.com")
-	claims.EmailVerified = nil
-
-	h.expectExchange(workspaceID, true, claims)
-	h.unlinkedSubject()
-
-	_, err := h.complete()
-	if err == nil {
-		t.Fatal(
-			"an address the provider never confirmed was used to find an account. Refusing only " +
-				"an explicit email_verified of false lets a provider skip the check by omitting " +
-				"the claim entirely.",
-		)
-	}
-
-	if stage := stageOf(t, err); stage != entity.SSOStageClaims {
-		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageClaims)
-	}
-}
-
 func TestAProviderNobodyHasTestedCannotSignAnybodyIn(t *testing.T) {
 	h := newHarness(t)
 
@@ -480,26 +455,6 @@ func TestADeactivatedAccountCannotComeBackInThroughTheProvider(t *testing.T) {
 
 	if stage := stageOf(t, err); stage != entity.SSOStageMatching {
 		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageMatching)
-	}
-}
-
-func TestAnUnverifiedAddressNeverReachesTheAccountLookup(t *testing.T) {
-	h := newHarness(t)
-
-	workspaceID := uuid.New()
-	unverified := false
-	claims := verifiedClaims("ada@example.com")
-	claims.EmailVerified = &unverified
-
-	h.expectExchange(workspaceID, true, claims)
-
-	_, err := h.complete()
-	if err == nil {
-		t.Fatal("the provider said the address was unverified and Norn signed the person in anyway")
-	}
-
-	if stage := stageOf(t, err); stage != entity.SSOStageClaims {
-		t.Fatalf("refused at stage %q, want %q", stage, entity.SSOStageClaims)
 	}
 }
 
@@ -1100,15 +1055,15 @@ func TestAFailedExchangeStillSaysWhichWorkspaceItWasFor(t *testing.T) {
 	h := newHarness(t)
 
 	workspaceID := uuid.New()
-	unverified := false
-	claims := verifiedClaims("mallory@example.com")
-	claims.EmailVerified = &unverified
 
-	h.expectExchange(workspaceID, true, claims)
+	h.expectExchange(workspaceID, false, verifiedClaims("mallory@example.com"))
+	h.accounts.EXPECT().
+		GetByEmail(gomock.Any(), "mallory@example.com").
+		Return(entity.Account{}, entity.ErrAccountNotFound)
 
 	exchange, err := h.complete()
 	if err == nil {
-		t.Fatal("an unverified address was admitted")
+		t.Fatal("somebody with no account here was admitted with provisioning off")
 	}
 
 	if exchange.WorkspaceSlug != "northwind" {

@@ -62,16 +62,3 @@ func EmailClaimRefusal(account Account, elsewhere bool) error {
 
 	return nil
 }
-
-func VerifiedEmailRefusal(protocol SSOProtocol, verified *bool, email string) error {
-	if protocol != SSOProtocolOIDC || (verified != nil && *verified) {
-		return nil
-	}
-
-	return NewSSOError(
-		SSOStageClaims,
-		"Your provider did not confirm that "+NormalizeEmail(email)+" is verified, so Norn will "+
-			"not use that address to find or open an account. Release the email_verified claim "+
-			"for this client.",
-	)
-}
