@@ -75,7 +75,13 @@
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
 	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
 
-	import { sourceControlFailure, failureMessage as codeFailureMessage, type CodeLink, type SourceControlFailure } from "$lib/source-control/source-control";
+	import {
+		conflictSummary,
+		sourceControlFailure,
+		failureMessage as codeFailureMessage,
+		type CodeLink,
+		type SourceControlFailure,
+	} from "$lib/source-control/source-control";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
 	import {
@@ -245,6 +251,7 @@
 		(ready?.codeLinks ?? []).filter((link) => !removedCodeLinks.includes(link.id))
 	);
 	const automationSuppressed = $derived(automationOverride ?? false);
+	const mirrorConflicts = $derived(ready?.mirrorConflicts ?? []);
 	const activity = $derived<ActivityFeed>(
 		activityPreview?.feed ?? loadedActivity ?? ready?.activity ?? { kind: "loading" }
 	);
@@ -1804,6 +1811,23 @@
 							busy={unlinking}
 							onunlink={canEdit ? unlinkCode : undefined}
 						/>
+
+						{#if mirrorConflicts.length > 0}
+							<div class="flex flex-col gap-2 rounded-md border border-warning/40 p-3">
+								<p class="text-sm text-ink-900">
+									An edit here and one on the platform landed together. Whichever moved last was
+									kept; the other is below so nothing is lost.
+								</p>
+								{#each mirrorConflicts as conflict (conflict.id)}
+									<div class="flex flex-col gap-0.5">
+										<p class="text-xs text-muted-foreground">
+											{conflict.field} · {conflictSummary(conflict)}
+										</p>
+										<pre class="overflow-x-auto rounded-sm bg-muted p-2 text-xs whitespace-pre-wrap text-ink-900">{conflict.discarded}</pre>
+									</div>
+								{/each}
+							</div>
+						{/if}
 
 						{#if canEdit}
 							<div class="flex flex-wrap items-center gap-2 pt-1">

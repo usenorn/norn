@@ -42,6 +42,7 @@ type WorkspaceSCMRepository struct {
 	LastSeenAt          null.Time `boil:"last_seen_at" json:"last_seen_at,omitempty" toml:"last_seen_at" yaml:"last_seen_at,omitempty"`
 	CreatedAt           time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt           time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	SyncDirection       string    `boil:"sync_direction" json:"sync_direction" toml:"sync_direction" yaml:"sync_direction"`
 
 	R *workspaceSCMRepositoryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSCMRepositoryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -66,6 +67,7 @@ var WorkspaceSCMRepositoryColumns = struct {
 	LastSeenAt          string
 	CreatedAt           string
 	UpdatedAt           string
+	SyncDirection       string
 }{
 	ID:                  "id",
 	ConnectionID:        "connection_id",
@@ -85,6 +87,7 @@ var WorkspaceSCMRepositoryColumns = struct {
 	LastSeenAt:          "last_seen_at",
 	CreatedAt:           "created_at",
 	UpdatedAt:           "updated_at",
+	SyncDirection:       "sync_direction",
 }
 
 var WorkspaceSCMRepositoryTableColumns = struct {
@@ -106,6 +109,7 @@ var WorkspaceSCMRepositoryTableColumns = struct {
 	LastSeenAt          string
 	CreatedAt           string
 	UpdatedAt           string
+	SyncDirection       string
 }{
 	ID:                  "workspace_scm_repositories.id",
 	ConnectionID:        "workspace_scm_repositories.connection_id",
@@ -125,6 +129,7 @@ var WorkspaceSCMRepositoryTableColumns = struct {
 	LastSeenAt:          "workspace_scm_repositories.last_seen_at",
 	CreatedAt:           "workspace_scm_repositories.created_at",
 	UpdatedAt:           "workspace_scm_repositories.updated_at",
+	SyncDirection:       "workspace_scm_repositories.sync_direction",
 }
 
 // Generated where
@@ -148,6 +153,7 @@ var WorkspaceSCMRepositoryWhere = struct {
 	LastSeenAt          whereHelpernull_Time
 	CreatedAt           whereHelpertime_Time
 	UpdatedAt           whereHelpertime_Time
+	SyncDirection       whereHelperstring
 }{
 	ID:                  whereHelperstring{field: "\"workspace_scm_repositories\".\"id\""},
 	ConnectionID:        whereHelperstring{field: "\"workspace_scm_repositories\".\"connection_id\""},
@@ -167,6 +173,7 @@ var WorkspaceSCMRepositoryWhere = struct {
 	LastSeenAt:          whereHelpernull_Time{field: "\"workspace_scm_repositories\".\"last_seen_at\""},
 	CreatedAt:           whereHelpertime_Time{field: "\"workspace_scm_repositories\".\"created_at\""},
 	UpdatedAt:           whereHelpertime_Time{field: "\"workspace_scm_repositories\".\"updated_at\""},
+	SyncDirection:       whereHelperstring{field: "\"workspace_scm_repositories\".\"sync_direction\""},
 }
 
 // WorkspaceSCMRepositoryRels is where relationship names are stored.
@@ -301,9 +308,9 @@ func (r *workspaceSCMRepositoryR) GetRepositoryWorkspaceSCMRoutes() WorkspaceSCM
 type workspaceSCMRepositoryL struct{}
 
 var (
-	workspaceSCMRepositoryAllColumns            = []string{"id", "connection_id", "workspace_id", "provider", "full_name", "external_id", "default_branch", "url", "webhook_secret_sealed", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at"}
+	workspaceSCMRepositoryAllColumns            = []string{"id", "connection_id", "workspace_id", "provider", "full_name", "external_id", "default_branch", "url", "webhook_secret_sealed", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction"}
 	workspaceSCMRepositoryColumnsWithoutDefault = []string{"connection_id", "workspace_id", "provider", "full_name", "webhook_secret_sealed"}
-	workspaceSCMRepositoryColumnsWithDefault    = []string{"id", "external_id", "default_branch", "url", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at"}
+	workspaceSCMRepositoryColumnsWithDefault    = []string{"id", "external_id", "default_branch", "url", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction"}
 	workspaceSCMRepositoryPrimaryKeyColumns     = []string{"id"}
 	workspaceSCMRepositoryGeneratedColumns      = []string{}
 )

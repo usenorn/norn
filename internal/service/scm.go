@@ -63,6 +63,7 @@ type ForgeIssue struct {
 	URL        string
 	State      string
 	Author     string
+	Assignees  []string
 	Labels     []string
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
@@ -78,9 +79,11 @@ type ForgeComment struct {
 }
 
 type ForgeIssuePatch struct {
-	Title  *string
-	Body   *string
-	Closed *bool
+	Title    *string
+	Body     *string
+	Closed   *bool
+	Assignee *string
+	Labels   []string
 }
 
 type ForgeChangePage struct {
@@ -194,8 +197,15 @@ type ConnectedRepository struct {
 }
 
 type UpdateRepositoryInput struct {
-	MirrorLabel  string
-	PollInterval time.Duration
+	MirrorLabel   string
+	SyncDirection entity.MirrorDirection
+	PollInterval  time.Duration
+}
+
+type MapSCMIdentityInput struct {
+	AccountID uuid.UUID
+	Provider  entity.SCMProvider
+	Login     string
 }
 
 type AddRouteInput struct {
@@ -245,6 +255,11 @@ type SourceControl interface {
 	ListRoutes(ctx context.Context, workspaceID, repositoryID uuid.UUID) (entity.SCMRoutes, error)
 	AddRoute(ctx context.Context, workspaceID uuid.UUID, input AddRouteInput) (entity.SCMRoute, error)
 	RemoveRoute(ctx context.Context, workspaceID, routeID uuid.UUID) error
+
+	Identities(ctx context.Context, workspaceID uuid.UUID) (entity.SCMIdentities, error)
+	MapIdentity(ctx context.Context, workspaceID uuid.UUID, input MapSCMIdentityInput) (entity.SCMIdentity, error)
+	UnmapIdentity(ctx context.Context, workspaceID, identityID uuid.UUID) error
+	Conflicts(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.MirrorConflict, error)
 
 	TeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.SCMTeamSettings, error)
 	SetTeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID, input SetTeamSCMSettingsInput) (entity.SCMTeamSettings, error)

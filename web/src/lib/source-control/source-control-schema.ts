@@ -38,6 +38,17 @@ export const addRepositorySchema = z.object({
 		.optional(),
 });
 
+export const mapIdentitySchema = z.object({
+	accountId: z.string().min(1, "Choose a member."),
+	provider: z.enum(["github", "gitlab"], { error: "Choose a platform." }),
+	login: z
+		.string()
+		.trim()
+		.min(1, "Give their handle on the platform.")
+		.max(100, "That is longer than any handle a platform issues.")
+		.regex(/^@?[^\s/]+$/, "A handle has no spaces or slashes."),
+});
+
 export const addRouteSchema = z.object({
 	teamId: z.string().min(1, "Choose a team."),
 	pathPrefix: z
@@ -86,6 +97,7 @@ export const mirrorIssueSchema = z.object({
 export type ConnectSourceControlInput = z.infer<typeof connectSourceControlSchema>;
 export type AddRepositoryInput = z.infer<typeof addRepositorySchema>;
 export type AddRouteInput = z.infer<typeof addRouteSchema>;
+export type MapIdentityInput = z.infer<typeof mapIdentitySchema>;
 export type SetTransitionRuleInput = z.infer<typeof setTransitionRuleSchema>;
 export type ReplaceTokenInput = z.infer<typeof replaceTokenSchema>;
 export type LinkCodeInput = z.infer<typeof linkCodeSchema>;

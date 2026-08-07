@@ -14,6 +14,7 @@ import (
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
+	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
@@ -31,6 +32,9 @@ type advanceHarness struct {
 	routes       *scmrepo.MockSCMRoute
 	rules        *scmrepo.MockSCMTransitionRule
 	teamSettings *scmrepo.MockSCMTeamSetting
+	identities   *scmrepo.MockSCMIdentity
+	conflicts    *scmrepo.MockMirrorConflict
+	labels       *labelrepo.MockLabel
 	deliveries   *scmrepo.MockSCMDelivery
 	links        *scmrepo.MockCodeLink
 	mirrors      *scmrepo.MockIssueMirror
@@ -58,6 +62,9 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		routes:       scmrepo.NewMockSCMRoute(ctrl),
 		rules:        scmrepo.NewMockSCMTransitionRule(ctrl),
 		teamSettings: scmrepo.NewMockSCMTeamSetting(ctrl),
+		identities:   scmrepo.NewMockSCMIdentity(ctrl),
+		conflicts:    scmrepo.NewMockMirrorConflict(ctrl),
+		labels:       labelrepo.NewMockLabel(ctrl),
 		deliveries:   scmrepo.NewMockSCMDelivery(ctrl),
 		links:        scmrepo.NewMockCodeLink(ctrl),
 		mirrors:      scmrepo.NewMockIssueMirror(ctrl),
@@ -87,6 +94,9 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		h.routes,
 		h.rules,
 		h.teamSettings,
+		h.identities,
+		h.conflicts,
+		h.labels,
 		h.deliveries,
 		h.links,
 		h.mirrors,

@@ -225,9 +225,15 @@ func (s *connections) UpdateRepository(
 		interval = input.PollInterval
 	}
 
+	direction := stored.Direction()
+	if input.SyncDirection.Valid() && input.SyncDirection != "" {
+		direction = input.SyncDirection
+	}
+
 	return s.repositories.UpdateSettings(ctx, repositoryID, repository.SCMRepositorySettings{
-		MirrorLabel:  label,
-		PollInterval: interval,
+		MirrorLabel:   label,
+		SyncDirection: direction,
+		PollInterval:  interval,
 	})
 }
 

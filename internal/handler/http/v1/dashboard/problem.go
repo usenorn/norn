@@ -817,8 +817,12 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrIssueMirrorNotFound),
 		errors.Is(err, entity.ErrSCMRepositoryNotFound),
 		errors.Is(err, entity.ErrSCMRouteNotFound),
+		errors.Is(err, entity.ErrSCMIdentityNotFound),
 		errors.Is(err, entity.ErrSCMTransitionRuleNotFound):
 		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrSCMIdentityExists):
+		return sourceControlConflict(api.SourceControlIdentityMapped, err), true
 
 	case errors.Is(err, entity.ErrSCMRouteExists):
 		return sourceControlConflict(api.SourceControlAlreadyRouted, err), true

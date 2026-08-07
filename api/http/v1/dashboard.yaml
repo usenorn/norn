@@ -5047,6 +5047,85 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/source-control/identities:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [source-control]
+      operationId: listWorkspaceSCMIdentities
+      summary: List who each member is on each platform
+      responses:
+        '200':
+          description: The mapped identities
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SCMIdentity' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [source-control]
+      operationId: mapWorkspaceSCMIdentity
+      summary: Say who a platform account belongs to here
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MapSCMIdentityRequest' }
+      responses:
+        '201':
+          description: The mapping
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SCMIdentity' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/SourceControlConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/identities/{identityId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - name: identityId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [source-control]
+      operationId: unmapWorkspaceSCMIdentity
+      summary: Stop treating a platform account as somebody here
+      responses:
+        '204': { description: The mapping is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [source-control]
+      operationId: listWorkspaceIssueMirrorConflicts
+      summary: Read the edits that lost arbitration, so they can be put back
+      responses:
+        '200':
+          description: The discarded edits, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MirrorConflict' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/teams/{teamId}/source-control/settings:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -6260,7 +6339,7 @@ components:
 
     CommentAuthorKind:
       type: string
-      enum: [person, agent]
+      enum: [person, agent, integration]
 
     CommentReaction:
       type: string
@@ -7318,7 +7397,11 @@ components:
 
     AccountKind:
       type: string
-      enum: [person, agent]
+      description: >-
+        An integration account is one Norn created to stand behind a source control
+        connection. It authors the content that connection mirrors, so it reaches every
+        surface that names an author even though nobody signs in as it.
+      enum: [person, agent, integration]
 
     AgentStatus:
       type: string
@@ -7726,6 +7809,7 @@ components:
         defaultBranch: { type: string }
         url: { type: string }
         mirrorLabel: { type: string }
+        syncDirection: { $ref: '#/components/schemas/MirrorDirection' }
         pollIntervalSeconds: { type: integer, format: int32 }
         hookInstalled: { type: boolean }
         routeCount: { type: integer, format: int32 }
@@ -7760,7 +7844,51 @@ components:
       type: object
       properties:
         mirrorLabel: { type: string }
+        syncDirection: { $ref: '#/components/schemas/MirrorDirection' }
         pollIntervalSeconds: { type: integer, format: int32 }
+
+    MirrorDirection:
+      type: string
+      description: >-
+        Which way work may flow for a repository. A repository somebody set to read-only is
+        never written to, however many pairings it holds.
+      enum: [inbound, outbound, both]
+
+    SCMIdentity:
+      type: object
+      description: >-
+        Who somebody is on a forge. It is stated by an administrator rather than discovered:
+        a handle that resembles a name is not evidence, and acting on the guess puts work on
+        a stranger.
+      required: [id, accountId, provider, login]
+      properties:
+        id: { type: string, format: uuid }
+        accountId: { type: string, format: uuid }
+        accountName: { type: string }
+        provider: { $ref: '#/components/schemas/SourceControlProvider' }
+        login: { type: string }
+
+    MapSCMIdentityRequest:
+      type: object
+      required: [accountId, provider, login]
+      properties:
+        accountId: { type: string, format: uuid }
+        provider: { $ref: '#/components/schemas/SourceControlProvider' }
+        login: { type: string }
+
+    MirrorConflict:
+      type: object
+      description: >-
+        An edit that lost arbitration, kept whole. A rule that silently discards one side is
+        not something a team can live with, so the discarded value is here to be put back.
+      required: [id, field, winner, discarded, kept, occurredAt]
+      properties:
+        id: { type: string, format: uuid }
+        field: { type: string }
+        winner: { type: string, enum: [norn, source] }
+        discarded: { type: string }
+        kept: { type: string }
+        occurredAt: { type: string, format: date-time }
 
     SourceControlRoute:
       type: object
@@ -7966,6 +8094,7 @@ components:
               enum:
                 - source_control_already_connected
                 - source_control_already_routed
+                - source_control_identity_mapped
                 - source_control_already_mirrored
                 - source_control_team_outside_connection
 

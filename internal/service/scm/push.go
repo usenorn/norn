@@ -27,6 +27,12 @@ func (s *sync) pushMirrors(
 	decision entity.Decision,
 	at time.Time,
 ) error {
+	// A repository somebody set to read-only never writes, however many pairings it holds.
+	// Direction is the promise that Norn will not touch a forge it was told to leave alone.
+	if !from.repository.Direction().Pushes() {
+		return nil
+	}
+
 	mirrors, err := s.mirrors.ListByRepository(ctx, from.repository.ID, s.cfg.ReconcileBatch)
 	if err != nil {
 		return err
@@ -90,6 +96,16 @@ func (s *sync) pushOne(
 
 	patch, changed := outboundPatch(refreshed, current)
 
+	if login, mapped := s.assigneeLogin(ctx, from, current); mapped {
+		patch.Assignee = &login
+		changed = true
+	}
+
+	if names := entity.LabelNames(current.Labels); len(names) > 0 {
+		patch.Labels = names
+		changed = true
+	}
+
 	if changed {
 		if _, err := forge.AmendIssue(ctx, target, refreshed.ExternalNumber, patch); err != nil {
 			return err
@@ -135,6 +151,28 @@ func outboundPatch(
 	}
 
 	return patch, changed
+}
+
+// assigneeLogin answers who the platform should be told holds this issue. An assignee this
+// workspace has not mapped to a forge account produces no answer at all: naming a handle
+// that resembles them would assign the work to whoever happens to own it.
+func (s *sync) assigneeLogin(
+	ctx context.Context,
+	from source,
+	issue entity.Issue,
+) (string, bool) {
+	if issue.AssigneeAccountID == uuid.Nil {
+		return "", false
+	}
+
+	identities, err := s.identities.List(ctx, from.workspaceID())
+	if err != nil {
+		logWarn(ctx, "reading platform identities failed", from.repository.ID, err)
+
+		return "", false
+	}
+
+	return identities.LoginFor(from.connection.Provider, issue.AssigneeAccountID)
 }
 
 // pushComments carries what people wrote here out to the platform. Three things stop a

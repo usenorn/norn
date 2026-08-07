@@ -9,7 +9,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-//go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=SCMTeamSetting=MockSCMTeamSetting,SCMConnection=MockSCMConnection,SCMRepository=MockSCMRepository,SCMRoute=MockSCMRoute,SCMDelivery=MockSCMDelivery,CodeLink=MockCodeLink,IssueMirror=MockIssueMirror,SCMTransitionRule=MockSCMTransitionRule
+//go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=SCMIdentity=MockSCMIdentity,MirrorConflict=MockMirrorConflict,SCMTeamSetting=MockSCMTeamSetting,SCMConnection=MockSCMConnection,SCMRepository=MockSCMRepository,SCMRoute=MockSCMRoute,SCMDelivery=MockSCMDelivery,CodeLink=MockCodeLink,IssueMirror=MockIssueMirror,SCMTransitionRule=MockSCMTransitionRule
 
 type SCMConnectionInput struct {
 	Connection entity.SCMConnection
@@ -35,8 +35,9 @@ type SCMRepositoryInput struct {
 }
 
 type SCMRepositorySettings struct {
-	MirrorLabel  string
-	PollInterval time.Duration
+	MirrorLabel   string
+	SyncDirection entity.MirrorDirection
+	PollInterval  time.Duration
 }
 
 type SCMRepository interface {
@@ -88,6 +89,17 @@ type CodeLink interface {
 	SetChecks(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repositoryName, externalID string, checks entity.CodeChecks) (int, error)
 	ReplaceReviewers(ctx context.Context, linkID uuid.UUID, reviewers entity.CodeReviewers) error
 	ListReviewers(ctx context.Context, linkIDs []uuid.UUID) (map[uuid.UUID]entity.CodeReviewers, error)
+}
+
+type SCMIdentity interface {
+	List(ctx context.Context, workspaceID uuid.UUID) (entity.SCMIdentities, error)
+	Create(ctx context.Context, identity entity.SCMIdentity) (entity.SCMIdentity, error)
+	Delete(ctx context.Context, workspaceID, identityID uuid.UUID) error
+}
+
+type MirrorConflict interface {
+	Record(ctx context.Context, conflict entity.MirrorConflict) error
+	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID, limit int) ([]entity.MirrorConflict, error)
 }
 
 type SCMTeamSetting interface {

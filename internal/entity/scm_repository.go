@@ -21,6 +21,7 @@ type SCMRepository struct {
 	WebhookSecretSet bool
 	ExternalHookID   string
 	MirrorLabel      string
+	SyncDirection    MirrorDirection
 	PollInterval     time.Duration
 	ReconcileCursor  string
 	ReconciledAt     *time.Time
@@ -52,6 +53,17 @@ func (r SCMRepository) Due(now time.Time) bool {
 	}
 
 	return !now.Before(r.ReconciledAt.Add(interval))
+}
+
+// Direction defaults rather than failing. A repository row written before direction existed
+// carries an empty one, and treating that as "sync nothing" would silently stop a pairing
+// that was working.
+func (r SCMRepository) Direction() MirrorDirection {
+	if !r.SyncDirection.Valid() || r.SyncDirection == "" {
+		return MirrorBoth
+	}
+
+	return r.SyncDirection
 }
 
 func (r SCMRepository) HookInstalled() bool {

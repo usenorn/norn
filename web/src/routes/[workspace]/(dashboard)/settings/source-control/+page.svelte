@@ -19,6 +19,7 @@
 		providerLabel,
 		sourceControlConnectionPath,
 		sourceControlFailure,
+		sourceControlIdentitiesPath,
 		sourceControlRepositoryPath,
 		type MintedRepository,
 		type SourceControlFailure,
@@ -241,6 +242,21 @@
 				<Alert.Description>{failureDetail || failureMessage(shown)}</Alert.Description>
 			</Alert.Root>
 		{/if}
+
+		<section class="flex flex-col gap-2 rounded-lg border border-line-subtle p-4">
+			<h2 class="text-md font-medium tracking-snug text-ink-900">Platform identities</h2>
+			<p class="text-sm leading-normal text-muted-foreground text-pretty">
+				Say who each member is on each platform. Until somebody is mapped, an assignee does not
+				cross in either direction — Norn will not guess from a handle that resembles a name.
+			</p>
+			<Button
+				variant="secondary"
+				href={sourceControlIdentitiesPath(workspace.slug)}
+				class="self-start"
+			>
+				Manage identities
+			</Button>
+		</section>
 
 		<section class="flex flex-col gap-3">
 			<h2 class="text-md font-medium tracking-snug text-ink-900">Connections</h2>

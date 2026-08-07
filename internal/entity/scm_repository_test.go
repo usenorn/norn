@@ -159,3 +159,46 @@ func TestASweepReadsARepositoryOnceItsIntervalHasPassed(t *testing.T) {
 		})
 	}
 }
+
+func TestARepositoryWrittenBeforeDirectionExistedStillSyncsBothWays(t *testing.T) {
+	cases := map[MirrorDirection]MirrorDirection{
+		"":                         MirrorBoth,
+		MirrorDirection("rubbish"): MirrorBoth,
+		MirrorInbound:              MirrorInbound,
+		MirrorOutbound:             MirrorOutbound,
+		MirrorBoth:                 MirrorBoth,
+	}
+
+	for stored, want := range cases {
+		t.Run(string(stored), func(t *testing.T) {
+			repository := SCMRepository{SyncDirection: stored}
+
+			if got := repository.Direction(); got != want {
+				t.Fatalf("Direction = %q, want %q", got, want)
+			}
+		})
+	}
+}
+
+func TestADirectionSaysWhichWayWorkMayFlow(t *testing.T) {
+	cases := []struct {
+		direction     MirrorDirection
+		pulls, pushes bool
+	}{
+		{MirrorInbound, true, false},
+		{MirrorOutbound, false, true},
+		{MirrorBoth, true, true},
+	}
+
+	for _, test := range cases {
+		t.Run(string(test.direction), func(t *testing.T) {
+			if test.direction.Pulls() != test.pulls {
+				t.Errorf("Pulls = %t, want %t", test.direction.Pulls(), test.pulls)
+			}
+
+			if test.direction.Pushes() != test.pushes {
+				t.Errorf("Pushes = %t, want %t", test.direction.Pushes(), test.pushes)
+			}
+		})
+	}
+}

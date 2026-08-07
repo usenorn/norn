@@ -8,7 +8,7 @@ import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
 import type { FollowState } from "$lib/notifications/notifications";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
-import type { CodeLink } from "$lib/source-control/source-control";
+import type { CodeLink, MirrorConflict } from "$lib/source-control/source-control";
 import type { WorkflowState } from "$lib/team/states";
 import type { PageServerLoad } from "./$types";
 
@@ -42,6 +42,7 @@ export type IssueDetail =
 			watchers: string[];
 			attachments: AttachmentPanel;
 			codeLinks: CodeLink[];
+			mirrorConflicts: MirrorConflict[];
 	  }
 	| { kind: "unavailable" };
 
@@ -96,6 +97,7 @@ export const load: PageServerLoad = async ({
 		follow,
 		watchers,
 		codeLinks,
+		mirrorConflicts,
 	] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -130,6 +132,9 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/follow", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/followers", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/code-links", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts", {
+			params: { path },
+		}),
 	]);
 
 	if (
@@ -164,6 +169,7 @@ export const load: PageServerLoad = async ({
 			follow: follow.data?.state ?? "muted",
 			watchers: (watchers.data?.followers ?? []).map((watcher) => watcher.accountId),
 			codeLinks: codeLinks.data ?? [],
+			mirrorConflicts: mirrorConflicts.data ?? [],
 		},
 	};
 };

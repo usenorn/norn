@@ -20,6 +20,9 @@ export type CodeChecks = components["schemas"]["CodeChecks"];
 export type ReviewVerdict = components["schemas"]["ReviewVerdict"];
 export type TeamSourceControlSettings =
 	components["schemas"]["TeamSourceControlSettings"];
+export type MirrorDirection = components["schemas"]["MirrorDirection"];
+export type SCMIdentity = components["schemas"]["SCMIdentity"];
+export type MirrorConflict = components["schemas"]["MirrorConflict"];
 export type SourceControlDeliveryOutcome =
 	components["schemas"]["SourceControlDeliveryOutcome"];
 
@@ -79,6 +82,7 @@ export type SourceControlFailure =
 	| { kind: "provider_unsupported" }
 	| { kind: "already_connected" }
 	| { kind: "already_routed" }
+	| { kind: "identity_mapped" }
 	| { kind: "already_mirrored" }
 	| { kind: "team_outside_connection" }
 	| { kind: "sealing_unavailable" }
@@ -101,6 +105,8 @@ export function sourceControlFailure(problem: SourceControlProblem): SourceContr
 				return { kind: "already_connected" };
 			case "source_control_already_routed":
 				return { kind: "already_routed" };
+			case "source_control_identity_mapped":
+				return { kind: "identity_mapped" };
 			case "source_control_already_mirrored":
 				return { kind: "already_mirrored" };
 			case "source_control_team_outside_connection":
@@ -150,6 +156,8 @@ export function failureMessage(failure: SourceControlFailure): string {
 			return "This workspace already holds a credential for that forge.";
 		case "already_routed":
 			return "That team already has a route for this path.";
+		case "identity_mapped":
+			return "That platform account is already mapped to somebody here.";
 		case "already_mirrored":
 			return "That issue is already paired with another one.";
 		case "team_outside_connection":
@@ -225,6 +233,24 @@ const checkStates: Record<CodeChecks, string> = {
 	failing: "Checks failing",
 };
 
+const directions: Record<MirrorDirection, string> = {
+	inbound: "Read only — bring issues here, never write back",
+	outbound: "Write only — send issues out, never take them",
+	both: "Both ways",
+};
+
+export function directionLabel(direction: MirrorDirection): string {
+	return directions[direction];
+}
+
+export const directionOrder: MirrorDirection[] = ["both", "inbound", "outbound"];
+
+export function conflictSummary(conflict: MirrorConflict): string {
+	return conflict.winner === "source"
+		? "The platform's edit was kept; yours is below."
+		: "Your edit was kept; the platform's is below.";
+}
+
 export function checksLabel(checks: CodeChecks): string {
 	return checkStates[checks];
 }
@@ -270,6 +296,10 @@ export function sourceControlConnectionPath(slug: string, connectionId: string):
 
 export function sourceControlRepositoryPath(slug: string, repositoryId: string): string {
 	return workspacePath(slug, `/settings/source-control/repositories/${repositoryId}`);
+}
+
+export function sourceControlIdentitiesPath(slug: string): string {
+	return workspacePath(slug, "/settings/source-control/identities");
 }
 
 export function connectionLabel(connection: SourceControlConnection): string {

@@ -17,6 +17,8 @@ const (
 	deliveryUniqueIndex           = "workspace_scm_deliveries_external_key"
 	mirrorPairUniqueIndex         = "workspace_issue_mirrors_pair_key"
 	mirrorExternalUniqueIndex     = "workspace_issue_mirrors_external_key"
+	identityLoginUniqueIndex      = "workspace_scm_identities_login_key"
+	identityAccountUniqueIndex    = "workspace_scm_identities_account_key"
 )
 
 func violates(err error, index string) bool {

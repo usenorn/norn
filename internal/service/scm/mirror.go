@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/pkg/identity"
@@ -24,6 +26,12 @@ func (s *sync) mirrorIssue(
 	decision entity.Decision,
 	found service.ForgeIssue,
 ) error {
+	// A repository set to write-only takes nothing from the forge. Bringing an issue across
+	// from one is exactly what somebody chose that setting to prevent.
+	if !from.repository.Direction().Pulls() {
+		return nil
+	}
+
 	mirror, err := s.mirrors.GetByExternalID(
 		ctx,
 		from.workspaceID(),
@@ -151,8 +159,11 @@ func mirroredBody(from source, found service.ForgeIssue) string {
 
 // reconcileMirror decides per field. A value that comes back exactly as it was pushed is the
 // forge echoing this instance and is dropped before anything is written; a field only one
-// side moved goes that way; and when both moved, whichever moved last wins and the other is
-// recorded on the issue's own feed rather than disappearing.
+// side moved goes that way; and when both moved, whichever moved last wins.
+//
+// Whichever loses is kept in full. An excerpt on the feed says an edit existed; it does not
+// give it back, and the whole reason a rule is acceptable is that the person who wrote the
+// losing side can recover what they wrote.
 func (s *sync) reconcileMirror(
 	ctx context.Context,
 	from source,
@@ -200,27 +211,41 @@ func (s *sync) reconcileMirror(
 			found.UpdatedAt,
 		)
 
+		bothMoved := mirror.NornChanged(field.name, issue) &&
+			mirror.SourceChanged(field.name, field.remote)
+
 		switch winner {
 		case entity.MirrorWinnerSource:
 			field.apply(field.remote)
+
+			if bothMoved {
+				s.keepDiscarded(ctx, from, mirror, issue, field.name, winner, field.local, field.remote)
+
+				overwritten = append(overwritten, discardedActivity(
+					from, decision, issue, field.name, field.local, field.remote,
+				))
+			}
 		case entity.MirrorWinnerNorn:
-			if mirror.SourceChanged(field.name, field.remote) {
-				overwritten = append(overwritten, entity.Activity{
-					WorkspaceID: from.workspaceID(),
-					Subject:     entity.IssueSubject(issue.ID),
-					Actor:       decision.ActivityActor(),
-					Kind:        entity.ActivityKindPropertyChanged,
-					Field:       field.name,
-					FromValue:   excerpt(field.remote),
-					ToValue:     excerpt(field.local),
-					Version:     issue.Version,
-				})
+			if bothMoved {
+				s.keepDiscarded(ctx, from, mirror, issue, field.name, winner, field.remote, field.local)
+
+				overwritten = append(overwritten, discardedActivity(
+					from, decision, issue, field.name, field.remote, field.local,
+				))
 			}
 		case entity.MirrorWinnerNeither:
 		}
 	}
 
-	if change.Title != nil || change.Description != nil {
+	if err := s.applyAssignee(ctx, from, issue, found, &change); err != nil {
+		return err
+	}
+
+	if err := s.applyLabels(ctx, from, decision, issue, found); err != nil {
+		return err
+	}
+
+	if change.Title != nil || change.Description != nil || change.AssigneeID != nil {
 		scoped := identity.WithActor(ctx, from.connection.Actor())
 
 		if _, err := s.issueWriter.Update(
@@ -281,7 +306,7 @@ func (s *sync) mirrorComment(
 	found service.ForgeIssue,
 	comment service.ForgeComment,
 ) error {
-	if from.connection.Wrote(comment.Author) {
+	if !from.repository.Direction().Pulls() || from.connection.Wrote(comment.Author) {
 		return nil
 	}
 
@@ -354,6 +379,151 @@ func (s *sync) mirrorComment(
 	})
 
 	return err
+}
+
+// applyAssignee moves the issue to whoever the platform says holds it, but only when this
+// workspace has said who that person is. An unmapped login leaves the assignee alone: a
+// forge handle that resembles a name is not evidence, and acting on it puts work on a
+// stranger.
+func (s *sync) applyAssignee(
+	ctx context.Context,
+	from source,
+	issue entity.Issue,
+	found service.ForgeIssue,
+	change *service.UpdateIssueInput,
+) error {
+	if len(found.Assignees) == 0 {
+		return nil
+	}
+
+	identities, err := s.identities.List(ctx, from.workspaceID())
+	if err != nil {
+		return err
+	}
+
+	for _, login := range found.Assignees {
+		account, mapped := identities.AccountFor(from.connection.Provider, login)
+		if !mapped {
+			continue
+		}
+
+		if account == issue.AssigneeAccountID {
+			return nil
+		}
+
+		change.AssigneeID = &account
+
+		return nil
+	}
+
+	logging.From(ctx).InfoContext(
+		ctx,
+		"a platform assignee is not mapped to anybody here, so the issue keeps its assignee",
+		"issue_id", issue.ID.String(),
+	)
+
+	return nil
+}
+
+// applyLabels applies what this workspace already has and reports the rest. Creating a label
+// because an outside system used the word would let anybody with push access add labels to
+// somebody else's workspace.
+func (s *sync) applyLabels(
+	ctx context.Context,
+	from source,
+	decision entity.Decision,
+	issue entity.Issue,
+	found service.ForgeIssue,
+) error {
+	if len(found.Labels) == 0 {
+		return nil
+	}
+
+	available, err := s.labels.ListByWorkspaceID(ctx, from.workspaceID(), decision.Scope)
+	if err != nil {
+		return err
+	}
+
+	matched, unmapped := entity.MapLabels(found.Labels, available)
+
+	if len(unmapped) > 0 {
+		logging.From(ctx).InfoContext(
+			ctx,
+			"a platform label has no counterpart here and was not applied",
+			"issue_id", issue.ID.String(),
+			"labels", strings.Join(unmapped, ", "),
+		)
+	}
+
+	if len(matched) == 0 {
+		return nil
+	}
+
+	ids := make([]uuid.UUID, len(matched))
+	for i, label := range matched {
+		ids[i] = label.ID
+	}
+
+	scoped := identity.WithActor(ctx, from.connection.Actor())
+
+	if _, err := s.issueWriter.SetLabels(scoped, from.workspaceID(), issue.ID, service.SetIssueLabelsInput{
+		ExpectedVersion: issue.Version,
+		LabelIDs:        ids,
+	}); err != nil && !errors.Is(err, entity.ErrIssueStale) {
+		return err
+	}
+
+	return nil
+}
+
+// keepDiscarded stores the losing value whole. A failure to store it must not stop the
+// reconcile, but it does have to be loud: from that moment the rule really is silent
+// last-write-wins, which is what this exists to prevent.
+func (s *sync) keepDiscarded(
+	ctx context.Context,
+	from source,
+	mirror entity.IssueMirror,
+	issue entity.Issue,
+	field string,
+	winner entity.MirrorWinner,
+	discarded, kept string,
+) {
+	if err := s.conflicts.Record(ctx, entity.MirrorConflict{
+		WorkspaceID: from.workspaceID(),
+		MirrorID:    mirror.ID,
+		IssueID:     issue.ID,
+		Field:       field,
+		Winner:      winner,
+		Discarded:   discarded,
+		Kept:        kept,
+		OccurredAt:  time.Now().UTC(),
+	}); err != nil {
+		logging.From(ctx).ErrorContext(
+			ctx,
+			"storing an edit that lost arbitration failed; that edit is now unrecoverable",
+			"issue_id", issue.ID.String(),
+			"field", field,
+			"error", err.Error(),
+		)
+	}
+}
+
+func discardedActivity(
+	from source,
+	decision entity.Decision,
+	issue entity.Issue,
+	field, discarded, kept string,
+) entity.Activity {
+	return entity.Activity{
+		WorkspaceID: from.workspaceID(),
+		Subject:     entity.IssueSubject(issue.ID),
+		Actor:       decision.ActivityActor(),
+		Kind:        entity.ActivityKindPropertyChanged,
+		Field:       field,
+		FromValue:   excerpt(discarded),
+		ToValue:     excerpt(kept),
+		Version:     issue.Version,
+	}
 }
 
 func commentBody(comment service.ForgeComment) string {
