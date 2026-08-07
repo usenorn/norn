@@ -198,7 +198,7 @@ func (a *casbinAuthorizer) Decide(ctx context.Context, request entity.AccessRequ
 		return entity.Decision{Actor: actor}, nil
 
 	default:
-		return entity.Decision{Actor: actor}, nil
+		return entity.Decision{}, a.deny(ctx, actor, request, entity.DenyReasonNoActor)
 	}
 }
 
