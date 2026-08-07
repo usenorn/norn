@@ -506,14 +506,13 @@ func (s *connectionsService) Complete(
 }
 
 type admission struct {
-	Protocol      entity.SSOProtocol
-	WorkspaceID   uuid.UUID
-	Provisioning  bool
-	Issuer        string
-	Subject       string
-	Email         string
-	Name          string
-	EmailVerified *bool
+	Protocol     entity.SSOProtocol
+	WorkspaceID  uuid.UUID
+	Provisioning bool
+	Issuer       string
+	Subject      string
+	Email        string
+	Name         string
 }
 
 func (s *connectionsService) admit(
@@ -522,14 +521,13 @@ func (s *connectionsService) admit(
 	claims entity.OIDCClaims,
 ) (entity.Account, bool, error) {
 	return s.admitIdentity(ctx, admission{
-		Protocol:      entity.SSOProtocolOIDC,
-		WorkspaceID:   connection.WorkspaceID,
-		Provisioning:  connection.Provisioning,
-		Issuer:        connection.Endpoints.Issuer,
-		Subject:       claims.Subject,
-		Email:         entity.NormalizeEmail(claims.Email),
-		Name:          claims.Name,
-		EmailVerified: claims.EmailVerified,
+		Protocol:     entity.SSOProtocolOIDC,
+		WorkspaceID:  connection.WorkspaceID,
+		Provisioning: connection.Provisioning,
+		Issuer:       connection.Endpoints.Issuer,
+		Subject:      claims.Subject,
+		Email:        entity.NormalizeEmail(claims.Email),
+		Name:         claims.Name,
 	})
 }
 
@@ -633,14 +631,6 @@ func (s *connectionsService) bootstrap(
 	ctx context.Context,
 	request admission,
 ) (entity.Account, bool, error) {
-	if err := entity.VerifiedEmailRefusal(
-		request.Protocol,
-		request.EmailVerified,
-		request.Email,
-	); err != nil {
-		return entity.Account{}, false, err
-	}
-
 	account, err := s.accounts.GetByEmail(ctx, request.Email)
 	if err != nil && !errors.Is(err, entity.ErrAccountNotFound) {
 		return entity.Account{}, false, err

@@ -126,11 +126,10 @@ func (c OIDCConnection) Validate() error {
 }
 
 type OIDCClaims struct {
-	Subject       string
-	Email         string
-	EmailVerified *bool
-	Name          string
-	Groups        []string
+	Subject string
+	Email   string
+	Name    string
+	Groups  []string
 }
 
 func ValidateClaims(claims OIDCClaims) error {

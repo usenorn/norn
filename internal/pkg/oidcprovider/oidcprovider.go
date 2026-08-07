@@ -202,7 +202,6 @@ func (s *Session) Exchange(ctx context.Context, code, verifier, nonce string) (e
 func claimsOf(token *oidc.IDToken) (entity.OIDCClaims, error) {
 	var payload struct {
 		Email             string   `json:"email"`
-		EmailVerified     *bool    `json:"email_verified"`
 		Name              string   `json:"name"`
 		PreferredUsername string   `json:"preferred_username"`
 		Groups            []string `json:"groups"`
@@ -222,11 +221,10 @@ func claimsOf(token *oidc.IDToken) (entity.OIDCClaims, error) {
 	}
 
 	return entity.OIDCClaims{
-		Subject:       token.Subject,
-		Email:         payload.Email,
-		EmailVerified: payload.EmailVerified,
-		Name:          name,
-		Groups:        payload.Groups,
+		Subject: token.Subject,
+		Email:   payload.Email,
+		Name:    name,
+		Groups:  payload.Groups,
 	}, nil
 }
 
