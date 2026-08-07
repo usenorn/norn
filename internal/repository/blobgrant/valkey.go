@@ -3,7 +3,9 @@ package blobgrant
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -39,7 +41,11 @@ func New(client *valkey.Client) repository.BlobGrant {
 	return &grantRepository{client: client}
 }
 
-func key(token string) string { return grantKeyPrefix + token }
+func key(token string) string {
+	digest := sha256.Sum256([]byte(token))
+
+	return grantKeyPrefix + hex.EncodeToString(digest[:])
+}
 
 func opaque() (string, error) {
 	buffer := make([]byte, grantTokenSize)

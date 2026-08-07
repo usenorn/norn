@@ -28,10 +28,11 @@ const (
 )
 
 type filesystemRepository struct {
-	root      *os.Root
-	base      string
-	grants    repository.BlobGrant
-	uploadTTL time.Duration
+	root         *os.Root
+	base         string
+	grants       repository.BlobGrant
+	uploadTTL    time.Duration
+	maxFileBytes int64
 }
 
 func newFilesystem(
@@ -54,10 +55,11 @@ func newFilesystem(
 	}
 
 	return &filesystemRepository{
-		root:      root,
-		base:      base,
-		grants:    grants,
-		uploadTTL: attachments.UploadTTL,
+		root:         root,
+		base:         base,
+		grants:       grants,
+		uploadTTL:    attachments.UploadTTL,
+		maxFileBytes: attachments.MaxFileBytes,
 	}, nil
 }
 
@@ -222,6 +224,7 @@ func (r *filesystemRepository) PresignPut(
 	token, err := r.grants.Issue(ctx, entity.BlobGrant{
 		Purpose:   entity.BlobGrantUpload,
 		Key:       key,
+		MaxBytes:  r.maxFileBytes,
 		ExpiresAt: expires,
 	}, ttl)
 	if err != nil {

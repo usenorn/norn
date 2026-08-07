@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/usenorn/norn/internal/observability/logging"
@@ -30,6 +31,18 @@ func (w *recordingWriter) Write(payload []byte) (int, error) {
 	return written, err
 }
 
+var capabilityPaths = []string{"/v1/blobs/upload/", "/v1/blobs/download/"}
+
+func loggedPath(path string) string {
+	for _, prefix := range capabilityPaths {
+		if strings.HasPrefix(path, prefix) {
+			return prefix + logging.Redacted
+		}
+	}
+
+	return path
+}
+
 func AccessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
@@ -39,7 +52,7 @@ func AccessLog(next http.Handler) http.Handler {
 
 		logging.From(r.Context()).InfoContext(r.Context(), "request handled",
 			"method", r.Method,
-			"path", r.URL.Path,
+			"path", loggedPath(r.URL.Path),
 			"status", recorder.status,
 			"bytes", recorder.bytes,
 			"duration_ms", time.Since(started).Milliseconds(),

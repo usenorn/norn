@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const redactedPlaceholder = "[REDACTED]"
+const Redacted = "[REDACTED]"
 
 var sensitiveKeys = map[string]struct{}{
 	"access_key_id":         {},
@@ -74,7 +74,7 @@ func redactAttr(attr slog.Attr) slog.Attr {
 	attr.Value = attr.Value.Resolve()
 
 	if _, sensitive := sensitiveKeys[strings.ToLower(attr.Key)]; sensitive {
-		attr.Value = slog.StringValue(redactedPlaceholder)
+		attr.Value = slog.StringValue(Redacted)
 
 		return attr
 	}

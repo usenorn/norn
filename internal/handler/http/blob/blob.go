@@ -37,36 +37,38 @@ func (e *Edge) grant(
 	w http.ResponseWriter,
 	r *http.Request,
 	purpose entity.BlobGrantPurpose,
-) (entity.BlobGrant, bool) {
-	grant, err := e.grants.Read(r.Context(), chi.URLParam(r, "grant"))
+) (entity.BlobGrant, string, bool) {
+	token := chi.URLParam(r, "grant")
+
+	grant, err := e.grants.Read(r.Context(), token)
 	if err != nil {
 		if errors.Is(err, entity.ErrBlobGrantNotFound) {
 			middleware.WriteProblem(w, r, http.StatusGone, entity.ErrBlobGrantNotFound.Error())
 
-			return entity.BlobGrant{}, false
+			return entity.BlobGrant{}, "", false
 		}
 
 		middleware.WriteProblem(w, r, http.StatusInternalServerError, "")
 
-		return entity.BlobGrant{}, false
+		return entity.BlobGrant{}, "", false
 	}
 
-	if grant.Purpose != purpose {
+	if grant.Spent(purpose, time.Now().UTC()) {
 		middleware.WriteProblem(w, r, http.StatusGone, entity.ErrBlobGrantNotFound.Error())
 
-		return entity.BlobGrant{}, false
+		return entity.BlobGrant{}, "", false
 	}
 
-	return grant, true
+	return grant, token, true
 }
 
 func (e *Edge) Receive(w http.ResponseWriter, r *http.Request) {
-	grant, ok := e.grant(w, r, entity.BlobGrantUpload)
+	grant, token, ok := e.grant(w, r, entity.BlobGrantUpload)
 	if !ok {
 		return
 	}
 
-	body := http.MaxBytesReader(w, r.Body, e.cfg.MaxFileBytes)
+	body := http.MaxBytesReader(w, r.Body, e.uploadLimit(grant))
 	defer func() { _ = body.Close() }()
 
 	if err := e.blobs.Put(r.Context(), grant.Key, entity.AttachmentGenericType, body, -1); err != nil {
@@ -83,11 +85,23 @@ func (e *Edge) Receive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := e.grants.Revoke(r.Context(), token); err != nil {
+		logging.From(r.Context()).ErrorContext(r.Context(), "spending an upload link failed", "error", err.Error())
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (e *Edge) uploadLimit(grant entity.BlobGrant) int64 {
+	if grant.MaxBytes > 0 && grant.MaxBytes < e.cfg.MaxFileBytes {
+		return grant.MaxBytes
+	}
+
+	return e.cfg.MaxFileBytes
+}
+
 func (e *Edge) Serve(w http.ResponseWriter, r *http.Request) {
-	grant, ok := e.grant(w, r, entity.BlobGrantDownload)
+	grant, _, ok := e.grant(w, r, entity.BlobGrantDownload)
 	if !ok {
 		return
 	}

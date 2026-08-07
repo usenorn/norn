@@ -44,6 +44,10 @@ type BlobGrant struct {
 	ExpiresAt time.Time
 }
 
+func (g BlobGrant) Spent(purpose BlobGrantPurpose, now time.Time) bool {
+	return g.Purpose != purpose || !g.ExpiresAt.After(now)
+}
+
 func ContentDisposition(serve ServeSpec) string {
 	disposition := serve.Disposition
 	if disposition == "" {
