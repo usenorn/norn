@@ -68,18 +68,21 @@ type changePayload struct {
 		Username string `json:"username"`
 	} `json:"user"`
 	ObjectAttributes struct {
-		ID           int64  `json:"id"`
-		IID          int    `json:"iid"`
-		Title        string `json:"title"`
-		Description  string `json:"description"`
-		State        string `json:"state"`
-		URL          string `json:"url"`
-		SourceBranch string `json:"source_branch"`
-		TargetBranch string `json:"target_branch"`
-		Draft        bool   `json:"draft"`
-		WorkInProg   bool   `json:"work_in_progress"`
-		UpdatedAt    string `json:"updated_at"`
-		Author       struct {
+		ID            int64  `json:"id"`
+		IID           int    `json:"iid"`
+		Title         string `json:"title"`
+		Description   string `json:"description"`
+		State         string `json:"state"`
+		URL           string `json:"url"`
+		SourceBranch  string `json:"source_branch"`
+		TargetBranch  string `json:"target_branch"`
+		Draft         bool   `json:"draft"`
+		WorkInProg    bool   `json:"work_in_progress"`
+		MergeStatus   string `json:"merge_status"`
+		DetailedMerge string `json:"detailed_merge_status"`
+		Action        string `json:"action"`
+		UpdatedAt     string `json:"updated_at"`
+		Author        struct {
 			Username string `json:"username"`
 		} `json:"author"`
 	} `json:"object_attributes"`
@@ -125,6 +128,8 @@ func (f *Forge) Translate(delivery entity.SCMDelivery) ([]service.ForgeEvent, er
 		return translateChange(delivery.Payload)
 	case "Issue Hook":
 		return translateIssue(delivery.Payload)
+	case "Pipeline Hook":
+		return translatePipeline(delivery.Payload)
 	case "Note Hook":
 		return translateNote(delivery.Payload)
 	default:
@@ -180,7 +185,12 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 
 	change := payload.ObjectAttributes
 	updatedAt := parseTime(change.UpdatedAt)
-	state := changeState(change.Draft || change.WorkInProg, change.State, len(payload.Reviewers))
+	state := changeState(
+		change.Draft || change.WorkInProg,
+		change.State,
+		change.MergeStatus,
+		change.DetailedMerge,
+	)
 
 	event := service.ForgeEvent{
 		Kind: service.ForgeEventChangeChanged,
@@ -195,6 +205,9 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 			HeadBranch: change.SourceBranch,
 			BaseBranch: change.TargetBranch,
 			UpdatedAt:  updatedAt,
+			// GitLab reports an approval as an action on the merge request and never carries
+			// the whole approval list, so the set is read back rather than rebuilt from this.
+			ReviewsMoved: reviewMoved(change.Action),
 		},
 		Author: payload.User.Username,
 		At:     updatedAt,
@@ -213,7 +226,13 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 
 // changeState reads GitLab's own vocabulary, where a merged request says so outright rather
 // than reporting itself closed the way GitHub does.
-func changeState(draft bool, state string, reviewers int) entity.CodeChangeState {
+// changeState reads what the merge request itself says. Who approved it arrives on its own
+// event and is combined by entity.ResolveChangeState, so this never guesses from the list of
+// people who were asked.
+//
+// GitLab reports a branch that will not merge as "cannot_be_merged"; older instances send
+// only merge_status, newer ones prefer detailed_merge_status, so both are read.
+func changeState(draft bool, state, mergeStatus, detailed string) entity.CodeChangeState {
 	switch {
 	case strings.EqualFold(state, "merged"):
 		return entity.CodeChangeMerged
@@ -221,10 +240,73 @@ func changeState(draft bool, state string, reviewers int) entity.CodeChangeState
 		return entity.CodeChangeClosed
 	case draft:
 		return entity.CodeChangeDraft
-	case reviewers > 0:
-		return entity.CodeChangeReviewRequested
+	case conflicted(mergeStatus) || conflicted(detailed):
+		return entity.CodeChangeConflicted
 	default:
 		return entity.CodeChangeOpen
+	}
+}
+
+func reviewMoved(action string) bool {
+	switch strings.ToLower(action) {
+	case "approved", "unapproved", "approval", "unapproval", "reviewer_updated", "open", "reopen":
+		return true
+	default:
+		return false
+	}
+}
+
+func conflicted(status string) bool {
+	return strings.EqualFold(status, "cannot_be_merged") ||
+		strings.EqualFold(status, "conflict")
+}
+
+type pipelinePayload struct {
+	ObjectAttributes struct {
+		Status string `json:"status"`
+	} `json:"object_attributes"`
+	MergeRequest struct {
+		ID  int64 `json:"id"`
+		IID int   `json:"iid"`
+	} `json:"merge_request"`
+	User struct {
+		Username string `json:"username"`
+	} `json:"user"`
+}
+
+// translatePipeline reflects GitLab's own answer and computes nothing. A pipeline attached
+// to a branch rather than a merge request names no change and is dropped.
+func translatePipeline(body []byte) ([]service.ForgeEvent, error) {
+	var payload pipelinePayload
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, fmt.Errorf("read pipeline delivery: %w", err)
+	}
+
+	if payload.MergeRequest.ID == 0 {
+		return nil, nil
+	}
+
+	return []service.ForgeEvent{{
+		Kind: service.ForgeEventChangeChanged,
+		Change: service.ForgeChange{
+			ExternalID:  strconv.FormatInt(payload.MergeRequest.ID, 10),
+			Number:      payload.MergeRequest.IID,
+			Checks:      pipelineChecks(payload.ObjectAttributes.Status),
+			KnowsChecks: true,
+		},
+		Author: payload.User.Username,
+	}}, nil
+}
+
+func pipelineChecks(status string) entity.CodeChecks {
+	switch strings.ToLower(status) {
+	case "success":
+		return entity.CodeChecksPassing
+	case "failed", "canceled", "cancelled":
+		return entity.CodeChecksFailing
+	default:
+		return entity.CodeChecksPending
 	}
 }
 

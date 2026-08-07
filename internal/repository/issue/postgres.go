@@ -46,6 +46,7 @@ const issueColumns = `
        coalesce(i.triage_decided_by_account_id::text, ''),
        coalesce(td.display_name, ''),
        i.triage_decided_at,
+       i.scm_automation_suppressed,
        i.created_at,
        i.updated_at,
        t.key,
@@ -104,8 +105,8 @@ WITH allocated AS (
               status, archived_at,
               parent_issue_id, depth, cycle_id, project_id,
               created_by_account_id, triage_state, triage_source,
-              triage_decided_by_account_id, triage_decided_at, created_at, updated_at,
-              rank
+              triage_decided_by_account_id, triage_decided_at, scm_automation_suppressed,
+              created_at, updated_at, rank
 )
 SELECT` + issueColumns + `
 FROM inserted i
@@ -421,6 +422,7 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		&triageDecider,
 		&issue.TriageDecidedName,
 		&triageAt,
+		&issue.SCMAutomationSuppressed,
 		&issue.CreatedAt,
 		&issue.UpdatedAt,
 		&issue.TeamKey,
@@ -1612,4 +1614,37 @@ func (r *issueRepository) tally(
 	}
 
 	return byParent, nil
+}
+
+const setSCMAutomationQuery = `
+UPDATE workspace_issues
+SET scm_automation_suppressed = $3,
+    version                   = version + 1,
+    field_versions            = field_versions || jsonb_build_object(
+                                    'scmAutomation', (version + 1)::text::jsonb),
+    updated_at                = now()
+WHERE workspace_id = $1 AND id = $2`
+
+func (r *issueRepository) SetSCMAutomationSuppressed(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	suppressed bool,
+) error {
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx, setSCMAutomationQuery, workspaceID, issueID, suppressed,
+	)
+	if err != nil {
+		return fmt.Errorf("set source control automation on an issue: %w", err)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read affected rows: %w", err)
+	}
+
+	if affected == 0 {
+		return entity.ErrIssueNotFound
+	}
+
+	return nil
 }

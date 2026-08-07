@@ -7,9 +7,11 @@
 	import { Button } from "$lib/components/ui/button";
 	import {
 		changeStateLabel,
+		checksLabel,
 		linkKindLabel,
 		linkTitle,
 		providerLabel,
+		reviewVerdictLabel,
 		type CodeLink,
 	} from "./source-control";
 
@@ -23,6 +25,12 @@
 		branch: GitBranch,
 		commit: GitCommitHorizontal,
 		change: GitPullRequest,
+	};
+
+	const checkTones = {
+		pending: "text-muted-foreground",
+		passing: "text-success",
+		failing: "text-destructive",
 	};
 
 	const tones: Record<CodeLink["state"], string> = {
@@ -64,7 +72,27 @@
 						{linkKindLabel(link.kind)} · {providerLabel(link.provider)} · {link.repository}
 						{#if link.author}· {link.author}{/if}
 						<span class={tones[link.state]}>· {changeStateLabel(link.state)}</span>
+						{#if link.checks}
+							<span class={checkTones[link.checks]}>· {checksLabel(link.checks)}</span>
+						{/if}
 					</p>
+
+					{#if link.reviewers?.length}
+						<ul class="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+							{#each link.reviewers as reviewer (reviewer.login)}
+								<li class:text-destructive={reviewer.verdict === "changes_requested"}>
+									{reviewer.login} — {reviewVerdictLabel(reviewer.verdict)}
+								</li>
+							{/each}
+						</ul>
+					{/if}
+
+					{#if link.kind === "change" && link.resolving === false}
+						<p class="text-xs text-muted-foreground">
+							Mentions this issue. Write “fixes {"{"}reference{"}"}” in the change for it to move
+							the issue on.
+						</p>
+					{/if}
 
 					{#if !link.connected}
 						<p class="text-xs text-muted-foreground">

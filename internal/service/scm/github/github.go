@@ -172,7 +172,7 @@ func (f *Forge) InstallHook(
 	payload := map[string]any{
 		"name":   "web",
 		"active": true,
-		"events": []string{"push", "pull_request", "issues", "issue_comment"},
+		"events": hookEvents,
 		"config": map[string]any{
 			"url":          request.CallbackURL,
 			"content_type": "json",
@@ -236,6 +236,7 @@ type changeBody struct {
 	HTMLURL            string     `json:"html_url"`
 	State              string     `json:"state"`
 	Draft              bool       `json:"draft"`
+	MergeableState     string     `json:"mergeable_state"`
 	MergedAt           *time.Time `json:"merged_at"`
 	ClosedAt           *time.Time `json:"closed_at"`
 	UpdatedAt          time.Time  `json:"updated_at"`
@@ -308,14 +309,17 @@ func (f *Forge) Changes(
 				change.Draft,
 				change.State,
 				change.MergedAt,
-				len(change.RequestedReviewers),
+				change.MergeableState,
 			),
-			Author:     change.User.Login,
-			HeadBranch: change.Head.Ref,
-			BaseBranch: change.Base.Ref,
-			UpdatedAt:  change.UpdatedAt,
-			MergedAt:   change.MergedAt,
-			ClosedAt:   change.ClosedAt,
+			// The listing carries who was asked to review but not what anybody answered. The
+			// sweep asks for the set to be read rather than rebuilding it from what it has.
+			ReviewsMoved: true,
+			Author:       change.User.Login,
+			HeadBranch:   change.Head.Ref,
+			BaseBranch:   change.Base.Ref,
+			UpdatedAt:    change.UpdatedAt,
+			MergedAt:     change.MergedAt,
+			ClosedAt:     change.ClosedAt,
 		})
 	}
 
@@ -606,4 +610,191 @@ func (f *Forge) ChangedPaths(
 	}
 
 	return paths, nil
+}
+
+// hookEvents is what Norn asks GitHub to send. Adding one here is not enough on its own: a
+// hook installed before the addition keeps its old list, which is what installedEvents and
+// the sweep's repair exist for.
+var hookEvents = []string{
+	"push",
+	"pull_request",
+	"pull_request_review",
+	"check_suite",
+	"issues",
+	"issue_comment",
+}
+
+type reviewBody struct {
+	State       string    `json:"state"`
+	HTMLURL     string    `json:"html_url"`
+	SubmittedAt time.Time `json:"submitted_at"`
+	User        struct {
+		Login string `json:"login"`
+	} `json:"user"`
+}
+
+// Reviews reads the answers a change currently has, keeping the latest one per person. A
+// reviewer who comments and later approves has one verdict, not two, and GitHub returns
+// every review ever submitted in order.
+func (f *Forge) Reviews(
+	ctx context.Context,
+	target entity.SCMTarget,
+	number int,
+) ([]service.ForgeReviewer, error) {
+	query := url.Values{}
+	query.Set("per_page", strconv.Itoa(f.pageSize))
+
+	path := "/repos/" + target.Repository + "/pulls/" + strconv.Itoa(number) +
+		"/reviews?" + query.Encode()
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body []reviewBody
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	at := make(map[string]int, len(body))
+	reviewers := make([]service.ForgeReviewer, 0, len(body))
+
+	for _, review := range body {
+		verdict, known := reviewVerdict(review.State)
+		if !known || review.User.Login == "" {
+			continue
+		}
+
+		submitted := review.SubmittedAt
+		reviewer := service.ForgeReviewer{
+			Login:      review.User.Login,
+			Verdict:    verdict,
+			URL:        review.HTMLURL,
+			ReviewedAt: &submitted,
+		}
+
+		if index, seen := at[review.User.Login]; seen {
+			reviewers[index] = reviewer
+
+			continue
+		}
+
+		at[review.User.Login] = len(reviewers)
+		reviewers = append(reviewers, reviewer)
+	}
+
+	requested, err := f.requestedReviewers(ctx, target, number)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, login := range requested {
+		if _, answered := at[login]; answered {
+			continue
+		}
+
+		reviewers = append(reviewers, service.ForgeReviewer{
+			Login:   login,
+			Verdict: entity.ReviewRequested,
+		})
+	}
+
+	return reviewers, nil
+}
+
+func (f *Forge) requestedReviewers(
+	ctx context.Context,
+	target entity.SCMTarget,
+	number int,
+) ([]string, error) {
+	path := "/repos/" + target.Repository + "/pulls/" + strconv.Itoa(number) +
+		"/requested_reviewers"
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body struct {
+		Users []struct {
+			Login string `json:"login"`
+		} `json:"users"`
+	}
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	logins := make([]string, 0, len(body.Users))
+	for _, user := range body.Users {
+		if user.Login != "" {
+			logins = append(logins, user.Login)
+		}
+	}
+
+	return logins, nil
+}
+
+// RepairHook rewrites the event list only when it is actually short. A pointless write on
+// every sweep would spend a rate limit on every repository for nothing.
+func (f *Forge) RepairHook(
+	ctx context.Context,
+	request service.ForgeHookRequest,
+	hookID string,
+) (bool, error) {
+	path := "/repos/" + request.Target.Repository + "/hooks/" + hookID
+
+	response, err := f.call(ctx, request.Target, http.MethodGet, path, nil)
+	if err != nil {
+		return false, err
+	}
+
+	var installed struct {
+		Events []string `json:"events"`
+	}
+
+	if err := f.decode(response, request.Target, &installed); err != nil {
+		return false, err
+	}
+
+	if covers(installed.Events, hookEvents) {
+		return false, nil
+	}
+
+	patched, err := f.call(ctx, request.Target, http.MethodPatch, path, map[string]any{
+		"active": true,
+		"events": hookEvents,
+		"config": map[string]any{
+			"url":          request.CallbackURL,
+			"content_type": "json",
+			"secret":       request.Secret,
+			"insecure_ssl": "0",
+		},
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return true, f.decode(patched, request.Target, nil)
+}
+
+func covers(installed, wanted []string) bool {
+	held := make(map[string]bool, len(installed))
+	for _, event := range installed {
+		held[event] = true
+	}
+
+	if held["*"] {
+		return true
+	}
+
+	for _, event := range wanted {
+		if !held[event] {
+			return false
+		}
+	}
+
+	return true
 }

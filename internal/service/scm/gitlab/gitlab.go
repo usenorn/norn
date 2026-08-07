@@ -184,6 +184,7 @@ func (f *Forge) InstallHook(
 		"merge_requests_events":   true,
 		"issues_events":           true,
 		"note_events":             true,
+		"pipeline_events":         true,
 		"enable_ssl_verification": true,
 	}
 
@@ -229,19 +230,21 @@ func (f *Forge) RemoveHook(ctx context.Context, target entity.SCMTarget, hookID 
 }
 
 type changeBody struct {
-	ID           int64      `json:"id"`
-	IID          int        `json:"iid"`
-	Title        string     `json:"title"`
-	Description  string     `json:"description"`
-	WebURL       string     `json:"web_url"`
-	State        string     `json:"state"`
-	Draft        bool       `json:"draft"`
-	SourceBranch string     `json:"source_branch"`
-	TargetBranch string     `json:"target_branch"`
-	UpdatedAt    time.Time  `json:"updated_at"`
-	MergedAt     *time.Time `json:"merged_at"`
-	ClosedAt     *time.Time `json:"closed_at"`
-	Author       struct {
+	ID            int64      `json:"id"`
+	IID           int        `json:"iid"`
+	Title         string     `json:"title"`
+	Description   string     `json:"description"`
+	WebURL        string     `json:"web_url"`
+	State         string     `json:"state"`
+	Draft         bool       `json:"draft"`
+	MergeStatus   string     `json:"merge_status"`
+	DetailedMerge string     `json:"detailed_merge_status"`
+	SourceBranch  string     `json:"source_branch"`
+	TargetBranch  string     `json:"target_branch"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+	MergedAt      *time.Time `json:"merged_at"`
+	ClosedAt      *time.Time `json:"closed_at"`
+	Author        struct {
 		Username string `json:"username"`
 	} `json:"author"`
 	Reviewers []struct {
@@ -293,13 +296,19 @@ func (f *Forge) Changes(
 			Title:      change.Title,
 			Body:       change.Description,
 			URL:        change.WebURL,
-			State:      changeState(change.Draft, change.State, len(change.Reviewers)),
-			Author:     change.Author.Username,
-			HeadBranch: change.SourceBranch,
-			BaseBranch: change.TargetBranch,
-			UpdatedAt:  change.UpdatedAt,
-			MergedAt:   change.MergedAt,
-			ClosedAt:   change.ClosedAt,
+			State: changeState(
+				change.Draft,
+				change.State,
+				change.MergeStatus,
+				change.DetailedMerge,
+			),
+			ReviewsMoved: true,
+			Author:       change.Author.Username,
+			HeadBranch:   change.SourceBranch,
+			BaseBranch:   change.TargetBranch,
+			UpdatedAt:    change.UpdatedAt,
+			MergedAt:     change.MergedAt,
+			ClosedAt:     change.ClosedAt,
 		})
 	}
 
@@ -576,4 +585,126 @@ func (f *Forge) ChangedPaths(
 	}
 
 	return paths, nil
+}
+
+// Reviews reads who is reviewing a merge request and who has approved it. GitLab keeps the
+// two apart — reviewers on the merge request, approvals on their own endpoint — so both are
+// read and merged into one answer per person.
+func (f *Forge) Reviews(
+	ctx context.Context,
+	target entity.SCMTarget,
+	number int,
+) ([]service.ForgeReviewer, error) {
+	path := "/projects/" + project(target) + "/merge_requests/" + strconv.Itoa(number)
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var change changeBody
+
+	if err := f.decode(response, target, &change); err != nil {
+		return nil, err
+	}
+
+	approvals, err := f.call(ctx, target, http.MethodGet, path+"/approvals", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var approved struct {
+		ApprovedBy []struct {
+			User struct {
+				Username string `json:"username"`
+			} `json:"user"`
+		} `json:"approved_by"`
+	}
+
+	if err := f.decode(approvals, target, &approved); err != nil {
+		return nil, err
+	}
+
+	total := len(approved.ApprovedBy) + len(change.Reviewers)
+	at := make(map[string]int, total)
+	reviewers := make([]service.ForgeReviewer, 0, total)
+
+	for _, one := range approved.ApprovedBy {
+		if one.User.Username == "" {
+			continue
+		}
+
+		at[one.User.Username] = len(reviewers)
+		reviewers = append(reviewers, service.ForgeReviewer{
+			Login:   one.User.Username,
+			Verdict: entity.ReviewApproved,
+		})
+	}
+
+	for _, one := range change.Reviewers {
+		if one.Username == "" {
+			continue
+		}
+
+		if _, approved := at[one.Username]; approved {
+			continue
+		}
+
+		at[one.Username] = len(reviewers)
+		reviewers = append(reviewers, service.ForgeReviewer{
+			Login:   one.Username,
+			Verdict: entity.ReviewRequested,
+		})
+	}
+
+	return reviewers, nil
+}
+
+// RepairHook turns on the event flags this version needs. GitLab describes a hook as a set
+// of booleans rather than a list, so a hook created before an event existed simply has that
+// flag off and never sends it.
+func (f *Forge) RepairHook(
+	ctx context.Context,
+	request service.ForgeHookRequest,
+	hookID string,
+) (bool, error) {
+	path := "/projects/" + project(request.Target) + "/hooks/" + hookID
+
+	response, err := f.call(ctx, request.Target, http.MethodGet, path, nil)
+	if err != nil {
+		return false, err
+	}
+
+	var installed struct {
+		PushEvents          bool `json:"push_events"`
+		MergeRequestsEvents bool `json:"merge_requests_events"`
+		IssuesEvents        bool `json:"issues_events"`
+		NoteEvents          bool `json:"note_events"`
+		PipelineEvents      bool `json:"pipeline_events"`
+	}
+
+	if err := f.decode(response, request.Target, &installed); err != nil {
+		return false, err
+	}
+
+	if installed.PushEvents && installed.MergeRequestsEvents && installed.IssuesEvents &&
+		installed.NoteEvents && installed.PipelineEvents {
+		return false, nil
+	}
+
+	patched, err := f.call(ctx, request.Target, http.MethodPut, path, map[string]any{
+		"url":                     request.CallbackURL,
+		"token":                   request.Secret,
+		"push_events":             true,
+		"merge_requests_events":   true,
+		"issues_events":           true,
+		"note_events":             true,
+		"pipeline_events":         true,
+		"enable_ssl_verification": true,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return true, f.decode(patched, request.Target, nil)
 }

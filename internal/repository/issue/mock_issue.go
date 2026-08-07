@@ -323,6 +323,20 @@ func (mr *MockIssueMockRecorder) SetParent(ctx, issueID, expectedVersion, parent
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetParent", reflect.TypeOf((*MockIssue)(nil).SetParent), ctx, issueID, expectedVersion, parentID, depth, changedAt)
 }
 
+// SetSCMAutomationSuppressed mocks base method.
+func (m *MockIssue) SetSCMAutomationSuppressed(ctx context.Context, workspaceID, issueID uuid.UUID, suppressed bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetSCMAutomationSuppressed", ctx, workspaceID, issueID, suppressed)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetSCMAutomationSuppressed indicates an expected call of SetSCMAutomationSuppressed.
+func (mr *MockIssueMockRecorder) SetSCMAutomationSuppressed(ctx, workspaceID, issueID, suppressed any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSCMAutomationSuppressed", reflect.TypeOf((*MockIssue)(nil).SetSCMAutomationSuppressed), ctx, workspaceID, issueID, suppressed)
+}
+
 // SetStatus mocks base method.
 func (m *MockIssue) SetStatus(ctx context.Context, issueID uuid.UUID, expectedVersion int, lifecycle entity.IssueLifecycle, changedAt time.Time) error {
 	m.ctrl.T.Helper()

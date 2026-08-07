@@ -30,6 +30,7 @@ type advanceHarness struct {
 	repositories *scmrepo.MockSCMRepository
 	routes       *scmrepo.MockSCMRoute
 	rules        *scmrepo.MockSCMTransitionRule
+	teamSettings *scmrepo.MockSCMTeamSetting
 	deliveries   *scmrepo.MockSCMDelivery
 	links        *scmrepo.MockCodeLink
 	mirrors      *scmrepo.MockIssueMirror
@@ -56,6 +57,7 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		repositories: scmrepo.NewMockSCMRepository(ctrl),
 		routes:       scmrepo.NewMockSCMRoute(ctrl),
 		rules:        scmrepo.NewMockSCMTransitionRule(ctrl),
+		teamSettings: scmrepo.NewMockSCMTeamSetting(ctrl),
 		deliveries:   scmrepo.NewMockSCMDelivery(ctrl),
 		links:        scmrepo.NewMockCodeLink(ctrl),
 		mirrors:      scmrepo.NewMockIssueMirror(ctrl),
@@ -84,6 +86,7 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		h.repositories,
 		h.routes,
 		h.rules,
+		h.teamSettings,
 		h.deliveries,
 		h.links,
 		h.mirrors,
@@ -157,6 +160,7 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 		ExternalID:     "900123",
 		Number:         14,
 		State:          entity.CodeChangeMerged,
+		Resolving:      true,
 	}
 
 	delivery := entity.SCMDelivery{
@@ -190,7 +194,7 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 		Change: service.ForgeChange{
 			ExternalID: "900123",
 			Number:     14,
-			Title:      "ENG-1 drop the cache",
+			Title:      "fixes ENG-1 drop the cache",
 			HeadBranch: "eng-1-drop-the-cache",
 			State:      entity.CodeChangeMerged,
 		},

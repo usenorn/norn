@@ -12,20 +12,34 @@ import (
 
 //go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=Forge=MockForge,Forges=MockForges,SourceControl=MockSourceControl,SourceControlSync=MockSourceControlSync
 
+type ForgeReviewer struct {
+	Login      string
+	Verdict    entity.ReviewVerdict
+	URL        string
+	ReviewedAt *time.Time
+}
+
 type ForgeChange struct {
 	ExternalID string
 	Number     int
 	Title      string
 	Body       string
 	URL        string
-	State      entity.CodeChangeState
-	Action     entity.CodeChangeAction
-	Author     string
-	HeadBranch string
-	BaseBranch string
-	UpdatedAt  time.Time
-	MergedAt   *time.Time
-	ClosedAt   *time.Time
+	// State is what the change itself says. What its reviewers said arrives separately, and
+	// entity.ResolveChangeState is the single place the two are combined.
+	State  entity.CodeChangeState
+	Checks entity.CodeChecks
+	// KnowsChecks and ReviewsMoved say what this event is evidence of. A payload carries one
+	// review, not the set, so claiming to know the reviews from it would wipe every other
+	// answer; ReviewsMoved asks for the set to be read instead.
+	KnowsChecks  bool
+	ReviewsMoved bool
+	Author       string
+	HeadBranch   string
+	BaseBranch   string
+	UpdatedAt    time.Time
+	MergedAt     *time.Time
+	ClosedAt     *time.Time
 }
 
 type ForgeCommit struct {
@@ -122,12 +136,19 @@ type Forge interface {
 	Repository(ctx context.Context, target entity.SCMTarget) (entity.SCMRemoteRepository, error)
 	Identity(ctx context.Context, target entity.SCMTarget) (string, error)
 	InstallHook(ctx context.Context, request ForgeHookRequest) (string, error)
+	// RepairHook brings an installed hook up to the events this version needs. A hook
+	// installed by an earlier version keeps the list it was created with, so a new event
+	// simply never arrives and the feature looks dead on every repository already connected.
+	RepairHook(ctx context.Context, request ForgeHookRequest, hookID string) (bool, error)
 	RemoveHook(ctx context.Context, target entity.SCMTarget, hookID string) error
 
 	Changes(ctx context.Context, target entity.SCMTarget, since time.Time, cursor string) (ForgeChangePage, error)
 	// ChangedPaths is what routing needs and no event carries: both forges describe a change
 	// without saying which files it touches.
 	ChangedPaths(ctx context.Context, target entity.SCMTarget, number int) ([]string, error)
+	// Reviews reads every answer a change currently has. A review event carries one review,
+	// so a second approval would erase the first if the set were rebuilt from events.
+	Reviews(ctx context.Context, target entity.SCMTarget, number int) ([]ForgeReviewer, error)
 	Issues(ctx context.Context, target entity.SCMTarget, label string, since time.Time, cursor string) (ForgeIssuePage, error)
 	// An issue is addressed by the number its repository counts with, not by the identity it
 	// is stored under. Both forges put the number in the path and the id in the payload, so
@@ -183,6 +204,10 @@ type AddRouteInput struct {
 	PathPrefix   string
 }
 
+type SetTeamSCMSettingsInput struct {
+	BranchTemplate string
+}
+
 type SetTransitionRuleInput struct {
 	Trigger entity.CodeChangeState
 	StateID uuid.UUID
@@ -221,11 +246,16 @@ type SourceControl interface {
 	AddRoute(ctx context.Context, workspaceID uuid.UUID, input AddRouteInput) (entity.SCMRoute, error)
 	RemoveRoute(ctx context.Context, workspaceID, routeID uuid.UUID) error
 
+	TeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.SCMTeamSettings, error)
+	SetTeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID, input SetTeamSCMSettingsInput) (entity.SCMTeamSettings, error)
+	BranchName(ctx context.Context, workspaceID, issueID uuid.UUID) (string, error)
+	SuppressAutomation(ctx context.Context, workspaceID, issueID uuid.UUID, suppressed bool) error
+
 	TeamRules(ctx context.Context, workspaceID, teamID uuid.UUID) ([]TeamTransitionRule, error)
 	SetTeamRule(ctx context.Context, workspaceID, teamID uuid.UUID, input SetTransitionRuleInput) ([]TeamTransitionRule, error)
 	ClearTeamRule(ctx context.Context, workspaceID, teamID uuid.UUID, trigger entity.CodeChangeState) ([]TeamTransitionRule, error)
 
-	Links(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.CodeLink, error)
+	Links(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.CodeLink, map[uuid.UUID]entity.CodeReviewers, error)
 	Link(ctx context.Context, workspaceID, issueID uuid.UUID, input LinkIssueCodeInput) (entity.CodeLink, error)
 	Unlink(ctx context.Context, workspaceID, issueID, linkID uuid.UUID) error
 

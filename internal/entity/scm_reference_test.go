@@ -90,7 +90,7 @@ func TestAReferenceIsReadOutOfWhateverTextTheForgeCarriesIt(t *testing.T) {
 			}
 
 			for i, reference := range testCase.want {
-				if got[i] != reference {
+				if got[i].Reference != reference {
 					t.Errorf(
 						"ScanIssueReferences(%q)[%d] = %v, want %v",
 						testCase.text, i, got[i], reference,
@@ -110,7 +110,7 @@ func TestTheScannerReadsWhatAWholeReferenceParserCannot(t *testing.T) {
 
 	found := entity.ScanIssueReferences(branch)
 
-	if len(found) != 1 || found[0] != (entity.IssueReference{Key: "ENG", Number: 12}) {
+	if len(found) != 1 || found[0].Reference != (entity.IssueReference{Key: "ENG", Number: 12}) {
 		t.Fatalf("ScanIssueReferences(%q) = %v, want one ENG-12", branch, found)
 	}
 }
@@ -142,5 +142,60 @@ func TestTheScannerRefusesToReadAnUnboundedBody(t *testing.T) {
 				"a hostile commit message can ask for",
 			found, entity.CodeLinkScanMaxLen,
 		)
+	}
+}
+
+func TestOnlyAVerbSaysTheChangeSettlesTheIssue(t *testing.T) {
+	cases := map[string]bool{
+		"ENG-1 drop the cache":         false,
+		"See ENG-1 for the background": false,
+		"fixes ENG-1":                  true,
+		"Fixes ENG-1":                  true,
+		"fix ENG-1":                    true,
+		"fixed ENG-1":                  true,
+		"closes ENG-1":                 true,
+		"close ENG-1":                  true,
+		"closed ENG-1":                 true,
+		"resolves ENG-1":               true,
+		"resolve ENG-1":                true,
+		"resolved ENG-1":               true,
+		"prefixes ENG-1":               false,
+		"eric/ENG-1-drop-the-cache":    false,
+		"Mentions ENG-1, and fixes ENG-1 properly": true,
+		"fixes ENG-1 and mentions ENG-1 again":     true,
+	}
+
+	for text, want := range cases {
+		t.Run(text, func(t *testing.T) {
+			found := entity.ScanIssueReferences(text)
+
+			if len(found) != 1 {
+				t.Fatalf("ScanIssueReferences(%q) found %d references, want 1", text, len(found))
+			}
+
+			if found[0].Resolving != want {
+				t.Errorf(
+					"ScanIssueReferences(%q) resolving = %t, want %t — a bare mention links the "+
+						"change and must not move the issue",
+					text, found[0].Resolving, want,
+				)
+			}
+		})
+	}
+}
+
+func TestAVerbBindsToTheReferenceItPrecedes(t *testing.T) {
+	found := entity.ScanIssueReferences("fixes ENG-1, and see ENG-2 for context")
+
+	if len(found) != 2 {
+		t.Fatalf("found %d references, want 2", len(found))
+	}
+
+	if !found[0].Resolving {
+		t.Error("ENG-1 follows the verb and settles the issue")
+	}
+
+	if found[1].Resolving {
+		t.Error("ENG-2 is a bare mention; a verb earlier in the line must not reach it")
 	}
 }

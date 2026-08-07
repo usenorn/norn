@@ -684,6 +684,27 @@ func (e CodeChangeState) Valid() bool {
 	}
 }
 
+// Defines values for CodeChecks.
+const (
+	CodeChecksFailing CodeChecks = "failing"
+	CodeChecksPassing CodeChecks = "passing"
+	CodeChecksPending CodeChecks = "pending"
+)
+
+// Valid indicates whether the value is a known member of the CodeChecks enum.
+func (e CodeChecks) Valid() bool {
+	switch e {
+	case CodeChecksFailing:
+		return true
+	case CodeChecksPassing:
+		return true
+	case CodeChecksPending:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CodeLinkKind.
 const (
 	Branch CodeLinkKind = "branch"
@@ -2268,6 +2289,33 @@ func (e ResetLinkUsedProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for ReviewVerdict.
+const (
+	ReviewVerdictApproved         ReviewVerdict = "approved"
+	ReviewVerdictChangesRequested ReviewVerdict = "changes_requested"
+	ReviewVerdictCommented        ReviewVerdict = "commented"
+	ReviewVerdictDismissed        ReviewVerdict = "dismissed"
+	ReviewVerdictRequested        ReviewVerdict = "requested"
+)
+
+// Valid indicates whether the value is a known member of the ReviewVerdict enum.
+func (e ReviewVerdict) Valid() bool {
+	switch e {
+	case ReviewVerdictApproved:
+		return true
+	case ReviewVerdictChangesRequested:
+		return true
+	case ReviewVerdictCommented:
+		return true
+	case ReviewVerdictDismissed:
+		return true
+	case ReviewVerdictRequested:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SavedViewConflictProblemCode.
 const (
 	SavedViewShared SavedViewConflictProblemCode = "saved_view_shared"
@@ -3753,24 +3801,30 @@ type CloseCycleRequest struct {
 // CodeChangeState Where a change stands on the forge. Review and conflict are states a change is in rather than events that happened to it, which is what lets a rule fire on entering one and lets the issue read correctly after a reload.
 type CodeChangeState string
 
+// CodeChecks What the platform's own checks say. Norn reflects this and runs nothing; a suite that has not finished is pending rather than passing, because reading green off an unfinished run is worse than saying nothing.
+type CodeChecks string
+
 // CodeLink Everything needed to render the link is on the link itself, so it survives the repository being removed. connected is false once that has happened.
 type CodeLink struct {
-	Author       *string               `json:"author,omitempty"`
-	BaseBranch   *string               `json:"baseBranch,omitempty"`
-	ChecksFailed *bool                 `json:"checksFailed,omitempty"`
-	ClosedAt     *time.Time            `json:"closedAt,omitempty"`
-	Connected    bool                  `json:"connected"`
-	CreatedAt    time.Time             `json:"createdAt"`
-	DetectedIn   *string               `json:"detectedIn,omitempty"`
-	ExternalId   string                `json:"externalId"`
-	HeadBranch   *string               `json:"headBranch,omitempty"`
-	Id           openapi_types.UUID    `json:"id"`
-	Kind         CodeLinkKind          `json:"kind"`
-	MergedAt     *time.Time            `json:"mergedAt,omitempty"`
-	Number       *int32                `json:"number,omitempty"`
-	Provider     SourceControlProvider `json:"provider"`
-	Repository   string                `json:"repository"`
-	Resolving    *bool                 `json:"resolving,omitempty"`
+	Author     *string `json:"author,omitempty"`
+	BaseBranch *string `json:"baseBranch,omitempty"`
+
+	// Checks What the platform's own checks say. Norn reflects this and runs nothing; a suite that has not finished is pending rather than passing, because reading green off an unfinished run is worse than saying nothing.
+	Checks     *CodeChecks           `json:"checks,omitempty"`
+	ClosedAt   *time.Time            `json:"closedAt,omitempty"`
+	Connected  bool                  `json:"connected"`
+	CreatedAt  time.Time             `json:"createdAt"`
+	DetectedIn *string               `json:"detectedIn,omitempty"`
+	ExternalId string                `json:"externalId"`
+	HeadBranch *string               `json:"headBranch,omitempty"`
+	Id         openapi_types.UUID    `json:"id"`
+	Kind       CodeLinkKind          `json:"kind"`
+	MergedAt   *time.Time            `json:"mergedAt,omitempty"`
+	Number     *int32                `json:"number,omitempty"`
+	Provider   SourceControlProvider `json:"provider"`
+	Repository string                `json:"repository"`
+	Resolving  *bool                 `json:"resolving,omitempty"`
+	Reviewers  *[]CodeReviewer       `json:"reviewers,omitempty"`
 
 	// State Where a change stands on the forge. Review and conflict are states a change is in rather than events that happened to it, which is what lets a rule fire on entering one and lets the issue read correctly after a reload.
 	State CodeChangeState `json:"state"`
@@ -3780,6 +3834,14 @@ type CodeLink struct {
 
 // CodeLinkKind defines model for CodeLinkKind.
 type CodeLinkKind string
+
+// CodeReviewer One person's answer on a change. Kept per reviewer rather than reduced to a single state, because "two approvals and one asking for changes" is exactly what somebody opens the issue to understand.
+type CodeReviewer struct {
+	Login      string        `json:"login"`
+	ReviewedAt *time.Time    `json:"reviewedAt,omitempty"`
+	Url        *string       `json:"url,omitempty"`
+	Verdict    ReviewVerdict `json:"verdict"`
+}
 
 // CommentAuthorKind defines model for CommentAuthorKind.
 type CommentAuthorKind string
@@ -4579,6 +4641,11 @@ type Issue struct {
 	WorkspaceId openapi_types.UUID `json:"workspaceId"`
 }
 
+// IssueBranchName The branch a person copies before starting work. It is generated rather than typed because the reference in it is what creates the link in the first place.
+type IssueBranchName struct {
+	Branch string `json:"branch"`
+}
+
 // IssueChildren defines model for IssueChildren.
 type IssueChildren struct {
 	Issues   []Issue       `json:"issues"`
@@ -5345,6 +5412,9 @@ type ResetLinkUsedProblem struct {
 // ResetLinkUsedProblemCode defines model for ResetLinkUsedProblem.Code.
 type ResetLinkUsedProblemCode string
 
+// ReviewVerdict defines model for ReviewVerdict.
+type ReviewVerdict string
+
 // SamlAttributeMapping defines model for SamlAttributeMapping.
 type SamlAttributeMapping struct {
 	Email  *string `json:"email,omitempty"`
@@ -5509,6 +5579,11 @@ type SetSourceControlTransitionRuleRequest struct {
 
 	// Trigger Where a change stands on the forge. Review and conflict are states a change is in rather than events that happened to it, which is what lets a rule fire on entering one and lets the issue read correctly after a reload.
 	Trigger CodeChangeState `json:"trigger"`
+}
+
+// SetTeamSourceControlSettingsRequest defines model for SetTeamSourceControlSettingsRequest.
+type SetTeamSourceControlSettingsRequest struct {
+	BranchTemplate *string `json:"branchTemplate,omitempty"`
 }
 
 // SetTriageSettingsRequest defines model for SetTriageSettingsRequest.
@@ -5802,6 +5877,11 @@ type StorageRefusedProblem struct {
 // StorageRefusedProblemCode defines model for StorageRefusedProblem.Code.
 type StorageRefusedProblemCode string
 
+// SuppressIssueAutomationRequest defines model for SuppressIssueAutomationRequest.
+type SuppressIssueAutomationRequest struct {
+	Suppressed bool `json:"suppressed"`
+}
+
 // Team defines model for Team.
 type Team struct {
 	ArchivedAt  *time.Time         `json:"archivedAt,omitempty"`
@@ -5842,6 +5922,12 @@ type TeamMember struct {
 	Email       string             `json:"email"`
 	JoinedAt    *time.Time         `json:"joinedAt,omitempty"`
 	TeamId      openapi_types.UUID `json:"teamId"`
+}
+
+// TeamSourceControlSettings defines model for TeamSourceControlSettings.
+type TeamSourceControlSettings struct {
+	BranchTemplate string             `json:"branchTemplate"`
+	TeamId         openapi_types.UUID `json:"teamId"`
 }
 
 // TeamStatus defines model for TeamStatus.
@@ -6822,6 +6908,9 @@ type UpdateWorkspaceIssueJSONRequestBody = UpdateIssueRequest
 // ReserveWorkspaceIssueAttachmentJSONRequestBody defines body for ReserveWorkspaceIssueAttachment for application/json ContentType.
 type ReserveWorkspaceIssueAttachmentJSONRequestBody = ReserveAttachmentRequest
 
+// SuppressWorkspaceIssueAutomationJSONRequestBody defines body for SuppressWorkspaceIssueAutomation for application/json ContentType.
+type SuppressWorkspaceIssueAutomationJSONRequestBody = SuppressIssueAutomationRequest
+
 // LinkWorkspaceIssueCodeJSONRequestBody defines body for LinkWorkspaceIssueCode for application/json ContentType.
 type LinkWorkspaceIssueCodeJSONRequestBody = LinkIssueCodeRequest
 
@@ -6953,6 +7042,9 @@ type SetWorkspaceTeamNotificationSettingsJSONRequestBody = NotificationPreferenc
 
 // SetTeamSourceControlRuleJSONRequestBody defines body for SetTeamSourceControlRule for application/json ContentType.
 type SetTeamSourceControlRuleJSONRequestBody = SetSourceControlTransitionRuleRequest
+
+// SetTeamSourceControlSettingsJSONRequestBody defines body for SetTeamSourceControlSettings for application/json ContentType.
+type SetTeamSourceControlSettingsJSONRequestBody = SetTeamSourceControlSettingsRequest
 
 // CreateWorkflowStateJSONRequestBody defines body for CreateWorkflowState for application/json ContentType.
 type CreateWorkflowStateJSONRequestBody = CreateWorkflowStateRequest
@@ -7292,9 +7384,15 @@ type ServerInterface interface {
 	// FinalizeWorkspaceIssueAttachment Confirm the bytes landed, and settle what the file actually is
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}/finalize)
 	FinalizeWorkspaceIssueAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, attachmentId AttachmentId)
+	// GetWorkspaceIssueBranchName Get the branch name to start work on this issue
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/branch-name)
+	GetWorkspaceIssueBranchName(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 	ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// SuppressWorkspaceIssueAutomation Stop or resume source control moving this issue
+	// (PUT /workspaces/{workspaceId}/issues/{issueId}/code-automation)
+	SuppressWorkspaceIssueAutomation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// ListWorkspaceIssueCodeLinks List the branches, commits and changes linked to this issue
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/code-links)
 	ListWorkspaceIssueCodeLinks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -7643,6 +7741,12 @@ type ServerInterface interface {
 	// ClearTeamSourceControlRule Stop moving issues when a change reaches this state
 	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/source-control/rules/{trigger})
 	ClearTeamSourceControlRule(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId, trigger CodeChangeState)
+	// GetTeamSourceControlSettings Read this team's branch template and whether it assigns on link
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/source-control/settings)
+	GetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// SetTeamSourceControlSettings Change the branch template, or whether linking assigns the issue
+	// (PUT /workspaces/{workspaceId}/teams/{teamId}/source-control/settings)
+	SetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
 	// ListWorkflowStates List a team's workflow states in order
 	// (GET /workspaces/{workspaceId}/teams/{teamId}/states)
 	ListWorkflowStates(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
@@ -8351,9 +8455,21 @@ func (_ Unimplemented) FinalizeWorkspaceIssueAttachment(w http.ResponseWriter, r
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetWorkspaceIssueBranchName Get the branch name to start work on this issue
+// (GET /workspaces/{workspaceId}/issues/{issueId}/branch-name)
+func (_ Unimplemented) GetWorkspaceIssueBranchName(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 // (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 func (_ Unimplemented) ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SuppressWorkspaceIssueAutomation Stop or resume source control moving this issue
+// (PUT /workspaces/{workspaceId}/issues/{issueId}/code-automation)
+func (_ Unimplemented) SuppressWorkspaceIssueAutomation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -9050,6 +9166,18 @@ func (_ Unimplemented) SetTeamSourceControlRule(w http.ResponseWriter, r *http.R
 // ClearTeamSourceControlRule Stop moving issues when a change reaches this state
 // (DELETE /workspaces/{workspaceId}/teams/{teamId}/source-control/rules/{trigger})
 func (_ Unimplemented) ClearTeamSourceControlRule(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId, trigger CodeChangeState) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetTeamSourceControlSettings Read this team's branch template and whether it assigns on link
+// (GET /workspaces/{workspaceId}/teams/{teamId}/source-control/settings)
+func (_ Unimplemented) GetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetTeamSourceControlSettings Change the branch template, or whether linking assigns the issue
+// (PUT /workspaces/{workspaceId}/teams/{teamId}/source-control/settings)
+func (_ Unimplemented) SetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -12339,6 +12467,41 @@ func (siw *ServerInterfaceWrapper) FinalizeWorkspaceIssueAttachment(w http.Respo
 	handler.ServeHTTP(w, r)
 }
 
+// GetWorkspaceIssueBranchName operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceIssueBranchName(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceIssueBranchName(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceIssueChildren operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request) {
 
@@ -12365,6 +12528,41 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceIssueChildren(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWorkspaceIssueChildren(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SuppressWorkspaceIssueAutomation operation middleware
+func (siw *ServerInterfaceWrapper) SuppressWorkspaceIssueAutomation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SuppressWorkspaceIssueAutomation(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -16550,6 +16748,76 @@ func (siw *ServerInterfaceWrapper) ClearTeamSourceControlRule(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
+// GetTeamSourceControlSettings operation middleware
+func (siw *ServerInterfaceWrapper) GetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetTeamSourceControlSettings(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetTeamSourceControlSettings operation middleware
+func (siw *ServerInterfaceWrapper) SetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetTeamSourceControlSettings(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkflowStates operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkflowStates(w http.ResponseWriter, r *http.Request) {
 
@@ -18486,6 +18754,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/source-control/rules/{trigger}", wrapper.ClearTeamSourceControlRule)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/source-control/settings", wrapper.GetTeamSourceControlSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/source-control/settings", wrapper.SetTeamSourceControlSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/branch-name", wrapper.GetWorkspaceIssueBranchName)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/code-automation", wrapper.SuppressWorkspaceIssueAutomation)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/code-links", wrapper.ListWorkspaceIssueCodeLinks)
@@ -27407,6 +27687,89 @@ func (response FinalizeWorkspaceIssueAttachment500ApplicationProblemPlusJSONResp
 	return err
 }
 
+type GetWorkspaceIssueBranchNameRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type GetWorkspaceIssueBranchNameResponseObject interface {
+	VisitGetWorkspaceIssueBranchNameResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceIssueBranchName200JSONResponse IssueBranchName
+
+func (response GetWorkspaceIssueBranchName200JSONResponse) VisitGetWorkspaceIssueBranchNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueBranchName401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueBranchName401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueBranchNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueBranchName403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueBranchName403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueBranchNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueBranchName404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueBranchName404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueBranchNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueBranchName500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueBranchName500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueBranchNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceIssueChildrenRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	IssueId     IssueId     `json:"issueId"`
@@ -27479,6 +27842,84 @@ func (response ListWorkspaceIssueChildren404ApplicationProblemPlusJSONResponse) 
 type ListWorkspaceIssueChildren500ApplicationProblemPlusJSONResponse Problem
 
 func (response ListWorkspaceIssueChildren500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuppressWorkspaceIssueAutomationRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *SuppressWorkspaceIssueAutomationJSONRequestBody
+}
+
+type SuppressWorkspaceIssueAutomationResponseObject interface {
+	VisitSuppressWorkspaceIssueAutomationResponse(w http.ResponseWriter) error
+}
+
+type SuppressWorkspaceIssueAutomation204Response struct {
+}
+
+func (response SuppressWorkspaceIssueAutomation204Response) VisitSuppressWorkspaceIssueAutomationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type SuppressWorkspaceIssueAutomation401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SuppressWorkspaceIssueAutomation401ApplicationProblemPlusJSONResponse) VisitSuppressWorkspaceIssueAutomationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuppressWorkspaceIssueAutomation403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SuppressWorkspaceIssueAutomation403ApplicationProblemPlusJSONResponse) VisitSuppressWorkspaceIssueAutomationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuppressWorkspaceIssueAutomation404ApplicationProblemPlusJSONResponse Problem
+
+func (response SuppressWorkspaceIssueAutomation404ApplicationProblemPlusJSONResponse) VisitSuppressWorkspaceIssueAutomationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuppressWorkspaceIssueAutomation500ApplicationProblemPlusJSONResponse Problem
+
+func (response SuppressWorkspaceIssueAutomation500ApplicationProblemPlusJSONResponse) VisitSuppressWorkspaceIssueAutomationResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -38305,6 +38746,187 @@ func (response ClearTeamSourceControlRule500ApplicationProblemPlusJSONResponse) 
 	return err
 }
 
+type GetTeamSourceControlSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type GetTeamSourceControlSettingsResponseObject interface {
+	VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error
+}
+
+type GetTeamSourceControlSettings200JSONResponse TeamSourceControlSettings
+
+func (response GetTeamSourceControlSettings200JSONResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamSourceControlSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetTeamSourceControlSettings401ApplicationProblemPlusJSONResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamSourceControlSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetTeamSourceControlSettings403ApplicationProblemPlusJSONResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamSourceControlSettings404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetTeamSourceControlSettings404ApplicationProblemPlusJSONResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamSourceControlSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetTeamSourceControlSettings500ApplicationProblemPlusJSONResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+	Body        *SetTeamSourceControlSettingsJSONRequestBody
+}
+
+type SetTeamSourceControlSettingsResponseObject interface {
+	VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error
+}
+
+type SetTeamSourceControlSettings200JSONResponse TeamSourceControlSettings
+
+func (response SetTeamSourceControlSettings200JSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetTeamSourceControlSettings401ApplicationProblemPlusJSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetTeamSourceControlSettings403ApplicationProblemPlusJSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettings404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamSourceControlSettings404ApplicationProblemPlusJSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettings422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamSourceControlSettings422ApplicationProblemPlusJSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetTeamSourceControlSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetTeamSourceControlSettings500ApplicationProblemPlusJSONResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkflowStatesRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	TeamId      TeamId      `json:"teamId"`
@@ -41256,9 +41878,15 @@ type StrictServerInterface interface {
 	// FinalizeWorkspaceIssueAttachment Confirm the bytes landed, and settle what the file actually is
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}/finalize)
 	FinalizeWorkspaceIssueAttachment(ctx context.Context, request FinalizeWorkspaceIssueAttachmentRequestObject) (FinalizeWorkspaceIssueAttachmentResponseObject, error)
+	// GetWorkspaceIssueBranchName Get the branch name to start work on this issue
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/branch-name)
+	GetWorkspaceIssueBranchName(ctx context.Context, request GetWorkspaceIssueBranchNameRequestObject) (GetWorkspaceIssueBranchNameResponseObject, error)
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 	ListWorkspaceIssueChildren(ctx context.Context, request ListWorkspaceIssueChildrenRequestObject) (ListWorkspaceIssueChildrenResponseObject, error)
+	// SuppressWorkspaceIssueAutomation Stop or resume source control moving this issue
+	// (PUT /workspaces/{workspaceId}/issues/{issueId}/code-automation)
+	SuppressWorkspaceIssueAutomation(ctx context.Context, request SuppressWorkspaceIssueAutomationRequestObject) (SuppressWorkspaceIssueAutomationResponseObject, error)
 	// ListWorkspaceIssueCodeLinks List the branches, commits and changes linked to this issue
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/code-links)
 	ListWorkspaceIssueCodeLinks(ctx context.Context, request ListWorkspaceIssueCodeLinksRequestObject) (ListWorkspaceIssueCodeLinksResponseObject, error)
@@ -41607,6 +42235,12 @@ type StrictServerInterface interface {
 	// ClearTeamSourceControlRule Stop moving issues when a change reaches this state
 	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/source-control/rules/{trigger})
 	ClearTeamSourceControlRule(ctx context.Context, request ClearTeamSourceControlRuleRequestObject) (ClearTeamSourceControlRuleResponseObject, error)
+	// GetTeamSourceControlSettings Read this team's branch template and whether it assigns on link
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/source-control/settings)
+	GetTeamSourceControlSettings(ctx context.Context, request GetTeamSourceControlSettingsRequestObject) (GetTeamSourceControlSettingsResponseObject, error)
+	// SetTeamSourceControlSettings Change the branch template, or whether linking assigns the issue
+	// (PUT /workspaces/{workspaceId}/teams/{teamId}/source-control/settings)
+	SetTeamSourceControlSettings(ctx context.Context, request SetTeamSourceControlSettingsRequestObject) (SetTeamSourceControlSettingsResponseObject, error)
 	// ListWorkflowStates List a team's workflow states in order
 	// (GET /workspaces/{workspaceId}/teams/{teamId}/states)
 	ListWorkflowStates(ctx context.Context, request ListWorkflowStatesRequestObject) (ListWorkflowStatesResponseObject, error)
@@ -44641,6 +45275,33 @@ func (sh *strictHandler) FinalizeWorkspaceIssueAttachment(w http.ResponseWriter,
 	}
 }
 
+// GetWorkspaceIssueBranchName operation middleware
+func (sh *strictHandler) GetWorkspaceIssueBranchName(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request GetWorkspaceIssueBranchNameRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceIssueBranchName(ctx, request.(GetWorkspaceIssueBranchNameRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceIssueBranchName")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceIssueBranchNameResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceIssueBranchNameResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListWorkspaceIssueChildren operation middleware
 func (sh *strictHandler) ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	var request ListWorkspaceIssueChildrenRequestObject
@@ -44661,6 +45322,40 @@ func (sh *strictHandler) ListWorkspaceIssueChildren(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListWorkspaceIssueChildrenResponseObject); ok {
 		if err := validResponse.VisitListWorkspaceIssueChildrenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SuppressWorkspaceIssueAutomation operation middleware
+func (sh *strictHandler) SuppressWorkspaceIssueAutomation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request SuppressWorkspaceIssueAutomationRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body SuppressWorkspaceIssueAutomationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SuppressWorkspaceIssueAutomation(ctx, request.(SuppressWorkspaceIssueAutomationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SuppressWorkspaceIssueAutomation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SuppressWorkspaceIssueAutomationResponseObject); ok {
+		if err := validResponse.VisitSuppressWorkspaceIssueAutomationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -48088,6 +48783,67 @@ func (sh *strictHandler) ClearTeamSourceControlRule(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ClearTeamSourceControlRuleResponseObject); ok {
 		if err := validResponse.VisitClearTeamSourceControlRuleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetTeamSourceControlSettings operation middleware
+func (sh *strictHandler) GetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request GetTeamSourceControlSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTeamSourceControlSettings(ctx, request.(GetTeamSourceControlSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTeamSourceControlSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetTeamSourceControlSettingsResponseObject); ok {
+		if err := validResponse.VisitGetTeamSourceControlSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetTeamSourceControlSettings operation middleware
+func (sh *strictHandler) SetTeamSourceControlSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request SetTeamSourceControlSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	var body SetTeamSourceControlSettingsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetTeamSourceControlSettings(ctx, request.(SetTeamSourceControlSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetTeamSourceControlSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetTeamSourceControlSettingsResponseObject); ok {
+		if err := validResponse.VisitSetTeamSourceControlSettingsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -12,6 +12,7 @@ import (
 //go:generate go tool mockgen -source=issue.go -destination=issue/mock_issue.go -package=issue -mock_names=Issue=MockIssue
 
 type Issue interface {
+	SetSCMAutomationSuppressed(ctx context.Context, workspaceID, issueID uuid.UUID, suppressed bool) error
 	Create(ctx context.Context, issue entity.Issue) (entity.Issue, error)
 	GetVisible(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) (entity.Issue, error)
 	GetVisibleByReference(ctx context.Context, workspaceID uuid.UUID, reference entity.IssueReference, scope entity.TeamScope) (entity.Issue, error)
