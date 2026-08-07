@@ -73,10 +73,7 @@ type Request struct {
 	URL      string
 	Header   http.Header
 	Body     []byte
-	// Trust is the exception an administrator granted this one connection. Everything with
-	// no exception uses the instance's ordinary client, so a mistake here can only ever
-	// widen the one connection it belongs to.
-	Trust entity.SCMTrust
+	Trust    entity.SCMTrust
 }
 
 type Response struct {
@@ -165,9 +162,6 @@ func (c *Client) read(body io.Reader) ([]byte, error) {
 	return readCapped(body, c.limit)
 }
 
-// clientFor hands back the ordinary client unless this connection was granted something.
-// Building one per call would discard every kept connection and every session ticket, so the
-// few that exist are kept, keyed by exactly what makes them different.
 func (c *Client) clientFor(trust entity.SCMTrust) (*http.Client, error) {
 	if !trust.Custom() {
 		return c.http, nil
@@ -219,9 +213,6 @@ func (c *Client) transportFor(trust entity.SCMTrust) (*http.Transport, error) {
 		return nil, err
 	}
 
-	// The supplied authority is added to the system pool rather than replacing it. A forge
-	// on an internal address may still redirect to, or embed, something signed publicly, and
-	// a pool holding only the private root would refuse it.
 	pool, err := x509.SystemCertPool()
 	if err != nil || pool == nil {
 		pool = x509.NewCertPool()

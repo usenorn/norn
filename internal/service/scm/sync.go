@@ -97,9 +97,6 @@ func NewSync(
 	}
 }
 
-// deliveryTally is what turns "applied" into an answer. A delivery that named no issue, one
-// that named an issue nobody here can reach, and one that linked two changes are three
-// different situations, and a log that calls all of them "processed" answers nothing.
 type deliveryTally struct {
 	references int
 	resolved   int
@@ -121,11 +118,6 @@ func (t *deliveryTally) describe() string {
 	}
 }
 
-// Accept answers a forge. It verifies against the repository's own secret, stores the
-// delivery and hands the work to a worker, because a forge gives its endpoint a few seconds
-// and a delivery that arrives while an issue is being written must not hold the connection
-// open. An unknown repository and a bad signature are the same refusal, so this endpoint
-// cannot be used to discover which repositories exist.
 func (s *sync) Accept(
 	ctx context.Context,
 	repositoryID uuid.UUID,
@@ -215,8 +207,6 @@ func (s *sync) Apply(ctx context.Context, deliveryID uuid.UUID) error {
 
 	events, err := forge.Translate(delivery)
 	if err != nil {
-		// A payload this instance cannot read will not become readable on a retry, and a
-		// delivery retried for ever holds a queue slot no other work can use.
 		return s.settle(ctx, deliveryID, entity.SCMDeliveryFailed, err.Error())
 	}
 
@@ -257,8 +247,6 @@ func (s *sync) Apply(ctx context.Context, deliveryID uuid.UUID) error {
 	return s.settle(ctx, deliveryID, entity.SCMDeliveryApplied, applied.describe())
 }
 
-// settle is the one place a delivery stops. Every exit records why, because the whole point
-// of the log is that "processed" and "did nothing" stop looking alike.
 func (s *sync) settle(
 	ctx context.Context,
 	deliveryID uuid.UUID,
@@ -268,9 +256,6 @@ func (s *sync) settle(
 	return s.deliveries.Settle(ctx, deliveryID, outcome, detail, time.Now().UTC())
 }
 
-// decide rebuilds the person who established the connection and asks again, every time. The
-// reach is theirs, so revoking their membership or narrowing their teams narrows the
-// integration at the next event rather than at the next restart.
 func (s *sync) decide(
 	ctx context.Context,
 	from source,
@@ -354,9 +339,6 @@ func (s *sync) applyOne(
 	event service.ForgeEvent,
 	tally *deliveryTally,
 ) error {
-	// A branch and a commit name no files here — a push payload lists them, but a branch is
-	// not a change and routing it by the files of one push would be wrong the moment the next
-	// push touched something else. Both fall to the repository's default route.
 	routed, err := s.teamsFor(ctx, from, nil)
 	if err != nil {
 		return err
@@ -400,10 +382,6 @@ func (s *sync) applyOne(
 	}
 }
 
-// linkReferences scans free text for anything shaped like an issue reference and keeps only
-// what resolves. The scanner is generous on purpose; a key that names no team, an issue that
-// does not exist, and a team the change was not routed to or this actor cannot reach are all
-// dropped without a word, because a wrong link is worse than a missing one.
 func (s *sync) linkReferences(
 	ctx context.Context,
 	from source,
@@ -463,8 +441,6 @@ func (s *sync) applyChange(
 	tally *deliveryTally,
 	change service.ForgeChange,
 ) error {
-	// A checks payload names the change and nothing else about it. Writing it through the
-	// ordinary path would blank the title, the address and the state the issue is showing.
 	if change.State == "" && change.KnowsChecks {
 		return s.recordChecks(ctx, from, tally, change)
 	}
@@ -531,9 +507,6 @@ func (s *sync) applyChange(
 	return nil
 }
 
-// recordChecks writes one column and leaves everything else alone. A change nobody linked
-// gets no row at all, which is right: a red build on work no issue claims is not this
-// integration's business.
 func (s *sync) recordChecks(
 	ctx context.Context,
 	from source,
@@ -557,8 +530,6 @@ func (s *sync) recordChecks(
 	return nil
 }
 
-// reviewersOf reads the whole set from the forge. A review event carries one review, so
-// rebuilding the set from events would erase every other answer the change already had.
 func (s *sync) reviewersOf(
 	ctx context.Context,
 	from source,
@@ -593,9 +564,6 @@ func (s *sync) reviewersOf(
 	return reviewers, true
 }
 
-// changedPaths is best-effort. A route that matches on path needs them, but a forge that
-// refuses the call must not stop the change being linked at all — an unread file list falls
-// back to the repository default rather than to nothing.
 func (s *sync) changedPaths(
 	ctx context.Context,
 	from source,

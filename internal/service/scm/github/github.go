@@ -220,8 +220,6 @@ func (f *Forge) RemoveHook(
 		return err
 	}
 
-	// A hook already gone is the state this was asking for, so disconnecting a repository
-	// somebody tidied up by hand must not fail.
 	if response.Status == http.StatusNotFound {
 		return nil
 	}
@@ -255,9 +253,6 @@ type changeBody struct {
 	} `json:"base"`
 }
 
-// Changes asks for every state, not the default. GitHub lists open pull requests unless told
-// otherwise, so a sweep healing a missed delivery would never see the merge it exists to
-// catch — the change is closed by then and invisible to the default query.
 func (f *Forge) Changes(
 	ctx context.Context,
 	target entity.SCMTarget,
@@ -293,8 +288,6 @@ func (f *Forge) Changes(
 
 	for _, change := range body {
 		if change.UpdatedAt.Before(since) {
-			// The listing is newest first, so the first change older than the watermark ends
-			// the walk and stops the cursor rather than paging to the beginning of time.
 			page.Cursor = ""
 
 			break
@@ -312,8 +305,6 @@ func (f *Forge) Changes(
 				change.MergedAt,
 				change.MergeableState,
 			),
-			// The listing carries who was asked to review but not what anybody answered. The
-			// sweep asks for the set to be read rather than rebuilding it from what it has.
 			ReviewsMoved: true,
 			Author:       change.User.Login,
 			HeadBranch:   change.Head.Ref,
@@ -418,8 +409,6 @@ func (f *Forge) Issues(
 	return page, nil
 }
 
-// issuePath addresses an issue by the number its repository counts with. The id carried in a
-// payload is global and is what a mirror is stored under; it is not an address.
 func (f *Forge) issuePath(target entity.SCMTarget, number int) string {
 	return "/repos/" + target.Repository + "/issues/" + strconv.Itoa(number)
 }
@@ -581,9 +570,6 @@ type changedFileBody struct {
 	PreviousFilename string `json:"previous_filename"`
 }
 
-// ChangedPaths reads the files a pull request touches. Nothing in a webhook payload carries
-// them, and routing a change to the team that owns its area cannot be decided without them.
-// A rename is reported under both names, because either one may be what a route matches.
 func (f *Forge) ChangedPaths(
 	ctx context.Context,
 	target entity.SCMTarget,
@@ -621,9 +607,6 @@ func (f *Forge) ChangedPaths(
 	return paths, nil
 }
 
-// hookEvents is what Norn asks GitHub to send. Adding one here is not enough on its own: a
-// hook installed before the addition keeps its old list, which is what installedEvents and
-// the sweep's repair exist for.
 var hookEvents = []string{
 	"push",
 	"pull_request",
@@ -642,9 +625,6 @@ type reviewBody struct {
 	} `json:"user"`
 }
 
-// Reviews reads the answers a change currently has, keeping the latest one per person. A
-// reviewer who comments and later approves has one verdict, not two, and GitHub returns
-// every review ever submitted in order.
 func (f *Forge) Reviews(
 	ctx context.Context,
 	target entity.SCMTarget,
@@ -746,8 +726,6 @@ func (f *Forge) requestedReviewers(
 	return logins, nil
 }
 
-// RepairHook rewrites the event list only when it is actually short. A pointless write on
-// every sweep would spend a rate limit on every repository for nothing.
 func (f *Forge) RepairHook(
 	ctx context.Context,
 	request service.ForgeHookRequest,

@@ -32,9 +32,6 @@ func (s SCMTeamSettings) Template() string {
 	return s.BranchTemplate
 }
 
-// BranchName fills a template with what a person needs to start work. The result is what
-// they copy and hand to git, so it is trimmed to what git and both forges accept rather than
-// left to fail at the point of use.
 func (s SCMTeamSettings) BranchName(handle, reference, title string) string {
 	filled := strings.NewReplacer(
 		"{handle}", SlugifyBranchPart(handle),
@@ -53,9 +50,6 @@ func BranchNameFor(settings SCMTeamSettings, handle string, issue Issue, referen
 	return settings.BranchName(handle, reference, issue.Title)
 }
 
-// SlugifyBranchPart keeps letters and digits and turns everything else into a single dash.
-// git refuses a ref with a space, a colon, two consecutive dots or a trailing dot, and a
-// title is written by a person who has no reason to know that.
 func SlugifyBranchPart(value string) string {
 	var builder strings.Builder
 
@@ -102,8 +96,6 @@ func ValidateSCMBranchTemplate(field, template string) FieldError {
 	case len(trimmed) > SCMBranchTemplateMax:
 		return FieldError{Field: field, Code: ValidationCodeTooLong}
 	case !strings.Contains(trimmed, "{reference}"):
-		// Without the reference the branch names no issue, and naming the issue is the whole
-		// reason the branch is generated here rather than typed.
 		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
 	default:
 		return FieldError{}

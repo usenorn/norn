@@ -21,9 +21,6 @@ const (
 	deliveryHeader  = "X-Gitea-Delivery"
 )
 
-// Verify checks the whole body against the secret this repository was given. Gitea sends the
-// digest bare rather than prefixed with its algorithm, and Forgejo does the same, so there is
-// no prefix to strip and nothing to negotiate.
 func (f *Forge) Verify(
 	secret string,
 	header http.Header,
@@ -101,8 +98,6 @@ func translatePush(body []byte) ([]service.ForgeEvent, error) {
 
 	branch := strings.TrimPrefix(payload.Ref, "refs/heads/")
 	if branch == payload.Ref || branch == "" {
-		// A tag or anything else that is not a branch. Nothing here names an issue in a way
-		// this integration acts on.
 		return nil, nil
 	}
 
@@ -151,9 +146,6 @@ type changePayload struct {
 	} `json:"sender"`
 }
 
-// translateChange carries the whole change whatever moved. A review arrives on its own event
-// here as it does elsewhere, and the set of reviews is read back rather than rebuilt from the
-// one this payload carries.
 func translateChange(body []byte, event string) ([]service.ForgeEvent, error) {
 	var payload changePayload
 

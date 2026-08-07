@@ -25,9 +25,6 @@ func (o MirrorOrigin) Valid() bool {
 	return slices.Contains(MirrorOrigins(), o)
 }
 
-// MirrorDirection bounds which way a pair syncs. A repository Norn only reads from, and one
-// it only writes to, are both ordinary arrangements, and a pair that syncs both ways is the
-// one that needs arbitration.
 type MirrorDirection string
 
 const (
@@ -92,9 +89,6 @@ type CommentMirror struct {
 	UpdatedAt       time.Time
 }
 
-// MirrorHash normalises line endings before hashing. A forge returns a body with CRLF that
-// Norn stored with LF, so without this every field we push reads back as a foreign edit and
-// the two systems overwrite each other for as long as both are running.
 func MirrorHash(value string) string {
 	normalised := strings.ReplaceAll(strings.TrimSpace(value), "\r\n", "\n")
 

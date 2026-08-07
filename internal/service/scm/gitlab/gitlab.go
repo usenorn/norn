@@ -46,8 +46,6 @@ func (f *Forge) base(target entity.SCMTarget) string {
 	return f.endpoint
 }
 
-// project is path-escaped whole, slashes included. GitLab addresses a project by its full
-// path as one url segment, so a group's nested project is "group%2Fsub%2Fproject".
 func project(target entity.SCMTarget) string {
 	return url.PathEscape(target.Repository)
 }
@@ -144,7 +142,6 @@ func (f *Forge) Repository(
 		return entity.SCMRemoteRepository{}, err
 	}
 
-	// GitLab grades access numerically; 40 is maintainer, the level a project hook needs.
 	const maintainer = 40
 
 	return entity.SCMRemoteRepository{
@@ -395,9 +392,6 @@ func (f *Forge) Issues(
 	return page, nil
 }
 
-// externalIssueID addresses an issue by the number a project counts with, not the global id
-// the payloads carry. GitLab's api takes the project-scoped iid, so passing the stored
-// external id would read somebody else's issue or none at all.
 func (f *Forge) issuePath(target entity.SCMTarget, number int) string {
 	return "/projects/" + project(target) + "/issues/" + strconv.Itoa(number)
 }
@@ -437,8 +431,6 @@ func (f *Forge) AmendIssue(
 		payload["description"] = *patch.Body
 	}
 
-	// GitLab takes an assignee by numeric id rather than a handle, so the handle is resolved
-	// first. A handle nobody there has produces no assignment rather than a failed edit.
 	if patch.Assignee != nil {
 		if id, found := f.userID(ctx, target, *patch.Assignee); found {
 			payload["assignee_ids"] = []int64{id}
@@ -507,8 +499,6 @@ func (f *Forge) Comments(
 	comments := make([]service.ForgeComment, 0, len(body))
 
 	for _, note := range body {
-		// A system note is GitLab narrating itself — "changed the description", "added a
-		// label". Mirroring those would fill an issue with an account of its own history.
 		if note.System || (!since.IsZero() && note.UpdatedAt.Before(since)) {
 			continue
 		}
@@ -564,9 +554,6 @@ type changesBody struct {
 	} `json:"changes"`
 }
 
-// ChangedPaths reads the files a merge request touches. Nothing in a webhook payload carries
-// them, and routing a change to the team that owns its area cannot be decided without them.
-// A rename is reported under both names, because either one may be what a route matches.
 func (f *Forge) ChangedPaths(
 	ctx context.Context,
 	target entity.SCMTarget,
@@ -600,9 +587,6 @@ func (f *Forge) ChangedPaths(
 	return paths, nil
 }
 
-// Reviews reads who is reviewing a merge request and who has approved it. GitLab keeps the
-// two apart — reviewers on the merge request, approvals on their own endpoint — so both are
-// read and merged into one answer per person.
 func (f *Forge) Reviews(
 	ctx context.Context,
 	target entity.SCMTarget,
@@ -673,9 +657,6 @@ func (f *Forge) Reviews(
 	return reviewers, nil
 }
 
-// RepairHook turns on the event flags this version needs. GitLab describes a hook as a set
-// of booleans rather than a list, so a hook created before an event existed simply has that
-// flag off and never sends it.
 func (f *Forge) RepairHook(
 	ctx context.Context,
 	request service.ForgeHookRequest,
@@ -722,8 +703,6 @@ func (f *Forge) RepairHook(
 	return true, f.decode(patched, request.Target, nil)
 }
 
-// userID turns a handle into what GitLab's api wants. A handle that matches nobody is not an
-// error here: the edit carries on without an assignee rather than failing wholesale.
 func (f *Forge) userID(ctx context.Context, target entity.SCMTarget, login string) (int64, bool) {
 	query := url.Values{}
 	query.Set("username", login)

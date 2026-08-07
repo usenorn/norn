@@ -24,9 +24,6 @@ const (
 	deletedCommitSHA = "0000000000000000000000000000000000000000"
 )
 
-// Verify recomputes the signature over the exact bytes that arrived. Nothing may decode,
-// re-encode or rewind the body first: a payload that round-trips through a decoder is no
-// longer the payload that was signed, and the mismatch reads as a wrong secret.
 func (f *Forge) Verify(secret string, header http.Header, body []byte) (entity.SCMDelivery, error) {
 	sent := strings.TrimSpace(header.Get(signatureHeader))
 	if !strings.HasPrefix(sent, signaturePrefix) {
@@ -236,12 +233,6 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 	}}, nil
 }
 
-// changeState reads merged before closed. GitHub reports a merged pull request as state
-// "closed" with a merge timestamp, so testing the state alone records every merge as an
-// abandoned change and no issue would ever advance.
-//
-// mergeable_state is computed after the event is sent and is very often "unknown" here; only
-// "dirty" is a definite conflict, and anything else leaves the question to the change itself.
 func changeState(
 	draft bool,
 	state string,
@@ -302,9 +293,6 @@ type reviewPayload struct {
 	} `json:"sender"`
 }
 
-// translateReview carries the whole change, not only the review. Every downstream step —
-// routing by changed files, linking, driving a rule — needs the change, and a review event
-// is simply the moment one of its fields moved.
 func translateReview(body []byte) ([]service.ForgeEvent, error) {
 	var payload reviewPayload
 
@@ -336,9 +324,6 @@ func translateReview(body []byte) ([]service.ForgeEvent, error) {
 	}}, nil
 }
 
-// reviewVerdict drops what GitHub calls "pending": a review nobody has submitted yet is not
-// an answer, and recording it would make a change look reviewed while its author is still
-// writing the comments.
 func reviewVerdict(state string) (entity.ReviewVerdict, bool) {
 	switch strings.ToLower(state) {
 	case "approved":
@@ -376,9 +361,6 @@ type checkPayload struct {
 	} `json:"sender"`
 }
 
-// translateChecks reflects the platform's own answer and computes nothing. A suite that has
-// not finished is pending rather than passing, because reading "green" off an unfinished run
-// is worse than saying nothing.
 func translateChecks(body []byte) ([]service.ForgeEvent, error) {
 	var payload checkPayload
 
@@ -444,9 +426,6 @@ func translateIssue(body []byte) ([]service.ForgeEvent, error) {
 		return nil, fmt.Errorf("read issue delivery: %w", err)
 	}
 
-	// A pull request is also an issue on GitHub's own API, and its comments arrive on the
-	// issue events. Mirroring one would create a second Norn issue for a change that is
-	// already carried as a link.
 	if payload.Issue.PullRequest != nil {
 		return nil, nil
 	}

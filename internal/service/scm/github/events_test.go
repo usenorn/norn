@@ -200,9 +200,6 @@ func TestWhatTheChangeItselfSaysIsReadOffThePayload(t *testing.T) {
 	}
 }
 
-// A review arrives on its own event carrying one review, not the set. Rebuilding the set
-// from it would erase every other answer, so the event says only that the reviews moved and
-// the whole set is read back from the forge.
 func TestAReviewEventAsksForTheWholeSetRatherThanCarryingIt(t *testing.T) {
 	body := []byte(`{"action":"submitted",
       "review":{"state":"changes_requested","user":{"login":"rae"}},
@@ -229,8 +226,6 @@ func TestAReviewEventAsksForTheWholeSetRatherThanCarryingIt(t *testing.T) {
 	}
 }
 
-// A pull request event that has nothing to do with review must not send the integration
-// back to the forge for a set that cannot have changed.
 func TestAnOrdinaryPullRequestEventDoesNotReReadTheReviews(t *testing.T) {
 	body := []byte(`{"action":"edited",
       "pull_request":{"id":9,"number":7,"state":"open","updated_at":"2026-08-07T11:00:00Z"}}`)
@@ -253,8 +248,6 @@ func TestChecksAreReflectedAndNeverComputed(t *testing.T) {
 		`{"check_suite":{"status":"completed","conclusion":"skipped","pull_requests":[{"id":9,"number":7}]}}`:   entity.CodeChecksPassing,
 		`{"check_suite":{"status":"completed","conclusion":"failure","pull_requests":[{"id":9,"number":7}]}}`:   entity.CodeChecksFailing,
 		`{"check_suite":{"status":"completed","conclusion":"timed_out","pull_requests":[{"id":9,"number":7}]}}`: entity.CodeChecksFailing,
-		// A re-run arrives carrying the previous run's conclusion while the new one is queued.
-		// Reading that as green says the change passed when nothing has run yet.
 		`{"check_suite":{"status":"queued","conclusion":"success","pull_requests":[{"id":9,"number":7}]}}`:      entity.CodeChecksPending,
 		`{"check_suite":{"status":"in_progress","conclusion":"failure","pull_requests":[{"id":9,"number":7}]}}`: entity.CodeChecksPending,
 	}

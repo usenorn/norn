@@ -9,11 +9,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-// Every statement this package sends. Source control reaches the database through raw SQL
-// rather than the generated models, so nothing here is checked by the compiler: a column
-// that stops existing leaves `go build` and `go test` green and breaks only in production.
-// This test is the missing check — Postgres itself refuses a statement naming a table,
-// column or type it does not have.
 func statements() map[string]string {
 	return map[string]string{
 		"claimDueQuery":                     claimDueQuery,
@@ -120,7 +115,6 @@ func TestEveryStatementMatchesTheSchemaItRunsAgainst(t *testing.T) {
 	}
 }
 
-// redacted keeps the password out of a failure message, which lands in CI output.
 func redacted(dsn string) string {
 	scheme, rest, found := strings.Cut(dsn, "://")
 	if !found {
@@ -135,8 +129,6 @@ func redacted(dsn string) string {
 	return scheme + "://" + host
 }
 
-// TestEveryStatementInThePackageIsChecked keeps the map above honest. A statement added to
-// the package and forgotten here would be exactly as unchecked as before this test existed.
 func TestEveryStatementInThePackageIsChecked(t *testing.T) {
 	declared, err := declaredStatements()
 	if err != nil {

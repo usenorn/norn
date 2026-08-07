@@ -32,8 +32,6 @@ export const load: PageServerLoad = async ({
 		}),
 	]);
 
-	// Only a person can be somebody on a forge. An integration account is one Norn created
-	// for a connection, and mapping it would let the integration assign work to itself.
 	const roster = (members.data?.members ?? [])
 		.filter((member) => member.kind !== "integration")
 		.map((member) => ({

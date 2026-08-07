@@ -56,10 +56,6 @@ func permitted(address netip.Addr, allowed []netip.Prefix, private bool) bool {
 		}
 	}
 
-	// Loopback and link-local stay refused even for a caller granted the private exception.
-	// Loopback is this instance's own internals, and link-local is where a cloud provider
-	// answers with the credentials of the machine Norn is running on; neither is what
-	// "our forge is on the office network" means, and both are what an attacker asks for.
 	if !address.IsValid() ||
 		address.IsUnspecified() ||
 		address.IsLoopback() ||

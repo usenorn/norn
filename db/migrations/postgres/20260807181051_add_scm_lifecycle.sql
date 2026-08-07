@@ -5,9 +5,6 @@ ALTER TABLE workspace_code_links
     ADD CONSTRAINT workspace_code_links_checks_check
         CHECK (checks IN ('', 'pending', 'passing', 'failing'));
 
--- One row per person asked to look at a change. The verdict is kept per reviewer rather
--- than reduced to a single state on the link, because "two approvals and one asking for
--- changes" is exactly the situation somebody opens the issue to understand.
 CREATE TABLE workspace_code_link_reviewers (
     link_id uuid NOT NULL REFERENCES workspace_code_links (id) ON DELETE CASCADE,
     login text NOT NULL,
@@ -37,8 +34,6 @@ CREATE TABLE workspace_team_scm_settings (
 CREATE INDEX workspace_team_scm_settings_workspace_idx
     ON workspace_team_scm_settings (workspace_id);
 
--- There is always an issue whose rule is wrong. Suppression is per issue rather than a
--- team-wide switch, so one exception does not cost the team its automation.
 ALTER TABLE workspace_issues
     ADD COLUMN scm_automation_suppressed boolean NOT NULL DEFAULT false;
 

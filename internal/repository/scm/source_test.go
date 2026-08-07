@@ -9,9 +9,6 @@ import (
 	"strings"
 )
 
-// declaredStatements reads the package's own source for every `const xQuery = ...`. Listing
-// them by hand in the schema test would rot the moment somebody added one, and a statement
-// missing from that list is a statement nothing checks.
 func declaredStatements() ([]string, error) {
 	entries, err := os.ReadDir(".")
 	if err != nil {

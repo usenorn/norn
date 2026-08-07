@@ -16,9 +16,6 @@ var (
 	ErrSCMIdentityExists   = errors.New("that platform account is already mapped to somebody")
 )
 
-// SCMIdentity is who a person is on a forge. It is stated rather than guessed: a display
-// name that happens to match is not evidence, and acting on one puts somebody else's work on
-// a stranger.
 type SCMIdentity struct {
 	ID          uuid.UUID
 	WorkspaceID uuid.UUID
@@ -30,9 +27,6 @@ type SCMIdentity struct {
 
 type SCMIdentities []SCMIdentity
 
-// AccountFor answers who a login belongs to. An unmapped login is not an error and not a
-// guess — it is simply somebody this workspace has not said anything about, and every caller
-// has to carry on without them.
 func (identities SCMIdentities) AccountFor(provider SCMProvider, login string) (uuid.UUID, bool) {
 	for _, identity := range identities {
 		if identity.Provider == provider && strings.EqualFold(identity.Login, login) {
@@ -72,9 +66,6 @@ func ValidateSCMLogin(field, login string) FieldError {
 	}
 }
 
-// MirrorConflict is the edit arbitration discarded. Keeping it is what makes the rule
-// something a person can live with: they can see what they wrote and put it back, rather
-// than discovering that a machine chose and their work is gone.
 type MirrorConflict struct {
 	ID          uuid.UUID
 	WorkspaceID uuid.UUID

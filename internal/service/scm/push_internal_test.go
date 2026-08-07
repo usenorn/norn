@@ -31,7 +31,6 @@ func TestTheForgesOwnLineEndingsComingBackAreNotAChangeToPush(t *testing.T) {
 		Description: "First line\nSecond line",
 	}
 
-	// What the forge handed back, and what we therefore stored, carries its line endings.
 	agreed := entity.IssueMirror{
 		TitleHash: entity.MirrorHash(issue.Title),
 		BodyHash:  entity.MirrorHash("First line\r\nSecond line"),

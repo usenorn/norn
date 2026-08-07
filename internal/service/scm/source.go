@@ -8,9 +8,6 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-// source is one connected repository together with the credential that reaches it. The two
-// were a single row before repositories could share a token, and every sync path needs both:
-// the repository says what to read, the connection says who is reading and with what.
 type source struct {
 	connection entity.SCMConnection
 	repository entity.SCMRepository
@@ -44,8 +41,6 @@ func (s *sync) sourceFor(ctx context.Context, repositoryID uuid.UUID) (source, e
 	return source{connection: connection, repository: stored, token: token}, nil
 }
 
-// teamsFor answers which teams a change reaches. Routing is what bounds a repository to the
-// work it belongs to, so a repository with no route reaches nobody rather than everybody.
 func (s *sync) teamsFor(
 	ctx context.Context,
 	from source,

@@ -55,9 +55,6 @@ func open(sealer *crypter.Crypter, sealed []byte) (string, error) {
 	return string(secret), nil
 }
 
-// connectionColumns never selects the sealed column. The plaintext leaves this repository
-// through Token alone, which is called on the way into a forge call and nowhere the
-// dashboard can reach; everything else reads whether a token is set, not what it is.
 const connectionColumns = `
     id, workspace_id, provider, base_url, label,
     token_hint, octet_length(token_sealed) > 0, identity_login,
@@ -189,9 +186,6 @@ SELECT` + connectionColumns + `
 FROM workspace_scm_connections
 WHERE id = $1`
 
-// GetForDelivery reads a connection by its id alone, because an inbound delivery arrives
-// with nothing but the address it was sent to. Everything it authorises afterwards is
-// decided from the connection's own workspace, never from anything the caller said.
 func (r *connectionRepository) GetForDelivery(
 	ctx context.Context,
 	connectionID uuid.UUID,

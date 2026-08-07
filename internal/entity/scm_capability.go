@@ -12,9 +12,6 @@ const SCMCertificateMaxLen = 32768
 
 var ErrSCMCertificateInvalid = errors.New("that is not a certificate this instance can read")
 
-// SCMCapability is something a target can do. Forges differ, and a connection that quietly
-// does nothing is worse than one that says which half of the feature it cannot offer: the
-// first looks broken with no cause, the second is a fact somebody can plan around.
 type SCMCapability string
 
 const (
@@ -49,8 +46,6 @@ func (set SCMCapabilitySet) Has(capability SCMCapability) bool {
 	return slices.Contains(set, capability)
 }
 
-// Missing is what a screen shows. It lists what this instance knows how to use and this
-// target does not offer, so nobody goes looking for a feature that was never going to work.
 func (set SCMCapabilitySet) Missing() []SCMCapability {
 	missing := make([]SCMCapability, 0)
 
@@ -85,9 +80,6 @@ func SCMCapabilitiesFrom(values []string) SCMCapabilitySet {
 	return set
 }
 
-// SCMTrust is the exception an administrator granted this one connection. It is carried with
-// the connection rather than configured on the instance, because "this forge is on our
-// network" is true of one target and not of the next.
 type SCMTrust struct {
 	AllowPrivateAddress bool
 	CACertificate       string
@@ -97,9 +89,6 @@ func (t SCMTrust) Custom() bool {
 	return t.AllowPrivateAddress || strings.TrimSpace(t.CACertificate) != ""
 }
 
-// ValidateSCMCertificate refuses anything that is not a certificate this instance can parse.
-// Storing an unreadable one would leave a connection that fails at every call with a TLS
-// error naming nothing, long after whoever pasted it has gone.
 func ValidateSCMCertificate(field, certificate string) FieldError {
 	trimmed := strings.TrimSpace(certificate)
 
@@ -118,9 +107,6 @@ func ValidateSCMCertificate(field, certificate string) FieldError {
 	return FieldError{}
 }
 
-// ParseSCMCertificates reads every certificate in a PEM bundle. An internal authority is
-// commonly an intermediate signed by a root, and accepting only the first would trust a
-// chain this instance cannot actually complete.
 func ParseSCMCertificates(bundle string) ([]*x509.Certificate, error) {
 	rest := []byte(strings.TrimSpace(bundle))
 	found := make([]*x509.Certificate, 0, 2)

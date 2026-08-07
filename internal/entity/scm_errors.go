@@ -15,9 +15,6 @@ func (e SCMRateLimitedError) Error() string {
 	return fmt.Sprintf("%s is rate limiting this connection for %s", e.Provider.Label(), e.RetryAfter)
 }
 
-// SCMCredentialsRejectedError is the one failure that changes what a connection is rather
-// than only what one call did, so it carries the reason a person has to act on. Everything
-// else is transient and retried; this stops until somebody supplies a new token.
 type SCMCredentialsRejectedError struct {
 	Provider SCMProvider
 	Reason   string
@@ -47,9 +44,6 @@ func (e SCMRepositoryUnreachableError) Unwrap() error {
 	return e.Cause
 }
 
-// SCMDestinationRefusedError is this instance declining to leave its own network, which is
-// a different thing from the forge saying no. Collapsing the two tells somebody to check a
-// token when nothing ever left the building, and that is the wrong thing to go and fix.
 type SCMDestinationRefusedError struct {
 	Provider SCMProvider
 	Reason   string

@@ -78,8 +78,6 @@ func TestTheLongestMatchingPrefixTakesThePath(t *testing.T) {
 	}
 }
 
-// The default route is usually created first and so is read last as often as not. Ordering
-// must not decide the owner, or the same repository routes differently after a reordering.
 func TestTheLongestPrefixWinsWhateverOrderTheRoutesArrivedIn(t *testing.T) {
 	api, platform := uuid.New(), uuid.New()
 

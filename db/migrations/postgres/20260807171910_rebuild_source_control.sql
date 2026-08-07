@@ -44,9 +44,6 @@ CREATE TABLE workspace_scm_connections (
         CHECK (octet_length(token_sealed) > 0)
 );
 
--- One credential per forge address per workspace. A token reaches many repositories, so
--- pasting it once and attaching repositories to it is both less work and one copy of the
--- secret rather than one per repository.
 CREATE UNIQUE INDEX workspace_scm_connections_endpoint_key
     ON workspace_scm_connections (workspace_id, provider, base_url);
 
@@ -86,13 +83,9 @@ CREATE UNIQUE INDEX workspace_scm_repositories_name_key
 CREATE INDEX workspace_scm_repositories_workspace_idx
     ON workspace_scm_repositories (workspace_id, full_name);
 
--- The sweep claims by how long a repository has gone unread, and poll_interval is what lets
--- a forge with no webhook delivery be read often while a healthy one is left alone.
 CREATE INDEX workspace_scm_repositories_due_idx
     ON workspace_scm_repositories (reconciled_at NULLS FIRST, id);
 
--- A route sends a change to a team. Matching is longest-prefix, and a route whose prefix is
--- empty is the repository's default rather than a special column.
 CREATE TABLE workspace_scm_routes (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     repository_id uuid NOT NULL REFERENCES workspace_scm_repositories (id) ON DELETE CASCADE,
@@ -112,9 +105,6 @@ CREATE UNIQUE INDEX workspace_scm_routes_prefix_key
 CREATE INDEX workspace_scm_routes_repository_idx
     ON workspace_scm_routes (repository_id, length(path_prefix) DESC);
 
--- A rule says which workflow state a team moves an issue to when its change reaches a given
--- state on the forge. The pair of columns it replaces could express one rule only, so a team
--- that wanted a review state as well as a done state had nowhere to put the second.
 CREATE TABLE workspace_scm_transition_rules (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id uuid NOT NULL,
@@ -182,9 +172,6 @@ CREATE INDEX workspace_code_links_repository_idx
 CREATE INDEX workspace_code_links_lookup_idx
     ON workspace_code_links (workspace_id, provider, repository_name, external_id);
 
--- One row per transition a link has already driven. The single boolean it replaces could
--- only ever say "something happened once", so a rule per transition had no way to know
--- which of them had already fired.
 CREATE TABLE workspace_code_link_transitions (
     link_id uuid NOT NULL REFERENCES workspace_code_links (id) ON DELETE CASCADE,
     transition text NOT NULL,
@@ -221,8 +208,6 @@ CREATE TABLE workspace_issue_mirrors (
     CONSTRAINT workspace_issue_mirrors_external_check CHECK (external_id <> '')
 );
 
--- An issue may be paired with one platform issue per repository, not one in the world: the
--- same work is often tracked in a service repository and a client one.
 CREATE UNIQUE INDEX workspace_issue_mirrors_pair_key
     ON workspace_issue_mirrors (issue_id, provider, repository_name);
 

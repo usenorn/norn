@@ -36,9 +36,6 @@ func (r SCMRepository) Parked(now time.Time) bool {
 	return r.ReconcileAfter != nil && now.Before(*r.ReconcileAfter)
 }
 
-// Due reports that the sweep should read this repository again. A repository whose webhook
-// never arrives is the case the sweep exists for, so the interval is per repository rather
-// than one number for the whole workspace.
 func (r SCMRepository) Due(now time.Time) bool {
 	if r.Parked(now) {
 		return false
@@ -56,9 +53,6 @@ func (r SCMRepository) Due(now time.Time) bool {
 	return !now.Before(r.ReconciledAt.Add(interval))
 }
 
-// Direction defaults rather than failing. A repository row written before direction existed
-// carries an empty one, and treating that as "sync nothing" would silently stop a pairing
-// that was working.
 func (r SCMRepository) Direction() MirrorDirection {
 	if !r.SyncDirection.Valid() || r.SyncDirection == "" {
 		return MirrorBoth
@@ -71,16 +65,10 @@ func (r SCMRepository) HookInstalled() bool {
 	return r.ExternalHookID != ""
 }
 
-// PollsOnly reports a repository read on a schedule rather than pushed to. A forge with no
-// route to this instance is the case it exists for, and without saying so the sweep would
-// keep trying to install a hook somebody deliberately turned off.
 func (r SCMRepository) PollsOnly() bool {
 	return r.WebhooksDisabled
 }
 
-// SCMRoute sends the changes under one path to one team. A repository holding several
-// products cannot be owned by a single team, and a route whose prefix is empty is the
-// repository's default rather than a separate column that could disagree with it.
 type SCMRoute struct {
 	ID           uuid.UUID
 	RepositoryID uuid.UUID
@@ -95,8 +83,6 @@ func (r SCMRoute) Default() bool {
 	return r.PathPrefix == ""
 }
 
-// Covers reports that a changed file lies under this route. Matching is by path segment, so
-// `api` owns `api/main.go` and leaves `apiary/main.go` to whoever owns that.
 func (r SCMRoute) Covers(path string) bool {
 	if r.PathPrefix == "" {
 		return true
@@ -109,9 +95,6 @@ func (r SCMRoute) Covers(path string) bool {
 
 type SCMRoutes []SCMRoute
 
-// Teams reports every team a change reaches. Each path is resolved by longest prefix, so a
-// team owning `api` does not receive a change confined to `web` when both are routed. Two
-// teams may share a prefix deliberately, and then both receive it.
 func (routes SCMRoutes) Teams(paths []string) []uuid.UUID {
 	if len(paths) == 0 {
 		return routes.teamsFor("")
@@ -154,9 +137,6 @@ func (routes SCMRoutes) teamsFor(path string) []uuid.UUID {
 	return teams
 }
 
-// Reaches answers whether this repository may act on an issue owned by the given team. It
-// is the bound on what a connection can touch, so an unrouted team is out of reach however
-// the issue was named.
 func (routes SCMRoutes) Reaches(teamID uuid.UUID) bool {
 	for _, route := range routes {
 		if route.TeamID == teamID {

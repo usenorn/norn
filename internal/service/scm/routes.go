@@ -86,8 +86,6 @@ func (s *connections) TeamRules(
 	return s.describeRules(ctx, workspaceID, teamID)
 }
 
-// describeRules names the state each rule points at. A rule whose state was deleted takes
-// the rule with it, so what comes back is always something a reader can act on.
 func (s *connections) describeRules(
 	ctx context.Context,
 	workspaceID, teamID uuid.UUID,

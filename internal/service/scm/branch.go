@@ -62,9 +62,6 @@ func (s *connections) SetTeamSettings(
 	})
 }
 
-// BranchName is what a person copies before starting work. The handle comes from their own
-// account rather than from a forge, because a wrong handle here costs a slightly odd branch
-// name and nothing more, while guessing a forge identity would be a different matter.
 func (s *connections) BranchName(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,

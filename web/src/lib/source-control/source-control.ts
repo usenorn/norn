@@ -68,8 +68,6 @@ export type SourceControlRepositoryView =
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
 
-// A repository is added after its connection exists, so the webhook address and secret are
-// shown once on the screen that created it rather than being folded into a list state.
 export type MintedRepository = {
 	repository: SourceControlRepository;
 	webhookUrl: string;
@@ -125,9 +123,6 @@ export function sourceControlFailure(problem: SourceControlProblem): SourceContr
 	return { kind: "unavailable" };
 }
 
-// detailOf prefers what the server actually said. Its detail names the repository and the
-// exact refusal; the canned copy below cannot, and reading only that is what turned a wrong
-// repository name into a long hunt through token scopes.
 export function detailOf(
 	problem: SourceControlProblem,
 	failure: SourceControlFailure,
@@ -198,7 +193,6 @@ export function capabilityLabel(capability: SourceControlCapability): string {
 	return capabilities[capability];
 }
 
-// Gitea and Forgejo have no hosted service, so a connection to one always names an address.
 export function requiresAddress(provider: SourceControlProvider): boolean {
 	return provider === "gitea";
 }
@@ -337,8 +331,6 @@ export function connectionLabel(connection: SourceControlConnection): string {
 	);
 }
 
-// routeLabel names the default route in words. An empty prefix is what every unrouted path
-// falls to, and showing it as a blank cell reads as a missing value rather than the rule.
 export function routeLabel(route: SourceControlRoute): string {
 	return route.pathPrefix || "Everything else";
 }

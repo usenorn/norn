@@ -346,8 +346,6 @@ func TestControlRefusesNetworksThatAreNotTCP(t *testing.T) {
 	}
 }
 
-// The private exception is granted per connection for a forge on somebody's own network. It
-// must never become a way to reach this instance's own internals or a cloud metadata service.
 func TestThePrivateExceptionStopsShortOfLoopbackAndMetadata(t *testing.T) {
 	refused := []string{
 		"127.0.0.1",

@@ -1,7 +1,4 @@
 -- +goose Up
--- A connection to an internal address is a deliberate exception an administrator grants for
--- that connection, not a relaxation of the instance's outbound rules. The certificate is
--- stored with it because an internal forge commonly presents one no public authority signed.
 ALTER TABLE workspace_scm_connections
     ADD COLUMN allow_private_address boolean NOT NULL DEFAULT false,
     ADD COLUMN ca_certificate text NOT NULL DEFAULT '',
@@ -37,9 +34,6 @@ ALTER TABLE workspace_scm_identities
     ADD CONSTRAINT workspace_scm_identities_provider_check
         CHECK (provider IN ('github', 'gitlab', 'gitea'));
 
--- A forge that cannot reach this instance is read on a schedule instead. Without saying so,
--- a repository whose hook was never installed looks identical to one whose hook was removed,
--- and the sweep would keep trying to install one that is deliberately absent.
 ALTER TABLE workspace_scm_repositories
     ADD COLUMN webhooks_disabled boolean NOT NULL DEFAULT false;
 

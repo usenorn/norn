@@ -46,9 +46,6 @@ SELECT` + teamSettingColumns + `
 FROM workspace_team_scm_settings
 WHERE workspace_id = $1 AND team_id = $2`
 
-// Get answers with the defaults rather than a missing-row error. Every team has a branch
-// template — the built-in one until somebody changes it — so absence is a value here, not a
-// failure a caller has to handle.
 func (r *teamSettingRepository) Get(
 	ctx context.Context,
 	workspaceID, teamID uuid.UUID,

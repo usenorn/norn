@@ -13,13 +13,6 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-// pushMirrors is the half that makes "in step" mean both directions. A delivery brings the
-// platform's side in; nothing carries Norn's side out, so without this a mirrored issue
-// edited here drifts away from the one it is paired with and never comes back.
-//
-// It reads the platform issue first rather than pushing blind, because that is the only way
-// to tell "Norn changed" from "both changed" — and when both did, the same arbitration the
-// inbound path uses decides it, so the two directions cannot disagree.
 func (s *sync) pushMirrors(
 	ctx context.Context,
 	from source,
@@ -27,8 +20,6 @@ func (s *sync) pushMirrors(
 	decision entity.Decision,
 	at time.Time,
 ) error {
-	// A repository somebody set to read-only never writes, however many pairings it holds.
-	// Direction is the promise that Norn will not touch a forge it was told to leave alone.
 	if !from.repository.Direction().Pushes() {
 		return nil
 	}
@@ -61,9 +52,6 @@ func (s *sync) pushOne(
 	mirror entity.IssueMirror,
 	at time.Time,
 ) error {
-	// Reach is checked before anything is fetched. It can be lost after a pairing was made,
-	// and going quiet is right: the connection is bounded by a person's permissions and
-	// those just narrowed.
 	if _, err := s.issues.GetVisible(
 		ctx,
 		from.workspaceID(),
@@ -78,8 +66,6 @@ func (s *sync) pushOne(
 		return err
 	}
 
-	// The inbound half first, so a platform edit is applied and recorded before anything is
-	// sent back. Running the push first would overwrite an edit we had not read yet.
 	if err := s.reconcileMirror(ctx, from, decision, mirror, found); err != nil {
 		return err
 	}
@@ -125,10 +111,6 @@ func (s *sync) pushOne(
 	return s.pushComments(ctx, from, target, forge, refreshed, at)
 }
 
-// outboundPatch sends only what differs from the value both sides last agreed on. Comparing
-// against the stored hash rather than a timestamp is what stops the sweep pushing the same
-// unchanged title on every cycle, which would burn the rate limit and rewrite the platform
-// issue's history for nothing.
 func outboundPatch(
 	mirror entity.IssueMirror,
 	issue entity.Issue,
@@ -153,9 +135,6 @@ func outboundPatch(
 	return patch, changed
 }
 
-// assigneeLogin answers who the platform should be told holds this issue. An assignee this
-// workspace has not mapped to a forge account produces no answer at all: naming a handle
-// that resembles them would assign the work to whoever happens to own it.
 func (s *sync) assigneeLogin(
 	ctx context.Context,
 	from source,
@@ -175,10 +154,6 @@ func (s *sync) assigneeLogin(
 	return identities.LoginFor(from.connection.Provider, issue.AssigneeAccountID)
 }
 
-// pushComments carries what people wrote here out to the platform. Three things stop a
-// comment going round for ever: one written by this connection's own account came from the
-// platform in the first place, one that already holds a mirror row has been sent, and the
-// row is written in the same pass as the send.
 func (s *sync) pushComments(
 	ctx context.Context,
 	from source,
