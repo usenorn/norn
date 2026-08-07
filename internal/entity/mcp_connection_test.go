@@ -166,12 +166,35 @@ func TestRedirectURIsAcceptHTTPSLoopbackAndPrivateSchemesOnly(t *testing.T) {
 		{"http://[::1]:8080/cb", true},
 		{"http://example.com/cb", false},
 		{"claude://oauth/callback", true},
+		{"com.example.app:/oauth/callback", true},
 		{"https://example.com/cb#fragment", false},
 		{"", false},
 		{"/relative/path", false},
 	} {
 		if got := entity.ValidMCPRedirectURI(probe.uri); got != probe.valid {
 			t.Errorf("redirect %q valid = %v, want %v", probe.uri, got, probe.valid)
+		}
+	}
+}
+
+func TestARedirectTheBrowserWouldExecuteIsNeverRegistrable(t *testing.T) {
+	for _, uri := range []string{
+		"javascript:eval(atob('ZmV0Y2g='))//",
+		"JavaScript:alert(1)",
+		"data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==",
+		"vbscript:msgbox(1)",
+		"blob:https://example.com/1234",
+		"file:///etc/passwd",
+		"about:blank",
+	} {
+		if entity.ValidMCPRedirectURI(uri) {
+			t.Errorf(
+				"%q was accepted as a redirect. Registration is unauthenticated and the consent "+
+					"screen hands the result to the browser, so a scheme the browser executes turns "+
+					"one click — approve or deny — into script running on our own origin with the "+
+					"signed-in session attached.",
+				uri,
+			)
 		}
 	}
 }

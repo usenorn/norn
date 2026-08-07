@@ -162,6 +162,8 @@ func ValidateMCPClientName(field, name string) FieldError {
 	}
 }
 
+var deniedRedirectSchemes = []string{"javascript", "data", "vbscript", "blob", "file", "about"}
+
 func ValidMCPRedirectURI(value string) bool {
 	parsed, err := url.Parse(value)
 	if err != nil || parsed.Scheme == "" || parsed.Fragment != "" {
@@ -174,8 +176,40 @@ func ValidMCPRedirectURI(value string) bool {
 	case "http":
 		return loopbackRedirect(parsed)
 	default:
-		return parsed.Opaque != "" || parsed.Host != "" || parsed.Path != ""
+		return privateSchemeRedirect(parsed)
 	}
+}
+
+func privateSchemeRedirect(parsed *url.URL) bool {
+	if slices.Contains(deniedRedirectSchemes, strings.ToLower(parsed.Scheme)) {
+		return false
+	}
+
+	if !privateSchemeName(parsed.Scheme) {
+		return false
+	}
+
+	if parsed.Opaque != "" {
+		return strings.HasPrefix(parsed.Opaque, "/")
+	}
+
+	return parsed.Host != "" || strings.HasPrefix(parsed.Path, "/")
+}
+
+func privateSchemeName(scheme string) bool {
+	for index, char := range scheme {
+		switch {
+		case char >= 'a' && char <= 'z':
+		case char >= '0' && char <= '9', char == '+', char == '-', char == '.':
+			if index == 0 {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+
+	return scheme != ""
 }
 
 type MCPConnection struct {

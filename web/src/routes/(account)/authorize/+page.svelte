@@ -26,6 +26,14 @@
 	);
 	const busy = $derived(preview?.busy ?? deciding);
 
+	const executableSchemes = ["javascript:", "data:", "vbscript:", "blob:", "file:", "about:"];
+
+	function handsBackTo(target: string): boolean {
+		const scheme = target.slice(0, target.indexOf(":") + 1).toLowerCase();
+
+		return scheme !== "" && !executableSchemes.includes(scheme);
+	}
+
 	async function decide(action: "approve" | "deny") {
 		deciding = action;
 		failed = false;
@@ -40,7 +48,7 @@
 				params: { path: { requestId: data.requestId } },
 			});
 
-			if (error || !decision) {
+			if (error || !decision || !handsBackTo(decision.redirectTo)) {
 				failed = true;
 
 				return;

@@ -26,7 +26,7 @@ func BearerToken(tokens service.APITokens) func(http.Handler) http.Handler {
 			value := strings.TrimSpace(strings.TrimPrefix(header, bearerPrefix))
 
 			if !entity.LooksLikeAPIToken(value) {
-				next.ServeHTTP(w, r)
+				rejectToken(w, r)
 
 				return
 			}
@@ -34,7 +34,7 @@ func BearerToken(tokens service.APITokens) func(http.Handler) http.Handler {
 			actor, err := tokens.Authenticate(r.Context(), value)
 			if err != nil {
 				logging.From(r.Context()).InfoContext(r.Context(), "api token rejected", "error", err.Error())
-				next.ServeHTTP(w, r)
+				rejectToken(w, r)
 
 				return
 			}
@@ -49,4 +49,9 @@ func BearerToken(tokens service.APITokens) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func rejectToken(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", `Bearer error="invalid_token"`)
+	WriteProblem(w, r, http.StatusUnauthorized, "that API token is not valid")
 }
