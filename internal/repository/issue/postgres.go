@@ -53,7 +53,8 @@ const issueColumns = `
        s.id,
        s.name,
        s.category,
-       s.position`
+       s.position,
+       i.rank`
 
 const issueJoins = `
 FROM workspace_issues i
@@ -88,11 +89,13 @@ WITH allocated AS (
     INSERT INTO workspace_issues (
         id, workspace_id, team_id, reference_key, number, title, state_id,
         created_by_account_id, description, priority, assignee_account_id,
-        estimate, due_on, cycle_id, project_id, triage_state, triage_source, created_at, updated_at
+        estimate, due_on, cycle_id, project_id, triage_state, triage_source, rank,
+        created_at, updated_at
     )
     SELECT $1, $2, $3, t.key, allocated.number, $4, $5, $6,
            $8, $9, nullif($10, '')::uuid, nullif($11, 0), nullif($12, '')::date,
-           nullif($17, '')::uuid, nullif($15, '')::uuid, nullif($13, ''), nullif($14, ''), $7, $16
+           nullif($17, '')::uuid, nullif($15, '')::uuid, nullif($13, ''), nullif($14, ''), $18,
+           $7, $16
     FROM allocated
     JOIN workspace_teams t ON t.id = $3
     RETURNING id, workspace_id, team_id, reference_key, number, title, state_id,
@@ -101,7 +104,8 @@ WITH allocated AS (
               status, archived_at,
               parent_issue_id, depth, cycle_id, project_id,
               created_by_account_id, triage_state, triage_source,
-              triage_decided_by_account_id, triage_decided_at, created_at, updated_at
+              triage_decided_by_account_id, triage_decided_at, created_at, updated_at,
+              rank
 )
 SELECT` + issueColumns + `
 FROM inserted i
@@ -135,12 +139,18 @@ SET title               = coalesce($3, title),
                                ELSE coalesce($19::uuid, cycle_id) END,
     project_id          = CASE WHEN $20::boolean THEN NULL
                                ELSE coalesce($21::uuid, project_id) END,
+    rank                = coalesce($22, rank),
     state_entered_at    = coalesce($13::timestamptz, state_entered_at),
     completed_at        = CASE WHEN $14::boolean THEN $15::timestamptz ELSE completed_at END,
     version             = version + 1,
     field_versions      = field_versions || $16::jsonb,
     updated_at          = $17
 WHERE id = $1 AND version = $2`
+
+const lowestRankQuery = `
+SELECT coalesce(min(rank), '')
+FROM workspace_issues
+WHERE workspace_id = $1`
 
 const dropTeamScopedLabelsQuery = `
 DELETE FROM workspace_issue_labels
@@ -419,6 +429,7 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		&issue.State.Name,
 		&category,
 		&issue.State.Position,
+		&issue.Rank,
 	); err != nil {
 		return entity.Issue{}, err
 	}
@@ -573,6 +584,7 @@ func (r *issueRepository) Create(ctx context.Context, issue entity.Issue) (entit
 		text(issue.ProjectID),
 		updatedAt,
 		text(issue.CycleID),
+		issue.Rank,
 	))
 	if err != nil {
 		if translated := translateWriteError(err); !errors.Is(translated, err) {
@@ -752,6 +764,19 @@ func groupSlices(groups []string, issues []entity.Issue) []entity.IssueGroupSlic
 	}
 
 	return grouped
+}
+
+func (r *issueRepository) LowestRank(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+	var lowest string
+
+	err := r.db.Querier(ctx).
+		QueryRowContext(ctx, lowestRankQuery, workspaceID.String()).
+		Scan(&lowest)
+	if err != nil {
+		return "", fmt.Errorf("find the lowest issue rank: %w", err)
+	}
+
+	return lowest, nil
 }
 
 func (r *issueRepository) hydrate(
@@ -969,6 +994,12 @@ func (r *issueRepository) Update(
 		projectID = change.ProjectID.String()
 	}
 
+	var rank any
+
+	if change.Rank != nil {
+		rank = *change.Rank
+	}
+
 	if timestamps != nil {
 		stateEnteredAt = timestamps.StateEnteredAt
 		touchCompleted = true
@@ -1002,6 +1033,7 @@ func (r *issueRepository) Update(
 		cycleID,
 		change.ClearProject,
 		projectID,
+		rank,
 	)
 	if err != nil {
 		return fmt.Errorf("update issue: %w", err)

@@ -57,6 +57,7 @@ type WorkspaceIssue struct {
 	TriageDecidedByAccountID null.String `boil:"triage_decided_by_account_id" json:"triage_decided_by_account_id,omitempty" toml:"triage_decided_by_account_id" yaml:"triage_decided_by_account_id,omitempty"`
 	TriageDecidedAt          null.Time   `boil:"triage_decided_at" json:"triage_decided_at,omitempty" toml:"triage_decided_at" yaml:"triage_decided_at,omitempty"`
 	SearchDocument           null.String `boil:"search_document" json:"search_document,omitempty" toml:"search_document" yaml:"search_document,omitempty"`
+	Rank                     string      `boil:"rank" json:"rank" toml:"rank" yaml:"rank"`
 
 	R *workspaceIssueR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -95,6 +96,7 @@ var WorkspaceIssueColumns = struct {
 	TriageDecidedByAccountID string
 	TriageDecidedAt          string
 	SearchDocument           string
+	Rank                     string
 }{
 	ID:                       "id",
 	WorkspaceID:              "workspace_id",
@@ -128,6 +130,7 @@ var WorkspaceIssueColumns = struct {
 	TriageDecidedByAccountID: "triage_decided_by_account_id",
 	TriageDecidedAt:          "triage_decided_at",
 	SearchDocument:           "search_document",
+	Rank:                     "rank",
 }
 
 var WorkspaceIssueTableColumns = struct {
@@ -163,6 +166,7 @@ var WorkspaceIssueTableColumns = struct {
 	TriageDecidedByAccountID string
 	TriageDecidedAt          string
 	SearchDocument           string
+	Rank                     string
 }{
 	ID:                       "workspace_issues.id",
 	WorkspaceID:              "workspace_issues.workspace_id",
@@ -196,6 +200,7 @@ var WorkspaceIssueTableColumns = struct {
 	TriageDecidedByAccountID: "workspace_issues.triage_decided_by_account_id",
 	TriageDecidedAt:          "workspace_issues.triage_decided_at",
 	SearchDocument:           "workspace_issues.search_document",
+	Rank:                     "workspace_issues.rank",
 }
 
 // Generated where
@@ -233,6 +238,7 @@ var WorkspaceIssueWhere = struct {
 	TriageDecidedByAccountID whereHelpernull_String
 	TriageDecidedAt          whereHelpernull_Time
 	SearchDocument           whereHelpernull_String
+	Rank                     whereHelperstring
 }{
 	ID:                       whereHelperstring{field: "\"workspace_issues\".\"id\""},
 	WorkspaceID:              whereHelperstring{field: "\"workspace_issues\".\"workspace_id\""},
@@ -266,6 +272,7 @@ var WorkspaceIssueWhere = struct {
 	TriageDecidedByAccountID: whereHelpernull_String{field: "\"workspace_issues\".\"triage_decided_by_account_id\""},
 	TriageDecidedAt:          whereHelpernull_Time{field: "\"workspace_issues\".\"triage_decided_at\""},
 	SearchDocument:           whereHelpernull_String{field: "\"workspace_issues\".\"search_document\""},
+	Rank:                     whereHelperstring{field: "\"workspace_issues\".\"rank\""},
 }
 
 // WorkspaceIssueRels is where relationship names are stored.
@@ -438,8 +445,8 @@ func (r *workspaceIssueR) GetIssueWorkspaceCycleScopeChanges() WorkspaceCycleSco
 type workspaceIssueL struct{}
 
 var (
-	workspaceIssueAllColumns            = []string{"id", "workspace_id", "team_id", "number", "title", "created_by_account_id", "created_at", "updated_at", "state_id", "reference_key", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at", "search_document"}
-	workspaceIssueColumnsWithoutDefault = []string{"workspace_id", "team_id", "number", "title", "state_id", "reference_key"}
+	workspaceIssueAllColumns            = []string{"id", "workspace_id", "team_id", "number", "title", "created_by_account_id", "created_at", "updated_at", "state_id", "reference_key", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at", "search_document", "rank"}
+	workspaceIssueColumnsWithoutDefault = []string{"workspace_id", "team_id", "number", "title", "state_id", "reference_key", "rank"}
 	workspaceIssueColumnsWithDefault    = []string{"id", "created_by_account_id", "created_at", "updated_at", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at", "search_document"}
 	workspaceIssuePrimaryKeyColumns     = []string{"id"}
 	workspaceIssueGeneratedColumns      = []string{"search_document"}

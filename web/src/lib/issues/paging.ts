@@ -9,7 +9,7 @@ export type ColumnPage = {
 };
 
 export type BoardPages = {
-	source: Issue[] | undefined;
+	source: string;
 	columns: Record<string, ColumnPage>;
 };
 
@@ -19,12 +19,9 @@ export type ColumnLoad =
 	| { kind: "loading" }
 	| { kind: "unavailable"; remaining: number; cursor: string | undefined };
 
-export const noPages: BoardPages = { source: undefined, columns: {} };
+export const noPages: BoardPages = { source: "", columns: {} };
 
-export function pagesOf(
-	held: BoardPages,
-	source: Issue[] | undefined
-): Record<string, ColumnPage> {
+export function pagesOf(held: BoardPages, source: string): Record<string, ColumnPage> {
 	return held.source === source ? held.columns : {};
 }
 
@@ -37,7 +34,7 @@ export function pageOf(
 
 function written(
 	held: BoardPages,
-	source: Issue[] | undefined,
+	source: string,
 	key: string,
 	page: (previous: ColumnPage) => ColumnPage
 ): BoardPages {
@@ -47,17 +44,13 @@ function written(
 	return { source, columns: { ...columns, [key]: page(previous) } };
 }
 
-export function withLoading(
-	held: BoardPages,
-	source: Issue[] | undefined,
-	key: string
-): BoardPages {
+export function withLoading(held: BoardPages, source: string, key: string): BoardPages {
 	return written(held, source, key, (previous) => ({ ...previous, paging: { kind: "loading" } }));
 }
 
 export function withPage(
 	held: BoardPages,
-	source: Issue[] | undefined,
+	source: string,
 	key: string,
 	issues: Issue[],
 	cursor: string | undefined
@@ -69,11 +62,7 @@ export function withPage(
 	}));
 }
 
-export function withFailure(
-	held: BoardPages,
-	source: Issue[] | undefined,
-	key: string
-): BoardPages {
+export function withFailure(held: BoardPages, source: string, key: string): BoardPages {
 	return written(held, source, key, (previous) => ({
 		...previous,
 		paging: { kind: "unavailable" },

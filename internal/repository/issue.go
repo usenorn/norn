@@ -34,5 +34,6 @@ type Issue interface {
 	ProgressByProject(ctx context.Context, scope entity.TeamScope, projectID uuid.UUID) (entity.IssueProgress, error)
 	TallyByGroup(ctx context.Context, scope entity.TeamScope, page entity.IssuePage, groupBy entity.IssueGroupBy) ([]entity.IssueGroupTally, error)
 	ListVisibleByGroup(ctx context.Context, scope entity.TeamScope, page entity.IssuePage, groupBy entity.IssueGroupBy) ([]entity.IssueGroupSlice, error)
+	LowestRank(ctx context.Context, workspaceID uuid.UUID) (string, error)
 	MoveIssuesToCycle(ctx context.Context, issueIDs []uuid.UUID, cycleID *uuid.UUID, changedAt time.Time) error
 }

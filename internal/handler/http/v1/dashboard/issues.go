@@ -188,6 +188,8 @@ func (h *handler) UpdateWorkspaceIssue(
 
 	input.CycleID = request.Body.CycleId
 	input.ProjectID = request.Body.ProjectId
+	input.AfterIssueID = request.Body.AfterIssueId
+	input.BeforeIssueID = request.Body.BeforeIssueId
 
 	if request.Body.Clear != nil {
 		for _, field := range *request.Body.Clear {

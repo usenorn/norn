@@ -93,6 +93,7 @@ type Issue struct {
 	TriageDecidedAt    *time.Time
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
+	Rank               string
 	Origin             *ImportOrigin
 }
 

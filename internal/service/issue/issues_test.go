@@ -104,6 +104,7 @@ func newHarness(t *testing.T) *harness {
 		Return(entity.TriageSettings{}, entity.ErrTriageDisabled).
 		AnyTimes()
 
+	h.issues.EXPECT().LowestRank(gomock.Any(), gomock.Any()).Return("", nil).AnyTimes()
 	h.notify.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	h.events.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()
 	h.followers.EXPECT().Follow(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
@@ -843,6 +844,114 @@ func TestAListWithNoStatusAsksOnlyForActiveIssues(t *testing.T) {
 			"asked for %v. An unfiltered list must not surface archived or deleted issues alongside "+
 				"live work.",
 			requested,
+		)
+	}
+}
+
+func TestAnIssueDroppedBetweenTwoOthersLandsBetweenTheirRanks(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	teamID := uuid.New()
+	scope := entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}}
+
+	h.expectScope(workspaceID, scope)
+
+	moving := issuesOf(workspaceID, teamID, 3)
+	above, below, dragged := moving[0], moving[1], moving[2]
+	above.Rank, below.Rank, dragged.Rank = "a", "b", "z"
+
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, above.ID, gomock.Any()).
+		Return(above, nil)
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, below.ID, gomock.Any()).
+		Return(below, nil)
+	h.issues.EXPECT().
+		LockByID(gomock.Any(), workspaceID, dragged.ID, gomock.Any()).
+		Return(dragged, nil)
+
+	var written entity.IssueChange
+
+	h.issues.EXPECT().
+		Update(gomock.Any(), dragged.ID, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ uuid.UUID, _ int,
+			change entity.IssueChange, _ *entity.StateTimestamps, _ time.Time,
+		) error {
+			written = change
+
+			return nil
+		})
+
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, dragged.ID, gomock.Any()).
+		Return(dragged, nil).
+		AnyTimes()
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	if _, err := h.service.Update(context.Background(), workspaceID, dragged.ID, service.UpdateIssueInput{
+		ExpectedVersion: dragged.Version,
+		AfterIssueID:    &above.ID,
+		BeforeIssueID:   &below.ID,
+	}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	if written.Rank == nil {
+		t.Fatal("dropping between two issues wrote no rank, so the card returns to where it was")
+	}
+
+	if *written.Rank <= above.Rank || *written.Rank >= below.Rank {
+		t.Fatalf(
+			"the drop wrote rank %q, which does not sort between %q and %q",
+			*written.Rank, above.Rank, below.Rank,
+		)
+	}
+}
+
+func TestADropWithNoNeighboursLeavesTheOrderAlone(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	teamID := uuid.New()
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	held := issuesOf(workspaceID, teamID, 1)[0]
+	held.Rank = "i"
+	title := "Renamed"
+
+	h.issues.EXPECT().LockByID(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(held, nil)
+
+	var written entity.IssueChange
+
+	h.issues.EXPECT().
+		Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ uuid.UUID, _ int,
+			change entity.IssueChange, _ *entity.StateTimestamps, _ time.Time,
+		) error {
+			written = change
+
+			return nil
+		})
+
+	h.issues.EXPECT().GetVisible(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(held, nil).AnyTimes()
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	if _, err := h.service.Update(context.Background(), workspaceID, held.ID, service.UpdateIssueInput{
+		ExpectedVersion: held.Version,
+		Title:           &title,
+	}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	if written.Rank != nil {
+		t.Fatalf(
+			"an edit that named no neighbours rewrote the rank to %q, which would shuffle the "+
+				"board every time somebody renames an issue",
+			*written.Rank,
 		)
 	}
 }

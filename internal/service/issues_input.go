@@ -86,6 +86,8 @@ type UpdateIssueInput struct {
 	DueOn                   *string
 	CycleID                 *uuid.UUID
 	ProjectID               *uuid.UUID
+	AfterIssueID            *uuid.UUID
+	BeforeIssueID           *uuid.UUID
 	Clear                   []string
 }
 

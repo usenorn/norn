@@ -163,6 +163,21 @@ func (mr *MockIssueMockRecorder) LockByID(ctx, workspaceID, issueID, scope any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByID", reflect.TypeOf((*MockIssue)(nil).LockByID), ctx, workspaceID, issueID, scope)
 }
 
+// LowestRank mocks base method.
+func (m *MockIssue) LowestRank(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LowestRank", ctx, workspaceID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LowestRank indicates an expected call of LowestRank.
+func (mr *MockIssueMockRecorder) LowestRank(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LowestRank", reflect.TypeOf((*MockIssue)(nil).LowestRank), ctx, workspaceID)
+}
+
 // MoveIssuesToCycle mocks base method.
 func (m *MockIssue) MoveIssuesToCycle(ctx context.Context, issueIDs []uuid.UUID, cycleID *uuid.UUID, changedAt time.Time) error {
 	m.ctrl.T.Helper()

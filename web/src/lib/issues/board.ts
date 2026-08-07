@@ -2,9 +2,10 @@ import type { components } from "$lib/api/dashboard.gen";
 import type { WorkflowState } from "$lib/team/states";
 import type { Project } from "$lib/projects/projects";
 import type { Issue, IssuePriority } from "./issues";
-import { tallyOf, tallyTotal, type IssueGroupTally } from "./filter";
+import { tabAdmits, tallyOf, tallyTotal, type IssueGroupTally } from "./filter";
 import { priorities } from "./issues";
 import { loadFor, pageOf, type ColumnLoad, type ColumnPage } from "./paging";
+import { applyMoves, keyOf, type PendingMove } from "./drop";
 import type { Grouping, IssueTab } from "./display";
 
 export type { Issue };
@@ -116,6 +117,8 @@ export type GroupingContext = {
 	states: WorkflowState[];
 	members: { accountId: string; displayName?: string }[];
 	projects: Project[];
+	tab: IssueTab;
+	backlogStateIds: string[];
 };
 
 type ColumnSlot = { key: string; name: string; mark: GroupMark };
@@ -127,21 +130,6 @@ export const unknownNames: Record<Grouping, string> = {
 	project: "Unknown project",
 	none: "All issues",
 };
-
-export function keyOf(grouping: Grouping, issue: Issue): string {
-	switch (grouping) {
-		case "priority":
-			return issue.priority;
-		case "assignee":
-			return issue.assigneeAccountId ?? "";
-		case "project":
-			return issue.projectId ?? "";
-		case "none":
-			return "all";
-		default:
-			return issue.state.id;
-	}
-}
 
 function slotsFor(grouping: Grouping, context: GroupingContext): ColumnSlot[] {
 	switch (grouping) {
@@ -172,11 +160,13 @@ function slotsFor(grouping: Grouping, context: GroupingContext): ColumnSlot[] {
 		case "none":
 			return [{ key: "all", name: "All issues", mark: { kind: "all" } }];
 		default:
-			return context.states.map((state) => ({
-				key: state.id,
-				name: state.name,
-				mark: { kind: "state", state },
-			}));
+			return context.states
+				.filter((state) => tabAdmits(context.tab, state, context.backlogStateIds))
+				.map((state) => ({
+					key: state.id,
+					name: state.name,
+					mark: { kind: "state", state },
+				}));
 	}
 }
 
@@ -238,19 +228,29 @@ export function columnsFor(
 	grouping: Grouping,
 	context: GroupingContext,
 	pages: Record<string, ColumnPage>,
-	options: { showEmpty?: boolean } = {}
+	options: { showEmpty?: boolean; moves?: PendingMove[] } = {}
 ): IssueColumn[] {
-	const held = new Map<string, Issue[]>();
+	const loaded = new Map<string, Issue[]>();
+	const known = new Map<string, Issue>();
 
-	for (const issue of source.issues) {
-		const key = keyOf(grouping, issue);
+	const bucket = (key: string, issue: Issue) => {
+		loaded.set(key, [...(loaded.get(key) ?? []), issue]);
+		known.set(issue.id, issue);
+	};
 
-		held.set(key, [...(held.get(key) ?? []), issue]);
+	for (const issue of source.issues) bucket(keyOf(grouping, issue), issue);
+
+	for (const [key, page] of Object.entries(pages)) {
+		for (const issue of page.issues) bucket(key, issue);
 	}
 
+	for (const [key, issues] of loaded) loaded.set(key, deduped(issues));
+
+	const held = applyMoves(loaded, options.moves ?? [], known);
+
 	const columns = slotted(grouping, context, source.issues, source.tallies).map((slot) => {
+		const issues = held.get(slot.key) ?? [];
 		const page = pageOf(pages, slot.key);
-		const issues = deduped([...(held.get(slot.key) ?? []), ...(page?.issues ?? [])]);
 		const counted =
 			grouping === "none" ? tallyTotal(source.tallies) : tallyOf(source.tallies, slot.key);
 		const total = counted ?? issues.length;
@@ -291,7 +291,7 @@ export function boardFor(
 	context: GroupingContext,
 	pages: Record<string, ColumnPage>,
 	scope: { name: string; teams: number },
-	options: { showEmpty?: boolean } = {}
+	options: { showEmpty?: boolean; moves?: PendingMove[] } = {}
 ): IssueBoard {
 	if (scope.teams === 0) return { kind: "no_teams" };
 
