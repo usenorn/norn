@@ -83,12 +83,30 @@ export function sourceControlFailure(problem: SourceControlProblem): SourceContr
 	return { kind: "unavailable" };
 }
 
+// detailOf prefers what the server actually said. Its detail names the repository and the
+// exact refusal; the canned copy below cannot, and reading only that is what turned a wrong
+// repository name into a long hunt through token scopes.
+export function detailOf(
+	problem: SourceControlProblem,
+	failure: SourceControlFailure,
+): string {
+	const detail = problem?.detail?.trim();
+
+	if (detail) return detail;
+
+	return failureMessage(failure);
+}
+
 export function failureMessage(failure: SourceControlFailure): string {
 	switch (failure.kind) {
 		case "credentials_rejected":
 			return "The token was refused. Check it has not expired and that it can read this repository.";
 		case "repository_unreachable":
-			return "That repository is not visible to this token. Check the name and the token's access.";
+			return (
+				"The token works, but that repository is not visible to it. Check the name is " +
+				"owner/repository, and that the token reaches it — a fine-grained token has to " +
+				"name the repository under Repository access, and a classic one needs the repo scope."
+			);
 		case "destination_refused":
 			return "That address is not reachable from this instance.";
 		case "provider_unsupported":

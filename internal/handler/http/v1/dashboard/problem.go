@@ -77,6 +77,11 @@ func problemFor(err error) (problemResponse, bool) {
 		return sourceControlRefused(api.SourceControlRepositoryUnreachable, err), true
 	}
 
+	var refusedDestination entity.SCMDestinationRefusedError
+	if errors.As(err, &refusedDestination) {
+		return sourceControlRefused(api.SourceControlDestinationRefused, err), true
+	}
+
 	// A forge asking to be left alone is passed on with how long to wait, so the screen can
 	// say when to try again rather than only that something went wrong.
 	var limited entity.SCMRateLimitedError

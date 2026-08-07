@@ -84,7 +84,31 @@ func (s *sync) reconcileOne(
 		return err
 	}
 
-	return s.refreshChanges(ctx, connection, target, at)
+	decision, err := s.decide(ctx, connection)
+	if err != nil {
+		if errors.Is(err, entity.ErrAccountForbidden) || errors.Is(err, entity.ErrMembershipNotFound) {
+			s.markBroken(
+				ctx,
+				connection,
+				entity.SCMBrokenCredentialsRejected,
+				"the account that established this connection no longer has access to the workspace",
+			)
+
+			return nil
+		}
+
+		return err
+	}
+
+	if err := s.refreshChanges(ctx, connection, target, decision, at); err != nil {
+		return err
+	}
+
+	if err := s.pushMirrors(ctx, connection, target, decision, at); err != nil {
+		return s.handleForgeError(ctx, connection, err)
+	}
+
+	return nil
 }
 
 func (s *sync) handleForgeError(
@@ -187,6 +211,7 @@ func (s *sync) refreshChanges(
 	ctx context.Context,
 	connection entity.SCMConnection,
 	target entity.SCMTarget,
+	decision entity.Decision,
 	at time.Time,
 ) error {
 	since := at.Add(-s.cfg.MaxCatchUp)
@@ -196,22 +221,6 @@ func (s *sync) refreshChanges(
 
 	forge, err := s.forges.Lookup(connection.Provider)
 	if err != nil {
-		return err
-	}
-
-	decision, err := s.decide(ctx, connection)
-	if err != nil {
-		if errors.Is(err, entity.ErrAccountForbidden) || errors.Is(err, entity.ErrMembershipNotFound) {
-			s.markBroken(
-				ctx,
-				connection,
-				entity.SCMBrokenCredentialsRejected,
-				"the account that established this connection no longer has access to the workspace",
-			)
-
-			return nil
-		}
-
 		return err
 	}
 

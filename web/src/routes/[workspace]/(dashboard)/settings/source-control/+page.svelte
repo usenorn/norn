@@ -13,6 +13,7 @@
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import {
 		brokenLabel,
+		detailOf,
 		failureMessage,
 		providerLabel,
 		sourceControlConnectionPath,
@@ -34,6 +35,7 @@
 
 	let loaded = $state.raw<SourceControlView | undefined>(undefined);
 	let failure = $state.raw<SourceControlFailure | undefined>(undefined);
+	let failureDetail = $state("");
 
 	const view = $derived(loaded ?? preview?.view ?? data.view);
 	const workspace = $derived(page.data.workspace);
@@ -42,10 +44,12 @@
 		id: "connect-source-control",
 		SPA: true,
 		validators: zod4Client(connectSourceControlSchema),
+		resetForm: false,
 		onUpdate: async ({ form: entered }) => {
 			if (!entered.valid) return;
 
 			failure = undefined;
+			failureDetail = "";
 
 			const { data: minted, error } = await api.POST(
 				"/workspaces/{workspaceId}/source-control/connections",
@@ -64,13 +68,15 @@
 
 			if (error) {
 				const mapped = sourceControlFailure(error);
+				const said = detailOf(error, mapped);
 
 				if (mapped.kind === "already_connected") {
-					setError(entered, "repository", failureMessage(mapped));
+					setError(entered, "repository", said);
 				} else if (mapped.kind === "credentials_rejected") {
-					setError(entered, "token", failureMessage(mapped));
+					setError(entered, "token", said);
 				} else {
 					failure = mapped;
+					failureDetail = said;
 				}
 
 				return;
@@ -91,6 +97,8 @@
 	});
 
 	const { form: fields, enhance, submitting, delayed } = form;
+
+	const shown = $derived(failure ?? preview?.failure);
 
 	const connections = $derived(
 		view.kind === "list" || view.kind === "connected" ? view.connections : [],
@@ -188,10 +196,10 @@
 			</ul>
 		{/if}
 
-		{#if failure}
+		{#if shown}
 			<Alert.Root variant="destructive">
 				<Alert.Title>The repository was not connected</Alert.Title>
-				<Alert.Description>{failureMessage(failure)}</Alert.Description>
+				<Alert.Description>{failureDetail || failureMessage(shown)}</Alert.Description>
 			</Alert.Root>
 		{/if}
 
