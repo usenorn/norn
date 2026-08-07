@@ -26,7 +26,6 @@ type WorkspaceTeamSCMSetting struct {
 	TeamID         string    `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
 	WorkspaceID    string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
 	BranchTemplate string    `boil:"branch_template" json:"branch_template" toml:"branch_template" yaml:"branch_template"`
-	AssignOnLink   bool      `boil:"assign_on_link" json:"assign_on_link" toml:"assign_on_link" yaml:"assign_on_link"`
 	CreatedAt      time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt      time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
@@ -38,14 +37,12 @@ var WorkspaceTeamSCMSettingColumns = struct {
 	TeamID         string
 	WorkspaceID    string
 	BranchTemplate string
-	AssignOnLink   string
 	CreatedAt      string
 	UpdatedAt      string
 }{
 	TeamID:         "team_id",
 	WorkspaceID:    "workspace_id",
 	BranchTemplate: "branch_template",
-	AssignOnLink:   "assign_on_link",
 	CreatedAt:      "created_at",
 	UpdatedAt:      "updated_at",
 }
@@ -54,14 +51,12 @@ var WorkspaceTeamSCMSettingTableColumns = struct {
 	TeamID         string
 	WorkspaceID    string
 	BranchTemplate string
-	AssignOnLink   string
 	CreatedAt      string
 	UpdatedAt      string
 }{
 	TeamID:         "workspace_team_scm_settings.team_id",
 	WorkspaceID:    "workspace_team_scm_settings.workspace_id",
 	BranchTemplate: "workspace_team_scm_settings.branch_template",
-	AssignOnLink:   "workspace_team_scm_settings.assign_on_link",
 	CreatedAt:      "workspace_team_scm_settings.created_at",
 	UpdatedAt:      "workspace_team_scm_settings.updated_at",
 }
@@ -72,14 +67,12 @@ var WorkspaceTeamSCMSettingWhere = struct {
 	TeamID         whereHelperstring
 	WorkspaceID    whereHelperstring
 	BranchTemplate whereHelperstring
-	AssignOnLink   whereHelperbool
 	CreatedAt      whereHelpertime_Time
 	UpdatedAt      whereHelpertime_Time
 }{
 	TeamID:         whereHelperstring{field: "\"workspace_team_scm_settings\".\"team_id\""},
 	WorkspaceID:    whereHelperstring{field: "\"workspace_team_scm_settings\".\"workspace_id\""},
 	BranchTemplate: whereHelperstring{field: "\"workspace_team_scm_settings\".\"branch_template\""},
-	AssignOnLink:   whereHelperbool{field: "\"workspace_team_scm_settings\".\"assign_on_link\""},
 	CreatedAt:      whereHelpertime_Time{field: "\"workspace_team_scm_settings\".\"created_at\""},
 	UpdatedAt:      whereHelpertime_Time{field: "\"workspace_team_scm_settings\".\"updated_at\""},
 }
@@ -101,9 +94,9 @@ func (*workspaceTeamSCMSettingR) NewStruct() *workspaceTeamSCMSettingR {
 type workspaceTeamSCMSettingL struct{}
 
 var (
-	workspaceTeamSCMSettingAllColumns            = []string{"team_id", "workspace_id", "branch_template", "assign_on_link", "created_at", "updated_at"}
+	workspaceTeamSCMSettingAllColumns            = []string{"team_id", "workspace_id", "branch_template", "created_at", "updated_at"}
 	workspaceTeamSCMSettingColumnsWithoutDefault = []string{"team_id", "workspace_id"}
-	workspaceTeamSCMSettingColumnsWithDefault    = []string{"branch_template", "assign_on_link", "created_at", "updated_at"}
+	workspaceTeamSCMSettingColumnsWithDefault    = []string{"branch_template", "created_at", "updated_at"}
 	workspaceTeamSCMSettingPrimaryKeyColumns     = []string{"team_id"}
 	workspaceTeamSCMSettingGeneratedColumns      = []string{}
 )

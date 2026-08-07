@@ -199,6 +199,14 @@ func (h *handler) AddWorkspaceSourceControlRepository(
 	}, nil
 }
 
+func optionalDirection(direction *api.MirrorDirection) entity.MirrorDirection {
+	if direction == nil {
+		return ""
+	}
+
+	return entity.MirrorDirection(*direction)
+}
+
 func optionalInterval(seconds *int32) time.Duration {
 	if seconds == nil {
 		return 0
@@ -216,8 +224,9 @@ func (h *handler) UpdateWorkspaceSourceControlRepository(
 		request.WorkspaceId,
 		request.RepositoryId,
 		service.UpdateRepositoryInput{
-			MirrorLabel:  optionalString(request.Body.MirrorLabel),
-			PollInterval: optionalInterval(request.Body.PollIntervalSeconds),
+			MirrorLabel:   optionalString(request.Body.MirrorLabel),
+			SyncDirection: optionalDirection(request.Body.SyncDirection),
+			PollInterval:  optionalInterval(request.Body.PollIntervalSeconds),
 		},
 	)
 	if err != nil {
@@ -698,5 +707,94 @@ func (r problemResponse) VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter
 }
 
 func (r problemResponse) VisitUnmirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (h *handler) ListWorkspaceSCMIdentities(
+	ctx context.Context,
+	request api.ListWorkspaceSCMIdentitiesRequestObject,
+) (api.ListWorkspaceSCMIdentitiesResponseObject, error) {
+	identities, err := h.sourceControl.Identities(ctx, request.WorkspaceId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceSCMIdentities200JSONResponse(scmIdentityDTOs(identities)), nil
+}
+
+func (h *handler) MapWorkspaceSCMIdentity(
+	ctx context.Context,
+	request api.MapWorkspaceSCMIdentityRequestObject,
+) (api.MapWorkspaceSCMIdentityResponseObject, error) {
+	identity, err := h.sourceControl.MapIdentity(ctx, request.WorkspaceId, service.MapSCMIdentityInput{
+		AccountID: request.Body.AccountId,
+		Provider:  entity.SCMProvider(request.Body.Provider),
+		Login:     request.Body.Login,
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.MapWorkspaceSCMIdentity201JSONResponse(scmIdentityDTO(identity)), nil
+}
+
+func (h *handler) UnmapWorkspaceSCMIdentity(
+	ctx context.Context,
+	request api.UnmapWorkspaceSCMIdentityRequestObject,
+) (api.UnmapWorkspaceSCMIdentityResponseObject, error) {
+	if err := h.sourceControl.UnmapIdentity(
+		ctx, request.WorkspaceId, request.IdentityId,
+	); err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.UnmapWorkspaceSCMIdentity204Response{}, nil
+}
+
+func (h *handler) ListWorkspaceIssueMirrorConflicts(
+	ctx context.Context,
+	request api.ListWorkspaceIssueMirrorConflictsRequestObject,
+) (api.ListWorkspaceIssueMirrorConflictsResponseObject, error) {
+	conflicts, err := h.sourceControl.Conflicts(ctx, request.WorkspaceId, request.IssueId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceIssueMirrorConflicts200JSONResponse(
+		mirrorConflictDTOs(conflicts),
+	), nil
+}
+
+func (r problemResponse) VisitListWorkspaceSCMIdentitiesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitMapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUnmapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueMirrorConflictsResponse(
+	w http.ResponseWriter,
+) error {
 	return r.write(w)
 }

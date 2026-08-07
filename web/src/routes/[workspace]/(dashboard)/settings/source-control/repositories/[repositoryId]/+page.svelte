@@ -12,8 +12,11 @@
 	import * as Form from "$lib/components/ui/form";
 	import { Input } from "$lib/components/ui/input";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import { Label } from "$lib/components/ui/label";
 	import {
 		connectionLabel,
+		directionLabel,
+		directionOrder,
 		deliveryOutcomeLabel,
 		detailOf,
 		failureMessage,
@@ -22,6 +25,7 @@
 		sourceControlConnectionPath,
 		sourceControlFailure,
 		sourceControlPath,
+		type MirrorDirection,
 		type SourceControlFailure,
 		type SourceControlRepositoryView,
 	} from "$lib/source-control/source-control";
@@ -43,6 +47,7 @@
 	let removing = $state("");
 	let disconnecting = $state(false);
 	let confirmingRemove = $state(false);
+	let savingDirection = $state(false);
 
 	const view = $derived(loaded ?? preview?.view ?? data.view);
 	const workspace = $derived(page.data.workspace);
@@ -131,6 +136,36 @@
 		if (view.kind !== "detail") return;
 
 		loaded = { ...view, routes: view.routes.filter((route) => route.id !== routeId) };
+	}
+
+	async function setDirection(direction: MirrorDirection) {
+		if (view.kind !== "detail") return;
+
+		savingDirection = true;
+		failure = undefined;
+		failureDetail = "";
+
+		const { data: updated, error } = await api.PATCH(
+			"/workspaces/{workspaceId}/source-control/repositories/{repositoryId}",
+			{
+				params: {
+					path: { workspaceId: workspace.id, repositoryId: view.repository.id },
+				},
+				body: { syncDirection: direction },
+			},
+		);
+
+		savingDirection = false;
+
+		if (error) {
+			record(error);
+
+			return;
+		}
+
+		if (updated && view.kind === "detail") {
+			loaded = { ...view, repository: updated };
+		}
 	}
 
 	async function disconnect() {
@@ -304,6 +339,28 @@
 					</Button>
 				</div>
 			</form>
+		</section>
+
+		<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
+			<h2 class="text-md font-medium tracking-snug text-ink-900">Which way work flows</h2>
+			<p class="text-sm leading-normal text-muted-foreground text-pretty">
+				A repository set one way is never touched the other. This is the promise that Norn
+				leaves a forge alone when it was told to.
+			</p>
+			<div class="flex flex-col gap-1">
+				<Label for="sync-direction">Direction</Label>
+				<select
+					id="sync-direction"
+					value={view.repository.syncDirection ?? "both"}
+					onchange={(event) => setDirection(event.currentTarget.value as MirrorDirection)}
+					disabled={savingDirection}
+					class="h-9 max-w-md rounded-md border border-line-subtle bg-transparent px-3 text-sm text-ink-900"
+				>
+					{#each directionOrder as option (option)}
+						<option value={option}>{directionLabel(option)}</option>
+					{/each}
+				</select>
+			</div>
 		</section>
 
 		<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">

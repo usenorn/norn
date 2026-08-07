@@ -26,7 +26,7 @@ func NewSCMRepository(db *postgres.Client, sealer *crypter.Crypter) repository.S
 
 const repositoryColumns = `
     id, connection_id, workspace_id, provider, full_name, external_id, default_branch, url,
-    octet_length(webhook_secret_sealed) > 0, external_hook_id, mirror_label,
+    octet_length(webhook_secret_sealed) > 0, external_hook_id, mirror_label, sync_direction,
     extract(epoch FROM poll_interval), reconcile_cursor, reconciled_at, reconcile_after,
     last_seen_at, created_at, updated_at`
 
@@ -48,6 +48,7 @@ func scanRepository(row interface{ Scan(...any) error }) (entity.SCMRepository, 
 		&stored.WebhookSecretSet,
 		&stored.ExternalHookID,
 		&stored.MirrorLabel,
+		&stored.SyncDirection,
 		&seconds,
 		&stored.ReconcileCursor,
 		&stored.ReconciledAt,
@@ -68,8 +69,8 @@ func scanRepository(row interface{ Scan(...any) error }) (entity.SCMRepository, 
 const insertRepositoryQuery = `
 INSERT INTO workspace_scm_repositories (
     id, connection_id, workspace_id, provider, full_name, external_id, default_branch, url,
-    webhook_secret_sealed, mirror_label, poll_interval
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, make_interval(secs => $11))
+    webhook_secret_sealed, mirror_label, sync_direction, poll_interval
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, make_interval(secs => $12))
 RETURNING` + repositoryColumns
 
 func (r *repositoryRepository) Create(
@@ -104,6 +105,7 @@ func (r *repositoryRepository) Create(
 		stored.URL,
 		secret,
 		stored.MirrorLabel,
+		stored.Direction(),
 		stored.PollInterval.Seconds(),
 	))
 	if err != nil {
@@ -247,7 +249,10 @@ func (r *repositoryRepository) WebhookSecret(
 
 const updateRepositorySettingsQuery = `
 UPDATE workspace_scm_repositories
-SET mirror_label = $2, poll_interval = make_interval(secs => $3), updated_at = now()
+SET mirror_label = $2,
+    sync_direction = $3,
+    poll_interval = make_interval(secs => $4),
+    updated_at = now()
 WHERE id = $1
 RETURNING` + repositoryColumns
 
@@ -261,8 +266,18 @@ func (r *repositoryRepository) UpdateSettings(
 		interval = entity.SCMDefaultPollInterval
 	}
 
+	direction := settings.SyncDirection
+	if !direction.Valid() || direction == "" {
+		direction = entity.MirrorBoth
+	}
+
 	stored, err := scanRepository(r.db.Querier(ctx).QueryRowContext(
-		ctx, updateRepositorySettingsQuery, repositoryID, settings.MirrorLabel, interval.Seconds(),
+		ctx,
+		updateRepositorySettingsQuery,
+		repositoryID,
+		settings.MirrorLabel,
+		direction,
+		interval.Seconds(),
 	))
 	if errors.Is(err, sql.ErrNoRows) {
 		return entity.SCMRepository{}, entity.ErrSCMRepositoryNotFound

@@ -110,6 +110,9 @@ type issuePayload struct {
 	Labels []struct {
 		Title string `json:"title"`
 	} `json:"labels"`
+	Assignees []struct {
+		Username string `json:"username"`
+	} `json:"assignees"`
 	Issue struct {
 		ID        int64  `json:"id"`
 		IID       int    `json:"iid"`
@@ -324,6 +327,14 @@ func translateIssue(body []byte) ([]service.ForgeEvent, error) {
 		labels = append(labels, label.Title)
 	}
 
+	assignees := make([]string, 0, len(payload.Assignees))
+
+	for _, assignee := range payload.Assignees {
+		if assignee.Username != "" {
+			assignees = append(assignees, assignee.Username)
+		}
+	}
+
 	return []service.ForgeEvent{{
 		Kind: service.ForgeEventIssueChanged,
 		Issue: service.ForgeIssue{
@@ -334,6 +345,7 @@ func translateIssue(body []byte) ([]service.ForgeEvent, error) {
 			URL:        issue.URL,
 			State:      issue.State,
 			Author:     payload.User.Username,
+			Assignees:  assignees,
 			Labels:     labels,
 			CreatedAt:  parseTime(issue.CreatedAt),
 			UpdatedAt:  parseTime(issue.UpdatedAt),

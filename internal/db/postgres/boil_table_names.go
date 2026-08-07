@@ -44,6 +44,7 @@ var TableNames = struct {
 	WorkspaceIssueComments            string
 	WorkspaceIssueFollowers           string
 	WorkspaceIssueLabels              string
+	WorkspaceIssueMirrorConflicts     string
 	WorkspaceIssueMirrors             string
 	WorkspaceIssueNumbers             string
 	WorkspaceIssueRelations           string
@@ -65,6 +66,7 @@ var TableNames = struct {
 	WorkspaceSavedViews               string
 	WorkspaceSCMConnections           string
 	WorkspaceSCMDeliveries            string
+	WorkspaceSCMIdentities            string
 	WorkspaceSCMRepositories          string
 	WorkspaceSCMRoutes                string
 	WorkspaceSCMTransitionRules       string
@@ -121,6 +123,7 @@ var TableNames = struct {
 	WorkspaceIssueComments:            "workspace_issue_comments",
 	WorkspaceIssueFollowers:           "workspace_issue_followers",
 	WorkspaceIssueLabels:              "workspace_issue_labels",
+	WorkspaceIssueMirrorConflicts:     "workspace_issue_mirror_conflicts",
 	WorkspaceIssueMirrors:             "workspace_issue_mirrors",
 	WorkspaceIssueNumbers:             "workspace_issue_numbers",
 	WorkspaceIssueRelations:           "workspace_issue_relations",
@@ -142,6 +145,7 @@ var TableNames = struct {
 	WorkspaceSavedViews:               "workspace_saved_views",
 	WorkspaceSCMConnections:           "workspace_scm_connections",
 	WorkspaceSCMDeliveries:            "workspace_scm_deliveries",
+	WorkspaceSCMIdentities:            "workspace_scm_identities",
 	WorkspaceSCMRepositories:          "workspace_scm_repositories",
 	WorkspaceSCMRoutes:                "workspace_scm_routes",
 	WorkspaceSCMTransitionRules:       "workspace_scm_transition_rules",

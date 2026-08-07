@@ -185,23 +185,26 @@ var WorkspaceIssueMirrorWhere = struct {
 
 // WorkspaceIssueMirrorRels is where relationship names are stored.
 var WorkspaceIssueMirrorRels = struct {
-	Issue                         string
-	Repository                    string
-	Workspace                     string
-	MirrorWorkspaceCommentMirrors string
+	Issue                               string
+	Repository                          string
+	Workspace                           string
+	MirrorWorkspaceCommentMirrors       string
+	MirrorWorkspaceIssueMirrorConflicts string
 }{
-	Issue:                         "Issue",
-	Repository:                    "Repository",
-	Workspace:                     "Workspace",
-	MirrorWorkspaceCommentMirrors: "MirrorWorkspaceCommentMirrors",
+	Issue:                               "Issue",
+	Repository:                          "Repository",
+	Workspace:                           "Workspace",
+	MirrorWorkspaceCommentMirrors:       "MirrorWorkspaceCommentMirrors",
+	MirrorWorkspaceIssueMirrorConflicts: "MirrorWorkspaceIssueMirrorConflicts",
 }
 
 // workspaceIssueMirrorR is where relationships are stored.
 type workspaceIssueMirrorR struct {
-	Issue                         *WorkspaceIssue             `boil:"Issue" json:"Issue" toml:"Issue" yaml:"Issue"`
-	Repository                    *WorkspaceSCMRepository     `boil:"Repository" json:"Repository" toml:"Repository" yaml:"Repository"`
-	Workspace                     *Workspace                  `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	MirrorWorkspaceCommentMirrors WorkspaceCommentMirrorSlice `boil:"MirrorWorkspaceCommentMirrors" json:"MirrorWorkspaceCommentMirrors" toml:"MirrorWorkspaceCommentMirrors" yaml:"MirrorWorkspaceCommentMirrors"`
+	Issue                               *WorkspaceIssue                   `boil:"Issue" json:"Issue" toml:"Issue" yaml:"Issue"`
+	Repository                          *WorkspaceSCMRepository           `boil:"Repository" json:"Repository" toml:"Repository" yaml:"Repository"`
+	Workspace                           *Workspace                        `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	MirrorWorkspaceCommentMirrors       WorkspaceCommentMirrorSlice       `boil:"MirrorWorkspaceCommentMirrors" json:"MirrorWorkspaceCommentMirrors" toml:"MirrorWorkspaceCommentMirrors" yaml:"MirrorWorkspaceCommentMirrors"`
+	MirrorWorkspaceIssueMirrorConflicts WorkspaceIssueMirrorConflictSlice `boil:"MirrorWorkspaceIssueMirrorConflicts" json:"MirrorWorkspaceIssueMirrorConflicts" toml:"MirrorWorkspaceIssueMirrorConflicts" yaml:"MirrorWorkspaceIssueMirrorConflicts"`
 }
 
 // NewStruct creates a new relationship struct
@@ -271,6 +274,22 @@ func (r *workspaceIssueMirrorR) GetMirrorWorkspaceCommentMirrors() WorkspaceComm
 	}
 
 	return r.MirrorWorkspaceCommentMirrors
+}
+
+func (o *WorkspaceIssueMirror) GetMirrorWorkspaceIssueMirrorConflicts() WorkspaceIssueMirrorConflictSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetMirrorWorkspaceIssueMirrorConflicts()
+}
+
+func (r *workspaceIssueMirrorR) GetMirrorWorkspaceIssueMirrorConflicts() WorkspaceIssueMirrorConflictSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.MirrorWorkspaceIssueMirrorConflicts
 }
 
 // workspaceIssueMirrorL is where Load methods for each relationship are stored.
@@ -634,6 +653,20 @@ func (o *WorkspaceIssueMirror) MirrorWorkspaceCommentMirrors(mods ...qm.QueryMod
 	)
 
 	return WorkspaceCommentMirrors(queryMods...)
+}
+
+// MirrorWorkspaceIssueMirrorConflicts retrieves all the workspace_issue_mirror_conflict's WorkspaceIssueMirrorConflicts with an executor via mirror_id column.
+func (o *WorkspaceIssueMirror) MirrorWorkspaceIssueMirrorConflicts(mods ...qm.QueryMod) workspaceIssueMirrorConflictQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_mirror_conflicts\".\"mirror_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueMirrorConflicts(queryMods...)
 }
 
 // LoadIssue allows an eager lookup of values, cached into the
@@ -1113,6 +1146,119 @@ func (workspaceIssueMirrorL) LoadMirrorWorkspaceCommentMirrors(ctx context.Conte
 	return nil
 }
 
+// LoadMirrorWorkspaceIssueMirrorConflicts allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceIssueMirrorL) LoadMirrorWorkspaceIssueMirrorConflicts(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueMirror any, mods queries.Applicator) error {
+	var slice []*WorkspaceIssueMirror
+	var object *WorkspaceIssueMirror
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceIssueMirror.(*WorkspaceIssueMirror)
+		if !ok {
+			object = new(WorkspaceIssueMirror)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssueMirror)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssueMirror))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceIssueMirror.(*[]*WorkspaceIssueMirror)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssueMirror)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssueMirror))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceIssueMirrorR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceIssueMirrorR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_mirror_conflicts`),
+		qm.WhereIn(`workspace_issue_mirror_conflicts.mirror_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_mirror_conflicts")
+	}
+
+	var resultSlice []*WorkspaceIssueMirrorConflict
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_mirror_conflicts")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_mirror_conflicts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_mirror_conflicts")
+	}
+
+	if len(workspaceIssueMirrorConflictAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.MirrorWorkspaceIssueMirrorConflicts = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueMirrorConflictR{}
+			}
+			foreign.R.Mirror = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.MirrorID {
+				local.R.MirrorWorkspaceIssueMirrorConflicts = append(local.R.MirrorWorkspaceIssueMirrorConflicts, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueMirrorConflictR{}
+				}
+				foreign.R.Mirror = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetIssue of the workspaceIssueMirror to the related item.
 // Sets o.R.Issue to related.
 // Adds o to related.R.IssueWorkspaceIssueMirrors.
@@ -1331,6 +1477,59 @@ func (o *WorkspaceIssueMirror) AddMirrorWorkspaceCommentMirrors(ctx context.Cont
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceCommentMirrorR{
+				Mirror: o,
+			}
+		} else {
+			rel.R.Mirror = o
+		}
+	}
+	return nil
+}
+
+// AddMirrorWorkspaceIssueMirrorConflicts adds the given related objects to the existing relationships
+// of the workspace_issue_mirror, optionally inserting them as new records.
+// Appends related to o.R.MirrorWorkspaceIssueMirrorConflicts.
+// Sets related.R.Mirror appropriately.
+func (o *WorkspaceIssueMirror) AddMirrorWorkspaceIssueMirrorConflicts(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueMirrorConflict) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.MirrorID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_mirror_conflicts\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"mirror_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueMirrorConflictPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.MirrorID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceIssueMirrorR{
+			MirrorWorkspaceIssueMirrorConflicts: related,
+		}
+	} else {
+		o.R.MirrorWorkspaceIssueMirrorConflicts = append(o.R.MirrorWorkspaceIssueMirrorConflicts, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueMirrorConflictR{
 				Mirror: o,
 			}
 		} else {

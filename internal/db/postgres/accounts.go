@@ -230,6 +230,7 @@ var AccountRels = struct {
 	LeadAccountWorkspaceProjects               string
 	IntegrationAccountWorkspaceSCMConnections  string
 	OwnerAccountWorkspaceSCMConnections        string
+	WorkspaceSCMIdentities                     string
 	WorkspaceSsoIdentities                     string
 }{
 	WorkspaceAgent:                             "WorkspaceAgent",
@@ -261,6 +262,7 @@ var AccountRels = struct {
 	LeadAccountWorkspaceProjects:               "LeadAccountWorkspaceProjects",
 	IntegrationAccountWorkspaceSCMConnections:  "IntegrationAccountWorkspaceSCMConnections",
 	OwnerAccountWorkspaceSCMConnections:        "OwnerAccountWorkspaceSCMConnections",
+	WorkspaceSCMIdentities:                     "WorkspaceSCMIdentities",
 	WorkspaceSsoIdentities:                     "WorkspaceSsoIdentities",
 }
 
@@ -295,6 +297,7 @@ type accountR struct {
 	LeadAccountWorkspaceProjects               WorkspaceProjectSlice              `boil:"LeadAccountWorkspaceProjects" json:"LeadAccountWorkspaceProjects" toml:"LeadAccountWorkspaceProjects" yaml:"LeadAccountWorkspaceProjects"`
 	IntegrationAccountWorkspaceSCMConnections  WorkspaceSCMConnectionSlice        `boil:"IntegrationAccountWorkspaceSCMConnections" json:"IntegrationAccountWorkspaceSCMConnections" toml:"IntegrationAccountWorkspaceSCMConnections" yaml:"IntegrationAccountWorkspaceSCMConnections"`
 	OwnerAccountWorkspaceSCMConnections        WorkspaceSCMConnectionSlice        `boil:"OwnerAccountWorkspaceSCMConnections" json:"OwnerAccountWorkspaceSCMConnections" toml:"OwnerAccountWorkspaceSCMConnections" yaml:"OwnerAccountWorkspaceSCMConnections"`
+	WorkspaceSCMIdentities                     WorkspaceSCMIdentitySlice          `boil:"WorkspaceSCMIdentities" json:"WorkspaceSCMIdentities" toml:"WorkspaceSCMIdentities" yaml:"WorkspaceSCMIdentities"`
 	WorkspaceSsoIdentities                     WorkspaceSsoIdentitySlice          `boil:"WorkspaceSsoIdentities" json:"WorkspaceSsoIdentities" toml:"WorkspaceSsoIdentities" yaml:"WorkspaceSsoIdentities"`
 }
 
@@ -765,6 +768,22 @@ func (r *accountR) GetOwnerAccountWorkspaceSCMConnections() WorkspaceSCMConnecti
 	}
 
 	return r.OwnerAccountWorkspaceSCMConnections
+}
+
+func (o *Account) GetWorkspaceSCMIdentities() WorkspaceSCMIdentitySlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceSCMIdentities()
+}
+
+func (r *accountR) GetWorkspaceSCMIdentities() WorkspaceSCMIdentitySlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceSCMIdentities
 }
 
 func (o *Account) GetWorkspaceSsoIdentities() WorkspaceSsoIdentitySlice {
@@ -1500,6 +1519,20 @@ func (o *Account) OwnerAccountWorkspaceSCMConnections(mods ...qm.QueryMod) works
 	)
 
 	return WorkspaceSCMConnections(queryMods...)
+}
+
+// WorkspaceSCMIdentities retrieves all the workspace_scm_identity's WorkspaceSCMIdentities with an executor.
+func (o *Account) WorkspaceSCMIdentities(mods ...qm.QueryMod) workspaceSCMIdentityQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_scm_identities\".\"account_id\"=?", o.ID),
+	)
+
+	return WorkspaceSCMIdentities(queryMods...)
 }
 
 // WorkspaceSsoIdentities retrieves all the workspace_sso_identity's WorkspaceSsoIdentities with an executor.
@@ -4797,6 +4830,119 @@ func (accountL) LoadOwnerAccountWorkspaceSCMConnections(ctx context.Context, e b
 	return nil
 }
 
+// LoadWorkspaceSCMIdentities allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadWorkspaceSCMIdentities(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_scm_identities`),
+		qm.WhereIn(`workspace_scm_identities.account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_scm_identities")
+	}
+
+	var resultSlice []*WorkspaceSCMIdentity
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_scm_identities")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_scm_identities")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_scm_identities")
+	}
+
+	if len(workspaceSCMIdentityAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceSCMIdentities = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceSCMIdentityR{}
+			}
+			foreign.R.Account = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.AccountID {
+				local.R.WorkspaceSCMIdentities = append(local.R.WorkspaceSCMIdentities, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceSCMIdentityR{}
+				}
+				foreign.R.Account = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadWorkspaceSsoIdentities allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (accountL) LoadWorkspaceSsoIdentities(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
@@ -7697,6 +7843,59 @@ func (o *Account) AddOwnerAccountWorkspaceSCMConnections(ctx context.Context, ex
 			}
 		} else {
 			rel.R.OwnerAccount = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceSCMIdentities adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceSCMIdentities.
+// Sets related.R.Account appropriately.
+func (o *Account) AddWorkspaceSCMIdentities(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceSCMIdentity) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.AccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_scm_identities\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceSCMIdentityPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.AccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			WorkspaceSCMIdentities: related,
+		}
+	} else {
+		o.R.WorkspaceSCMIdentities = append(o.R.WorkspaceSCMIdentities, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceSCMIdentityR{
+				Account: o,
+			}
+		} else {
+			rel.R.Account = o
 		}
 	}
 	return nil

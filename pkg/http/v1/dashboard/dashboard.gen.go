@@ -50,14 +50,17 @@ func (e APITokenUnusableProblemCode) Valid() bool {
 
 // Defines values for AccountKind.
 const (
-	AccountKindAgent  AccountKind = "agent"
-	AccountKindPerson AccountKind = "person"
+	AccountKindAgent       AccountKind = "agent"
+	AccountKindIntegration AccountKind = "integration"
+	AccountKindPerson      AccountKind = "person"
 )
 
 // Valid indicates whether the value is a known member of the AccountKind enum.
 func (e AccountKind) Valid() bool {
 	switch e {
 	case AccountKindAgent:
+		return true
+	case AccountKindIntegration:
 		return true
 	case AccountKindPerson:
 		return true
@@ -728,14 +731,17 @@ func (e CodeLinkKind) Valid() bool {
 
 // Defines values for CommentAuthorKind.
 const (
-	CommentAuthorKindAgent  CommentAuthorKind = "agent"
-	CommentAuthorKindPerson CommentAuthorKind = "person"
+	CommentAuthorKindAgent       CommentAuthorKind = "agent"
+	CommentAuthorKindIntegration CommentAuthorKind = "integration"
+	CommentAuthorKindPerson      CommentAuthorKind = "person"
 )
 
 // Valid indicates whether the value is a known member of the CommentAuthorKind enum.
 func (e CommentAuthorKind) Valid() bool {
 	switch e {
 	case CommentAuthorKindAgent:
+		return true
+	case CommentAuthorKindIntegration:
 		return true
 	case CommentAuthorKindPerson:
 		return true
@@ -1745,19 +1751,19 @@ func (e IssueGroupBy) Valid() bool {
 
 // Defines values for IssueMirrorDirection.
 const (
-	Both     IssueMirrorDirection = "both"
-	Inbound  IssueMirrorDirection = "inbound"
-	Outbound IssueMirrorDirection = "outbound"
+	IssueMirrorDirectionBoth     IssueMirrorDirection = "both"
+	IssueMirrorDirectionInbound  IssueMirrorDirection = "inbound"
+	IssueMirrorDirectionOutbound IssueMirrorDirection = "outbound"
 )
 
 // Valid indicates whether the value is a known member of the IssueMirrorDirection enum.
 func (e IssueMirrorDirection) Valid() bool {
 	switch e {
-	case Both:
+	case IssueMirrorDirectionBoth:
 		return true
-	case Inbound:
+	case IssueMirrorDirectionInbound:
 		return true
-	case Outbound:
+	case IssueMirrorDirectionOutbound:
 		return true
 	default:
 		return false
@@ -1766,16 +1772,16 @@ func (e IssueMirrorDirection) Valid() bool {
 
 // Defines values for IssueMirrorOrigin.
 const (
-	Norn     IssueMirrorOrigin = "norn"
-	Platform IssueMirrorOrigin = "platform"
+	IssueMirrorOriginNorn     IssueMirrorOrigin = "norn"
+	IssueMirrorOriginPlatform IssueMirrorOrigin = "platform"
 )
 
 // Valid indicates whether the value is a known member of the IssueMirrorOrigin enum.
 func (e IssueMirrorOrigin) Valid() bool {
 	switch e {
-	case Norn:
+	case IssueMirrorOriginNorn:
 		return true
-	case Platform:
+	case IssueMirrorOriginPlatform:
 		return true
 	default:
 		return false
@@ -2067,6 +2073,45 @@ func (e MembershipSource) Valid() bool {
 	case Directory:
 		return true
 	case Manual:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MirrorConflictWinner.
+const (
+	MirrorConflictWinnerNorn   MirrorConflictWinner = "norn"
+	MirrorConflictWinnerSource MirrorConflictWinner = "source"
+)
+
+// Valid indicates whether the value is a known member of the MirrorConflictWinner enum.
+func (e MirrorConflictWinner) Valid() bool {
+	switch e {
+	case MirrorConflictWinnerNorn:
+		return true
+	case MirrorConflictWinnerSource:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MirrorDirection.
+const (
+	MirrorDirectionBoth     MirrorDirection = "both"
+	MirrorDirectionInbound  MirrorDirection = "inbound"
+	MirrorDirectionOutbound MirrorDirection = "outbound"
+)
+
+// Valid indicates whether the value is a known member of the MirrorDirection enum.
+func (e MirrorDirection) Valid() bool {
+	switch e {
+	case MirrorDirectionBoth:
+		return true
+	case MirrorDirectionInbound:
+		return true
+	case MirrorDirectionOutbound:
 		return true
 	default:
 		return false
@@ -2510,6 +2555,7 @@ const (
 	SourceControlAlreadyConnected      SourceControlConflictProblemCode = "source_control_already_connected"
 	SourceControlAlreadyMirrored       SourceControlConflictProblemCode = "source_control_already_mirrored"
 	SourceControlAlreadyRouted         SourceControlConflictProblemCode = "source_control_already_routed"
+	SourceControlIdentityMapped        SourceControlConflictProblemCode = "source_control_identity_mapped"
 	SourceControlTeamOutsideConnection SourceControlConflictProblemCode = "source_control_team_outside_connection"
 )
 
@@ -2521,6 +2567,8 @@ func (e SourceControlConflictProblemCode) Valid() bool {
 	case SourceControlAlreadyMirrored:
 		return true
 	case SourceControlAlreadyRouted:
+		return true
+	case SourceControlIdentityMapped:
 		return true
 	case SourceControlTeamOutsideConnection:
 		return true
@@ -3392,7 +3440,7 @@ type Account struct {
 	Timezone    string             `json:"timezone"`
 }
 
-// AccountKind defines model for AccountKind.
+// AccountKind An integration account is one Norn created to stand behind a source control connection. It authors the content that connection mirrors, so it reaches every surface that names an author even though nobody signs in as it.
 type AccountKind string
 
 // AccountLockedProblem defines model for AccountLockedProblem.
@@ -4999,6 +5047,13 @@ type MailUnavailableProblem struct {
 // MailUnavailableProblemCode defines model for MailUnavailableProblem.Code.
 type MailUnavailableProblemCode string
 
+// MapSCMIdentityRequest defines model for MapSCMIdentityRequest.
+type MapSCMIdentityRequest struct {
+	AccountId openapi_types.UUID    `json:"accountId"`
+	Login     string                `json:"login"`
+	Provider  SourceControlProvider `json:"provider"`
+}
+
 // MemberPage defines model for MemberPage.
 type MemberPage struct {
 	Members    []Membership `json:"members"`
@@ -5015,11 +5070,13 @@ type MemberRemovalPreview struct {
 
 // Membership defines model for Membership.
 type Membership struct {
-	AccountId      openapi_types.UUID `json:"accountId"`
-	DeactivatedAt  *time.Time         `json:"deactivatedAt,omitempty"`
-	DisplayName    *string            `json:"displayName,omitempty"`
-	Email          *string            `json:"email,omitempty"`
-	JoinedAt       *time.Time         `json:"joinedAt,omitempty"`
+	AccountId     openapi_types.UUID `json:"accountId"`
+	DeactivatedAt *time.Time         `json:"deactivatedAt,omitempty"`
+	DisplayName   *string            `json:"displayName,omitempty"`
+	Email         *string            `json:"email,omitempty"`
+	JoinedAt      *time.Time         `json:"joinedAt,omitempty"`
+
+	// Kind An integration account is one Norn created to stand behind a source control connection. It authors the content that connection mirrors, so it reaches every surface that names an author even though nobody signs in as it.
 	Kind           *AccountKind       `json:"kind,omitempty"`
 	LastActiveAt   *time.Time         `json:"lastActiveAt,omitempty"`
 	LastAuthMethod *SessionAuthMethod `json:"lastAuthMethod,omitempty"`
@@ -5096,6 +5153,22 @@ type MintedWebhook struct {
 	Secret  string  `json:"secret"`
 	Webhook Webhook `json:"webhook"`
 }
+
+// MirrorConflict An edit that lost arbitration, kept whole. A rule that silently discards one side is not something a team can live with, so the discarded value is here to be put back.
+type MirrorConflict struct {
+	Discarded  string               `json:"discarded"`
+	Field      string               `json:"field"`
+	Id         openapi_types.UUID   `json:"id"`
+	Kept       string               `json:"kept"`
+	OccurredAt time.Time            `json:"occurredAt"`
+	Winner     MirrorConflictWinner `json:"winner"`
+}
+
+// MirrorConflictWinner defines model for MirrorConflict.Winner.
+type MirrorConflictWinner string
+
+// MirrorDirection Which way work may flow for a repository. A repository somebody set to read-only is never written to, however many pairings it holds.
+type MirrorDirection string
 
 // MirrorIssueRequest defines model for MirrorIssueRequest.
 type MirrorIssueRequest struct {
@@ -5414,6 +5487,15 @@ type ResetLinkUsedProblemCode string
 
 // ReviewVerdict defines model for ReviewVerdict.
 type ReviewVerdict string
+
+// SCMIdentity Who somebody is on a forge. It is stated by an administrator rather than discovered: a handle that resembles a name is not evidence, and acting on the guess puts work on a stranger.
+type SCMIdentity struct {
+	AccountId   openapi_types.UUID    `json:"accountId"`
+	AccountName *string               `json:"accountName,omitempty"`
+	Id          openapi_types.UUID    `json:"id"`
+	Login       string                `json:"login"`
+	Provider    SourceControlProvider `json:"provider"`
+}
 
 // SamlAttributeMapping defines model for SamlAttributeMapping.
 type SamlAttributeMapping struct {
@@ -5786,8 +5868,11 @@ type SourceControlRepository struct {
 	ReconcileAfter      *time.Time            `json:"reconcileAfter,omitempty"`
 	ReconciledAt        *time.Time            `json:"reconciledAt,omitempty"`
 	RouteCount          *int32                `json:"routeCount,omitempty"`
-	UpdatedAt           time.Time             `json:"updatedAt"`
-	Url                 *string               `json:"url,omitempty"`
+
+	// SyncDirection Which way work may flow for a repository. A repository somebody set to read-only is never written to, however many pairings it holds.
+	SyncDirection *MirrorDirection `json:"syncDirection,omitempty"`
+	UpdatedAt     time.Time        `json:"updatedAt"`
+	Url           *string          `json:"url,omitempty"`
 }
 
 // SourceControlRoute Sends the changes under one path to one team. Matching is by longest prefix, and a route whose prefix is empty is the repository's default rather than a separate flag that could disagree with it.
@@ -6033,6 +6118,9 @@ type UpdateSavedViewRequest struct {
 type UpdateSourceControlRepositoryRequest struct {
 	MirrorLabel         *string `json:"mirrorLabel,omitempty"`
 	PollIntervalSeconds *int32  `json:"pollIntervalSeconds,omitempty"`
+
+	// SyncDirection Which way work may flow for a repository. A repository somebody set to read-only is never written to, however many pairings it holds.
+	SyncDirection *MirrorDirection `json:"syncDirection,omitempty"`
 }
 
 // UpdateSourceControlRequest defines model for UpdateSourceControlRequest.
@@ -7001,6 +7089,9 @@ type UpdateWorkspaceSourceControlConnectionJSONRequestBody = UpdateSourceControl
 // ReplaceWorkspaceSourceControlTokenJSONRequestBody defines body for ReplaceWorkspaceSourceControlToken for application/json ContentType.
 type ReplaceWorkspaceSourceControlTokenJSONRequestBody = ReplaceSourceControlTokenRequest
 
+// MapWorkspaceSCMIdentityJSONRequestBody defines body for MapWorkspaceSCMIdentity for application/json ContentType.
+type MapWorkspaceSCMIdentityJSONRequestBody = MapSCMIdentityRequest
+
 // AddWorkspaceSourceControlRepositoryJSONRequestBody defines body for AddWorkspaceSourceControlRepository for application/json ContentType.
 type AddWorkspaceSourceControlRepositoryJSONRequestBody = AddSourceControlRepositoryRequest
 
@@ -7432,6 +7523,9 @@ type ServerInterface interface {
 	// SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 	SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// ListWorkspaceIssueMirrorConflicts Read the edits that lost arbitration, so they can be put back
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts)
+	ListWorkspaceIssueMirrorConflicts(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// ListWorkspaceIssueMirrors Read the platform issues this one is kept in step with
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/mirrors)
 	ListWorkspaceIssueMirrors(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -7615,6 +7709,15 @@ type ServerInterface interface {
 	// VerifyWorkspaceSourceControlConnection Ask the forge now, checking every repository this credential is used for
 	// (POST /workspaces/{workspaceId}/source-control/connections/{connectionId}/verify)
 	VerifyWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
+	// ListWorkspaceSCMIdentities List who each member is on each platform
+	// (GET /workspaces/{workspaceId}/source-control/identities)
+	ListWorkspaceSCMIdentities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// MapWorkspaceSCMIdentity Say who a platform account belongs to here
+	// (POST /workspaces/{workspaceId}/source-control/identities)
+	MapWorkspaceSCMIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// UnmapWorkspaceSCMIdentity Stop treating a platform account as somebody here
+	// (DELETE /workspaces/{workspaceId}/source-control/identities/{identityId})
+	UnmapWorkspaceSCMIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, identityId openapi_types.UUID)
 	// ListWorkspaceSourceControlRepositories List the repositories this workspace is connected to
 	// (GET /workspaces/{workspaceId}/source-control/repositories)
 	ListWorkspaceSourceControlRepositories(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceSourceControlRepositoriesParams)
@@ -8551,6 +8654,12 @@ func (_ Unimplemented) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListWorkspaceIssueMirrorConflicts Read the edits that lost arbitration, so they can be put back
+// (GET /workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts)
+func (_ Unimplemented) ListWorkspaceIssueMirrorConflicts(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceIssueMirrors Read the platform issues this one is kept in step with
 // (GET /workspaces/{workspaceId}/issues/{issueId}/mirrors)
 func (_ Unimplemented) ListWorkspaceIssueMirrors(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
@@ -8914,6 +9023,24 @@ func (_ Unimplemented) ReplaceWorkspaceSourceControlToken(w http.ResponseWriter,
 // VerifyWorkspaceSourceControlConnection Ask the forge now, checking every repository this credential is used for
 // (POST /workspaces/{workspaceId}/source-control/connections/{connectionId}/verify)
 func (_ Unimplemented) VerifyWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceSCMIdentities List who each member is on each platform
+// (GET /workspaces/{workspaceId}/source-control/identities)
+func (_ Unimplemented) ListWorkspaceSCMIdentities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MapWorkspaceSCMIdentity Say who a platform account belongs to here
+// (POST /workspaces/{workspaceId}/source-control/identities)
+func (_ Unimplemented) MapWorkspaceSCMIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UnmapWorkspaceSCMIdentity Stop treating a platform account as somebody here
+// (DELETE /workspaces/{workspaceId}/source-control/identities/{identityId})
+func (_ Unimplemented) UnmapWorkspaceSCMIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, identityId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -13132,6 +13259,41 @@ func (siw *ServerInterfaceWrapper) SetWorkspaceIssueLabels(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceIssueMirrorConflicts operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueMirrorConflicts(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueMirrorConflicts(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceIssueMirrors operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceIssueMirrors(w http.ResponseWriter, r *http.Request) {
 
@@ -15381,6 +15543,93 @@ func (siw *ServerInterfaceWrapper) VerifyWorkspaceSourceControlConnection(w http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.VerifyWorkspaceSourceControlConnection(w, r, workspaceId, connectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceSCMIdentities operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceSCMIdentities(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceSCMIdentities(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MapWorkspaceSCMIdentity operation middleware
+func (siw *ServerInterfaceWrapper) MapWorkspaceSCMIdentity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MapWorkspaceSCMIdentity(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnmapWorkspaceSCMIdentity operation middleware
+func (siw *ServerInterfaceWrapper) UnmapWorkspaceSCMIdentity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "identityId" -------------
+	var identityId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "identityId", chi.URLParam(r, "identityId"), &identityId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "identityId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnmapWorkspaceSCMIdentity(w, r, workspaceId, identityId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -18754,6 +19003,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/source-control/rules/{trigger}", wrapper.ClearTeamSourceControlRule)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/identities", wrapper.ListWorkspaceSCMIdentities)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/source-control/identities", wrapper.MapWorkspaceSCMIdentity)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/source-control/identities/{identityId}", wrapper.UnmapWorkspaceSCMIdentity)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts", wrapper.ListWorkspaceIssueMirrorConflicts)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/source-control/settings", wrapper.GetTeamSourceControlSettings)
@@ -29235,6 +29496,89 @@ func (response SetWorkspaceIssueLabels500ApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type ListWorkspaceIssueMirrorConflictsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueMirrorConflictsResponseObject interface {
+	VisitListWorkspaceIssueMirrorConflictsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueMirrorConflicts200JSONResponse []MirrorConflict
+
+func (response ListWorkspaceIssueMirrorConflicts200JSONResponse) VisitListWorkspaceIssueMirrorConflictsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueMirrorConflicts401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueMirrorConflicts401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueMirrorConflictsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueMirrorConflicts403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueMirrorConflicts403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueMirrorConflictsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueMirrorConflicts404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueMirrorConflicts404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueMirrorConflictsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueMirrorConflicts500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueMirrorConflicts500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueMirrorConflictsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceIssueMirrorsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	IssueId     IssueId     `json:"issueId"`
@@ -34961,6 +35305,264 @@ func (response VerifyWorkspaceSourceControlConnection429ApplicationProblemPlusJS
 type VerifyWorkspaceSourceControlConnection500ApplicationProblemPlusJSONResponse Problem
 
 func (response VerifyWorkspaceSourceControlConnection500ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceSourceControlConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSCMIdentitiesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceSCMIdentitiesResponseObject interface {
+	VisitListWorkspaceSCMIdentitiesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceSCMIdentities200JSONResponse []SCMIdentity
+
+func (response ListWorkspaceSCMIdentities200JSONResponse) VisitListWorkspaceSCMIdentitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSCMIdentities401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSCMIdentities401ApplicationProblemPlusJSONResponse) VisitListWorkspaceSCMIdentitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSCMIdentities403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSCMIdentities403ApplicationProblemPlusJSONResponse) VisitListWorkspaceSCMIdentitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSCMIdentities500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceSCMIdentities500ApplicationProblemPlusJSONResponse) VisitListWorkspaceSCMIdentitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapWorkspaceSCMIdentityRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *MapWorkspaceSCMIdentityJSONRequestBody
+}
+
+type MapWorkspaceSCMIdentityResponseObject interface {
+	VisitMapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error
+}
+
+type MapWorkspaceSCMIdentity201JSONResponse SCMIdentity
+
+func (response MapWorkspaceSCMIdentity201JSONResponse) VisitMapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapWorkspaceSCMIdentity401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MapWorkspaceSCMIdentity401ApplicationProblemPlusJSONResponse) VisitMapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapWorkspaceSCMIdentity403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response MapWorkspaceSCMIdentity403ApplicationProblemPlusJSONResponse) VisitMapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapWorkspaceSCMIdentity404ApplicationProblemPlusJSONResponse Problem
+
+func (response MapWorkspaceSCMIdentity404ApplicationProblemPlusJSONResponse) VisitMapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapWorkspaceSCMIdentity409ApplicationProblemPlusJSONResponse struct {
+	SourceControlConflictApplicationProblemPlusJSONResponse
+}
+
+func (response MapWorkspaceSCMIdentity409ApplicationProblemPlusJSONResponse) VisitMapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapWorkspaceSCMIdentity422ApplicationProblemPlusJSONResponse Problem
+
+func (response MapWorkspaceSCMIdentity422ApplicationProblemPlusJSONResponse) VisitMapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapWorkspaceSCMIdentity500ApplicationProblemPlusJSONResponse Problem
+
+func (response MapWorkspaceSCMIdentity500ApplicationProblemPlusJSONResponse) VisitMapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmapWorkspaceSCMIdentityRequestObject struct {
+	WorkspaceId WorkspaceId        `json:"workspaceId"`
+	IdentityId  openapi_types.UUID `json:"identityId"`
+}
+
+type UnmapWorkspaceSCMIdentityResponseObject interface {
+	VisitUnmapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error
+}
+
+type UnmapWorkspaceSCMIdentity204Response struct {
+}
+
+func (response UnmapWorkspaceSCMIdentity204Response) VisitUnmapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnmapWorkspaceSCMIdentity401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UnmapWorkspaceSCMIdentity401ApplicationProblemPlusJSONResponse) VisitUnmapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmapWorkspaceSCMIdentity403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UnmapWorkspaceSCMIdentity403ApplicationProblemPlusJSONResponse) VisitUnmapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmapWorkspaceSCMIdentity404ApplicationProblemPlusJSONResponse Problem
+
+func (response UnmapWorkspaceSCMIdentity404ApplicationProblemPlusJSONResponse) VisitUnmapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmapWorkspaceSCMIdentity500ApplicationProblemPlusJSONResponse Problem
+
+func (response UnmapWorkspaceSCMIdentity500ApplicationProblemPlusJSONResponse) VisitUnmapWorkspaceSCMIdentityResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -41926,6 +42528,9 @@ type StrictServerInterface interface {
 	// SetWorkspaceIssueLabels Replace the labels on an issue with the given set
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/labels)
 	SetWorkspaceIssueLabels(ctx context.Context, request SetWorkspaceIssueLabelsRequestObject) (SetWorkspaceIssueLabelsResponseObject, error)
+	// ListWorkspaceIssueMirrorConflicts Read the edits that lost arbitration, so they can be put back
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts)
+	ListWorkspaceIssueMirrorConflicts(ctx context.Context, request ListWorkspaceIssueMirrorConflictsRequestObject) (ListWorkspaceIssueMirrorConflictsResponseObject, error)
 	// ListWorkspaceIssueMirrors Read the platform issues this one is kept in step with
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/mirrors)
 	ListWorkspaceIssueMirrors(ctx context.Context, request ListWorkspaceIssueMirrorsRequestObject) (ListWorkspaceIssueMirrorsResponseObject, error)
@@ -42109,6 +42714,15 @@ type StrictServerInterface interface {
 	// VerifyWorkspaceSourceControlConnection Ask the forge now, checking every repository this credential is used for
 	// (POST /workspaces/{workspaceId}/source-control/connections/{connectionId}/verify)
 	VerifyWorkspaceSourceControlConnection(ctx context.Context, request VerifyWorkspaceSourceControlConnectionRequestObject) (VerifyWorkspaceSourceControlConnectionResponseObject, error)
+	// ListWorkspaceSCMIdentities List who each member is on each platform
+	// (GET /workspaces/{workspaceId}/source-control/identities)
+	ListWorkspaceSCMIdentities(ctx context.Context, request ListWorkspaceSCMIdentitiesRequestObject) (ListWorkspaceSCMIdentitiesResponseObject, error)
+	// MapWorkspaceSCMIdentity Say who a platform account belongs to here
+	// (POST /workspaces/{workspaceId}/source-control/identities)
+	MapWorkspaceSCMIdentity(ctx context.Context, request MapWorkspaceSCMIdentityRequestObject) (MapWorkspaceSCMIdentityResponseObject, error)
+	// UnmapWorkspaceSCMIdentity Stop treating a platform account as somebody here
+	// (DELETE /workspaces/{workspaceId}/source-control/identities/{identityId})
+	UnmapWorkspaceSCMIdentity(ctx context.Context, request UnmapWorkspaceSCMIdentityRequestObject) (UnmapWorkspaceSCMIdentityResponseObject, error)
 	// ListWorkspaceSourceControlRepositories List the repositories this workspace is connected to
 	// (GET /workspaces/{workspaceId}/source-control/repositories)
 	ListWorkspaceSourceControlRepositories(ctx context.Context, request ListWorkspaceSourceControlRepositoriesRequestObject) (ListWorkspaceSourceControlRepositoriesResponseObject, error)
@@ -45757,6 +46371,33 @@ func (sh *strictHandler) SetWorkspaceIssueLabels(w http.ResponseWriter, r *http.
 	}
 }
 
+// ListWorkspaceIssueMirrorConflicts operation middleware
+func (sh *strictHandler) ListWorkspaceIssueMirrorConflicts(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueMirrorConflictsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueMirrorConflicts(ctx, request.(ListWorkspaceIssueMirrorConflictsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueMirrorConflicts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueMirrorConflictsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueMirrorConflictsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListWorkspaceIssueMirrors operation middleware
 func (sh *strictHandler) ListWorkspaceIssueMirrors(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	var request ListWorkspaceIssueMirrorsRequestObject
@@ -47565,6 +48206,92 @@ func (sh *strictHandler) VerifyWorkspaceSourceControlConnection(w http.ResponseW
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(VerifyWorkspaceSourceControlConnectionResponseObject); ok {
 		if err := validResponse.VisitVerifyWorkspaceSourceControlConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceSCMIdentities operation middleware
+func (sh *strictHandler) ListWorkspaceSCMIdentities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceSCMIdentitiesRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceSCMIdentities(ctx, request.(ListWorkspaceSCMIdentitiesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceSCMIdentities")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceSCMIdentitiesResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceSCMIdentitiesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MapWorkspaceSCMIdentity operation middleware
+func (sh *strictHandler) MapWorkspaceSCMIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request MapWorkspaceSCMIdentityRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body MapWorkspaceSCMIdentityJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MapWorkspaceSCMIdentity(ctx, request.(MapWorkspaceSCMIdentityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MapWorkspaceSCMIdentity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MapWorkspaceSCMIdentityResponseObject); ok {
+		if err := validResponse.VisitMapWorkspaceSCMIdentityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnmapWorkspaceSCMIdentity operation middleware
+func (sh *strictHandler) UnmapWorkspaceSCMIdentity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, identityId openapi_types.UUID) {
+	var request UnmapWorkspaceSCMIdentityRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IdentityId = identityId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnmapWorkspaceSCMIdentity(ctx, request.(UnmapWorkspaceSCMIdentityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnmapWorkspaceSCMIdentity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnmapWorkspaceSCMIdentityResponseObject); ok {
+		if err := validResponse.VisitUnmapWorkspaceSCMIdentityResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

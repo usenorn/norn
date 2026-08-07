@@ -125,6 +125,9 @@ type issuePayload struct {
 		Labels []struct {
 			Name string `json:"name"`
 		} `json:"labels"`
+		Assignees []struct {
+			Login string `json:"login"`
+		} `json:"assignees"`
 		PullRequest *struct{} `json:"pull_request"`
 	} `json:"issue"`
 	Comment struct {
@@ -493,6 +496,13 @@ func forgeIssue(payload issuePayload) service.ForgeIssue {
 		labels = append(labels, label.Name)
 	}
 
+	assignees := make([]string, 0, len(payload.Issue.Assignees))
+	for _, assignee := range payload.Issue.Assignees {
+		if assignee.Login != "" {
+			assignees = append(assignees, assignee.Login)
+		}
+	}
+
 	return service.ForgeIssue{
 		ExternalID: strconv.FormatInt(payload.Issue.ID, 10),
 		Number:     payload.Issue.Number,
@@ -501,6 +511,7 @@ func forgeIssue(payload issuePayload) service.ForgeIssue {
 		URL:        payload.Issue.HTMLURL,
 		State:      payload.Issue.State,
 		Author:     payload.Issue.User.Login,
+		Assignees:  assignees,
 		Labels:     labels,
 		CreatedAt:  payload.Issue.CreatedAt,
 		UpdatedAt:  payload.Issue.UpdatedAt,

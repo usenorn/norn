@@ -434,6 +434,21 @@ func (mr *MockSourceControlMockRecorder) ClearTeamRule(ctx, workspaceID, teamID,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearTeamRule", reflect.TypeOf((*MockSourceControl)(nil).ClearTeamRule), ctx, workspaceID, teamID, trigger)
 }
 
+// Conflicts mocks base method.
+func (m *MockSourceControl) Conflicts(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.MirrorConflict, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Conflicts", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].([]entity.MirrorConflict)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Conflicts indicates an expected call of Conflicts.
+func (mr *MockSourceControlMockRecorder) Conflicts(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Conflicts", reflect.TypeOf((*MockSourceControl)(nil).Conflicts), ctx, workspaceID, issueID)
+}
+
 // Connect mocks base method.
 func (m *MockSourceControl) Connect(ctx context.Context, input service.ConnectSourceControlInput) (entity.SCMConnection, error) {
 	m.ctrl.T.Helper()
@@ -491,6 +506,21 @@ func (m *MockSourceControl) GetConnection(ctx context.Context, workspaceID, conn
 func (mr *MockSourceControlMockRecorder) GetConnection(ctx, workspaceID, connectionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConnection", reflect.TypeOf((*MockSourceControl)(nil).GetConnection), ctx, workspaceID, connectionID)
+}
+
+// Identities mocks base method.
+func (m *MockSourceControl) Identities(ctx context.Context, workspaceID uuid.UUID) (entity.SCMIdentities, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Identities", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.SCMIdentities)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Identities indicates an expected call of Identities.
+func (mr *MockSourceControlMockRecorder) Identities(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identities", reflect.TypeOf((*MockSourceControl)(nil).Identities), ctx, workspaceID)
 }
 
 // Link mocks base method.
@@ -567,6 +597,21 @@ func (m *MockSourceControl) ListRoutes(ctx context.Context, workspaceID, reposit
 func (mr *MockSourceControlMockRecorder) ListRoutes(ctx, workspaceID, repositoryID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRoutes", reflect.TypeOf((*MockSourceControl)(nil).ListRoutes), ctx, workspaceID, repositoryID)
+}
+
+// MapIdentity mocks base method.
+func (m *MockSourceControl) MapIdentity(ctx context.Context, workspaceID uuid.UUID, input service.MapSCMIdentityInput) (entity.SCMIdentity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MapIdentity", ctx, workspaceID, input)
+	ret0, _ := ret[0].(entity.SCMIdentity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MapIdentity indicates an expected call of MapIdentity.
+func (mr *MockSourceControlMockRecorder) MapIdentity(ctx, workspaceID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MapIdentity", reflect.TypeOf((*MockSourceControl)(nil).MapIdentity), ctx, workspaceID, input)
 }
 
 // Mirror mocks base method.
@@ -728,6 +773,20 @@ func (m *MockSourceControl) Unlink(ctx context.Context, workspaceID, issueID, li
 func (mr *MockSourceControlMockRecorder) Unlink(ctx, workspaceID, issueID, linkID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unlink", reflect.TypeOf((*MockSourceControl)(nil).Unlink), ctx, workspaceID, issueID, linkID)
+}
+
+// UnmapIdentity mocks base method.
+func (m *MockSourceControl) UnmapIdentity(ctx context.Context, workspaceID, identityID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnmapIdentity", ctx, workspaceID, identityID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnmapIdentity indicates an expected call of UnmapIdentity.
+func (mr *MockSourceControlMockRecorder) UnmapIdentity(ctx, workspaceID, identityID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnmapIdentity", reflect.TypeOf((*MockSourceControl)(nil).UnmapIdentity), ctx, workspaceID, identityID)
 }
 
 // Unmirror mocks base method.

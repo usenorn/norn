@@ -458,6 +458,14 @@ func (f *Forge) AmendIssue(
 		payload["body"] = *patch.Body
 	}
 
+	if patch.Assignee != nil {
+		payload["assignees"] = []string{*patch.Assignee}
+	}
+
+	if len(patch.Labels) > 0 {
+		payload["labels"] = patch.Labels
+	}
+
 	if patch.Closed != nil {
 		payload["state"] = "open"
 		if *patch.Closed {

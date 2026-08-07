@@ -3213,6 +3213,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/source-control/identities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List who each member is on each platform */
+        get: operations["listWorkspaceSCMIdentities"];
+        put?: never;
+        /** Say who a platform account belongs to here */
+        post: operations["mapWorkspaceSCMIdentity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/source-control/identities/{identityId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                identityId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Stop treating a platform account as somebody here */
+        delete: operations["unmapWorkspaceSCMIdentity"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Read the edits that lost arbitration, so they can be put back */
+        get: operations["listWorkspaceIssueMirrorConflicts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/teams/{teamId}/source-control/settings": {
         parameters: {
             query?: never;
@@ -3727,7 +3787,7 @@ export interface components {
             createdAt: string;
         };
         /** @enum {string} */
-        CommentAuthorKind: "person" | "agent";
+        CommentAuthorKind: "person" | "agent" | "integration";
         /** @enum {string} */
         CommentReaction: "up" | "down" | "celebrate" | "thinking" | "eyes" | "heart";
         CommentReactionTally: {
@@ -4399,8 +4459,11 @@ export interface components {
             projectId?: string;
             labelIds?: string[];
         };
-        /** @enum {string} */
-        AccountKind: "person" | "agent";
+        /**
+         * @description An integration account is one Norn created to stand behind a source control connection. It authors the content that connection mirrors, so it reaches every surface that names an author even though nobody signs in as it.
+         * @enum {string}
+         */
+        AccountKind: "person" | "agent" | "integration";
         /** @enum {string} */
         AgentStatus: "active" | "disabled";
         Agent: {
@@ -4648,6 +4711,7 @@ export interface components {
             defaultBranch?: string;
             url?: string;
             mirrorLabel: string;
+            syncDirection?: components["schemas"]["MirrorDirection"];
             /** Format: int32 */
             pollIntervalSeconds?: number;
             hookInstalled: boolean;
@@ -4680,8 +4744,42 @@ export interface components {
         };
         UpdateSourceControlRepositoryRequest: {
             mirrorLabel?: string;
+            syncDirection?: components["schemas"]["MirrorDirection"];
             /** Format: int32 */
             pollIntervalSeconds?: number;
+        };
+        /**
+         * @description Which way work may flow for a repository. A repository somebody set to read-only is never written to, however many pairings it holds.
+         * @enum {string}
+         */
+        MirrorDirection: "inbound" | "outbound" | "both";
+        /** @description Who somebody is on a forge. It is stated by an administrator rather than discovered: a handle that resembles a name is not evidence, and acting on the guess puts work on a stranger. */
+        SCMIdentity: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            accountId: string;
+            accountName?: string;
+            provider: components["schemas"]["SourceControlProvider"];
+            login: string;
+        };
+        MapSCMIdentityRequest: {
+            /** Format: uuid */
+            accountId: string;
+            provider: components["schemas"]["SourceControlProvider"];
+            login: string;
+        };
+        /** @description An edit that lost arbitration, kept whole. A rule that silently discards one side is not something a team can live with, so the discarded value is here to be put back. */
+        MirrorConflict: {
+            /** Format: uuid */
+            id: string;
+            field: string;
+            /** @enum {string} */
+            winner: "norn" | "source";
+            discarded: string;
+            kept: string;
+            /** Format: date-time */
+            occurredAt: string;
         };
         /** @description Sends the changes under one path to one team. Matching is by longest prefix, and a route whose prefix is empty is the repository's default rather than a separate flag that could disagree with it. */
         SourceControlRoute: {
@@ -4828,7 +4926,7 @@ export interface components {
         };
         SourceControlConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "source_control_already_connected" | "source_control_already_routed" | "source_control_already_mirrored" | "source_control_team_outside_connection";
+            code: "source_control_already_connected" | "source_control_already_routed" | "source_control_identity_mapped" | "source_control_already_mirrored" | "source_control_team_outside_connection";
         };
         SourceControlSealingUnavailableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -13094,6 +13192,115 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourceControlTransitionRule"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceSCMIdentities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The mapped identities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SCMIdentity"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    mapWorkspaceSCMIdentity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MapSCMIdentityRequest"];
+            };
+        };
+        responses: {
+            /** @description The mapping */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SCMIdentity"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["SourceControlConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unmapWorkspaceSCMIdentity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                identityId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The mapping is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueMirrorConflicts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The discarded edits, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MirrorConflict"][];
                 };
             };
             401: components["responses"]["Problem"];

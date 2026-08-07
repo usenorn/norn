@@ -25,6 +25,9 @@ type sync struct {
 	routes       repository.SCMRoute
 	rules        repository.SCMTransitionRule
 	teamSettings repository.SCMTeamSetting
+	identities   repository.SCMIdentity
+	conflicts    repository.MirrorConflict
+	labels       repository.Label
 	deliveries   repository.SCMDelivery
 	links        repository.CodeLink
 	mirrors      repository.IssueMirror
@@ -48,6 +51,9 @@ func NewSync(
 	routes repository.SCMRoute,
 	rules repository.SCMTransitionRule,
 	teamSettings repository.SCMTeamSetting,
+	identities repository.SCMIdentity,
+	conflicts repository.MirrorConflict,
+	labels repository.Label,
 	deliveries repository.SCMDelivery,
 	links repository.CodeLink,
 	mirrors repository.IssueMirror,
@@ -70,6 +76,9 @@ func NewSync(
 		routes:       routes,
 		rules:        rules,
 		teamSettings: teamSettings,
+		identities:   identities,
+		conflicts:    conflicts,
+		labels:       labels,
 		deliveries:   deliveries,
 		links:        links,
 		mirrors:      mirrors,

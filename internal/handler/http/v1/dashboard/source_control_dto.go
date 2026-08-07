@@ -79,6 +79,8 @@ func sourceControlRepositoryDTO(stored entity.SCMRepository) api.SourceControlRe
 		dto.Url = &stored.URL
 	}
 
+	direction := api.MirrorDirection(stored.Direction())
+	dto.SyncDirection = &direction
 	dto.PollIntervalSeconds = pointer(int32(stored.PollInterval / time.Second))
 	dto.LastSeenAt = stored.LastSeenAt
 	dto.ReconciledAt = stored.ReconciledAt
@@ -294,6 +296,44 @@ func sourceControlDeliveryDTOs(deliveries []entity.SCMDelivery) []api.SourceCont
 	dtos := make([]api.SourceControlDelivery, len(deliveries))
 	for i, delivery := range deliveries {
 		dtos[i] = sourceControlDeliveryDTO(delivery)
+	}
+
+	return dtos
+}
+
+func scmIdentityDTO(identity entity.SCMIdentity) api.SCMIdentity {
+	return api.SCMIdentity{
+		Id:        identity.ID,
+		AccountId: identity.AccountID,
+		Provider:  api.SourceControlProvider(identity.Provider),
+		Login:     identity.Login,
+	}
+}
+
+func scmIdentityDTOs(identities entity.SCMIdentities) []api.SCMIdentity {
+	dtos := make([]api.SCMIdentity, len(identities))
+	for i, identity := range identities {
+		dtos[i] = scmIdentityDTO(identity)
+	}
+
+	return dtos
+}
+
+func mirrorConflictDTO(conflict entity.MirrorConflict) api.MirrorConflict {
+	return api.MirrorConflict{
+		Id:         conflict.ID,
+		Field:      conflict.Field,
+		Winner:     api.MirrorConflictWinner(conflict.Winner),
+		Discarded:  conflict.Discarded,
+		Kept:       conflict.Kept,
+		OccurredAt: conflict.OccurredAt,
+	}
+}
+
+func mirrorConflictDTOs(conflicts []entity.MirrorConflict) []api.MirrorConflict {
+	dtos := make([]api.MirrorConflict, len(conflicts))
+	for i, conflict := range conflicts {
+		dtos[i] = mirrorConflictDTO(conflict)
 	}
 
 	return dtos

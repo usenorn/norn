@@ -436,6 +436,18 @@ func (f *Forge) AmendIssue(
 		payload["description"] = *patch.Body
 	}
 
+	// GitLab takes an assignee by numeric id rather than a handle, so the handle is resolved
+	// first. A handle nobody there has produces no assignment rather than a failed edit.
+	if patch.Assignee != nil {
+		if id, found := f.userID(ctx, target, *patch.Assignee); found {
+			payload["assignee_ids"] = []int64{id}
+		}
+	}
+
+	if len(patch.Labels) > 0 {
+		payload["labels"] = strings.Join(patch.Labels, ",")
+	}
+
 	if patch.Closed != nil {
 		payload["state_event"] = "reopen"
 		if *patch.Closed {
@@ -707,4 +719,33 @@ func (f *Forge) RepairHook(
 	}
 
 	return true, f.decode(patched, request.Target, nil)
+}
+
+// userID turns a handle into what GitLab's api wants. A handle that matches nobody is not an
+// error here: the edit carries on without an assignee rather than failing wholesale.
+func (f *Forge) userID(ctx context.Context, target entity.SCMTarget, login string) (int64, bool) {
+	query := url.Values{}
+	query.Set("username", login)
+
+	response, err := f.call(ctx, target, http.MethodGet, "/users?"+query.Encode(), nil)
+	if err != nil {
+		return 0, false
+	}
+
+	var users []struct {
+		ID       int64  `json:"id"`
+		Username string `json:"username"`
+	}
+
+	if err := f.decode(response, target, &users); err != nil {
+		return 0, false
+	}
+
+	for _, user := range users {
+		if strings.EqualFold(user.Username, login) {
+			return user.ID, true
+		}
+	}
+
+	return 0, false
 }
