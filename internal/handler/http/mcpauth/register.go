@@ -32,7 +32,17 @@ func (e *Edge) Register(w http.ResponseWriter, r *http.Request) {
 	client := middleware.ClientFrom(r.Context())
 
 	taken, err := e.throttle.Record(r.Context(), dcrKeyPrefix+client.IP.String())
-	if err == nil && taken > entity.MCPRegistrationsPerWindow {
+	if err != nil {
+		w.Header().Set("Retry-After", strconv.Itoa(int(e.cfg.RateWindow.Seconds())))
+		writeOAuthError(
+			w, http.StatusServiceUnavailable,
+			"temporarily_unavailable", "registrations cannot be counted right now",
+		)
+
+		return
+	}
+
+	if taken > entity.MCPRegistrationsPerWindow {
 		w.Header().Set("Retry-After", strconv.Itoa(int(e.cfg.RateWindow.Seconds())))
 		writeOAuthError(
 			w, http.StatusTooManyRequests,

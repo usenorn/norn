@@ -218,6 +218,28 @@ func TestARecoveryCodeLiftsTheRequirementAndIsSpent(t *testing.T) {
 	}
 }
 
+func TestRecoveryCodesCannotBeGuessedFromOneAddressForever(t *testing.T) {
+	h := newHarnessWithoutThrottle(t)
+
+	h.throttle.EXPECT().
+		RecordAddressAttempt(gomock.Any(), gomock.Any()).
+		Return(entity.SignInAddressMaxAttempts+1, nil)
+
+	err := h.service.RedeemRecoveryCode(context.Background(), service.RedeemRecoveryCodeInput{
+		WorkspaceSlug: "northwind",
+		Code:          "abcd-efgh-jklm",
+	})
+
+	if !errors.Is(err, entity.ErrSignInRateLimited) {
+		t.Fatalf(
+			"redeeming gave %v with the address already over its limit. This endpoint takes no "+
+				"session and lifts the single sign-on requirement, so it has to be paced like the "+
+				"sign-in form it stands in for.",
+			err,
+		)
+	}
+}
+
 func TestARecoveryCodeIsRefusedWhereNothingIsBeingEnforced(t *testing.T) {
 	h := newHarness(t)
 

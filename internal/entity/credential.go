@@ -41,6 +41,12 @@ func ValidatePassword(field, password string) FieldError {
 	}
 }
 
+func BurnPasswordGuess(password string) {
+	salt := make([]byte, argon2SaltBytes)
+
+	argon2.IDKey([]byte(password), salt, argon2Time, argon2Memory, argon2Threads, argon2KeyLength)
+}
+
 func HashPassword(password string) (string, error) {
 	salt := make([]byte, argon2SaltBytes)
 	if _, err := rand.Read(salt); err != nil {

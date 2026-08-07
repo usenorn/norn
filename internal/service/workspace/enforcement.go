@@ -181,6 +181,15 @@ func (s *workspacesService) RedeemRecoveryCode(
 	ctx context.Context,
 	input service.RedeemRecoveryCodeInput,
 ) error {
+	attempts, err := s.throttle.RecordAddressAttempt(ctx, input.FromAddress)
+	if err != nil {
+		return err
+	}
+
+	if attempts > entity.SignInAddressMaxAttempts {
+		return entity.ErrSignInRateLimited
+	}
+
 	workspace, err := s.workspaces.GetBySlug(ctx, input.WorkspaceSlug)
 	if err != nil {
 		if errors.Is(err, entity.ErrWorkspaceNotFound) {

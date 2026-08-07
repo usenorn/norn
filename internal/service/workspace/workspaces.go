@@ -26,6 +26,7 @@ type workspacesService struct {
 	connections  repository.SSOConnection
 	identities   repository.SSOIdentity
 	breakGlass   repository.BreakGlass
+	throttle     repository.SignInThrottle
 	producer     repository.JobProducer
 	blobs        repository.Blob
 	authorizer   service.Authorizer
@@ -48,6 +49,7 @@ func New(
 	connections repository.SSOConnection,
 	identities repository.SSOIdentity,
 	breakGlass repository.BreakGlass,
+	throttle repository.SignInThrottle,
 	producer repository.JobProducer,
 	blobs repository.Blob,
 	authorizer service.Authorizer,
@@ -69,6 +71,7 @@ func New(
 		connections:  connections,
 		identities:   identities,
 		breakGlass:   breakGlass,
+		throttle:     throttle,
 		producer:     producer,
 		blobs:        blobs,
 		authorizer:   authorizer,
