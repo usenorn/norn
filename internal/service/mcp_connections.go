@@ -14,7 +14,11 @@ type MCPConnections interface {
 	RegisterClient(ctx context.Context, input RegisterMCPClientInput) (entity.MCPClient, error)
 	BeginAuthorization(ctx context.Context, input BeginMCPAuthorizationInput) (string, error)
 	DescribeAuthorization(ctx context.Context, requestID string) (MCPAuthorizationView, error)
-	Approve(ctx context.Context, requestID string) (MCPAuthorizationDecision, error)
+	Approve(
+		ctx context.Context,
+		requestID string,
+		input ApproveMCPAuthorizationInput,
+	) (MCPAuthorizationDecision, error)
 	Deny(ctx context.Context, requestID string) (MCPAuthorizationDecision, error)
 	Exchange(ctx context.Context, input ExchangeMCPCodeInput) (MCPTokenPair, error)
 	Refresh(ctx context.Context, input RefreshMCPTokenInput) (MCPTokenPair, error)

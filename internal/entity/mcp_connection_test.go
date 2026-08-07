@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"testing"
 	"time"
 
@@ -302,5 +303,40 @@ func TestMintedMCPTokenValuesCarryThePrefixAndHashConsistently(t *testing.T) {
 
 	if !bytes.Equal(hash, entity.HashMCPToken(value)) {
 		t.Error("the returned hash does not match hashing the returned value")
+	}
+}
+
+func TestAConnectionReachesOnlyTheWorkspacesThatWereChosen(t *testing.T) {
+	first, second, elsewhere := uuid.New(), uuid.New(), uuid.New()
+	reachable := []entity.Workspace{{ID: first}, {ID: second}}
+
+	grants, err := entity.MCPGrantsFor([]uuid.UUID{first}, reachable)
+	if err != nil {
+		t.Fatalf("MCPGrantsFor: %v", err)
+	}
+
+	if !grants.Covers(first) {
+		t.Fatal("the workspace that was chosen is not covered")
+	}
+
+	if grants.Covers(second) {
+		t.Fatal(
+			"approving one workspace granted another. The consent screen names what it is asking " +
+				"for, so the grant has to be exactly that and nothing more.",
+		)
+	}
+
+	if _, err := entity.MCPGrantsFor([]uuid.UUID{elsewhere}, reachable); !errors.Is(
+		err, entity.ErrMCPWorkspaceUnreachable,
+	) {
+		t.Fatalf(
+			"choosing a workspace that was never offered gave %v. The list comes from the browser, "+
+				"so it has to be checked against what the account can actually reach.",
+			err,
+		)
+	}
+
+	if _, err := entity.MCPGrantsFor(nil, reachable); !errors.Is(err, entity.ErrMCPNoWorkspaceChosen) {
+		t.Fatalf("approving with nothing chosen gave %v, want a refusal", err)
 	}
 }

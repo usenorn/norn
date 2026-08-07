@@ -3454,6 +3454,15 @@ type AgentUnusableProblem struct {
 // AgentUnusableProblemCode defines model for AgentUnusableProblem.Code.
 type AgentUnusableProblemCode string
 
+// ApproveMCPAuthorizationRequest defines model for ApproveMCPAuthorizationRequest.
+type ApproveMCPAuthorizationRequest struct {
+	// AllWorkspaces Follow the caller's own membership, so workspaces they join later are reached too. Choosing this is deliberate; it is never the default.
+	AllWorkspaces bool `json:"allWorkspaces"`
+
+	// WorkspaceIds The workspaces this connection may reach when allWorkspaces is false.
+	WorkspaceIds []openapi_types.UUID `json:"workspaceIds"`
+}
+
 // Attachment defines model for Attachment.
 type Attachment struct {
 	ByteSize  int64               `json:"byteSize"`
@@ -4781,7 +4790,7 @@ type MCPAuthorizationView struct {
 	Capability MCPCapability `json:"capability"`
 	ClientName string        `json:"clientName"`
 
-	// Workspaces Every workspace the grant would reach today; future ones join automatically.
+	// Workspaces Every workspace the caller may choose from.
 	Workspaces []MCPAuthorizationWorkspace `json:"workspaces"`
 }
 
@@ -6566,6 +6575,9 @@ type AcceptInvitationJSONRequestBody = AcceptInvitationRequest
 // PreviewInvitationJSONRequestBody defines body for PreviewInvitation for application/json ContentType.
 type PreviewInvitationJSONRequestBody = PreviewInvitationRequest
 
+// ApproveMCPAuthorizationJSONRequestBody defines body for ApproveMCPAuthorization for application/json ContentType.
+type ApproveMCPAuthorizationJSONRequestBody = ApproveMCPAuthorizationRequest
+
 // NarrowMCPConnectionJSONRequestBody defines body for NarrowMCPConnection for application/json ContentType.
 type NarrowMCPConnectionJSONRequestBody = NarrowMCPConnectionRequest
 
@@ -6859,7 +6871,7 @@ type ServerInterface interface {
 	// DescribeMCPAuthorization What an AI client is asking to be granted, for the consent screen
 	// (GET /mcp/authorizations/{requestId})
 	DescribeMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId)
-	// ApproveMCPAuthorization Grant the AI client a connection that follows the caller's own membership
+	// ApproveMCPAuthorization Grant the AI client a connection confined to the workspaces the caller picked
 	// (POST /mcp/authorizations/{requestId}/approve)
 	ApproveMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId)
 	// DenyMCPAuthorization Refuse the AI client and send it away empty-handed
@@ -7657,7 +7669,7 @@ func (_ Unimplemented) DescribeMCPAuthorization(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ApproveMCPAuthorization Grant the AI client a connection that follows the caller's own membership
+// ApproveMCPAuthorization Grant the AI client a connection confined to the workspaces the caller picked
 // (POST /mcp/authorizations/{requestId}/approve)
 func (_ Unimplemented) ApproveMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -19925,6 +19937,7 @@ func (response DescribeMCPAuthorization500ApplicationProblemPlusJSONResponse) Vi
 
 type ApproveMCPAuthorizationRequestObject struct {
 	RequestId MCPRequestId `json:"requestId"`
+	Body      *ApproveMCPAuthorizationJSONRequestBody
 }
 
 type ApproveMCPAuthorizationResponseObject interface {
@@ -39536,7 +39549,7 @@ type StrictServerInterface interface {
 	// DescribeMCPAuthorization What an AI client is asking to be granted, for the consent screen
 	// (GET /mcp/authorizations/{requestId})
 	DescribeMCPAuthorization(ctx context.Context, request DescribeMCPAuthorizationRequestObject) (DescribeMCPAuthorizationResponseObject, error)
-	// ApproveMCPAuthorization Grant the AI client a connection that follows the caller's own membership
+	// ApproveMCPAuthorization Grant the AI client a connection confined to the workspaces the caller picked
 	// (POST /mcp/authorizations/{requestId}/approve)
 	ApproveMCPAuthorization(ctx context.Context, request ApproveMCPAuthorizationRequestObject) (ApproveMCPAuthorizationResponseObject, error)
 	// DenyMCPAuthorization Refuse the AI client and send it away empty-handed
@@ -40921,6 +40934,13 @@ func (sh *strictHandler) ApproveMCPAuthorization(w http.ResponseWriter, r *http.
 	var request ApproveMCPAuthorizationRequestObject
 
 	request.RequestId = requestId
+
+	var body ApproveMCPAuthorizationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ApproveMCPAuthorization(ctx, request.(ApproveMCPAuthorizationRequestObject))
