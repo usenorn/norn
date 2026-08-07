@@ -246,14 +246,19 @@ export function columnsFor(
 
 	for (const [key, issues] of loaded) loaded.set(key, deduped(issues));
 
-	const held = applyMoves(loaded, options.moves ?? [], known);
+	const moves = options.moves ?? [];
+	const held = applyMoves(loaded, moves, known);
+	const shifted = tallyShift(moves, known, grouping);
 
 	const columns = slotted(grouping, context, source.issues, source.tallies).map((slot) => {
 		const issues = held.get(slot.key) ?? [];
 		const page = pageOf(pages, slot.key);
 		const counted =
 			grouping === "none" ? tallyTotal(source.tallies) : tallyOf(source.tallies, slot.key);
-		const total = counted ?? issues.length;
+		const total = Math.max(
+			(counted ?? issues.length) + (shifted.get(slot.key) ?? 0),
+			issues.length
+		);
 		const cursor =
 			page?.cursor ??
 			(grouping === "none"
@@ -271,6 +276,29 @@ export function columnsFor(
 	return options.showEmpty
 		? columns
 		: columns.filter((column) => column.total > 0 || column.issues.length > 0);
+}
+
+function tallyShift(
+	moves: PendingMove[],
+	known: Map<string, Issue>,
+	grouping: Grouping
+): Map<string, number> {
+	const shifted = new Map<string, number>();
+
+	const shift = (key: string, by: number) => shifted.set(key, (shifted.get(key) ?? 0) + by);
+
+	for (const move of moves) {
+		const issue = known.get(move.issueId);
+		if (!issue) continue;
+
+		const from = keyOf(grouping, issue);
+		if (from === move.key) continue;
+
+		shift(from, -1);
+		shift(move.key, 1);
+	}
+
+	return shifted;
 }
 
 function deduped(issues: Issue[]): Issue[] {

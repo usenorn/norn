@@ -487,9 +487,10 @@
 
 	function movedMessage(issue: Issue, placed: ReturnType<typeof landing>, key: string): string {
 		const name = columns.find((column) => column.key === key)?.name ?? "another column";
+		const priority = placed.move.priority;
 
-		if (placed.move.priority && display.ordering === "priority") {
-			return `Moved ${issue.reference} to ${priorityLabel(placed.move.priority).toLowerCase()}`;
+		if (!placed.move.stateId && priority && priority !== issue.priority) {
+			return `Moved ${issue.reference} to ${priorityLabel(priority).toLowerCase()}`;
 		}
 
 		return `Moved ${issue.reference} to ${name}`;
@@ -497,20 +498,29 @@
 
 	function returning(issue: Issue, placed: ReturnType<typeof landing>): Record<string, unknown> {
 		const back: Record<string, unknown> = {};
+		const cleared: string[] = [];
+		const touched = (field: string) =>
+			placed.move.clear?.includes(field) ?? false;
 
 		if (placed.move.stateId) back.stateId = issue.state.id;
 		if (placed.move.priority) back.priority = issue.priority;
-		if (placed.move.dueOn) back.dueOn = issue.dueOn;
 
-		if (placed.move.assigneeId || placed.move.clear?.includes("assignee")) {
+		if (placed.move.dueOn || touched("dueOn")) {
+			if (issue.dueOn) back.dueOn = issue.dueOn;
+			else cleared.push("dueOn");
+		}
+
+		if (placed.move.assigneeId || touched("assignee")) {
 			if (issue.assigneeAccountId) back.assigneeId = issue.assigneeAccountId;
-			else back.clear = ["assignee"];
+			else cleared.push("assignee");
 		}
 
-		if (placed.move.projectId || placed.move.clear?.includes("project")) {
+		if (placed.move.projectId || touched("project")) {
 			if (issue.projectId) back.projectId = issue.projectId;
-			else back.clear = [...((back.clear as string[]) ?? []), "project"];
+			else cleared.push("project");
 		}
+
+		if (cleared.length > 0) back.clear = cleared;
 
 		return back;
 	}
