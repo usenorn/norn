@@ -1,13 +1,18 @@
 package middleware_test
 
 import (
+	"bytes"
+	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
+	"strings"
 	"testing"
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/observability/logging"
 )
 
 const forwardedHeader = "X-Forwarded-For"
@@ -128,5 +133,52 @@ func TestAnUnconfiguredInstanceStillRecordsTheConnectingAddress(t *testing.T) {
 
 	if got.String() != "198.51.100.4" {
 		t.Fatalf("client IP = %s, want the peer address 198.51.100.4", got)
+	}
+}
+
+func capturedPath(t *testing.T, path string) string {
+	t.Helper()
+
+	var written bytes.Buffer
+
+	logger := slog.New(slog.NewJSONHandler(&written, nil))
+	request := httptest.NewRequest(http.MethodGet, path, nil)
+	request = request.WithContext(logging.Into(request.Context(), logger))
+
+	middleware.AccessLog(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).
+		ServeHTTP(httptest.NewRecorder(), request)
+
+	var line struct {
+		Path string `json:"path"`
+	}
+
+	if err := json.Unmarshal(written.Bytes(), &line); err != nil {
+		t.Fatalf("the access log did not emit a readable line: %v", err)
+	}
+
+	return line.Path
+}
+
+func TestACapabilityURLNeverReachesTheAccessLog(t *testing.T) {
+	cases := map[string]bool{
+		"/v1/blobs/upload/the-secret-grant":   true,
+		"/v1/blobs/download/the-secret-grant": true,
+		"/v1/workspaces/northwind/issues":     false,
+	}
+
+	for path, redacted := range cases {
+		logged := capturedPath(t, path)
+
+		if redacted && strings.Contains(logged, "the-secret-grant") {
+			t.Errorf(
+				"%s was logged as %q. That path segment is the whole credential, so every line "+
+					"of the access log hands out the file.",
+				path, logged,
+			)
+		}
+
+		if !redacted && logged != path {
+			t.Errorf("%s was logged as %q, want it left alone", path, logged)
+		}
 	}
 }
