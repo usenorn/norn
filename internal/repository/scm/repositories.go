@@ -29,7 +29,7 @@ const repositoryColumns = `
     octet_length(webhook_secret_sealed) > 0, external_hook_id, mirror_label, sync_direction,
     webhooks_disabled,
     extract(epoch FROM poll_interval), reconcile_cursor, reconciled_at, reconcile_after,
-    last_seen_at, created_at, updated_at`
+    last_seen_at, backfilled_at, created_at, updated_at`
 
 func scanRepository(row interface{ Scan(...any) error }) (entity.SCMRepository, error) {
 	var (
@@ -56,6 +56,7 @@ func scanRepository(row interface{ Scan(...any) error }) (entity.SCMRepository, 
 		&stored.ReconciledAt,
 		&stored.ReconcileAfter,
 		&stored.LastSeenAt,
+		&stored.BackfilledAt,
 		&stored.CreatedAt,
 		&stored.UpdatedAt,
 	)
@@ -404,6 +405,24 @@ func (r *repositoryRepository) Delete(
 	)
 	if err != nil {
 		return fmt.Errorf("disconnect repository: %w", err)
+	}
+
+	return expectOne(result, entity.ErrSCMRepositoryNotFound)
+}
+
+const recordBackfilledQuery = `
+UPDATE workspace_scm_repositories
+SET backfilled_at = $2, updated_at = now()
+WHERE id = $1`
+
+func (r *repositoryRepository) RecordBackfilled(
+	ctx context.Context,
+	repositoryID uuid.UUID,
+	at time.Time,
+) error {
+	result, err := r.db.Querier(ctx).ExecContext(ctx, recordBackfilledQuery, repositoryID, at)
+	if err != nil {
+		return fmt.Errorf("record a repository backfill: %w", err)
 	}
 
 	return expectOne(result, entity.ErrSCMRepositoryNotFound)

@@ -22,6 +22,8 @@ const (
 	CapabilityIssues       SCMCapability = "issues"
 	CapabilityLabels       SCMCapability = "labels"
 	CapabilityAssignees    SCMCapability = "assignees"
+	CapabilityReleases     SCMCapability = "releases"
+	CapabilityDeployments  SCMCapability = "deployments"
 )
 
 func SCMCapabilities() []SCMCapability {
@@ -33,6 +35,8 @@ func SCMCapabilities() []SCMCapability {
 		CapabilityIssues,
 		CapabilityLabels,
 		CapabilityAssignees,
+		CapabilityReleases,
+		CapabilityDeployments,
 	}
 }
 

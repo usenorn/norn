@@ -228,21 +228,22 @@ func (f *Forge) RemoveHook(ctx context.Context, target entity.SCMTarget, hookID 
 }
 
 type changeBody struct {
-	ID            int64      `json:"id"`
-	IID           int        `json:"iid"`
-	Title         string     `json:"title"`
-	Description   string     `json:"description"`
-	WebURL        string     `json:"web_url"`
-	State         string     `json:"state"`
-	Draft         bool       `json:"draft"`
-	MergeStatus   string     `json:"merge_status"`
-	DetailedMerge string     `json:"detailed_merge_status"`
-	SourceBranch  string     `json:"source_branch"`
-	TargetBranch  string     `json:"target_branch"`
-	UpdatedAt     time.Time  `json:"updated_at"`
-	MergedAt      *time.Time `json:"merged_at"`
-	ClosedAt      *time.Time `json:"closed_at"`
-	Author        struct {
+	ID             int64      `json:"id"`
+	IID            int        `json:"iid"`
+	Title          string     `json:"title"`
+	Description    string     `json:"description"`
+	WebURL         string     `json:"web_url"`
+	State          string     `json:"state"`
+	Draft          bool       `json:"draft"`
+	MergeStatus    string     `json:"merge_status"`
+	MergeCommitSHA string     `json:"merge_commit_sha"`
+	DetailedMerge  string     `json:"detailed_merge_status"`
+	SourceBranch   string     `json:"source_branch"`
+	TargetBranch   string     `json:"target_branch"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	MergedAt       *time.Time `json:"merged_at"`
+	ClosedAt       *time.Time `json:"closed_at"`
+	Author         struct {
 		Username string `json:"username"`
 	} `json:"author"`
 	Reviewers []struct {
@@ -300,13 +301,14 @@ func (f *Forge) Changes(
 				change.MergeStatus,
 				change.DetailedMerge,
 			),
-			ReviewsMoved: true,
-			Author:       change.Author.Username,
-			HeadBranch:   change.SourceBranch,
-			BaseBranch:   change.TargetBranch,
-			UpdatedAt:    change.UpdatedAt,
-			MergedAt:     change.MergedAt,
-			ClosedAt:     change.ClosedAt,
+			MergeCommitSHA: change.MergeCommitSHA,
+			ReviewsMoved:   true,
+			Author:         change.Author.Username,
+			HeadBranch:     change.SourceBranch,
+			BaseBranch:     change.TargetBranch,
+			UpdatedAt:      change.UpdatedAt,
+			MergedAt:       change.MergedAt,
+			ClosedAt:       change.ClosedAt,
 		})
 	}
 
@@ -739,5 +741,165 @@ func (f *Forge) Capabilities() entity.SCMCapabilitySet {
 		entity.CapabilityIssues,
 		entity.CapabilityLabels,
 		entity.CapabilityAssignees,
+		entity.CapabilityReleases,
+		entity.CapabilityDeployments,
+	}
+}
+
+func (f *Forge) Releases(
+	ctx context.Context,
+	target entity.SCMTarget,
+	limit int,
+) ([]service.ForgeRelease, error) {
+	query := url.Values{}
+	query.Set("per_page", strconv.Itoa(limit))
+
+	path := "/projects/" + project(target) + "/releases?" + query.Encode()
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body []struct {
+		TagName     string     `json:"tag_name"`
+		Name        string     `json:"name"`
+		ReleasedAt  *time.Time `json:"released_at"`
+		UpcomingRel bool       `json:"upcoming_release"`
+		Commit      struct {
+			ID string `json:"id"`
+		} `json:"commit"`
+		Links struct {
+			Self string `json:"self"`
+		} `json:"_links"`
+	}
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	releases := make([]service.ForgeRelease, 0, len(body))
+
+	for _, release := range body {
+		releases = append(releases, service.ForgeRelease{
+			ExternalID:  release.TagName,
+			Tag:         release.TagName,
+			Name:        release.Name,
+			URL:         release.Links.Self,
+			CommitSHA:   release.Commit.ID,
+			Prerelease:  release.UpcomingRel,
+			PublishedAt: release.ReleasedAt,
+		})
+	}
+
+	return releases, nil
+}
+
+func (f *Forge) ReleaseCommits(
+	ctx context.Context,
+	target entity.SCMTarget,
+	from, to string,
+) ([]string, error) {
+	if from == "" || to == "" {
+		return nil, nil
+	}
+
+	query := url.Values{}
+	query.Set("from", from)
+	query.Set("to", to)
+
+	path := "/projects/" + project(target) + "/repository/compare?" + query.Encode()
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body struct {
+		Commits []struct {
+			ID string `json:"id"`
+		} `json:"commits"`
+	}
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	commits := make([]string, 0, len(body.Commits))
+	for _, commit := range body.Commits {
+		if commit.ID != "" {
+			commits = append(commits, commit.ID)
+		}
+	}
+
+	return commits, nil
+}
+
+func (f *Forge) Deployments(
+	ctx context.Context,
+	target entity.SCMTarget,
+	limit int,
+) ([]service.ForgeDeployment, error) {
+	query := url.Values{}
+	query.Set("per_page", strconv.Itoa(limit))
+	query.Set("order_by", "created_at")
+	query.Set("sort", "desc")
+
+	path := "/projects/" + project(target) + "/deployments?" + query.Encode()
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body []struct {
+		ID          int64      `json:"id"`
+		Status      string     `json:"status"`
+		CreatedAt   *time.Time `json:"created_at"`
+		Environment struct {
+			Name string `json:"name"`
+		} `json:"environment"`
+		Deployable struct {
+			Commit struct {
+				ID string `json:"id"`
+			} `json:"commit"`
+		} `json:"deployable"`
+	}
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	deployments := make([]service.ForgeDeployment, 0, len(body))
+
+	for _, deployment := range body {
+		if deployment.Environment.Name == "" {
+			continue
+		}
+
+		deployments = append(deployments, service.ForgeDeployment{
+			ExternalID:  strconv.FormatInt(deployment.ID, 10),
+			Environment: deployment.Environment.Name,
+			State:       deploymentState(deployment.Status),
+			CommitSHA:   deployment.Deployable.Commit.ID,
+			OccurredAt:  deployment.CreatedAt,
+		})
+	}
+
+	return deployments, nil
+}
+
+func deploymentState(status string) entity.DeploymentState {
+	switch strings.ToLower(status) {
+	case "success":
+		return entity.DeploymentSucceeded
+	case "failed", "canceled", "cancelled":
+		return entity.DeploymentFailed
+	case "running":
+		return entity.DeploymentRunning
+	case "blocked", "skipped":
+		return entity.DeploymentInactive
+	default:
+		return entity.DeploymentPending
 	}
 }

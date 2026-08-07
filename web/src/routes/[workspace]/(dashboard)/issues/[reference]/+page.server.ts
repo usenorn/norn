@@ -8,7 +8,11 @@ import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
 import type { FollowState } from "$lib/notifications/notifications";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
-import type { CodeLink, MirrorConflict } from "$lib/source-control/source-control";
+import type {
+	CodeLink,
+	IssueShipping,
+	MirrorConflict,
+} from "$lib/source-control/source-control";
 import type { WorkflowState } from "$lib/team/states";
 import type { PageServerLoad } from "./$types";
 
@@ -43,6 +47,7 @@ export type IssueDetail =
 			attachments: AttachmentPanel;
 			codeLinks: CodeLink[];
 			mirrorConflicts: MirrorConflict[];
+			shipping: IssueShipping;
 	  }
 	| { kind: "unavailable" };
 
@@ -98,6 +103,7 @@ export const load: PageServerLoad = async ({
 		watchers,
 		codeLinks,
 		mirrorConflicts,
+		shipping,
 	] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -135,6 +141,7 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts", {
 			params: { path },
 		}),
+		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/shipping", { params: { path } }),
 	]);
 
 	if (
@@ -170,6 +177,7 @@ export const load: PageServerLoad = async ({
 			watchers: (watchers.data?.followers ?? []).map((watcher) => watcher.accountId),
 			codeLinks: codeLinks.data ?? [],
 			mirrorConflicts: mirrorConflicts.data ?? [],
+			shipping: shipping.data ?? { releases: [], deployments: [] },
 		},
 	};
 };

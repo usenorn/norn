@@ -490,3 +490,29 @@ func translateTaskError(err error, action string) error {
 		return fmt.Errorf("%s task: %w", action, err)
 	}
 }
+
+func (c *Client) EnqueueSCMBackfill(
+	ctx context.Context,
+	payload entity.SCMBackfillPayload,
+) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode source control backfill: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeSCMBackfill, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueSCM),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.TaskID(entity.TaskTypeSCMBackfill+":"+payload.RepositoryID.String()),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue source control backfill: %w", err)
+	}
+
+	return nil
+}

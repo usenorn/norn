@@ -28,6 +28,7 @@ type SCMRepository struct {
 	ReconciledAt     *time.Time
 	ReconcileAfter   *time.Time
 	LastSeenAt       *time.Time
+	BackfilledAt     *time.Time
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 }

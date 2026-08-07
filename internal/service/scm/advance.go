@@ -73,9 +73,29 @@ func (s *sync) advance(
 		return nil
 	}
 
+	author := s.attribute(ctx, from, decision, link)
+
+	held, waiting, err := s.holds.Hold(ctx, author, issue, entity.AgentActionStateChange, entity.AgentChange{
+		StateID: &target.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	if waiting {
+		logging.From(ctx).InfoContext(
+			ctx,
+			"a change written by an agent is waiting for somebody to approve the move",
+			"issue_id", issue.ID.String(),
+			"proposal_id", held.ID.String(),
+		)
+
+		return nil
+	}
+
 	tally.advanced++
 
-	scoped := identity.WithActor(ctx, from.connection.Actor())
+	scoped := identity.WithActor(ctx, actorOf(author, from))
 
 	return s.moveIssue(scoped, issue, target.ID)
 }
@@ -131,4 +151,12 @@ func (s *sync) moveIssue(ctx context.Context, issue entity.Issue, stateID uuid.U
 	}
 
 	return nil
+}
+
+func actorOf(decision entity.Decision, from source) entity.Actor {
+	if decision.Actor.Kind == entity.ActorKindAgent {
+		return decision.Actor
+	}
+
+	return from.connection.Actor()
 }

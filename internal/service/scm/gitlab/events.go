@@ -64,21 +64,22 @@ type changePayload struct {
 		Username string `json:"username"`
 	} `json:"user"`
 	ObjectAttributes struct {
-		ID            int64  `json:"id"`
-		IID           int    `json:"iid"`
-		Title         string `json:"title"`
-		Description   string `json:"description"`
-		State         string `json:"state"`
-		URL           string `json:"url"`
-		SourceBranch  string `json:"source_branch"`
-		TargetBranch  string `json:"target_branch"`
-		Draft         bool   `json:"draft"`
-		WorkInProg    bool   `json:"work_in_progress"`
-		MergeStatus   string `json:"merge_status"`
-		DetailedMerge string `json:"detailed_merge_status"`
-		Action        string `json:"action"`
-		UpdatedAt     string `json:"updated_at"`
-		Author        struct {
+		ID             int64  `json:"id"`
+		IID            int    `json:"iid"`
+		Title          string `json:"title"`
+		Description    string `json:"description"`
+		State          string `json:"state"`
+		URL            string `json:"url"`
+		SourceBranch   string `json:"source_branch"`
+		TargetBranch   string `json:"target_branch"`
+		Draft          bool   `json:"draft"`
+		WorkInProg     bool   `json:"work_in_progress"`
+		MergeStatus    string `json:"merge_status"`
+		MergeCommitSHA string `json:"merge_commit_sha"`
+		DetailedMerge  string `json:"detailed_merge_status"`
+		Action         string `json:"action"`
+		UpdatedAt      string `json:"updated_at"`
+		Author         struct {
 			Username string `json:"username"`
 		} `json:"author"`
 	} `json:"object_attributes"`
@@ -194,17 +195,18 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 	event := service.ForgeEvent{
 		Kind: service.ForgeEventChangeChanged,
 		Change: service.ForgeChange{
-			ExternalID:   strconv.FormatInt(change.ID, 10),
-			Number:       change.IID,
-			Title:        change.Title,
-			Body:         change.Description,
-			URL:          change.URL,
-			State:        state,
-			Author:       change.Author.Username,
-			HeadBranch:   change.SourceBranch,
-			BaseBranch:   change.TargetBranch,
-			UpdatedAt:    updatedAt,
-			ReviewsMoved: reviewMoved(change.Action),
+			ExternalID:     strconv.FormatInt(change.ID, 10),
+			Number:         change.IID,
+			Title:          change.Title,
+			Body:           change.Description,
+			URL:            change.URL,
+			State:          state,
+			Author:         change.Author.Username,
+			HeadBranch:     change.SourceBranch,
+			BaseBranch:     change.TargetBranch,
+			UpdatedAt:      updatedAt,
+			MergeCommitSHA: change.MergeCommitSHA,
+			ReviewsMoved:   reviewMoved(change.Action),
 		},
 		Author: payload.User.Username,
 		At:     updatedAt,

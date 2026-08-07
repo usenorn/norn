@@ -101,6 +101,14 @@ func (s *sync) reconcileOne(
 		return err
 	}
 
+	if err := s.refreshReleases(ctx, from, target); err != nil {
+		return err
+	}
+
+	if err := s.refreshDeployments(ctx, from, target); err != nil {
+		return err
+	}
+
 	if err := s.pushMirrors(ctx, from, target, decision, at); err != nil {
 		return s.handleForgeError(ctx, from, err)
 	}

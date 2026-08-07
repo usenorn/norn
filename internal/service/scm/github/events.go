@@ -87,6 +87,7 @@ type changePayload struct {
 		ClosedAt           *time.Time `json:"closed_at"`
 		UpdatedAt          time.Time  `json:"updated_at"`
 		MergeableState     string     `json:"mergeable_state"`
+		MergeCommitSHA     string     `json:"merge_commit_sha"`
 		RequestedReviewers []struct {
 			Login string `json:"login"`
 		} `json:"requested_reviewers"`
@@ -212,12 +213,13 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 	return []service.ForgeEvent{{
 		Kind: service.ForgeEventChangeChanged,
 		Change: service.ForgeChange{
-			ExternalID: strconv.FormatInt(change.ID, 10),
-			Number:     change.Number,
-			Title:      change.Title,
-			Body:       change.Body,
-			URL:        change.HTMLURL,
-			State:      changeState(change.Draft, change.State, change.MergedAt, change.MergeableState),
+			ExternalID:     strconv.FormatInt(change.ID, 10),
+			Number:         change.Number,
+			Title:          change.Title,
+			Body:           change.Body,
+			URL:            change.HTMLURL,
+			State:          changeState(change.Draft, change.State, change.MergedAt, change.MergeableState),
+			MergeCommitSHA: change.MergeCommitSHA,
 			ReviewsMoved: payload.Action == "review_requested" ||
 				payload.Action == "review_request_removed" ||
 				payload.Action == "ready_for_review",

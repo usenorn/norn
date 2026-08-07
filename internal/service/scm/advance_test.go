@@ -12,6 +12,9 @@ import (
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
+	agentrepo "github.com/usenorn/norn/internal/repository/agent"
+	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
+	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
@@ -20,6 +23,7 @@ import (
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
+	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
@@ -35,6 +39,11 @@ type advanceHarness struct {
 	identities   *scmrepo.MockSCMIdentity
 	conflicts    *scmrepo.MockMirrorConflict
 	labels       *labelrepo.MockLabel
+	agents       *agentrepo.MockAgent
+	settings     *agentsettingrepo.MockAgentSetting
+	proposals    *agentproposalrepo.MockAgentProposal
+	releases     *scmrepo.MockSCMRelease
+	deployments  *scmrepo.MockSCMDeployment
 	deliveries   *scmrepo.MockSCMDelivery
 	links        *scmrepo.MockCodeLink
 	mirrors      *scmrepo.MockIssueMirror
@@ -65,6 +74,11 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		identities:   scmrepo.NewMockSCMIdentity(ctrl),
 		conflicts:    scmrepo.NewMockMirrorConflict(ctrl),
 		labels:       labelrepo.NewMockLabel(ctrl),
+		agents:       agentrepo.NewMockAgent(ctrl),
+		settings:     agentsettingrepo.NewMockAgentSetting(ctrl),
+		proposals:    agentproposalrepo.NewMockAgentProposal(ctrl),
+		releases:     scmrepo.NewMockSCMRelease(ctrl),
+		deployments:  scmrepo.NewMockSCMDeployment(ctrl),
 		deliveries:   scmrepo.NewMockSCMDelivery(ctrl),
 		links:        scmrepo.NewMockCodeLink(ctrl),
 		mirrors:      scmrepo.NewMockIssueMirror(ctrl),
@@ -97,6 +111,10 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		h.identities,
 		h.conflicts,
 		h.labels,
+		h.agents,
+		agenthold.New(h.settings, h.proposals, h.agents),
+		h.releases,
+		h.deployments,
 		h.deliveries,
 		h.links,
 		h.mirrors,

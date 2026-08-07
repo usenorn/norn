@@ -17,6 +17,7 @@ import (
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
+	"github.com/usenorn/norn/internal/service/agenthold"
 )
 
 type sync struct {
@@ -28,6 +29,10 @@ type sync struct {
 	identities   repository.SCMIdentity
 	conflicts    repository.MirrorConflict
 	labels       repository.Label
+	agents       repository.Agent
+	holds        *agenthold.Gate
+	releases     repository.SCMRelease
+	deployments  repository.SCMDeployment
 	deliveries   repository.SCMDelivery
 	links        repository.CodeLink
 	mirrors      repository.IssueMirror
@@ -54,6 +59,10 @@ func NewSync(
 	identities repository.SCMIdentity,
 	conflicts repository.MirrorConflict,
 	labels repository.Label,
+	agents repository.Agent,
+	holds *agenthold.Gate,
+	releases repository.SCMRelease,
+	deployments repository.SCMDeployment,
 	deliveries repository.SCMDelivery,
 	links repository.CodeLink,
 	mirrors repository.IssueMirror,
@@ -79,6 +88,10 @@ func NewSync(
 		identities:   identities,
 		conflicts:    conflicts,
 		labels:       labels,
+		agents:       agents,
+		holds:        holds,
+		releases:     releases,
+		deployments:  deployments,
 		deliveries:   deliveries,
 		links:        links,
 		mirrors:      mirrors,
@@ -469,6 +482,7 @@ func (s *sync) applyChange(
 		URL:             change.URL,
 		State:           state,
 		Checks:          change.Checks,
+		MergeCommitSHA:  change.MergeCommitSHA,
 		Author:          change.Author,
 		HeadBranch:      change.HeadBranch,
 		BaseBranch:      change.BaseBranch,

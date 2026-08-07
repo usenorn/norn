@@ -60,6 +60,7 @@ func NewServeMux(
 	importRescue *job.ImportRescueHandler,
 	scmDelivery *job.SCMDeliveryHandler,
 	scmReconcile *job.SCMReconcileHandler,
+	scmBackfill *job.SCMBackfillHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -86,6 +87,7 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeImportRescue, importRescue)
 	mux.Handle(entity.TaskTypeSCMDelivery, scmDelivery)
 	mux.Handle(entity.TaskTypeSCMReconcile, scmReconcile)
+	mux.Handle(entity.TaskTypeSCMBackfill, scmBackfill)
 
 	return mux
 }

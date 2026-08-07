@@ -24,6 +24,9 @@ export type MirrorDirection = components["schemas"]["MirrorDirection"];
 export type SCMIdentity = components["schemas"]["SCMIdentity"];
 export type MirrorConflict = components["schemas"]["MirrorConflict"];
 export type SourceControlCapability = components["schemas"]["SourceControlCapability"];
+export type IssueShipping = components["schemas"]["IssueShipping"];
+export type SCMRelease = components["schemas"]["SCMRelease"];
+export type SCMDeployment = components["schemas"]["SCMDeployment"];
 export type SourceControlDeliveryOutcome =
 	components["schemas"]["SourceControlDeliveryOutcome"];
 
@@ -187,7 +190,25 @@ const capabilities: Record<SourceControlCapability, string> = {
 	issues: "Issue sync",
 	labels: "Labels",
 	assignees: "Assignees",
+	releases: "Releases",
+	deployments: "Deployments",
 };
+
+const deploymentStates: Record<SCMDeployment["state"], string> = {
+	pending: "waiting",
+	running: "deploying",
+	succeeded: "live",
+	failed: "failed",
+	inactive: "stopped",
+};
+
+export function deploymentLabel(deployment: SCMDeployment): string {
+	return `${deployment.environment} — ${deploymentStates[deployment.state]}`;
+}
+
+export function releaseLabel(release: SCMRelease): string {
+	return release.prerelease ? `${release.name} (prerelease)` : release.name;
+}
 
 export function capabilityLabel(capability: SourceControlCapability): string {
 	return capabilities[capability];

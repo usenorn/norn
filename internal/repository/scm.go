@@ -9,7 +9,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-//go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=SCMIdentity=MockSCMIdentity,MirrorConflict=MockMirrorConflict,SCMTeamSetting=MockSCMTeamSetting,SCMConnection=MockSCMConnection,SCMRepository=MockSCMRepository,SCMRoute=MockSCMRoute,SCMDelivery=MockSCMDelivery,CodeLink=MockCodeLink,IssueMirror=MockIssueMirror,SCMTransitionRule=MockSCMTransitionRule
+//go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=SCMRelease=MockSCMRelease,SCMDeployment=MockSCMDeployment,SCMIdentity=MockSCMIdentity,MirrorConflict=MockMirrorConflict,SCMTeamSetting=MockSCMTeamSetting,SCMConnection=MockSCMConnection,SCMRepository=MockSCMRepository,SCMRoute=MockSCMRoute,SCMDelivery=MockSCMDelivery,CodeLink=MockCodeLink,IssueMirror=MockIssueMirror,SCMTransitionRule=MockSCMTransitionRule
 
 type SCMConnectionInput struct {
 	Connection entity.SCMConnection
@@ -52,6 +52,7 @@ type SCMRepository interface {
 	RecordHook(ctx context.Context, repositoryID uuid.UUID, externalHookID string) error
 	RecordSeen(ctx context.Context, repositoryID uuid.UUID, at time.Time) error
 	RecordReconciled(ctx context.Context, repositoryID uuid.UUID, cursor string, at time.Time) error
+	RecordBackfilled(ctx context.Context, repositoryID uuid.UUID, at time.Time) error
 	Park(ctx context.Context, repositoryID uuid.UUID, until time.Time) error
 	ClaimDue(ctx context.Context, at time.Time, limit int) ([]entity.SCMRepository, error)
 	Delete(ctx context.Context, workspaceID, repositoryID uuid.UUID) error
@@ -78,18 +79,26 @@ type CodeLink interface {
 	Upsert(ctx context.Context, link entity.CodeLink) (entity.CodeLink, error)
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.CodeLink, error)
 	ListByExternalID(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repositoryName, externalID string) ([]entity.CodeLink, error)
-	// ClaimTransition reports false when this link has already driven the issue for this
-	// state, which is what makes a redelivered event safe to process again.
+	ListByRepository(ctx context.Context, repositoryID uuid.UUID) ([]entity.CodeLink, error)
 	ClaimTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, issueID uuid.UUID, at time.Time) (bool, error)
 	Delete(ctx context.Context, workspaceID, issueID, linkID uuid.UUID) (entity.CodeLink, error)
 	DetachRepository(ctx context.Context, repositoryID uuid.UUID) error
 
-	// SetChecks touches one column on the links a change already has. A checks payload names
-	// the change and nothing else about it, so upserting from one would blank the title, the
-	// address and the state the issue is showing.
 	SetChecks(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repositoryName, externalID string, checks entity.CodeChecks) (int, error)
 	ReplaceReviewers(ctx context.Context, linkID uuid.UUID, reviewers entity.CodeReviewers) error
 	ListReviewers(ctx context.Context, linkIDs []uuid.UUID) (map[uuid.UUID]entity.CodeReviewers, error)
+}
+
+type SCMRelease interface {
+	Upsert(ctx context.Context, release entity.SCMRelease) (entity.SCMRelease, error)
+	ListByRepository(ctx context.Context, repositoryID uuid.UUID, limit int) (entity.SCMReleases, error)
+	LinkChanges(ctx context.Context, releaseID uuid.UUID, links []entity.CodeLink) error
+	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.SCMReleases, error)
+}
+
+type SCMDeployment interface {
+	Upsert(ctx context.Context, deployment entity.SCMDeployment) error
+	ListByCommits(ctx context.Context, repositoryID uuid.UUID, commits []string) (entity.SCMDeployments, error)
 }
 
 type SCMIdentity interface {

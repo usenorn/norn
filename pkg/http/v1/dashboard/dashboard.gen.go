@@ -2361,6 +2361,33 @@ func (e ReviewVerdict) Valid() bool {
 	}
 }
 
+// Defines values for SCMDeploymentState.
+const (
+	SCMDeploymentStateFailed    SCMDeploymentState = "failed"
+	SCMDeploymentStateInactive  SCMDeploymentState = "inactive"
+	SCMDeploymentStatePending   SCMDeploymentState = "pending"
+	SCMDeploymentStateRunning   SCMDeploymentState = "running"
+	SCMDeploymentStateSucceeded SCMDeploymentState = "succeeded"
+)
+
+// Valid indicates whether the value is a known member of the SCMDeploymentState enum.
+func (e SCMDeploymentState) Valid() bool {
+	switch e {
+	case SCMDeploymentStateFailed:
+		return true
+	case SCMDeploymentStateInactive:
+		return true
+	case SCMDeploymentStatePending:
+		return true
+	case SCMDeploymentStateRunning:
+		return true
+	case SCMDeploymentStateSucceeded:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SavedViewConflictProblemCode.
 const (
 	SavedViewShared SavedViewConflictProblemCode = "saved_view_shared"
@@ -2555,8 +2582,10 @@ const (
 	Assignees    SourceControlCapability = "assignees"
 	ChangedPaths SourceControlCapability = "changed_paths"
 	Checks       SourceControlCapability = "checks"
+	Deployments  SourceControlCapability = "deployments"
 	Issues       SourceControlCapability = "issues"
 	Labels       SourceControlCapability = "labels"
+	Releases     SourceControlCapability = "releases"
 	Reviews      SourceControlCapability = "reviews"
 	Webhooks     SourceControlCapability = "webhooks"
 )
@@ -2570,9 +2599,13 @@ func (e SourceControlCapability) Valid() bool {
 		return true
 	case Checks:
 		return true
+	case Deployments:
+		return true
 	case Issues:
 		return true
 	case Labels:
+		return true
+	case Releases:
 		return true
 	case Reviews:
 		return true
@@ -4941,6 +4974,12 @@ type IssueRelationGroups struct {
 // IssueRelationKind A relation as seen from the issue you are looking at
 type IssueRelationKind string
 
+// IssueShipping Where this issue's work has reached. Reflection only: Norn reads what the platform says and never triggers a deployment or owns a release process.
+type IssueShipping struct {
+	Deployments []SCMDeployment `json:"deployments"`
+	Releases    []SCMRelease    `json:"releases"`
+}
+
 // IssueSort defines model for IssueSort.
 type IssueSort struct {
 	Descending *bool `json:"descending,omitempty"`
@@ -5534,6 +5573,18 @@ type ResetLinkUsedProblemCode string
 // ReviewVerdict defines model for ReviewVerdict.
 type ReviewVerdict string
 
+// SCMDeployment defines model for SCMDeployment.
+type SCMDeployment struct {
+	Environment string             `json:"environment"`
+	Id          openapi_types.UUID `json:"id"`
+	OccurredAt  *time.Time         `json:"occurredAt,omitempty"`
+	State       SCMDeploymentState `json:"state"`
+	Url         *string            `json:"url,omitempty"`
+}
+
+// SCMDeploymentState defines model for SCMDeployment.State.
+type SCMDeploymentState string
+
 // SCMIdentity Who somebody is on a forge. It is stated by an administrator rather than discovered: a handle that resembles a name is not evidence, and acting on the guess puts work on a stranger.
 type SCMIdentity struct {
 	AccountId   openapi_types.UUID `json:"accountId"`
@@ -5543,6 +5594,16 @@ type SCMIdentity struct {
 
 	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
 	Provider SourceControlProvider `json:"provider"`
+}
+
+// SCMRelease defines model for SCMRelease.
+type SCMRelease struct {
+	Id          openapi_types.UUID `json:"id"`
+	Name        string             `json:"name"`
+	Prerelease  *bool              `json:"prerelease,omitempty"`
+	PublishedAt *time.Time         `json:"publishedAt,omitempty"`
+	Tag         string             `json:"tag"`
+	Url         *string            `json:"url,omitempty"`
 }
 
 // SamlAttributeMapping defines model for SamlAttributeMapping.
@@ -7608,6 +7669,9 @@ type ServerInterface interface {
 	// RemoveWorkspaceIssueRelation Unlink two issues, from either side, removing both directions
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/relations/{relationId})
 	RemoveWorkspaceIssueRelation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, relationId openapi_types.UUID)
+	// GetWorkspaceIssueShipping Read which releases carried this issue and where they were deployed
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/shipping)
+	GetWorkspaceIssueShipping(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// SetWorkspaceIssueStatus Archive, delete or restore an issue without losing its reference
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/status)
 	SetWorkspaceIssueStatus(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -8760,6 +8824,12 @@ func (_ Unimplemented) AddWorkspaceIssueRelation(w http.ResponseWriter, r *http.
 // RemoveWorkspaceIssueRelation Unlink two issues, from either side, removing both directions
 // (DELETE /workspaces/{workspaceId}/issues/{issueId}/relations/{relationId})
 func (_ Unimplemented) RemoveWorkspaceIssueRelation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, relationId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceIssueShipping Read which releases carried this issue and where they were deployed
+// (GET /workspaces/{workspaceId}/issues/{issueId}/shipping)
+func (_ Unimplemented) GetWorkspaceIssueShipping(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -13609,6 +13679,41 @@ func (siw *ServerInterfaceWrapper) RemoveWorkspaceIssueRelation(w http.ResponseW
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RemoveWorkspaceIssueRelation(w, r, workspaceId, issueId, relationId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceIssueShipping operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceIssueShipping(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceIssueShipping(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19073,6 +19178,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/source-control/identities/{identityId}", wrapper.UnmapWorkspaceSCMIdentity)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/shipping", wrapper.GetWorkspaceIssueShipping)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts", wrapper.ListWorkspaceIssueMirrorConflicts)
@@ -30309,6 +30417,89 @@ func (response RemoveWorkspaceIssueRelation404ApplicationProblemPlusJSONResponse
 type RemoveWorkspaceIssueRelation500ApplicationProblemPlusJSONResponse Problem
 
 func (response RemoveWorkspaceIssueRelation500ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueRelationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueShippingRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type GetWorkspaceIssueShippingResponseObject interface {
+	VisitGetWorkspaceIssueShippingResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceIssueShipping200JSONResponse IssueShipping
+
+func (response GetWorkspaceIssueShipping200JSONResponse) VisitGetWorkspaceIssueShippingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueShipping401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueShipping401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueShippingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueShipping403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueShipping403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueShippingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueShipping404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueShipping404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueShippingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueShipping500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueShipping500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueShippingResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -42613,6 +42804,9 @@ type StrictServerInterface interface {
 	// RemoveWorkspaceIssueRelation Unlink two issues, from either side, removing both directions
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/relations/{relationId})
 	RemoveWorkspaceIssueRelation(ctx context.Context, request RemoveWorkspaceIssueRelationRequestObject) (RemoveWorkspaceIssueRelationResponseObject, error)
+	// GetWorkspaceIssueShipping Read which releases carried this issue and where they were deployed
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/shipping)
+	GetWorkspaceIssueShipping(ctx context.Context, request GetWorkspaceIssueShippingRequestObject) (GetWorkspaceIssueShippingResponseObject, error)
 	// SetWorkspaceIssueStatus Archive, delete or restore an issue without losing its reference
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/status)
 	SetWorkspaceIssueStatus(ctx context.Context, request SetWorkspaceIssueStatusRequestObject) (SetWorkspaceIssueStatusResponseObject, error)
@@ -46664,6 +46858,33 @@ func (sh *strictHandler) RemoveWorkspaceIssueRelation(w http.ResponseWriter, r *
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RemoveWorkspaceIssueRelationResponseObject); ok {
 		if err := validResponse.VisitRemoveWorkspaceIssueRelationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceIssueShipping operation middleware
+func (sh *strictHandler) GetWorkspaceIssueShipping(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request GetWorkspaceIssueShippingRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceIssueShipping(ctx, request.(GetWorkspaceIssueShippingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceIssueShipping")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceIssueShippingResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceIssueShippingResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

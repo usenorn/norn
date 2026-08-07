@@ -356,3 +356,45 @@ func mirrorConflictDTOs(conflicts []entity.MirrorConflict) []api.MirrorConflict 
 
 	return dtos
 }
+
+func issueShippingDTO(shipping service.IssueShipping) api.IssueShipping {
+	releases := make([]api.SCMRelease, len(shipping.Releases))
+
+	for i, release := range shipping.Releases {
+		releases[i] = api.SCMRelease{
+			Id:          release.ID,
+			Tag:         release.Tag,
+			Name:        release.DisplayName(),
+			Prerelease:  pointer(release.Prerelease),
+			PublishedAt: release.PublishedAt,
+		}
+
+		if release.URL != "" {
+			releases[i].Url = &release.URL
+		}
+	}
+
+	deployments := make([]api.SCMDeployment, 0, len(shipping.Deployments))
+
+	for _, environment := range shipping.Deployments.Environments() {
+		latest, found := shipping.Deployments.Latest(environment)
+		if !found {
+			continue
+		}
+
+		one := api.SCMDeployment{
+			Id:          latest.ID,
+			Environment: latest.Environment,
+			State:       api.SCMDeploymentState(latest.State),
+			OccurredAt:  latest.OccurredAt,
+		}
+
+		if latest.URL != "" {
+			one.Url = &latest.URL
+		}
+
+		deployments = append(deployments, one)
+	}
+
+	return api.IssueShipping{Releases: releases, Deployments: deployments}
+}

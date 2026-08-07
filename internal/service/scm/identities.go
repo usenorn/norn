@@ -81,3 +81,45 @@ func (s *connections) Conflicts(
 
 	return s.conflicts.ListByIssue(ctx, workspaceID, issueID, conflictLogSize)
 }
+
+func (s *connections) Shipped(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) (service.IssueShipping, error) {
+	if _, _, err := s.reads(ctx, workspaceID, issueID); err != nil {
+		return service.IssueShipping{}, err
+	}
+
+	releases, err := s.releases.ListByIssue(ctx, workspaceID, issueID)
+	if err != nil {
+		return service.IssueShipping{}, err
+	}
+
+	links, err := s.links.ListByIssue(ctx, workspaceID, issueID)
+	if err != nil {
+		return service.IssueShipping{}, err
+	}
+
+	shipping := service.IssueShipping{Releases: releases}
+
+	byRepository := make(map[uuid.UUID][]string, len(links))
+
+	for _, link := range links {
+		if link.MergeCommitSHA == "" || link.RepositoryID == uuid.Nil {
+			continue
+		}
+
+		byRepository[link.RepositoryID] = append(byRepository[link.RepositoryID], link.MergeCommitSHA)
+	}
+
+	for repositoryID, commits := range byRepository {
+		found, err := s.deployments.ListByCommits(ctx, repositoryID, commits)
+		if err != nil {
+			return service.IssueShipping{}, err
+		}
+
+		shipping.Deployments = append(shipping.Deployments, found...)
+	}
+
+	return shipping, nil
+}

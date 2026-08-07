@@ -304,6 +304,8 @@ type changeBody struct {
 	Draft     bool       `json:"draft"`
 	Mergeable bool       `json:"mergeable"`
 	Merged    bool       `json:"merged"`
+	MergeBase string     `json:"merge_base"`
+	MergedSHA string     `json:"merge_commit_sha"`
 	MergedAt  *time.Time `json:"merged_at"`
 	ClosedAt  *time.Time `json:"closed_at"`
 	Updated   time.Time  `json:"updated_at"`
@@ -336,19 +338,20 @@ func changeState(change changeBody) entity.CodeChangeState {
 
 func (f *Forge) forgeChange(change changeBody) service.ForgeChange {
 	return service.ForgeChange{
-		ExternalID:   strconv.FormatInt(change.ID, 10),
-		Number:       change.Number,
-		Title:        change.Title,
-		Body:         change.Body,
-		URL:          change.HTMLURL,
-		State:        changeState(change),
-		ReviewsMoved: true,
-		Author:       change.User.Login,
-		HeadBranch:   change.Head.Ref,
-		BaseBranch:   change.Base.Ref,
-		UpdatedAt:    change.Updated,
-		MergedAt:     change.MergedAt,
-		ClosedAt:     change.ClosedAt,
+		ExternalID:     strconv.FormatInt(change.ID, 10),
+		Number:         change.Number,
+		Title:          change.Title,
+		Body:           change.Body,
+		URL:            change.HTMLURL,
+		State:          changeState(change),
+		MergeCommitSHA: change.MergedSHA,
+		ReviewsMoved:   true,
+		Author:         change.User.Login,
+		HeadBranch:     change.Head.Ref,
+		BaseBranch:     change.Base.Ref,
+		UpdatedAt:      change.Updated,
+		MergedAt:       change.MergedAt,
+		ClosedAt:       change.ClosedAt,
 	}
 }
 
@@ -844,5 +847,100 @@ func (f *Forge) Capabilities() entity.SCMCapabilitySet {
 		entity.CapabilityIssues,
 		entity.CapabilityLabels,
 		entity.CapabilityAssignees,
+		entity.CapabilityReleases,
 	}
+}
+
+func (f *Forge) Releases(
+	ctx context.Context,
+	target entity.SCMTarget,
+	limit int,
+) ([]service.ForgeRelease, error) {
+	query := url.Values{}
+	query.Set("limit", strconv.Itoa(limit))
+
+	path := "/repos/" + target.Repository + "/releases?" + query.Encode()
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body []struct {
+		ID          int64      `json:"id"`
+		TagName     string     `json:"tag_name"`
+		Name        string     `json:"name"`
+		HTMLURL     string     `json:"html_url"`
+		Draft       bool       `json:"draft"`
+		Prerelease  bool       `json:"prerelease"`
+		PublishedAt *time.Time `json:"published_at"`
+	}
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	releases := make([]service.ForgeRelease, 0, len(body))
+
+	for _, release := range body {
+		if release.Draft {
+			continue
+		}
+
+		releases = append(releases, service.ForgeRelease{
+			ExternalID:  strconv.FormatInt(release.ID, 10),
+			Tag:         release.TagName,
+			Name:        release.Name,
+			URL:         release.HTMLURL,
+			Prerelease:  release.Prerelease,
+			PublishedAt: release.PublishedAt,
+		})
+	}
+
+	return releases, nil
+}
+
+func (f *Forge) ReleaseCommits(
+	ctx context.Context,
+	target entity.SCMTarget,
+	from, to string,
+) ([]string, error) {
+	if from == "" || to == "" {
+		return nil, nil
+	}
+
+	path := "/repos/" + target.Repository + "/compare/" + url.PathEscape(from) + "..." +
+		url.PathEscape(to)
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body struct {
+		Commits []struct {
+			SHA string `json:"sha"`
+		} `json:"commits"`
+	}
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	commits := make([]string, 0, len(body.Commits))
+	for _, commit := range body.Commits {
+		if commit.SHA != "" {
+			commits = append(commits, commit.SHA)
+		}
+	}
+
+	return commits, nil
+}
+
+func (f *Forge) Deployments(
+	_ context.Context,
+	_ entity.SCMTarget,
+	_ int,
+) ([]service.ForgeDeployment, error) {
+	return nil, entity.ErrSCMCapabilityUnsupported
 }

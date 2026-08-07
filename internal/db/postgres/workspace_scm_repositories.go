@@ -44,6 +44,7 @@ type WorkspaceSCMRepository struct {
 	UpdatedAt           time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	SyncDirection       string    `boil:"sync_direction" json:"sync_direction" toml:"sync_direction" yaml:"sync_direction"`
 	WebhooksDisabled    bool      `boil:"webhooks_disabled" json:"webhooks_disabled" toml:"webhooks_disabled" yaml:"webhooks_disabled"`
+	BackfilledAt        null.Time `boil:"backfilled_at" json:"backfilled_at,omitempty" toml:"backfilled_at" yaml:"backfilled_at,omitempty"`
 
 	R *workspaceSCMRepositoryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSCMRepositoryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -70,6 +71,7 @@ var WorkspaceSCMRepositoryColumns = struct {
 	UpdatedAt           string
 	SyncDirection       string
 	WebhooksDisabled    string
+	BackfilledAt        string
 }{
 	ID:                  "id",
 	ConnectionID:        "connection_id",
@@ -91,6 +93,7 @@ var WorkspaceSCMRepositoryColumns = struct {
 	UpdatedAt:           "updated_at",
 	SyncDirection:       "sync_direction",
 	WebhooksDisabled:    "webhooks_disabled",
+	BackfilledAt:        "backfilled_at",
 }
 
 var WorkspaceSCMRepositoryTableColumns = struct {
@@ -114,6 +117,7 @@ var WorkspaceSCMRepositoryTableColumns = struct {
 	UpdatedAt           string
 	SyncDirection       string
 	WebhooksDisabled    string
+	BackfilledAt        string
 }{
 	ID:                  "workspace_scm_repositories.id",
 	ConnectionID:        "workspace_scm_repositories.connection_id",
@@ -135,6 +139,7 @@ var WorkspaceSCMRepositoryTableColumns = struct {
 	UpdatedAt:           "workspace_scm_repositories.updated_at",
 	SyncDirection:       "workspace_scm_repositories.sync_direction",
 	WebhooksDisabled:    "workspace_scm_repositories.webhooks_disabled",
+	BackfilledAt:        "workspace_scm_repositories.backfilled_at",
 }
 
 // Generated where
@@ -160,6 +165,7 @@ var WorkspaceSCMRepositoryWhere = struct {
 	UpdatedAt           whereHelpertime_Time
 	SyncDirection       whereHelperstring
 	WebhooksDisabled    whereHelperbool
+	BackfilledAt        whereHelpernull_Time
 }{
 	ID:                  whereHelperstring{field: "\"workspace_scm_repositories\".\"id\""},
 	ConnectionID:        whereHelperstring{field: "\"workspace_scm_repositories\".\"connection_id\""},
@@ -181,33 +187,40 @@ var WorkspaceSCMRepositoryWhere = struct {
 	UpdatedAt:           whereHelpertime_Time{field: "\"workspace_scm_repositories\".\"updated_at\""},
 	SyncDirection:       whereHelperstring{field: "\"workspace_scm_repositories\".\"sync_direction\""},
 	WebhooksDisabled:    whereHelperbool{field: "\"workspace_scm_repositories\".\"webhooks_disabled\""},
+	BackfilledAt:        whereHelpernull_Time{field: "\"workspace_scm_repositories\".\"backfilled_at\""},
 }
 
 // WorkspaceSCMRepositoryRels is where relationship names are stored.
 var WorkspaceSCMRepositoryRels = struct {
-	Connection                       string
-	Workspace                        string
-	RepositoryWorkspaceCodeLinks     string
-	RepositoryWorkspaceIssueMirrors  string
-	RepositoryWorkspaceSCMDeliveries string
-	RepositoryWorkspaceSCMRoutes     string
+	Connection                        string
+	Workspace                         string
+	RepositoryWorkspaceCodeLinks      string
+	RepositoryWorkspaceIssueMirrors   string
+	RepositoryWorkspaceSCMDeliveries  string
+	RepositoryWorkspaceSCMDeployments string
+	RepositoryWorkspaceSCMReleases    string
+	RepositoryWorkspaceSCMRoutes      string
 }{
-	Connection:                       "Connection",
-	Workspace:                        "Workspace",
-	RepositoryWorkspaceCodeLinks:     "RepositoryWorkspaceCodeLinks",
-	RepositoryWorkspaceIssueMirrors:  "RepositoryWorkspaceIssueMirrors",
-	RepositoryWorkspaceSCMDeliveries: "RepositoryWorkspaceSCMDeliveries",
-	RepositoryWorkspaceSCMRoutes:     "RepositoryWorkspaceSCMRoutes",
+	Connection:                        "Connection",
+	Workspace:                         "Workspace",
+	RepositoryWorkspaceCodeLinks:      "RepositoryWorkspaceCodeLinks",
+	RepositoryWorkspaceIssueMirrors:   "RepositoryWorkspaceIssueMirrors",
+	RepositoryWorkspaceSCMDeliveries:  "RepositoryWorkspaceSCMDeliveries",
+	RepositoryWorkspaceSCMDeployments: "RepositoryWorkspaceSCMDeployments",
+	RepositoryWorkspaceSCMReleases:    "RepositoryWorkspaceSCMReleases",
+	RepositoryWorkspaceSCMRoutes:      "RepositoryWorkspaceSCMRoutes",
 }
 
 // workspaceSCMRepositoryR is where relationships are stored.
 type workspaceSCMRepositoryR struct {
-	Connection                       *WorkspaceSCMConnection   `boil:"Connection" json:"Connection" toml:"Connection" yaml:"Connection"`
-	Workspace                        *Workspace                `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	RepositoryWorkspaceCodeLinks     WorkspaceCodeLinkSlice    `boil:"RepositoryWorkspaceCodeLinks" json:"RepositoryWorkspaceCodeLinks" toml:"RepositoryWorkspaceCodeLinks" yaml:"RepositoryWorkspaceCodeLinks"`
-	RepositoryWorkspaceIssueMirrors  WorkspaceIssueMirrorSlice `boil:"RepositoryWorkspaceIssueMirrors" json:"RepositoryWorkspaceIssueMirrors" toml:"RepositoryWorkspaceIssueMirrors" yaml:"RepositoryWorkspaceIssueMirrors"`
-	RepositoryWorkspaceSCMDeliveries WorkspaceSCMDeliverySlice `boil:"RepositoryWorkspaceSCMDeliveries" json:"RepositoryWorkspaceSCMDeliveries" toml:"RepositoryWorkspaceSCMDeliveries" yaml:"RepositoryWorkspaceSCMDeliveries"`
-	RepositoryWorkspaceSCMRoutes     WorkspaceSCMRouteSlice    `boil:"RepositoryWorkspaceSCMRoutes" json:"RepositoryWorkspaceSCMRoutes" toml:"RepositoryWorkspaceSCMRoutes" yaml:"RepositoryWorkspaceSCMRoutes"`
+	Connection                        *WorkspaceSCMConnection     `boil:"Connection" json:"Connection" toml:"Connection" yaml:"Connection"`
+	Workspace                         *Workspace                  `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	RepositoryWorkspaceCodeLinks      WorkspaceCodeLinkSlice      `boil:"RepositoryWorkspaceCodeLinks" json:"RepositoryWorkspaceCodeLinks" toml:"RepositoryWorkspaceCodeLinks" yaml:"RepositoryWorkspaceCodeLinks"`
+	RepositoryWorkspaceIssueMirrors   WorkspaceIssueMirrorSlice   `boil:"RepositoryWorkspaceIssueMirrors" json:"RepositoryWorkspaceIssueMirrors" toml:"RepositoryWorkspaceIssueMirrors" yaml:"RepositoryWorkspaceIssueMirrors"`
+	RepositoryWorkspaceSCMDeliveries  WorkspaceSCMDeliverySlice   `boil:"RepositoryWorkspaceSCMDeliveries" json:"RepositoryWorkspaceSCMDeliveries" toml:"RepositoryWorkspaceSCMDeliveries" yaml:"RepositoryWorkspaceSCMDeliveries"`
+	RepositoryWorkspaceSCMDeployments WorkspaceSCMDeploymentSlice `boil:"RepositoryWorkspaceSCMDeployments" json:"RepositoryWorkspaceSCMDeployments" toml:"RepositoryWorkspaceSCMDeployments" yaml:"RepositoryWorkspaceSCMDeployments"`
+	RepositoryWorkspaceSCMReleases    WorkspaceSCMReleaseSlice    `boil:"RepositoryWorkspaceSCMReleases" json:"RepositoryWorkspaceSCMReleases" toml:"RepositoryWorkspaceSCMReleases" yaml:"RepositoryWorkspaceSCMReleases"`
+	RepositoryWorkspaceSCMRoutes      WorkspaceSCMRouteSlice      `boil:"RepositoryWorkspaceSCMRoutes" json:"RepositoryWorkspaceSCMRoutes" toml:"RepositoryWorkspaceSCMRoutes" yaml:"RepositoryWorkspaceSCMRoutes"`
 }
 
 // NewStruct creates a new relationship struct
@@ -295,6 +308,38 @@ func (r *workspaceSCMRepositoryR) GetRepositoryWorkspaceSCMDeliveries() Workspac
 	return r.RepositoryWorkspaceSCMDeliveries
 }
 
+func (o *WorkspaceSCMRepository) GetRepositoryWorkspaceSCMDeployments() WorkspaceSCMDeploymentSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetRepositoryWorkspaceSCMDeployments()
+}
+
+func (r *workspaceSCMRepositoryR) GetRepositoryWorkspaceSCMDeployments() WorkspaceSCMDeploymentSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.RepositoryWorkspaceSCMDeployments
+}
+
+func (o *WorkspaceSCMRepository) GetRepositoryWorkspaceSCMReleases() WorkspaceSCMReleaseSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetRepositoryWorkspaceSCMReleases()
+}
+
+func (r *workspaceSCMRepositoryR) GetRepositoryWorkspaceSCMReleases() WorkspaceSCMReleaseSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.RepositoryWorkspaceSCMReleases
+}
+
 func (o *WorkspaceSCMRepository) GetRepositoryWorkspaceSCMRoutes() WorkspaceSCMRouteSlice {
 	if o == nil {
 		return nil
@@ -315,9 +360,9 @@ func (r *workspaceSCMRepositoryR) GetRepositoryWorkspaceSCMRoutes() WorkspaceSCM
 type workspaceSCMRepositoryL struct{}
 
 var (
-	workspaceSCMRepositoryAllColumns            = []string{"id", "connection_id", "workspace_id", "provider", "full_name", "external_id", "default_branch", "url", "webhook_secret_sealed", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled"}
+	workspaceSCMRepositoryAllColumns            = []string{"id", "connection_id", "workspace_id", "provider", "full_name", "external_id", "default_branch", "url", "webhook_secret_sealed", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled", "backfilled_at"}
 	workspaceSCMRepositoryColumnsWithoutDefault = []string{"connection_id", "workspace_id", "provider", "full_name", "webhook_secret_sealed"}
-	workspaceSCMRepositoryColumnsWithDefault    = []string{"id", "external_id", "default_branch", "url", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled"}
+	workspaceSCMRepositoryColumnsWithDefault    = []string{"id", "external_id", "default_branch", "url", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled", "backfilled_at"}
 	workspaceSCMRepositoryPrimaryKeyColumns     = []string{"id"}
 	workspaceSCMRepositoryGeneratedColumns      = []string{}
 )
@@ -689,6 +734,34 @@ func (o *WorkspaceSCMRepository) RepositoryWorkspaceSCMDeliveries(mods ...qm.Que
 	)
 
 	return WorkspaceSCMDeliveries(queryMods...)
+}
+
+// RepositoryWorkspaceSCMDeployments retrieves all the workspace_scm_deployment's WorkspaceSCMDeployments with an executor via repository_id column.
+func (o *WorkspaceSCMRepository) RepositoryWorkspaceSCMDeployments(mods ...qm.QueryMod) workspaceSCMDeploymentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_scm_deployments\".\"repository_id\"=?", o.ID),
+	)
+
+	return WorkspaceSCMDeployments(queryMods...)
+}
+
+// RepositoryWorkspaceSCMReleases retrieves all the workspace_scm_release's WorkspaceSCMReleases with an executor via repository_id column.
+func (o *WorkspaceSCMRepository) RepositoryWorkspaceSCMReleases(mods ...qm.QueryMod) workspaceSCMReleaseQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_scm_releases\".\"repository_id\"=?", o.ID),
+	)
+
+	return WorkspaceSCMReleases(queryMods...)
 }
 
 // RepositoryWorkspaceSCMRoutes retrieves all the workspace_scm_route's WorkspaceSCMRoutes with an executor via repository_id column.
@@ -1284,6 +1357,232 @@ func (workspaceSCMRepositoryL) LoadRepositoryWorkspaceSCMDeliveries(ctx context.
 	return nil
 }
 
+// LoadRepositoryWorkspaceSCMDeployments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceSCMRepositoryL) LoadRepositoryWorkspaceSCMDeployments(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMRepository any, mods queries.Applicator) error {
+	var slice []*WorkspaceSCMRepository
+	var object *WorkspaceSCMRepository
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceSCMRepository.(*WorkspaceSCMRepository)
+		if !ok {
+			object = new(WorkspaceSCMRepository)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceSCMRepository)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceSCMRepository))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceSCMRepository.(*[]*WorkspaceSCMRepository)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceSCMRepository)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceSCMRepository))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceSCMRepositoryR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceSCMRepositoryR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_scm_deployments`),
+		qm.WhereIn(`workspace_scm_deployments.repository_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_scm_deployments")
+	}
+
+	var resultSlice []*WorkspaceSCMDeployment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_scm_deployments")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_scm_deployments")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_scm_deployments")
+	}
+
+	if len(workspaceSCMDeploymentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.RepositoryWorkspaceSCMDeployments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceSCMDeploymentR{}
+			}
+			foreign.R.Repository = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.RepositoryID {
+				local.R.RepositoryWorkspaceSCMDeployments = append(local.R.RepositoryWorkspaceSCMDeployments, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceSCMDeploymentR{}
+				}
+				foreign.R.Repository = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadRepositoryWorkspaceSCMReleases allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceSCMRepositoryL) LoadRepositoryWorkspaceSCMReleases(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMRepository any, mods queries.Applicator) error {
+	var slice []*WorkspaceSCMRepository
+	var object *WorkspaceSCMRepository
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceSCMRepository.(*WorkspaceSCMRepository)
+		if !ok {
+			object = new(WorkspaceSCMRepository)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceSCMRepository)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceSCMRepository))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceSCMRepository.(*[]*WorkspaceSCMRepository)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceSCMRepository)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceSCMRepository))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceSCMRepositoryR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceSCMRepositoryR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_scm_releases`),
+		qm.WhereIn(`workspace_scm_releases.repository_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_scm_releases")
+	}
+
+	var resultSlice []*WorkspaceSCMRelease
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_scm_releases")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_scm_releases")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_scm_releases")
+	}
+
+	if len(workspaceSCMReleaseAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.RepositoryWorkspaceSCMReleases = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceSCMReleaseR{}
+			}
+			foreign.R.Repository = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.RepositoryID {
+				local.R.RepositoryWorkspaceSCMReleases = append(local.R.RepositoryWorkspaceSCMReleases, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceSCMReleaseR{}
+				}
+				foreign.R.Repository = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadRepositoryWorkspaceSCMRoutes allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceSCMRepositoryL) LoadRepositoryWorkspaceSCMRoutes(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMRepository any, mods queries.Applicator) error {
@@ -1789,6 +2088,112 @@ func (o *WorkspaceSCMRepository) AddRepositoryWorkspaceSCMDeliveries(ctx context
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceSCMDeliveryR{
+				Repository: o,
+			}
+		} else {
+			rel.R.Repository = o
+		}
+	}
+	return nil
+}
+
+// AddRepositoryWorkspaceSCMDeployments adds the given related objects to the existing relationships
+// of the workspace_scm_repository, optionally inserting them as new records.
+// Appends related to o.R.RepositoryWorkspaceSCMDeployments.
+// Sets related.R.Repository appropriately.
+func (o *WorkspaceSCMRepository) AddRepositoryWorkspaceSCMDeployments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceSCMDeployment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.RepositoryID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_scm_deployments\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"repository_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceSCMDeploymentPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.RepositoryID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceSCMRepositoryR{
+			RepositoryWorkspaceSCMDeployments: related,
+		}
+	} else {
+		o.R.RepositoryWorkspaceSCMDeployments = append(o.R.RepositoryWorkspaceSCMDeployments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceSCMDeploymentR{
+				Repository: o,
+			}
+		} else {
+			rel.R.Repository = o
+		}
+	}
+	return nil
+}
+
+// AddRepositoryWorkspaceSCMReleases adds the given related objects to the existing relationships
+// of the workspace_scm_repository, optionally inserting them as new records.
+// Appends related to o.R.RepositoryWorkspaceSCMReleases.
+// Sets related.R.Repository appropriately.
+func (o *WorkspaceSCMRepository) AddRepositoryWorkspaceSCMReleases(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceSCMRelease) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.RepositoryID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_scm_releases\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"repository_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceSCMReleasePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.RepositoryID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceSCMRepositoryR{
+			RepositoryWorkspaceSCMReleases: related,
+		}
+	} else {
+		o.R.RepositoryWorkspaceSCMReleases = append(o.R.RepositoryWorkspaceSCMReleases, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceSCMReleaseR{
 				Repository: o,
 			}
 		} else {
