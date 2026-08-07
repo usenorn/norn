@@ -47,7 +47,7 @@ func parsePrefixes(values []string) ([]netip.Prefix, error) {
 	return prefixes, nil
 }
 
-func permitted(address netip.Addr, allowed []netip.Prefix) bool {
+func permitted(address netip.Addr, allowed []netip.Prefix, private bool) bool {
 	address = address.Unmap()
 
 	for _, prefix := range allowed {
@@ -56,15 +56,22 @@ func permitted(address netip.Addr, allowed []netip.Prefix) bool {
 		}
 	}
 
+	// Loopback and link-local stay refused even for a caller granted the private exception.
+	// Loopback is this instance's own internals, and link-local is where a cloud provider
+	// answers with the credentials of the machine Norn is running on; neither is what
+	// "our forge is on the office network" means, and both are what an attacker asks for.
 	if !address.IsValid() ||
 		address.IsUnspecified() ||
 		address.IsLoopback() ||
-		address.IsPrivate() ||
 		address.IsLinkLocalUnicast() ||
 		address.IsLinkLocalMulticast() ||
 		address.IsInterfaceLocalMulticast() ||
 		address.IsMulticast() {
 		return false
+	}
+
+	if address.IsPrivate() {
+		return private
 	}
 
 	for _, prefix := range reservedPrefixes {
@@ -80,7 +87,7 @@ func refuse(address netip.Addr) error {
 	return fmt.Errorf("%w: %s", ErrDestinationRefused, address)
 }
 
-func control(allowed []netip.Prefix) func(string, string, syscall.RawConn) error {
+func control(allowed []netip.Prefix, private bool) func(string, string, syscall.RawConn) error {
 	return func(network, address string, _ syscall.RawConn) error {
 		if network != "tcp4" && network != "tcp6" {
 			return fmt.Errorf("%w: %s is not a tcp network", ErrDestinationRefused, network)
@@ -91,7 +98,7 @@ func control(allowed []netip.Prefix) func(string, string, syscall.RawConn) error
 			return fmt.Errorf("%w: %s", ErrDestinationRefused, address)
 		}
 
-		if !permitted(parsed.Addr(), allowed) {
+		if !permitted(parsed.Addr(), allowed, private) {
 			return refuse(parsed.Addr())
 		}
 

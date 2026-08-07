@@ -64,6 +64,7 @@ func (f *Forge) call(
 	}
 
 	request := forge.Request{
+		Trust:    target.Trust,
 		Provider: entity.SCMProviderGitLab,
 		Method:   method,
 		URL:      address,
@@ -748,4 +749,16 @@ func (f *Forge) userID(ctx context.Context, target entity.SCMTarget, login strin
 	}
 
 	return 0, false
+}
+
+func (f *Forge) Capabilities() entity.SCMCapabilitySet {
+	return entity.SCMCapabilitySet{
+		entity.CapabilityWebhooks,
+		entity.CapabilityReviews,
+		entity.CapabilityChecks,
+		entity.CapabilityChangedPaths,
+		entity.CapabilityIssues,
+		entity.CapabilityLabels,
+		entity.CapabilityAssignees,
+	}
 }

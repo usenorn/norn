@@ -12,6 +12,7 @@
 	import * as Form from "$lib/components/ui/form";
 	import { Input } from "$lib/components/ui/input";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import { Checkbox } from "$lib/components/ui/checkbox";
 	import { Label } from "$lib/components/ui/label";
 	import {
 		connectionLabel,
@@ -168,6 +169,36 @@
 		}
 	}
 
+	async function setPolling(disabled: boolean) {
+		if (view.kind !== "detail") return;
+
+		savingDirection = true;
+		failure = undefined;
+		failureDetail = "";
+
+		const { data: updated, error } = await api.PATCH(
+			"/workspaces/{workspaceId}/source-control/repositories/{repositoryId}",
+			{
+				params: {
+					path: { workspaceId: workspace.id, repositoryId: view.repository.id },
+				},
+				body: { webhooksDisabled: disabled },
+			},
+		);
+
+		savingDirection = false;
+
+		if (error) {
+			record(error);
+
+			return;
+		}
+
+		if (updated && view.kind === "detail") {
+			loaded = { ...view, repository: updated };
+		}
+	}
+
 	async function disconnect() {
 		if (view.kind !== "detail") return;
 
@@ -243,7 +274,7 @@
 			<Alert.Description>{failureMessage({ kind: "unavailable" })}</Alert.Description>
 		</Alert.Root>
 	{:else}
-		{#if !view.repository.hookInstalled}
+		{#if !view.repository.hookInstalled && !view.repository.webhooksDisabled}
 			<Alert.Root>
 				<TriangleAlert aria-hidden="true" />
 				<Alert.Title>The webhook is not installed</Alert.Title>
@@ -347,6 +378,23 @@
 				A repository set one way is never touched the other. This is the promise that Norn
 				leaves a forge alone when it was told to.
 			</p>
+			<div class="flex items-start gap-2.5">
+				<Checkbox
+					id="webhooks-disabled"
+					checked={view.repository.webhooksDisabled ?? false}
+					disabled={savingDirection}
+					onCheckedChange={(checked) => setPolling(checked === true)}
+				/>
+				<div class="flex flex-col gap-0.5">
+					<Label for="webhooks-disabled">This forge cannot reach Norn</Label>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Read this repository on a schedule instead of waiting to be told. Norn stops
+						installing and repairing a webhook here, and changes are noticed at the interval
+						below rather than at once.
+					</p>
+				</div>
+			</div>
+
 			<div class="flex flex-col gap-1">
 				<Label for="sync-direction">Direction</Label>
 				<select

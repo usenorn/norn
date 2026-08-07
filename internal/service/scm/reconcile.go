@@ -72,13 +72,19 @@ func (s *sync) reconcileOne(
 		return s.handleForgeError(ctx, from, err)
 	}
 
-	if err := s.connections.MarkVerified(ctx, from.connection.ID, login, at); err != nil {
+	if err := s.connections.MarkVerified(
+		ctx, from.connection.ID, login, forge.Capabilities(), at,
+	); err != nil {
 		return err
 	}
 
-	if from.repository.ExternalHookID == "" {
+	// A repository read on a schedule has no hook to install or repair. Trying anyway would
+	// spend a call per cycle on a forge that was never going to reach this instance.
+	switch {
+	case from.repository.PollsOnly():
+	case from.repository.ExternalHookID == "":
 		s.installMissingHook(ctx, from, target, secret)
-	} else {
+	default:
 		s.repairHook(ctx, from, target, secret)
 	}
 

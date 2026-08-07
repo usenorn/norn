@@ -22,6 +22,7 @@ type SCMRepository struct {
 	ExternalHookID   string
 	MirrorLabel      string
 	SyncDirection    MirrorDirection
+	WebhooksDisabled bool
 	PollInterval     time.Duration
 	ReconcileCursor  string
 	ReconciledAt     *time.Time
@@ -68,6 +69,13 @@ func (r SCMRepository) Direction() MirrorDirection {
 
 func (r SCMRepository) HookInstalled() bool {
 	return r.ExternalHookID != ""
+}
+
+// PollsOnly reports a repository read on a schedule rather than pushed to. A forge with no
+// route to this instance is the case it exists for, and without saying so the sweep would
+// keep trying to install a hook somebody deliberately turned off.
+func (r SCMRepository) PollsOnly() bool {
+	return r.WebhooksDisabled
 }
 
 // SCMRoute sends the changes under one path to one team. A repository holding several

@@ -25,7 +25,7 @@ func New(cfg config.Webhooks) (*Client, error) {
 		return nil, err
 	}
 
-	dialer := &net.Dialer{Timeout: cfg.DialTimeout, Control: control(allowed)}
+	dialer := &net.Dialer{Timeout: cfg.DialTimeout, Control: control(allowed, false)}
 
 	transport := &http.Transport{
 		Proxy:                 nil,
@@ -84,7 +84,7 @@ func (c *Client) Check(ctx context.Context, raw string) error {
 	}
 
 	if literal, err := netip.ParseAddr(host); err == nil {
-		if !permitted(literal, c.allowed) {
+		if !permitted(literal, c.allowed, false) {
 			return refuse(literal)
 		}
 
@@ -97,7 +97,7 @@ func (c *Client) Check(ctx context.Context, raw string) error {
 	}
 
 	for _, address := range addresses {
-		if !permitted(address, c.allowed) {
+		if !permitted(address, c.allowed, false) {
 			return refuse(address)
 		}
 	}

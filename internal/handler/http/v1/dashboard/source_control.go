@@ -40,6 +40,9 @@ func (h *handler) ConnectWorkspaceSourceControl(
 		BaseURL:     optionalString(request.Body.BaseUrl),
 		Label:       optionalString(request.Body.Label),
 		Token:       optionalString(request.Body.Token),
+		AllowPrivateAddress: request.Body.AllowPrivateAddress != nil &&
+			*request.Body.AllowPrivateAddress,
+		CACertificate: optionalString(request.Body.CaCertificate),
 	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
@@ -224,9 +227,10 @@ func (h *handler) UpdateWorkspaceSourceControlRepository(
 		request.WorkspaceId,
 		request.RepositoryId,
 		service.UpdateRepositoryInput{
-			MirrorLabel:   optionalString(request.Body.MirrorLabel),
-			SyncDirection: optionalDirection(request.Body.SyncDirection),
-			PollInterval:  optionalInterval(request.Body.PollIntervalSeconds),
+			MirrorLabel:      optionalString(request.Body.MirrorLabel),
+			SyncDirection:    optionalDirection(request.Body.SyncDirection),
+			WebhooksDisabled: request.Body.WebhooksDisabled,
+			PollInterval:     optionalInterval(request.Body.PollIntervalSeconds),
 		},
 	)
 	if err != nil {

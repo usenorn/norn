@@ -136,6 +136,7 @@ func validateConnect(input service.ConnectSourceControlInput) error {
 		entity.ValidateSCMBaseURL("baseUrl", input.BaseURL),
 		entity.ValidateSCMToken("token", input.Token),
 		entity.ValidateSCMLabel("label", input.Label),
+		entity.ValidateSCMCertificate("caCertificate", input.CACertificate),
 	} {
 		if field.Field != "" {
 			fields = append(fields, field)
@@ -146,6 +147,14 @@ func validateConnect(input service.ConnectSourceControlInput) error {
 		fields = append(fields, entity.FieldError{
 			Field: "provider",
 			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
+	// Gitea has no hosted service, so a connection naming no address names nothing at all.
+	if input.Provider == entity.SCMProviderGitea && strings.TrimSpace(input.BaseURL) == "" {
+		fields = append(fields, entity.FieldError{
+			Field: "baseUrl",
+			Code:  entity.ValidationCodeRequired,
 		})
 	}
 
@@ -177,10 +186,16 @@ func (s *connections) Connect(
 		return entity.SCMConnection{}, err
 	}
 
+	trust := entity.SCMTrust{
+		AllowPrivateAddress: input.AllowPrivateAddress,
+		CACertificate:       strings.TrimSpace(input.CACertificate),
+	}
+
 	target := entity.SCMTarget{
 		Provider: input.Provider,
 		BaseURL:  strings.TrimSpace(input.BaseURL),
 		Token:    strings.TrimSpace(input.Token),
+		Trust:    trust,
 	}
 
 	login, err := forge.Identity(ctx, target)
@@ -218,6 +233,8 @@ func (s *connections) Connect(
 				OwnerAccountID:       decision.Actor.Authority(),
 				OwnerActorKind:       entity.ActorKindToken,
 				OwnerAuthMethod:      decision.Actor.AuthMethod,
+				Trust:                trust,
+				Capabilities:         forge.Capabilities(),
 			},
 			Token: target.Token,
 		})
@@ -234,7 +251,9 @@ func (s *connections) Connect(
 
 	now := time.Now().UTC()
 
-	if err := s.connections.MarkVerified(ctx, created.ID, login, now); err != nil {
+	if err := s.connections.MarkVerified(
+		ctx, created.ID, login, forge.Capabilities(), now,
+	); err != nil {
 		return entity.SCMConnection{}, err
 	}
 
@@ -377,7 +396,7 @@ func (s *connections) VerifyConnection(
 	}
 
 	if err := s.connections.MarkVerified(
-		ctx, connectionID, login, time.Now().UTC(),
+		ctx, connectionID, login, forge.Capabilities(), time.Now().UTC(),
 	); err != nil {
 		return entity.SCMConnection{}, err
 	}

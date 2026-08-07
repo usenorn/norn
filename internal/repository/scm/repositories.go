@@ -27,6 +27,7 @@ func NewSCMRepository(db *postgres.Client, sealer *crypter.Crypter) repository.S
 const repositoryColumns = `
     id, connection_id, workspace_id, provider, full_name, external_id, default_branch, url,
     octet_length(webhook_secret_sealed) > 0, external_hook_id, mirror_label, sync_direction,
+    webhooks_disabled,
     extract(epoch FROM poll_interval), reconcile_cursor, reconciled_at, reconcile_after,
     last_seen_at, created_at, updated_at`
 
@@ -49,6 +50,7 @@ func scanRepository(row interface{ Scan(...any) error }) (entity.SCMRepository, 
 		&stored.ExternalHookID,
 		&stored.MirrorLabel,
 		&stored.SyncDirection,
+		&stored.WebhooksDisabled,
 		&seconds,
 		&stored.ReconcileCursor,
 		&stored.ReconciledAt,
@@ -251,7 +253,8 @@ const updateRepositorySettingsQuery = `
 UPDATE workspace_scm_repositories
 SET mirror_label = $2,
     sync_direction = $3,
-    poll_interval = make_interval(secs => $4),
+    webhooks_disabled = $4,
+    poll_interval = make_interval(secs => $5),
     updated_at = now()
 WHERE id = $1
 RETURNING` + repositoryColumns
@@ -277,6 +280,7 @@ func (r *repositoryRepository) UpdateSettings(
 		repositoryID,
 		settings.MirrorLabel,
 		direction,
+		settings.WebhooksDisabled,
 		interval.Seconds(),
 	))
 	if errors.Is(err, sql.ErrNoRows) {

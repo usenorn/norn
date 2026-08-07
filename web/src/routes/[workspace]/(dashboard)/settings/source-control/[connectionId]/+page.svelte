@@ -15,6 +15,7 @@
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import {
 		brokenLabel,
+		capabilityLabel,
 		connectionLabel,
 		detailOf,
 		failureMessage,
@@ -236,6 +237,32 @@
 					</div>
 				{/if}
 			</dl>
+
+			{#if view.connection.allowPrivateAddress || view.connection.caCertificateSet}
+				<p class="text-xs text-muted-foreground">
+					{#if view.connection.allowPrivateAddress}
+						Reaching an address on your own network is allowed for this connection.
+					{/if}
+					{#if view.connection.caCertificateSet}
+						It trusts a certificate authority you supplied.
+					{/if}
+				</p>
+			{/if}
+
+			{#if view.connection.missingCapabilities?.length}
+				<div class="flex flex-col gap-1 rounded-md border border-line-subtle p-3">
+					<p class="text-sm text-ink-900">This platform does not offer everything Norn uses</p>
+					<ul class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+						{#each view.connection.missingCapabilities as capability (capability)}
+							<li>{capabilityLabel(capability)}</li>
+						{/each}
+					</ul>
+					<p class="text-xs text-muted-foreground">
+						Everything else works as usual. Nothing here fails quietly — it is simply not
+						available on this target.
+					</p>
+				</div>
+			{/if}
 
 			<div class="flex flex-wrap gap-2">
 				<Button variant="secondary" onclick={verify} disabled={verifying}>

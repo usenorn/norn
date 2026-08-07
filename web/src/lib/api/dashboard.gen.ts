@@ -4651,8 +4651,13 @@ export interface components {
         WebhookAttemptOutcome: "succeeded" | "rejected" | "refused" | "timed_out" | "failed";
         /** @enum {string} */
         WebhookDisableReason: "by_owner" | "sustained_failure";
+        /**
+         * @description `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
+         * @enum {string}
+         */
+        SourceControlProvider: "github" | "gitlab" | "gitea";
         /** @enum {string} */
-        SourceControlProvider: "github" | "gitlab";
+        SourceControlCapability: "webhooks" | "reviews" | "checks" | "changed_paths" | "issues" | "labels" | "assignees";
         /** @enum {string} */
         SourceControlStatus: "connected" | "broken";
         /** @enum {string} */
@@ -4676,6 +4681,10 @@ export interface components {
             identityLogin?: string;
             /** Format: int32 */
             repositoryCount?: number;
+            allowPrivateAddress?: boolean;
+            caCertificateSet?: boolean;
+            capabilities?: components["schemas"]["SourceControlCapability"][];
+            missingCapabilities?: components["schemas"]["SourceControlCapability"][];
             status: components["schemas"]["SourceControlStatus"];
             brokenReason?: components["schemas"]["SourceControlBrokenReason"];
             brokenDetail?: string;
@@ -4688,10 +4697,13 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        /** @description allowPrivateAddress is a deliberate exception an administrator grants this one connection so it may reach a forge on their own network. It is not an instance-wide relaxation, and it never opens loopback or the link-local range a cloud provider answers on. */
         ConnectSourceControlRequest: {
             provider: components["schemas"]["SourceControlProvider"];
             baseUrl?: string;
             label?: string;
+            allowPrivateAddress?: boolean;
+            caCertificate?: string;
             token: string;
         };
         UpdateSourceControlRequest: {
@@ -4712,6 +4724,7 @@ export interface components {
             url?: string;
             mirrorLabel: string;
             syncDirection?: components["schemas"]["MirrorDirection"];
+            webhooksDisabled?: boolean;
             /** Format: int32 */
             pollIntervalSeconds?: number;
             hookInstalled: boolean;
@@ -4745,6 +4758,7 @@ export interface components {
         UpdateSourceControlRepositoryRequest: {
             mirrorLabel?: string;
             syncDirection?: components["schemas"]["MirrorDirection"];
+            webhooksDisabled?: boolean;
             /** Format: int32 */
             pollIntervalSeconds?: number;
         };

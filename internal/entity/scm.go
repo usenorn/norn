@@ -53,10 +53,13 @@ type SCMProvider string
 const (
 	SCMProviderGitHub SCMProvider = "github"
 	SCMProviderGitLab SCMProvider = "gitlab"
+	// SCMProviderGitea covers Forgejo as well. Forgejo is a fork of Gitea and serves the same
+	// api under the same paths, so one adapter reaches both and a second would be a copy.
+	SCMProviderGitea SCMProvider = "gitea"
 )
 
 func SCMProviders() []SCMProvider {
-	return []SCMProvider{SCMProviderGitHub, SCMProviderGitLab}
+	return []SCMProvider{SCMProviderGitHub, SCMProviderGitLab, SCMProviderGitea}
 }
 
 func (p SCMProvider) Valid() bool {
@@ -69,6 +72,8 @@ func (p SCMProvider) Label() string {
 		return "GitHub"
 	case SCMProviderGitLab:
 		return "GitLab"
+	case SCMProviderGitea:
+		return "Gitea or Forgejo"
 	default:
 		return string(p)
 	}
@@ -102,6 +107,12 @@ func (r SCMBrokenReason) Valid() bool {
 	return r == SCMBrokenNone || slices.Contains(SCMBrokenReasons(), r)
 }
 
+// SelfHosted reports a connection to somebody's own instance rather than the public service.
+// Gitea has no hosted service this integration knows, so it is always somebody's own.
+func (c SCMConnection) SelfHosted() bool {
+	return c.Provider == SCMProviderGitea || strings.TrimSpace(c.BaseURL) != ""
+}
+
 // SCMConnection is one credential against one forge address. A token already reaches every
 // repository its owner can see, so repositories hang off the connection rather than each
 // carrying its own copy of the secret.
@@ -124,6 +135,8 @@ type SCMConnection struct {
 	BrokenDetail         string
 	BrokenAt             *time.Time
 	VerifiedAt           *time.Time
+	Trust                SCMTrust
+	Capabilities         SCMCapabilitySet
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
 }
@@ -179,6 +192,7 @@ type SCMTarget struct {
 	BaseURL    string
 	Repository string
 	Token      string
+	Trust      SCMTrust
 }
 
 func (c SCMConnection) Target(repository, token string) SCMTarget {
@@ -187,6 +201,7 @@ func (c SCMConnection) Target(repository, token string) SCMTarget {
 		BaseURL:    c.BaseURL,
 		Repository: repository,
 		Token:      token,
+		Trust:      c.Trust,
 	}
 }
 

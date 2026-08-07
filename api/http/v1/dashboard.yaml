@@ -7723,7 +7723,16 @@ components:
 
     SourceControlProvider:
       type: string
-      enum: [github, gitlab]
+      description: >-
+        `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api,
+        so one connection type reaches both. It has no hosted service, so a connection to it
+        always names the address of somebody's own instance.
+      enum: [github, gitlab, gitea]
+
+    SourceControlCapability:
+      type: string
+      enum:
+        [webhooks, reviews, checks, changed_paths, issues, labels, assignees]
 
     SourceControlStatus:
       type: string
@@ -7765,6 +7774,14 @@ components:
         tokenHint: { type: string }
         identityLogin: { type: string }
         repositoryCount: { type: integer, format: int32 }
+        allowPrivateAddress: { type: boolean }
+        caCertificateSet: { type: boolean }
+        capabilities:
+          type: array
+          items: { $ref: '#/components/schemas/SourceControlCapability' }
+        missingCapabilities:
+          type: array
+          items: { $ref: '#/components/schemas/SourceControlCapability' }
         status: { $ref: '#/components/schemas/SourceControlStatus' }
         brokenReason: { $ref: '#/components/schemas/SourceControlBrokenReason' }
         brokenDetail: { type: string }
@@ -7775,11 +7792,18 @@ components:
 
     ConnectSourceControlRequest:
       type: object
+      description: >-
+        allowPrivateAddress is a deliberate exception an administrator grants this one
+        connection so it may reach a forge on their own network. It is not an instance-wide
+        relaxation, and it never opens loopback or the link-local range a cloud provider
+        answers on.
       required: [provider, token]
       properties:
         provider: { $ref: '#/components/schemas/SourceControlProvider' }
         baseUrl: { type: string }
         label: { type: string }
+        allowPrivateAddress: { type: boolean }
+        caCertificate: { type: string, writeOnly: true }
         token: { type: string, writeOnly: true }
 
     UpdateSourceControlRequest:
@@ -7810,6 +7834,7 @@ components:
         url: { type: string }
         mirrorLabel: { type: string }
         syncDirection: { $ref: '#/components/schemas/MirrorDirection' }
+        webhooksDisabled: { type: boolean }
         pollIntervalSeconds: { type: integer, format: int32 }
         hookInstalled: { type: boolean }
         routeCount: { type: integer, format: int32 }
@@ -7845,6 +7870,7 @@ components:
       properties:
         mirrorLabel: { type: string }
         syncDirection: { $ref: '#/components/schemas/MirrorDirection' }
+        webhooksDisabled: { type: boolean }
         pollIntervalSeconds: { type: integer, format: int32 }
 
     MirrorDirection:
