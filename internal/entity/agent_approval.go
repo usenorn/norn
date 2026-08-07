@@ -51,6 +51,17 @@ func (s AgentSettings) Holds(action AgentAction) bool {
 	}
 }
 
+func (a AgentAction) Scopes() APIScopeSet {
+	switch a {
+	case AgentActionComment:
+		return APIScopeSet{NewAPIScope(ResourceComment, ActionManage)}
+	case AgentActionStateChange, AgentActionIssueEdit:
+		return APIScopeSet{NewAPIScope(ResourceIssue, ActionUpdate)}
+	default:
+		return APIScopeSet{}
+	}
+}
+
 func (s AgentSettings) HoldsAnything() bool {
 	return s.HoldComments || s.HoldStateChanges || s.HoldIssueEdits
 }

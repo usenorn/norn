@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -23,6 +24,7 @@ SELECT id, workspace_id, source_kind, source_label,
        status, phase_error, preview_digest, acknowledge_triage,
        source_settings, unknown_reference_policy, source_secret_sealed IS NOT NULL,
        coalesce(lease_token::text, ''), lease_expires_at, attempt, staged, processed,
+       requested_all_teams, requested_team_ids, requested_scopes,
        staged_at, mapped_at, started_at, finished_at, reverted_at, created_at, updated_at
 FROM workspace_import_runs`
 
@@ -37,9 +39,10 @@ INSERT INTO workspace_import_runs (
     id, workspace_id, source_kind, source_label,
     requested_by_account_id, requested_actor_kind, requested_auth_method,
     status, preview_digest, acknowledge_triage,
-    source_settings, unknown_reference_policy, created_at, updated_at
+    source_settings, unknown_reference_policy, created_at, updated_at,
+    requested_all_teams, requested_team_ids, requested_scopes
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`
 
 const saveSourceConfigQuery = `
 UPDATE workspace_import_runs
@@ -199,6 +202,9 @@ func (r *runRepository) Create(
 		string(run.UnknownReferences.Or(entity.ImportUnknownSkip)),
 		run.CreatedAt,
 		run.UpdatedAt,
+		run.Authority.AllTeams,
+		types.StringArray(run.Authority.TeamStrings()),
+		nullableStrings(run.Authority.ScopeStrings()),
 	); err != nil {
 		return entity.ImportRun{}, fmt.Errorf("insert import run: %w", err)
 	}
@@ -516,6 +522,8 @@ func scanRun(row scanner) (entity.ImportRun, error) {
 		revertedKind, revertedMethod    string
 		status, leaseToken              string
 		settings, unknownReferences     string
+		teamIDs                         types.StringArray
+		scopes                          types.StringArray
 		leaseExpires, stagedAt          sql.NullTime
 		mappedAt, startedAt, finishedAt sql.NullTime
 		revertedAt                      sql.NullTime
@@ -528,6 +536,7 @@ func scanRun(row scanner) (entity.ImportRun, error) {
 		&status, &run.PhaseError, &run.PreviewDigest, &run.AcknowledgeTriage,
 		&settings, &unknownReferences, &run.SourceSecretSet,
 		&leaseToken, &leaseExpires, &run.Attempt, &run.Staged, &run.Processed,
+		&run.Authority.AllTeams, &teamIDs, &scopes,
 		&stagedAt, &mappedAt, &startedAt, &finishedAt, &revertedAt,
 		&run.CreatedAt, &run.UpdatedAt,
 	); err != nil {
@@ -552,6 +561,7 @@ func scanRun(row scanner) (entity.ImportRun, error) {
 	run.StartedAt = optionalTime(startedAt)
 	run.FinishedAt = optionalTime(finishedAt)
 	run.RevertedAt = optionalTime(revertedAt)
+	run.Authority = entity.NewRequestedAuthority(run.Authority.AllTeams, teamIDs, scopes)
 
 	return run, nil
 }
@@ -599,4 +609,12 @@ func optionalIdentifier(id uuid.UUID) *string {
 	value := id.String()
 
 	return &value
+}
+
+func nullableStrings(values []string) any {
+	if values == nil {
+		return nil
+	}
+
+	return types.StringArray(values)
 }

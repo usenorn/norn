@@ -324,6 +324,7 @@ type ImportRun struct {
 	RevertedByAccount   uuid.UUID
 	RevertedActorKind   ActorKind
 	RevertedAuthMethod  SessionAuthMethod
+	Authority           RequestedAuthority
 	Status              ImportStatus
 	PhaseError          string
 	PreviewDigest       string
@@ -346,19 +347,21 @@ type ImportRun struct {
 }
 
 func (r ImportRun) Requester() Actor {
-	return actorFrom(r.RequestedActorKind, r.RequestedByAccount, r.RequestedAuthMethod)
+	return r.Authority.Replay(
+		r.RequestedActorKind,
+		r.RequestedByAccount,
+		r.RequestedAuthMethod,
+		r.WorkspaceID,
+	)
 }
 
 func (r ImportRun) Reverter() Actor {
-	return actorFrom(r.RevertedActorKind, r.RevertedByAccount, r.RevertedAuthMethod)
-}
-
-func actorFrom(kind ActorKind, account uuid.UUID, method SessionAuthMethod) Actor {
-	if kind == "" {
-		kind = ActorKindUser
-	}
-
-	return Actor{Kind: kind, AccountID: account, AuthMethod: method}
+	return r.Authority.Replay(
+		r.RevertedActorKind,
+		r.RevertedByAccount,
+		r.RevertedAuthMethod,
+		r.WorkspaceID,
+	)
 }
 
 type ImportCursor struct {

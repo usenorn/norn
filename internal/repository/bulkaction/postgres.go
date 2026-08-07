@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -19,17 +20,20 @@ import (
 const insertActionQuery = `
 INSERT INTO workspace_bulk_actions (
     id, workspace_id, requested_by_account_id, requested_actor_kind, requested_auth_method,
-    change, status, expected, created_at, updated_at
+    change, status, expected, created_at, updated_at,
+    requested_all_teams, requested_team_ids, requested_scopes
 )
-VALUES ($1, $2, $3, $7, $8, $4, 'queued', $5, $6, $6)
+VALUES ($1, $2, $3, $7, $8, $4, 'queued', $5, $6, $6, $9, $10, $11)
 RETURNING id, workspace_id, coalesce(requested_by_account_id::text, ''),
           requested_actor_kind, requested_auth_method, change, status,
-          expected, processed, started_at, finished_at, created_at, updated_at`
+          expected, processed, requested_all_teams, requested_team_ids, requested_scopes,
+          started_at, finished_at, created_at, updated_at`
 
 const actionByIDQuery = `
 SELECT id, workspace_id, coalesce(requested_by_account_id::text, ''),
        requested_actor_kind, requested_auth_method, change, status,
-       expected, processed, started_at, finished_at, created_at, updated_at
+       expected, processed, requested_all_teams, requested_team_ids, requested_scopes,
+       started_at, finished_at, created_at, updated_at
 FROM workspace_bulk_actions
 WHERE id = $1 AND workspace_id = $2`
 
@@ -77,13 +81,17 @@ func scanAction(row scanner) (entity.BulkAction, error) {
 		change    []byte
 		status    string
 		expected  sql.NullInt64
+		allTeams  bool
+		teamIDs   types.StringArray
+		scopes    types.StringArray
 		started   sql.NullTime
 		finished  sql.NullTime
 	)
 
 	if err := row.Scan(
 		&id, &workspace, &requested, &kind, &method, &change, &status,
-		&expected, &action.Processed, &started, &finished,
+		&expected, &action.Processed, &allTeams, &teamIDs, &scopes,
+		&started, &finished,
 		&action.CreatedAt, &action.UpdatedAt,
 	); err != nil {
 		return entity.BulkAction{}, err
@@ -92,6 +100,7 @@ func scanAction(row scanner) (entity.BulkAction, error) {
 	action.Status = entity.BulkActionStatus(status)
 	action.RequestedActorKind = entity.ActorKind(kind)
 	action.RequestedAuthMethod = entity.SessionAuthMethod(method)
+	action.Authority = entity.NewRequestedAuthority(allTeams, teamIDs, scopes)
 
 	if err := json.Unmarshal(change, &action.Change); err != nil {
 		return entity.BulkAction{}, fmt.Errorf("decode bulk change: %w", err)
@@ -169,6 +178,9 @@ func (r *actionRepository) Create(
 		time.Now().UTC(),
 		string(action.RequestedActorKind),
 		string(action.RequestedAuthMethod),
+		action.Authority.AllTeams,
+		types.StringArray(action.Authority.TeamStrings()),
+		nullableStrings(action.Authority.ScopeStrings()),
 	))
 	if err != nil {
 		return entity.BulkAction{}, fmt.Errorf("insert bulk action: %w", err)
@@ -313,4 +325,12 @@ func (r *actionRepository) ListOutcomes(
 	}
 
 	return outcomes, nil
+}
+
+func nullableStrings(values []string) any {
+	if values == nil {
+		return nil
+	}
+
+	return types.StringArray(values)
 }
