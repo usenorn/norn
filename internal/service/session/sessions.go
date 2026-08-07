@@ -87,6 +87,8 @@ func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput)
 	account, err := s.accounts.GetByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, entity.ErrAccountNotFound) {
+			entity.BurnPasswordGuess(input.Password)
+
 			return service.IssuedSession{}, s.recordFailure(ctx, subject, email, uuid.Nil)
 		}
 
@@ -94,6 +96,8 @@ func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput)
 	}
 
 	if !account.CanAuthenticate() {
+		entity.BurnPasswordGuess(input.Password)
+
 		return service.IssuedSession{}, s.recordFailure(ctx, subject, email, account.ID)
 	}
 

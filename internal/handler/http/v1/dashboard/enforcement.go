@@ -60,6 +60,7 @@ func (h *handler) RedeemRecoveryCode(
 		WorkspaceSlug: request.Body.Workspace,
 		Code:          request.Body.Code,
 		From:          client.IP.String(),
+		FromAddress:   client.IP,
 	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

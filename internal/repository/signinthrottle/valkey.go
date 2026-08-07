@@ -76,15 +76,9 @@ func (r *signInThrottleRepository) Get(ctx context.Context, subjectHash string) 
 func (r *signInThrottleRepository) RecordFailure(ctx context.Context, subjectHash string) (entity.SignInThrottle, error) {
 	key := r.failuresKey(subjectHash)
 
-	failures, err := r.client.Incr(ctx, key).Result()
+	failures, err := r.count(ctx, key, entity.SignInFailureWindow)
 	if err != nil {
 		return entity.SignInThrottle{}, fmt.Errorf("increment sign-in failures: %w", err)
-	}
-
-	if failures == 1 {
-		if err := r.client.Expire(ctx, key, entity.SignInFailureWindow).Err(); err != nil {
-			return entity.SignInThrottle{}, fmt.Errorf("expire sign-in failures: %w", err)
-		}
 	}
 
 	if failures < entity.SignInMaxFailures {
@@ -121,16 +115,23 @@ func (r *signInThrottleRepository) Clear(ctx context.Context, subjectHash string
 func (r *signInThrottleRepository) RecordAddressAttempt(ctx context.Context, ip netip.Addr) (int, error) {
 	key := r.addressKey(ip)
 
-	attempts, err := r.client.Incr(ctx, key).Result()
+	attempts, err := r.count(ctx, key, entity.SignInAddressWindow)
 	if err != nil {
 		return 0, fmt.Errorf("increment sign-in address attempts: %w", err)
 	}
 
-	if attempts == 1 {
-		if err := r.client.Expire(ctx, key, entity.SignInAddressWindow).Err(); err != nil {
-			return 0, fmt.Errorf("expire sign-in address attempts: %w", err)
-		}
+	return int(attempts), nil
+}
+
+func (r *signInThrottleRepository) count(
+	ctx context.Context,
+	key string,
+	window time.Duration,
+) (int64, error) {
+	err := r.client.SetArgs(ctx, key, 0, redis.SetArgs{Mode: "NX", TTL: window}).Err()
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return 0, err
 	}
 
-	return int(attempts), nil
+	return r.client.Incr(ctx, key).Result()
 }

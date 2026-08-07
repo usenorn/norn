@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"net/netip"
 
 	"github.com/google/uuid"
 
@@ -40,4 +41,5 @@ type RedeemRecoveryCodeInput struct {
 	WorkspaceSlug string
 	Code          string
 	From          string
+	FromAddress   netip.Addr
 }

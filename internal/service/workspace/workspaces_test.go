@@ -17,6 +17,7 @@ import (
 	breakglassrepo "github.com/usenorn/norn/internal/repository/breakglass"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	throttlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	ssoconnectionrepo "github.com/usenorn/norn/internal/repository/ssoconnection"
 	ssoidentityrepo "github.com/usenorn/norn/internal/repository/ssoidentity"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
@@ -44,6 +45,7 @@ type harness struct {
 	connections  *ssoconnectionrepo.MockSSOConnection
 	identities   *ssoidentityrepo.MockSSOIdentity
 	breakGlass   *breakglassrepo.MockBreakGlass
+	throttle     *throttlerepo.MockSignInThrottle
 	producer     *jobqueuerepo.MockJobProducer
 	blobs        *blobrepo.MockBlob
 	authorizer   *authorizersvc.MockAuthorizer
@@ -51,6 +53,19 @@ type harness struct {
 }
 
 func newHarness(t *testing.T) *harness {
+	t.Helper()
+
+	h := newHarnessWithoutThrottle(t)
+
+	h.throttle.EXPECT().
+		RecordAddressAttempt(gomock.Any(), gomock.Any()).
+		Return(1, nil).
+		AnyTimes()
+
+	return h
+}
+
+func newHarnessWithoutThrottle(t *testing.T) *harness {
 	t.Helper()
 
 	return newHarnessWithLicence(t, licensedForDirectory())
@@ -80,6 +95,7 @@ func newHarnessWithLicence(t *testing.T, licence entity.Licence) *harness {
 		connections:  ssoconnectionrepo.NewMockSSOConnection(ctrl),
 		identities:   ssoidentityrepo.NewMockSSOIdentity(ctrl),
 		breakGlass:   breakglassrepo.NewMockBreakGlass(ctrl),
+		throttle:     throttlerepo.NewMockSignInThrottle(ctrl),
 		producer:     jobqueuerepo.NewMockJobProducer(ctrl),
 		blobs:        blobrepo.NewMockBlob(ctrl),
 		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
@@ -96,6 +112,7 @@ func newHarnessWithLicence(t *testing.T, licence entity.Licence) *harness {
 		h.connections,
 		h.identities,
 		h.breakGlass,
+		h.throttle,
 		h.producer,
 		h.blobs,
 		h.authorizer,
