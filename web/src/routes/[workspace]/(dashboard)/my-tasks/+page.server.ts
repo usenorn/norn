@@ -1,13 +1,17 @@
 import { keys } from "$lib/api/keys";
-import { bucketsOf } from "$lib/tasks/tasks";
-import type { TaskBucket } from "$lib/tasks/types";
+import type { Issue } from "$lib/issues/issues";
+import { issuePageSize } from "$lib/issues/filter";
+import type { IssueQueryBody } from "$lib/issues/filter";
 import type { PageServerLoad } from "./$types";
-
-const assignedLimit = 200;
 
 const openCategories = ["not_started", "active"];
 
-export type MyTasksPageData = { buckets: TaskBucket[] };
+export type MyTasksPageData = {
+	query: IssueQueryBody;
+	issues: Issue[];
+	nextCursor: string | undefined;
+	assignee: string;
+};
 
 export const load: PageServerLoad = async ({
 	depends,
@@ -17,25 +21,30 @@ export const load: PageServerLoad = async ({
 }): Promise<MyTasksPageData> => {
 	depends(keys.page(route.id));
 
-	const { workspace, member, now } = await parent();
+	const { workspace, member } = await parent();
 
 	depends(keys.issues(workspace.id));
 
+	const query: IssueQueryBody = {
+		filter: {
+			all: [
+				{ field: "assignee", op: "is", values: [member.id] },
+				{ field: "stateCategory", op: "in", values: openCategories },
+			],
+		},
+		sort: [{ field: "dueOn" }, { field: "priority" }],
+		limit: issuePageSize,
+	};
+
 	const assigned = await locals.api.POST("/workspaces/{workspaceId}/issues/query", {
 		params: { path: { workspaceId: workspace.id } },
-		body: {
-			filter: {
-				all: [
-					{ field: "assignee", op: "is", values: [member.id] },
-					{ field: "stateCategory", op: "in", values: openCategories },
-				],
-			},
-			sort: [{ field: "dueOn" }, { field: "priority" }],
-			limit: assignedLimit,
-		},
+		body: query,
 	});
 
 	return {
-		buckets: bucketsOf(assigned.data?.issues ?? [], member.name, now, workspace.timezone),
+		query,
+		issues: assigned.data?.issues ?? [],
+		nextCursor: assigned.data?.nextCursor,
+		assignee: member.name,
 	};
 };

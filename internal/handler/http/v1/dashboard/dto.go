@@ -709,7 +709,7 @@ func issueQueryResultDTO(result service.IssueQueryResult, grouped bool) api.Issu
 	if grouped {
 		groups := make([]api.IssueGroupTally, len(result.Groups))
 		for i, group := range result.Groups {
-			groups[i] = api.IssueGroupTally{Key: group.Key, Issues: int32(group.Issues)}
+			groups[i] = issueGroupTallyDTO(group)
 		}
 
 		dto.Groups = &groups
@@ -718,10 +718,21 @@ func issueQueryResultDTO(result service.IssueQueryResult, grouped bool) api.Issu
 	return dto
 }
 
+func issueGroupTallyDTO(tally entity.IssueGroupTally) api.IssueGroupTally {
+	dto := api.IssueGroupTally{Key: tally.Key, Issues: int32(tally.Issues)}
+
+	if tally.NextCursor != "" {
+		cursor := tally.NextCursor
+		dto.NextCursor = &cursor
+	}
+
+	return dto
+}
+
 func triageQueueDTO(queue service.TriageQueue) api.TriageQueue {
 	teams := make([]api.IssueGroupTally, 0, len(queue.Teams))
 	for _, team := range queue.Teams {
-		teams = append(teams, api.IssueGroupTally{Key: team.Key, Issues: int32(team.Issues)})
+		teams = append(teams, issueGroupTallyDTO(team))
 	}
 
 	dto := api.TriageQueue{Issues: issueDTOs(queue.Issues), Teams: teams}

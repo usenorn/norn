@@ -4603,6 +4603,9 @@ type IssueGroupTally struct {
 
 	// Key The id or enum value the group is keyed on; empty when the property is unset
 	Key string `json:"key"`
+
+	// NextCursor The position after the rows this group contributed to `issues`, sent back as `cursor` on a query narrowed to this group. Absent when the group is complete, and absent when the group contributed nothing at all, which is paged from the start instead.
+	NextCursor *string `json:"nextCursor,omitempty"`
 }
 
 // IssueMirror defines model for IssueMirror.
@@ -4641,22 +4644,30 @@ type IssueProgress struct {
 
 // IssueQueryRequest defines model for IssueQueryRequest.
 type IssueQueryRequest struct {
+	// Cursor A position from a previous `nextCursor`. Refused together with `perGroup`.
 	Cursor *string `json:"cursor,omitempty"`
 
 	// Filter A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
 	Filter  *IssueFilter  `json:"filter,omitempty"`
 	GroupBy *IssueGroupBy `json:"groupBy,omitempty"`
-	Limit   *int32        `json:"limit,omitempty"`
-	Sort    *[]IssueSort  `json:"sort,omitempty"`
-	Text    *string       `json:"text,omitempty"`
+
+	// Limit The most rows `issues` may hold. With `perGroup` it is the budget every group spends from, and defaults to the maximum rather than the page default.
+	Limit *int32 `json:"limit,omitempty"`
+
+	// PerGroup Return the first rows of every group instead of one flat page. Requires `groupBy`, and is refused together with `cursor`, which names a position in the whole ordering rather than in one group. Groups fill rank by rank, so no group loses its first row while another still has a second.
+	PerGroup *int32       `json:"perGroup,omitempty"`
+	Sort     *[]IssueSort `json:"sort,omitempty"`
+	Text     *string      `json:"text,omitempty"`
 }
 
 // IssueQueryResult defines model for IssueQueryResult.
 type IssueQueryResult struct {
-	// Groups Present when a grouping was asked for. Grouping by label counts an issue once per label it carries, so those tallies sum to more than the issues returned.
-	Groups     *[]IssueGroupTally `json:"groups,omitempty"`
-	Issues     []Issue            `json:"issues"`
-	NextCursor *string            `json:"nextCursor,omitempty"`
+	// Groups Present when a grouping was asked for, one entry per group holding at least one match, counted over the whole filtered set. With `perGroup`, the rows a group contributed to `issues` are the first rows of that group in the requested order, so a group counting more than it contributed was cut short by a limit rather than by a filter. Grouping by label counts an issue once per label it carries, though `issues` still lists it once.
+	Groups *[]IssueGroupTally `json:"groups,omitempty"`
+	Issues []Issue            `json:"issues"`
+
+	// NextCursor Absent when `perGroup` was asked for, since each group carries its own.
+	NextCursor *string `json:"nextCursor,omitempty"`
 }
 
 // IssueRelation defines model for IssueRelation.

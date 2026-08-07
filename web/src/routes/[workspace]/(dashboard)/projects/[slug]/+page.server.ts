@@ -1,5 +1,6 @@
 import type { IssueProgress } from "$lib/issues/board";
 import { keys } from "$lib/api/keys";
+import { issuePageSize } from "$lib/issues/filter";
 import type { ProjectDetail } from "$lib/projects/projects";
 import { projectPreviewStates } from "./preview";
 import type { components } from "$lib/api/dashboard.gen";
@@ -53,7 +54,7 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/issues", {
 			params: {
 				path: { workspaceId: workspace.id },
-				query: { projectId: project.id, limit: 200 },
+				query: { projectId: project.id, limit: issuePageSize },
 			},
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/projects/{projectId}/activity", {
@@ -71,6 +72,7 @@ export const load: PageServerLoad = async ({
 			members: members.data ?? [],
 			updates: updates.data ?? [],
 			issues: issues.data?.issues ?? [],
+			nextCursor: issues.data?.nextCursor,
 			activity: readActivity(activity.data),
 		},
 		progress: progress.data,

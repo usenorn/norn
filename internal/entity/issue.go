@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"encoding/base64"
 	"errors"
 	"strconv"
 	"strings"
@@ -12,11 +11,11 @@ import (
 )
 
 const (
-	IssueTitleMinLen     = 1
-	IssueTitleMaxLen     = 200
-	IssuePageDefaultSize = 50
-	IssuePageMaxSize     = 200
-	IssueCursorIDLen     = 36
+	IssueTitleMinLen      = 1
+	IssueTitleMaxLen      = 200
+	IssuePageDefaultSize  = 50
+	IssuePageMaxSize      = 200
+	IssueGroupPageMaxSize = 50
 )
 
 var (
@@ -145,42 +144,7 @@ func ValidateIssueTitle(field, title string) FieldError {
 	}
 }
 
-func (i Issue) Cursor() IssueCursor {
-	return IssueCursor{CreatedAt: i.CreatedAt, IssueID: i.ID}
-}
-
-type IssueCursor struct {
-	CreatedAt time.Time
-	IssueID   uuid.UUID
-}
-
-func (c IssueCursor) Encode() string {
-	return base64.RawURLEncoding.EncodeToString(
-		[]byte(c.IssueID.String() + c.CreatedAt.UTC().Format(time.RFC3339Nano)),
-	)
-}
-
-func DecodeIssueCursor(raw string) (IssueCursor, error) {
-	decoded, err := base64.RawURLEncoding.DecodeString(raw)
-	if err != nil || len(decoded) < IssueCursorIDLen {
-		return IssueCursor{}, ErrIssueCursorInvalid
-	}
-
-	issueID, err := uuid.Parse(string(decoded[:IssueCursorIDLen]))
-	if err != nil {
-		return IssueCursor{}, ErrIssueCursorInvalid
-	}
-
-	createdAt, err := time.Parse(time.RFC3339Nano, string(decoded[IssueCursorIDLen:]))
-	if err != nil {
-		return IssueCursor{}, ErrIssueCursorInvalid
-	}
-
-	return IssueCursor{CreatedAt: createdAt, IssueID: issueID}, nil
-}
-
 type IssuePage struct {
-	Cursor    *IssueCursor
 	Limit     int
 	Statuses  []IssueStatus
 	CycleID   *uuid.UUID
@@ -190,10 +154,23 @@ type IssuePage struct {
 	Filter      *IssueFilter
 	Sort        []IssueSort
 	QueryCursor *IssueQueryCursor
+	PerGroup    int
 	Waiting     bool
 }
 
 func (p IssuePage) Normalized() IssuePage {
+	if p.PerGroup < 0 {
+		p.PerGroup = 0
+	}
+
+	if p.PerGroup > IssueGroupPageMaxSize {
+		p.PerGroup = IssueGroupPageMaxSize
+	}
+
+	if p.Limit <= 0 && p.PerGroup > 0 {
+		p.Limit = IssuePageMaxSize
+	}
+
 	if p.Limit <= 0 {
 		p.Limit = IssuePageDefaultSize
 	}

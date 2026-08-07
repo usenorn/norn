@@ -1,23 +1,21 @@
-import {
-	backlogStates,
-	issueLayouts,
-	issueTabs,
-	type IssueLayout,
-	type IssueTab,
-} from "$lib/issues/board";
+import { backlogStates } from "$lib/issues/board";
 import { keys } from "$lib/api/keys";
 import type { Issue, IssueProgress } from "$lib/issues/board";
 import {
 	carriesDisplay,
 	displayCookie,
 	readDisplay,
+	readLayout,
+	readTab,
 	writeDisplay,
 	type Display,
+	type IssueLayout,
+	type IssueTab,
 } from "$lib/issues/display";
 import { facetFilters, readFacets, type Facets } from "$lib/issues/facets";
 import type { IssueGroupTally, IssueQueryBody } from "$lib/issues/filter";
 import type { Label } from "$lib/labels/labels";
-import { appliedView, viewQuery, type AppliedView } from "$lib/views/applied";
+import { appliedView, viewQuery, viewTeams, type AppliedView } from "$lib/views/applied";
 import { calendarDate } from "$lib/time";
 import type { Team } from "$lib/team/teams";
 import type { WorkflowState } from "$lib/team/states";
@@ -46,8 +44,8 @@ export type IssuesPageData = {
 	layout: IssueLayout;
 };
 
-function pick<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
-	return allowed.includes(value as T) ? (value as T) : fallback;
+function byPositionThenName(a: WorkflowState, b: WorkflowState): number {
+	return a.position - b.position || a.name.localeCompare(b.name);
 }
 
 export const load: PageServerLoad = async ({
@@ -70,11 +68,12 @@ export const load: PageServerLoad = async ({
 
 	const facets = readFacets(q);
 	const display = readDisplay(chosen);
-	const layout = pick(chosen.get("layout"), issueLayouts, "list");
+	const layout = readLayout(chosen);
+	const tab = readTab(chosen);
 	const today = calendarDate(now, workspace.timezone);
 
 	if (carriesDisplay(q)) {
-		cookies.set(remembered, writeDisplay(display, layout).toString(), {
+		cookies.set(remembered, writeDisplay(display, layout, tab).toString(), {
 			path: "/",
 			httpOnly: true,
 			sameSite: "lax",
@@ -82,13 +81,7 @@ export const load: PageServerLoad = async ({
 		});
 	}
 
-	const options = {
-		tab: pick(q.get("tab"), issueTabs, "active"),
-		layout,
-		facets,
-		display,
-		today,
-	};
+	const options = { tab, layout, facets, display, today };
 
 	const available = teams ?? [];
 	const applied = appliedView(q.get("view") ?? "", views ?? [], available);
@@ -119,13 +112,22 @@ export const load: PageServerLoad = async ({
 
 	const path = { workspaceId: workspace.id };
 
-	const states = team
-		? await locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
-				params: { path: { ...path, teamId: team.id } },
-			})
-		: { data: undefined };
+	const scoped = viewTeams(applied, available);
+	const covered = scoped.length > 0 ? scoped : team ? [team] : [];
 
-	const backlog = backlogStates(states.data ?? []);
+	const fetched = await Promise.all(
+		covered.map((each) =>
+			locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
+				params: { path: { ...path, teamId: each.id } },
+			})
+		)
+	);
+
+	const states = fetched.some((result) => result.data)
+		? fetched.flatMap((result) => result.data ?? []).sort(byPositionThenName)
+		: undefined;
+
+	const backlog = backlogStates(states ?? []);
 	const filters = facetFilters(facets, today);
 
 	const query = viewQuery(applied, options.tab, team?.id ?? null, "", {
@@ -141,7 +143,7 @@ export const load: PageServerLoad = async ({
 		locals.api.POST("/workspaces/{workspaceId}/issues/query", { params: { path }, body: query }),
 		locals.api.POST("/workspaces/{workspaceId}/issues/query", {
 			params: { path },
-			body: { ...across, limit: 1 },
+			body: { ...across, perGroup: undefined, limit: 1 },
 		}),
 		facets.cycle
 			? locals.api.GET("/workspaces/{workspaceId}/issues/progress", {
@@ -170,7 +172,7 @@ export const load: PageServerLoad = async ({
 		nextCursor: issues.data?.nextCursor,
 		groups: issues.data?.groups,
 		totals: totals.data?.groups,
-		states: states.data,
+		states,
 		labels: labels.data ?? [],
 		progress: progress.data,
 		members: members.data?.members ?? [],

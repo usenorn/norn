@@ -1,6 +1,9 @@
 import type { TaskBucket } from "$lib/tasks/types";
 
-export type MyTasksPreview = { buckets: TaskBucket[] };
+export type MyTasksPreview = {
+	buckets: TaskBucket[];
+	paging?: { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
+};
 
 export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.env.DEV
 	? {

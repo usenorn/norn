@@ -8,6 +8,7 @@
 	import Check from "@lucide/svelte/icons/check";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
+	import CircleHelp from "@lucide/svelte/icons/circle-help";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Folder from "@lucide/svelte/icons/folder";
 	import Funnel from "@lucide/svelte/icons/funnel";
@@ -46,24 +47,37 @@
 	import {
 		backlogStates,
 		boardFor,
-		issueTabs,
 		tabCounts,
-		tabLabels,
+		type ColumnSource,
 		type Issue,
+		type IssueColumn,
 	} from "$lib/issues/board";
+	import ColumnMore from "$lib/issues/column-more.svelte";
 	import {
 		atDefaults,
 		groupingLabels,
 		groupingNouns,
 		groupings,
 		hiddenParam,
+		issueTabs,
 		orderingLabels,
 		orderings,
 		rowProperties,
 		rowPropertyLabels,
+		tabLabels,
 		writeDisplay,
 	} from "$lib/issues/display";
 	import {
+		noPages,
+		pagesOf,
+		withFailure,
+		withLoading,
+		withPage,
+		type BoardPages,
+	} from "$lib/issues/paging";
+	import { columnQuery, tallyTotal } from "$lib/issues/filter";
+	import {
+		columnFilter,
 		dueWindowLabels,
 		dueWindows,
 		facetCount,
@@ -77,6 +91,7 @@
 	import { brokenIn } from "$lib/views/applied";
 	import { referenceLabel, scopeOf, viewsPath } from "$lib/views/views";
 	import { initialsOf } from "$lib/team/members";
+	import type { WorkflowState } from "$lib/team/states";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { cycleWindow } from "$lib/time";
 	import { issuesPreviewStates } from "./preview";
@@ -93,11 +108,7 @@
 	const slug = $derived(data.workspace.slug);
 	const at = $derived((path: string) => workspacePath(slug, path));
 
-	type Loaded = { source: Issue[] | undefined; issues: Issue[]; nextCursor?: string };
-	type Paging = { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
-
-	let accumulated = $state.raw<Loaded | null>(null);
-	let localPaging = $state<Paging>({ kind: "idle" });
+	let pages = $state.raw<BoardPages>(noPages);
 
 	let dragging = $state<string | null>(null);
 	let dropTarget = $state<string | null>(null);
@@ -114,22 +125,21 @@
 	const facets = $derived(preview?.facets ?? data.facets);
 
 	const base = $derived(preview?.issues ?? data.issues);
-
-	const loaded = $derived(
-		accumulated && accumulated.source === base ? accumulated.issues : base
-	);
-
-	const nextCursor = $derived(
-		accumulated && accumulated.source === base
-			? accumulated.nextCursor
-			: (preview?.nextCursor ?? data.nextCursor)
-	);
-
 	const tallies = $derived(preview?.groups ?? data.groups);
+
+	const source = $derived<ColumnSource | undefined>(
+		base && {
+			issues: base,
+			tallies,
+			nextCursor: preview?.nextCursor ?? data.nextCursor,
+		}
+	);
+
+	const held = $derived(preview?.pages ?? pagesOf(pages, base));
+
 	const applied = $derived(data.applied);
 	const broken = $derived(brokenIn(applied));
 	const scopeName = $derived(applied.kind === "applied" ? applied.view.name : (team?.name ?? ""));
-	const paging = $derived<Paging>(preview?.paging ?? localPaging);
 
 	const teamCycles = $derived(
 		(data.cycles ?? []).filter((entry) => !team || entry.teamId === team.id).map((entry) => entry.cycle)
@@ -138,11 +148,11 @@
 
 	const board = $derived(
 		boardFor(
-			loaded,
+			source,
 			display.grouping,
 			{ states, members, projects: data.projects ?? [] },
-			tallies,
-			scopeName,
+			held,
+			{ name: scopeName, teams: data.teams.length },
 			{ showEmpty: display.showEmpty }
 		)
 	);
@@ -151,9 +161,28 @@
 		new Map(members.map((member) => [member.accountId, member.displayName ?? ""]))
 	);
 	const flat = $derived(columns.flatMap((column) => column.issues));
+	const offsets = $derived.by(() => {
+		const at = new Map<string, number>();
+		let seen = 0;
+
+		for (const column of columns) {
+			at.set(column.key, seen);
+			seen += column.issues.length;
+		}
+
+		return at;
+	});
+	const statesByTeam = $derived.by(() => {
+		const byTeam: Record<string, WorkflowState[]> = {};
+
+		for (const state of states) byTeam[state.teamId] = [...(byTeam[state.teamId] ?? []), state];
+
+		return byTeam;
+	});
+	const statesOfTeam = $derived((teamId: string) => statesByTeam[teamId] ?? []);
 	const backlog = $derived(backlogStates(states));
 	const counts = $derived(tabCounts(preview?.totals ?? data.totals, states, backlog));
-	const total = $derived(columns.reduce((sum, column) => sum + column.total, 0));
+	const total = $derived(tallyTotal(tallies) ?? flat.length);
 
 	const params = $derived.by(() => {
 		const q = new URLSearchParams();
@@ -164,9 +193,7 @@
 
 		for (const [kind, value] of Object.entries(facets)) if (value) q.set(kind, value);
 
-		if (data.tab !== "active") q.set("tab", data.tab);
-
-		for (const [key, value] of writeDisplay(display, data.layout)) q.set(key, value);
+		for (const [key, value] of writeDisplay(display, data.layout, data.tab)) q.set(key, value);
 
 		return q;
 	});
@@ -217,7 +244,7 @@
 	}
 
 	function asLoaded(issue: Issue): Issue {
-		return (loaded ?? []).find((candidate) => candidate.id === issue.id) ?? issue;
+		return flat.find((candidate) => candidate.id === issue.id) ?? issue;
 	}
 
 	async function change(
@@ -314,32 +341,32 @@
 		);
 	}
 
-	async function loadMore() {
-		if (!nextCursor || !loaded) return;
+	async function loadColumn(column: IssueColumn) {
+		if (column.load.kind === "complete" || column.load.kind === "loading") return;
 
-		const source = base;
-		localPaging = { kind: "loading" };
+		const from = base;
+
+		pages = withLoading(pages, from, column.key);
 
 		try {
 			const { data: next, error } = await api.POST("/workspaces/{workspaceId}/issues/query", {
 				params: { path: { workspaceId: data.workspace.id } },
-				body: { ...data.query, cursor: nextCursor },
+				body: columnQuery(
+					data.query,
+					columnFilter(display.grouping, column.key),
+					column.load.cursor
+				),
 			});
 
 			if (error || !next) {
-				localPaging = { kind: "unavailable" };
+				pages = withFailure(pages, from, column.key);
 
 				return;
 			}
 
-			accumulated = {
-				source,
-				issues: [...loaded, ...next.issues],
-				nextCursor: next.nextCursor,
-			};
-			localPaging = { kind: "idle" };
+			pages = withPage(pages, from, column.key, next.issues, next.nextCursor);
 		} catch {
-			localPaging = { kind: "unavailable" };
+			pages = withFailure(pages, from, column.key);
 		}
 	}
 
@@ -354,8 +381,15 @@
 		dropTarget = null;
 	}
 
+	function landsIn(id: string | null, key: string): boolean {
+		const issue = flat.find((candidate) => candidate.id === id);
+		const target = states.find((state) => state.id === key);
+
+		return Boolean(issue) && (!target || target.teamId === issue?.teamId);
+	}
+
 	function onDragOver(event: DragEvent, key: string) {
-		if (!dragging || display.grouping !== "state") return;
+		if (!dragging || display.grouping !== "state" || !landsIn(dragging, key)) return;
 
 		event.preventDefault();
 		if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
@@ -368,9 +402,9 @@
 		const id = event.dataTransfer?.getData("text/plain") || dragging;
 		onDragEnd();
 
-		if (display.grouping !== "state") return;
+		if (display.grouping !== "state" || !landsIn(id, key)) return;
 
-		const issue = (loaded ?? []).find((candidate) => candidate.id === id);
+		const issue = flat.find((candidate) => candidate.id === id);
 		if (issue) void setState(issue, key);
 	}
 
@@ -435,6 +469,13 @@
 
 	const bulk = $derived(preview?.bulk ?? liveBulk);
 	const orderedIDs = $derived(flat.map((issue) => issue.id));
+
+	const selectedTeams = $derived(
+		new Set(flat.filter((issue) => selected.has(issue.id)).map((issue) => issue.teamId))
+	);
+	const sharedStates = $derived(
+		selectedTeams.size === 1 ? statesOfTeam([...selectedTeams][0]) : []
+	);
 
 	function toggle(id: string, extend = false) {
 		if (extend && anchor) {
@@ -730,6 +771,8 @@
 		{/if}
 	{:else if column.mark.kind === "project"}
 		<Folder class="size-icon-row text-muted-foreground" aria-hidden="true" />
+	{:else if column.mark.kind === "unknown"}
+		<CircleHelp class="size-icon-row text-muted-foreground" aria-hidden="true" />
 	{:else}
 		<Layers class="size-icon-row text-muted-foreground" aria-hidden="true" />
 	{/if}
@@ -764,7 +807,7 @@
 
 {#snippet stateControl(issue: Issue)}
 	<PropertyPicker
-		options={states.map((state) => ({
+		options={statesOfTeam(issue.teamId).map((state) => ({
 			value: state.id,
 			label: state.name,
 			checked: state.id === issue.state.id,
@@ -933,7 +976,7 @@
 					<span class="shrink-0 text-md text-muted-foreground">{team.name}</span>
 				{/if}
 
-				{#if loaded}
+				{#if source}
 					<div
 						role="tablist"
 						class="ml-1 flex shrink-0 items-center gap-3"
@@ -941,7 +984,7 @@
 					>
 						{#each issueTabs as tab (tab)}
 							<a
-								href={linkWith({ tab: tab === "active" ? null : tab })}
+								href={linkWith({ tab })}
 								role="tab"
 								aria-selected={data.tab === tab}
 								data-active={data.tab === tab}
@@ -1371,7 +1414,7 @@
 		{:else if data.layout === "list"}
 			<div class="flex-1 overflow-auto">
 				{#each columns as column (column.key)}
-					{@const offset = flat.indexOf(column.issues[0])}
+					{@const offset = offsets.get(column.key) ?? 0}
 					{@const shut = collapsed.has(column.key)}
 					<section
 						aria-label={column.name}
@@ -1439,29 +1482,15 @@
 									ondragend={onDragEnd}
 								/>
 							{/each}
+							<ColumnMore
+								load={column.load}
+								name={column.name}
+								layout="list"
+								onload={() => void loadColumn(column)}
+							/>
 						{/if}
 					</section>
 				{/each}
-
-				{#if nextCursor || paging.kind === "unavailable"}
-					<div class="flex flex-col items-center gap-2 border-t border-line-subtle px-4 py-4">
-						{#if paging.kind === "unavailable"}
-							<p class="text-sm text-muted-foreground">
-								We could not load any more. Nothing changed &mdash; try again.
-							</p>
-						{/if}
-						{#if nextCursor}
-							<Button
-								variant="secondary"
-								size="sm"
-								onclick={loadMore}
-								disabled={paging.kind === "loading"}
-							>
-								{paging.kind === "loading" ? "Loading" : "Load more"}
-							</Button>
-						{/if}
-					</div>
-				{/if}
 			</div>
 		{:else}
 			<div class="flex-1 overflow-auto bg-background p-4">
@@ -1518,13 +1547,20 @@
 								/>
 							{/each}
 
-							{#if column.issues.length === 0}
+							{#if column.issues.length === 0 && column.load.kind === "complete"}
 								<p
 									class="border-t border-dashed border-line-strong px-0.5 py-3 font-mono text-2xs tracking-eyebrow text-ink-600 uppercase"
 								>
 									Nothing here
 								</p>
 							{/if}
+
+							<ColumnMore
+								load={column.load}
+								name={column.name}
+								layout="board"
+								onload={() => void loadColumn(column)}
+							/>
 
 							<button
 								type="button"
@@ -1538,26 +1574,6 @@
 						</div>
 					{/each}
 				</div>
-
-				{#if nextCursor || paging.kind === "unavailable"}
-					<div class="flex flex-col items-center gap-2 border-t border-line-subtle px-4 py-4">
-						{#if paging.kind === "unavailable"}
-							<p class="text-sm text-muted-foreground">
-								We could not load any more. Nothing changed &mdash; try again.
-							</p>
-						{/if}
-						{#if nextCursor}
-							<Button
-								variant="secondary"
-								size="sm"
-								onclick={loadMore}
-								disabled={paging.kind === "loading"}
-							>
-								{paging.kind === "loading" ? "Loading" : "Load more"}
-							</Button>
-						{/if}
-					</div>
-				{/if}
 			</div>
 		{/if}
 
@@ -1577,7 +1593,7 @@
 	{#if selected.size > 0}
 		<BulkBar
 			count={selected.size}
-			{states}
+			states={sharedStates}
 			{members}
 			cycles={teamCycles}
 			working={applying}
@@ -1628,7 +1644,7 @@
 		bind:open={creating}
 		workspaceId={data.workspace.id}
 		teams={data.teams}
-		states={{ [team.id]: states }}
+		states={statesByTeam}
 		{members}
 		{labels}
 		projects={data.projects ?? []}

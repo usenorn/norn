@@ -1,5 +1,19 @@
 import type { IssueGroupBy, IssueSort } from "./filter";
 
+export const issueTabs = ["active", "backlog", "all"] as const;
+
+export type IssueTab = (typeof issueTabs)[number];
+
+export const tabLabels: Record<IssueTab, string> = {
+	active: "Active",
+	backlog: "Backlog",
+	all: "All issues",
+};
+
+export const issueLayouts = ["list", "board"] as const;
+
+export type IssueLayout = (typeof issueLayouts)[number];
+
 export const groupings = ["state", "priority", "assignee", "project", "none"] as const;
 
 export type Grouping = (typeof groupings)[number];
@@ -68,13 +82,25 @@ export function readDisplay(params: URLSearchParams): Display {
 	};
 }
 
-export const displayKeys = ["group", "order", "empty", "hide", "layout"] as const;
+export function readLayout(params: URLSearchParams): IssueLayout {
+	return pick(params.get("layout"), issueLayouts, "list");
+}
+
+export function readTab(params: URLSearchParams): IssueTab {
+	return pick(params.get("tab"), issueTabs, "active");
+}
+
+export const displayKeys = ["group", "order", "empty", "hide", "layout", "tab"] as const;
 
 export function carriesDisplay(params: URLSearchParams): boolean {
 	return displayKeys.some((key) => params.has(key));
 }
 
-export function writeDisplay(display: Display, layout: string): URLSearchParams {
+export function writeDisplay(
+	display: Display,
+	layout: IssueLayout,
+	tab: IssueTab
+): URLSearchParams {
 	const hidden = rowProperties.filter((property) => !display.shown.includes(property));
 	const params = new URLSearchParams();
 
@@ -83,6 +109,7 @@ export function writeDisplay(display: Display, layout: string): URLSearchParams 
 	params.set("empty", display.showEmpty ? "1" : "0");
 	params.set("hide", hidden.join(","));
 	params.set("layout", layout);
+	params.set("tab", tab);
 
 	return params;
 }

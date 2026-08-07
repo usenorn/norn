@@ -1,4 +1,5 @@
 import { onCalendarDate, shiftDays } from "$lib/time";
+import type { Grouping } from "./display";
 import type { IssueFilter } from "./filter";
 import type { IssuePriority } from "./issues";
 
@@ -97,30 +98,46 @@ function dueFilter(window: string, today: string): IssueFilter | undefined {
 	}
 }
 
+export function propertyFilter(
+	kind: FacetKind,
+	value: string,
+	today: string
+): IssueFilter | undefined {
+	switch (kind) {
+		case "state":
+			return value ? { field: "state", op: "is", values: [value] } : undefined;
+		case "assignee":
+			return value && value !== unassigned
+				? { field: "assignee", op: "is", values: [value] }
+				: { field: "assignee", op: "is_not_set" };
+		case "priority":
+			return value ? { field: "priority", op: "is", values: [value as IssuePriority] } : undefined;
+		case "label":
+			return value ? { field: "label", op: "has_any", values: [value] } : undefined;
+		case "project":
+			return value
+				? { field: "project", op: "is", values: [value] }
+				: { field: "project", op: "is_not_set" };
+		case "cycle":
+			return value ? { field: "cycle", op: "is", values: [value] } : undefined;
+		default:
+			return value ? dueFilter(value, today) : undefined;
+	}
+}
+
+export function columnFilter(grouping: Grouping, key: string): IssueFilter | undefined {
+	return grouping === "none" ? undefined : propertyFilter(grouping, key, "");
+}
+
 export function facetFilters(facets: Facets, today: string): IssueFilter[] {
 	const parts: IssueFilter[] = [];
 
-	if (facets.state) parts.push({ field: "state", op: "is", values: [facets.state] });
+	for (const kind of facetKinds) {
+		const chosen = facets[kind];
+		if (chosen === undefined) continue;
 
-	if (facets.assignee) {
-		parts.push(
-			facets.assignee === unassigned
-				? { field: "assignee", op: "is_not_set" }
-				: { field: "assignee", op: "is", values: [facets.assignee] }
-		);
-	}
-
-	if (facets.priority) {
-		parts.push({ field: "priority", op: "is", values: [facets.priority as IssuePriority] });
-	}
-
-	if (facets.label) parts.push({ field: "label", op: "has_any", values: [facets.label] });
-	if (facets.project) parts.push({ field: "project", op: "is", values: [facets.project] });
-	if (facets.cycle) parts.push({ field: "cycle", op: "is", values: [facets.cycle] });
-
-	if (facets.due) {
-		const window = dueFilter(facets.due, today);
-		if (window) parts.push(window);
+		const part = propertyFilter(kind, chosen, today);
+		if (part) parts.push(part);
 	}
 
 	return parts;

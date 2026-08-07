@@ -325,10 +325,11 @@ func (s *issuesService) List(
 		Statuses:  entity.RequestedIssueStatuses(input.Statuses),
 		CycleID:   input.CycleID,
 		ProjectID: input.ProjectID,
+		Sort:      entity.DefaultIssueSort(),
 	}.Normalized()
 
 	if input.Cursor != "" {
-		cursor, err := entity.DecodeIssueCursor(input.Cursor)
+		cursor, err := entity.DecodeIssueQueryCursor(input.Cursor)
 		if err != nil {
 			return service.IssuePage{}, entity.NewValidationError(entity.FieldError{
 				Field: "cursor",
@@ -336,7 +337,7 @@ func (s *issuesService) List(
 			})
 		}
 
-		page.Cursor = &cursor
+		page.QueryCursor = &cursor
 	}
 
 	issues, err := s.issues.ListVisible(ctx, narrowed(decision.Scope, input.TeamID), page.Lookahead())
@@ -349,10 +350,14 @@ func (s *issuesService) List(
 	}
 
 	issues = issues[:page.Limit]
+	last := issues[len(issues)-1]
 
 	return service.IssuePage{
-		Issues:     issues,
-		NextCursor: issues[len(issues)-1].Cursor().Encode(),
+		Issues: issues,
+		NextCursor: entity.IssueQueryCursor{
+			Keys:    entity.IssueSortKeys(last, page.Sort),
+			IssueID: last.ID,
+		}.Encode(),
 	}, nil
 }
 

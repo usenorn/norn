@@ -29,6 +29,10 @@ func (s *issuesService) Query(
 		return service.IssueQueryResult{}, err
 	}
 
+	if page.PerGroup > 0 {
+		return s.groupedQuery(ctx, decision.Scope, page, input.GroupBy)
+	}
+
 	issues, err := s.issues.ListVisible(ctx, decision.Scope, page.Lookahead())
 	if err != nil {
 		return service.IssueQueryResult{}, err
@@ -60,6 +64,77 @@ func (s *issuesService) Query(
 	return result, nil
 }
 
+func (s *issuesService) groupedQuery(
+	ctx context.Context,
+	scope entity.TeamScope,
+	page entity.IssuePage,
+	groupBy entity.IssueGroupBy,
+) (service.IssueQueryResult, error) {
+	grouped, err := s.issues.ListVisibleByGroup(ctx, scope, page, groupBy)
+	if err != nil {
+		return service.IssueQueryResult{}, err
+	}
+
+	tallies, err := s.issues.TallyByGroup(ctx, scope, page, groupBy)
+	if err != nil {
+		return service.IssueQueryResult{}, err
+	}
+
+	return service.IssueQueryResult{
+		Issues: flattened(grouped),
+		Groups: continued(tallies, grouped, page.Sort),
+	}, nil
+}
+
+func flattened(grouped []entity.IssueGroupSlice) []entity.Issue {
+	issues := make([]entity.Issue, 0, len(grouped))
+	listed := make(map[uuid.UUID]bool)
+
+	for _, slice := range grouped {
+		for _, issue := range slice.Issues {
+			if listed[issue.ID] {
+				continue
+			}
+
+			listed[issue.ID] = true
+
+			issues = append(issues, issue)
+		}
+	}
+
+	return issues
+}
+
+func continued(
+	tallies []entity.IssueGroupTally,
+	grouped []entity.IssueGroupSlice,
+	sort []entity.IssueSort,
+) []entity.IssueGroupTally {
+	held := make(map[string][]entity.Issue, len(grouped))
+
+	for _, slice := range grouped {
+		held[slice.Key] = slice.Issues
+	}
+
+	continuing := make([]entity.IssueGroupTally, 0, len(tallies))
+
+	for _, tally := range tallies {
+		issues := held[tally.Key]
+
+		if len(issues) > 0 && len(issues) < tally.Issues {
+			last := issues[len(issues)-1]
+			tally.NextCursor = entity.IssueQueryCursor{
+				Keys:    entity.IssueSortKeys(last, sort),
+				IssueID: last.ID,
+			}.Encode()
+		}
+
+		continuing = append(continuing, tally)
+	}
+
+	return continuing
+}
+
 func queryPage(input service.QueryIssuesInput) (entity.IssuePage, error) {
 	if input.Filter != nil {
 		if err := input.Filter.Validate(); err != nil {
@@ -74,6 +149,20 @@ func queryPage(input service.QueryIssuesInput) (entity.IssuePage, error) {
 		})
 	}
 
+	if input.PerGroup > 0 && input.GroupBy == "" {
+		return entity.IssuePage{}, entity.NewValidationError(entity.FieldError{
+			Field: "perGroup",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
+	if input.PerGroup > 0 && input.Cursor != "" {
+		return entity.IssuePage{}, entity.NewValidationError(entity.FieldError{
+			Field: "cursor",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
 	sort, err := entity.NormalizedIssueSort(input.Sort)
 	if err != nil {
 		return entity.IssuePage{}, err
@@ -84,6 +173,7 @@ func queryPage(input service.QueryIssuesInput) (entity.IssuePage, error) {
 		Text:     entity.ParseSearchQuery(input.Text),
 		Filter:   input.Filter,
 		Sort:     sort,
+		PerGroup: input.PerGroup,
 		Statuses: entity.RequestedIssueStatuses(nil),
 	}.Normalized()
 

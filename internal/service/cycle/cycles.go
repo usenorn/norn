@@ -542,11 +542,32 @@ func (s *cyclesService) membership(
 	scope entity.TeamScope,
 ) ([]entity.Issue, error) {
 	cycleID := cycle.ID
-
-	return s.issues.ListVisible(ctx, scope, entity.IssuePage{
+	page := entity.IssuePage{
 		Limit:   entity.IssuePageMaxSize,
 		CycleID: &cycleID,
-	})
+		Sort:    entity.DefaultIssueSort(),
+	}
+
+	held := make([]entity.Issue, 0)
+
+	for {
+		issues, err := s.issues.ListVisible(ctx, scope, page)
+		if err != nil {
+			return nil, err
+		}
+
+		held = append(held, issues...)
+
+		if len(issues) < page.Limit {
+			return held, nil
+		}
+
+		last := issues[len(issues)-1]
+		page.QueryCursor = &entity.IssueQueryCursor{
+			Keys:    entity.IssueSortKeys(last, page.Sort),
+			IssueID: last.ID,
+		}
+	}
 }
 
 func (s *cyclesService) Close(

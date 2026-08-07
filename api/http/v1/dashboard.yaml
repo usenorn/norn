@@ -6919,6 +6919,12 @@ components:
           type: string
           description: The id or enum value the group is keyed on; empty when the property is unset
         issues: { type: integer, format: int32 }
+        nextCursor:
+          type: string
+          description: >-
+            The position after the rows this group contributed to `issues`, sent back as `cursor`
+            on a query narrowed to this group. Absent when the group is complete, and absent when
+            the group contributed nothing at all, which is paged from the start instead.
 
     IssueQueryRequest:
       type: object
@@ -6929,8 +6935,27 @@ components:
           type: array
           items: { $ref: '#/components/schemas/IssueSort' }
         groupBy: { $ref: '#/components/schemas/IssueGroupBy' }
-        limit: { type: integer, format: int32, minimum: 1, maximum: 200 }
-        cursor: { type: string }
+        limit:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 200
+          description: >-
+            The most rows `issues` may hold. With `perGroup` it is the budget every group spends
+            from, and defaults to the maximum rather than the page default.
+        perGroup:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 50
+          description: >-
+            Return the first rows of every group instead of one flat page. Requires `groupBy`, and
+            is refused together with `cursor`, which names a position in the whole ordering rather
+            than in one group. Groups fill rank by rank, so no group loses its first row while
+            another still has a second.
+        cursor:
+          type: string
+          description: A position from a previous `nextCursor`. Refused together with `perGroup`.
 
     IssueQueryResult:
       type: object
@@ -6939,12 +6964,17 @@ components:
         issues:
           type: array
           items: { $ref: '#/components/schemas/Issue' }
-        nextCursor: { type: string }
+        nextCursor:
+          type: string
+          description: Absent when `perGroup` was asked for, since each group carries its own.
         groups:
           type: array
           description: >-
-            Present when a grouping was asked for. Grouping by label counts an issue once per
-            label it carries, so those tallies sum to more than the issues returned.
+            Present when a grouping was asked for, one entry per group holding at least one match,
+            counted over the whole filtered set. With `perGroup`, the rows a group contributed to
+            `issues` are the first rows of that group in the requested order, so a group counting
+            more than it contributed was cut short by a limit rather than by a filter. Grouping by
+            label counts an issue once per label it carries, though `issues` still lists it once.
           items: { $ref: '#/components/schemas/IssueGroupTally' }
 
     IssuePage:
