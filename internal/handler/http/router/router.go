@@ -132,10 +132,10 @@ func New(
 		BaseURL:    apiBasePath,
 		BaseRouter: base,
 		Middlewares: []api.MiddlewareFunc{
-			middleware.BearerToken(tokens),
-			middleware.Session(sessions, sessionCfg),
 			maxRequestBytes(cfg.MaxRequestBytes),
 			chimiddleware.Timeout(cfg.RequestTimeout),
+			middleware.BearerToken(tokens),
+			middleware.Session(sessions, sessionCfg),
 		},
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			middleware.WriteProblem(w, r, http.StatusBadRequest, err.Error())

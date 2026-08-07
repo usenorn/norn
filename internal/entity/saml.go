@@ -159,6 +159,18 @@ type SAMLAssertion struct {
 	NotOnOrAfter time.Time
 }
 
+func ValidateSAMLMetadataURL(address string) error {
+	if err := requireHTTPSURL(address); err != nil {
+		return NewSSOError(
+			SSOStageMetadata,
+			"The metadata address must be an https URL, for example "+
+				"https://login.example.com/metadata.",
+		)
+	}
+
+	return nil
+}
+
 func SAMLRequestMismatch(expected string, assertion SAMLAssertion) error {
 	if expected != "" && assertion.InResponseTo == expected {
 		return nil

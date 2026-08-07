@@ -246,7 +246,8 @@ type Notifications struct {
 }
 
 type Realtime struct {
-	Enabled bool `mapstructure:"enabled"`
+	Enabled       bool `mapstructure:"enabled"`
+	MaxPerAccount int  `mapstructure:"max_per_account"`
 }
 
 type APITokens struct {

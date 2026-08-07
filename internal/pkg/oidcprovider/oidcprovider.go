@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -17,6 +18,7 @@ import (
 
 type Client struct {
 	http *http.Client
+	keys sync.Map
 }
 
 func New(cfg config.OIDC) *Client {
@@ -129,8 +131,21 @@ type Session struct {
 	verifier *oidc.IDTokenVerifier
 }
 
+func (c *Client) keySet(ctx context.Context, jwksURI string) oidc.KeySet {
+	if cached, ok := c.keys.Load(jwksURI); ok {
+		return cached.(oidc.KeySet)
+	}
+
+	keys, _ := c.keys.LoadOrStore(
+		jwksURI,
+		oidc.NewRemoteKeySet(c.context(context.WithoutCancel(ctx)), jwksURI),
+	)
+
+	return keys.(oidc.KeySet)
+}
+
 func (c *Client) For(ctx context.Context, connection entity.OIDCConnection, redirectURI string) *Session {
-	keys := oidc.NewRemoteKeySet(c.context(ctx), connection.Endpoints.JWKSURI)
+	keys := c.keySet(ctx, connection.Endpoints.JWKSURI)
 
 	return &Session{
 		client: c,

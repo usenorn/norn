@@ -97,7 +97,7 @@ func (s *connectionsService) Get(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 ) (entity.OIDCConnection, error) {
-	if err := s.authorize(ctx, workspaceID, entity.ActionRead); err != nil {
+	if err := s.authorize(ctx, workspaceID, entity.ActionUpdate); err != nil {
 		return entity.OIDCConnection{}, err
 	}
 
