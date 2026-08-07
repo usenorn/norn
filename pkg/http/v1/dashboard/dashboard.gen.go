@@ -2447,9 +2447,10 @@ func (e SourceControlConflictProblemCode) Valid() bool {
 
 // Defines values for SourceControlDeliveryOutcome.
 const (
-	SourceControlDeliveryOutcomeApplied SourceControlDeliveryOutcome = "applied"
-	SourceControlDeliveryOutcomeFailed  SourceControlDeliveryOutcome = "failed"
-	SourceControlDeliveryOutcomeIgnored SourceControlDeliveryOutcome = "ignored"
+	SourceControlDeliveryOutcomeApplied   SourceControlDeliveryOutcome = "applied"
+	SourceControlDeliveryOutcomeFailed    SourceControlDeliveryOutcome = "failed"
+	SourceControlDeliveryOutcomeIgnored   SourceControlDeliveryOutcome = "ignored"
+	SourceControlDeliveryOutcomeProcessed SourceControlDeliveryOutcome = "processed"
 )
 
 // Valid indicates whether the value is a known member of the SourceControlDeliveryOutcome enum.
@@ -2460,6 +2461,8 @@ func (e SourceControlDeliveryOutcome) Valid() bool {
 	case SourceControlDeliveryOutcomeFailed:
 		return true
 	case SourceControlDeliveryOutcomeIgnored:
+		return true
+	case SourceControlDeliveryOutcomeProcessed:
 		return true
 	default:
 		return false
@@ -5610,18 +5613,20 @@ type SourceControlConnection struct {
 
 // SourceControlDelivery One thing the platform sent. outcome is the difference between "a link was made" and "there was nothing to make", which is the question anybody asks when a link did not appear; detail says which, in words.
 type SourceControlDelivery struct {
-	Attempt     *int32                        `json:"attempt,omitempty"`
-	Detail      *string                       `json:"detail,omitempty"`
-	Event       string                        `json:"event"`
-	ExternalId  *string                       `json:"externalId,omitempty"`
-	Id          openapi_types.UUID            `json:"id"`
+	Attempt    *int32             `json:"attempt,omitempty"`
+	Detail     *string            `json:"detail,omitempty"`
+	Event      string             `json:"event"`
+	ExternalId *string            `json:"externalId,omitempty"`
+	Id         openapi_types.UUID `json:"id"`
+
+	// Outcome `processed` is what a delivery settled before outcomes existed carries: handled, but the row never recorded which of the other three it was.
 	Outcome     *SourceControlDeliveryOutcome `json:"outcome,omitempty"`
 	ProcessedAt *time.Time                    `json:"processedAt,omitempty"`
 	ReceivedAt  time.Time                     `json:"receivedAt"`
 	RetryAfter  *time.Time                    `json:"retryAfter,omitempty"`
 }
 
-// SourceControlDeliveryOutcome defines model for SourceControlDeliveryOutcome.
+// SourceControlDeliveryOutcome `processed` is what a delivery settled before outcomes existed carries: handled, but the row never recorded which of the other three it was.
 type SourceControlDeliveryOutcome string
 
 // SourceControlProvider defines model for SourceControlProvider.

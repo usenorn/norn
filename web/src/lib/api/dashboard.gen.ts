@@ -4530,8 +4530,11 @@ export interface components {
             connectionId: string;
             reference: string;
         };
-        /** @enum {string} */
-        SourceControlDeliveryOutcome: "applied" | "ignored" | "failed";
+        /**
+         * @description `processed` is what a delivery settled before outcomes existed carries: handled, but the row never recorded which of the other three it was.
+         * @enum {string}
+         */
+        SourceControlDeliveryOutcome: "applied" | "ignored" | "failed" | "processed";
         /** @description One thing the platform sent. outcome is the difference between "a link was made" and "there was nothing to make", which is the question anybody asks when a link did not appear; detail says which, in words. */
         SourceControlDelivery: {
             /** Format: uuid */
