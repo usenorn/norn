@@ -57,9 +57,6 @@ func (s *connections) manages(
 	return decision, issue, nil
 }
 
-// Links carries the reviewers alongside. Who is blocking a change is the thing somebody
-// opens the issue to find out, and a second round trip per link to discover it would make
-// the panel the slowest part of the screen.
 func (s *connections) Links(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
@@ -86,9 +83,6 @@ func (s *connections) Links(
 	return links, reviewers, nil
 }
 
-// Link takes the address a person pasted rather than a set of fields, because that is what
-// they have in front of them. What the forge calls the thing is read out of the address and
-// checked against a connection this workspace actually holds.
 func (s *connections) Link(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
@@ -208,8 +202,6 @@ type codeAddress struct {
 	number     int
 }
 
-// parseCodeURL reads what both forges put in the address bar. GitHub numbers a change under
-// /pull and GitLab under /-/merge_requests, and each carries the repository path before it.
 func parseCodeURL(raw string) (codeAddress, error) {
 	invalid := entity.ValidationError{
 		Fields: []entity.FieldError{{Field: "url", Code: entity.ValidationCodeUnsupportedValue}},
@@ -220,8 +212,6 @@ func parseCodeURL(raw string) (codeAddress, error) {
 		return codeAddress{}, invalid
 	}
 
-	// The address is stored and later rendered as a link on the issue, so a scheme the
-	// browser would execute rather than follow must never get that far.
 	if parsed.Scheme != "https" && parsed.Scheme != "http" {
 		return codeAddress{}, invalid
 	}
@@ -273,8 +263,6 @@ func parseCodeURL(raw string) (codeAddress, error) {
 	return codeAddress{}, invalid
 }
 
-// trimGitLabMarker drops the "/-/" segment GitLab puts between a project path and what
-// follows, so the repository reads the same on both forges.
 func trimGitLabMarker(segments []string) []string {
 	kept := make([]string, 0, len(segments))
 
@@ -289,9 +277,6 @@ func trimGitLabMarker(segments []string) []string {
 	return kept
 }
 
-// matchRepository finds the connected repository an address belongs to. The host is checked
-// against the connection's own address, so a repository of the same name on a different
-// forge is not mistaken for this one.
 func (s *connections) matchRepository(
 	ctx context.Context,
 	workspaceID uuid.UUID,
@@ -326,10 +311,6 @@ func (s *connections) matchRepository(
 	return entity.SCMRepository{}, unknown
 }
 
-// sameHost decides whether an address belongs to a connection's forge. A connection with no
-// base url follows the forge's own host and matches anything the address bar can hold; two
-// forges can each hold a project called acme/api, and linking across them would point at
-// somebody else's work.
 func sameHost(baseURL, host string) bool {
 	if baseURL == "" {
 		return true
@@ -343,8 +324,6 @@ func sameHost(baseURL, host string) bool {
 	return strings.EqualFold(parsed.Host, host)
 }
 
-// reaches is the bound on what a repository may touch. A repository routes to the teams
-// somebody routed it to and to no others, however the issue was named.
 func (s *connections) reaches(
 	ctx context.Context,
 	stored entity.SCMRepository,

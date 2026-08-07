@@ -16,11 +16,6 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-// Forge reaches Gitea and Forgejo alike. Forgejo is a fork of Gitea and serves the same api
-// under the same paths, so one adapter covers both; a second would be a copy that drifts.
-//
-// There is no hosted service here. Every connection names somebody's own instance, which is
-// why this adapter has no default endpoint and refuses a target without one.
 type Forge struct {
 	client   *forge.Client
 	pageSize int
@@ -34,8 +29,6 @@ func (f *Forge) Provider() entity.SCMProvider {
 	return entity.SCMProviderGitea
 }
 
-// Endpoint is empty on purpose. Reporting one would suggest there is a service to fall back
-// to, and a connection with no address is a mistake to report rather than a default to pick.
 func (f *Forge) Endpoint() string {
 	return ""
 }
@@ -75,10 +68,7 @@ func (f *Forge) call(
 		Method:   method,
 		URL:      address,
 		Header: http.Header{
-			"Accept": {"application/json"},
-			// Gitea names its own scheme rather than reusing bearer. A bearer header is
-			// accepted by recent versions and refused by older ones, and the audience here is
-			// exactly the people running an older one.
+			"Accept":        {"application/json"},
 			"Authorization": {"token " + target.Token},
 		},
 	}
@@ -331,10 +321,6 @@ type changeBody struct {
 	} `json:"requested_reviewers"`
 }
 
-// changeState reads merged before closed, as every forge reports a merged change as closed.
-// Gitea says whether a change can merge with a plain boolean, and it means "not conflicted"
-// only once the instance has worked it out — an open change it has not checked yet reports
-// false, so a false alone is not evidence of a conflict.
 func changeState(change changeBody) entity.CodeChangeState {
 	switch {
 	case change.Merged || change.MergedAt != nil:
@@ -406,8 +392,6 @@ func (f *Forge) Changes(
 	var found service.ForgeChangePage
 
 	for _, change := range body {
-		// The listing is newest first, so the first change older than the window ends the
-		// walk. Paging on would read to the beginning of the repository every cycle.
 		if !since.IsZero() && change.Updated.Before(since) {
 			return found, nil
 		}
@@ -543,8 +527,6 @@ func (f *Forge) Reviews(
 	return reviewers, nil
 }
 
-// reviewVerdict drops a review still being written. Gitea calls that PENDING, and recording
-// it would make a change read as reviewed while its author has not pressed submit.
 func reviewVerdict(state string, dismissed bool) (entity.ReviewVerdict, bool) {
 	if dismissed {
 		return entity.ReviewDismissed, true
@@ -686,8 +668,6 @@ func (f *Forge) Issues(
 	var found service.ForgeIssuePage
 
 	for _, issue := range body {
-		// Gitea returns pull requests on the issue endpoint as GitHub does. Mirroring one
-		// would open a second Norn issue for work already carried as a link.
 		if issue.PullRequest != nil {
 			continue
 		}
@@ -721,8 +701,6 @@ func (f *Forge) Issue(
 	return forgeIssue(body), nil
 }
 
-// issuePath addresses an issue by the number its repository counts with. The id in a payload
-// is instance-wide and is what a mirror is stored under; it is not an address.
 func (f *Forge) issuePath(target entity.SCMTarget, number int) string {
 	return "/repos/" + target.Repository + "/issues/" + strconv.Itoa(number)
 }
@@ -858,9 +836,6 @@ func (f *Forge) PostComment(
 	return created.forgeComment(), nil
 }
 
-// Capabilities leaves out checks. Gitea runs Actions and Forgejo runs its own, but neither
-// reports a suite on a pull request through a webhook this adapter can read, so claiming the
-// capability would leave a promise nothing keeps.
 func (f *Forge) Capabilities() entity.SCMCapabilitySet {
 	return entity.SCMCapabilitySet{
 		entity.CapabilityWebhooks,

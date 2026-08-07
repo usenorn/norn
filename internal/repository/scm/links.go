@@ -71,9 +71,6 @@ func scanLink(row interface{ Scan(...any) error }) (entity.CodeLink, error) {
 	return link, nil
 }
 
-// upsertLinkQuery refuses an update carrying an older source timestamp than the row already
-// holds. Deliveries arrive out of order, so a change reopened after it closed would otherwise
-// settle as whichever event happened to be handled last rather than whichever happened last.
 const upsertLinkQuery = `
 INSERT INTO workspace_code_links (
     id, workspace_id, issue_id, repository_id, provider, repository_name, kind, external_id,
@@ -143,8 +140,6 @@ func (r *linkRepository) Upsert(
 		link.ClosedAt,
 	))
 
-	// No row comes back when the guard above refused a stale update. The link is unchanged
-	// and still wanted, so read it rather than reporting a failure the caller cannot act on.
 	if errors.Is(err, sql.ErrNoRows) {
 		return scanLinkOrFail(r.db.Querier(ctx).QueryRowContext(
 			ctx,
@@ -243,9 +238,6 @@ func (r *linkRepository) collect(
 	return links, nil
 }
 
-// claimTransitionQuery inserts nothing when this link has already driven the issue for this
-// state. The single flag it replaces could only say that something had happened once, so a
-// change that entered review and later merged had no way to act on the second.
 const claimTransitionQuery = `
 INSERT INTO workspace_code_link_transitions (link_id, transition, issue_id, applied_at)
 VALUES ($1, $2, $3, $4)
@@ -291,9 +283,6 @@ func (r *linkRepository) Delete(
 	))
 }
 
-// detachLinksQuery is what makes disconnecting keep history. Everything a link needs to
-// render — the forge, the repository, the number, the title and a working address — is on
-// the row already, so cutting it loose from the repository costs the reader nothing.
 const detachLinksQuery = `
 UPDATE workspace_code_links
 SET repository_id = NULL, updated_at = now()

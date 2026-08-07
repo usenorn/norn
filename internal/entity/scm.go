@@ -53,9 +53,7 @@ type SCMProvider string
 const (
 	SCMProviderGitHub SCMProvider = "github"
 	SCMProviderGitLab SCMProvider = "gitlab"
-	// SCMProviderGitea covers Forgejo as well. Forgejo is a fork of Gitea and serves the same
-	// api under the same paths, so one adapter reaches both and a second would be a copy.
-	SCMProviderGitea SCMProvider = "gitea"
+	SCMProviderGitea  SCMProvider = "gitea"
 )
 
 func SCMProviders() []SCMProvider {
@@ -107,15 +105,10 @@ func (r SCMBrokenReason) Valid() bool {
 	return r == SCMBrokenNone || slices.Contains(SCMBrokenReasons(), r)
 }
 
-// SelfHosted reports a connection to somebody's own instance rather than the public service.
-// Gitea has no hosted service this integration knows, so it is always somebody's own.
 func (c SCMConnection) SelfHosted() bool {
 	return c.Provider == SCMProviderGitea || strings.TrimSpace(c.BaseURL) != ""
 }
 
-// SCMConnection is one credential against one forge address. A token already reaches every
-// repository its owner can see, so repositories hang off the connection rather than each
-// carrying its own copy of the secret.
 type SCMConnection struct {
 	ID                   uuid.UUID
 	WorkspaceID          uuid.UUID
@@ -149,9 +142,6 @@ func (c SCMConnection) Verified() bool {
 	return c.VerifiedAt != nil
 }
 
-// Wrote reports content on the forge that this connection's own token authored. A digest
-// tells us a value came back unchanged; this tells us who sent it, which is the only guard
-// that still holds when a delivery arrives before we have recorded what we just pushed.
 func (c SCMConnection) Wrote(login string) bool {
 	return c.IdentityLogin != "" && strings.EqualFold(c.IdentityLogin, login)
 }
@@ -205,8 +195,6 @@ func (c SCMConnection) Target(repository, token string) SCMTarget {
 	}
 }
 
-// SCMRemoteRepository is what the forge says about a repository, as read at connect time.
-// It is never stored whole; SCMRepository is the row Norn keeps.
 type SCMRemoteRepository struct {
 	ExternalID    string
 	FullName      string
@@ -216,9 +204,6 @@ type SCMRemoteRepository struct {
 	CanAdmin      bool
 }
 
-// SCMDeliveryOutcome answers the question a delivery log exists for: not "did this
-// arrive" but "why did no link appear". Applied and ignored are both successes and read
-// identically without this — one made a link, the other decided there was nothing to make.
 type SCMDeliveryOutcome string
 
 const (

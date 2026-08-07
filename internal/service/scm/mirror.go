@@ -16,18 +16,12 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-// mirrorIssue keeps a platform issue and a Norn issue in step. A platform issue becomes a
-// Norn one only when it carries the label the connection was told to watch for, because a
-// team using both systems is a supported way to work and a repository's whole backlog
-// arriving unasked is not.
 func (s *sync) mirrorIssue(
 	ctx context.Context,
 	from source,
 	decision entity.Decision,
 	found service.ForgeIssue,
 ) error {
-	// A repository set to write-only takes nothing from the forge. Bringing an issue across
-	// from one is exactly what somebody chose that setting to prevent.
 	if !from.repository.Direction().Pulls() {
 		return nil
 	}
@@ -62,10 +56,6 @@ func labelled(labels []string, wanted string) bool {
 	})
 }
 
-// openMirroredIssue needs somewhere to put the issue. A platform issue names no files, so it
-// belongs to whoever holds the repository's default route; a repository routed to two teams
-// by default has no single answer and picking one would be a guess, so the issue is not
-// created and the reason is logged rather than a team being invented.
 func (s *sync) openMirroredIssue(
 	ctx context.Context,
 	from source,
@@ -134,9 +124,6 @@ func (s *sync) openMirroredIssue(
 	)
 }
 
-// mirroredBody names the person who wrote it. The change itself is the integration's — that
-// is what the rules require — but a body with no author reads as though nobody wrote it, and
-// the platform account behind it usually has no Norn account to attribute it to.
 func mirroredBody(from source, found service.ForgeIssue) string {
 	if strings.TrimSpace(found.Author) == "" {
 		return found.Body
@@ -157,13 +144,6 @@ func mirroredBody(from source, found service.ForgeIssue) string {
 	return opening + "\n\n" + found.Body
 }
 
-// reconcileMirror decides per field. A value that comes back exactly as it was pushed is the
-// forge echoing this instance and is dropped before anything is written; a field only one
-// side moved goes that way; and when both moved, whichever moved last wins.
-//
-// Whichever loses is kept in full. An excerpt on the feed says an edit existed; it does not
-// give it back, and the whole reason a rule is acceptable is that the person who wrote the
-// losing side can recover what they wrote.
 func (s *sync) reconcileMirror(
 	ctx context.Context,
 	from source,
@@ -295,10 +275,6 @@ func excerpt(value string) string {
 	return trimmed
 }
 
-// mirrorComment carries a platform comment onto the Norn issue once. Three things stop it
-// bouncing: a comment already mirrored is recognised by its own id, a comment written by
-// this connection's own token is this instance's voice coming back, and a comment created
-// here is never pushed out again because it holds a mirror row from the moment it exists.
 func (s *sync) mirrorComment(
 	ctx context.Context,
 	from source,
@@ -381,10 +357,6 @@ func (s *sync) mirrorComment(
 	return err
 }
 
-// applyAssignee moves the issue to whoever the platform says holds it, but only when this
-// workspace has said who that person is. An unmapped login leaves the assignee alone: a
-// forge handle that resembles a name is not evidence, and acting on it puts work on a
-// stranger.
 func (s *sync) applyAssignee(
 	ctx context.Context,
 	from source,
@@ -425,9 +397,6 @@ func (s *sync) applyAssignee(
 	return nil
 }
 
-// applyLabels applies what this workspace already has and reports the rest. Creating a label
-// because an outside system used the word would let anybody with push access add labels to
-// somebody else's workspace.
 func (s *sync) applyLabels(
 	ctx context.Context,
 	from source,
@@ -476,9 +445,6 @@ func (s *sync) applyLabels(
 	return nil
 }
 
-// keepDiscarded stores the losing value whole. A failure to store it must not stop the
-// reconcile, but it does have to be loud: from that moment the rule really is silent
-// last-write-wins, which is what this exists to prevent.
 func (s *sync) keepDiscarded(
 	ctx context.Context,
 	from source,

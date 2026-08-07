@@ -87,9 +87,6 @@ func (s *connections) administers(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 ) (entity.Decision, error) {
-	// Scoped, because every caller of this goes on to ask whether a team is within reach.
-	// Without it the decision carries an empty scope, which covers no team at all and turns
-	// "route this to Engineering" into "there is no such team".
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceWorkspace,
 		Action:      entity.ActionUpdate,
@@ -150,7 +147,6 @@ func validateConnect(input service.ConnectSourceControlInput) error {
 		})
 	}
 
-	// Gitea has no hosted service, so a connection naming no address names nothing at all.
 	if input.Provider == entity.SCMProviderGitea && strings.TrimSpace(input.BaseURL) == "" {
 		fields = append(fields, entity.FieldError{
 			Field: "baseUrl",
@@ -165,9 +161,6 @@ func validateConnect(input service.ConnectSourceControlInput) error {
 	return nil
 }
 
-// Connect proves the token before anything is stored. A connection that exists but was never
-// reachable is indistinguishable on the screen from one whose credentials expired, and the
-// person who just pasted a token is the only one who can fix it while they are still here.
 func (s *connections) Connect(
 	ctx context.Context,
 	input service.ConnectSourceControlInput,
@@ -319,9 +312,6 @@ func (s *connections) ReplaceToken(
 
 	target := connection.Target("", strings.TrimSpace(token))
 
-	// The replacement is proved before it is stored, and a failure leaves the connection
-	// broken. A repair that reports success without working is worse than no repair: the
-	// screen stops saying anything is wrong and nobody looks again.
 	login, err := forge.Identity(ctx, target)
 	if err != nil {
 		return entity.SCMConnection{}, err
@@ -349,9 +339,6 @@ func (s *connections) ReplaceToken(
 	return s.connections.GetByID(ctx, workspaceID, connectionID)
 }
 
-// VerifyConnection reads the identity again and, when the token still works, checks every
-// repository hanging off it. A token that lost its reach to one repository is the failure a
-// person has to hear about, and the connection itself looks fine at that point.
 func (s *connections) VerifyConnection(
 	ctx context.Context,
 	workspaceID, connectionID uuid.UUID,
@@ -404,8 +391,6 @@ func (s *connections) VerifyConnection(
 	return s.connections.GetByID(ctx, workspaceID, connectionID)
 }
 
-// breakOn records only the failures that mean a person has to act. An outage is not a broken
-// connection, and marking one would ask somebody to repair something that was never broken.
 func (s *connections) breakOn(ctx context.Context, connection entity.SCMConnection, cause error) {
 	reason, detail, actionable := entity.SCMBrokenBy(cause)
 	if !actionable {
@@ -443,9 +428,6 @@ func (s *connections) breakOn(ctx context.Context, connection entity.SCMConnecti
 	})
 }
 
-// Disconnect removes every repository first, so each one's hook is taken off the forge and
-// its links and mirrors are cut loose rather than deleted. What a person already saw on an
-// issue stays exactly as readable, and the sealed credential is destroyed rather than kept.
 func (s *connections) Disconnect(ctx context.Context, workspaceID, connectionID uuid.UUID) error {
 	if _, err := s.administers(ctx, workspaceID); err != nil {
 		return err
@@ -488,8 +470,6 @@ func (s *connections) Disconnect(ctx context.Context, workspaceID, connectionID 
 	return nil
 }
 
-// retireIntegrationAccount deactivates rather than deletes. Every comment the connection
-// authored still names it, so removing the account would leave that content with no author.
 func (s *connections) retireIntegrationAccount(ctx context.Context, accountID uuid.UUID) error {
 	account, err := s.accounts.GetByID(ctx, accountID)
 	if err != nil {

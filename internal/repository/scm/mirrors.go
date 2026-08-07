@@ -126,8 +126,6 @@ FROM workspace_issue_mirrors
 WHERE workspace_id = $1 AND issue_id = $2
 ORDER BY created_at, id`
 
-// ListByIssue returns every pair an issue has. One issue is often tracked in a service
-// repository and a client one at once, so a single mirror per issue could not describe it.
 func (r *mirrorRepository) ListByIssue(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
@@ -392,8 +390,6 @@ func (r *mirrorRepository) CreateComment(
 	return created, nil
 }
 
-// commentOrNil keeps a mirror readable after its Norn comment is deleted. The column is
-// nullable for exactly that reason, and scanning a NULL into a uuid fails the whole read.
 func commentOrNil(commentID uuid.UUID) any {
 	if commentID == uuid.Nil {
 		return nil

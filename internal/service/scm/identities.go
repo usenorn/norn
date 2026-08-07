@@ -22,9 +22,6 @@ func (s *connections) Identities(
 	return s.identities.List(ctx, workspaceID)
 }
 
-// MapIdentity is stated by an administrator rather than discovered. The whole value of the
-// mapping is that somebody vouched for it: a handle that resembles a name is exactly the
-// evidence that puts work on the wrong person.
 func (s *connections) MapIdentity(
 	ctx context.Context,
 	workspaceID uuid.UUID,
@@ -74,8 +71,6 @@ func (s *connections) UnmapIdentity(
 	return s.identities.Delete(ctx, workspaceID, identityID)
 }
 
-// Conflicts is what makes arbitration liveable: the edit that lost is here in full, so the
-// person who wrote it can put it back.
 func (s *connections) Conflicts(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,

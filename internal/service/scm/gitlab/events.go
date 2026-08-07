@@ -21,10 +21,6 @@ const (
 	deletedCommit   = "0000000000000000000000000000000000000000"
 )
 
-// Verify compares a shared token rather than a signature, because that is all GitLab sends.
-// It is weaker than an HMAC — it proves the sender knows the secret but says nothing about
-// the body — so the comparison is constant time and the caller must treat an unknown
-// connection and a wrong token identically, or this endpoint enumerates connections.
 func (f *Forge) Verify(secret string, header http.Header, body []byte) (entity.SCMDelivery, error) {
 	sent := strings.TrimSpace(header.Get(tokenHeader))
 
@@ -198,18 +194,16 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 	event := service.ForgeEvent{
 		Kind: service.ForgeEventChangeChanged,
 		Change: service.ForgeChange{
-			ExternalID: strconv.FormatInt(change.ID, 10),
-			Number:     change.IID,
-			Title:      change.Title,
-			Body:       change.Description,
-			URL:        change.URL,
-			State:      state,
-			Author:     change.Author.Username,
-			HeadBranch: change.SourceBranch,
-			BaseBranch: change.TargetBranch,
-			UpdatedAt:  updatedAt,
-			// GitLab reports an approval as an action on the merge request and never carries
-			// the whole approval list, so the set is read back rather than rebuilt from this.
+			ExternalID:   strconv.FormatInt(change.ID, 10),
+			Number:       change.IID,
+			Title:        change.Title,
+			Body:         change.Description,
+			URL:          change.URL,
+			State:        state,
+			Author:       change.Author.Username,
+			HeadBranch:   change.SourceBranch,
+			BaseBranch:   change.TargetBranch,
+			UpdatedAt:    updatedAt,
 			ReviewsMoved: reviewMoved(change.Action),
 		},
 		Author: payload.User.Username,
@@ -227,14 +221,6 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 	return []service.ForgeEvent{event}, nil
 }
 
-// changeState reads GitLab's own vocabulary, where a merged request says so outright rather
-// than reporting itself closed the way GitHub does.
-// changeState reads what the merge request itself says. Who approved it arrives on its own
-// event and is combined by entity.ResolveChangeState, so this never guesses from the list of
-// people who were asked.
-//
-// GitLab reports a branch that will not merge as "cannot_be_merged"; older instances send
-// only merge_status, newer ones prefer detailed_merge_status, so both are read.
 func changeState(draft bool, state, mergeStatus, detailed string) entity.CodeChangeState {
 	switch {
 	case strings.EqualFold(state, "merged"):
@@ -277,8 +263,6 @@ type pipelinePayload struct {
 	} `json:"user"`
 }
 
-// translatePipeline reflects GitLab's own answer and computes nothing. A pipeline attached
-// to a branch rather than a merge request names no change and is dropped.
 func translatePipeline(body []byte) ([]service.ForgeEvent, error) {
 	var payload pipelinePayload
 
@@ -362,8 +346,6 @@ func translateNote(body []byte) ([]service.ForgeEvent, error) {
 		return nil, fmt.Errorf("read note delivery: %w", err)
 	}
 
-	// A note rides on whatever it was left on, and only a note on an issue is a comment this
-	// integration mirrors. One left on a merge request or a commit names no issue.
 	if payload.Issue.ID == 0 {
 		return nil, nil
 	}
@@ -394,9 +376,6 @@ func translateNote(body []byte) ([]service.ForgeEvent, error) {
 	}}, nil
 }
 
-// parseTime reads the two shapes GitLab uses. Its webhooks send a space-separated local
-// stamp with a numeric zone while its API sends RFC 3339, and a stamp read as zero would
-// make every change look older than the watermark and be skipped.
 func parseTime(value string) time.Time {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {

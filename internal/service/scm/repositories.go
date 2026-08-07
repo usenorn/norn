@@ -67,9 +67,6 @@ func validateRepository(input service.AddRepositoryInput) error {
 	return nil
 }
 
-// AddRepository proves the token reaches the repository before storing it, then installs the
-// hook. Storing first means a repository that never delivered reads the same as one whose
-// hook was removed on the forge, and only one of those is anybody's fault.
 func (s *connections) AddRepository(
 	ctx context.Context,
 	workspaceID uuid.UUID,
@@ -137,9 +134,6 @@ func (s *connections) AddRepository(
 
 	callback := s.callbackURL(created)
 
-	// The hook is installed after the row exists rather than before. Installing first and
-	// failing to store leaves a hook on the forge pointing at a repository that never
-	// existed, delivering into nothing with no record able to remove it.
 	hookID, err := forge.InstallHook(ctx, service.ForgeHookRequest{
 		Target:      target,
 		CallbackURL: callback,
@@ -276,8 +270,6 @@ func (s *connections) RemoveRepository(
 	return nil
 }
 
-// removeRepository takes the hook off the forge and cuts links and mirrors loose before
-// deleting the row, so an issue that already showed a merged pull request keeps showing it.
 func (s *connections) removeRepository(
 	ctx context.Context,
 	connection entity.SCMConnection,
@@ -334,8 +326,6 @@ func (s *connections) removeHook(
 	}
 }
 
-// Deliveries is the log. It is admin-only like the rest of the repository surface, because
-// a payload can carry anything the repository holds.
 func (s *connections) Deliveries(
 	ctx context.Context,
 	workspaceID, repositoryID uuid.UUID,

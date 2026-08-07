@@ -23,9 +23,6 @@ func (k CodeLinkKind) Valid() bool {
 	return slices.Contains(CodeLinkKinds(), k)
 }
 
-// CodeChangeState is where a change stands on the forge. Review and conflict are states a
-// change is in, not events that happened to it, which is what lets a rule fire on entering
-// one and lets the issue read correctly after a reload.
 type CodeChangeState string
 
 const (
@@ -72,9 +69,6 @@ func (s CodeChangeState) InReview() bool {
 		s == CodeChangeApproved
 }
 
-// CodeChecks is what the platform's own checks say about a change. Norn reflects it and
-// never runs anything: a red build is something to see on the issue, not something to fix
-// from here.
 type CodeChecks string
 
 const (
@@ -92,8 +86,6 @@ func (c CodeChecks) Valid() bool {
 	return c == CodeChecksUnknown || slices.Contains(CodeChecksStates(), c)
 }
 
-// ReviewVerdict is one person's answer on a change. Keeping it per reviewer rather than
-// reducing it to a single state is what lets the issue say who is blocking and who is not.
 type ReviewVerdict string
 
 const (
@@ -133,9 +125,6 @@ type CodeReviewer struct {
 
 type CodeReviewers []CodeReviewer
 
-// Outcome reduces a set of reviews to the state a change is in. Changes requested outranks
-// an approval however recent the approval is, because a change nobody addressed is not ready
-// whatever else was said about it.
 func (reviewers CodeReviewers) Outcome() (CodeChangeState, bool) {
 	var approved, requested bool
 
@@ -160,10 +149,6 @@ func (reviewers CodeReviewers) Outcome() (CodeChangeState, bool) {
 	}
 }
 
-// ResolveChangeState combines what the change itself says with what its reviewers said. The
-// order is mechanical first: a merged or closed change is finished whatever anybody thought
-// of it, a draft is not up for review yet, and a change that will not merge is blocked on
-// something no reviewer can fix. Only then does the review outcome speak.
 func ResolveChangeState(base CodeChangeState, reviewers CodeReviewers) CodeChangeState {
 	switch base {
 	case CodeChangeMerged, CodeChangeClosed, CodeChangeDraft, CodeChangeConflicted:
@@ -220,9 +205,6 @@ func (l CodeLink) Supersedes(observed *time.Time) bool {
 	return !l.SourceUpdatedAt.Before(*observed)
 }
 
-// CodeLinkTransition records that a link has already driven the issue for one state. The
-// single flag it replaces could only say that something had happened once, so a second rule
-// on the same link had no way to know whether its own turn had come.
 type CodeLinkTransition struct {
 	LinkID     uuid.UUID
 	Transition CodeChangeState
@@ -230,8 +212,6 @@ type CodeLinkTransition struct {
 	AppliedAt  time.Time
 }
 
-// SCMTransitionRule moves a team's issue to a workflow state when its change reaches one on
-// the forge.
 type SCMTransitionRule struct {
 	ID          uuid.UUID
 	WorkspaceID uuid.UUID
@@ -244,10 +224,6 @@ type SCMTransitionRule struct {
 
 type SCMTransitionRules []SCMTransitionRule
 
-// For reports the rule that a link entering the given state should drive, if the team has
-// one. Only a change carries a lifecycle; a branch or a commit has no state to enter. A
-// change that merely mentions an issue never drives it either — naming a ticket for context
-// is not a claim to settle it, and only `fixes`, `closes` or `resolves` makes that claim.
 func (rules SCMTransitionRules) For(link CodeLink) (SCMTransitionRule, bool) {
 	if link.Kind != CodeLinkChange || !link.Resolving {
 		return SCMTransitionRule{}, false

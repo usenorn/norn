@@ -6,8 +6,6 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-// A repository somebody set one way must never touch the other. This pins the decision
-// itself rather than the plumbing around it, because the plumbing is what changes.
 func TestADirectionIsRespectedInBothHalvesOfTheSync(t *testing.T) {
 	cases := []struct {
 		name          string

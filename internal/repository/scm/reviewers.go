@@ -23,9 +23,6 @@ SET verdict = EXCLUDED.verdict,
     reviewed_at = EXCLUDED.reviewed_at,
     updated_at = now()`
 
-// ReplaceReviewers writes the whole set rather than merging into it. A forge reports the
-// reviews a change currently has, and somebody removed from the reviewers has to disappear
-// here too, which a merge could never do.
 func (r *linkRepository) ReplaceReviewers(
 	ctx context.Context,
 	linkID uuid.UUID,

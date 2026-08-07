@@ -13,11 +13,6 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-// advance moves an issue when the team routed the state its change just reached. Everything
-// that can stop it — a team with no rule for this state, a deleted target state, an issue
-// already there, open children, a person editing at the same moment — leaves the link
-// recorded and the issue alone. Reflecting the state of a change and moving the issue are
-// two separate promises, and the first must keep working when the second is switched off.
 func (s *sync) advance(
 	ctx context.Context,
 	from source,
@@ -27,13 +22,9 @@ func (s *sync) advance(
 ) error {
 	issue, err := s.issues.GetVisible(ctx, from.workspaceID(), link.IssueID, decision.Scope)
 	if err != nil {
-		// Reach was lost between recording the link and acting on it. Going quiet is right:
-		// the connection is bounded by a person's permissions and those just narrowed.
 		return nil
 	}
 
-	// An issue can opt out entirely. The link is still recorded and still renders; only the
-	// moving stops, which is the whole point of an exception.
 	if issue.SCMAutomationSuppressed {
 		return nil
 	}
@@ -67,8 +58,6 @@ func (s *sync) advance(
 		return nil
 	}
 
-	// The claim comes before the move, so a redelivered event cannot move an issue a person
-	// has since moved back. A link that already drove this state is done with it.
 	claimed, err := s.links.ClaimTransition(
 		ctx, link.ID, link.State, issue.ID, time.Now().UTC(),
 	)
@@ -91,10 +80,6 @@ func (s *sync) advance(
 	return s.moveIssue(scoped, issue, target.ID)
 }
 
-// moveIssue reads the issue's version and offers it back, so the conflict machinery decides
-// whether a person moved it first. One retry covers the ordinary race of a person saving as
-// a merge arrives; a second conflict means somebody is actively working on it, and an
-// integration that keeps trying would be overwriting them rather than reflecting a merge.
 func (s *sync) moveIssue(ctx context.Context, issue entity.Issue, stateID uuid.UUID) error {
 	for attempt := range 2 {
 		_, err := s.issueWriter.Update(ctx, issue.WorkspaceID, issue.ID, service.UpdateIssueInput{

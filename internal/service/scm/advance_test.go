@@ -189,7 +189,6 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 	h.connections.EXPECT().Token(gomock.Any(), connectionID).Return("token", nil)
 	h.forges.EXPECT().Lookup(entity.SCMProviderGitHub).Return(h.forge, nil).AnyTimes()
 
-	// The change names one file, and the team owning it is the only one the link may reach.
 	h.forge.EXPECT().
 		ChangedPaths(gomock.Any(), gomock.Any(), 14).
 		Return([]string{"services/api/cache.go"}, nil)
@@ -246,7 +245,6 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 		{ID: doneID, Name: "Done", IsCompletion: true},
 	}, nil)
 
-	// The whole point: the issue is moved, and to the state the team's completion marks.
 	h.issueWriter.EXPECT().
 		Update(gomock.Any(), workspaceID, issueID, gomock.Any()).
 		DoAndReturn(func(
@@ -272,7 +270,6 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 	h.links.EXPECT().
 		ClaimTransition(gomock.Any(), linkID, entity.CodeChangeMerged, issueID, gomock.Any()).
 		Return(true, nil)
-	// The log has to say the delivery did something, not merely that it was processed.
 	h.deliveries.EXPECT().
 		Settle(gomock.Any(), delivery.ID, entity.SCMDeliveryApplied, gomock.Any(), gomock.Any()).
 		DoAndReturn(func(

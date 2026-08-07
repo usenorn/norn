@@ -12,9 +12,6 @@ type registry struct {
 	forges map[entity.SCMProvider]service.Forge
 }
 
-// NewForges takes each adapter as its own concrete type rather than a slice of the
-// interface, so wire can tell them apart and so the set of platforms this instance supports
-// is declared here instead of discovered at run time.
 func NewForges(hub *github.Forge, lab *gitlab.Forge, tea *gitea.Forge) service.Forges {
 	return &registry{
 		forges: map[entity.SCMProvider]service.Forge{

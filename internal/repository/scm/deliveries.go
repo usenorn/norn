@@ -57,9 +57,6 @@ INSERT INTO workspace_scm_deliveries (
 ) VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id`
 
-// Record is the idempotency boundary. A forge redelivers with the same delivery id, so a
-// second arrival is a conflicting insert rather than a second application, and the edge
-// answers it as success without queueing any work.
 func (r *deliveryRepository) Record(
 	ctx context.Context,
 	delivery entity.SCMDelivery,
@@ -209,8 +206,6 @@ WHERE repository_id = $1
 ORDER BY received_at DESC, id
 LIMIT $2`
 
-// ListByRepository is the log a person reads when a link did not appear. It carries the
-// payload too: without it "ignored" is an answer nobody can act on.
 func (r *deliveryRepository) ListByRepository(
 	ctx context.Context,
 	repositoryID uuid.UUID,

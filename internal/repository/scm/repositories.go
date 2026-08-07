@@ -149,9 +149,6 @@ SELECT` + repositoryColumns + `
 FROM workspace_scm_repositories
 WHERE id = $1`
 
-// GetForDelivery reads a repository by its id alone, because an inbound delivery arrives
-// with nothing but the address it was sent to. Everything it authorises afterwards is
-// decided from the repository's own workspace, never from anything the caller said.
 func (r *repositoryRepository) GetForDelivery(
 	ctx context.Context,
 	repositoryID uuid.UUID,
@@ -356,8 +353,6 @@ UPDATE workspace_scm_repositories
 SET reconcile_after = $2, updated_at = now()
 WHERE id = $1`
 
-// Park holds a repository off the forge until a rate limit has reset. The window comes from
-// what the forge said, so a busy workspace stops asking rather than being shut out.
 func (r *repositoryRepository) Park(
 	ctx context.Context,
 	repositoryID uuid.UUID,
@@ -388,8 +383,6 @@ FROM (
 WHERE r.id = due.due_id
 RETURNING` + repositoryColumns
 
-// ClaimDue stamps the rows it returns in the same statement that selects them, so two
-// workers sweeping at once cannot both take the same repository.
 func (r *repositoryRepository) ClaimDue(
 	ctx context.Context,
 	at time.Time,
