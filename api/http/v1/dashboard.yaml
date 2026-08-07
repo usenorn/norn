@@ -8327,6 +8327,9 @@ components:
           type: array
           items: { type: string }
         groupsClaim: { type: string }
+        adminGroup:
+          type: string
+          description: Members of this provider group become administrators; everyone else a member.
         provisioning: { type: boolean }
         redirectUri: { type: string }
         verifiedAt: { type: string, format: date-time }
@@ -8344,6 +8347,9 @@ components:
           type: array
           items: { type: string }
         groupsClaim: { type: string }
+        adminGroup:
+          type: string
+          description: Members of this provider group become administrators; everyone else a member.
         provisioning: { type: boolean }
 
     DiscoverOidcRequest:
@@ -8434,6 +8440,9 @@ components:
         allowIdpInitiated: { type: boolean }
         mapping: { $ref: '#/components/schemas/SamlAttributeMapping' }
         provisioning: { type: boolean }
+        adminGroup:
+          type: string
+          description: Members of this provider group become administrators; everyone else a member.
         certificateExpiresAt: { type: string, format: date-time }
         certificateDaysLeft: { type: integer, format: int32 }
         verifiedAt: { type: string, format: date-time }
@@ -8448,6 +8457,9 @@ components:
         allowIdpInitiated: { type: boolean }
         mapping: { $ref: '#/components/schemas/SamlAttributeMapping' }
         provisioning: { type: boolean }
+        adminGroup:
+          type: string
+          description: Members of this provider group become administrators; everyone else a member.
 
     ReadSamlMetadataRequest:
       type: object

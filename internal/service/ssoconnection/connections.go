@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -144,6 +145,7 @@ func (s *connectionsService) Save(
 		Scopes:       entity.NormalizeOIDCScopes(input.Scopes),
 		GroupsClaim:  strings.TrimSpace(input.GroupsClaim),
 		Provisioning: input.Provisioning,
+		AdminGroup:   strings.TrimSpace(input.AdminGroup),
 	}
 
 	if input.Endpoints == nil {
@@ -513,6 +515,8 @@ type admission struct {
 	Subject      string
 	Email        string
 	Name         string
+	Groups       []string
+	AdminGroup   string
 }
 
 func (s *connectionsService) admit(
@@ -528,6 +532,8 @@ func (s *connectionsService) admit(
 		Subject:      claims.Subject,
 		Email:        entity.NormalizeEmail(claims.Email),
 		Name:         claims.Name,
+		Groups:       claims.Groups,
+		AdminGroup:   connection.AdminGroup,
 	})
 }
 
@@ -544,6 +550,10 @@ func (s *connectionsService) admitIdentity(
 
 	if provisioned {
 		s.recordSSO(ctx, request, entity.AuditSSOAccountOpened, account.ID, "")
+	}
+
+	if err := s.applyGroupRole(ctx, request, account.ID); err != nil {
+		return entity.Account{}, false, err
 	}
 
 	return account, provisioned, nil
@@ -563,6 +573,50 @@ func (s *connectionsService) resolve(
 	}
 
 	return s.bootstrap(ctx, request)
+}
+
+func (s *connectionsService) applyGroupRole(
+	ctx context.Context,
+	request admission,
+	accountID uuid.UUID,
+) error {
+	role, governed := entity.SSORoleFor(request.AdminGroup, request.Groups)
+	if !governed {
+		return nil
+	}
+
+	membership, err := s.memberships.Get(ctx, request.WorkspaceID, accountID)
+	if err != nil {
+		return err
+	}
+
+	if membership.Role == role {
+		return nil
+	}
+
+	if membership.Role == entity.MembershipRoleAdmin {
+		orphaned, err := s.memberships.ListWorkspaceIDsWithoutOtherActiveAdmin(ctx, accountID)
+		if err != nil {
+			return err
+		}
+
+		if slices.Contains(orphaned, request.WorkspaceID) {
+			s.recordSSO(
+				ctx, request, entity.AuditSSOIdentityRefused, accountID,
+				"kept the last administrator despite the provider's groups",
+			)
+
+			return nil
+		}
+	}
+
+	if _, err := s.memberships.UpdateRole(ctx, request.WorkspaceID, accountID, role); err != nil {
+		return err
+	}
+
+	s.recordSSO(ctx, request, entity.AuditMemberRoleChanged, accountID, string(role))
+
+	return nil
 }
 
 func (s *connectionsService) recordSSO(

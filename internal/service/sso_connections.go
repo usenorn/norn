@@ -42,6 +42,7 @@ type SaveOIDCConnectionInput struct {
 	Scopes       []string
 	GroupsClaim  string
 	Provisioning bool
+	AdminGroup   string
 }
 
 type BeginOIDCLoginInput struct {
@@ -64,6 +65,7 @@ type SaveSAMLConnectionInput struct {
 	AllowIDPInitiated bool
 	Mapping           entity.SAMLAttributeMapping
 	Provisioning      bool
+	AdminGroup        string
 }
 
 type ReadSAMLMetadataInput struct {

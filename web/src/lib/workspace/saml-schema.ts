@@ -12,6 +12,7 @@ export const samlConnectionSchema = z
 		nameAttribute: z.string().trim().default(""),
 		groupsAttribute: z.string().trim().default(""),
 		allowIdpInitiated: z.boolean().default(false),
+		adminGroup: z.string().trim().default(""),
 		provisioning: z.boolean().default(false),
 	})
 	.superRefine((value, ctx) => {

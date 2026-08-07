@@ -33,6 +33,7 @@ export const ssoConnectionSchema = z
 		clientSecret: z.string().default(""),
 		scopes: z.string().trim().default("openid email profile"),
 		groupsClaim: z.string().trim().default(""),
+		adminGroup: z.string().trim().default(""),
 		provisioning: z.boolean().default(false),
 	})
 	.superRefine((value, ctx) => {

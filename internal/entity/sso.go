@@ -220,6 +220,21 @@ type WorkspaceSignIn struct {
 	Host     string
 }
 
+func SSORoleFor(adminGroup string, groups []string) (MembershipRole, bool) {
+	admin := strings.TrimSpace(adminGroup)
+	if admin == "" {
+		return "", false
+	}
+
+	for _, group := range groups {
+		if strings.EqualFold(admin, strings.TrimSpace(group)) {
+			return MembershipRoleAdmin, true
+		}
+	}
+
+	return MembershipRoleMember, true
+}
+
 const SSOCorrelatorBytes = 32
 
 type SSOHandoff struct {

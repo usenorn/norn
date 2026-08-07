@@ -117,6 +117,7 @@
 				clientId: connection.clientId,
 				scopes: scopeText(connection.scopes),
 				groupsClaim: connection.groupsClaim ?? "",
+				adminGroup: connection.adminGroup ?? "",
 				provisioning: connection.provisioning,
 			}),
 			{ taint: false }
@@ -601,10 +602,32 @@
 								{/snippet}
 							</Form.Control>
 							<Form.Description class="text-sm text-muted-foreground">
-								Optional. Groups are read and stored; mapping them to teams is not built yet.
+								Optional. Which claim your provider releases group names under.
 							</Form.Description>
 							<Form.FieldErrors />
 						</Form.Field>
+
+						<Form.Field {form} name="adminGroup">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Administrator group</Form.Label>
+									<Input
+										{...props}
+										autocapitalize="none"
+										spellcheck="false"
+										placeholder="norn-admins"
+										disabled={busy}
+										bind:value={$formData.adminGroup}
+									/>
+								{/snippet}
+							</Form.Control>
+							<Form.Description class="text-sm text-muted-foreground">
+								Optional. Members of this group become administrators on every sign-in, and
+								everyone else becomes a member. Norn will not demote the last administrator.
+							</Form.Description>
+							<Form.FieldErrors />
+						</Form.Field>
+
 
 						<Form.Field {form} name="provisioning">
 							<Form.Control>

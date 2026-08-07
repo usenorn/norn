@@ -26,6 +26,14 @@ func stageOf(t *testing.T, err error) entity.SSOStage {
 }
 
 func (h *harness) expectExchange(workspaceID uuid.UUID, provisioning bool, claims entity.OIDCClaims) {
+	h.expectExchangeWith(workspaceID, connection(workspaceID, provisioning), claims)
+}
+
+func (h *harness) expectExchangeWith(
+	workspaceID uuid.UUID,
+	oidc entity.OIDCConnection,
+	claims entity.OIDCClaims,
+) {
 	h.states.EXPECT().
 		Take(gomock.Any(), "the-state").
 		Return(entity.OIDCState{
@@ -41,7 +49,7 @@ func (h *harness) expectExchange(workspaceID uuid.UUID, provisioning bool, claim
 
 	h.connections.EXPECT().
 		GetOIDC(gomock.Any(), workspaceID).
-		Return(connection(workspaceID, provisioning), nil)
+		Return(oidc, nil)
 
 	h.provider.EXPECT().
 		Exchange(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -1231,5 +1239,108 @@ func TestACallbackWithNoCorrelatorAtAllIsRefused(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("stripping the correlator cookie was enough to complete somebody else's sign-in")
+	}
+}
+
+func (h *harness) expectMember(workspaceID, accountID uuid.UUID, role entity.MembershipRole) {
+	h.memberships.EXPECT().
+		Get(gomock.Any(), workspaceID, accountID).
+		Return(entity.Membership{WorkspaceID: workspaceID, AccountID: accountID, Role: role}, nil).
+		AnyTimes()
+}
+
+func TestTheAdminGroupDecidesTheRoleOnEverySignIn(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	account := entity.Account{ID: uuid.New(), Status: entity.AccountStatusActive, Email: "ada@example.com"}
+
+	governed := connection(workspaceID, false)
+	governed.AdminGroup = "norn-admins"
+
+	claims := verifiedClaims("ada@example.com")
+	claims.Groups = []string{"engineering", "NORN-ADMINS"}
+
+	h.expectExchangeWith(workspaceID, governed, claims)
+	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(account, nil)
+	h.expectMember(workspaceID, account.ID, entity.MembershipRoleMember)
+
+	var promoted entity.MembershipRole
+
+	h.memberships.EXPECT().
+		UpdateRole(gomock.Any(), workspaceID, account.ID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _, _ uuid.UUID, role entity.MembershipRole,
+		) (entity.Membership, error) {
+			promoted = role
+
+			return entity.Membership{Role: role}, nil
+		})
+
+	h.sessions.EXPECT().
+		Start(gomock.Any(), gomock.Any()).
+		Return(service.IssuedSession{Token: "session-token"}, nil)
+
+	if _, err := h.complete(); err != nil {
+		t.Fatalf("Complete: %v", err)
+	}
+
+	if promoted != entity.MembershipRoleAdmin {
+		t.Fatalf(
+			"a member of the administrator group was left as %q. The group is configured to decide "+
+				"the role, and a control that is collected but never applied is worse than none.",
+			promoted,
+		)
+	}
+}
+
+func TestTheGroupsClaimNeverDemotesTheLastAdministrator(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	account := entity.Account{ID: uuid.New(), Status: entity.AccountStatusActive, Email: "ada@example.com"}
+
+	governed := connection(workspaceID, false)
+	governed.AdminGroup = "norn-admins"
+
+	claims := verifiedClaims("ada@example.com")
+	claims.Groups = []string{"engineering"}
+
+	h.expectExchangeWith(workspaceID, governed, claims)
+	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(account, nil)
+	h.expectMember(workspaceID, account.ID, entity.MembershipRoleAdmin)
+
+	h.memberships.EXPECT().
+		ListWorkspaceIDsWithoutOtherActiveAdmin(gomock.Any(), account.ID).
+		Return([]uuid.UUID{workspaceID}, nil)
+
+	h.sessions.EXPECT().
+		Start(gomock.Any(), gomock.Any()).
+		Return(service.IssuedSession{Token: "session-token"}, nil)
+
+	if _, err := h.complete(); err != nil {
+		t.Fatalf("Complete: %v", err)
+	}
+}
+
+func TestAProviderWithNoAdminGroupLeavesRolesAlone(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	account := entity.Account{ID: uuid.New(), Status: entity.AccountStatusActive, Email: "ada@example.com"}
+
+	claims := verifiedClaims("ada@example.com")
+	claims.Groups = []string{"engineering"}
+
+	h.expectExchangeWith(workspaceID, connection(workspaceID, false), claims)
+	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(account, nil)
+	h.expectMember(workspaceID, account.ID, entity.MembershipRoleAdmin)
+
+	h.sessions.EXPECT().
+		Start(gomock.Any(), gomock.Any()).
+		Return(service.IssuedSession{Token: "session-token"}, nil)
+
+	if _, err := h.complete(); err != nil {
+		t.Fatalf("Complete: %v", err)
 	}
 }

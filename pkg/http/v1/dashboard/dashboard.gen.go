@@ -5424,6 +5424,8 @@ type SetWorkspaceAuthPolicyRequest struct {
 
 // SetWorkspaceOidcConnectionRequest defines model for SetWorkspaceOidcConnectionRequest.
 type SetWorkspaceOidcConnectionRequest struct {
+	// AdminGroup Members of this provider group become administrators; everyone else a member.
+	AdminGroup   *string        `json:"adminGroup,omitempty"`
 	ClientId     string         `json:"clientId"`
 	ClientSecret *string        `json:"clientSecret,omitempty"`
 	Endpoints    *OidcEndpoints `json:"endpoints,omitempty"`
@@ -5435,6 +5437,8 @@ type SetWorkspaceOidcConnectionRequest struct {
 
 // SetWorkspaceSamlConnectionRequest defines model for SetWorkspaceSamlConnectionRequest.
 type SetWorkspaceSamlConnectionRequest struct {
+	// AdminGroup Members of this provider group become administrators; everyone else a member.
+	AdminGroup        *string               `json:"adminGroup,omitempty"`
 	AllowIdpInitiated *bool                 `json:"allowIdpInitiated,omitempty"`
 	Descriptor        *SamlDescriptor       `json:"descriptor,omitempty"`
 	Mapping           *SamlAttributeMapping `json:"mapping,omitempty"`
@@ -6012,6 +6016,8 @@ type WorkspaceMCPConnection struct {
 
 // WorkspaceOidcConnection defines model for WorkspaceOidcConnection.
 type WorkspaceOidcConnection struct {
+	// AdminGroup Members of this provider group become administrators; everyone else a member.
+	AdminGroup   *string            `json:"adminGroup,omitempty"`
 	ClientId     string             `json:"clientId"`
 	Discovered   bool               `json:"discovered"`
 	Endpoints    OidcEndpoints      `json:"endpoints"`
@@ -6027,7 +6033,10 @@ type WorkspaceOidcConnection struct {
 
 // WorkspaceSamlConnection defines model for WorkspaceSamlConnection.
 type WorkspaceSamlConnection struct {
-	AcsUrl               string               `json:"acsUrl"`
+	AcsUrl string `json:"acsUrl"`
+
+	// AdminGroup Members of this provider group become administrators; everyone else a member.
+	AdminGroup           *string              `json:"adminGroup,omitempty"`
 	AllowIdpInitiated    bool                 `json:"allowIdpInitiated"`
 	CertificateDaysLeft  *int32               `json:"certificateDaysLeft,omitempty"`
 	CertificateExpiresAt time.Time            `json:"certificateExpiresAt"`

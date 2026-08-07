@@ -78,6 +78,7 @@
 				emailAttribute: connection.mapping.email ?? "",
 				nameAttribute: connection.mapping.name ?? "",
 				groupsAttribute: connection.mapping.groups ?? "",
+				adminGroup: connection.adminGroup ?? "",
 				allowIdpInitiated: connection.allowIdpInitiated,
 				provisioning: connection.provisioning,
 			}),
@@ -328,10 +329,32 @@
 			{/snippet}
 		</Form.Control>
 		<Form.Description class="text-sm text-muted-foreground">
-			Groups are read and stored; mapping them to teams is not built yet.
+			Which attribute your provider releases group names under.
 		</Form.Description>
 		<Form.FieldErrors />
 	</Form.Field>
+
+	<Form.Field {form} name="adminGroup">
+		<Form.Control>
+			{#snippet children({ props })}
+				<Form.Label>Administrator group</Form.Label>
+				<Input
+					{...props}
+					placeholder="norn-admins"
+					autocapitalize="none"
+					spellcheck="false"
+					disabled={working}
+					bind:value={$formData.adminGroup}
+				/>
+			{/snippet}
+		</Form.Control>
+		<Form.Description class="text-sm text-muted-foreground">
+			Optional. Members of this group become administrators on every sign-in, and everyone else
+			becomes a member. Norn will not demote the last administrator.
+		</Form.Description>
+		<Form.FieldErrors />
+	</Form.Field>
+
 
 	<Form.Field {form} name="allowIdpInitiated">
 		<Form.Control>

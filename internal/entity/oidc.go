@@ -98,6 +98,7 @@ type OIDCConnection struct {
 	Scopes       []string
 	GroupsClaim  string
 	Provisioning bool
+	AdminGroup   string
 	VerifiedAt   *time.Time
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
