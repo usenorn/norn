@@ -33,7 +33,20 @@ var (
 	ErrDirectoryUserNameRequired = errors.New("directory user must carry a userName")
 	ErrDirectoryPatchUnsupported = errors.New("this patch expression is not supported")
 	ErrDirectoryRunNotFound      = errors.New("directory sync run not found")
+
+	ErrDirectoryAccountNotClaimable = errors.New(
+		"a Norn account already holds that address and this directory does not own it. " +
+			"The person signs in themselves and joins by invitation instead",
+	)
 )
+
+func DirectoryClaimRefusal(account Account, elsewhere bool) error {
+	if account.HasPassword() || elsewhere {
+		return ErrDirectoryAccountNotClaimable
+	}
+
+	return nil
+}
 
 type DirectoryUnknownPolicy string
 

@@ -30,6 +30,10 @@ func TestTheDirectoryTakesOverAMembershipSomebodyAddedByHand(t *testing.T) {
 		Return(entity.Account{ID: accountID, Status: entity.AccountStatusActive}, nil)
 
 	h.memberships.EXPECT().
+		ExistsOutside(gomock.Any(), accountID, workspaceID).
+		Return(false, nil)
+
+	h.memberships.EXPECT().
 		Get(gomock.Any(), workspaceID, accountID).
 		Return(entity.Membership{
 			WorkspaceID: workspaceID,
@@ -243,5 +247,55 @@ func TestTheAdminGroupDecidesTheRole(t *testing.T) {
 				"admin group must never hand out administration",
 			role,
 		)
+	}
+}
+
+func TestTheDirectoryCannotClaimAnAccountItDoesNotOwn(t *testing.T) {
+	for name, tc := range map[string]struct {
+		account   entity.Account
+		elsewhere bool
+	}{
+		"an account with its own password": {
+			account: entity.Account{Status: entity.AccountStatusActive, PasswordHash: "argon2id$stored"},
+		},
+		"an account other workspaces rely on": {
+			account:   entity.Account{Status: entity.AccountStatusActive},
+			elsewhere: true,
+		},
+	} {
+		h := newHarness(t, licensed())
+
+		workspaceID := uuid.New()
+		account := tc.account
+		account.ID = uuid.New()
+		account.Email = "rae@northwind.co"
+
+		h.connection(workspaceID, "")
+
+		h.directories.EXPECT().
+			GetUserByName(gomock.Any(), workspaceID, "rae@northwind.co").
+			Return(entity.DirectoryUser{}, entity.ErrDirectoryUserNotFound)
+
+		h.accounts.EXPECT().
+			GetByEmail(gomock.Any(), "rae@northwind.co").
+			Return(account, nil)
+
+		h.memberships.EXPECT().
+			ExistsOutside(gomock.Any(), account.ID, workspaceID).
+			Return(tc.elsewhere, nil)
+
+		_, err := h.service.PutUser(context.Background(), workspaceID, nil, service.DirectoryProfile{
+			UserName: "rae@northwind.co",
+			Active:   true,
+		})
+
+		if !errors.Is(err, entity.ErrDirectoryAccountNotClaimable) {
+			t.Errorf(
+				"%s: provisioning gave %v. Whoever runs the directory controls which addresses it "+
+					"asserts, so adopting an account that answers to something else would hand them "+
+					"that account.",
+				name, err,
+			)
+		}
 	}
 }

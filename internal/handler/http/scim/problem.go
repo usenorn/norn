@@ -41,7 +41,8 @@ func problem(err error) (int, string, string) {
 		return http.StatusConflict, "mutability",
 			"this would leave the workspace without an administrator"
 
-	case errors.Is(err, entity.ErrAccountDeactivated):
+	case errors.Is(err, entity.ErrAccountDeactivated),
+		errors.Is(err, entity.ErrDirectoryAccountNotClaimable):
 		return http.StatusConflict, "mutability", err.Error()
 	}
 
