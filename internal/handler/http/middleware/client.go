@@ -38,7 +38,7 @@ func clientIP(r *http.Request, header string, trusted []netip.Prefix) netip.Addr
 		return peer
 	}
 
-	hops := strings.Split(r.Header.Get(header), ",")
+	hops := strings.Split(strings.Join(r.Header.Values(header), ","), ",")
 
 	for i := len(hops) - 1; i >= 0; i-- {
 		hop, err := netip.ParseAddr(strings.TrimSpace(hops[i]))

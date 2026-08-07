@@ -26,6 +26,23 @@ const (
 
 var ErrPasswordHashMalformed = errors.New("password hash is malformed")
 
+func PasswordNeedsRehash(hash string) bool {
+	parts := strings.Split(hash, "$")
+	if len(parts) != 6 {
+		return false
+	}
+
+	var memory uint32
+
+	var time, threads uint8
+
+	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &memory, &time, &threads); err != nil {
+		return false
+	}
+
+	return memory < argon2Memory || uint32(time) < argon2Time || uint32(threads) < argon2Threads
+}
+
 func ValidatePassword(field, password string) FieldError {
 	length := utf8.RuneCountInString(password)
 
