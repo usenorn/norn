@@ -257,7 +257,7 @@ func (s *mcpConnectionsService) Exchange(
 		return service.MCPTokenPair{}, entity.ErrMCPCodeInvalid
 	}
 
-	if input.RedirectURI != "" && input.RedirectURI != grant.RedirectURI {
+	if input.RedirectURI != grant.RedirectURI {
 		return service.MCPTokenPair{}, entity.ErrMCPCodeInvalid
 	}
 
@@ -330,11 +330,9 @@ func (s *mcpConnectionsService) Refresh(
 		return service.MCPTokenPair{}, entity.ErrMCPCodeInvalid
 	}
 
-	if input.ClientID != "" {
-		clientID, err := uuid.Parse(input.ClientID)
-		if err != nil || clientID != connection.ClientID {
-			return service.MCPTokenPair{}, entity.ErrMCPCodeInvalid
-		}
+	clientID, err := uuid.Parse(input.ClientID)
+	if err != nil || clientID != connection.ClientID {
+		return service.MCPTokenPair{}, entity.ErrMCPCodeInvalid
 	}
 
 	pair, mint, err := s.mintPair(connection.Capability())
@@ -361,7 +359,7 @@ func (s *mcpConnectionsService) Refresh(
 	return pair, nil
 }
 
-func (s *mcpConnectionsService) RevokeByValue(ctx context.Context, value string) error {
+func (s *mcpConnectionsService) RevokeByValue(ctx context.Context, value, clientID string) error {
 	token, err := s.tokens.GetByHash(ctx, entity.HashMCPToken(value))
 	if err != nil {
 		return nil
@@ -370,6 +368,11 @@ func (s *mcpConnectionsService) RevokeByValue(ctx context.Context, value string)
 	connection, err := s.connections.GetByID(ctx, token.ConnectionID)
 	if err != nil {
 		return err
+	}
+
+	claimed, err := uuid.Parse(clientID)
+	if err != nil || claimed != connection.ClientID {
+		return nil
 	}
 
 	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {

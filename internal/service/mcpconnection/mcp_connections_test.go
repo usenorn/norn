@@ -349,6 +349,7 @@ func TestRefreshRotatesThePair(t *testing.T) {
 
 	pair, err := h.service.Refresh(context.Background(), service.RefreshMCPTokenInput{
 		RefreshToken: "nmcp_old",
+		ClientID:     connection.ClientID.String(),
 	})
 	if err != nil {
 		t.Fatalf("Refresh: %v", err)
@@ -356,6 +357,41 @@ func TestRefreshRotatesThePair(t *testing.T) {
 
 	if pair.AccessToken == "" || pair.RefreshToken == "" {
 		t.Fatal("rotation returned an empty pair")
+	}
+}
+
+func TestARefreshTokenIsOnlySpentByTheClientItWasIssuedTo(t *testing.T) {
+	h := newHarness(t)
+	connection := liveConnection(h, entity.MCPCapabilityRead)
+
+	h.tokens.EXPECT().
+		GetByHash(gomock.Any(), gomock.Any()).
+		Return(entity.MCPToken{
+			ID:           uuid.New(),
+			ConnectionID: connection.ID,
+			Kind:         entity.MCPTokenKindRefresh,
+			ExpiresAt:    time.Now().Add(time.Hour),
+		}, nil).
+		Times(2)
+
+	h.connections.EXPECT().GetByID(gomock.Any(), connection.ID).Return(connection, nil).Times(2)
+
+	for name, clientID := range map[string]string{
+		"another client": uuid.NewString(),
+		"no client":      "",
+	} {
+		_, err := h.service.Refresh(context.Background(), service.RefreshMCPTokenInput{
+			RefreshToken: "nmcp_old",
+			ClientID:     clientID,
+		})
+
+		if !errors.Is(err, entity.ErrMCPCodeInvalid) {
+			t.Errorf(
+				"%s: refreshing gave %v. These clients hold no secret, so naming the client is the "+
+					"only thing binding a refresh token to the one it was issued to.",
+				name, err,
+			)
+		}
 	}
 }
 
