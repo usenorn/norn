@@ -355,16 +355,16 @@ func (r *sessionRepository) RevokedAt(ctx context.Context, accountID uuid.UUID) 
 		return time.Time{}, fmt.Errorf("load account revocation: %w", err)
 	}
 
-	millis, err := strconv.ParseInt(raw, 10, 64)
+	nanos, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("decode account revocation: %w", err)
 	}
 
-	return time.UnixMilli(millis).UTC(), nil
+	return time.Unix(0, nanos).UTC(), nil
 }
 
 func (r *sessionRepository) MarkRevoked(ctx context.Context, accountID uuid.UUID, at time.Time) error {
-	value := strconv.FormatInt(at.UnixMilli(), 10)
+	value := strconv.FormatInt(at.UnixNano(), 10)
 
 	if err := r.client.Set(ctx, r.revokedKey(accountID), value, r.absoluteLifetime).Err(); err != nil {
 		return fmt.Errorf("mark account sessions revoked: %w", err)

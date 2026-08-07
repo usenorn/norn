@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,6 +14,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/handler/http/v1/dashboard"
+	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/service"
 )
 
@@ -20,10 +23,28 @@ const Path = "/v1/workspaces/{workspaceId}/events"
 type Edge struct {
 	events service.Events
 	cfg    config.Realtime
+	open   sync.Map
 }
 
 func New(events service.Events, cfg config.Realtime) *Edge {
 	return &Edge{events: events, cfg: cfg}
+}
+
+func (e *Edge) admit(accountID uuid.UUID) (func(), bool) {
+	counter, _ := e.open.LoadOrStore(accountID, &atomic.Int64{})
+	streams := counter.(*atomic.Int64)
+
+	if streams.Add(1) > int64(e.cfg.MaxPerAccount) {
+		streams.Add(-1)
+
+		return nil, false
+	}
+
+	return func() {
+		if streams.Add(-1) == 0 {
+			e.open.CompareAndDelete(accountID, streams)
+		}
+	}, true
 }
 
 func (e *Edge) Serve(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +64,20 @@ func (e *Edge) Serve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	issueID, _ := uuid.Parse(r.URL.Query().Get("issue"))
+
+	actor, _ := identity.Actor(r.Context())
+
+	release, admitted := e.admit(actor.Authority())
+	if !admitted {
+		middleware.WriteProblem(
+			w, r, http.StatusTooManyRequests,
+			"too many live update streams are already open for this account",
+		)
+
+		return
+	}
+
+	defer release()
 
 	subscription, err := e.events.Subscribe(r.Context(), service.SubscribeInput{
 		WorkspaceID:  workspaceID,

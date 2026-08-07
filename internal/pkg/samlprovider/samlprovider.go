@@ -32,6 +32,9 @@ func New(cfg config.SAML) *Client {
 		http: &http.Client{
 			Timeout:   cfg.RequestTimeout,
 			Transport: &cappedTransport{inner: http.DefaultTransport, limit: cfg.MaxResponseSize},
+			CheckRedirect: func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
 		},
 		skew: cfg.MaxClockSkew,
 	}
@@ -57,6 +60,10 @@ func (t *cappedTransport) RoundTrip(request *http.Request) (*http.Response, erro
 }
 
 func (c *Client) Fetch(ctx context.Context, metadataURL string) (entity.SAMLDescriptor, error) {
+	if err := entity.ValidateSAMLMetadataURL(metadataURL); err != nil {
+		return entity.SAMLDescriptor{}, err
+	}
+
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, metadataURL, nil)
 	if err != nil {
 		return entity.SAMLDescriptor{}, entity.SSOFailure(
