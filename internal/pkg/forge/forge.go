@@ -94,8 +94,11 @@ func (c *Client) Do(ctx context.Context, request Request) (Response, error) {
 
 	response, err := c.http.Do(call)
 	if err != nil {
+		// Refused by our own dial guard, so nothing was ever asked of the forge. Reported as
+		// an unreachable repository this reads as "check the token", and somebody goes and
+		// rotates a credential that was never involved.
 		if errors.Is(err, outbound.ErrDestinationRefused) {
-			return Response{}, entity.SCMRepositoryUnreachableError{
+			return Response{}, entity.SCMDestinationRefusedError{
 				Provider: request.Provider,
 				Reason:   err.Error(),
 				Cause:    err,

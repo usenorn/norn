@@ -11,9 +11,11 @@
 	import { Button } from "$lib/components/ui/button";
 	import * as Form from "$lib/components/ui/form";
 	import { Input } from "$lib/components/ui/input";
+	import { Label } from "$lib/components/ui/label";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import {
 		brokenLabel,
+		detailOf,
 		failureMessage,
 		providerLabel,
 		sourceControlFailure,
@@ -36,12 +38,16 @@
 
 	let loaded = $state.raw<SourceControlDetailView | undefined>(undefined);
 	let failure = $state.raw<SourceControlFailure | undefined>(undefined);
+	let failureDetail = $state("");
 	let verifying = $state(false);
 	let disconnecting = $state(false);
 	let confirmingDisconnect = $state(false);
+	let retargeting = $state(false);
 
 	const view = $derived(loaded ?? preview?.view ?? data.view);
 	const workspace = $derived(page.data.workspace);
+
+	const shown = $derived(failure ?? preview?.failure);
 
 	function replace(connection: SourceControlConnection) {
 		loaded = { kind: "detail", connection, links: view.kind === "detail" ? view.links : [] };
@@ -51,6 +57,7 @@
 		id: "replace-source-control-token",
 		SPA: true,
 		validators: zod4Client(replaceTokenSchema),
+		resetForm: false,
 		onUpdate: async ({ form: entered }) => {
 			if (!entered.valid || view.kind !== "detail") return;
 
@@ -68,11 +75,13 @@
 
 			if (error) {
 				const mapped = sourceControlFailure(error);
+				const said = detailOf(error, mapped);
 
 				if (mapped.kind === "credentials_rejected" || mapped.kind === "repository_unreachable") {
-					setError(entered, "token", failureMessage(mapped));
+					setError(entered, "token", said);
 				} else {
 					failure = mapped;
+					failureDetail = said;
 				}
 
 				return;
@@ -83,6 +92,36 @@
 	});
 
 	const { form: fields, enhance, submitting, delayed } = form;
+
+	// A connection serving the whole workspace links branches and changes perfectly well, but
+	// brings no platform issue across, because there is no team to put one in. That was only
+	// ever written to the log, so the screen has to say it.
+	async function retarget(teamId: string) {
+		if (view.kind !== "detail") return;
+
+		retargeting = true;
+		failure = undefined;
+		failureDetail = "";
+
+		const { data: updated, error } = await api.PATCH(
+			"/workspaces/{workspaceId}/source-control/connections/{connectionId}",
+			{
+				params: { path: { workspaceId: workspace.id, connectionId: view.connection.id } },
+				body: teamId ? { teamId } : { clearTeam: true },
+			},
+		);
+
+		retargeting = false;
+
+		if (error) {
+			failure = sourceControlFailure(error);
+			failureDetail = detailOf(error, failure);
+
+			return;
+		}
+
+		if (updated) replace(updated);
+	}
 
 	async function verify() {
 		if (view.kind !== "detail") return;
@@ -99,6 +138,7 @@
 
 		if (error) {
 			failure = sourceControlFailure(error);
+			failureDetail = detailOf(error, failure);
 
 			return;
 		}
@@ -121,6 +161,7 @@
 
 		if (error) {
 			failure = sourceControlFailure(error);
+			failureDetail = detailOf(error, failure);
 
 			return;
 		}
@@ -184,10 +225,10 @@
 			</Alert.Root>
 		{/if}
 
-		{#if failure}
+		{#if shown}
 			<Alert.Root variant="destructive">
 				<Alert.Title>That did not work</Alert.Title>
-				<Alert.Description>{failureMessage(failure)}</Alert.Description>
+				<Alert.Description>{failureDetail || failureMessage(shown)}</Alert.Description>
 			</Alert.Root>
 		{/if}
 
@@ -220,6 +261,30 @@
 					</dd>
 				</div>
 			</dl>
+
+			<div class="flex flex-col gap-1">
+				<Label for="connection-team">Team</Label>
+				<select
+					id="connection-team"
+					disabled={retargeting}
+					value={view.connection.teamId ?? ""}
+					onchange={(event) => retarget(event.currentTarget.value)}
+					class="h-9 max-w-sm rounded-md border border-line-subtle bg-transparent px-3 text-sm text-ink-900"
+				>
+					<option value="">The whole workspace</option>
+					{#each data.teams as team (team.id)}
+						<option value={team.id}>{team.key} · {team.name}</option>
+					{/each}
+				</select>
+				{#if !view.connection.teamId}
+					<p class="flex items-start gap-1.5 pt-1 text-sm text-ink-900">
+						<TriangleAlert class="mt-0.5 size-icon-row shrink-0 text-destructive" aria-hidden="true" />
+						Branches, commits and changes still link to issues. Platform issues carrying the
+						label are not brought across, because there is no team to put them in — pick one
+						above to turn that on.
+					</p>
+				{/if}
+			</div>
 
 			<div class="flex flex-wrap gap-2">
 				<Button variant="secondary" disabled={verifying} onclick={verify}>

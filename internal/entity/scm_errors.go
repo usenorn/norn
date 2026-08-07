@@ -47,6 +47,27 @@ func (e SCMRepositoryUnreachableError) Unwrap() error {
 	return e.Cause
 }
 
+// SCMDestinationRefusedError is this instance declining to leave its own network, which is
+// a different thing from the forge saying no. Collapsing the two tells somebody to check a
+// token when nothing ever left the building, and that is the wrong thing to go and fix.
+type SCMDestinationRefusedError struct {
+	Provider SCMProvider
+	Reason   string
+	Cause    error
+}
+
+func (e SCMDestinationRefusedError) Error() string {
+	return fmt.Sprintf(
+		"this instance would not open a connection to %s: %s",
+		e.Provider.Label(),
+		e.Reason,
+	)
+}
+
+func (e SCMDestinationRefusedError) Unwrap() error {
+	return e.Cause
+}
+
 type SCMUnavailableError struct {
 	Provider SCMProvider
 	Reason   string

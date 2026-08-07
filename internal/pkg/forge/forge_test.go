@@ -265,12 +265,22 @@ func TestAHostThatResolvesInsideTheNetworkIsRefused(t *testing.T) {
 		URL:      server.URL,
 	})
 
-	var unreachable entity.SCMRepositoryUnreachableError
-	if !errors.As(err, &unreachable) {
+	var refused entity.SCMDestinationRefusedError
+	if !errors.As(err, &refused) {
 		t.Fatalf(
-			"a connection naming a loopback host was allowed (%v). A base url is supplied by "+
-				"whoever connects, so it is exactly the input the destination guard exists for",
+			"a connection naming a loopback host was allowed, or was reported as %T. A base url "+
+				"is supplied by whoever connects, so it is exactly the input the destination guard "+
+				"exists for — and being refused by our own guard is not the forge saying no",
 			err,
+		)
+	}
+
+	var unreachable entity.SCMRepositoryUnreachableError
+	if errors.As(err, &unreachable) {
+		t.Fatal(
+			"our own dial guard was reported as an unreachable repository. Those read the same " +
+				"on screen, so somebody told to check the token would rotate a credential that " +
+				"never left this instance",
 		)
 	}
 }
