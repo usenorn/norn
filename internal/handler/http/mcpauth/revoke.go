@@ -15,7 +15,11 @@ func (e *Edge) Revoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := e.connections.RevokeByValue(r.Context(), r.PostFormValue("token")); err != nil {
+	if err := e.connections.RevokeByValue(
+		r.Context(),
+		r.PostFormValue("token"),
+		r.PostFormValue("client_id"),
+	); err != nil {
 		writeOAuthError(w, http.StatusInternalServerError, "server_error", "")
 
 		return

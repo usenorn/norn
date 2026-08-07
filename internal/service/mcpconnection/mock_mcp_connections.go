@@ -224,17 +224,17 @@ func (mr *MockMCPConnectionsMockRecorder) Revoke(ctx, connectionID any) *gomock.
 }
 
 // RevokeByValue mocks base method.
-func (m *MockMCPConnections) RevokeByValue(ctx context.Context, token string) error {
+func (m *MockMCPConnections) RevokeByValue(ctx context.Context, token, clientID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RevokeByValue", ctx, token)
+	ret := m.ctrl.Call(m, "RevokeByValue", ctx, token, clientID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RevokeByValue indicates an expected call of RevokeByValue.
-func (mr *MockMCPConnectionsMockRecorder) RevokeByValue(ctx, token any) *gomock.Call {
+func (mr *MockMCPConnectionsMockRecorder) RevokeByValue(ctx, token, clientID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevokeByValue", reflect.TypeOf((*MockMCPConnections)(nil).RevokeByValue), ctx, token)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevokeByValue", reflect.TypeOf((*MockMCPConnections)(nil).RevokeByValue), ctx, token, clientID)
 }
 
 // RevokeInWorkspace mocks base method.

@@ -18,7 +18,7 @@ type MCPConnections interface {
 	Deny(ctx context.Context, requestID string) (MCPAuthorizationDecision, error)
 	Exchange(ctx context.Context, input ExchangeMCPCodeInput) (MCPTokenPair, error)
 	Refresh(ctx context.Context, input RefreshMCPTokenInput) (MCPTokenPair, error)
-	RevokeByValue(ctx context.Context, token string) error
+	RevokeByValue(ctx context.Context, token, clientID string) error
 	Authenticate(ctx context.Context, token string) (entity.Actor, entity.MCPConnection, error)
 	List(ctx context.Context) ([]entity.MCPConnection, error)
 	Revoke(ctx context.Context, connectionID uuid.UUID) error
