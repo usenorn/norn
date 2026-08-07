@@ -20,26 +20,22 @@ type ForgeReviewer struct {
 }
 
 type ForgeChange struct {
-	ExternalID string
-	Number     int
-	Title      string
-	Body       string
-	URL        string
-	// State is what the change itself says. What its reviewers said arrives separately, and
-	// entity.ResolveChangeState is the single place the two are combined.
-	State  entity.CodeChangeState
-	Checks entity.CodeChecks
-	// KnowsChecks and ReviewsMoved say what this event is evidence of. A payload carries one
-	// review, not the set, so claiming to know the reviews from it would wipe every other
-	// answer; ReviewsMoved asks for the set to be read instead.
-	KnowsChecks  bool
-	ReviewsMoved bool
-	Author       string
-	HeadBranch   string
-	BaseBranch   string
-	UpdatedAt    time.Time
-	MergedAt     *time.Time
-	ClosedAt     *time.Time
+	ExternalID     string
+	Number         int
+	Title          string
+	Body           string
+	URL            string
+	State          entity.CodeChangeState
+	Checks         entity.CodeChecks
+	MergeCommitSHA string
+	KnowsChecks    bool
+	ReviewsMoved   bool
+	Author         string
+	HeadBranch     string
+	BaseBranch     string
+	UpdatedAt      time.Time
+	MergedAt       *time.Time
+	ClosedAt       *time.Time
 }
 
 type ForgeCommit struct {
@@ -96,9 +92,25 @@ type ForgeIssuePage struct {
 	Cursor string
 }
 
-// ForgeEvent is what one delivery means once the wire format is gone. A single delivery can
-// carry several — a push names many commits — and every one of them is something the rest of
-// the feature can act on without knowing which forge it came from.
+type ForgeRelease struct {
+	ExternalID  string
+	Tag         string
+	Name        string
+	URL         string
+	CommitSHA   string
+	Prerelease  bool
+	PublishedAt *time.Time
+}
+
+type ForgeDeployment struct {
+	ExternalID  string
+	Environment string
+	State       entity.DeploymentState
+	URL         string
+	CommitSHA   string
+	OccurredAt  *time.Time
+}
+
 type ForgeEvent struct {
 	Kind    ForgeEventKind
 	Change  ForgeChange
@@ -126,14 +138,9 @@ type ForgeHookRequest struct {
 	Secret      string
 }
 
-// Forge is what a platform has to be able to do. Verify and Translate take no context and no
-// credential on purpose: signature checking and payload reading are the highest-risk code
-// here and this keeps them provable against recorded payloads, with no network and no token.
 type Forge interface {
 	Provider() entity.SCMProvider
 	Endpoint() string
-	// Capabilities is what this target can do. Forges differ, and a connection that quietly
-	// does nothing is worse than one that names the half it cannot offer.
 	Capabilities() entity.SCMCapabilitySet
 
 	Verify(secret string, header http.Header, body []byte) (entity.SCMDelivery, error)
@@ -142,23 +149,16 @@ type Forge interface {
 	Repository(ctx context.Context, target entity.SCMTarget) (entity.SCMRemoteRepository, error)
 	Identity(ctx context.Context, target entity.SCMTarget) (string, error)
 	InstallHook(ctx context.Context, request ForgeHookRequest) (string, error)
-	// RepairHook brings an installed hook up to the events this version needs. A hook
-	// installed by an earlier version keeps the list it was created with, so a new event
-	// simply never arrives and the feature looks dead on every repository already connected.
 	RepairHook(ctx context.Context, request ForgeHookRequest, hookID string) (bool, error)
 	RemoveHook(ctx context.Context, target entity.SCMTarget, hookID string) error
 
 	Changes(ctx context.Context, target entity.SCMTarget, since time.Time, cursor string) (ForgeChangePage, error)
-	// ChangedPaths is what routing needs and no event carries: both forges describe a change
-	// without saying which files it touches.
 	ChangedPaths(ctx context.Context, target entity.SCMTarget, number int) ([]string, error)
-	// Reviews reads every answer a change currently has. A review event carries one review,
-	// so a second approval would erase the first if the set were rebuilt from events.
 	Reviews(ctx context.Context, target entity.SCMTarget, number int) ([]ForgeReviewer, error)
+	Releases(ctx context.Context, target entity.SCMTarget, limit int) ([]ForgeRelease, error)
+	ReleaseCommits(ctx context.Context, target entity.SCMTarget, from, to string) ([]string, error)
+	Deployments(ctx context.Context, target entity.SCMTarget, limit int) ([]ForgeDeployment, error)
 	Issues(ctx context.Context, target entity.SCMTarget, label string, since time.Time, cursor string) (ForgeIssuePage, error)
-	// An issue is addressed by the number its repository counts with, not by the identity it
-	// is stored under. Both forges put the number in the path and the id in the payload, so
-	// passing one where the other belongs reads a different issue or none at all.
 	Issue(ctx context.Context, target entity.SCMTarget, number int) (ForgeIssue, error)
 	AmendIssue(ctx context.Context, target entity.SCMTarget, number int, patch ForgeIssuePatch) (ForgeIssue, error)
 	Comments(ctx context.Context, target entity.SCMTarget, number int, since time.Time) ([]ForgeComment, error)
@@ -171,13 +171,11 @@ type Forges interface {
 }
 
 type ConnectSourceControlInput struct {
-	WorkspaceID uuid.UUID
-	Provider    entity.SCMProvider
-	BaseURL     string
-	Label       string
-	Token       string
-	// AllowPrivateAddress is the exception an administrator grants this one connection so it
-	// may reach a forge on their own network. It is never an instance-wide relaxation.
+	WorkspaceID         uuid.UUID
+	Provider            entity.SCMProvider
+	BaseURL             string
+	Label               string
+	Token               string
 	AllowPrivateAddress bool
 	CACertificate       string
 }
@@ -193,9 +191,6 @@ type AddRepositoryInput struct {
 	PollInterval time.Duration
 }
 
-// ConnectedRepository carries the webhook address and secret back to whoever added the
-// repository. Norn installs the hook itself when the token may, and this is what a person
-// needs when it may not.
 type ConnectedRepository struct {
 	Repository    entity.SCMRepository
 	WebhookURL    string
@@ -208,6 +203,11 @@ type UpdateRepositoryInput struct {
 	SyncDirection    entity.MirrorDirection
 	WebhooksDisabled *bool
 	PollInterval     time.Duration
+}
+
+type IssueShipping struct {
+	Releases    entity.SCMReleases
+	Deployments entity.SCMDeployments
 }
 
 type MapSCMIdentityInput struct {
@@ -268,6 +268,7 @@ type SourceControl interface {
 	MapIdentity(ctx context.Context, workspaceID uuid.UUID, input MapSCMIdentityInput) (entity.SCMIdentity, error)
 	UnmapIdentity(ctx context.Context, workspaceID, identityID uuid.UUID) error
 	Conflicts(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.MirrorConflict, error)
+	Shipped(ctx context.Context, workspaceID, issueID uuid.UUID) (IssueShipping, error)
 
 	TeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.SCMTeamSettings, error)
 	SetTeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID, input SetTeamSCMSettingsInput) (entity.SCMTeamSettings, error)
@@ -287,11 +288,9 @@ type SourceControl interface {
 	Unmirror(ctx context.Context, workspaceID, issueID, mirrorID uuid.UUID) error
 }
 
-// SourceControlSync is the job-facing half. It is separate because everything on it runs
-// with no person waiting and rebuilds its own actor from the connection, which is a
-// different contract from the dashboard operations above.
 type SourceControlSync interface {
 	Accept(ctx context.Context, repositoryID uuid.UUID, provider entity.SCMProvider, header http.Header, body []byte) (uuid.UUID, error)
 	Apply(ctx context.Context, deliveryID uuid.UUID) error
 	Reconcile(ctx context.Context, at time.Time) error
+	Backfill(ctx context.Context, repositoryID uuid.UUID) error
 }

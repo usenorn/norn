@@ -802,3 +802,23 @@ func (r problemResponse) VisitListWorkspaceIssueMirrorConflictsResponse(
 ) error {
 	return r.write(w)
 }
+
+func (h *handler) GetWorkspaceIssueShipping(
+	ctx context.Context,
+	request api.GetWorkspaceIssueShippingRequestObject,
+) (api.GetWorkspaceIssueShippingResponseObject, error) {
+	shipping, err := h.sourceControl.Shipped(ctx, request.WorkspaceId, request.IssueId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetWorkspaceIssueShipping200JSONResponse(issueShippingDTO(shipping)), nil
+}
+
+func (r problemResponse) VisitGetWorkspaceIssueShippingResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}

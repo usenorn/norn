@@ -236,6 +236,7 @@ type changeBody struct {
 	State              string     `json:"state"`
 	Draft              bool       `json:"draft"`
 	MergeableState     string     `json:"mergeable_state"`
+	MergeCommitSHA     string     `json:"merge_commit_sha"`
 	MergedAt           *time.Time `json:"merged_at"`
 	ClosedAt           *time.Time `json:"closed_at"`
 	UpdatedAt          time.Time  `json:"updated_at"`
@@ -305,13 +306,14 @@ func (f *Forge) Changes(
 				change.MergedAt,
 				change.MergeableState,
 			),
-			ReviewsMoved: true,
-			Author:       change.User.Login,
-			HeadBranch:   change.Head.Ref,
-			BaseBranch:   change.Base.Ref,
-			UpdatedAt:    change.UpdatedAt,
-			MergedAt:     change.MergedAt,
-			ClosedAt:     change.ClosedAt,
+			MergeCommitSHA: change.MergeCommitSHA,
+			ReviewsMoved:   true,
+			Author:         change.User.Login,
+			HeadBranch:     change.Head.Ref,
+			BaseBranch:     change.Base.Ref,
+			UpdatedAt:      change.UpdatedAt,
+			MergedAt:       change.MergedAt,
+			ClosedAt:       change.ClosedAt,
 		})
 	}
 
@@ -795,5 +797,197 @@ func (f *Forge) Capabilities() entity.SCMCapabilitySet {
 		entity.CapabilityIssues,
 		entity.CapabilityLabels,
 		entity.CapabilityAssignees,
+		entity.CapabilityReleases,
+		entity.CapabilityDeployments,
+	}
+}
+
+type releaseBody struct {
+	ID          int64      `json:"id"`
+	TagName     string     `json:"tag_name"`
+	Name        string     `json:"name"`
+	HTMLURL     string     `json:"html_url"`
+	Prerelease  bool       `json:"prerelease"`
+	Draft       bool       `json:"draft"`
+	PublishedAt *time.Time `json:"published_at"`
+}
+
+func (f *Forge) Releases(
+	ctx context.Context,
+	target entity.SCMTarget,
+	limit int,
+) ([]service.ForgeRelease, error) {
+	query := url.Values{}
+	query.Set("per_page", strconv.Itoa(limit))
+
+	path := "/repos/" + target.Repository + "/releases?" + query.Encode()
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body []releaseBody
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	releases := make([]service.ForgeRelease, 0, len(body))
+
+	for _, release := range body {
+		if release.Draft {
+			continue
+		}
+
+		releases = append(releases, service.ForgeRelease{
+			ExternalID:  strconv.FormatInt(release.ID, 10),
+			Tag:         release.TagName,
+			Name:        release.Name,
+			URL:         release.HTMLURL,
+			Prerelease:  release.Prerelease,
+			PublishedAt: release.PublishedAt,
+		})
+	}
+
+	return releases, nil
+}
+
+func (f *Forge) ReleaseCommits(
+	ctx context.Context,
+	target entity.SCMTarget,
+	from, to string,
+) ([]string, error) {
+	if from == "" || to == "" {
+		return nil, nil
+	}
+
+	path := "/repos/" + target.Repository + "/compare/" + url.PathEscape(from) + "..." +
+		url.PathEscape(to)
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body struct {
+		Commits []struct {
+			SHA string `json:"sha"`
+		} `json:"commits"`
+	}
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	commits := make([]string, 0, len(body.Commits))
+	for _, commit := range body.Commits {
+		if commit.SHA != "" {
+			commits = append(commits, commit.SHA)
+		}
+	}
+
+	return commits, nil
+}
+
+func (f *Forge) Deployments(
+	ctx context.Context,
+	target entity.SCMTarget,
+	limit int,
+) ([]service.ForgeDeployment, error) {
+	query := url.Values{}
+	query.Set("per_page", strconv.Itoa(limit))
+
+	path := "/repos/" + target.Repository + "/deployments?" + query.Encode()
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body []struct {
+		ID          int64     `json:"id"`
+		SHA         string    `json:"sha"`
+		Environment string    `json:"environment"`
+		CreatedAt   time.Time `json:"created_at"`
+	}
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	deployments := make([]service.ForgeDeployment, 0, len(body))
+
+	for _, deployment := range body {
+		if deployment.Environment == "" {
+			continue
+		}
+
+		state, at, err := f.deploymentState(ctx, target, deployment.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		created := deployment.CreatedAt
+
+		if at != nil {
+			created = *at
+		}
+
+		deployments = append(deployments, service.ForgeDeployment{
+			ExternalID:  strconv.FormatInt(deployment.ID, 10),
+			Environment: deployment.Environment,
+			State:       state,
+			CommitSHA:   deployment.SHA,
+			OccurredAt:  &created,
+		})
+	}
+
+	return deployments, nil
+}
+
+func (f *Forge) deploymentState(
+	ctx context.Context,
+	target entity.SCMTarget,
+	deploymentID int64,
+) (entity.DeploymentState, *time.Time, error) {
+	path := "/repos/" + target.Repository + "/deployments/" +
+		strconv.FormatInt(deploymentID, 10) + "/statuses?per_page=1"
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return "", nil, err
+	}
+
+	var body []struct {
+		State     string    `json:"state"`
+		CreatedAt time.Time `json:"created_at"`
+	}
+
+	if err := f.decode(response, target, &body); err != nil {
+		return "", nil, err
+	}
+
+	if len(body) == 0 {
+		return entity.DeploymentPending, nil, nil
+	}
+
+	at := body[0].CreatedAt
+
+	return deploymentState(body[0].State), &at, nil
+}
+
+func deploymentState(state string) entity.DeploymentState {
+	switch strings.ToLower(state) {
+	case "success":
+		return entity.DeploymentSucceeded
+	case "failure", "error":
+		return entity.DeploymentFailed
+	case "in_progress", "queued":
+		return entity.DeploymentRunning
+	case "inactive":
+		return entity.DeploymentInactive
+	default:
+		return entity.DeploymentPending
 	}
 }

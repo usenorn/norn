@@ -23,6 +23,9 @@ type connections struct {
 	identities   repository.SCMIdentity
 	conflicts    repository.MirrorConflict
 	memberships  repository.Membership
+	jobs         repository.JobProducer
+	releases     repository.SCMRelease
+	deployments  repository.SCMDeployment
 	deliveries   repository.SCMDelivery
 	links        repository.CodeLink
 	mirrors      repository.IssueMirror
@@ -46,6 +49,9 @@ func NewConnections(
 	identities repository.SCMIdentity,
 	conflicts repository.MirrorConflict,
 	memberships repository.Membership,
+	jobs repository.JobProducer,
+	releases repository.SCMRelease,
+	deployments repository.SCMDeployment,
 	deliveries repository.SCMDelivery,
 	links repository.CodeLink,
 	mirrors repository.IssueMirror,
@@ -68,6 +74,9 @@ func NewConnections(
 		identities:   identities,
 		conflicts:    conflicts,
 		memberships:  memberships,
+		jobs:         jobs,
+		releases:     releases,
+		deployments:  deployments,
 		deliveries:   deliveries,
 		links:        links,
 		mirrors:      mirrors,

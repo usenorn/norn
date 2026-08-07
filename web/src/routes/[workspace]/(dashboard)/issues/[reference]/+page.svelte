@@ -77,6 +77,8 @@
 
 	import {
 		conflictSummary,
+		deploymentLabel,
+		releaseLabel,
 		sourceControlFailure,
 		failureMessage as codeFailureMessage,
 		type CodeLink,
@@ -252,6 +254,7 @@
 	);
 	const automationSuppressed = $derived(automationOverride ?? false);
 	const mirrorConflicts = $derived(ready?.mirrorConflicts ?? []);
+	const shipping = $derived(ready?.shipping ?? { releases: [], deployments: [] });
 	const activity = $derived<ActivityFeed>(
 		activityPreview?.feed ?? loadedActivity ?? ready?.activity ?? { kind: "loading" }
 	);
@@ -1811,6 +1814,32 @@
 							busy={unlinking}
 							onunlink={canEdit ? unlinkCode : undefined}
 						/>
+
+						{#if shipping.releases.length > 0 || shipping.deployments.length > 0}
+							<div class="flex flex-col gap-1 pt-1">
+								{#if shipping.releases.length > 0}
+									<p class="text-sm text-ink-900">
+										Shipped in
+										{#each shipping.releases as release, index (release.id)}{#if index > 0}, {/if}{#if release.url}<a
+												href={release.url}
+												target="_blank"
+												rel="noreferrer"
+												class="underline underline-offset-2">{releaseLabel(release)}</a
+											>{:else}{releaseLabel(release)}{/if}{/each}
+									</p>
+								{/if}
+								{#if shipping.deployments.length > 0}
+									<ul class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+										{#each shipping.deployments as deployment (deployment.id)}
+											<li class:text-success={deployment.state === "succeeded"}
+												class:text-destructive={deployment.state === "failed"}>
+												{deploymentLabel(deployment)}
+											</li>
+										{/each}
+									</ul>
+								{/if}
+							</div>
+						{/if}
 
 						{#if mirrorConflicts.length > 0}
 							<div class="flex flex-col gap-2 rounded-md border border-warning/40 p-3">

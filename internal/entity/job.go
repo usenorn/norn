@@ -32,6 +32,7 @@ const (
 	TaskTypeImportRescue            = "import:rescue"
 	TaskTypeSCMDelivery             = "scm:delivery"
 	TaskTypeSCMReconcile            = "scm:reconcile"
+	TaskTypeSCMBackfill             = "scm:backfill"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 	WebhookFanOutTaskID     = "webhook-fan-out"
@@ -97,6 +98,10 @@ type WebhookDeliverPayload struct {
 type SCMDeliveryPayload struct {
 	DeliveryID uuid.UUID
 	Attempt    int
+}
+
+type SCMBackfillPayload struct {
+	RepositoryID uuid.UUID
 }
 
 type ImportStagePayload struct {

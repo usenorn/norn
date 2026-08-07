@@ -152,6 +152,12 @@ func (s *connections) AddRepository(
 		created.ExternalHookID = hookID
 	}
 
+	if err := s.jobs.EnqueueSCMBackfill(ctx, entity.SCMBackfillPayload{
+		RepositoryID: created.ID,
+	}); err != nil {
+		logWarn(ctx, "queueing the first read of a repository failed", created.ID, err)
+	}
+
 	s.audit.Record(ctx, entity.AuditEntry{
 		WorkspaceID:  workspaceID,
 		Action:       entity.AuditSourceControlConnected,

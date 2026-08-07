@@ -119,6 +119,21 @@ func (mr *MockForgeMockRecorder) Comments(ctx, target, number, since any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Comments", reflect.TypeOf((*MockForge)(nil).Comments), ctx, target, number, since)
 }
 
+// Deployments mocks base method.
+func (m *MockForge) Deployments(ctx context.Context, target entity.SCMTarget, limit int) ([]service.ForgeDeployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Deployments", ctx, target, limit)
+	ret0, _ := ret[0].([]service.ForgeDeployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Deployments indicates an expected call of Deployments.
+func (mr *MockForgeMockRecorder) Deployments(ctx, target, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deployments", reflect.TypeOf((*MockForge)(nil).Deployments), ctx, target, limit)
+}
+
 // Endpoint mocks base method.
 func (m *MockForge) Endpoint() string {
 	m.ctrl.T.Helper()
@@ -220,6 +235,36 @@ func (m *MockForge) Provider() entity.SCMProvider {
 func (mr *MockForgeMockRecorder) Provider() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Provider", reflect.TypeOf((*MockForge)(nil).Provider))
+}
+
+// ReleaseCommits mocks base method.
+func (m *MockForge) ReleaseCommits(ctx context.Context, target entity.SCMTarget, from, to string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReleaseCommits", ctx, target, from, to)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReleaseCommits indicates an expected call of ReleaseCommits.
+func (mr *MockForgeMockRecorder) ReleaseCommits(ctx, target, from, to any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseCommits", reflect.TypeOf((*MockForge)(nil).ReleaseCommits), ctx, target, from, to)
+}
+
+// Releases mocks base method.
+func (m *MockForge) Releases(ctx context.Context, target entity.SCMTarget, limit int) ([]service.ForgeRelease, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Releases", ctx, target, limit)
+	ret0, _ := ret[0].([]service.ForgeRelease)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Releases indicates an expected call of Releases.
+func (mr *MockForgeMockRecorder) Releases(ctx, target, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Releases", reflect.TypeOf((*MockForge)(nil).Releases), ctx, target, limit)
 }
 
 // RemoveHook mocks base method.
@@ -731,6 +776,21 @@ func (mr *MockSourceControlMockRecorder) SetTeamSettings(ctx, workspaceID, teamI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTeamSettings", reflect.TypeOf((*MockSourceControl)(nil).SetTeamSettings), ctx, workspaceID, teamID, input)
 }
 
+// Shipped mocks base method.
+func (m *MockSourceControl) Shipped(ctx context.Context, workspaceID, issueID uuid.UUID) (service.IssueShipping, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Shipped", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].(service.IssueShipping)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Shipped indicates an expected call of Shipped.
+func (mr *MockSourceControlMockRecorder) Shipped(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shipped", reflect.TypeOf((*MockSourceControl)(nil).Shipped), ctx, workspaceID, issueID)
+}
+
 // SuppressAutomation mocks base method.
 func (m *MockSourceControl) SuppressAutomation(ctx context.Context, workspaceID, issueID uuid.UUID, suppressed bool) error {
 	m.ctrl.T.Helper()
@@ -913,6 +973,20 @@ func (m *MockSourceControlSync) Apply(ctx context.Context, deliveryID uuid.UUID)
 func (mr *MockSourceControlSyncMockRecorder) Apply(ctx, deliveryID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Apply", reflect.TypeOf((*MockSourceControlSync)(nil).Apply), ctx, deliveryID)
+}
+
+// Backfill mocks base method.
+func (m *MockSourceControlSync) Backfill(ctx context.Context, repositoryID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Backfill", ctx, repositoryID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Backfill indicates an expected call of Backfill.
+func (mr *MockSourceControlSyncMockRecorder) Backfill(ctx, repositoryID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Backfill", reflect.TypeOf((*MockSourceControlSync)(nil).Backfill), ctx, repositoryID)
 }
 
 // Reconcile mocks base method.

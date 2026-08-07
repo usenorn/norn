@@ -49,6 +49,7 @@ type WorkspaceCodeLink struct {
 	CreatedAt       time.Time         `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt       time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	Checks          string            `boil:"checks" json:"checks" toml:"checks" yaml:"checks"`
+	MergeCommitSha  string            `boil:"merge_commit_sha" json:"merge_commit_sha" toml:"merge_commit_sha" yaml:"merge_commit_sha"`
 
 	R *workspaceCodeLinkR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceCodeLinkL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -79,6 +80,7 @@ var WorkspaceCodeLinkColumns = struct {
 	CreatedAt       string
 	UpdatedAt       string
 	Checks          string
+	MergeCommitSha  string
 }{
 	ID:              "id",
 	WorkspaceID:     "workspace_id",
@@ -104,6 +106,7 @@ var WorkspaceCodeLinkColumns = struct {
 	CreatedAt:       "created_at",
 	UpdatedAt:       "updated_at",
 	Checks:          "checks",
+	MergeCommitSha:  "merge_commit_sha",
 }
 
 var WorkspaceCodeLinkTableColumns = struct {
@@ -131,6 +134,7 @@ var WorkspaceCodeLinkTableColumns = struct {
 	CreatedAt       string
 	UpdatedAt       string
 	Checks          string
+	MergeCommitSha  string
 }{
 	ID:              "workspace_code_links.id",
 	WorkspaceID:     "workspace_code_links.workspace_id",
@@ -156,6 +160,7 @@ var WorkspaceCodeLinkTableColumns = struct {
 	CreatedAt:       "workspace_code_links.created_at",
 	UpdatedAt:       "workspace_code_links.updated_at",
 	Checks:          "workspace_code_links.checks",
+	MergeCommitSha:  "workspace_code_links.merge_commit_sha",
 }
 
 // Generated where
@@ -185,6 +190,7 @@ var WorkspaceCodeLinkWhere = struct {
 	CreatedAt       whereHelpertime_Time
 	UpdatedAt       whereHelpertime_Time
 	Checks          whereHelperstring
+	MergeCommitSha  whereHelperstring
 }{
 	ID:              whereHelperstring{field: "\"workspace_code_links\".\"id\""},
 	WorkspaceID:     whereHelperstring{field: "\"workspace_code_links\".\"workspace_id\""},
@@ -210,6 +216,7 @@ var WorkspaceCodeLinkWhere = struct {
 	CreatedAt:       whereHelpertime_Time{field: "\"workspace_code_links\".\"created_at\""},
 	UpdatedAt:       whereHelpertime_Time{field: "\"workspace_code_links\".\"updated_at\""},
 	Checks:          whereHelperstring{field: "\"workspace_code_links\".\"checks\""},
+	MergeCommitSha:  whereHelperstring{field: "\"workspace_code_links\".\"merge_commit_sha\""},
 }
 
 // WorkspaceCodeLinkRels is where relationship names are stored.
@@ -219,12 +226,14 @@ var WorkspaceCodeLinkRels = struct {
 	Workspace                        string
 	LinkWorkspaceCodeLinkReviewers   string
 	LinkWorkspaceCodeLinkTransitions string
+	LinkWorkspaceSCMReleaseLinks     string
 }{
 	Issue:                            "Issue",
 	Repository:                       "Repository",
 	Workspace:                        "Workspace",
 	LinkWorkspaceCodeLinkReviewers:   "LinkWorkspaceCodeLinkReviewers",
 	LinkWorkspaceCodeLinkTransitions: "LinkWorkspaceCodeLinkTransitions",
+	LinkWorkspaceSCMReleaseLinks:     "LinkWorkspaceSCMReleaseLinks",
 }
 
 // workspaceCodeLinkR is where relationships are stored.
@@ -234,6 +243,7 @@ type workspaceCodeLinkR struct {
 	Workspace                        *Workspace                       `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
 	LinkWorkspaceCodeLinkReviewers   WorkspaceCodeLinkReviewerSlice   `boil:"LinkWorkspaceCodeLinkReviewers" json:"LinkWorkspaceCodeLinkReviewers" toml:"LinkWorkspaceCodeLinkReviewers" yaml:"LinkWorkspaceCodeLinkReviewers"`
 	LinkWorkspaceCodeLinkTransitions WorkspaceCodeLinkTransitionSlice `boil:"LinkWorkspaceCodeLinkTransitions" json:"LinkWorkspaceCodeLinkTransitions" toml:"LinkWorkspaceCodeLinkTransitions" yaml:"LinkWorkspaceCodeLinkTransitions"`
+	LinkWorkspaceSCMReleaseLinks     WorkspaceSCMReleaseLinkSlice     `boil:"LinkWorkspaceSCMReleaseLinks" json:"LinkWorkspaceSCMReleaseLinks" toml:"LinkWorkspaceSCMReleaseLinks" yaml:"LinkWorkspaceSCMReleaseLinks"`
 }
 
 // NewStruct creates a new relationship struct
@@ -321,13 +331,29 @@ func (r *workspaceCodeLinkR) GetLinkWorkspaceCodeLinkTransitions() WorkspaceCode
 	return r.LinkWorkspaceCodeLinkTransitions
 }
 
+func (o *WorkspaceCodeLink) GetLinkWorkspaceSCMReleaseLinks() WorkspaceSCMReleaseLinkSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetLinkWorkspaceSCMReleaseLinks()
+}
+
+func (r *workspaceCodeLinkR) GetLinkWorkspaceSCMReleaseLinks() WorkspaceSCMReleaseLinkSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.LinkWorkspaceSCMReleaseLinks
+}
+
 // workspaceCodeLinkL is where Load methods for each relationship are stored.
 type workspaceCodeLinkL struct{}
 
 var (
-	workspaceCodeLinkAllColumns            = []string{"id", "workspace_id", "issue_id", "repository_id", "provider", "repository_name", "kind", "external_id", "number", "title", "url", "state", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at", "checks"}
+	workspaceCodeLinkAllColumns            = []string{"id", "workspace_id", "issue_id", "repository_id", "provider", "repository_name", "kind", "external_id", "number", "title", "url", "state", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at", "checks", "merge_commit_sha"}
 	workspaceCodeLinkColumnsWithoutDefault = []string{"workspace_id", "issue_id", "provider", "repository_name", "kind", "external_id"}
-	workspaceCodeLinkColumnsWithDefault    = []string{"id", "repository_id", "number", "title", "url", "state", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at", "checks"}
+	workspaceCodeLinkColumnsWithDefault    = []string{"id", "repository_id", "number", "title", "url", "state", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at", "checks", "merge_commit_sha"}
 	workspaceCodeLinkPrimaryKeyColumns     = []string{"id"}
 	workspaceCodeLinkGeneratedColumns      = []string{}
 )
@@ -696,6 +722,20 @@ func (o *WorkspaceCodeLink) LinkWorkspaceCodeLinkTransitions(mods ...qm.QueryMod
 	)
 
 	return WorkspaceCodeLinkTransitions(queryMods...)
+}
+
+// LinkWorkspaceSCMReleaseLinks retrieves all the workspace_scm_release_link's WorkspaceSCMReleaseLinks with an executor via link_id column.
+func (o *WorkspaceCodeLink) LinkWorkspaceSCMReleaseLinks(mods ...qm.QueryMod) workspaceSCMReleaseLinkQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_scm_release_links\".\"link_id\"=?", o.ID),
+	)
+
+	return WorkspaceSCMReleaseLinks(queryMods...)
 }
 
 // LoadIssue allows an eager lookup of values, cached into the
@@ -1288,6 +1328,119 @@ func (workspaceCodeLinkL) LoadLinkWorkspaceCodeLinkTransitions(ctx context.Conte
 	return nil
 }
 
+// LoadLinkWorkspaceSCMReleaseLinks allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceCodeLinkL) LoadLinkWorkspaceSCMReleaseLinks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceCodeLink any, mods queries.Applicator) error {
+	var slice []*WorkspaceCodeLink
+	var object *WorkspaceCodeLink
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceCodeLink.(*WorkspaceCodeLink)
+		if !ok {
+			object = new(WorkspaceCodeLink)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceCodeLink)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceCodeLink))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceCodeLink.(*[]*WorkspaceCodeLink)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceCodeLink)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceCodeLink))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceCodeLinkR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceCodeLinkR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_scm_release_links`),
+		qm.WhereIn(`workspace_scm_release_links.link_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_scm_release_links")
+	}
+
+	var resultSlice []*WorkspaceSCMReleaseLink
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_scm_release_links")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_scm_release_links")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_scm_release_links")
+	}
+
+	if len(workspaceSCMReleaseLinkAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.LinkWorkspaceSCMReleaseLinks = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceSCMReleaseLinkR{}
+			}
+			foreign.R.Link = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.LinkID {
+				local.R.LinkWorkspaceSCMReleaseLinks = append(local.R.LinkWorkspaceSCMReleaseLinks, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceSCMReleaseLinkR{}
+				}
+				foreign.R.Link = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetIssue of the workspaceCodeLink to the related item.
 // Sets o.R.Issue to related.
 // Adds o to related.R.IssueWorkspaceCodeLinks.
@@ -1559,6 +1712,59 @@ func (o *WorkspaceCodeLink) AddLinkWorkspaceCodeLinkTransitions(ctx context.Cont
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceCodeLinkTransitionR{
+				Link: o,
+			}
+		} else {
+			rel.R.Link = o
+		}
+	}
+	return nil
+}
+
+// AddLinkWorkspaceSCMReleaseLinks adds the given related objects to the existing relationships
+// of the workspace_code_link, optionally inserting them as new records.
+// Appends related to o.R.LinkWorkspaceSCMReleaseLinks.
+// Sets related.R.Link appropriately.
+func (o *WorkspaceCodeLink) AddLinkWorkspaceSCMReleaseLinks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceSCMReleaseLink) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.LinkID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_scm_release_links\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"link_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceSCMReleaseLinkPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ReleaseID, rel.LinkID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.LinkID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceCodeLinkR{
+			LinkWorkspaceSCMReleaseLinks: related,
+		}
+	} else {
+		o.R.LinkWorkspaceSCMReleaseLinks = append(o.R.LinkWorkspaceSCMReleaseLinks, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceSCMReleaseLinkR{
 				Link: o,
 			}
 		} else {

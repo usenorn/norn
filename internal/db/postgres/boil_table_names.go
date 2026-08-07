@@ -66,7 +66,10 @@ var TableNames = struct {
 	WorkspaceSavedViews               string
 	WorkspaceSCMConnections           string
 	WorkspaceSCMDeliveries            string
+	WorkspaceSCMDeployments           string
 	WorkspaceSCMIdentities            string
+	WorkspaceSCMReleaseLinks          string
+	WorkspaceSCMReleases              string
 	WorkspaceSCMRepositories          string
 	WorkspaceSCMRoutes                string
 	WorkspaceSCMTransitionRules       string
@@ -145,7 +148,10 @@ var TableNames = struct {
 	WorkspaceSavedViews:               "workspace_saved_views",
 	WorkspaceSCMConnections:           "workspace_scm_connections",
 	WorkspaceSCMDeliveries:            "workspace_scm_deliveries",
+	WorkspaceSCMDeployments:           "workspace_scm_deployments",
 	WorkspaceSCMIdentities:            "workspace_scm_identities",
+	WorkspaceSCMReleaseLinks:          "workspace_scm_release_links",
+	WorkspaceSCMReleases:              "workspace_scm_releases",
 	WorkspaceSCMRepositories:          "workspace_scm_repositories",
 	WorkspaceSCMRoutes:                "workspace_scm_routes",
 	WorkspaceSCMTransitionRules:       "workspace_scm_transition_rules",

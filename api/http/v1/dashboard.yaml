@@ -5105,6 +5105,25 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/shipping:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [source-control]
+      operationId: getWorkspaceIssueShipping
+      summary: Read which releases carried this issue and where they were deployed
+      responses:
+        '200':
+          description: Where this issue's work has reached
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueShipping' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7732,7 +7751,8 @@ components:
     SourceControlCapability:
       type: string
       enum:
-        [webhooks, reviews, checks, changed_paths, issues, labels, assignees]
+        [webhooks, reviews, checks, changed_paths, issues, labels, assignees, releases,
+         deployments]
 
     SourceControlStatus:
       type: string
@@ -7893,6 +7913,41 @@ components:
         accountName: { type: string }
         provider: { $ref: '#/components/schemas/SourceControlProvider' }
         login: { type: string }
+
+    SCMRelease:
+      type: object
+      required: [id, tag, name]
+      properties:
+        id: { type: string, format: uuid }
+        tag: { type: string }
+        name: { type: string }
+        url: { type: string }
+        prerelease: { type: boolean }
+        publishedAt: { type: string, format: date-time }
+
+    SCMDeployment:
+      type: object
+      required: [id, environment, state]
+      properties:
+        id: { type: string, format: uuid }
+        environment: { type: string }
+        state: { type: string, enum: [pending, running, succeeded, failed, inactive] }
+        url: { type: string }
+        occurredAt: { type: string, format: date-time }
+
+    IssueShipping:
+      type: object
+      description: >-
+        Where this issue's work has reached. Reflection only: Norn reads what the platform
+        says and never triggers a deployment or owns a release process.
+      required: [releases, deployments]
+      properties:
+        releases:
+          type: array
+          items: { $ref: '#/components/schemas/SCMRelease' }
+        deployments:
+          type: array
+          items: { $ref: '#/components/schemas/SCMDeployment' }
 
     MapSCMIdentityRequest:
       type: object

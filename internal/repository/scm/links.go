@@ -27,7 +27,8 @@ const linkColumns = `
     id, workspace_id, issue_id,
     coalesce(repository_id, '00000000-0000-0000-0000-000000000000'::uuid),
     provider, repository_name, kind, external_id, number, title, url, state, checks, author,
-    head_branch, base_branch, paths, detected_in, resolving, source_updated_at,
+    head_branch, base_branch, paths, detected_in, resolving, merge_commit_sha,
+    source_updated_at,
     merged_at, closed_at, created_at, updated_at`
 
 func scanLink(row interface{ Scan(...any) error }) (entity.CodeLink, error) {
@@ -56,6 +57,7 @@ func scanLink(row interface{ Scan(...any) error }) (entity.CodeLink, error) {
 		&paths,
 		&link.DetectedIn,
 		&link.Resolving,
+		&link.MergeCommitSHA,
 		&link.SourceUpdatedAt,
 		&link.MergedAt,
 		&link.ClosedAt,
@@ -75,9 +77,9 @@ const upsertLinkQuery = `
 INSERT INTO workspace_code_links (
     id, workspace_id, issue_id, repository_id, provider, repository_name, kind, external_id,
     number, title, url, state, checks, author, head_branch, base_branch, paths, detected_in,
-    resolving, source_updated_at, merged_at, closed_at
+    resolving, merge_commit_sha, source_updated_at, merged_at, closed_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
-          $19, $20, $21, $22)
+          $19, $20, $21, $22, $23)
 ON CONFLICT (issue_id, provider, repository_name, kind, external_id) DO UPDATE
 SET repository_id = excluded.repository_id,
     number = excluded.number,
@@ -90,6 +92,7 @@ SET repository_id = excluded.repository_id,
     base_branch = excluded.base_branch,
     paths = excluded.paths,
     resolving = excluded.resolving,
+    merge_commit_sha = excluded.merge_commit_sha,
     source_updated_at = excluded.source_updated_at,
     merged_at = excluded.merged_at,
     closed_at = excluded.closed_at,
@@ -135,6 +138,7 @@ func (r *linkRepository) Upsert(
 		types.StringArray(link.Paths),
 		link.DetectedIn,
 		link.Resolving,
+		link.MergeCommitSHA,
 		link.SourceUpdatedAt,
 		link.MergedAt,
 		link.ClosedAt,
@@ -321,4 +325,17 @@ func (r *linkRepository) SetChecks(
 	}
 
 	return int(affected), nil
+}
+
+const listLinksByRepositoryQuery = `
+SELECT` + linkColumns + `
+FROM workspace_code_links
+WHERE repository_id = $1 AND merge_commit_sha <> ''
+ORDER BY created_at, id`
+
+func (r *linkRepository) ListByRepository(
+	ctx context.Context,
+	repositoryID uuid.UUID,
+) ([]entity.CodeLink, error) {
+	return r.collect(ctx, listLinksByRepositoryQuery, repositoryID)
 }

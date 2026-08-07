@@ -3253,6 +3253,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/shipping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Read which releases carried this issue and where they were deployed */
+        get: operations["getWorkspaceIssueShipping"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/mirror-conflicts": {
         parameters: {
             query?: never;
@@ -4657,7 +4677,7 @@ export interface components {
          */
         SourceControlProvider: "github" | "gitlab" | "gitea";
         /** @enum {string} */
-        SourceControlCapability: "webhooks" | "reviews" | "checks" | "changed_paths" | "issues" | "labels" | "assignees";
+        SourceControlCapability: "webhooks" | "reviews" | "checks" | "changed_paths" | "issues" | "labels" | "assignees" | "releases" | "deployments";
         /** @enum {string} */
         SourceControlStatus: "connected" | "broken";
         /** @enum {string} */
@@ -4776,6 +4796,31 @@ export interface components {
             accountName?: string;
             provider: components["schemas"]["SourceControlProvider"];
             login: string;
+        };
+        SCMRelease: {
+            /** Format: uuid */
+            id: string;
+            tag: string;
+            name: string;
+            url?: string;
+            prerelease?: boolean;
+            /** Format: date-time */
+            publishedAt?: string;
+        };
+        SCMDeployment: {
+            /** Format: uuid */
+            id: string;
+            environment: string;
+            /** @enum {string} */
+            state: "pending" | "running" | "succeeded" | "failed" | "inactive";
+            url?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+        };
+        /** @description Where this issue's work has reached. Reflection only: Norn reads what the platform says and never triggers a deployment or owns a release process. */
+        IssueShipping: {
+            releases: components["schemas"]["SCMRelease"][];
+            deployments: components["schemas"]["SCMDeployment"][];
         };
         MapSCMIdentityRequest: {
             /** Format: uuid */
@@ -13289,6 +13334,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceIssueShipping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Where this issue's work has reached */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueShipping"];
+                };
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];

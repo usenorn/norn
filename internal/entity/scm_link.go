@@ -182,6 +182,7 @@ type CodeLink struct {
 	Paths           []string
 	DetectedIn      string
 	Resolving       bool
+	MergeCommitSHA  string
 	SourceUpdatedAt *time.Time
 	MergedAt        *time.Time
 	ClosedAt        *time.Time
