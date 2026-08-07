@@ -52,6 +52,7 @@ func New(
 		middleware.AccessLog,
 		middleware.SecurityHeaders,
 		middleware.ClientCapture(cfg),
+		middleware.SameOrigin(appCfg, sessionCfg),
 	)
 
 	bounded := base.With(
