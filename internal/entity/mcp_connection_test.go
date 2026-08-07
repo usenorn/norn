@@ -104,24 +104,54 @@ func TestOAuthScopeStringsResolveToTheStrongestCapability(t *testing.T) {
 	}
 }
 
-func TestARegisteredRedirectMatchesExactlyOrNotAtAll(t *testing.T) {
+func TestALoopbackRedirectMayComeBackOnAnyPort(t *testing.T) {
 	client := entity.MCPClient{
 		RedirectURIs: []string{"http://127.0.0.1:8976/callback"},
 	}
 
-	if !client.PermitsRedirect("http://127.0.0.1:8976/callback") {
-		t.Error("the registered redirect was refused")
+	for _, uri := range []string{
+		"http://127.0.0.1:8976/callback",
+		"http://127.0.0.1:9000/callback",
+		"http://127.0.0.1:54304/callback",
+	} {
+		if !client.PermitsRedirect(uri) {
+			t.Errorf(
+				"a loopback redirect to %q was refused. Clients take an ephemeral port from the "+
+					"operating system when they start listening, so the port they registered with "+
+					"is rarely the one they come back on, and RFC 8252 requires any port here.",
+				uri,
+			)
+		}
 	}
 
 	for _, uri := range []string{
 		"http://127.0.0.1:8976/callback/",
 		"http://127.0.0.1:8976/other",
-		"http://127.0.0.1:9000/callback",
+		"http://localhost:8976/callback",
 		"https://127.0.0.1:8976/callback",
+		"http://example.com:8976/callback",
 	} {
 		if client.PermitsRedirect(uri) {
 			t.Errorf("a redirect to %q was permitted despite not being registered", uri)
 		}
+	}
+}
+
+func TestOnlyLoopbackRedirectsAreForgivenTheirPort(t *testing.T) {
+	client := entity.MCPClient{
+		RedirectURIs: []string{"https://client.example.com:8443/callback"},
+	}
+
+	if !client.PermitsRedirect("https://client.example.com:8443/callback") {
+		t.Error("the registered redirect was refused")
+	}
+
+	if client.PermitsRedirect("https://client.example.com:9443/callback") {
+		t.Error(
+			"a public https redirect was accepted on a different port. Only loopback addresses " +
+				"take whatever port the operating system hands out; anywhere else the port is part " +
+				"of the address that was registered.",
+		)
 	}
 }
 

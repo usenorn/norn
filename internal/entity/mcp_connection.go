@@ -111,7 +111,42 @@ type MCPClient struct {
 }
 
 func (c MCPClient) PermitsRedirect(uri string) bool {
-	return slices.Contains(c.RedirectURIs, uri)
+	if slices.Contains(c.RedirectURIs, uri) {
+		return true
+	}
+
+	requested, err := url.Parse(uri)
+	if err != nil || !loopbackRedirect(requested) {
+		return false
+	}
+
+	for _, registered := range c.RedirectURIs {
+		parsed, err := url.Parse(registered)
+		if err != nil || !loopbackRedirect(parsed) {
+			continue
+		}
+
+		if parsed.Hostname() == requested.Hostname() &&
+			parsed.Path == requested.Path &&
+			parsed.RawQuery == requested.RawQuery {
+			return true
+		}
+	}
+
+	return false
+}
+
+func loopbackRedirect(parsed *url.URL) bool {
+	if parsed.Scheme != "http" {
+		return false
+	}
+
+	switch parsed.Hostname() {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	default:
+		return false
+	}
 }
 
 func ValidateMCPClientName(field, name string) FieldError {
@@ -137,9 +172,7 @@ func ValidMCPRedirectURI(value string) bool {
 	case "https":
 		return parsed.Host != ""
 	case "http":
-		host := parsed.Hostname()
-
-		return host == "localhost" || host == "127.0.0.1" || host == "::1"
+		return loopbackRedirect(parsed)
 	default:
 		return parsed.Opaque != "" || parsed.Host != "" || parsed.Path != ""
 	}
