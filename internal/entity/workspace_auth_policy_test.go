@@ -75,6 +75,22 @@ func TestOnlyMachineActorsSkipTheEnforcementCheck(t *testing.T) {
 	}
 }
 
+func TestWorkRequestedEarlierStillRunsWhenTheWorkspaceRequiresSSO(t *testing.T) {
+	replayed := entity.Actor{
+		Kind:       entity.ActorKindUser,
+		AccountID:  uuid.New(),
+		AuthMethod: entity.SessionAuthMethodSSO,
+	}
+
+	if !entity.AuthEnforcementSSO.PermitsActor(replayed, uuid.New()) {
+		t.Fatal(
+			"an import, bulk action or approval replaying the actor that asked for it was refused. " +
+				"Those are rebuilt from what was stored about the request, so they carry no session " +
+				"and cannot name the workspace its provider signed into.",
+		)
+	}
+}
+
 func TestSomebodyJoiningAnonymouslyIsStillAdmittedWhereAnyMethodIsAccepted(t *testing.T) {
 	if !entity.AuthEnforcementAny.PermitsActor(entity.Actor{}, uuid.New()) {
 		t.Fatal(

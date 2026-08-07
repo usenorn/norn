@@ -53,7 +53,9 @@ func (e AuthEnforcement) PermitsActor(actor Actor, workspaceID uuid.UUID) bool {
 		return false
 	}
 
-	if e == AuthEnforcementSSO && actor.SSOWorkspaceID != workspaceID {
+	if e == AuthEnforcementSSO &&
+		actor.SSOWorkspaceID != uuid.Nil &&
+		actor.SSOWorkspaceID != workspaceID {
 		return false
 	}
 
