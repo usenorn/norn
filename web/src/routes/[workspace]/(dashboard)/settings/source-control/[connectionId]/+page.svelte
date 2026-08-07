@@ -7,6 +7,7 @@
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
 	import { api } from "$lib/api";
+	import { onDateAndTime } from "$lib/time";
 	import * as Alert from "$lib/components/ui/alert";
 	import { Button } from "$lib/components/ui/button";
 	import * as Form from "$lib/components/ui/form";
@@ -19,6 +20,7 @@
 		failureMessage,
 		providerLabel,
 		sourceControlFailure,
+		deliveryOutcomeLabel,
 		sourceControlPath,
 		type SourceControlConnection,
 		type SourceControlDetailView,
@@ -50,7 +52,12 @@
 	const shown = $derived(failure ?? preview?.failure);
 
 	function replace(connection: SourceControlConnection) {
-		loaded = { kind: "detail", connection, links: view.kind === "detail" ? view.links : [] };
+		loaded = {
+			kind: "detail",
+			connection,
+			links: view.kind === "detail" ? view.links : [],
+			deliveries: view.kind === "detail" ? view.deliveries : [],
+		};
 	}
 
 	const form = superForm(defaults(zod4(replaceTokenSchema)), {
@@ -322,6 +329,46 @@
 				</Button>
 			</div>
 		</form>
+
+		<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
+			<div class="flex flex-col gap-1">
+				<h2 class="text-md font-medium tracking-snug text-ink-900">What the platform sent</h2>
+				<p class="text-sm leading-normal text-muted-foreground text-pretty">
+					The last fifty deliveries and what Norn did with each. “Nothing to do” means the
+					delivery arrived and verified but named no issue Norn could reach — which is the
+					usual reason a link does not appear.
+				</p>
+			</div>
+
+			{#if view.deliveries.length === 0}
+				<p class="text-sm text-muted-foreground">
+					Nothing has arrived yet. Push a branch naming an issue and it shows up here.
+				</p>
+			{:else}
+				<ul class="flex flex-col gap-2">
+					{#each view.deliveries as delivery (delivery.id)}
+						<li class="flex flex-col gap-0.5 rounded-md border border-line-subtle px-3 py-2">
+							<div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+								<span class="text-sm font-medium text-ink-900">{delivery.event}</span>
+								<span
+									class="text-xs {delivery.outcome === 'failed'
+										? 'text-destructive'
+										: 'text-muted-foreground'}"
+								>
+									{deliveryOutcomeLabel(delivery)}
+								</span>
+								<span class="text-xs text-muted-foreground">
+									{onDateAndTime(delivery.receivedAt, workspace.timezone)}
+								</span>
+							</div>
+							{#if delivery.detail}
+								<p class="text-xs break-words text-muted-foreground">{delivery.detail}</p>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</section>
 
 		<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
 			<h2 class="text-md font-medium tracking-snug text-ink-900">Disconnect</h2>

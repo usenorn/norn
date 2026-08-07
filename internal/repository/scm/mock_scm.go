@@ -315,6 +315,21 @@ func (mr *MockSCMDeliveryMockRecorder) GetByID(ctx, deliveryID any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockSCMDelivery)(nil).GetByID), ctx, deliveryID)
 }
 
+// ListByConnection mocks base method.
+func (m *MockSCMDelivery) ListByConnection(ctx context.Context, connectionID uuid.UUID, limit int) ([]entity.SCMDelivery, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByConnection", ctx, connectionID, limit)
+	ret0, _ := ret[0].([]entity.SCMDelivery)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByConnection indicates an expected call of ListByConnection.
+func (mr *MockSCMDeliveryMockRecorder) ListByConnection(ctx, connectionID, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByConnection", reflect.TypeOf((*MockSCMDelivery)(nil).ListByConnection), ctx, connectionID, limit)
+}
+
 // ListPending mocks base method.
 func (m *MockSCMDelivery) ListPending(ctx context.Context, connectionID uuid.UUID, at time.Time, limit int) ([]entity.SCMDelivery, error) {
 	m.ctrl.T.Helper()
@@ -360,17 +375,17 @@ func (mr *MockSCMDeliveryMockRecorder) Reschedule(ctx, deliveryID, attempt, retr
 }
 
 // Settle mocks base method.
-func (m *MockSCMDelivery) Settle(ctx context.Context, deliveryID uuid.UUID, failure string, at time.Time) error {
+func (m *MockSCMDelivery) Settle(ctx context.Context, deliveryID uuid.UUID, outcome entity.SCMDeliveryOutcome, detail string, at time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Settle", ctx, deliveryID, failure, at)
+	ret := m.ctrl.Call(m, "Settle", ctx, deliveryID, outcome, detail, at)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Settle indicates an expected call of Settle.
-func (mr *MockSCMDeliveryMockRecorder) Settle(ctx, deliveryID, failure, at any) *gomock.Call {
+func (mr *MockSCMDeliveryMockRecorder) Settle(ctx, deliveryID, outcome, detail, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Settle", reflect.TypeOf((*MockSCMDelivery)(nil).Settle), ctx, deliveryID, failure, at)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Settle", reflect.TypeOf((*MockSCMDelivery)(nil).Settle), ctx, deliveryID, outcome, detail, at)
 }
 
 // MockCodeLink is a mock of CodeLink interface.

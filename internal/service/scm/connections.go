@@ -18,6 +18,7 @@ import (
 
 type connections struct {
 	connections repository.SCMConnection
+	deliveries  repository.SCMDelivery
 	links       repository.CodeLink
 	mirrors     repository.IssueMirror
 	settings    repository.SCMTeamSetting
@@ -34,6 +35,7 @@ type connections struct {
 
 func NewConnections(
 	connectionRepository repository.SCMConnection,
+	deliveries repository.SCMDelivery,
 	links repository.CodeLink,
 	mirrors repository.IssueMirror,
 	settings repository.SCMTeamSetting,
@@ -49,6 +51,7 @@ func NewConnections(
 ) service.SourceControl {
 	return &connections{
 		connections: connectionRepository,
+		deliveries:  deliveries,
 		links:       links,
 		mirrors:     mirrors,
 		settings:    settings,
@@ -567,6 +570,25 @@ func (s *connections) retireIntegrationAccount(ctx context.Context, accountID uu
 
 	return err
 }
+
+// Deliveries is the log. It is admin-only like the rest of the connection surface, because
+// a payload can carry anything the repository holds.
+func (s *connections) Deliveries(
+	ctx context.Context,
+	workspaceID, connectionID uuid.UUID,
+) ([]entity.SCMDelivery, error) {
+	if _, err := s.administers(ctx, workspaceID); err != nil {
+		return nil, err
+	}
+
+	if _, err := s.connections.GetByID(ctx, workspaceID, connectionID); err != nil {
+		return nil, err
+	}
+
+	return s.deliveries.ListByConnection(ctx, connectionID, deliveryLogSize)
+}
+
+const deliveryLogSize = 50
 
 func (s *connections) TeamSettings(
 	ctx context.Context,

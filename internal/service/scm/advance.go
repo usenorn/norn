@@ -21,6 +21,7 @@ func (s *sync) advance(
 	ctx context.Context,
 	connection entity.SCMConnection,
 	decision entity.Decision,
+	tally *deliveryTally,
 	link entity.CodeLink,
 ) error {
 	issue, err := s.issues.GetVisible(ctx, connection.WorkspaceID, link.IssueID, decision.Scope)
@@ -64,6 +65,8 @@ func (s *sync) advance(
 	if issue.State.ID == target.ID {
 		return s.links.MarkAdvanced(ctx, link.ID)
 	}
+
+	tally.advanced++
 
 	scoped := identity.WithActor(ctx, connection.Actor())
 

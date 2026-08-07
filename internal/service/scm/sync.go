@@ -3,6 +3,7 @@ package scm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -74,6 +75,30 @@ func NewSync(
 		transactor:  transactor,
 		cfg:         cfg,
 		baseURL:     strings.TrimRight(app.BaseURL, "/"),
+	}
+}
+
+// deliveryTally is what turns "applied" into an answer. A delivery that named no issue, one
+// that named an issue nobody here can reach, and one that linked two changes are three
+// different situations, and a log that calls all of them "processed" answers nothing.
+type deliveryTally struct {
+	references int
+	resolved   int
+	linked     int
+	advanced   int
+}
+
+func (t *deliveryTally) describe() string {
+	switch {
+	case t.references == 0:
+		return "nothing in this delivery named an issue"
+	case t.resolved == 0:
+		return fmt.Sprintf(
+			"named %d issue reference(s), none of which resolved to an issue this connection reaches",
+			t.references,
+		)
+	default:
+		return fmt.Sprintf("linked %d, advanced %d", t.linked, t.advanced)
 	}
 }
 
@@ -173,11 +198,16 @@ func (s *sync) Apply(ctx context.Context, deliveryID uuid.UUID) error {
 	if err != nil {
 		// A payload this instance cannot read will not become readable on a retry, and a
 		// delivery retried for ever holds a queue slot no other work can use.
-		return s.deliveries.Settle(ctx, deliveryID, err.Error(), time.Now().UTC())
+		return s.settle(ctx, deliveryID, entity.SCMDeliveryFailed, err.Error())
 	}
 
 	if len(events) == 0 {
-		return s.deliveries.Settle(ctx, deliveryID, "", time.Now().UTC())
+		return s.settle(
+			ctx,
+			deliveryID,
+			entity.SCMDeliveryIgnored,
+			"this instance does not act on "+delivery.Event,
+		)
 	}
 
 	decision, err := s.decide(ctx, connection)
@@ -186,24 +216,37 @@ func (s *sync) Apply(ctx context.Context, deliveryID uuid.UUID) error {
 			s.markBroken(ctx, connection, entity.SCMBrokenCredentialsRejected,
 				"the account that established this connection no longer has access to the workspace")
 
-			return s.deliveries.Settle(ctx, deliveryID, err.Error(), time.Now().UTC())
+			return s.settle(ctx, deliveryID, entity.SCMDeliveryFailed, err.Error())
 		}
 
 		return err
 	}
 
+	applied := &deliveryTally{}
+
 	for _, event := range events {
-		if err := s.applyOne(ctx, connection, decision, event); err != nil {
+		if err := s.applyOne(ctx, connection, decision, event, applied); err != nil {
 			var limited entity.SCMRateLimitedError
 			if errors.As(err, &limited) {
 				return s.park(ctx, connection, delivery, limited.RetryAfter)
 			}
 
-			return s.deliveries.Settle(ctx, deliveryID, err.Error(), time.Now().UTC())
+			return s.settle(ctx, deliveryID, entity.SCMDeliveryFailed, err.Error())
 		}
 	}
 
-	return s.deliveries.Settle(ctx, deliveryID, "", time.Now().UTC())
+	return s.settle(ctx, deliveryID, entity.SCMDeliveryApplied, applied.describe())
+}
+
+// settle is the one place a delivery stops. Every exit records why, because the whole point
+// of the log is that "processed" and "did nothing" stop looking alike.
+func (s *sync) settle(
+	ctx context.Context,
+	deliveryID uuid.UUID,
+	outcome entity.SCMDeliveryOutcome,
+	detail string,
+) error {
+	return s.deliveries.Settle(ctx, deliveryID, outcome, detail, time.Now().UTC())
 }
 
 // decide rebuilds the person who established the connection and asks again, every time. The
@@ -246,11 +289,11 @@ func (s *sync) park(
 	}
 
 	if delivery.Attempt+1 >= s.cfg.MaxAttempts {
-		return s.deliveries.Settle(
+		return s.settle(
 			ctx,
 			delivery.ID,
+			entity.SCMDeliveryFailed,
 			"the forge kept rate limiting this delivery",
-			time.Now().UTC(),
 		)
 	}
 
@@ -290,10 +333,11 @@ func (s *sync) applyOne(
 	connection entity.SCMConnection,
 	decision entity.Decision,
 	event service.ForgeEvent,
+	tally *deliveryTally,
 ) error {
 	switch event.Kind {
 	case service.ForgeEventBranchPushed:
-		return s.linkReferences(ctx, connection, decision, event.Branch.Name, entity.CodeLink{
+		return s.linkReferences(ctx, connection, decision, tally, event.Branch.Name, entity.CodeLink{
 			Kind:       entity.CodeLinkBranch,
 			ExternalID: event.Branch.Name,
 			Title:      event.Branch.Name,
@@ -304,7 +348,7 @@ func (s *sync) applyOne(
 		})
 
 	case service.ForgeEventCommitPushed:
-		return s.linkReferences(ctx, connection, decision, event.Commit.Message, entity.CodeLink{
+		return s.linkReferences(ctx, connection, decision, tally, event.Commit.Message, entity.CodeLink{
 			Kind:       entity.CodeLinkCommit,
 			ExternalID: event.Commit.SHA,
 			Title:      firstLine(event.Commit.Message),
@@ -316,7 +360,7 @@ func (s *sync) applyOne(
 		})
 
 	case service.ForgeEventChangeChanged:
-		return s.applyChange(ctx, connection, decision, event.Change)
+		return s.applyChange(ctx, connection, decision, tally, event.Change)
 
 	case service.ForgeEventIssueChanged:
 		return s.mirrorIssue(ctx, connection, decision, event.Issue)
@@ -337,10 +381,14 @@ func (s *sync) linkReferences(
 	ctx context.Context,
 	connection entity.SCMConnection,
 	decision entity.Decision,
+	tally *deliveryTally,
 	text string,
 	template entity.CodeLink,
 ) error {
-	for _, reference := range entity.ScanIssueReferences(text) {
+	references := entity.ScanIssueReferences(text)
+	tally.references += len(references)
+
+	for _, reference := range references {
 		issue, err := s.issues.GetVisibleByReference(
 			ctx,
 			connection.WorkspaceID,
@@ -362,10 +410,14 @@ func (s *sync) linkReferences(
 		link.Provider = connection.Provider
 		link.Repository = connection.Repository
 
+		tally.resolved++
+
 		stored, err := s.links.Upsert(ctx, link)
 		if err != nil {
 			return err
 		}
+
+		tally.linked++
 
 		if stored.CreatedAt.Equal(stored.UpdatedAt) {
 			s.recordLinkActivity(ctx, issue, stored, decision, entity.ActivityKindCodeLinked)
@@ -379,11 +431,12 @@ func (s *sync) applyChange(
 	ctx context.Context,
 	connection entity.SCMConnection,
 	decision entity.Decision,
+	tally *deliveryTally,
 	change service.ForgeChange,
 ) error {
 	text := strings.Join([]string{change.HeadBranch, change.Title, change.Body}, "\n")
 
-	if err := s.linkReferences(ctx, connection, decision, text, entity.CodeLink{
+	if err := s.linkReferences(ctx, connection, decision, tally, text, entity.CodeLink{
 		Kind:            entity.CodeLinkChange,
 		ExternalID:      change.ExternalID,
 		Number:          change.Number,
@@ -415,7 +468,7 @@ func (s *sync) applyChange(
 	}
 
 	for _, link := range links {
-		if err := s.advance(ctx, connection, decision, link); err != nil {
+		if err := s.advance(ctx, connection, decision, tally, link); err != nil {
 			return err
 		}
 	}

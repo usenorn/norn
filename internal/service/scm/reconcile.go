@@ -236,7 +236,8 @@ func (s *sync) refreshChanges(
 		calls++
 
 		for _, change := range page.Changes {
-			if err := s.applyChange(ctx, connection, decision, change); err != nil {
+			// The sweep has no delivery to explain, so its tally is discarded.
+			if err := s.applyChange(ctx, connection, decision, &deliveryTally{}, change); err != nil {
 				return err
 			}
 		}

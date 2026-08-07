@@ -189,6 +189,7 @@ type SourceControl interface {
 	Update(ctx context.Context, workspaceID, connectionID uuid.UUID, input UpdateSourceControlInput) (entity.SCMConnection, error)
 	ReplaceToken(ctx context.Context, workspaceID, connectionID uuid.UUID, token string) (entity.SCMConnection, error)
 	Verify(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error)
+	Deliveries(ctx context.Context, workspaceID, connectionID uuid.UUID) ([]entity.SCMDelivery, error)
 	Disconnect(ctx context.Context, workspaceID, connectionID uuid.UUID) error
 
 	TeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID) (TeamSourceControlSettings, error)

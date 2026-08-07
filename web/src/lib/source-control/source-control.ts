@@ -12,6 +12,9 @@ export type CodeLink = components["schemas"]["CodeLink"];
 export type CodeLinkKind = components["schemas"]["CodeLinkKind"];
 export type CodeChangeState = components["schemas"]["CodeChangeState"];
 export type IssueMirror = components["schemas"]["IssueMirror"];
+export type SourceControlDelivery = components["schemas"]["SourceControlDelivery"];
+export type SourceControlDeliveryOutcome =
+	components["schemas"]["SourceControlDeliveryOutcome"];
 
 type ConnectResponses = operations["connectWorkspaceSourceControl"]["responses"];
 
@@ -35,7 +38,12 @@ export type SourceControlView =
 
 export type SourceControlDetailView =
 	| { kind: "loading" }
-	| { kind: "detail"; connection: SourceControlConnection; links: CodeLink[] }
+	| {
+			kind: "detail";
+			connection: SourceControlConnection;
+			links: CodeLink[];
+			deliveries: SourceControlDelivery[];
+	  }
 	| { kind: "not_found" }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
@@ -171,6 +179,18 @@ export function linkTitle(link: CodeLink): string {
 	if (link.number) return `${link.repository}#${link.number}`;
 
 	return `${link.repository} ${link.externalId}`;
+}
+
+const deliveryOutcomes: Record<SourceControlDeliveryOutcome, string> = {
+	applied: "Acted on",
+	ignored: "Nothing to do",
+	failed: "Failed",
+};
+
+export function deliveryOutcomeLabel(delivery: SourceControlDelivery): string {
+	if (!delivery.outcome) return delivery.processedAt ? "Done" : "Waiting";
+
+	return deliveryOutcomes[delivery.outcome];
 }
 
 export function sourceControlPath(slug: string): string {

@@ -10,6 +10,13 @@ export type ActivityFeed =
 	| { kind: "ready"; events: ActivityEvent[]; nextCursor?: string }
 	| { kind: "unavailable" };
 
+// Keyed by the link's kind, which is what source control puts in the change's field.
+const codeKindNames: Record<string, string> = {
+	branch: "branch",
+	commit: "commit",
+	change: "pull request",
+};
+
 const relationHeadings: Record<string, string> = {
 	blocks: "blocks",
 	blocked_by: "blocked by",
@@ -81,6 +88,10 @@ export function changeLine(change: ActivityChange): string {
 			return `Attached ${change.toValue}`;
 		case "attachment_removed":
 			return `Removed ${change.toValue || change.fromValue}`;
+		case "code_linked":
+			return `Linked ${codeKindNames[change.field ?? ""] ?? "a change"} ${change.toValue}`;
+		case "code_unlinked":
+			return `Unlinked ${codeKindNames[change.field ?? ""] ?? "a change"} ${change.toValue}`;
 		case "triaged":
 			return triageLine(change);
 		case "property_changed":

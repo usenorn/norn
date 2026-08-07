@@ -402,3 +402,27 @@ func (r problemResponse) VisitMirrorWorkspaceIssueResponse(w http.ResponseWriter
 func (r problemResponse) VisitUnmirrorWorkspaceIssueResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
+
+func (h *handler) ListWorkspaceSourceControlDeliveries(
+	ctx context.Context,
+	request api.ListWorkspaceSourceControlDeliveriesRequestObject,
+) (api.ListWorkspaceSourceControlDeliveriesResponseObject, error) {
+	deliveries, err := h.sourceControl.Deliveries(ctx, request.WorkspaceId, request.ConnectionId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceSourceControlDeliveries200JSONResponse(
+		sourceControlDeliveryDTOs(deliveries),
+	), nil
+}
+
+func (r problemResponse) VisitListWorkspaceSourceControlDeliveriesResponse(
+	w http.ResponseWriter,
+) error {
+	return r.write(w)
+}

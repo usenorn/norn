@@ -3029,6 +3029,26 @@ export interface paths {
         patch: operations["updateWorkspaceSourceControlConnection"];
         trace?: never;
     };
+    "/workspaces/{workspaceId}/source-control/connections/{connectionId}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        /** Read what the platform sent and what Norn did with it, newest first */
+        get: operations["listWorkspaceSourceControlDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/source-control/connections/{connectionId}/token": {
         parameters: {
             query?: never;
@@ -3795,7 +3815,7 @@ export interface components {
             version?: number;
         };
         /** @enum {string} */
-        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed";
+        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked";
         /** @enum {string} */
         LicenceStatus: "absent" | "active" | "grace" | "expired";
         LicenceFeature: {
@@ -4509,6 +4529,25 @@ export interface components {
             /** Format: uuid */
             connectionId: string;
             reference: string;
+        };
+        /** @enum {string} */
+        SourceControlDeliveryOutcome: "applied" | "ignored" | "failed";
+        /** @description One thing the platform sent. outcome is the difference between "a link was made" and "there was nothing to make", which is the question anybody asks when a link did not appear; detail says which, in words. */
+        SourceControlDelivery: {
+            /** Format: uuid */
+            id: string;
+            event: string;
+            externalId?: string;
+            outcome?: components["schemas"]["SourceControlDeliveryOutcome"];
+            detail?: string;
+            /** Format: int32 */
+            attempt?: number;
+            /** Format: date-time */
+            receivedAt: string;
+            /** Format: date-time */
+            processedAt?: string;
+            /** Format: date-time */
+            retryAfter?: string;
         };
         SourceControlRefusedProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -12403,6 +12442,33 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceSourceControlDeliveries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connection's recent deliveries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceControlDelivery"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };
