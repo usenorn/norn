@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -23,30 +25,37 @@ func NewCodeLink(db *postgres.Client) repository.CodeLink {
 
 const linkColumns = `
     id, workspace_id, issue_id,
-    coalesce(connection_id, '00000000-0000-0000-0000-000000000000'::uuid),
-    provider, repository, kind, external_id, number, title, url, state, author,
-    detected_in, advanced_issue, source_updated_at, merged_at, closed_at,
-    created_at, updated_at`
+    coalesce(repository_id, '00000000-0000-0000-0000-000000000000'::uuid),
+    provider, repository_name, kind, external_id, number, title, url, state, action, author,
+    head_branch, base_branch, paths, detected_in, resolving, source_updated_at,
+    merged_at, closed_at, created_at, updated_at`
 
 func scanLink(row interface{ Scan(...any) error }) (entity.CodeLink, error) {
-	var link entity.CodeLink
+	var (
+		link  entity.CodeLink
+		paths types.StringArray
+	)
 
 	err := row.Scan(
 		&link.ID,
 		&link.WorkspaceID,
 		&link.IssueID,
-		&link.ConnectionID,
+		&link.RepositoryID,
 		&link.Provider,
-		&link.Repository,
+		&link.RepositoryName,
 		&link.Kind,
 		&link.ExternalID,
 		&link.Number,
 		&link.Title,
 		&link.URL,
 		&link.State,
+		&link.Action,
 		&link.Author,
+		&link.HeadBranch,
+		&link.BaseBranch,
+		&paths,
 		&link.DetectedIn,
-		&link.AdvancedIssue,
+		&link.Resolving,
 		&link.SourceUpdatedAt,
 		&link.MergedAt,
 		&link.ClosedAt,
@@ -57,6 +66,8 @@ func scanLink(row interface{ Scan(...any) error }) (entity.CodeLink, error) {
 		return entity.CodeLink{}, err
 	}
 
+	link.Paths = paths
+
 	return link, nil
 }
 
@@ -65,16 +76,23 @@ func scanLink(row interface{ Scan(...any) error }) (entity.CodeLink, error) {
 // settle as whichever event happened to be handled last rather than whichever happened last.
 const upsertLinkQuery = `
 INSERT INTO workspace_code_links (
-    id, workspace_id, issue_id, connection_id, provider, repository, kind, external_id,
-    number, title, url, state, author, detected_in, source_updated_at, merged_at, closed_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-ON CONFLICT (issue_id, provider, repository, kind, external_id) DO UPDATE
-SET connection_id = excluded.connection_id,
+    id, workspace_id, issue_id, repository_id, provider, repository_name, kind, external_id,
+    number, title, url, state, action, author, head_branch, base_branch, paths, detected_in,
+    resolving, source_updated_at, merged_at, closed_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+          $19, $20, $21, $22)
+ON CONFLICT (issue_id, provider, repository_name, kind, external_id) DO UPDATE
+SET repository_id = excluded.repository_id,
     number = excluded.number,
     title = excluded.title,
     url = excluded.url,
     state = excluded.state,
+    action = excluded.action,
     author = excluded.author,
+    head_branch = excluded.head_branch,
+    base_branch = excluded.base_branch,
+    paths = excluded.paths,
+    resolving = excluded.resolving,
     source_updated_at = excluded.source_updated_at,
     merged_at = excluded.merged_at,
     closed_at = excluded.closed_at,
@@ -87,7 +105,8 @@ RETURNING` + linkColumns
 const readLinkQuery = `
 SELECT` + linkColumns + `
 FROM workspace_code_links
-WHERE issue_id = $1 AND provider = $2 AND repository = $3 AND kind = $4 AND external_id = $5`
+WHERE issue_id = $1 AND provider = $2 AND repository_name = $3 AND kind = $4
+  AND external_id = $5`
 
 func (r *linkRepository) Upsert(
 	ctx context.Context,
@@ -103,17 +122,22 @@ func (r *linkRepository) Upsert(
 		link.ID,
 		link.WorkspaceID,
 		link.IssueID,
-		connectionOrNil(link.ConnectionID),
+		repositoryOrNil(link.RepositoryID),
 		link.Provider,
-		link.Repository,
+		link.RepositoryName,
 		link.Kind,
 		link.ExternalID,
 		link.Number,
 		link.Title,
 		link.URL,
 		link.State,
+		link.Action,
 		link.Author,
+		link.HeadBranch,
+		link.BaseBranch,
+		types.StringArray(link.Paths),
 		link.DetectedIn,
+		link.Resolving,
 		link.SourceUpdatedAt,
 		link.MergedAt,
 		link.ClosedAt,
@@ -127,7 +151,7 @@ func (r *linkRepository) Upsert(
 			readLinkQuery,
 			link.IssueID,
 			link.Provider,
-			link.Repository,
+			link.RepositoryName,
 			link.Kind,
 			link.ExternalID,
 		))
@@ -153,12 +177,12 @@ func scanLinkOrFail(row interface{ Scan(...any) error }) (entity.CodeLink, error
 	return link, nil
 }
 
-func connectionOrNil(connectionID uuid.UUID) any {
-	if connectionID == uuid.Nil {
+func repositoryOrNil(repositoryID uuid.UUID) any {
+	if repositoryID == uuid.Nil {
 		return nil
 	}
 
-	return connectionID
+	return repositoryID
 }
 
 const listLinksByIssueQuery = `
@@ -177,16 +201,16 @@ func (r *linkRepository) ListByIssue(
 const listLinksByExternalQuery = `
 SELECT` + linkColumns + `
 FROM workspace_code_links
-WHERE workspace_id = $1 AND provider = $2 AND repository = $3 AND external_id = $4
+WHERE workspace_id = $1 AND provider = $2 AND repository_name = $3 AND external_id = $4
 ORDER BY created_at, id`
 
 func (r *linkRepository) ListByExternalID(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	provider entity.SCMProvider,
-	repo, externalID string,
+	repositoryName, externalID string,
 ) ([]entity.CodeLink, error) {
-	return r.collect(ctx, listLinksByExternalQuery, workspaceID, provider, repo, externalID)
+	return r.collect(ctx, listLinksByExternalQuery, workspaceID, provider, repositoryName, externalID)
 }
 
 func (r *linkRepository) collect(
@@ -219,18 +243,34 @@ func (r *linkRepository) collect(
 	return links, nil
 }
 
-const markAdvancedQuery = `
-UPDATE workspace_code_links
-SET advanced_issue = true, updated_at = now()
-WHERE id = $1`
+// claimTransitionQuery inserts nothing when this link has already driven the issue for this
+// state. The single flag it replaces could only say that something had happened once, so a
+// change that entered review and later merged had no way to act on the second.
+const claimTransitionQuery = `
+INSERT INTO workspace_code_link_transitions (link_id, transition, issue_id, applied_at)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (link_id, transition) DO NOTHING`
 
-func (r *linkRepository) MarkAdvanced(ctx context.Context, linkID uuid.UUID) error {
-	result, err := r.db.Querier(ctx).ExecContext(ctx, markAdvancedQuery, linkID)
+func (r *linkRepository) ClaimTransition(
+	ctx context.Context,
+	linkID uuid.UUID,
+	transition entity.CodeChangeState,
+	issueID uuid.UUID,
+	at time.Time,
+) (bool, error) {
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx, claimTransitionQuery, linkID, transition, issueID, at,
+	)
 	if err != nil {
-		return fmt.Errorf("record that a linked change advanced its issue: %w", err)
+		return false, fmt.Errorf("claim a linked change transition: %w", err)
 	}
 
-	return expectOne(result, entity.ErrCodeLinkNotFound)
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("read affected rows: %w", err)
+	}
+
+	return affected > 0, nil
 }
 
 const deleteLinkQuery = `
@@ -253,15 +293,15 @@ func (r *linkRepository) Delete(
 
 // detachLinksQuery is what makes disconnecting keep history. Everything a link needs to
 // render — the forge, the repository, the number, the title and a working address — is on
-// the row already, so cutting it loose from the connection costs the reader nothing.
+// the row already, so cutting it loose from the repository costs the reader nothing.
 const detachLinksQuery = `
 UPDATE workspace_code_links
-SET connection_id = NULL, updated_at = now()
-WHERE connection_id = $1`
+SET repository_id = NULL, updated_at = now()
+WHERE repository_id = $1`
 
-func (r *linkRepository) DetachConnection(ctx context.Context, connectionID uuid.UUID) error {
-	if _, err := r.db.Querier(ctx).ExecContext(ctx, detachLinksQuery, connectionID); err != nil {
-		return fmt.Errorf("detach linked changes from a connection: %w", err)
+func (r *linkRepository) DetachRepository(ctx context.Context, repositoryID uuid.UUID) error {
+	if _, err := r.db.Querier(ctx).ExecContext(ctx, detachLinksQuery, repositoryID); err != nil {
+		return fmt.Errorf("detach linked changes from a repository: %w", err)
 	}
 
 	return nil

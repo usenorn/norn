@@ -17,8 +17,11 @@ export const load: PageServerLoad = async ({
 
 	const { workspace } = await parent();
 
-	const [listing, teams] = await Promise.all([
+	const [listing, repositories, teams] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/source-control/connections", {
+			params: { path: { workspaceId: workspace.id } },
+		}),
+		locals.api.GET("/workspaces/{workspaceId}/source-control/repositories", {
 			params: { path: { workspaceId: workspace.id } },
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/teams", {
@@ -45,5 +48,12 @@ export const load: PageServerLoad = async ({
 		return { view: { kind: "empty" }, teams: reachable };
 	}
 
-	return { view: { kind: "list", connections: listing.data }, teams: reachable };
+	return {
+		view: {
+			kind: "list",
+			connections: listing.data,
+			repositories: repositories.data ?? [],
+		},
+		teams: reachable,
+	};
 };

@@ -25,17 +25,45 @@ func (o MirrorOrigin) Valid() bool {
 	return slices.Contains(MirrorOrigins(), o)
 }
 
+// MirrorDirection bounds which way a pair syncs. A repository Norn only reads from, and one
+// it only writes to, are both ordinary arrangements, and a pair that syncs both ways is the
+// one that needs arbitration.
+type MirrorDirection string
+
+const (
+	MirrorInbound  MirrorDirection = "inbound"
+	MirrorOutbound MirrorDirection = "outbound"
+	MirrorBoth     MirrorDirection = "both"
+)
+
+func MirrorDirections() []MirrorDirection {
+	return []MirrorDirection{MirrorInbound, MirrorOutbound, MirrorBoth}
+}
+
+func (d MirrorDirection) Valid() bool {
+	return slices.Contains(MirrorDirections(), d)
+}
+
+func (d MirrorDirection) Pulls() bool {
+	return d == MirrorInbound || d == MirrorBoth
+}
+
+func (d MirrorDirection) Pushes() bool {
+	return d == MirrorOutbound || d == MirrorBoth
+}
+
 type IssueMirror struct {
 	ID              uuid.UUID
 	WorkspaceID     uuid.UUID
 	IssueID         uuid.UUID
-	ConnectionID    uuid.UUID
+	RepositoryID    uuid.UUID
 	Provider        SCMProvider
-	Repository      string
+	RepositoryName  string
 	ExternalID      string
 	ExternalNumber  int
 	URL             string
 	Origin          MirrorOrigin
+	Direction       MirrorDirection
 	TitleHash       string
 	BodyHash        string
 	StateHash       string
@@ -52,9 +80,9 @@ type CommentMirror struct {
 	WorkspaceID     uuid.UUID
 	IssueID         uuid.UUID
 	CommentID       uuid.UUID
-	ConnectionID    uuid.UUID
+	MirrorID        uuid.UUID
 	Provider        SCMProvider
-	Repository      string
+	RepositoryName  string
 	ExternalID      string
 	ExternalAuthor  string
 	Origin          MirrorOrigin

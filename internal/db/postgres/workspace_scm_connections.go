@@ -24,34 +24,25 @@ import (
 
 // WorkspaceSCMConnection is an object representing the database table.
 type WorkspaceSCMConnection struct {
-	ID                   string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID          string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	TeamID               null.String `boil:"team_id" json:"team_id,omitempty" toml:"team_id" yaml:"team_id,omitempty"`
-	Provider             string      `boil:"provider" json:"provider" toml:"provider" yaml:"provider"`
-	BaseURL              string      `boil:"base_url" json:"base_url" toml:"base_url" yaml:"base_url"`
-	Repository           string      `boil:"repository" json:"repository" toml:"repository" yaml:"repository"`
-	ExternalRepositoryID string      `boil:"external_repository_id" json:"external_repository_id" toml:"external_repository_id" yaml:"external_repository_id"`
-	TokenSealed          []byte      `boil:"token_sealed" json:"token_sealed" toml:"token_sealed" yaml:"token_sealed"`
-	TokenHint            string      `boil:"token_hint" json:"token_hint" toml:"token_hint" yaml:"token_hint"`
-	IdentityLogin        string      `boil:"identity_login" json:"identity_login" toml:"identity_login" yaml:"identity_login"`
-	WebhookSecretSealed  []byte      `boil:"webhook_secret_sealed" json:"webhook_secret_sealed" toml:"webhook_secret_sealed" yaml:"webhook_secret_sealed"`
-	ExternalHookID       string      `boil:"external_hook_id" json:"external_hook_id" toml:"external_hook_id" yaml:"external_hook_id"`
-	IntegrationAccountID string      `boil:"integration_account_id" json:"integration_account_id" toml:"integration_account_id" yaml:"integration_account_id"`
-	OwnerAccountID       string      `boil:"owner_account_id" json:"owner_account_id" toml:"owner_account_id" yaml:"owner_account_id"`
-	OwnerActorKind       string      `boil:"owner_actor_kind" json:"owner_actor_kind" toml:"owner_actor_kind" yaml:"owner_actor_kind"`
-	OwnerAuthMethod      string      `boil:"owner_auth_method" json:"owner_auth_method" toml:"owner_auth_method" yaml:"owner_auth_method"`
-	MirrorLabel          string      `boil:"mirror_label" json:"mirror_label" toml:"mirror_label" yaml:"mirror_label"`
-	Status               string      `boil:"status" json:"status" toml:"status" yaml:"status"`
-	BrokenReason         string      `boil:"broken_reason" json:"broken_reason" toml:"broken_reason" yaml:"broken_reason"`
-	BrokenDetail         string      `boil:"broken_detail" json:"broken_detail" toml:"broken_detail" yaml:"broken_detail"`
-	BrokenAt             null.Time   `boil:"broken_at" json:"broken_at,omitempty" toml:"broken_at" yaml:"broken_at,omitempty"`
-	VerifiedAt           null.Time   `boil:"verified_at" json:"verified_at,omitempty" toml:"verified_at" yaml:"verified_at,omitempty"`
-	LastSeenAt           null.Time   `boil:"last_seen_at" json:"last_seen_at,omitempty" toml:"last_seen_at" yaml:"last_seen_at,omitempty"`
-	ReconcileCursor      string      `boil:"reconcile_cursor" json:"reconcile_cursor" toml:"reconcile_cursor" yaml:"reconcile_cursor"`
-	ReconciledAt         null.Time   `boil:"reconciled_at" json:"reconciled_at,omitempty" toml:"reconciled_at" yaml:"reconciled_at,omitempty"`
-	ReconcileAfter       null.Time   `boil:"reconcile_after" json:"reconcile_after,omitempty" toml:"reconcile_after" yaml:"reconcile_after,omitempty"`
-	CreatedAt            time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt            time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID                   string    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID          string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	Provider             string    `boil:"provider" json:"provider" toml:"provider" yaml:"provider"`
+	BaseURL              string    `boil:"base_url" json:"base_url" toml:"base_url" yaml:"base_url"`
+	Label                string    `boil:"label" json:"label" toml:"label" yaml:"label"`
+	TokenSealed          []byte    `boil:"token_sealed" json:"token_sealed" toml:"token_sealed" yaml:"token_sealed"`
+	TokenHint            string    `boil:"token_hint" json:"token_hint" toml:"token_hint" yaml:"token_hint"`
+	IdentityLogin        string    `boil:"identity_login" json:"identity_login" toml:"identity_login" yaml:"identity_login"`
+	IntegrationAccountID string    `boil:"integration_account_id" json:"integration_account_id" toml:"integration_account_id" yaml:"integration_account_id"`
+	OwnerAccountID       string    `boil:"owner_account_id" json:"owner_account_id" toml:"owner_account_id" yaml:"owner_account_id"`
+	OwnerActorKind       string    `boil:"owner_actor_kind" json:"owner_actor_kind" toml:"owner_actor_kind" yaml:"owner_actor_kind"`
+	OwnerAuthMethod      string    `boil:"owner_auth_method" json:"owner_auth_method" toml:"owner_auth_method" yaml:"owner_auth_method"`
+	Status               string    `boil:"status" json:"status" toml:"status" yaml:"status"`
+	BrokenReason         string    `boil:"broken_reason" json:"broken_reason" toml:"broken_reason" yaml:"broken_reason"`
+	BrokenDetail         string    `boil:"broken_detail" json:"broken_detail" toml:"broken_detail" yaml:"broken_detail"`
+	BrokenAt             null.Time `boil:"broken_at" json:"broken_at,omitempty" toml:"broken_at" yaml:"broken_at,omitempty"`
+	VerifiedAt           null.Time `boil:"verified_at" json:"verified_at,omitempty" toml:"verified_at" yaml:"verified_at,omitempty"`
+	CreatedAt            time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt            time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *workspaceSCMConnectionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSCMConnectionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -60,59 +51,41 @@ type WorkspaceSCMConnection struct {
 var WorkspaceSCMConnectionColumns = struct {
 	ID                   string
 	WorkspaceID          string
-	TeamID               string
 	Provider             string
 	BaseURL              string
-	Repository           string
-	ExternalRepositoryID string
+	Label                string
 	TokenSealed          string
 	TokenHint            string
 	IdentityLogin        string
-	WebhookSecretSealed  string
-	ExternalHookID       string
 	IntegrationAccountID string
 	OwnerAccountID       string
 	OwnerActorKind       string
 	OwnerAuthMethod      string
-	MirrorLabel          string
 	Status               string
 	BrokenReason         string
 	BrokenDetail         string
 	BrokenAt             string
 	VerifiedAt           string
-	LastSeenAt           string
-	ReconcileCursor      string
-	ReconciledAt         string
-	ReconcileAfter       string
 	CreatedAt            string
 	UpdatedAt            string
 }{
 	ID:                   "id",
 	WorkspaceID:          "workspace_id",
-	TeamID:               "team_id",
 	Provider:             "provider",
 	BaseURL:              "base_url",
-	Repository:           "repository",
-	ExternalRepositoryID: "external_repository_id",
+	Label:                "label",
 	TokenSealed:          "token_sealed",
 	TokenHint:            "token_hint",
 	IdentityLogin:        "identity_login",
-	WebhookSecretSealed:  "webhook_secret_sealed",
-	ExternalHookID:       "external_hook_id",
 	IntegrationAccountID: "integration_account_id",
 	OwnerAccountID:       "owner_account_id",
 	OwnerActorKind:       "owner_actor_kind",
 	OwnerAuthMethod:      "owner_auth_method",
-	MirrorLabel:          "mirror_label",
 	Status:               "status",
 	BrokenReason:         "broken_reason",
 	BrokenDetail:         "broken_detail",
 	BrokenAt:             "broken_at",
 	VerifiedAt:           "verified_at",
-	LastSeenAt:           "last_seen_at",
-	ReconcileCursor:      "reconcile_cursor",
-	ReconciledAt:         "reconciled_at",
-	ReconcileAfter:       "reconcile_after",
 	CreatedAt:            "created_at",
 	UpdatedAt:            "updated_at",
 }
@@ -120,59 +93,41 @@ var WorkspaceSCMConnectionColumns = struct {
 var WorkspaceSCMConnectionTableColumns = struct {
 	ID                   string
 	WorkspaceID          string
-	TeamID               string
 	Provider             string
 	BaseURL              string
-	Repository           string
-	ExternalRepositoryID string
+	Label                string
 	TokenSealed          string
 	TokenHint            string
 	IdentityLogin        string
-	WebhookSecretSealed  string
-	ExternalHookID       string
 	IntegrationAccountID string
 	OwnerAccountID       string
 	OwnerActorKind       string
 	OwnerAuthMethod      string
-	MirrorLabel          string
 	Status               string
 	BrokenReason         string
 	BrokenDetail         string
 	BrokenAt             string
 	VerifiedAt           string
-	LastSeenAt           string
-	ReconcileCursor      string
-	ReconciledAt         string
-	ReconcileAfter       string
 	CreatedAt            string
 	UpdatedAt            string
 }{
 	ID:                   "workspace_scm_connections.id",
 	WorkspaceID:          "workspace_scm_connections.workspace_id",
-	TeamID:               "workspace_scm_connections.team_id",
 	Provider:             "workspace_scm_connections.provider",
 	BaseURL:              "workspace_scm_connections.base_url",
-	Repository:           "workspace_scm_connections.repository",
-	ExternalRepositoryID: "workspace_scm_connections.external_repository_id",
+	Label:                "workspace_scm_connections.label",
 	TokenSealed:          "workspace_scm_connections.token_sealed",
 	TokenHint:            "workspace_scm_connections.token_hint",
 	IdentityLogin:        "workspace_scm_connections.identity_login",
-	WebhookSecretSealed:  "workspace_scm_connections.webhook_secret_sealed",
-	ExternalHookID:       "workspace_scm_connections.external_hook_id",
 	IntegrationAccountID: "workspace_scm_connections.integration_account_id",
 	OwnerAccountID:       "workspace_scm_connections.owner_account_id",
 	OwnerActorKind:       "workspace_scm_connections.owner_actor_kind",
 	OwnerAuthMethod:      "workspace_scm_connections.owner_auth_method",
-	MirrorLabel:          "workspace_scm_connections.mirror_label",
 	Status:               "workspace_scm_connections.status",
 	BrokenReason:         "workspace_scm_connections.broken_reason",
 	BrokenDetail:         "workspace_scm_connections.broken_detail",
 	BrokenAt:             "workspace_scm_connections.broken_at",
 	VerifiedAt:           "workspace_scm_connections.verified_at",
-	LastSeenAt:           "workspace_scm_connections.last_seen_at",
-	ReconcileCursor:      "workspace_scm_connections.reconcile_cursor",
-	ReconciledAt:         "workspace_scm_connections.reconciled_at",
-	ReconcileAfter:       "workspace_scm_connections.reconcile_after",
 	CreatedAt:            "workspace_scm_connections.created_at",
 	UpdatedAt:            "workspace_scm_connections.updated_at",
 }
@@ -182,94 +137,64 @@ var WorkspaceSCMConnectionTableColumns = struct {
 var WorkspaceSCMConnectionWhere = struct {
 	ID                   whereHelperstring
 	WorkspaceID          whereHelperstring
-	TeamID               whereHelpernull_String
 	Provider             whereHelperstring
 	BaseURL              whereHelperstring
-	Repository           whereHelperstring
-	ExternalRepositoryID whereHelperstring
+	Label                whereHelperstring
 	TokenSealed          whereHelper__byte
 	TokenHint            whereHelperstring
 	IdentityLogin        whereHelperstring
-	WebhookSecretSealed  whereHelper__byte
-	ExternalHookID       whereHelperstring
 	IntegrationAccountID whereHelperstring
 	OwnerAccountID       whereHelperstring
 	OwnerActorKind       whereHelperstring
 	OwnerAuthMethod      whereHelperstring
-	MirrorLabel          whereHelperstring
 	Status               whereHelperstring
 	BrokenReason         whereHelperstring
 	BrokenDetail         whereHelperstring
 	BrokenAt             whereHelpernull_Time
 	VerifiedAt           whereHelpernull_Time
-	LastSeenAt           whereHelpernull_Time
-	ReconcileCursor      whereHelperstring
-	ReconciledAt         whereHelpernull_Time
-	ReconcileAfter       whereHelpernull_Time
 	CreatedAt            whereHelpertime_Time
 	UpdatedAt            whereHelpertime_Time
 }{
 	ID:                   whereHelperstring{field: "\"workspace_scm_connections\".\"id\""},
 	WorkspaceID:          whereHelperstring{field: "\"workspace_scm_connections\".\"workspace_id\""},
-	TeamID:               whereHelpernull_String{field: "\"workspace_scm_connections\".\"team_id\""},
 	Provider:             whereHelperstring{field: "\"workspace_scm_connections\".\"provider\""},
 	BaseURL:              whereHelperstring{field: "\"workspace_scm_connections\".\"base_url\""},
-	Repository:           whereHelperstring{field: "\"workspace_scm_connections\".\"repository\""},
-	ExternalRepositoryID: whereHelperstring{field: "\"workspace_scm_connections\".\"external_repository_id\""},
+	Label:                whereHelperstring{field: "\"workspace_scm_connections\".\"label\""},
 	TokenSealed:          whereHelper__byte{field: "\"workspace_scm_connections\".\"token_sealed\""},
 	TokenHint:            whereHelperstring{field: "\"workspace_scm_connections\".\"token_hint\""},
 	IdentityLogin:        whereHelperstring{field: "\"workspace_scm_connections\".\"identity_login\""},
-	WebhookSecretSealed:  whereHelper__byte{field: "\"workspace_scm_connections\".\"webhook_secret_sealed\""},
-	ExternalHookID:       whereHelperstring{field: "\"workspace_scm_connections\".\"external_hook_id\""},
 	IntegrationAccountID: whereHelperstring{field: "\"workspace_scm_connections\".\"integration_account_id\""},
 	OwnerAccountID:       whereHelperstring{field: "\"workspace_scm_connections\".\"owner_account_id\""},
 	OwnerActorKind:       whereHelperstring{field: "\"workspace_scm_connections\".\"owner_actor_kind\""},
 	OwnerAuthMethod:      whereHelperstring{field: "\"workspace_scm_connections\".\"owner_auth_method\""},
-	MirrorLabel:          whereHelperstring{field: "\"workspace_scm_connections\".\"mirror_label\""},
 	Status:               whereHelperstring{field: "\"workspace_scm_connections\".\"status\""},
 	BrokenReason:         whereHelperstring{field: "\"workspace_scm_connections\".\"broken_reason\""},
 	BrokenDetail:         whereHelperstring{field: "\"workspace_scm_connections\".\"broken_detail\""},
 	BrokenAt:             whereHelpernull_Time{field: "\"workspace_scm_connections\".\"broken_at\""},
 	VerifiedAt:           whereHelpernull_Time{field: "\"workspace_scm_connections\".\"verified_at\""},
-	LastSeenAt:           whereHelpernull_Time{field: "\"workspace_scm_connections\".\"last_seen_at\""},
-	ReconcileCursor:      whereHelperstring{field: "\"workspace_scm_connections\".\"reconcile_cursor\""},
-	ReconciledAt:         whereHelpernull_Time{field: "\"workspace_scm_connections\".\"reconciled_at\""},
-	ReconcileAfter:       whereHelpernull_Time{field: "\"workspace_scm_connections\".\"reconcile_after\""},
 	CreatedAt:            whereHelpertime_Time{field: "\"workspace_scm_connections\".\"created_at\""},
 	UpdatedAt:            whereHelpertime_Time{field: "\"workspace_scm_connections\".\"updated_at\""},
 }
 
 // WorkspaceSCMConnectionRels is where relationship names are stored.
 var WorkspaceSCMConnectionRels = struct {
-	IntegrationAccount                string
-	OwnerAccount                      string
-	Team                              string
-	Workspace                         string
-	ConnectionWorkspaceCodeLinks      string
-	ConnectionWorkspaceCommentMirrors string
-	ConnectionWorkspaceIssueMirrors   string
-	ConnectionWorkspaceSCMDeliveries  string
+	IntegrationAccount                 string
+	OwnerAccount                       string
+	Workspace                          string
+	ConnectionWorkspaceSCMRepositories string
 }{
-	IntegrationAccount:                "IntegrationAccount",
-	OwnerAccount:                      "OwnerAccount",
-	Team:                              "Team",
-	Workspace:                         "Workspace",
-	ConnectionWorkspaceCodeLinks:      "ConnectionWorkspaceCodeLinks",
-	ConnectionWorkspaceCommentMirrors: "ConnectionWorkspaceCommentMirrors",
-	ConnectionWorkspaceIssueMirrors:   "ConnectionWorkspaceIssueMirrors",
-	ConnectionWorkspaceSCMDeliveries:  "ConnectionWorkspaceSCMDeliveries",
+	IntegrationAccount:                 "IntegrationAccount",
+	OwnerAccount:                       "OwnerAccount",
+	Workspace:                          "Workspace",
+	ConnectionWorkspaceSCMRepositories: "ConnectionWorkspaceSCMRepositories",
 }
 
 // workspaceSCMConnectionR is where relationships are stored.
 type workspaceSCMConnectionR struct {
-	IntegrationAccount                *Account                    `boil:"IntegrationAccount" json:"IntegrationAccount" toml:"IntegrationAccount" yaml:"IntegrationAccount"`
-	OwnerAccount                      *Account                    `boil:"OwnerAccount" json:"OwnerAccount" toml:"OwnerAccount" yaml:"OwnerAccount"`
-	Team                              *WorkspaceTeam              `boil:"Team" json:"Team" toml:"Team" yaml:"Team"`
-	Workspace                         *Workspace                  `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	ConnectionWorkspaceCodeLinks      WorkspaceCodeLinkSlice      `boil:"ConnectionWorkspaceCodeLinks" json:"ConnectionWorkspaceCodeLinks" toml:"ConnectionWorkspaceCodeLinks" yaml:"ConnectionWorkspaceCodeLinks"`
-	ConnectionWorkspaceCommentMirrors WorkspaceCommentMirrorSlice `boil:"ConnectionWorkspaceCommentMirrors" json:"ConnectionWorkspaceCommentMirrors" toml:"ConnectionWorkspaceCommentMirrors" yaml:"ConnectionWorkspaceCommentMirrors"`
-	ConnectionWorkspaceIssueMirrors   WorkspaceIssueMirrorSlice   `boil:"ConnectionWorkspaceIssueMirrors" json:"ConnectionWorkspaceIssueMirrors" toml:"ConnectionWorkspaceIssueMirrors" yaml:"ConnectionWorkspaceIssueMirrors"`
-	ConnectionWorkspaceSCMDeliveries  WorkspaceSCMDeliverySlice   `boil:"ConnectionWorkspaceSCMDeliveries" json:"ConnectionWorkspaceSCMDeliveries" toml:"ConnectionWorkspaceSCMDeliveries" yaml:"ConnectionWorkspaceSCMDeliveries"`
+	IntegrationAccount                 *Account                    `boil:"IntegrationAccount" json:"IntegrationAccount" toml:"IntegrationAccount" yaml:"IntegrationAccount"`
+	OwnerAccount                       *Account                    `boil:"OwnerAccount" json:"OwnerAccount" toml:"OwnerAccount" yaml:"OwnerAccount"`
+	Workspace                          *Workspace                  `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	ConnectionWorkspaceSCMRepositories WorkspaceSCMRepositorySlice `boil:"ConnectionWorkspaceSCMRepositories" json:"ConnectionWorkspaceSCMRepositories" toml:"ConnectionWorkspaceSCMRepositories" yaml:"ConnectionWorkspaceSCMRepositories"`
 }
 
 // NewStruct creates a new relationship struct
@@ -309,22 +234,6 @@ func (r *workspaceSCMConnectionR) GetOwnerAccount() *Account {
 	return r.OwnerAccount
 }
 
-func (o *WorkspaceSCMConnection) GetTeam() *WorkspaceTeam {
-	if o == nil {
-		return nil
-	}
-
-	return o.R.GetTeam()
-}
-
-func (r *workspaceSCMConnectionR) GetTeam() *WorkspaceTeam {
-	if r == nil {
-		return nil
-	}
-
-	return r.Team
-}
-
 func (o *WorkspaceSCMConnection) GetWorkspace() *Workspace {
 	if o == nil {
 		return nil
@@ -341,77 +250,29 @@ func (r *workspaceSCMConnectionR) GetWorkspace() *Workspace {
 	return r.Workspace
 }
 
-func (o *WorkspaceSCMConnection) GetConnectionWorkspaceCodeLinks() WorkspaceCodeLinkSlice {
+func (o *WorkspaceSCMConnection) GetConnectionWorkspaceSCMRepositories() WorkspaceSCMRepositorySlice {
 	if o == nil {
 		return nil
 	}
 
-	return o.R.GetConnectionWorkspaceCodeLinks()
+	return o.R.GetConnectionWorkspaceSCMRepositories()
 }
 
-func (r *workspaceSCMConnectionR) GetConnectionWorkspaceCodeLinks() WorkspaceCodeLinkSlice {
+func (r *workspaceSCMConnectionR) GetConnectionWorkspaceSCMRepositories() WorkspaceSCMRepositorySlice {
 	if r == nil {
 		return nil
 	}
 
-	return r.ConnectionWorkspaceCodeLinks
-}
-
-func (o *WorkspaceSCMConnection) GetConnectionWorkspaceCommentMirrors() WorkspaceCommentMirrorSlice {
-	if o == nil {
-		return nil
-	}
-
-	return o.R.GetConnectionWorkspaceCommentMirrors()
-}
-
-func (r *workspaceSCMConnectionR) GetConnectionWorkspaceCommentMirrors() WorkspaceCommentMirrorSlice {
-	if r == nil {
-		return nil
-	}
-
-	return r.ConnectionWorkspaceCommentMirrors
-}
-
-func (o *WorkspaceSCMConnection) GetConnectionWorkspaceIssueMirrors() WorkspaceIssueMirrorSlice {
-	if o == nil {
-		return nil
-	}
-
-	return o.R.GetConnectionWorkspaceIssueMirrors()
-}
-
-func (r *workspaceSCMConnectionR) GetConnectionWorkspaceIssueMirrors() WorkspaceIssueMirrorSlice {
-	if r == nil {
-		return nil
-	}
-
-	return r.ConnectionWorkspaceIssueMirrors
-}
-
-func (o *WorkspaceSCMConnection) GetConnectionWorkspaceSCMDeliveries() WorkspaceSCMDeliverySlice {
-	if o == nil {
-		return nil
-	}
-
-	return o.R.GetConnectionWorkspaceSCMDeliveries()
-}
-
-func (r *workspaceSCMConnectionR) GetConnectionWorkspaceSCMDeliveries() WorkspaceSCMDeliverySlice {
-	if r == nil {
-		return nil
-	}
-
-	return r.ConnectionWorkspaceSCMDeliveries
+	return r.ConnectionWorkspaceSCMRepositories
 }
 
 // workspaceSCMConnectionL is where Load methods for each relationship are stored.
 type workspaceSCMConnectionL struct{}
 
 var (
-	workspaceSCMConnectionAllColumns            = []string{"id", "workspace_id", "team_id", "provider", "base_url", "repository", "external_repository_id", "token_sealed", "token_hint", "identity_login", "webhook_secret_sealed", "external_hook_id", "integration_account_id", "owner_account_id", "owner_actor_kind", "owner_auth_method", "mirror_label", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "last_seen_at", "reconcile_cursor", "reconciled_at", "reconcile_after", "created_at", "updated_at"}
-	workspaceSCMConnectionColumnsWithoutDefault = []string{"workspace_id", "provider", "repository", "token_sealed", "webhook_secret_sealed", "integration_account_id", "owner_account_id"}
-	workspaceSCMConnectionColumnsWithDefault    = []string{"id", "team_id", "base_url", "external_repository_id", "token_hint", "identity_login", "external_hook_id", "owner_actor_kind", "owner_auth_method", "mirror_label", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "last_seen_at", "reconcile_cursor", "reconciled_at", "reconcile_after", "created_at", "updated_at"}
+	workspaceSCMConnectionAllColumns            = []string{"id", "workspace_id", "provider", "base_url", "label", "token_sealed", "token_hint", "identity_login", "integration_account_id", "owner_account_id", "owner_actor_kind", "owner_auth_method", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "created_at", "updated_at"}
+	workspaceSCMConnectionColumnsWithoutDefault = []string{"workspace_id", "provider", "token_sealed", "integration_account_id", "owner_account_id"}
+	workspaceSCMConnectionColumnsWithDefault    = []string{"id", "base_url", "label", "token_hint", "identity_login", "owner_actor_kind", "owner_auth_method", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "created_at", "updated_at"}
 	workspaceSCMConnectionPrimaryKeyColumns     = []string{"id"}
 	workspaceSCMConnectionGeneratedColumns      = []string{}
 )
@@ -743,17 +604,6 @@ func (o *WorkspaceSCMConnection) OwnerAccount(mods ...qm.QueryMod) accountQuery 
 	return Accounts(queryMods...)
 }
 
-// Team pointed to by the foreign key.
-func (o *WorkspaceSCMConnection) Team(mods ...qm.QueryMod) workspaceTeamQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.TeamID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	return WorkspaceTeams(queryMods...)
-}
-
 // Workspace pointed to by the foreign key.
 func (o *WorkspaceSCMConnection) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	queryMods := []qm.QueryMod{
@@ -765,60 +615,18 @@ func (o *WorkspaceSCMConnection) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	return Workspaces(queryMods...)
 }
 
-// ConnectionWorkspaceCodeLinks retrieves all the workspace_code_link's WorkspaceCodeLinks with an executor via connection_id column.
-func (o *WorkspaceSCMConnection) ConnectionWorkspaceCodeLinks(mods ...qm.QueryMod) workspaceCodeLinkQuery {
+// ConnectionWorkspaceSCMRepositories retrieves all the workspace_scm_repository's WorkspaceSCMRepositories with an executor via connection_id column.
+func (o *WorkspaceSCMConnection) ConnectionWorkspaceSCMRepositories(mods ...qm.QueryMod) workspaceSCMRepositoryQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"workspace_code_links\".\"connection_id\"=?", o.ID),
+		qm.Where("\"workspace_scm_repositories\".\"connection_id\"=?", o.ID),
 	)
 
-	return WorkspaceCodeLinks(queryMods...)
-}
-
-// ConnectionWorkspaceCommentMirrors retrieves all the workspace_comment_mirror's WorkspaceCommentMirrors with an executor via connection_id column.
-func (o *WorkspaceSCMConnection) ConnectionWorkspaceCommentMirrors(mods ...qm.QueryMod) workspaceCommentMirrorQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"workspace_comment_mirrors\".\"connection_id\"=?", o.ID),
-	)
-
-	return WorkspaceCommentMirrors(queryMods...)
-}
-
-// ConnectionWorkspaceIssueMirrors retrieves all the workspace_issue_mirror's WorkspaceIssueMirrors with an executor via connection_id column.
-func (o *WorkspaceSCMConnection) ConnectionWorkspaceIssueMirrors(mods ...qm.QueryMod) workspaceIssueMirrorQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"workspace_issue_mirrors\".\"connection_id\"=?", o.ID),
-	)
-
-	return WorkspaceIssueMirrors(queryMods...)
-}
-
-// ConnectionWorkspaceSCMDeliveries retrieves all the workspace_scm_delivery's WorkspaceSCMDeliveries with an executor via connection_id column.
-func (o *WorkspaceSCMConnection) ConnectionWorkspaceSCMDeliveries(mods ...qm.QueryMod) workspaceSCMDeliveryQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"workspace_scm_deliveries\".\"connection_id\"=?", o.ID),
-	)
-
-	return WorkspaceSCMDeliveries(queryMods...)
+	return WorkspaceSCMRepositories(queryMods...)
 }
 
 // LoadIntegrationAccount allows an eager lookup of values, cached into the
@@ -1061,130 +869,6 @@ func (workspaceSCMConnectionL) LoadOwnerAccount(ctx context.Context, e boil.Cont
 	return nil
 }
 
-// LoadTeam allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (workspaceSCMConnectionL) LoadTeam(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMConnection any, mods queries.Applicator) error {
-	var slice []*WorkspaceSCMConnection
-	var object *WorkspaceSCMConnection
-
-	if singular {
-		var ok bool
-		object, ok = maybeWorkspaceSCMConnection.(*WorkspaceSCMConnection)
-		if !ok {
-			object = new(WorkspaceSCMConnection)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceSCMConnection)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceSCMConnection))
-			}
-		}
-	} else {
-		s, ok := maybeWorkspaceSCMConnection.(*[]*WorkspaceSCMConnection)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceSCMConnection)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceSCMConnection))
-			}
-		}
-	}
-
-	args := make(map[any]struct{})
-	if singular {
-		if object.R == nil {
-			object.R = &workspaceSCMConnectionR{}
-		}
-		if !queries.IsNil(object.TeamID) {
-			args[object.TeamID] = struct{}{}
-		}
-
-	} else {
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &workspaceSCMConnectionR{}
-			}
-
-			if !queries.IsNil(obj.TeamID) {
-				args[obj.TeamID] = struct{}{}
-			}
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	argsSlice := make([]any, len(args))
-	i := 0
-	for arg := range args {
-		argsSlice[i] = arg
-		i++
-	}
-
-	query := NewQuery(
-		qm.From(`workspace_teams`),
-		qm.WhereIn(`workspace_teams.id in ?`, argsSlice...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load WorkspaceTeam")
-	}
-
-	var resultSlice []*WorkspaceTeam
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceTeam")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for workspace_teams")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_teams")
-	}
-
-	if len(workspaceTeamAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Team = foreign
-		if foreign.R == nil {
-			foreign.R = &workspaceTeamR{}
-		}
-		foreign.R.TeamWorkspaceSCMConnections = append(foreign.R.TeamWorkspaceSCMConnections, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if queries.Equal(local.TeamID, foreign.ID) {
-				local.R.Team = foreign
-				if foreign.R == nil {
-					foreign.R = &workspaceTeamR{}
-				}
-				foreign.R.TeamWorkspaceSCMConnections = append(foreign.R.TeamWorkspaceSCMConnections, local)
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // LoadWorkspace allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (workspaceSCMConnectionL) LoadWorkspace(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMConnection any, mods queries.Applicator) error {
@@ -1305,9 +989,9 @@ func (workspaceSCMConnectionL) LoadWorkspace(ctx context.Context, e boil.Context
 	return nil
 }
 
-// LoadConnectionWorkspaceCodeLinks allows an eager lookup of values, cached into the
+// LoadConnectionWorkspaceSCMRepositories allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (workspaceSCMConnectionL) LoadConnectionWorkspaceCodeLinks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMConnection any, mods queries.Applicator) error {
+func (workspaceSCMConnectionL) LoadConnectionWorkspaceSCMRepositories(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMConnection any, mods queries.Applicator) error {
 	var slice []*WorkspaceSCMConnection
 	var object *WorkspaceSCMConnection
 
@@ -1360,8 +1044,8 @@ func (workspaceSCMConnectionL) LoadConnectionWorkspaceCodeLinks(ctx context.Cont
 	}
 
 	query := NewQuery(
-		qm.From(`workspace_code_links`),
-		qm.WhereIn(`workspace_code_links.connection_id in ?`, argsSlice...),
+		qm.From(`workspace_scm_repositories`),
+		qm.WhereIn(`workspace_scm_repositories.connection_id in ?`, argsSlice...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -1369,22 +1053,22 @@ func (workspaceSCMConnectionL) LoadConnectionWorkspaceCodeLinks(ctx context.Cont
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load workspace_code_links")
+		return errors.Wrap(err, "failed to eager load workspace_scm_repositories")
 	}
 
-	var resultSlice []*WorkspaceCodeLink
+	var resultSlice []*WorkspaceSCMRepository
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice workspace_code_links")
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_scm_repositories")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on workspace_code_links")
+		return errors.Wrap(err, "failed to close results in eager load on workspace_scm_repositories")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_code_links")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_scm_repositories")
 	}
 
-	if len(workspaceCodeLinkAfterSelectHooks) != 0 {
+	if len(workspaceSCMRepositoryAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -1392,349 +1076,10 @@ func (workspaceSCMConnectionL) LoadConnectionWorkspaceCodeLinks(ctx context.Cont
 		}
 	}
 	if singular {
-		object.R.ConnectionWorkspaceCodeLinks = resultSlice
+		object.R.ConnectionWorkspaceSCMRepositories = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &workspaceCodeLinkR{}
-			}
-			foreign.R.Connection = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if queries.Equal(local.ID, foreign.ConnectionID) {
-				local.R.ConnectionWorkspaceCodeLinks = append(local.R.ConnectionWorkspaceCodeLinks, foreign)
-				if foreign.R == nil {
-					foreign.R = &workspaceCodeLinkR{}
-				}
-				foreign.R.Connection = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadConnectionWorkspaceCommentMirrors allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (workspaceSCMConnectionL) LoadConnectionWorkspaceCommentMirrors(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMConnection any, mods queries.Applicator) error {
-	var slice []*WorkspaceSCMConnection
-	var object *WorkspaceSCMConnection
-
-	if singular {
-		var ok bool
-		object, ok = maybeWorkspaceSCMConnection.(*WorkspaceSCMConnection)
-		if !ok {
-			object = new(WorkspaceSCMConnection)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceSCMConnection)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceSCMConnection))
-			}
-		}
-	} else {
-		s, ok := maybeWorkspaceSCMConnection.(*[]*WorkspaceSCMConnection)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceSCMConnection)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceSCMConnection))
-			}
-		}
-	}
-
-	args := make(map[any]struct{})
-	if singular {
-		if object.R == nil {
-			object.R = &workspaceSCMConnectionR{}
-		}
-		args[object.ID] = struct{}{}
-	} else {
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &workspaceSCMConnectionR{}
-			}
-			args[obj.ID] = struct{}{}
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	argsSlice := make([]any, len(args))
-	i := 0
-	for arg := range args {
-		argsSlice[i] = arg
-		i++
-	}
-
-	query := NewQuery(
-		qm.From(`workspace_comment_mirrors`),
-		qm.WhereIn(`workspace_comment_mirrors.connection_id in ?`, argsSlice...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load workspace_comment_mirrors")
-	}
-
-	var resultSlice []*WorkspaceCommentMirror
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice workspace_comment_mirrors")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on workspace_comment_mirrors")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_comment_mirrors")
-	}
-
-	if len(workspaceCommentMirrorAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.ConnectionWorkspaceCommentMirrors = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &workspaceCommentMirrorR{}
-			}
-			foreign.R.Connection = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if queries.Equal(local.ID, foreign.ConnectionID) {
-				local.R.ConnectionWorkspaceCommentMirrors = append(local.R.ConnectionWorkspaceCommentMirrors, foreign)
-				if foreign.R == nil {
-					foreign.R = &workspaceCommentMirrorR{}
-				}
-				foreign.R.Connection = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadConnectionWorkspaceIssueMirrors allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (workspaceSCMConnectionL) LoadConnectionWorkspaceIssueMirrors(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMConnection any, mods queries.Applicator) error {
-	var slice []*WorkspaceSCMConnection
-	var object *WorkspaceSCMConnection
-
-	if singular {
-		var ok bool
-		object, ok = maybeWorkspaceSCMConnection.(*WorkspaceSCMConnection)
-		if !ok {
-			object = new(WorkspaceSCMConnection)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceSCMConnection)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceSCMConnection))
-			}
-		}
-	} else {
-		s, ok := maybeWorkspaceSCMConnection.(*[]*WorkspaceSCMConnection)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceSCMConnection)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceSCMConnection))
-			}
-		}
-	}
-
-	args := make(map[any]struct{})
-	if singular {
-		if object.R == nil {
-			object.R = &workspaceSCMConnectionR{}
-		}
-		args[object.ID] = struct{}{}
-	} else {
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &workspaceSCMConnectionR{}
-			}
-			args[obj.ID] = struct{}{}
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	argsSlice := make([]any, len(args))
-	i := 0
-	for arg := range args {
-		argsSlice[i] = arg
-		i++
-	}
-
-	query := NewQuery(
-		qm.From(`workspace_issue_mirrors`),
-		qm.WhereIn(`workspace_issue_mirrors.connection_id in ?`, argsSlice...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load workspace_issue_mirrors")
-	}
-
-	var resultSlice []*WorkspaceIssueMirror
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_mirrors")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_mirrors")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_mirrors")
-	}
-
-	if len(workspaceIssueMirrorAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.ConnectionWorkspaceIssueMirrors = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &workspaceIssueMirrorR{}
-			}
-			foreign.R.Connection = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if queries.Equal(local.ID, foreign.ConnectionID) {
-				local.R.ConnectionWorkspaceIssueMirrors = append(local.R.ConnectionWorkspaceIssueMirrors, foreign)
-				if foreign.R == nil {
-					foreign.R = &workspaceIssueMirrorR{}
-				}
-				foreign.R.Connection = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadConnectionWorkspaceSCMDeliveries allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (workspaceSCMConnectionL) LoadConnectionWorkspaceSCMDeliveries(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMConnection any, mods queries.Applicator) error {
-	var slice []*WorkspaceSCMConnection
-	var object *WorkspaceSCMConnection
-
-	if singular {
-		var ok bool
-		object, ok = maybeWorkspaceSCMConnection.(*WorkspaceSCMConnection)
-		if !ok {
-			object = new(WorkspaceSCMConnection)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceSCMConnection)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceSCMConnection))
-			}
-		}
-	} else {
-		s, ok := maybeWorkspaceSCMConnection.(*[]*WorkspaceSCMConnection)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceSCMConnection)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceSCMConnection))
-			}
-		}
-	}
-
-	args := make(map[any]struct{})
-	if singular {
-		if object.R == nil {
-			object.R = &workspaceSCMConnectionR{}
-		}
-		args[object.ID] = struct{}{}
-	} else {
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &workspaceSCMConnectionR{}
-			}
-			args[obj.ID] = struct{}{}
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	argsSlice := make([]any, len(args))
-	i := 0
-	for arg := range args {
-		argsSlice[i] = arg
-		i++
-	}
-
-	query := NewQuery(
-		qm.From(`workspace_scm_deliveries`),
-		qm.WhereIn(`workspace_scm_deliveries.connection_id in ?`, argsSlice...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load workspace_scm_deliveries")
-	}
-
-	var resultSlice []*WorkspaceSCMDelivery
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice workspace_scm_deliveries")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on workspace_scm_deliveries")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_scm_deliveries")
-	}
-
-	if len(workspaceSCMDeliveryAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.ConnectionWorkspaceSCMDeliveries = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &workspaceSCMDeliveryR{}
+				foreign.R = &workspaceSCMRepositoryR{}
 			}
 			foreign.R.Connection = object
 		}
@@ -1744,9 +1089,9 @@ func (workspaceSCMConnectionL) LoadConnectionWorkspaceSCMDeliveries(ctx context.
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
 			if local.ID == foreign.ConnectionID {
-				local.R.ConnectionWorkspaceSCMDeliveries = append(local.R.ConnectionWorkspaceSCMDeliveries, foreign)
+				local.R.ConnectionWorkspaceSCMRepositories = append(local.R.ConnectionWorkspaceSCMRepositories, foreign)
 				if foreign.R == nil {
-					foreign.R = &workspaceSCMDeliveryR{}
+					foreign.R = &workspaceSCMRepositoryR{}
 				}
 				foreign.R.Connection = local
 				break
@@ -1851,86 +1196,6 @@ func (o *WorkspaceSCMConnection) SetOwnerAccount(ctx context.Context, exec boil.
 	return nil
 }
 
-// SetTeam of the workspaceSCMConnection to the related item.
-// Sets o.R.Team to related.
-// Adds o to related.R.TeamWorkspaceSCMConnections.
-func (o *WorkspaceSCMConnection) SetTeam(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceTeam) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"workspace_scm_connections\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"team_id"}),
-		strmangle.WhereClause("\"", "\"", 2, workspaceSCMConnectionPrimaryKeyColumns),
-	)
-	values := []any{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	queries.Assign(&o.TeamID, related.ID)
-	if o.R == nil {
-		o.R = &workspaceSCMConnectionR{
-			Team: related,
-		}
-	} else {
-		o.R.Team = related
-	}
-
-	if related.R == nil {
-		related.R = &workspaceTeamR{
-			TeamWorkspaceSCMConnections: WorkspaceSCMConnectionSlice{o},
-		}
-	} else {
-		related.R.TeamWorkspaceSCMConnections = append(related.R.TeamWorkspaceSCMConnections, o)
-	}
-
-	return nil
-}
-
-// RemoveTeam relationship.
-// Sets o.R.Team to nil.
-// Removes o from all passed in related items' relationships struct.
-func (o *WorkspaceSCMConnection) RemoveTeam(ctx context.Context, exec boil.ContextExecutor, related *WorkspaceTeam) error {
-	var err error
-
-	queries.SetScanner(&o.TeamID, nil)
-	if _, err = o.Update(ctx, exec, boil.Whitelist("team_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	if o.R != nil {
-		o.R.Team = nil
-	}
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.TeamWorkspaceSCMConnections {
-		if queries.Equal(o.TeamID, ri.TeamID) {
-			continue
-		}
-
-		ln := len(related.R.TeamWorkspaceSCMConnections)
-		if ln > 1 && i < ln-1 {
-			related.R.TeamWorkspaceSCMConnections[i] = related.R.TeamWorkspaceSCMConnections[ln-1]
-		}
-		related.R.TeamWorkspaceSCMConnections = related.R.TeamWorkspaceSCMConnections[:ln-1]
-		break
-	}
-	return nil
-}
-
 // SetWorkspace of the workspaceSCMConnection to the related item.
 // Sets o.R.Workspace to related.
 // Adds o to related.R.WorkspaceSCMConnections.
@@ -1978,392 +1243,11 @@ func (o *WorkspaceSCMConnection) SetWorkspace(ctx context.Context, exec boil.Con
 	return nil
 }
 
-// AddConnectionWorkspaceCodeLinks adds the given related objects to the existing relationships
+// AddConnectionWorkspaceSCMRepositories adds the given related objects to the existing relationships
 // of the workspace_scm_connection, optionally inserting them as new records.
-// Appends related to o.R.ConnectionWorkspaceCodeLinks.
+// Appends related to o.R.ConnectionWorkspaceSCMRepositories.
 // Sets related.R.Connection appropriately.
-func (o *WorkspaceSCMConnection) AddConnectionWorkspaceCodeLinks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCodeLink) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			queries.Assign(&rel.ConnectionID, o.ID)
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"workspace_code_links\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"connection_id"}),
-				strmangle.WhereClause("\"", "\"", 2, workspaceCodeLinkPrimaryKeyColumns),
-			)
-			values := []any{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			queries.Assign(&rel.ConnectionID, o.ID)
-		}
-	}
-
-	if o.R == nil {
-		o.R = &workspaceSCMConnectionR{
-			ConnectionWorkspaceCodeLinks: related,
-		}
-	} else {
-		o.R.ConnectionWorkspaceCodeLinks = append(o.R.ConnectionWorkspaceCodeLinks, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &workspaceCodeLinkR{
-				Connection: o,
-			}
-		} else {
-			rel.R.Connection = o
-		}
-	}
-	return nil
-}
-
-// SetConnectionWorkspaceCodeLinks removes all previously related items of the
-// workspace_scm_connection replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Connection's ConnectionWorkspaceCodeLinks accordingly.
-// Replaces o.R.ConnectionWorkspaceCodeLinks with related.
-// Sets related.R.Connection's ConnectionWorkspaceCodeLinks accordingly.
-func (o *WorkspaceSCMConnection) SetConnectionWorkspaceCodeLinks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCodeLink) error {
-	query := "update \"workspace_code_links\" set \"connection_id\" = null where \"connection_id\" = $1"
-	values := []any{o.ID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.ConnectionWorkspaceCodeLinks {
-			queries.SetScanner(&rel.ConnectionID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Connection = nil
-		}
-		o.R.ConnectionWorkspaceCodeLinks = nil
-	}
-
-	return o.AddConnectionWorkspaceCodeLinks(ctx, exec, insert, related...)
-}
-
-// RemoveConnectionWorkspaceCodeLinks relationships from objects passed in.
-// Removes related items from R.ConnectionWorkspaceCodeLinks (uses pointer comparison, removal does not keep order)
-// Sets related.R.Connection.
-func (o *WorkspaceSCMConnection) RemoveConnectionWorkspaceCodeLinks(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceCodeLink) error {
-	if len(related) == 0 {
-		return nil
-	}
-
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.ConnectionID, nil)
-		if rel.R != nil {
-			rel.R.Connection = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("connection_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.ConnectionWorkspaceCodeLinks {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.ConnectionWorkspaceCodeLinks)
-			if ln > 1 && i < ln-1 {
-				o.R.ConnectionWorkspaceCodeLinks[i] = o.R.ConnectionWorkspaceCodeLinks[ln-1]
-			}
-			o.R.ConnectionWorkspaceCodeLinks = o.R.ConnectionWorkspaceCodeLinks[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
-// AddConnectionWorkspaceCommentMirrors adds the given related objects to the existing relationships
-// of the workspace_scm_connection, optionally inserting them as new records.
-// Appends related to o.R.ConnectionWorkspaceCommentMirrors.
-// Sets related.R.Connection appropriately.
-func (o *WorkspaceSCMConnection) AddConnectionWorkspaceCommentMirrors(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCommentMirror) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			queries.Assign(&rel.ConnectionID, o.ID)
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"workspace_comment_mirrors\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"connection_id"}),
-				strmangle.WhereClause("\"", "\"", 2, workspaceCommentMirrorPrimaryKeyColumns),
-			)
-			values := []any{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			queries.Assign(&rel.ConnectionID, o.ID)
-		}
-	}
-
-	if o.R == nil {
-		o.R = &workspaceSCMConnectionR{
-			ConnectionWorkspaceCommentMirrors: related,
-		}
-	} else {
-		o.R.ConnectionWorkspaceCommentMirrors = append(o.R.ConnectionWorkspaceCommentMirrors, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &workspaceCommentMirrorR{
-				Connection: o,
-			}
-		} else {
-			rel.R.Connection = o
-		}
-	}
-	return nil
-}
-
-// SetConnectionWorkspaceCommentMirrors removes all previously related items of the
-// workspace_scm_connection replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Connection's ConnectionWorkspaceCommentMirrors accordingly.
-// Replaces o.R.ConnectionWorkspaceCommentMirrors with related.
-// Sets related.R.Connection's ConnectionWorkspaceCommentMirrors accordingly.
-func (o *WorkspaceSCMConnection) SetConnectionWorkspaceCommentMirrors(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCommentMirror) error {
-	query := "update \"workspace_comment_mirrors\" set \"connection_id\" = null where \"connection_id\" = $1"
-	values := []any{o.ID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.ConnectionWorkspaceCommentMirrors {
-			queries.SetScanner(&rel.ConnectionID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Connection = nil
-		}
-		o.R.ConnectionWorkspaceCommentMirrors = nil
-	}
-
-	return o.AddConnectionWorkspaceCommentMirrors(ctx, exec, insert, related...)
-}
-
-// RemoveConnectionWorkspaceCommentMirrors relationships from objects passed in.
-// Removes related items from R.ConnectionWorkspaceCommentMirrors (uses pointer comparison, removal does not keep order)
-// Sets related.R.Connection.
-func (o *WorkspaceSCMConnection) RemoveConnectionWorkspaceCommentMirrors(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceCommentMirror) error {
-	if len(related) == 0 {
-		return nil
-	}
-
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.ConnectionID, nil)
-		if rel.R != nil {
-			rel.R.Connection = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("connection_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.ConnectionWorkspaceCommentMirrors {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.ConnectionWorkspaceCommentMirrors)
-			if ln > 1 && i < ln-1 {
-				o.R.ConnectionWorkspaceCommentMirrors[i] = o.R.ConnectionWorkspaceCommentMirrors[ln-1]
-			}
-			o.R.ConnectionWorkspaceCommentMirrors = o.R.ConnectionWorkspaceCommentMirrors[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
-// AddConnectionWorkspaceIssueMirrors adds the given related objects to the existing relationships
-// of the workspace_scm_connection, optionally inserting them as new records.
-// Appends related to o.R.ConnectionWorkspaceIssueMirrors.
-// Sets related.R.Connection appropriately.
-func (o *WorkspaceSCMConnection) AddConnectionWorkspaceIssueMirrors(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueMirror) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			queries.Assign(&rel.ConnectionID, o.ID)
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"workspace_issue_mirrors\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"connection_id"}),
-				strmangle.WhereClause("\"", "\"", 2, workspaceIssueMirrorPrimaryKeyColumns),
-			)
-			values := []any{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			queries.Assign(&rel.ConnectionID, o.ID)
-		}
-	}
-
-	if o.R == nil {
-		o.R = &workspaceSCMConnectionR{
-			ConnectionWorkspaceIssueMirrors: related,
-		}
-	} else {
-		o.R.ConnectionWorkspaceIssueMirrors = append(o.R.ConnectionWorkspaceIssueMirrors, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &workspaceIssueMirrorR{
-				Connection: o,
-			}
-		} else {
-			rel.R.Connection = o
-		}
-	}
-	return nil
-}
-
-// SetConnectionWorkspaceIssueMirrors removes all previously related items of the
-// workspace_scm_connection replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Connection's ConnectionWorkspaceIssueMirrors accordingly.
-// Replaces o.R.ConnectionWorkspaceIssueMirrors with related.
-// Sets related.R.Connection's ConnectionWorkspaceIssueMirrors accordingly.
-func (o *WorkspaceSCMConnection) SetConnectionWorkspaceIssueMirrors(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueMirror) error {
-	query := "update \"workspace_issue_mirrors\" set \"connection_id\" = null where \"connection_id\" = $1"
-	values := []any{o.ID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.ConnectionWorkspaceIssueMirrors {
-			queries.SetScanner(&rel.ConnectionID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Connection = nil
-		}
-		o.R.ConnectionWorkspaceIssueMirrors = nil
-	}
-
-	return o.AddConnectionWorkspaceIssueMirrors(ctx, exec, insert, related...)
-}
-
-// RemoveConnectionWorkspaceIssueMirrors relationships from objects passed in.
-// Removes related items from R.ConnectionWorkspaceIssueMirrors (uses pointer comparison, removal does not keep order)
-// Sets related.R.Connection.
-func (o *WorkspaceSCMConnection) RemoveConnectionWorkspaceIssueMirrors(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceIssueMirror) error {
-	if len(related) == 0 {
-		return nil
-	}
-
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.ConnectionID, nil)
-		if rel.R != nil {
-			rel.R.Connection = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("connection_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.ConnectionWorkspaceIssueMirrors {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.ConnectionWorkspaceIssueMirrors)
-			if ln > 1 && i < ln-1 {
-				o.R.ConnectionWorkspaceIssueMirrors[i] = o.R.ConnectionWorkspaceIssueMirrors[ln-1]
-			}
-			o.R.ConnectionWorkspaceIssueMirrors = o.R.ConnectionWorkspaceIssueMirrors[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
-// AddConnectionWorkspaceSCMDeliveries adds the given related objects to the existing relationships
-// of the workspace_scm_connection, optionally inserting them as new records.
-// Appends related to o.R.ConnectionWorkspaceSCMDeliveries.
-// Sets related.R.Connection appropriately.
-func (o *WorkspaceSCMConnection) AddConnectionWorkspaceSCMDeliveries(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceSCMDelivery) error {
+func (o *WorkspaceSCMConnection) AddConnectionWorkspaceSCMRepositories(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceSCMRepository) error {
 	var err error
 	for _, rel := range related {
 		if insert {
@@ -2373,9 +1257,9 @@ func (o *WorkspaceSCMConnection) AddConnectionWorkspaceSCMDeliveries(ctx context
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"workspace_scm_deliveries\" SET %s WHERE %s",
+				"UPDATE \"workspace_scm_repositories\" SET %s WHERE %s",
 				strmangle.SetParamNames("\"", "\"", 1, []string{"connection_id"}),
-				strmangle.WhereClause("\"", "\"", 2, workspaceSCMDeliveryPrimaryKeyColumns),
+				strmangle.WhereClause("\"", "\"", 2, workspaceSCMRepositoryPrimaryKeyColumns),
 			)
 			values := []any{o.ID, rel.ID}
 
@@ -2394,15 +1278,15 @@ func (o *WorkspaceSCMConnection) AddConnectionWorkspaceSCMDeliveries(ctx context
 
 	if o.R == nil {
 		o.R = &workspaceSCMConnectionR{
-			ConnectionWorkspaceSCMDeliveries: related,
+			ConnectionWorkspaceSCMRepositories: related,
 		}
 	} else {
-		o.R.ConnectionWorkspaceSCMDeliveries = append(o.R.ConnectionWorkspaceSCMDeliveries, related...)
+		o.R.ConnectionWorkspaceSCMRepositories = append(o.R.ConnectionWorkspaceSCMRepositories, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &workspaceSCMDeliveryR{
+			rel.R = &workspaceSCMRepositoryR{
 				Connection: o,
 			}
 		} else {

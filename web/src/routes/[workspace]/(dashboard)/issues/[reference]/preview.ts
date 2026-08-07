@@ -159,7 +159,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 							state: "merged",
 							author: "rae",
 							detectedIn: "the branch name",
-							advancedIssue: true,
+							resolving: true,
 							connected: true,
 							mergedAt: "2026-08-07T10:05:00Z",
 							createdAt: "2026-08-06T14:00:00Z",

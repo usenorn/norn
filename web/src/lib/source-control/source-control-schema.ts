@@ -15,17 +15,52 @@ const token = z
 
 export const connectSourceControlSchema = z.object({
 	provider: z.enum(["github", "gitlab"], { error: "Choose a platform." }),
-	repository,
 	baseUrl: z
 		.union([z.literal(""), z.url("Enter the full address, including https://")])
 		.optional(),
-	teamId: z.string().optional(),
+	label: z.string().trim().max(80, "Keep the label under 80 characters.").optional(),
+	token,
+});
+
+export const addRepositorySchema = z.object({
+	connectionId: z.string().min(1, "Choose a connection."),
+	fullName: repository,
 	mirrorLabel: z
 		.string()
 		.trim()
 		.max(80, "Keep the label under 80 characters.")
 		.optional(),
-	token,
+	pollIntervalSeconds: z.coerce
+		.number()
+		.int()
+		.min(60, "Sweep at most once a minute.")
+		.max(86400, "Sweep at least once a day.")
+		.optional(),
+});
+
+export const addRouteSchema = z.object({
+	teamId: z.string().min(1, "Choose a team."),
+	pathPrefix: z
+		.string()
+		.trim()
+		.max(300, "Keep the path under 300 characters.")
+		.refine((value) => !value.includes(".."), "A path cannot step outside the repository.")
+		.optional(),
+});
+
+export const setTransitionRuleSchema = z.object({
+	trigger: z.enum([
+		"draft",
+		"open",
+		"review_requested",
+		"changes_requested",
+		"approved",
+		"merged",
+		"closed",
+		"reopened",
+		"conflicted",
+	]),
+	stateId: z.string().min(1, "Choose a state."),
 });
 
 export const replaceTokenSchema = z.object({ token });
@@ -40,7 +75,7 @@ export const linkCodeSchema = z.object({
 });
 
 export const mirrorIssueSchema = z.object({
-	connectionId: z.string().min(1, "Choose a connected repository."),
+	repositoryId: z.string().min(1, "Choose a connected repository."),
 	reference: z
 		.string()
 		.trim()
@@ -49,6 +84,9 @@ export const mirrorIssueSchema = z.object({
 });
 
 export type ConnectSourceControlInput = z.infer<typeof connectSourceControlSchema>;
+export type AddRepositoryInput = z.infer<typeof addRepositorySchema>;
+export type AddRouteInput = z.infer<typeof addRouteSchema>;
+export type SetTransitionRuleInput = z.infer<typeof setTransitionRuleSchema>;
 export type ReplaceTokenInput = z.infer<typeof replaceTokenSchema>;
 export type LinkCodeInput = z.infer<typeof linkCodeSchema>;
 export type MirrorIssueInput = z.infer<typeof mirrorIssueSchema>;

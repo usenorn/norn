@@ -4,7 +4,6 @@ import type { PageServerLoad } from "./$types";
 
 export type SourceControlDetailPageData = {
 	view: SourceControlDetailView;
-	teams: { id: string; key: string; name: string }[];
 };
 
 export const load: PageServerLoad = async ({
@@ -18,46 +17,32 @@ export const load: PageServerLoad = async ({
 
 	const { workspace } = await parent();
 
-	const [connection, teams, deliveries] = await Promise.all([
+	const [connection, repositories] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/source-control/connections/{connectionId}", {
 			params: { path: { workspaceId: workspace.id, connectionId: params.connectionId } },
 		}),
-		locals.api.GET("/workspaces/{workspaceId}/teams", {
-			params: { path: { workspaceId: workspace.id } },
+		locals.api.GET("/workspaces/{workspaceId}/source-control/repositories", {
+			params: {
+				path: { workspaceId: workspace.id },
+				query: { connectionId: params.connectionId },
+			},
 		}),
-		locals.api.GET(
-			"/workspaces/{workspaceId}/source-control/connections/{connectionId}/deliveries",
-			{ params: { path: { workspaceId: workspace.id, connectionId: params.connectionId } } },
-		),
 	]);
 
-	const reachable = (teams.data ?? []).map((team) => ({
-		id: team.id,
-		key: team.key,
-		name: team.name,
-	}));
-
 	if (connection.error) {
-		if (connection.response.status === 403) {
-			return { view: { kind: "forbidden" }, teams: reachable };
-		}
+		if (connection.response.status === 403) return { view: { kind: "forbidden" } };
+		if (connection.response.status === 404) return { view: { kind: "not_found" } };
 
-		if (connection.response.status === 404) {
-			return { view: { kind: "not_found" }, teams: reachable };
-		}
-
-		return { view: { kind: "unavailable" }, teams: reachable };
+		return { view: { kind: "unavailable" } };
 	}
 
-	if (!connection.data) return { view: { kind: "not_found" }, teams: reachable };
+	if (!connection.data) return { view: { kind: "not_found" } };
 
 	return {
 		view: {
 			kind: "detail",
 			connection: connection.data,
-			links: [],
-			deliveries: deliveries.data ?? [],
+			repositories: repositories.data ?? [],
 		},
-		teams: reachable,
 	};
 };

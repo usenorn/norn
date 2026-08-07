@@ -22,23 +22,23 @@ import (
 // inbound path uses decides it, so the two directions cannot disagree.
 func (s *sync) pushMirrors(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	target entity.SCMTarget,
 	decision entity.Decision,
 	at time.Time,
 ) error {
-	mirrors, err := s.mirrors.ListByConnection(ctx, connection.ID, s.cfg.ReconcileBatch)
+	mirrors, err := s.mirrors.ListByRepository(ctx, from.repository.ID, s.cfg.ReconcileBatch)
 	if err != nil {
 		return err
 	}
 
-	forge, err := s.forges.Lookup(connection.Provider)
+	forge, err := s.forges.Lookup(from.connection.Provider)
 	if err != nil {
 		return err
 	}
 
 	for _, mirror := range mirrors {
-		if err := s.pushOne(ctx, connection, target, decision, forge, mirror, at); err != nil {
+		if err := s.pushOne(ctx, from, target, decision, forge, mirror, at); err != nil {
 			return err
 		}
 	}
@@ -48,7 +48,7 @@ func (s *sync) pushMirrors(
 
 func (s *sync) pushOne(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	target entity.SCMTarget,
 	decision entity.Decision,
 	forge service.Forge,
@@ -60,7 +60,7 @@ func (s *sync) pushOne(
 	// those just narrowed.
 	if _, err := s.issues.GetVisible(
 		ctx,
-		connection.WorkspaceID,
+		from.workspaceID(),
 		mirror.IssueID,
 		decision.Scope,
 	); err != nil {
@@ -74,16 +74,16 @@ func (s *sync) pushOne(
 
 	// The inbound half first, so a platform edit is applied and recorded before anything is
 	// sent back. Running the push first would overwrite an edit we had not read yet.
-	if err := s.reconcileMirror(ctx, connection, decision, mirror, found); err != nil {
+	if err := s.reconcileMirror(ctx, from, decision, mirror, found); err != nil {
 		return err
 	}
 
-	refreshed, err := s.mirrors.GetByIssue(ctx, connection.WorkspaceID, mirror.IssueID)
+	refreshed, err := s.mirrors.GetByIssue(ctx, from.workspaceID(), mirror.IssueID)
 	if err != nil {
 		return err
 	}
 
-	current, err := s.issues.GetVisible(ctx, connection.WorkspaceID, mirror.IssueID, decision.Scope)
+	current, err := s.issues.GetVisible(ctx, from.workspaceID(), mirror.IssueID, decision.Scope)
 	if err != nil {
 		return nil
 	}
@@ -106,7 +106,7 @@ func (s *sync) pushOne(
 		}
 	}
 
-	return s.pushComments(ctx, connection, target, forge, refreshed, at)
+	return s.pushComments(ctx, from, target, forge, refreshed, at)
 }
 
 // outboundPatch sends only what differs from the value both sides last agreed on. Comparing
@@ -143,17 +143,17 @@ func outboundPatch(
 // row is written in the same pass as the send.
 func (s *sync) pushComments(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	target entity.SCMTarget,
 	forge service.Forge,
 	mirror entity.IssueMirror,
 	at time.Time,
 ) error {
-	scoped := identity.WithActor(ctx, connection.Actor())
+	scoped := identity.WithActor(ctx, from.connection.Actor())
 
 	thread, err := s.comments.List(
 		scoped,
-		connection.WorkspaceID,
+		from.workspaceID(),
 		mirror.IssueID,
 		service.ListCommentsInput{Limit: s.cfg.ReconcileBatch},
 	)
@@ -161,7 +161,7 @@ func (s *sync) pushComments(
 		return nil
 	}
 
-	mirrored, err := s.mirrors.ListCommentsByIssue(ctx, connection.WorkspaceID, mirror.IssueID)
+	mirrored, err := s.mirrors.ListCommentsByIssue(ctx, from.workspaceID(), mirror.IssueID)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (s *sync) pushComments(
 
 	for _, comment := range thread.Comments {
 		if comment.Deleted() ||
-			comment.AuthorAccountID == connection.IntegrationAccountID ||
+			comment.AuthorAccountID == from.connection.IntegrationAccountID ||
 			sent[comment.ID] {
 			continue
 		}
@@ -196,12 +196,12 @@ func (s *sync) pushComments(
 		}
 
 		if _, err := s.mirrors.CreateComment(ctx, entity.CommentMirror{
-			WorkspaceID:     connection.WorkspaceID,
+			WorkspaceID:     from.workspaceID(),
 			IssueID:         mirror.IssueID,
 			CommentID:       comment.ID,
-			ConnectionID:    connection.ID,
-			Provider:        connection.Provider,
-			Repository:      connection.Repository,
+			MirrorID:        mirror.ID,
+			Provider:        from.connection.Provider,
+			RepositoryName:  from.repository.FullName,
 			ExternalID:      posted.ExternalID,
 			ExternalAuthor:  posted.Author,
 			Origin:          entity.MirrorOriginNorn,

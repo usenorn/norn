@@ -20,22 +20,29 @@ const (
 	SCMTokenHintLen     = 4
 	SCMRepositoryMaxLen = 200
 	SCMMirrorLabelMax   = 80
+	SCMLabelMaxLen      = 80
 	SCMBaseURLMaxLen    = 300
 	SCMTokenMaxLen      = 500
+	SCMPathPrefixMaxLen = 300
 )
 
 var (
 	ErrSCMConnectionNotFound      = errors.New("source control connection not found")
-	ErrSCMConnectionExists        = errors.New("that repository is already connected")
+	ErrSCMConnectionExists        = errors.New("that forge is already connected")
 	ErrSCMProviderUnsupported     = errors.New("source control provider is not supported")
 	ErrSCMEncryptionKeyMissing    = errors.New("source control credentials cannot be sealed")
 	ErrSCMConnectionBroken        = errors.New("source control connection is broken")
 	ErrSCMDeliveryDuplicate       = errors.New("delivery has already been received")
 	ErrSCMSignatureInvalid        = errors.New("delivery signature did not verify")
+	ErrSCMRepositoryNotFound      = errors.New("repository is not connected")
+	ErrSCMRepositoryExists        = errors.New("that repository is already connected")
+	ErrSCMRouteNotFound           = errors.New("route not found")
+	ErrSCMRouteExists             = errors.New("that team already has a route for this path")
+	ErrSCMRouteUnreachable        = errors.New("no team owns this path")
 	ErrCodeLinkNotFound           = errors.New("linked change not found")
 	ErrIssueMirrorNotFound        = errors.New("issue is not mirrored")
 	ErrIssueMirrorExists          = errors.New("issue is already mirrored")
-	ErrSCMTeamSettingsNotFound    = errors.New("team does not act on merged changes")
+	ErrSCMTransitionRuleNotFound  = errors.New("team does not act on this change")
 	ErrSCMRepositoryUnrecognised  = errors.New("repository is not owner and name")
 	ErrSCMTeamOutsideConnection   = errors.New("issue is outside the connection's reach")
 	ErrSCMMirrorLabelNotSupported = errors.New("mirror label is not usable")
@@ -95,33 +102,28 @@ func (r SCMBrokenReason) Valid() bool {
 	return r == SCMBrokenNone || slices.Contains(SCMBrokenReasons(), r)
 }
 
+// SCMConnection is one credential against one forge address. A token already reaches every
+// repository its owner can see, so repositories hang off the connection rather than each
+// carrying its own copy of the secret.
 type SCMConnection struct {
 	ID                   uuid.UUID
 	WorkspaceID          uuid.UUID
-	TeamID               uuid.UUID
 	Provider             SCMProvider
 	BaseURL              string
-	Repository           string
-	ExternalRepositoryID string
+	Label                string
 	TokenHint            string
 	TokenSet             bool
 	IdentityLogin        string
-	ExternalHookID       string
 	IntegrationAccountID uuid.UUID
 	IntegrationName      string
 	OwnerAccountID       uuid.UUID
 	OwnerActorKind       ActorKind
 	OwnerAuthMethod      SessionAuthMethod
-	MirrorLabel          string
 	Status               SCMConnectionStatus
 	BrokenReason         SCMBrokenReason
 	BrokenDetail         string
 	BrokenAt             *time.Time
 	VerifiedAt           *time.Time
-	LastSeenAt           *time.Time
-	ReconcileCursor      string
-	ReconciledAt         *time.Time
-	ReconcileAfter       *time.Time
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
 }
@@ -132,14 +134,6 @@ func (c SCMConnection) Broken() bool {
 
 func (c SCMConnection) Verified() bool {
 	return c.VerifiedAt != nil
-}
-
-func (c SCMConnection) Parked(now time.Time) bool {
-	return c.ReconcileAfter != nil && now.Before(*c.ReconcileAfter)
-}
-
-func (c SCMConnection) Covers(teamID uuid.UUID) bool {
-	return c.TeamID == uuid.Nil || c.TeamID == teamID
 }
 
 // Wrote reports content on the forge that this connection's own token authored. A digest
@@ -167,6 +161,19 @@ func (c SCMConnection) Actor() Actor {
 	}
 }
 
+func (c SCMConnection) DisplayName() string {
+	switch {
+	case c.Label != "":
+		return c.Label
+	case c.IdentityLogin != "":
+		return c.IdentityLogin
+	case c.BaseURL != "":
+		return c.BaseURL
+	default:
+		return c.Provider.Label()
+	}
+}
+
 type SCMTarget struct {
 	Provider   SCMProvider
 	BaseURL    string
@@ -174,16 +181,18 @@ type SCMTarget struct {
 	Token      string
 }
 
-func (c SCMConnection) Target(token string) SCMTarget {
+func (c SCMConnection) Target(repository, token string) SCMTarget {
 	return SCMTarget{
 		Provider:   c.Provider,
 		BaseURL:    c.BaseURL,
-		Repository: c.Repository,
+		Repository: repository,
 		Token:      token,
 	}
 }
 
-type SCMRepository struct {
+// SCMRemoteRepository is what the forge says about a repository, as read at connect time.
+// It is never stored whole; SCMRepository is the row Norn keeps.
+type SCMRemoteRepository struct {
 	ExternalID    string
 	FullName      string
 	URL           string
@@ -202,20 +211,10 @@ const (
 	SCMDeliveryApplied SCMDeliveryOutcome = "applied"
 	SCMDeliveryIgnored SCMDeliveryOutcome = "ignored"
 	SCMDeliveryFailed  SCMDeliveryOutcome = "failed"
-
-	// SCMDeliveryProcessed is what a delivery settled before outcomes existed carries. It
-	// records that the delivery was handled without claiming which of the three it was,
-	// because the row it was backfilled from never knew.
-	SCMDeliveryProcessed SCMDeliveryOutcome = "processed"
 )
 
 func SCMDeliveryOutcomes() []SCMDeliveryOutcome {
-	return []SCMDeliveryOutcome{
-		SCMDeliveryApplied,
-		SCMDeliveryIgnored,
-		SCMDeliveryFailed,
-		SCMDeliveryProcessed,
-	}
+	return []SCMDeliveryOutcome{SCMDeliveryApplied, SCMDeliveryIgnored, SCMDeliveryFailed}
 }
 
 func (o SCMDeliveryOutcome) Valid() bool {
@@ -228,7 +227,7 @@ func (o SCMDeliveryOutcome) Settled() bool {
 
 type SCMDelivery struct {
 	ID           uuid.UUID
-	ConnectionID uuid.UUID
+	RepositoryID uuid.UUID
 	WorkspaceID  uuid.UUID
 	ExternalID   string
 	Event        string
@@ -264,8 +263,13 @@ func SCMTokenHint(token string) string {
 	return string(runes[len(runes)-SCMTokenHintLen:])
 }
 
-func IntegrationAccountName(provider SCMProvider, repository string) string {
-	return provider.Label() + " · " + repository
+func IntegrationAccountName(provider SCMProvider, label string) string {
+	trimmed := strings.TrimSpace(label)
+	if trimmed == "" {
+		return provider.Label()
+	}
+
+	return provider.Label() + " · " + trimmed
 }
 
 var scmRepositoryPattern = regexp.MustCompile(`^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)+$`)
@@ -319,6 +323,16 @@ func ValidateSCMToken(field, token string) FieldError {
 	default:
 		return FieldError{}
 	}
+}
+
+func ValidateSCMLabel(field, label string) FieldError {
+	trimmed := strings.TrimSpace(label)
+
+	if utf8.RuneCountInString(trimmed) > SCMLabelMaxLen {
+		return FieldError{Field: field, Code: ValidationCodeTooLong}
+	}
+
+	return FieldError{}
 }
 
 func ValidateSCMMirrorLabel(field, label string) FieldError {

@@ -24,8 +24,8 @@ func NewIssueMirror(db *postgres.Client) repository.IssueMirror {
 
 const mirrorColumns = `
     id, workspace_id, issue_id,
-    coalesce(connection_id, '00000000-0000-0000-0000-000000000000'::uuid),
-    provider, repository, external_id, external_number, url, origin,
+    coalesce(repository_id, '00000000-0000-0000-0000-000000000000'::uuid),
+    provider, repository_name, external_id, external_number, url, origin, direction,
     title_hash, body_hash, state_hash, synced_version, source_updated_at,
     pulled_at, pushed_at, created_at, updated_at`
 
@@ -36,13 +36,14 @@ func scanMirror(row interface{ Scan(...any) error }) (entity.IssueMirror, error)
 		&mirror.ID,
 		&mirror.WorkspaceID,
 		&mirror.IssueID,
-		&mirror.ConnectionID,
+		&mirror.RepositoryID,
 		&mirror.Provider,
-		&mirror.Repository,
+		&mirror.RepositoryName,
 		&mirror.ExternalID,
 		&mirror.ExternalNumber,
 		&mirror.URL,
 		&mirror.Origin,
+		&mirror.Direction,
 		&mirror.TitleHash,
 		&mirror.BodyHash,
 		&mirror.StateHash,
@@ -62,9 +63,9 @@ func scanMirror(row interface{ Scan(...any) error }) (entity.IssueMirror, error)
 
 const insertMirrorQuery = `
 INSERT INTO workspace_issue_mirrors (
-    id, workspace_id, issue_id, connection_id, provider, repository,
-    external_id, external_number, url, origin
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    id, workspace_id, issue_id, repository_id, provider, repository_name,
+    external_id, external_number, url, origin, direction
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 RETURNING` + mirrorColumns
 
 func (r *mirrorRepository) Create(
@@ -75,22 +76,27 @@ func (r *mirrorRepository) Create(
 		mirror.ID = uuid.New()
 	}
 
+	if mirror.Direction == "" {
+		mirror.Direction = entity.MirrorBoth
+	}
+
 	created, err := scanMirror(r.db.Querier(ctx).QueryRowContext(
 		ctx,
 		insertMirrorQuery,
 		mirror.ID,
 		mirror.WorkspaceID,
 		mirror.IssueID,
-		connectionOrNil(mirror.ConnectionID),
+		repositoryOrNil(mirror.RepositoryID),
 		mirror.Provider,
-		mirror.Repository,
+		mirror.RepositoryName,
 		mirror.ExternalID,
 		mirror.ExternalNumber,
 		mirror.URL,
 		mirror.Origin,
+		mirror.Direction,
 	))
 	if err != nil {
-		if violates(err, mirrorIssueUniqueIndex) || violates(err, mirrorExternalUniqueIndex) {
+		if violates(err, mirrorPairUniqueIndex) || violates(err, mirrorExternalUniqueIndex) {
 			return entity.IssueMirror{}, entity.ErrIssueMirrorExists
 		}
 
@@ -114,10 +120,47 @@ func (r *mirrorRepository) GetByIssue(
 	)
 }
 
+const listMirrorsByIssueQuery = `
+SELECT` + mirrorColumns + `
+FROM workspace_issue_mirrors
+WHERE workspace_id = $1 AND issue_id = $2
+ORDER BY created_at, id`
+
+// ListByIssue returns every pair an issue has. One issue is often tracked in a service
+// repository and a client one at once, so a single mirror per issue could not describe it.
+func (r *mirrorRepository) ListByIssue(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) ([]entity.IssueMirror, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, listMirrorsByIssueQuery, workspaceID, issueID)
+	if err != nil {
+		return nil, fmt.Errorf("list issue mirrors: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	mirrors := make([]entity.IssueMirror, 0)
+
+	for rows.Next() {
+		mirror, err := scanMirror(rows)
+		if err != nil {
+			return nil, fmt.Errorf("read issue mirror: %w", err)
+		}
+
+		mirrors = append(mirrors, mirror)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("list issue mirrors: %w", err)
+	}
+
+	return mirrors, nil
+}
+
 const getMirrorByExternalQuery = `
 SELECT` + mirrorColumns + `
 FROM workspace_issue_mirrors
-WHERE workspace_id = $1 AND provider = $2 AND repository = $3 AND external_id = $4`
+WHERE workspace_id = $1 AND provider = $2 AND repository_name = $3 AND external_id = $4`
 
 func (r *mirrorRepository) GetByExternalID(
 	ctx context.Context,
@@ -148,20 +191,20 @@ func mirrorOrFail(row interface{ Scan(...any) error }) (entity.IssueMirror, erro
 	return mirror, nil
 }
 
-const listMirrorsByConnectionQuery = `
+const listMirrorsByRepositoryQuery = `
 SELECT` + mirrorColumns + `
 FROM workspace_issue_mirrors
-WHERE connection_id = $1
+WHERE repository_id = $1
 ORDER BY coalesce(pulled_at, created_at), id
 LIMIT $2`
 
-func (r *mirrorRepository) ListByConnection(
+func (r *mirrorRepository) ListByRepository(
 	ctx context.Context,
 	connectionID uuid.UUID,
 	limit int,
 ) ([]entity.IssueMirror, error) {
 	rows, err := r.db.Querier(ctx).
-		QueryContext(ctx, listMirrorsByConnectionQuery, connectionID, limit)
+		QueryContext(ctx, listMirrorsByRepositoryQuery, connectionID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list issue mirrors: %w", err)
 	}
@@ -249,10 +292,16 @@ func (r *mirrorRepository) RecordPush(
 }
 
 const deleteMirrorQuery = `
-DELETE FROM workspace_issue_mirrors WHERE workspace_id = $1 AND issue_id = $2`
+DELETE FROM workspace_issue_mirrors
+WHERE workspace_id = $1 AND issue_id = $2 AND id = $3`
 
-func (r *mirrorRepository) Delete(ctx context.Context, workspaceID, issueID uuid.UUID) error {
-	result, err := r.db.Querier(ctx).ExecContext(ctx, deleteMirrorQuery, workspaceID, issueID)
+func (r *mirrorRepository) Delete(
+	ctx context.Context,
+	workspaceID, issueID, mirrorID uuid.UUID,
+) error {
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx, deleteMirrorQuery, workspaceID, issueID, mirrorID,
+	)
 	if err != nil {
 		return fmt.Errorf("stop mirroring an issue: %w", err)
 	}
@@ -262,21 +311,21 @@ func (r *mirrorRepository) Delete(ctx context.Context, workspaceID, issueID uuid
 
 const detachMirrorsQuery = `
 UPDATE workspace_issue_mirrors
-SET connection_id = NULL, updated_at = now()
-WHERE connection_id = $1`
+SET repository_id = NULL, updated_at = now()
+WHERE repository_id = $1`
 
-func (r *mirrorRepository) DetachConnection(ctx context.Context, connectionID uuid.UUID) error {
-	if _, err := r.db.Querier(ctx).ExecContext(ctx, detachMirrorsQuery, connectionID); err != nil {
-		return fmt.Errorf("detach issue mirrors from a connection: %w", err)
+func (r *mirrorRepository) DetachRepository(ctx context.Context, repositoryID uuid.UUID) error {
+	if _, err := r.db.Querier(ctx).ExecContext(ctx, detachMirrorsQuery, repositoryID); err != nil {
+		return fmt.Errorf("detach issue mirrors from a repository: %w", err)
 	}
 
 	return nil
 }
 
 const commentMirrorColumns = `
-    id, workspace_id, issue_id, comment_id,
-    coalesce(connection_id, '00000000-0000-0000-0000-000000000000'::uuid),
-    provider, repository, external_id, external_author, origin, body_hash,
+    id, workspace_id, issue_id,
+    coalesce(comment_id, '00000000-0000-0000-0000-000000000000'::uuid),
+    mirror_id, provider, repository_name, external_id, external_author, origin, body_hash,
     source_updated_at, created_at, updated_at`
 
 func scanCommentMirror(row interface{ Scan(...any) error }) (entity.CommentMirror, error) {
@@ -287,9 +336,9 @@ func scanCommentMirror(row interface{ Scan(...any) error }) (entity.CommentMirro
 		&mirror.WorkspaceID,
 		&mirror.IssueID,
 		&mirror.CommentID,
-		&mirror.ConnectionID,
+		&mirror.MirrorID,
 		&mirror.Provider,
-		&mirror.Repository,
+		&mirror.RepositoryName,
 		&mirror.ExternalID,
 		&mirror.ExternalAuthor,
 		&mirror.Origin,
@@ -307,7 +356,7 @@ func scanCommentMirror(row interface{ Scan(...any) error }) (entity.CommentMirro
 
 const insertCommentMirrorQuery = `
 INSERT INTO workspace_comment_mirrors (
-    id, workspace_id, issue_id, comment_id, connection_id, provider, repository,
+    id, workspace_id, issue_id, comment_id, mirror_id, provider, repository_name,
     external_id, external_author, origin, body_hash, source_updated_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING` + commentMirrorColumns
@@ -326,10 +375,10 @@ func (r *mirrorRepository) CreateComment(
 		mirror.ID,
 		mirror.WorkspaceID,
 		mirror.IssueID,
-		mirror.CommentID,
-		connectionOrNil(mirror.ConnectionID),
+		commentOrNil(mirror.CommentID),
+		mirror.MirrorID,
 		mirror.Provider,
-		mirror.Repository,
+		mirror.RepositoryName,
 		mirror.ExternalID,
 		mirror.ExternalAuthor,
 		mirror.Origin,
@@ -343,10 +392,20 @@ func (r *mirrorRepository) CreateComment(
 	return created, nil
 }
 
+// commentOrNil keeps a mirror readable after its Norn comment is deleted. The column is
+// nullable for exactly that reason, and scanning a NULL into a uuid fails the whole read.
+func commentOrNil(commentID uuid.UUID) any {
+	if commentID == uuid.Nil {
+		return nil
+	}
+
+	return commentID
+}
+
 const getCommentMirrorQuery = `
 SELECT` + commentMirrorColumns + `
 FROM workspace_comment_mirrors
-WHERE workspace_id = $1 AND provider = $2 AND repository = $3 AND external_id = $4`
+WHERE workspace_id = $1 AND provider = $2 AND repository_name = $3 AND external_id = $4`
 
 func (r *mirrorRepository) GetCommentByExternalID(
 	ctx context.Context,
@@ -407,21 +466,4 @@ func (r *mirrorRepository) ListCommentsByIssue(
 	}
 
 	return mirrors, nil
-}
-
-const detachCommentMirrorsQuery = `
-UPDATE workspace_comment_mirrors
-SET connection_id = NULL, updated_at = now()
-WHERE connection_id = $1`
-
-func (r *mirrorRepository) DetachConnectionComments(
-	ctx context.Context,
-	connectionID uuid.UUID,
-) error {
-	_, err := r.db.Querier(ctx).ExecContext(ctx, detachCommentMirrorsQuery, connectionID)
-	if err != nil {
-		return fmt.Errorf("detach comment mirrors from a connection: %w", err)
-	}
-
-	return nil
 }

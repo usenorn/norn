@@ -11,10 +11,12 @@ import (
 const (
 	uniqueViolationCode = "23505"
 
-	repositoryUniqueIndex     = "workspace_scm_connections_repository_key"
-	deliveryUniqueIndex       = "workspace_scm_deliveries_external_key"
-	mirrorIssueUniqueIndex    = "workspace_issue_mirrors_issue_key"
-	mirrorExternalUniqueIndex = "workspace_issue_mirrors_external_key"
+	connectionEndpointUniqueIndex = "workspace_scm_connections_endpoint_key"
+	repositoryNameUniqueIndex     = "workspace_scm_repositories_name_key"
+	routePrefixUniqueIndex        = "workspace_scm_routes_prefix_key"
+	deliveryUniqueIndex           = "workspace_scm_deliveries_external_key"
+	mirrorPairUniqueIndex         = "workspace_issue_mirrors_pair_key"
+	mirrorExternalUniqueIndex     = "workspace_issue_mirrors_external_key"
 )
 
 func violates(err error, index string) bool {

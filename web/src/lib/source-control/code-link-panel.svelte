@@ -26,11 +26,15 @@
 	};
 
 	const tones: Record<CodeLink["state"], string> = {
-		open: "text-ink-900",
 		draft: "text-muted-foreground",
-		in_review: "text-ink-900",
+		open: "text-ink-900",
+		review_requested: "text-ink-900",
+		changes_requested: "text-warning",
+		approved: "text-success",
 		merged: "text-success",
 		closed: "text-muted-foreground",
+		reopened: "text-ink-900",
+		conflicted: "text-destructive",
 	};
 </script>
 
