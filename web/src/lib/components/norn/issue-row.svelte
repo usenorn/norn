@@ -81,9 +81,14 @@
 </script>
 
 <div
+	role="listitem"
+	data-issue={issue.id}
 	data-cursor={cursor}
 	data-selected={selected}
 	data-dragging={dragging}
+	{draggable}
+	{ondragstart}
+	{ondragend}
 	class={cn(
 		"group/row relative flex min-h-12 items-center gap-3 border-b border-line-subtle bg-card px-4 py-1.5 transition-none sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 hover:bg-accent hover:transition-colors hover:duration-70 hover:ease-out data-[cursor=true]:rule-lead data-[cursor=true]:bg-surface-cursor data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40",
 		draggable && "cursor-grab active:cursor-grabbing",
@@ -139,9 +144,7 @@
 	<span class="flex min-w-0 flex-1 flex-col gap-0.5 sm:block">
 		<a
 			{href}
-			{draggable}
-			{ondragstart}
-			{ondragend}
+			draggable="false"
 			onclick={(event) => {
 				if (!onselect || !(event.metaKey || event.ctrlKey || event.shiftKey)) return;
 

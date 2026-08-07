@@ -32,6 +32,7 @@ var sortColumns = map[entity.IssueSortField]string{
 	entity.IssueSortFieldDueOn:     "i.due_on",
 	entity.IssueSortFieldState:     "s.position",
 	entity.IssueSortFieldEstimate:  "i.estimate",
+	entity.IssueSortFieldRank:      "i.rank",
 }
 
 var nullableSorts = map[entity.IssueSortField]bool{

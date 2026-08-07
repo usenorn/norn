@@ -139,13 +139,18 @@ export function groupByFor(grouping: Grouping): IssueGroupBy {
 	return grouping === "none" ? "state" : grouping;
 }
 
-export function sortFor(ordering: Ordering): IssueSort[] | undefined {
+export function sortFor(ordering: Ordering): IssueSort[] {
 	switch (ordering) {
 		case "priority":
 			return [{ field: "priority" }, { field: "createdAt", descending: true }];
 		case "due":
 			return [{ field: "dueOn" }, { field: "createdAt", descending: true }];
 		default:
-			return undefined;
+			return [{ field: "rank" }];
 	}
 }
+
+export const orderedProperty: Partial<Record<Ordering, "priority" | "due">> = {
+	priority: "priority",
+	due: "due",
+};

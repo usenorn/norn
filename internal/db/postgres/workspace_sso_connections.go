@@ -30,6 +30,7 @@ type WorkspaceSsoConnection struct {
 	VerifiedAt   null.Time `boil:"verified_at" json:"verified_at,omitempty" toml:"verified_at" yaml:"verified_at,omitempty"`
 	CreatedAt    time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt    time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	AdminGroup   string    `boil:"admin_group" json:"admin_group" toml:"admin_group" yaml:"admin_group"`
 
 	R *workspaceSsoConnectionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSsoConnectionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -42,6 +43,7 @@ var WorkspaceSsoConnectionColumns = struct {
 	VerifiedAt   string
 	CreatedAt    string
 	UpdatedAt    string
+	AdminGroup   string
 }{
 	WorkspaceID:  "workspace_id",
 	Protocol:     "protocol",
@@ -49,6 +51,7 @@ var WorkspaceSsoConnectionColumns = struct {
 	VerifiedAt:   "verified_at",
 	CreatedAt:    "created_at",
 	UpdatedAt:    "updated_at",
+	AdminGroup:   "admin_group",
 }
 
 var WorkspaceSsoConnectionTableColumns = struct {
@@ -58,6 +61,7 @@ var WorkspaceSsoConnectionTableColumns = struct {
 	VerifiedAt   string
 	CreatedAt    string
 	UpdatedAt    string
+	AdminGroup   string
 }{
 	WorkspaceID:  "workspace_sso_connections.workspace_id",
 	Protocol:     "workspace_sso_connections.protocol",
@@ -65,6 +69,7 @@ var WorkspaceSsoConnectionTableColumns = struct {
 	VerifiedAt:   "workspace_sso_connections.verified_at",
 	CreatedAt:    "workspace_sso_connections.created_at",
 	UpdatedAt:    "workspace_sso_connections.updated_at",
+	AdminGroup:   "workspace_sso_connections.admin_group",
 }
 
 // Generated where
@@ -76,6 +81,7 @@ var WorkspaceSsoConnectionWhere = struct {
 	VerifiedAt   whereHelpernull_Time
 	CreatedAt    whereHelpertime_Time
 	UpdatedAt    whereHelpertime_Time
+	AdminGroup   whereHelperstring
 }{
 	WorkspaceID:  whereHelperstring{field: "\"workspace_sso_connections\".\"workspace_id\""},
 	Protocol:     whereHelperstring{field: "\"workspace_sso_connections\".\"protocol\""},
@@ -83,6 +89,7 @@ var WorkspaceSsoConnectionWhere = struct {
 	VerifiedAt:   whereHelpernull_Time{field: "\"workspace_sso_connections\".\"verified_at\""},
 	CreatedAt:    whereHelpertime_Time{field: "\"workspace_sso_connections\".\"created_at\""},
 	UpdatedAt:    whereHelpertime_Time{field: "\"workspace_sso_connections\".\"updated_at\""},
+	AdminGroup:   whereHelperstring{field: "\"workspace_sso_connections\".\"admin_group\""},
 }
 
 // WorkspaceSsoConnectionRels is where relationship names are stored.
@@ -141,9 +148,9 @@ func (r *workspaceSsoConnectionR) GetWorkspaceWorkspaceSsoIdentities() Workspace
 type workspaceSsoConnectionL struct{}
 
 var (
-	workspaceSsoConnectionAllColumns            = []string{"workspace_id", "protocol", "provisioning", "verified_at", "created_at", "updated_at"}
+	workspaceSsoConnectionAllColumns            = []string{"workspace_id", "protocol", "provisioning", "verified_at", "created_at", "updated_at", "admin_group"}
 	workspaceSsoConnectionColumnsWithoutDefault = []string{"workspace_id", "protocol"}
-	workspaceSsoConnectionColumnsWithDefault    = []string{"provisioning", "verified_at", "created_at", "updated_at"}
+	workspaceSsoConnectionColumnsWithDefault    = []string{"provisioning", "verified_at", "created_at", "updated_at", "admin_group"}
 	workspaceSsoConnectionPrimaryKeyColumns     = []string{"workspace_id"}
 	workspaceSsoConnectionGeneratedColumns      = []string{}
 )

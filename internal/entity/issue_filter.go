@@ -304,6 +304,7 @@ const (
 	IssueSortFieldDueOn     IssueSortField = "dueOn"
 	IssueSortFieldState     IssueSortField = "state"
 	IssueSortFieldEstimate  IssueSortField = "estimate"
+	IssueSortFieldRank      IssueSortField = "rank"
 )
 
 func IssueSortFields() []IssueSortField {
@@ -314,6 +315,7 @@ func IssueSortFields() []IssueSortField {
 		IssueSortFieldDueOn,
 		IssueSortFieldState,
 		IssueSortFieldEstimate,
+		IssueSortFieldRank,
 	}
 }
 
@@ -456,6 +458,8 @@ func issueSortKey(issue Issue, field IssueSortField) string {
 		return issue.DueOn
 	case IssueSortFieldState:
 		return strconv.Itoa(issue.State.Position)
+	case IssueSortFieldRank:
+		return issue.Rank
 	case IssueSortFieldEstimate:
 		if issue.Estimate == 0 {
 			return ""

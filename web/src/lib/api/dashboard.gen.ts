@@ -3410,6 +3410,16 @@ export interface components {
             cycleId?: string;
             /** Format: uuid */
             projectId?: string;
+            /**
+             * Format: uuid
+             * @description Place this issue immediately after the named one in rank order. Send it with `beforeIssueId` to drop between two issues, alone to drop at the end, or send only `beforeIssueId` to drop at the start. The server works out the rank, so two people dropping in the same gap cannot land on the same one.
+             */
+            afterIssueId?: string;
+            /**
+             * Format: uuid
+             * @description Place this issue immediately before the named one in rank order.
+             */
+            beforeIssueId?: string;
             /** @description Properties to reset; absent means unchanged, which a nullable field cannot express */
             clear?: ("assignee" | "estimate" | "dueOn" | "cycle" | "project")[];
         };
@@ -4116,8 +4126,11 @@ export interface components {
         IssueFilterField: "team" | "state" | "stateCategory" | "priority" | "status" | "assignee" | "creator" | "label" | "project" | "cycle" | "createdAt" | "updatedAt" | "dueOn" | "completedAt" | "estimate" | "blocked" | "hasChildren" | "isChild";
         /** @enum {string} */
         IssueFilterOp: "is" | "is_not" | "in" | "not_in" | "is_set" | "is_not_set" | "has_any" | "has_all" | "has_none" | "before" | "after" | "on" | "eq" | "lt" | "gt" | "is_true" | "is_false";
-        /** @enum {string} */
-        IssueSortField: "createdAt" | "updatedAt" | "priority" | "dueOn" | "state" | "estimate";
+        /**
+         * @description `rank` is the order people drag issues into. Every other field is a property of the issue.
+         * @enum {string}
+         */
+        IssueSortField: "createdAt" | "updatedAt" | "priority" | "dueOn" | "state" | "estimate" | "rank";
         IssueSort: {
             field: components["schemas"]["IssueSortField"];
             descending?: boolean;

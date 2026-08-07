@@ -1782,6 +1782,7 @@ const (
 	IssueSortFieldDueOn     IssueSortField = "dueOn"
 	IssueSortFieldEstimate  IssueSortField = "estimate"
 	IssueSortFieldPriority  IssueSortField = "priority"
+	IssueSortFieldRank      IssueSortField = "rank"
 	IssueSortFieldState     IssueSortField = "state"
 	IssueSortFieldUpdatedAt IssueSortField = "updatedAt"
 )
@@ -1796,6 +1797,8 @@ func (e IssueSortField) Valid() bool {
 	case IssueSortFieldEstimate:
 		return true
 	case IssueSortFieldPriority:
+		return true
+	case IssueSortFieldRank:
 		return true
 	case IssueSortFieldState:
 		return true
@@ -4697,11 +4700,13 @@ type IssueRelationKind string
 
 // IssueSort defines model for IssueSort.
 type IssueSort struct {
-	Descending *bool          `json:"descending,omitempty"`
-	Field      IssueSortField `json:"field"`
+	Descending *bool `json:"descending,omitempty"`
+
+	// Field `rank` is the order people drag issues into. Every other field is a property of the issue.
+	Field IssueSortField `json:"field"`
 }
 
-// IssueSortField defines model for IssueSortField.
+// IssueSortField `rank` is the order people drag issues into. Every other field is a property of the issue.
 type IssueSortField string
 
 // IssueState defines model for IssueState.
@@ -5747,8 +5752,14 @@ type TriageState string
 // UpdateIssueRequest defines model for UpdateIssueRequest.
 type UpdateIssueRequest struct {
 	// AcknowledgeOpenChildren Complete this issue even though children of it are still open
-	AcknowledgeOpenChildren *bool               `json:"acknowledgeOpenChildren,omitempty"`
-	AssigneeId              *openapi_types.UUID `json:"assigneeId,omitempty"`
+	AcknowledgeOpenChildren *bool `json:"acknowledgeOpenChildren,omitempty"`
+
+	// AfterIssueId Place this issue immediately after the named one in rank order. Send it with `beforeIssueId` to drop between two issues, alone to drop at the end, or send only `beforeIssueId` to drop at the start. The server works out the rank, so two people dropping in the same gap cannot land on the same one.
+	AfterIssueId *openapi_types.UUID `json:"afterIssueId,omitempty"`
+	AssigneeId   *openapi_types.UUID `json:"assigneeId,omitempty"`
+
+	// BeforeIssueId Place this issue immediately before the named one in rank order.
+	BeforeIssueId *openapi_types.UUID `json:"beforeIssueId,omitempty"`
 
 	// Clear Properties to reset; absent means unchanged, which a nullable field cannot express
 	Clear           *[]UpdateIssueRequestClear `json:"clear,omitempty"`

@@ -1,5 +1,5 @@
 import type { components } from "$lib/api/dashboard.gen";
-import type { StateCategory } from "$lib/team/states";
+import type { StateCategory, WorkflowState } from "$lib/team/states";
 import type { IssueTab } from "./display";
 
 export type IssueFilter = components["schemas"]["IssueFilter"];
@@ -11,6 +11,17 @@ export const issuePageSize = 50;
 export const issueGroupSize = 25;
 
 const openCategories: StateCategory[] = ["not_started", "active"];
+
+export function tabAdmits(tab: IssueTab, state: WorkflowState, backlogStateIds: string[]): boolean {
+	switch (tab) {
+		case "backlog":
+			return backlogStateIds.includes(state.id);
+		case "active":
+			return openCategories.includes(state.category) && !backlogStateIds.includes(state.id);
+		default:
+			return true;
+	}
+}
 
 export function tabFilter(tab: IssueTab, backlogStateIds: string[] = []): IssueFilter | undefined {
 	const backlog: IssueFilter | undefined =

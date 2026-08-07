@@ -77,6 +77,14 @@
 	} from "$lib/issues/paging";
 	import { columnQuery, tallyTotal } from "$lib/issues/filter";
 	import {
+		insertionIndex,
+		landing,
+		movedInto,
+		stayedPut,
+		type DropTarget,
+		type PendingMove,
+	} from "$lib/issues/drop";
+	import {
 		columnFilter,
 		dueWindowLabels,
 		dueWindows,
@@ -109,9 +117,10 @@
 	const at = $derived((path: string) => workspacePath(slug, path));
 
 	let pages = $state.raw<BoardPages>(noPages);
+	let moves = $state.raw<PendingMove[]>([]);
 
 	let dragging = $state<string | null>(null);
-	let dropTarget = $state<string | null>(null);
+	let dropTarget = $state<DropTarget | null>(null);
 	let failure = $state<string | null>(null);
 	let toast = $state<{ message: string; undo?: () => Promise<void> } | null>(null);
 	let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -135,7 +144,13 @@
 		}
 	);
 
-	const held = $derived(preview?.pages ?? pagesOf(pages, base));
+	const signature = $derived(JSON.stringify(data.query));
+	const held = $derived(preview?.pages ?? pagesOf(pages, signature));
+
+	$effect(() => {
+		base;
+		moves = [];
+	});
 
 	const applied = $derived(data.applied);
 	const broken = $derived(brokenIn(applied));
@@ -146,14 +161,22 @@
 	);
 	const openCycle = $derived(teamCycles.find((cycle) => cycle.id === facets.cycle));
 
+	const backlog = $derived(backlogStates(states));
+
 	const board = $derived(
 		boardFor(
 			source,
 			display.grouping,
-			{ states, members, projects: data.projects ?? [] },
+			{
+				states,
+				members,
+				projects: data.projects ?? [],
+				tab: data.tab,
+				backlogStateIds: backlog.map((state) => state.id),
+			},
 			held,
 			{ name: scopeName, teams: data.teams.length },
-			{ showEmpty: display.showEmpty }
+			{ showEmpty: display.showEmpty, moves }
 		)
 	);
 	const columns = $derived(board.kind === "ready" ? board.columns : []);
@@ -180,7 +203,6 @@
 		return byTeam;
 	});
 	const statesOfTeam = $derived((teamId: string) => statesByTeam[teamId] ?? []);
-	const backlog = $derived(backlogStates(states));
 	const counts = $derived(tabCounts(preview?.totals ?? data.totals, states, backlog));
 	const total = $derived(tallyTotal(tallies) ?? flat.length);
 
@@ -223,7 +245,11 @@
 		toastTimer = setTimeout(() => (toast = null), 6000);
 	}
 
-	async function patch(issue: Issue, body: Record<string, unknown>): Promise<boolean> {
+	async function patch(
+		issue: Issue,
+		body: Record<string, unknown>,
+		options: { reload?: boolean } = {}
+	): Promise<boolean> {
 		failure = null;
 
 		const { error } = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
@@ -238,7 +264,7 @@
 			return false;
 		}
 
-		await invalidate(keys.page(page.route.id));
+		if (options.reload !== false) await invalidate(keys.page(page.route.id));
 
 		return true;
 	}
@@ -344,7 +370,7 @@
 	async function loadColumn(column: IssueColumn) {
 		if (column.load.kind === "complete" || column.load.kind === "loading") return;
 
-		const from = base;
+		const from = signature;
 
 		pages = withLoading(pages, from, column.key);
 
@@ -383,29 +409,110 @@
 
 	function landsIn(id: string | null, key: string): boolean {
 		const issue = flat.find((candidate) => candidate.id === id);
+
+		if (!issue) return false;
+		if (display.grouping !== "state") return true;
+
 		const target = states.find((state) => state.id === key);
 
-		return Boolean(issue) && (!target || target.teamId === issue?.teamId);
+		return !target || target.teamId === issue.teamId;
 	}
 
 	function onDragOver(event: DragEvent, key: string) {
-		if (!dragging || display.grouping !== "state" || !landsIn(dragging, key)) return;
-
 		event.preventDefault();
+
+		if (!dragging || !landsIn(dragging, key)) {
+			if (event.dataTransfer) event.dataTransfer.dropEffect = "none";
+
+			return;
+		}
+
 		if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
-		dropTarget = key;
+
+		dropTarget = {
+			key,
+			index: insertionIndex(event.currentTarget as Element, event.clientY),
+		};
 	}
 
-	function onDrop(event: DragEvent, key: string) {
+	function onDragLeave(event: DragEvent, key: string) {
+		const leaving = event.currentTarget as Element;
+
+		if (leaving.contains(event.relatedTarget as Node)) return;
+		if (dropTarget?.key === key) dropTarget = null;
+	}
+
+	async function onDrop(event: DragEvent, key: string) {
 		event.preventDefault();
 
 		const id = event.dataTransfer?.getData("text/plain") || dragging;
+		const target = dropTarget ?? {
+			key,
+			index: insertionIndex(event.currentTarget as Element, event.clientY),
+		};
+
 		onDragEnd();
 
-		if (display.grouping !== "state" || !landsIn(id, key)) return;
-
 		const issue = flat.find((candidate) => candidate.id === id);
-		if (issue) void setState(issue, key);
+		if (!issue || !landsIn(id, key)) return;
+
+		const column = columns.find((candidate) => candidate.key === key);
+		const held = column?.issues ?? [];
+
+		if (stayedPut(issue, held, target, display.grouping)) return;
+
+		const placed = landing(issue, held, target, display.grouping, display.ordering);
+
+		if (!movedInto(placed.move)) return;
+
+		moves = [...moves.filter((held) => held.issueId !== issue.id), placed.pending];
+
+		const settled = await patch(issue, placed.move, { reload: false });
+
+		if (!settled) {
+			moves = moves.filter((held) => held.issueId !== issue.id);
+
+			return;
+		}
+
+		announce(movedMessage(issue, placed, key), async () => {
+			toast = null;
+			moves = moves.filter((held) => held.issueId !== issue.id);
+
+			await patch(asLoaded(issue), returning(issue, placed));
+		});
+
+		await invalidate(keys.page(page.route.id));
+	}
+
+	function movedMessage(issue: Issue, placed: ReturnType<typeof landing>, key: string): string {
+		const name = columns.find((column) => column.key === key)?.name ?? "another column";
+
+		if (placed.move.priority && display.ordering === "priority") {
+			return `Moved ${issue.reference} to ${priorityLabel(placed.move.priority).toLowerCase()}`;
+		}
+
+		return `Moved ${issue.reference} to ${name}`;
+	}
+
+	function returning(issue: Issue, placed: ReturnType<typeof landing>): Record<string, unknown> {
+		const back: Record<string, unknown> = {};
+
+		if (placed.move.stateId) back.stateId = issue.state.id;
+		if (placed.move.priority) back.priority = issue.priority;
+		if (placed.move.dueOn) back.dueOn = issue.dueOn;
+
+		if (placed.move.assigneeId || placed.move.clear?.includes("assignee")) {
+			if (issue.assigneeAccountId) back.assigneeId = issue.assigneeAccountId;
+			else back.clear = ["assignee"];
+		}
+
+		if (placed.move.projectId || placed.move.clear?.includes("project")) {
+			if (issue.projectId) back.projectId = issue.projectId;
+			else back.clear = [...((back.clear as string[]) ?? []), "project"];
+		}
+
+		return back;
 	}
 
 	let saving = $state(false);
@@ -753,6 +860,14 @@
 
 <svelte:head><title>Issues · Norn</title></svelte:head>
 <svelte:window {onkeydown} />
+
+{#snippet dropGap(key: string, index: number)}
+	<div
+		aria-hidden="true"
+		data-open={dropTarget?.key === key && dropTarget.index === index}
+		class="pointer-events-none -my-0.5 h-1 rounded-full bg-primary opacity-0 transition-opacity duration-70 ease-out data-[open=true]:opacity-100"
+	></div>
+{/snippet}
 
 {#snippet columnMark(column: (typeof columns)[number])}
 	{#if column.mark.kind === "state"}
@@ -1419,8 +1534,9 @@
 					<section
 						aria-label={column.name}
 						ondragover={(event) => onDragOver(event, column.key)}
-						ondrop={(event) => onDrop(event, column.key)}
-						data-dropping={dropTarget === column.key}
+						ondragleave={(event) => onDragLeave(event, column.key)}
+						ondrop={(event) => void onDrop(event, column.key)}
+						data-dropping={dropTarget?.key === column.key}
 						class="data-[dropping=true]:bg-accent"
 					>
 						<div
@@ -1461,27 +1577,31 @@
 							</Button>
 						</div>
 						{#if !shut}
-							{#each column.issues as issue, index (issue.id)}
-								<IssueRow
-									{issue}
-									href={at(`/issues/${issue.reference}`)}
-									assignee={names.get(issue.assigneeAccountId ?? "") ?? ""}
-									now={data.now}
-									timezone={data.workspace.timezone}
-									shown={display.shown}
-									cursor={offset + index === cursor}
-									selected={selected.has(issue.id)}
-									onselect={(extend) => toggle(issue.id, extend)}
-									{priorityControl}
-									{stateControl}
-									{labelsControl}
-									{assigneeControl}
-									draggable={display.grouping === "state"}
-									dragging={dragging === issue.id}
-									ondragstart={(event) => onDragStart(event, issue.id)}
-									ondragend={onDragEnd}
-								/>
-							{/each}
+							<div role="list">
+								{#each column.issues as issue, index (issue.id)}
+									{@render dropGap(column.key, index)}
+									<IssueRow
+										{issue}
+										href={at(`/issues/${issue.reference}`)}
+										assignee={names.get(issue.assigneeAccountId ?? "") ?? ""}
+										now={data.now}
+										timezone={data.workspace.timezone}
+										shown={display.shown}
+										cursor={offset + index === cursor}
+										selected={selected.has(issue.id)}
+										onselect={(extend) => toggle(issue.id, extend)}
+										{priorityControl}
+										{stateControl}
+										{labelsControl}
+										{assigneeControl}
+										draggable
+										dragging={dragging === issue.id}
+										ondragstart={(event) => onDragStart(event, issue.id)}
+										ondragend={onDragEnd}
+									/>
+								{/each}
+								{@render dropGap(column.key, column.issues.length)}
+							</div>
 							<ColumnMore
 								load={column.load}
 								name={column.name}
@@ -1494,14 +1614,15 @@
 			</div>
 		{:else}
 			<div class="flex-1 overflow-auto bg-background p-4">
-				<div class="flex min-h-full items-start gap-3">
+				<div class="flex min-h-full items-stretch gap-3">
 					{#each columns as column (column.key)}
 						<div
 							role="group"
 							aria-label={column.name}
 							ondragover={(event) => onDragOver(event, column.key)}
-							ondrop={(event) => onDrop(event, column.key)}
-							data-dropping={dropTarget === column.key}
+							ondragleave={(event) => onDragLeave(event, column.key)}
+							ondrop={(event) => void onDrop(event, column.key)}
+							data-dropping={dropTarget?.key === column.key}
 							class="group/column flex w-60 flex-none sm:w-62.5 flex-col gap-2 rounded-lg border border-transparent p-1 transition-colors duration-70 ease-out data-[dropping=true]:border-dashed data-[dropping=true]:border-ink-400 data-[dropping=true]:bg-accent"
 						>
 							<div class="flex h-7 items-center gap-2 px-1">
@@ -1526,26 +1647,30 @@
 								</Button>
 							</div>
 
-							{#each column.issues as issue (issue.id)}
-								<IssueCard
-									{issue}
-									href={at(`/issues/${issue.reference}`)}
-									assignee={names.get(issue.assigneeAccountId ?? "") ?? ""}
-									now={data.now}
-									timezone={data.workspace.timezone}
-									shown={display.shown}
-									selected={selected.has(issue.id)}
-									onselect={(extend) => toggle(issue.id, extend)}
-									{priorityControl}
-									{stateControl}
-									{labelsControl}
-									{assigneeControl}
-									draggable={display.grouping === "state"}
-									dragging={dragging === issue.id}
-									ondragstart={(event) => onDragStart(event, issue.id)}
-									ondragend={onDragEnd}
-								/>
-							{/each}
+							<div role="list" class="flex flex-col gap-2">
+								{#each column.issues as issue, index (issue.id)}
+									{@render dropGap(column.key, index)}
+									<IssueCard
+										{issue}
+										href={at(`/issues/${issue.reference}`)}
+										assignee={names.get(issue.assigneeAccountId ?? "") ?? ""}
+										now={data.now}
+										timezone={data.workspace.timezone}
+										shown={display.shown}
+										selected={selected.has(issue.id)}
+										onselect={(extend) => toggle(issue.id, extend)}
+										{priorityControl}
+										{stateControl}
+										{labelsControl}
+										{assigneeControl}
+										draggable
+										dragging={dragging === issue.id}
+										ondragstart={(event) => onDragStart(event, issue.id)}
+										ondragend={onDragEnd}
+									/>
+								{/each}
+								{@render dropGap(column.key, column.issues.length)}
+							</div>
 
 							{#if column.issues.length === 0 && column.load.kind === "complete"}
 								<p

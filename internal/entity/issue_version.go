@@ -25,6 +25,7 @@ const (
 	IssueFieldParent      = "parent"
 	IssueFieldChildren    = "children"
 	IssueFieldRelations   = "relations"
+	IssueFieldRank        = "rank"
 )
 
 var ErrIssueStale = errors.New("issue changed since it was read")
@@ -59,6 +60,7 @@ func IssueFields() []string {
 		IssueFieldParent,
 		IssueFieldChildren,
 		IssueFieldRelations,
+		IssueFieldRank,
 	}
 }
 
@@ -124,6 +126,7 @@ type IssueChange struct {
 	DueOn       *string
 	CycleID     *uuid.UUID
 	ProjectID   *uuid.UUID
+	Rank        *string
 
 	ClearAssignee bool
 	ClearEstimate bool
@@ -169,6 +172,10 @@ func (c IssueChange) Touched() []string {
 
 	if c.ProjectID != nil || c.ClearProject {
 		fields = append(fields, IssueFieldProject)
+	}
+
+	if c.Rank != nil {
+		fields = append(fields, IssueFieldRank)
 	}
 
 	return fields

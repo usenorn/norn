@@ -67,8 +67,13 @@
 </script>
 
 <div
+	role="listitem"
+	data-issue={issue.id}
 	data-selected={selected}
 	data-dragging={dragging}
+	{draggable}
+	{ondragstart}
+	{ondragend}
 	class={cn(
 		"relative flex flex-col gap-2 rounded-lg border border-line-default bg-card px-3 py-2.5 transition-colors duration-110 ease-out hover:border-ink-400 active:bg-paper-2 data-[selected=true]:rule-lead data-[selected=true]:border-ink-400 data-[dragging=true]:opacity-40",
 		draggable && "cursor-grab active:cursor-grabbing",
@@ -92,9 +97,7 @@
 
 	<a
 		{href}
-		{draggable}
-		{ondragstart}
-		{ondragend}
+		draggable="false"
 		onclick={(event) => {
 			if (!onselect || !(event.metaKey || event.ctrlKey || event.shiftKey)) return;
 

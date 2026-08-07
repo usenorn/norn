@@ -152,6 +152,11 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		arriving.Priority = entity.IssuePriorityNone
 	}
 
+	arriving.Rank, err = s.openingRank(ctx, input.WorkspaceID)
+	if err != nil {
+		return entity.Issue{}, err
+	}
+
 	if err := s.route(ctx, &arriving, decision); err != nil {
 		return entity.Issue{}, err
 	}
@@ -395,6 +400,11 @@ func (s *issuesService) Update(
 		ClearDueOn:    slices.Contains(input.Clear, entity.IssueFieldDueOn),
 		ClearCycle:    slices.Contains(input.Clear, entity.IssueFieldCycle),
 		ClearProject:  slices.Contains(input.Clear, entity.IssueFieldProject),
+	}
+
+	change.Rank, err = s.rankBetween(ctx, workspaceID, decision, input)
+	if err != nil {
+		return entity.Issue{}, err
 	}
 
 	touched := change.Touched()
@@ -743,6 +753,64 @@ func narrowed(scope entity.TeamScope, teamID *uuid.UUID) entity.TeamScope {
 	}
 
 	return entity.TeamScope{WorkspaceID: scope.WorkspaceID, TeamIDs: []uuid.UUID{*teamID}}
+}
+
+func (s *issuesService) openingRank(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+	lowest, err := s.issues.LowestRank(ctx, workspaceID)
+	if err != nil {
+		return "", err
+	}
+
+	return entity.RankBetween("", lowest)
+}
+
+func (s *issuesService) rankBetween(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	decision entity.Decision,
+	input service.UpdateIssueInput,
+) (*string, error) {
+	if input.AfterIssueID == nil && input.BeforeIssueID == nil {
+		return nil, nil
+	}
+
+	after, err := s.neighbourRank(ctx, workspaceID, decision, input.AfterIssueID)
+	if err != nil {
+		return nil, err
+	}
+
+	before, err := s.neighbourRank(ctx, workspaceID, decision, input.BeforeIssueID)
+	if err != nil {
+		return nil, err
+	}
+
+	rank, err := entity.RankBetween(after, before)
+	if err != nil {
+		return nil, entity.NewValidationError(entity.FieldError{
+			Field: "afterIssueId",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
+	return &rank, nil
+}
+
+func (s *issuesService) neighbourRank(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	decision entity.Decision,
+	neighbour *uuid.UUID,
+) (string, error) {
+	if neighbour == nil {
+		return "", nil
+	}
+
+	issue, err := s.issues.GetVisible(ctx, workspaceID, *neighbour, decision.Scope)
+	if err != nil {
+		return "", err
+	}
+
+	return issue.Rank, nil
 }
 
 func validateUpdate(input service.UpdateIssueInput) error {
