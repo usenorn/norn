@@ -106,7 +106,7 @@ func (s *directoriesService) admit(
 	userName string,
 	profile service.DirectoryProfile,
 ) (service.DirectoryUserView, error) {
-	account, err := s.accountFor(ctx, userName, profile.DisplayName)
+	account, err := s.accountFor(ctx, connection.WorkspaceID, userName, profile.DisplayName)
 	if err != nil {
 		return service.DirectoryUserView{}, err
 	}
@@ -192,12 +192,22 @@ func (s *directoriesService) admit(
 
 func (s *directoriesService) accountFor(
 	ctx context.Context,
+	workspaceID uuid.UUID,
 	userName, displayName string,
 ) (entity.Account, error) {
 	account, err := s.accounts.GetByEmail(ctx, userName)
 	if err == nil {
 		if account.Status != entity.AccountStatusActive {
 			return entity.Account{}, entity.ErrAccountDeactivated
+		}
+
+		elsewhere, err := s.memberships.ExistsOutside(ctx, account.ID, workspaceID)
+		if err != nil {
+			return entity.Account{}, err
+		}
+
+		if err := entity.DirectoryClaimRefusal(account, elsewhere); err != nil {
+			return entity.Account{}, err
 		}
 
 		return account, nil
