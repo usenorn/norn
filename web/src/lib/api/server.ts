@@ -78,6 +78,7 @@ export function apiForEvent(event: RequestEvent): Client<paths> {
 			const address = clientAddress(event);
 
 			request.headers.set("cookie", cookieHeader(event.cookies));
+			request.headers.set("origin", event.url.origin);
 			if (address) {
 				request.headers.set("x-forwarded-for", address);
 			}

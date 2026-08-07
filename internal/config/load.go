@@ -71,6 +71,21 @@ func validate(cfg Config) error {
 		return fmt.Errorf("session.max_per_account (%d) must be at least 1", cfg.Session.MaxPerAccount)
 	}
 
+	if strings.EqualFold(cfg.Session.SameSite, "none") {
+		return fmt.Errorf(
+			"session.same_site cannot be none; that sends the session cookie on requests any " +
+				"other site makes, which is the whole shape of a cross-site request forgery",
+		)
+	}
+
+	if strings.HasPrefix(cfg.App.BaseURL, "https://") && !cfg.Session.Secure {
+		return fmt.Errorf(
+			"session.secure must be set when app.base_url (%s) is https, or the session cookie "+
+				"travels over any plain-http request to the same host",
+			cfg.App.BaseURL,
+		)
+	}
+
 	if (cfg.SMTP.Host == "") != (cfg.SMTP.FromAddress == "") {
 		return fmt.Errorf("smtp.host and smtp.from_address must be set together")
 	}
