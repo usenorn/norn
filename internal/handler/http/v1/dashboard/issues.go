@@ -65,6 +65,10 @@ func (h *handler) QueryWorkspaceIssues(
 		input.Limit = int(*request.Body.Limit)
 	}
 
+	if request.Body.PerGroup != nil {
+		input.PerGroup = int(*request.Body.PerGroup)
+	}
+
 	if request.Body.Cursor != nil {
 		input.Cursor = *request.Body.Cursor
 	}

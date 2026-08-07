@@ -267,6 +267,10 @@ func arrayCast(cast string) string {
 }
 
 func orderBy(sort []entity.IssueSort) string {
+	return "ORDER BY " + sortTerms(sort)
+}
+
+func sortTerms(sort []entity.IssueSort) string {
 	terms := make([]string, 0, len(sort)+1)
 
 	for _, key := range sort {
@@ -286,7 +290,7 @@ func orderBy(sort []entity.IssueSort) string {
 
 	terms = append(terms, "i.id "+tiebreak(sort))
 
-	return "ORDER BY " + strings.Join(terms, ", ")
+	return strings.Join(terms, ", ")
 }
 
 func tiebreak(sort []entity.IssueSort) string {
@@ -416,6 +420,42 @@ func (r *issueRepository) pageStatement(
 	statement := "SELECT" + issueColumns + issueJoins +
 		"\nWHERE " + where +
 		"\n" + orderBy(sort) +
+		"\nLIMIT " + b.bind(page.Limit)
+
+	return statement, b.args
+}
+
+func (r *issueRepository) groupPageStatement(
+	scope entity.TeamScope,
+	page entity.IssuePage,
+	key string,
+	groupBy entity.IssueGroupBy,
+) (string, []any) {
+	b := &builder{}
+
+	sort, err := entity.NormalizedIssueSort(page.Sort)
+	if err != nil {
+		sort = entity.DefaultIssueSort()
+	}
+
+	joins := issueJoins
+	if groupBy == entity.IssueGroupByLabel {
+		joins += groupLabelJoin
+	}
+
+	ranked := "WITH ranked AS (" +
+		"\nSELECT i.id AS issue_id, " + key + " AS group_key," +
+		"\n       row_number() OVER (PARTITION BY " + key +
+		" ORDER BY " + sortTerms(sort) + ") AS group_position" +
+		joins +
+		"\nWHERE " + b.where(scope, page, page.Filter) + b.legacy(page) +
+		"\n)"
+
+	statement := ranked +
+		"\nSELECT" + issueColumns + ",\n       r.group_key" + issueJoins +
+		"\nJOIN ranked r ON r.issue_id = i.id" +
+		"\nWHERE r.group_position <= " + b.bind(page.PerGroup) +
+		"\nORDER BY r.group_position, r.group_key" +
 		"\nLIMIT " + b.bind(page.Limit)
 
 	return statement, b.args

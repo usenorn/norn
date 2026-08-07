@@ -4129,20 +4129,32 @@ export interface components {
             key: string;
             /** Format: int32 */
             issues: number;
+            /** @description The position after the rows this group contributed to `issues`, sent back as `cursor` on a query narrowed to this group. Absent when the group is complete, and absent when the group contributed nothing at all, which is paged from the start instead. */
+            nextCursor?: string;
         };
         IssueQueryRequest: {
             text?: string;
             filter?: components["schemas"]["IssueFilter"];
             sort?: components["schemas"]["IssueSort"][];
             groupBy?: components["schemas"]["IssueGroupBy"];
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description The most rows `issues` may hold. With `perGroup` it is the budget every group spends from, and defaults to the maximum rather than the page default.
+             */
             limit?: number;
+            /**
+             * Format: int32
+             * @description Return the first rows of every group instead of one flat page. Requires `groupBy`, and is refused together with `cursor`, which names a position in the whole ordering rather than in one group. Groups fill rank by rank, so no group loses its first row while another still has a second.
+             */
+            perGroup?: number;
+            /** @description A position from a previous `nextCursor`. Refused together with `perGroup`. */
             cursor?: string;
         };
         IssueQueryResult: {
             issues: components["schemas"]["Issue"][];
+            /** @description Absent when `perGroup` was asked for, since each group carries its own. */
             nextCursor?: string;
-            /** @description Present when a grouping was asked for. Grouping by label counts an issue once per label it carries, so those tallies sum to more than the issues returned. */
+            /** @description Present when a grouping was asked for, one entry per group holding at least one match, counted over the whole filtered set. With `perGroup`, the rows a group contributed to `issues` are the first rows of that group in the requested order, so a group counting more than it contributed was cut short by a limit rather than by a filter. Grouping by label counts an issue once per label it carries, though `issues` still lists it once. */
             groups?: components["schemas"]["IssueGroupTally"][];
         };
         IssuePage: {

@@ -1,7 +1,12 @@
 import type { IssueFilter, IssueQueryBody } from "$lib/issues/filter";
-import { allOf, issuePageSize, tabFilter, teamFilter } from "$lib/issues/filter";
-import { groupByFor, sortFor, type Grouping, type Ordering } from "$lib/issues/display";
-import type { IssueTab } from "$lib/issues/board";
+import { allOf, issueGroupSize, issuePageSize, tabFilter, teamFilter } from "$lib/issues/filter";
+import {
+	groupByFor,
+	sortFor,
+	type Grouping,
+	type IssueTab,
+	type Ordering,
+} from "$lib/issues/display";
 import type { Team } from "$lib/team/teams";
 import type { SavedView, ViewReference } from "./views";
 
@@ -24,15 +29,29 @@ export function appliedView(
 }
 
 function soleTeam(view: SavedView, teams: Team[]): Team | null {
-	const named = new Set<string>();
-
-	collectTeams(view.filter, named);
+	const named = namedIn(view);
 
 	if (named.size !== 1) return null;
 
 	const [id] = [...named];
 
 	return teams.find((team) => team.id === id) ?? null;
+}
+
+function namedIn(view: SavedView): Set<string> {
+	const named = new Set<string>();
+
+	collectTeams(view.filter, named);
+
+	return named;
+}
+
+export function viewTeams(applied: AppliedView, teams: Team[]): Team[] {
+	if (applied.kind !== "applied") return [];
+
+	const named = namedIn(applied.view);
+
+	return teams.filter((team) => named.has(team.id));
 }
 
 function collectTeams(filter: SavedView["filter"] | undefined, into: Set<string>) {
@@ -56,6 +75,10 @@ export type QueryShaping = {
 	backlogStateIds?: string[];
 };
 
+function sliced(grouping: Grouping): Pick<IssueQueryBody, "limit" | "perGroup"> {
+	return grouping === "none" ? { limit: issuePageSize } : { perGroup: issueGroupSize };
+}
+
 export function viewQuery(
 	applied: AppliedView,
 	tab: IssueTab,
@@ -72,7 +95,7 @@ export function viewQuery(
 			filter: allOf(teamId ? teamFilter(teamId) : undefined, tabFilter(tab, shaping.backlogStateIds), ...extra),
 			sort: chosen,
 			groupBy: groupByFor(shaping.grouping ?? "state"),
-			limit: issuePageSize,
+			...sliced(shaping.grouping ?? "state"),
 		};
 	}
 
@@ -83,7 +106,7 @@ export function viewQuery(
 		groupBy: shaping.grouping
 			? groupByFor(shaping.grouping)
 			: (applied.view.groupBy ?? "state"),
-		limit: issuePageSize,
+		...sliced(shaping.grouping ?? "state"),
 	};
 }
 

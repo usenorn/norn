@@ -7,6 +7,7 @@ import type { Label } from "$lib/labels/labels";
 import type { Member } from "./+page.server";
 import type { BulkActionResult } from "$lib/issues/bulk";
 import type { IssueGroupTally } from "$lib/issues/filter";
+import type { ColumnPage } from "$lib/issues/paging";
 
 export type IssuesPreview = {
 	team: Team | null;
@@ -17,7 +18,7 @@ export type IssuesPreview = {
 	nextCursor?: string;
 	groups?: IssueGroupTally[];
 	totals?: IssueGroupTally[];
-	paging?: { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
+	pages?: Record<string, ColumnPage>;
 	progress?: IssueProgress;
 	members?: Member[];
 	facets?: Facets;
@@ -461,7 +462,7 @@ export const issuesPreviewStates: Record<string, IssuesPreview> = import.meta.en
 				members: [],
 				progress: { notStarted: 1, active: 2, complete: 1, abandoned: 0 },
 			},
-			paged: {
+			column_more: {
 				team: {
 					id: "00000000-0000-4000-8000-000000000102",
 					workspaceId: "00000000-0000-4000-8000-000000000000",
@@ -516,15 +517,18 @@ export const issuesPreviewStates: Record<string, IssuesPreview> = import.meta.en
 						createdAt: "2026-07-30T09:00:00Z",
 					},
 				],
-				nextCursor: "eyJrIjpbIjIwMjYtMDctMzBUMDk6MDA6MDBaIl19",
 				groups: [
-					{ key: "00000000-0000-4000-8000-000000000403", issues: 137 },
+					{
+						key: "00000000-0000-4000-8000-000000000403",
+						issues: 137,
+						nextCursor: "eyJrIjpbIjIwMjYtMDctMzBUMDk6MDA6MDBaIl19",
+					},
 					{ key: "00000000-0000-4000-8000-000000000402", issues: 42 },
 				],
 				members: [],
 				progress: { notStarted: 42, active: 137, complete: 8, abandoned: 1 },
 			},
-			paging: {
+			column_loading: {
 				team: {
 					id: "00000000-0000-4000-8000-000000000102",
 					workspaceId: "00000000-0000-4000-8000-000000000000",
@@ -570,13 +574,24 @@ export const issuesPreviewStates: Record<string, IssuesPreview> = import.meta.en
 						createdAt: "2026-07-29T09:00:00Z",
 					},
 				],
-				nextCursor: "eyJrIjpbIjIwMjYtMDctMjlUMDk6MDA6MDBaIl19",
-				groups: [{ key: "00000000-0000-4000-8000-000000000403", issues: 137 }],
-				paging: { kind: "loading" as const },
+				groups: [
+					{
+						key: "00000000-0000-4000-8000-000000000403",
+						issues: 137,
+						nextCursor: "eyJrIjpbIjIwMjYtMDctMjlUMDk6MDA6MDBaIl19",
+					},
+				],
+				pages: {
+					"00000000-0000-4000-8000-000000000403": {
+						issues: [],
+						cursor: "eyJrIjpbIjIwMjYtMDctMjlUMDk6MDA6MDBaIl19",
+						paging: { kind: "loading" as const },
+					},
+				},
 				members: [],
 				progress: { notStarted: 0, active: 137, complete: 0, abandoned: 0 },
 			},
-			paging_unavailable: {
+			column_failed: {
 				team: {
 					id: "00000000-0000-4000-8000-000000000102",
 					workspaceId: "00000000-0000-4000-8000-000000000000",
@@ -622,11 +637,84 @@ export const issuesPreviewStates: Record<string, IssuesPreview> = import.meta.en
 						createdAt: "2026-07-28T09:00:00Z",
 					},
 				],
-				nextCursor: "eyJrIjpbIjIwMjYtMDctMjhUMDk6MDA6MDBaIl19",
-				groups: [{ key: "00000000-0000-4000-8000-000000000403", issues: 137 }],
-				paging: { kind: "unavailable" as const },
+				groups: [
+					{
+						key: "00000000-0000-4000-8000-000000000403",
+						issues: 137,
+						nextCursor: "eyJrIjpbIjIwMjYtMDctMjhUMDk6MDA6MDBaIl19",
+					},
+				],
+				pages: {
+					"00000000-0000-4000-8000-000000000403": {
+						issues: [],
+						cursor: "eyJrIjpbIjIwMjYtMDctMjhUMDk6MDA6MDBaIl19",
+						paging: { kind: "unavailable" as const },
+					},
+				},
 				members: [],
 				progress: { notStarted: 0, active: 137, complete: 0, abandoned: 0 },
+			},
+			column_unloaded: {
+				team: {
+					id: "00000000-0000-4000-8000-000000000102",
+					workspaceId: "00000000-0000-4000-8000-000000000000",
+					key: "DSG",
+					name: "Design",
+					visibility: "public",
+					status: "active",
+					createdAt: "2026-02-11T09:00:00Z",
+				},
+				states: [
+					{
+						id: "00000000-0000-4000-8000-000000000402",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Ready",
+						category: "not_started",
+						position: 2,
+						isDefault: true,
+						isCompletion: false,
+					},
+					{
+						id: "00000000-0000-4000-8000-000000000403",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						name: "Sketching",
+						category: "active",
+						position: 3,
+						isDefault: false,
+						isCompletion: false,
+					},
+				],
+				issues: [
+					{
+						id: "00000000-0000-4000-8000-000000000524",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "none",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000402",
+							name: "Ready",
+							category: "not_started",
+							position: 2,
+						},
+						labels: [],
+						number: 34,
+						reference: "DSG-34",
+						title: "Retune the empty state illustration",
+						createdAt: "2026-07-27T09:00:00Z",
+					},
+				],
+				groups: [
+					{ key: "00000000-0000-4000-8000-000000000402", issues: 1 },
+					{ key: "00000000-0000-4000-8000-000000000403", issues: 1 },
+				],
+				members: [],
+				progress: { notStarted: 1, active: 1, complete: 0, abandoned: 0 },
 			},
 			bulk_running: {
 				team: null,

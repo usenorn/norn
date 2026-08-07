@@ -178,13 +178,69 @@ func TestAFullPageCarriesACursorWhenMoreVisibleIssuesExist(t *testing.T) {
 		t.Fatal("a full page must carry a cursor when more visible rows exist")
 	}
 
-	cursor, err := entity.DecodeIssueCursor(page.NextCursor)
+	cursor, err := entity.DecodeIssueQueryCursor(page.NextCursor)
 	if err != nil {
-		t.Fatalf("DecodeIssueCursor: %v", err)
+		t.Fatalf("DecodeIssueQueryCursor: %v", err)
 	}
 
 	if cursor.IssueID != page.Issues[1].ID {
 		t.Fatal("the cursor must be built from the last kept row, not the discarded lookahead row")
+	}
+}
+
+func TestAListCursorNamesWhereTheNextPageStartsFrom(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	teamID := uuid.New()
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+	h.issues.EXPECT().
+		ListVisible(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(issuesOf(workspaceID, teamID, 3), nil)
+
+	first, err := h.service.List(context.Background(), workspaceID, service.ListIssuesInput{Limit: 2})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	var resumed entity.IssuePage
+
+	h.issues.EXPECT().
+		ListVisible(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ entity.TeamScope, page entity.IssuePage) ([]entity.Issue, error) {
+			resumed = page
+
+			return nil, nil
+		})
+
+	_, err = h.service.List(context.Background(), workspaceID, service.ListIssuesInput{
+		Limit:  2,
+		Cursor: first.NextCursor,
+	})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if resumed.QueryCursor == nil {
+		t.Fatal("a cursor must reach the store as a keyset position, not a field the query ignores")
+	}
+
+	if resumed.QueryCursor.IssueID != first.Issues[1].ID {
+		t.Fatalf(
+			"the second page resumes from %s, want the last row of the first page",
+			resumed.QueryCursor.IssueID,
+		)
+	}
+
+	if len(resumed.QueryCursor.Keys) != len(resumed.Sort) {
+		t.Fatalf(
+			"the cursor carries %d sort keys against %d sort terms, so the keyset is silently discarded",
+			len(resumed.QueryCursor.Keys),
+			len(resumed.Sort),
+		)
 	}
 }
 

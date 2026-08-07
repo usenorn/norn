@@ -37,12 +37,13 @@ type IssuePage struct {
 }
 
 type QueryIssuesInput struct {
-	Text    string
-	Filter  *entity.IssueFilter
-	Sort    []entity.IssueSort
-	GroupBy entity.IssueGroupBy
-	Cursor  string
-	Limit   int
+	Text     string
+	Filter   *entity.IssueFilter
+	Sort     []entity.IssueSort
+	GroupBy  entity.IssueGroupBy
+	Cursor   string
+	Limit    int
+	PerGroup int
 }
 
 type IssueQueryResult struct {

@@ -175,3 +175,41 @@ func TestAnEmptyKeyStandsForAMissingSortValue(t *testing.T) {
 		}
 	}
 }
+
+func TestAPerGroupRequestIsClampedToWhatTheServerWillFetch(t *testing.T) {
+	cases := map[string]struct {
+		page            entity.IssuePage
+		limit, perGroup int
+	}{
+		"a flat page keeps the page default": {
+			page: entity.IssuePage{}, limit: entity.IssuePageDefaultSize, perGroup: 0,
+		},
+		"a grouped page spends the whole budget": {
+			page:  entity.IssuePage{PerGroup: 25},
+			limit: entity.IssuePageMaxSize, perGroup: 25,
+		},
+		"a grouped page keeps a budget it was given": {
+			page: entity.IssuePage{Limit: 60, PerGroup: 25}, limit: 60, perGroup: 25,
+		},
+		"an oversized group slice is trimmed": {
+			page:  entity.IssuePage{PerGroup: 5000},
+			limit: entity.IssuePageMaxSize, perGroup: entity.IssueGroupPageMaxSize,
+		},
+		"a negative group slice is no grouping at all": {
+			page: entity.IssuePage{PerGroup: -1}, limit: entity.IssuePageDefaultSize, perGroup: 0,
+		},
+	}
+
+	for name, testCase := range cases {
+		t.Run(name, func(t *testing.T) {
+			normalized := testCase.page.Normalized()
+
+			if normalized.Limit != testCase.limit || normalized.PerGroup != testCase.perGroup {
+				t.Fatalf(
+					"Normalized() = limit %d, perGroup %d; want limit %d, perGroup %d",
+					normalized.Limit, normalized.PerGroup, testCase.limit, testCase.perGroup,
+				)
+			}
+		})
+	}
+}

@@ -681,6 +681,79 @@ func (r *issueRepository) ListVisible(
 	return issues, nil
 }
 
+type groupedScanner struct {
+	rows *sql.Rows
+	key  *string
+}
+
+func (s groupedScanner) Scan(dest ...any) error {
+	return s.rows.Scan(append(dest, s.key)...)
+}
+
+func (r *issueRepository) ListVisibleByGroup(
+	ctx context.Context,
+	scope entity.TeamScope,
+	page entity.IssuePage,
+	groupBy entity.IssueGroupBy,
+) ([]entity.IssueGroupSlice, error) {
+	key, known := groupKeys[groupBy]
+	if !known {
+		return nil, entity.ErrIssueGroupUnknown
+	}
+
+	statement, args := r.groupPageStatement(scope, page, key, groupBy)
+
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, statement, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list visible issues by group: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	issues := make([]entity.Issue, 0, page.Limit)
+	groups := make([]string, 0, page.Limit)
+
+	for rows.Next() {
+		var group string
+
+		issue, err := scanIssue(groupedScanner{rows: rows, key: &group})
+		if err != nil {
+			return nil, fmt.Errorf("scan grouped issue: %w", err)
+		}
+
+		issues = append(issues, issue)
+		groups = append(groups, group)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate grouped issues: %w", err)
+	}
+
+	if err := r.hydrate(ctx, scope, issues); err != nil {
+		return nil, err
+	}
+
+	return groupSlices(groups, issues), nil
+}
+
+func groupSlices(groups []string, issues []entity.Issue) []entity.IssueGroupSlice {
+	grouped := make([]entity.IssueGroupSlice, 0)
+	at := make(map[string]int, len(groups))
+
+	for i, group := range groups {
+		held, known := at[group]
+		if !known {
+			held = len(grouped)
+			at[group] = held
+			grouped = append(grouped, entity.IssueGroupSlice{Key: group})
+		}
+
+		grouped[held].Issues = append(grouped[held].Issues, issues[i])
+	}
+
+	return grouped
+}
+
 func (r *issueRepository) hydrate(
 	ctx context.Context,
 	scope entity.TeamScope,

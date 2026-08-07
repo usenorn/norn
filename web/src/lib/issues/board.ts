@@ -1,28 +1,27 @@
 import type { components } from "$lib/api/dashboard.gen";
-import type { Issue, IssuePriority } from "./issues";
-
-export type { Issue };
 import type { WorkflowState } from "$lib/team/states";
 import type { Project } from "$lib/projects/projects";
-import { tallyOf, type IssueGroupTally } from "./filter";
+import type { Issue, IssuePriority } from "./issues";
+import { tallyOf, tallyTotal, type IssueGroupTally } from "./filter";
 import { priorities } from "./issues";
-import type { Grouping } from "./display";
+import { loadFor, pageOf, type ColumnLoad, type ColumnPage } from "./paging";
+import type { Grouping, IssueTab } from "./display";
+
+export type { Issue };
 
 export type IssueProgress = components["schemas"]["IssueProgress"];
 
-export const issueTabs = ["active", "backlog", "all"] as const;
-export type IssueTab = (typeof issueTabs)[number];
-
-export const issueLayouts = ["list", "board"] as const;
-export type IssueLayout = (typeof issueLayouts)[number];
-
-export const tabLabels: Record<IssueTab, string> = {
-	active: "Active",
-	backlog: "Backlog",
-	all: "All issues",
-};
-
 export function backlogStates(states: WorkflowState[]): WorkflowState[] {
+	const teams = new Map<string, WorkflowState[]>();
+
+	for (const state of states) {
+		teams.set(state.teamId, [...(teams.get(state.teamId) ?? []), state]);
+	}
+
+	return [...teams.values()].flatMap(teamBacklog);
+}
+
+function teamBacklog(states: WorkflowState[]): WorkflowState[] {
 	const lands = states.find((state) => state.isDefault);
 
 	if (!lands) return [];
@@ -37,7 +36,7 @@ export function tabCounts(
 	states: WorkflowState[],
 	backlog: WorkflowState[]
 ): Record<IssueTab, number> | undefined {
-	if (!tallies) return undefined;
+	if (!tallies || states.length === 0) return undefined;
 
 	const category = new Map(states.map((state) => [state.id, state.category]));
 	const held = new Set(backlog.map((state) => state.id));
@@ -60,7 +59,6 @@ export function tabCounts(
 }
 
 export type IssueBoard =
-	| { kind: "loading" }
 	| { kind: "no_teams" }
 	| { kind: "empty"; team: string }
 	| { kind: "ready"; columns: IssueColumn[] }
@@ -69,83 +67,41 @@ export type IssueBoard =
 export type IssueGroup = {
 	state: WorkflowState;
 	issues: Issue[];
-	total: number;
 };
 
-export function groupByState(
-	issues: Issue[],
-	states: WorkflowState[],
-	tallies: IssueGroupTally[] | undefined,
-	options: { showEmpty?: boolean } = {}
-): IssueGroup[] {
-	const known = new Set(states.map((state) => state.id));
-	const loose = issues.filter((issue) => !known.has(issue.state.id));
-
-	const groups = states.map((state) => {
-		const held = issues.filter((issue) => issue.state.id === state.id);
-
-		return { state, issues: held, total: tallyOf(tallies, state.id) ?? held.length };
-	});
-
-	for (const issue of loose) {
-		const existing = groups.find((group) => group.state.id === issue.state.id);
-
-		if (existing) {
-			existing.issues.push(issue);
-
-			continue;
-		}
-
-		groups.push({
-			state: { ...issue.state, teamId: issue.teamId, isDefault: false, isCompletion: false },
-			issues: [issue],
-			total: tallyOf(tallies, issue.state.id) ?? 1,
-		});
-	}
-
-	return options.showEmpty ? groups : groups.filter((group) => group.issues.length > 0);
-}
-
-export function statesInPlay(issues: Issue[]): WorkflowState[] {
-	const seen = new Map<string, WorkflowState>();
+export function groupByState(issues: Issue[], states: WorkflowState[]): IssueGroup[] {
+	const known = new Map(states.map((state) => [state.id, state]));
 
 	for (const issue of issues) {
-		if (seen.has(issue.state.id)) continue;
-
-		seen.set(issue.state.id, {
-			...issue.state,
-			teamId: issue.teamId,
-			isDefault: false,
-			isCompletion: false,
-		});
+		if (!known.has(issue.state.id)) known.set(issue.state.id, statedBy(issue));
 	}
 
-	return [...seen.values()].sort(
-		(a, b) => a.position - b.position || a.name.localeCompare(b.name)
-	);
+	return [...known.values()]
+		.sort((a, b) => a.position - b.position || a.name.localeCompare(b.name))
+		.map((state) => ({
+			state,
+			issues: issues.filter((issue) => issue.state.id === state.id),
+		}))
+		.filter((group) => group.issues.length > 0);
 }
 
-export function boardFor(
-	issues: Issue[] | undefined,
-	grouping: Grouping,
-	context: GroupingContext,
-	tallies: IssueGroupTally[] | undefined,
-	scopeName: string,
-	options: { showEmpty?: boolean } = {}
-): IssueBoard {
-	if (!issues) return { kind: "unavailable" };
-
-	if (issues.length === 0) return { kind: "empty", team: scopeName };
-
-	return { kind: "ready", columns: columnsFor(issues, grouping, context, tallies, options) };
+function statedBy(issue: Issue): WorkflowState {
+	return { ...issue.state, teamId: issue.teamId, isDefault: false, isCompletion: false };
 }
+
+export type ColumnSource = {
+	issues: Issue[];
+	tallies: IssueGroupTally[] | undefined;
+	nextCursor: string | undefined;
+};
 
 export type GroupMark =
 	| { kind: "state"; state: WorkflowState }
 	| { kind: "priority"; priority: IssuePriority }
 	| { kind: "assignee"; name: string }
 	| { kind: "project" }
-	| { kind: "all" };
+	| { kind: "all" }
+	| { kind: "unknown" };
 
 export type IssueColumn = {
 	key: string;
@@ -153,6 +109,7 @@ export type IssueColumn = {
 	mark: GroupMark;
 	issues: Issue[];
 	total: number;
+	load: ColumnLoad;
 };
 
 export type GroupingContext = {
@@ -161,120 +118,190 @@ export type GroupingContext = {
 	projects: Project[];
 };
 
-function stateColumns(issues: Issue[], context: GroupingContext): IssueColumn[] {
-	const known = context.states.length > 0 ? context.states : statesInPlay(issues);
+type ColumnSlot = { key: string; name: string; mark: GroupMark };
 
-	return known.map((state) => ({
-		key: state.id,
-		name: state.name,
-		mark: { kind: "state", state } as const,
-		issues: issues.filter((issue) => issue.state.id === state.id),
-		total: 0,
-	}));
+export const unknownNames: Record<Grouping, string> = {
+	state: "Unknown status",
+	priority: "Unknown priority",
+	assignee: "Unknown person",
+	project: "Unknown project",
+	none: "All issues",
+};
+
+export function keyOf(grouping: Grouping, issue: Issue): string {
+	switch (grouping) {
+		case "priority":
+			return issue.priority;
+		case "assignee":
+			return issue.assigneeAccountId ?? "";
+		case "project":
+			return issue.projectId ?? "";
+		case "none":
+			return "all";
+		default:
+			return issue.state.id;
+	}
 }
 
-function priorityColumns(issues: Issue[]): IssueColumn[] {
-	return priorities.map((priority) => ({
-		key: priority.value,
-		name: priority.label,
-		mark: { kind: "priority", priority: priority.value } as const,
-		issues: issues.filter((issue) => issue.priority === priority.value),
-		total: 0,
-	}));
+function slotsFor(grouping: Grouping, context: GroupingContext): ColumnSlot[] {
+	switch (grouping) {
+		case "priority":
+			return priorities.map((priority) => ({
+				key: priority.value,
+				name: priority.label,
+				mark: { kind: "priority", priority: priority.value },
+			}));
+		case "assignee":
+			return [
+				...context.members.map((member) => ({
+					key: member.accountId,
+					name: member.displayName ?? "Someone",
+					mark: { kind: "assignee", name: member.displayName ?? "" } as const,
+				})),
+				{ key: "", name: "Unassigned", mark: { kind: "assignee", name: "" } },
+			];
+		case "project":
+			return [
+				...context.projects.map((project) => ({
+					key: project.id,
+					name: project.name,
+					mark: { kind: "project" } as const,
+				})),
+				{ key: "", name: "No project", mark: { kind: "project" } },
+			];
+		case "none":
+			return [{ key: "all", name: "All issues", mark: { kind: "all" } }];
+		default:
+			return context.states.map((state) => ({
+				key: state.id,
+				name: state.name,
+				mark: { kind: "state", state },
+			}));
+	}
 }
 
-function assigneeColumns(issues: Issue[], context: GroupingContext): IssueColumn[] {
-	const named = context.members.map((member) => ({
-		key: member.accountId,
-		name: member.displayName ?? "Someone",
-		mark: { kind: "assignee", name: member.displayName ?? "" } as const,
-		issues: issues.filter((issue) => issue.assigneeAccountId === member.accountId),
-		total: 0,
-	}));
+function slotFrom(grouping: Grouping, key: string, issue: Issue | undefined): ColumnSlot {
+	if (!issue) return { key, name: unknownNames[grouping], mark: { kind: "unknown" } };
 
-	return [
-		...named,
-		{
-			key: "",
-			name: "Unassigned",
-			mark: { kind: "assignee", name: "" } as const,
-			issues: issues.filter((issue) => !issue.assigneeAccountId),
-			total: 0,
-		},
-	];
+	switch (grouping) {
+		case "priority":
+			return {
+				key,
+				name: priorities.find((priority) => priority.value === key)?.label ?? unknownNames[grouping],
+				mark: { kind: "priority", priority: issue.priority },
+			};
+		case "project":
+			return {
+				key,
+				name: issue.projectName || unknownNames[grouping],
+				mark: { kind: "project" },
+			};
+		case "state":
+			return { key, name: issue.state.name, mark: { kind: "state", state: statedBy(issue) } };
+		default:
+			return { key, name: unknownNames[grouping], mark: { kind: "unknown" } };
+	}
 }
 
-function projectColumns(issues: Issue[], context: GroupingContext): IssueColumn[] {
-	const named = context.projects.map((project) => ({
-		key: project.id,
-		name: project.name,
-		mark: { kind: "project" } as const,
-		issues: issues.filter((issue) => issue.projectId === project.id),
-		total: 0,
-	}));
+function slotted(
+	grouping: Grouping,
+	context: GroupingContext,
+	issues: Issue[],
+	tallies: IssueGroupTally[] | undefined
+): ColumnSlot[] {
+	const slots = slotsFor(grouping, context);
+	const known = new Set(slots.map((slot) => slot.key));
+	const first = new Map<string, Issue>();
 
-	return [
-		...named,
-		{
-			key: "",
-			name: "No project",
-			mark: { kind: "project" } as const,
-			issues: issues.filter((issue) => !issue.projectId),
-			total: 0,
-		},
-	];
+	for (const issue of issues) {
+		const key = keyOf(grouping, issue);
+		if (!first.has(key)) first.set(key, issue);
+	}
+
+	const missing = [...new Set([...(tallies ?? []).map((tally) => tally.key), ...first.keys()])]
+		.filter((key) => !known.has(key))
+		.map((key) => slotFrom(grouping, key, first.get(key)));
+
+	if (grouping === "state") {
+		missing.sort((a, b) => positionOf(a) - positionOf(b) || a.name.localeCompare(b.name));
+	}
+
+	return [...slots, ...missing];
+}
+
+function positionOf(slot: ColumnSlot): number {
+	return slot.mark.kind === "state" ? slot.mark.state.position : Number.MAX_SAFE_INTEGER;
 }
 
 export function columnsFor(
-	issues: Issue[],
+	source: ColumnSource,
 	grouping: Grouping,
 	context: GroupingContext,
-	tallies: IssueGroupTally[] | undefined,
+	pages: Record<string, ColumnPage>,
 	options: { showEmpty?: boolean } = {}
 ): IssueColumn[] {
-	const columns: IssueColumn[] =
-		grouping === "priority"
-			? priorityColumns(issues)
-			: grouping === "assignee"
-				? assigneeColumns(issues, context)
-				: grouping === "project"
-					? projectColumns(issues, context)
-					: grouping === "none"
-						? [{ key: "all", name: "All issues", mark: { kind: "all" }, issues, total: 0 }]
-						: stateColumns(issues, context);
+	const held = new Map<string, Issue[]>();
 
-	const placed = new Set(columns.flatMap((column) => column.issues.map((issue) => issue.id)));
-	const loose = issues.filter((issue) => !placed.has(issue.id));
+	for (const issue of source.issues) {
+		const key = keyOf(grouping, issue);
 
-	if (loose.length > 0 && grouping === "state") {
-		for (const issue of loose) {
-			const existing = columns.find((column) => column.key === issue.state.id);
-
-			if (existing) {
-				existing.issues.push(issue);
-
-				continue;
-			}
-
-			columns.push({
-				key: issue.state.id,
-				name: issue.state.name,
-				mark: {
-					kind: "state",
-					state: { ...issue.state, teamId: issue.teamId, isDefault: false, isCompletion: false },
-				},
-				issues: [issue],
-				total: 0,
-			});
-		}
+		held.set(key, [...(held.get(key) ?? []), issue]);
 	}
 
-	const counted = columns.map((column) => ({
-		...column,
-		total: tallyOf(tallies, column.key) ?? column.issues.length,
-	}));
+	const columns = slotted(grouping, context, source.issues, source.tallies).map((slot) => {
+		const page = pageOf(pages, slot.key);
+		const issues = deduped([...(held.get(slot.key) ?? []), ...(page?.issues ?? [])]);
+		const counted =
+			grouping === "none" ? tallyTotal(source.tallies) : tallyOf(source.tallies, slot.key);
+		const total = counted ?? issues.length;
+		const cursor =
+			page?.cursor ??
+			(grouping === "none"
+				? source.nextCursor
+				: source.tallies?.find((tally) => tally.key === slot.key)?.nextCursor);
 
-	return options.showEmpty ? counted : counted.filter((column) => column.issues.length > 0);
+		return {
+			...slot,
+			issues,
+			total,
+			load: loadFor(issues.length, total, cursor, page?.paging ?? { kind: "idle" }),
+		};
+	});
+
+	return options.showEmpty
+		? columns
+		: columns.filter((column) => column.total > 0 || column.issues.length > 0);
+}
+
+function deduped(issues: Issue[]): Issue[] {
+	const seen = new Set<string>();
+
+	return issues.filter((issue) => {
+		if (seen.has(issue.id)) return false;
+
+		seen.add(issue.id);
+
+		return true;
+	});
+}
+
+export function boardFor(
+	source: ColumnSource | undefined,
+	grouping: Grouping,
+	context: GroupingContext,
+	pages: Record<string, ColumnPage>,
+	scope: { name: string; teams: number },
+	options: { showEmpty?: boolean } = {}
+): IssueBoard {
+	if (scope.teams === 0) return { kind: "no_teams" };
+
+	if (!source) return { kind: "unavailable" };
+
+	if (source.issues.length === 0 && (tallyTotal(source.tallies) ?? 0) === 0) {
+		return { kind: "empty", team: scope.name };
+	}
+
+	return { kind: "ready", columns: columnsFor(source, grouping, context, pages, options) };
 }
 
 export function totalIssues(progress: IssueProgress): number {

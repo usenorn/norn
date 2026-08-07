@@ -20,6 +20,8 @@
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
+	import { issuePageSize } from "$lib/issues/filter";
+	import type { Issue } from "$lib/issues/issues";
 	import {
 		groupByCategory,
 		healthLabel,
@@ -54,11 +56,58 @@
 
 	const ready = $derived(detail.kind === "ready" ? detail : null);
 	const project = $derived(ready?.project ?? null);
-	const groups = $derived(groupByCategory(ready?.issues ?? []));
+
+	type Loaded = { source: Issue[]; issues: Issue[]; nextCursor: string | undefined };
+	type Paging = { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
+
+	let accumulated = $state.raw<Loaded | null>(null);
+	let localPaging = $state<Paging>({ kind: "idle" });
+
+	const base = $derived(ready?.issues ?? []);
+	const loaded = $derived(
+		accumulated && accumulated.source === base ? accumulated.issues : base
+	);
+	const nextCursor = $derived(
+		accumulated && accumulated.source === base ? accumulated.nextCursor : ready?.nextCursor
+	);
+	const paging = $derived<Paging>(preview?.paging ?? localPaging);
+	const groups = $derived(groupByCategory(loaded));
+
 	const members = $derived(ready?.members ?? []);
 	const latest = $derived(ready?.updates[0] ?? null);
 	const earlier = $derived(ready?.updates.slice(1) ?? []);
 	const posting = $derived(page.url.searchParams.has("status"));
+
+	async function loadMore() {
+		if (!nextCursor || !project) return;
+
+		const source = base;
+		localPaging = { kind: "loading" };
+
+		try {
+			const { data: next, error } = await api.GET("/workspaces/{workspaceId}/issues", {
+				params: {
+					path: { workspaceId: data.workspace.id },
+					query: { projectId: project.id, limit: issuePageSize, cursor: nextCursor },
+				},
+			});
+
+			if (error || !next) {
+				localPaging = { kind: "unavailable" };
+
+				return;
+			}
+
+			accumulated = {
+				source,
+				issues: [...loaded, ...next.issues],
+				nextCursor: next.nextCursor,
+			};
+			localPaging = { kind: "idle" };
+		} catch {
+			localPaging = { kind: "unavailable" };
+		}
+	}
 
 	let health = $state<ProjectHealth>("on_track");
 	let body = $state("");
@@ -596,6 +645,26 @@
 								</ul>
 							</div>
 						{/each}
+					{/if}
+
+					{#if nextCursor || paging.kind === "unavailable"}
+						<div class="flex flex-col items-start gap-2">
+							{#if paging.kind === "unavailable"}
+								<p role="status" class="text-sm text-muted-foreground">
+									We could not load any more. Nothing changed &mdash; try again.
+								</p>
+							{/if}
+							{#if nextCursor}
+								<Button
+									variant="secondary"
+									size="sm"
+									onclick={loadMore}
+									disabled={paging.kind === "loading"}
+								>
+									{paging.kind === "loading" ? "Loading" : "Load more"}
+								</Button>
+							{/if}
+						</div>
 					{/if}
 				</section>
 

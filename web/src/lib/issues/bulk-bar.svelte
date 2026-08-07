@@ -75,7 +75,13 @@
 
 	<PropertyPicker options={stateOptions} placeholder="Set status…" onpick={onstate}>
 		{#snippet trigger(props)}
-			<Button {...props} variant="outline" size="sm" disabled={working} class={barButton}>
+			<Button
+				{...props}
+				variant="outline"
+				size="sm"
+				disabled={working || stateOptions.length === 0}
+				class={barButton}
+			>
 				Set status
 			</Button>
 		{/snippet}

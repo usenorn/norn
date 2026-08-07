@@ -391,8 +391,14 @@ func (g IssueGroupBy) Overlaps() bool {
 }
 
 type IssueGroupTally struct {
+	Key        string
+	Issues     int
+	NextCursor string
+}
+
+type IssueGroupSlice struct {
 	Key    string
-	Issues int
+	Issues []Issue
 }
 
 type IssueQueryCursor struct {

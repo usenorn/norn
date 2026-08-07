@@ -9,7 +9,10 @@
 	import TaskRow from "$lib/components/norn/task-row.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { workspacePath } from "$lib/workspace/navigation";
+	import { bucketsOf } from "$lib/tasks/tasks";
 	import type { TaskBucket } from "$lib/tasks/types";
+	import { api } from "$lib/api";
+	import type { Issue } from "$lib/issues/issues";
 	import { myTasksPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -21,8 +24,53 @@
 			: undefined
 	);
 
-	const buckets = $derived<TaskBucket[]>(preview?.buckets ?? data.buckets);
+	type Loaded = { source: Issue[]; issues: Issue[]; nextCursor: string | undefined };
+	type Paging = { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
+
+	let accumulated = $state.raw<Loaded | null>(null);
+	let localPaging = $state<Paging>({ kind: "idle" });
+
+	const loaded = $derived(
+		accumulated && accumulated.source === data.issues ? accumulated.issues : data.issues
+	);
+	const nextCursor = $derived(
+		accumulated && accumulated.source === data.issues ? accumulated.nextCursor : data.nextCursor
+	);
+	const paging = $derived<Paging>(preview?.paging ?? localPaging);
+
+	const buckets = $derived<TaskBucket[]>(
+		preview?.buckets ?? bucketsOf(loaded, data.assignee, data.now, data.workspace.timezone)
+	);
 	const total = $derived(buckets.reduce((sum, bucket) => sum + bucket.tasks.length, 0));
+
+	async function loadMore() {
+		if (!nextCursor) return;
+
+		const source = data.issues;
+		localPaging = { kind: "loading" };
+
+		try {
+			const { data: next, error } = await api.POST("/workspaces/{workspaceId}/issues/query", {
+				params: { path: { workspaceId: data.workspace.id } },
+				body: { ...data.query, cursor: nextCursor },
+			});
+
+			if (error || !next) {
+				localPaging = { kind: "unavailable" };
+
+				return;
+			}
+
+			accumulated = {
+				source,
+				issues: [...loaded, ...next.issues],
+				nextCursor: next.nextCursor,
+			};
+			localPaging = { kind: "idle" };
+		} catch {
+			localPaging = { kind: "unavailable" };
+		}
+	}
 
 	let cursor = $state(0);
 	const flat = $derived(buckets.flatMap((bucket) => bucket.tasks));
@@ -111,6 +159,26 @@
 					{/each}
 				</section>
 			{/each}
+		{/if}
+
+		{#if nextCursor || paging.kind === "unavailable"}
+			<div class="flex flex-col items-center gap-2 border-t border-line-subtle px-4 py-4">
+				{#if paging.kind === "unavailable"}
+					<p role="status" class="text-sm text-muted-foreground">
+						We could not load any more. Nothing changed &mdash; try again.
+					</p>
+				{/if}
+				{#if nextCursor}
+					<Button
+						variant="secondary"
+						size="sm"
+						onclick={loadMore}
+						disabled={paging.kind === "loading"}
+					>
+						{paging.kind === "loading" ? "Loading" : "Load more"}
+					</Button>
+				{/if}
+			</div>
 		{/if}
 	</div>
 

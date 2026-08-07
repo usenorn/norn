@@ -77,6 +77,7 @@ export type ProjectDetail =
 			members: ProjectMember[];
 			updates: ProjectStatusUpdate[];
 			issues: Issue[];
+			nextCursor: string | undefined;
 			activity: ActivityFeed;
 	  };
 

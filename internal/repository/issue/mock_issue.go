@@ -133,6 +133,21 @@ func (mr *MockIssueMockRecorder) ListVisible(ctx, scope, page any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVisible", reflect.TypeOf((*MockIssue)(nil).ListVisible), ctx, scope, page)
 }
 
+// ListVisibleByGroup mocks base method.
+func (m *MockIssue) ListVisibleByGroup(ctx context.Context, scope entity.TeamScope, page entity.IssuePage, groupBy entity.IssueGroupBy) ([]entity.IssueGroupSlice, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListVisibleByGroup", ctx, scope, page, groupBy)
+	ret0, _ := ret[0].([]entity.IssueGroupSlice)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListVisibleByGroup indicates an expected call of ListVisibleByGroup.
+func (mr *MockIssueMockRecorder) ListVisibleByGroup(ctx, scope, page, groupBy any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVisibleByGroup", reflect.TypeOf((*MockIssue)(nil).ListVisibleByGroup), ctx, scope, page, groupBy)
+}
+
 // LockByID mocks base method.
 func (m *MockIssue) LockByID(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) (entity.Issue, error) {
 	m.ctrl.T.Helper()

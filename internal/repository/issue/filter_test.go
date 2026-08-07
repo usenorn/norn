@@ -337,5 +337,103 @@ func TestEveryCompiledStatementDecidesAboutTriage(t *testing.T) {
 		if !strings.Contains(statement, decided) {
 			t.Errorf("the %s tally counts issues still waiting in triage", group)
 		}
+
+		ranked, _ := (&issueRepository{}).groupPageStatement(
+			scopeOf(uuid.New()),
+			entity.IssuePage{Limit: 200, PerGroup: 25},
+			groupKeys[group],
+			group,
+		)
+
+		if !strings.Contains(ranked, decided) {
+			t.Errorf("the %s grouped page lists issues still waiting in triage", group)
+		}
+	}
+}
+
+func groupPageOf(group entity.IssueGroupBy, page entity.IssuePage) (string, []any) {
+	return (&issueRepository{}).groupPageStatement(scopeOf(uuid.New()), page, groupKeys[group], group)
+}
+
+func TestAGroupedPageRanksInsideEachGroupAndNotAcrossThem(t *testing.T) {
+	for _, group := range entity.IssueGroupBys() {
+		t.Run(string(group), func(t *testing.T) {
+			statement, args := groupPageOf(group, entity.IssuePage{Limit: 200, PerGroup: 25})
+
+			partition := "row_number() OVER (PARTITION BY " + groupKeys[group] + " ORDER BY "
+			if !strings.Contains(statement, partition) {
+				t.Fatalf(
+					"the %s page does not rank within each group:\n%s\nRanking across the whole "+
+						"result is the bug: the board then shows a column counting work it never "+
+						"received a row for.",
+					group, statement,
+				)
+			}
+
+			if !strings.Contains(statement, "i.team_id = ANY(") {
+				t.Fatalf("the %s grouped page is unscoped:\n%s", group, statement)
+			}
+
+			bounds := args[len(args)-2:]
+			if bounds[0] != 25 || bounds[1] != 200 {
+				t.Fatalf(
+					"the %s grouped page bound %v as its last arguments, want the per-group and "+
+						"total bounds rather than values written into the statement",
+					group, bounds,
+				)
+			}
+		})
+	}
+}
+
+func TestTheGroupedWindowOrdersByTheSameKeysAsThePage(t *testing.T) {
+	sort := []entity.IssueSort{{Field: entity.IssueSortFieldPriority}}
+	page := entity.IssuePage{Limit: 200, PerGroup: 25, Sort: sort}
+
+	statement, _ := groupPageOf(entity.IssueGroupByState, page)
+	terms := sortTerms(sort)
+
+	if !strings.Contains(statement, "ORDER BY "+terms+") AS group_position") {
+		t.Fatalf(
+			"the window orders by something other than the requested sort:\n%s\nwant %q",
+			statement, terms,
+		)
+	}
+
+	if !strings.HasSuffix(terms, "i.id ASC") {
+		t.Fatalf(
+			"the window's order is not total (%q), so row_number() is free to rank two "+
+				"equal rows differently on every request and columns change between reloads",
+			terms,
+		)
+	}
+}
+
+func TestAGroupedPageJoinsTheLabelTableWhereItCannotMultiplyTheRow(t *testing.T) {
+	statement, _ := groupPageOf(entity.IssueGroupByLabel, entity.IssuePage{Limit: 200, PerGroup: 25})
+
+	if strings.Count(statement, groupLabelJoin) != 1 {
+		t.Fatalf("the label join appears %d times:\n%s", strings.Count(statement, groupLabelJoin), statement)
+	}
+
+	if strings.Index(statement, groupLabelJoin) > strings.Index(statement, "\n)\nSELECT") {
+		t.Fatalf(
+			"the label join sits outside the ranking query:\n%s\nOut there it multiplies every "+
+				"projected row by the labels the issue carries.",
+			statement,
+		)
+	}
+}
+
+func TestTheGroupBudgetTakesTheDeepestRowsFirst(t *testing.T) {
+	statement, _ := groupPageOf(entity.IssueGroupByAssignee, entity.IssuePage{Limit: 200, PerGroup: 25})
+
+	budget := strings.Index(statement, "ORDER BY r.group_position, r.group_key")
+	if budget < 0 || budget > strings.LastIndex(statement, "LIMIT ") {
+		t.Fatalf(
+			"the total bound is not applied rank by rank:\n%s\nWithout it the first groups eat "+
+				"the whole budget and the rest of the board reports counts against no rows at all.",
+			statement,
+		)
 	}
 }
