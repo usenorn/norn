@@ -66,21 +66,18 @@
 
 	const realtime = provideRealtime();
 
+	const workspaceId = $derived(data.workspace.id);
+
 	$effect(() => {
-		realtime.open(data.workspace.id);
+		realtime.open(workspaceId);
 
 		return () => realtime.close();
 	});
 
 	$effect(() => {
-		const workspaceId = data.workspace.id;
-		const self = data.member.id;
+		const opened = workspaceId;
 
-		return realtime.on((event) => {
-			if (event.actorId === self) return;
-
-			realtime.refetch(...invalidatedBy(event, workspaceId));
-		});
+		return realtime.on((event) => realtime.refetch(...invalidatedBy(event, opened)));
 	});
 
 	$effect(() => {
