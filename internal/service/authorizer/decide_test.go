@@ -252,6 +252,25 @@ func TestAnSSOActorIsAdmittedByTheWorkspaceWhoseProviderSignedItIn(t *testing.T)
 	}
 }
 
+func TestARequestNamingNeitherAWorkspaceNorASubjectIsRefused(t *testing.T) {
+	harness := newDecider(t, &stubEnforcer{allow: true}, entity.MembershipRoleAdmin, entity.AuthEnforcementAny)
+
+	_, err := harness.Decide(actingAs(uuid.New(), entity.SessionAuthMethodPassword), entity.AccessRequest{
+		Resource: entity.ResourceIssue,
+		Action:   entity.ActionManage,
+	})
+
+	var denied entity.AccessDeniedError
+	if !errors.As(err, &denied) {
+		t.Fatalf(
+			"Decide allowed a request that named no workspace and no subject, giving %v. The self "+
+				"check takes a caller-supplied uuid, so one zero value there would otherwise turn a "+
+				"scoped check into an allow-all.",
+			err,
+		)
+	}
+}
+
 func TestAnSSOSessionFromAnotherWorkspaceDoesNotSatisfyThisOne(t *testing.T) {
 	harness := newDecider(t, &stubEnforcer{allow: true}, entity.MembershipRoleAdmin, entity.AuthEnforcementSSO)
 
