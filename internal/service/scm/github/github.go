@@ -58,6 +58,7 @@ func (f *Forge) call(
 	}
 
 	request := forge.Request{
+		Trust:    target.Trust,
 		Provider: entity.SCMProviderGitHub,
 		Method:   method,
 		URL:      address,
@@ -805,4 +806,16 @@ func covers(installed, wanted []string) bool {
 	}
 
 	return true
+}
+
+func (f *Forge) Capabilities() entity.SCMCapabilitySet {
+	return entity.SCMCapabilitySet{
+		entity.CapabilityWebhooks,
+		entity.CapabilityReviews,
+		entity.CapabilityChecks,
+		entity.CapabilityChangedPaths,
+		entity.CapabilityIssues,
+		entity.CapabilityLabels,
+		entity.CapabilityAssignees,
+	}
 }

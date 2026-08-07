@@ -9,6 +9,14 @@ import (
 	"net"
 	"net/http"
 
+	"crypto/sha256"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/hex"
+	"net/netip"
+	"strings"
+	"sync"
+
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/outbound"
@@ -17,8 +25,13 @@ import (
 var ErrResponseTooLarge = errors.New("the forge answered with more than this instance will read")
 
 type Client struct {
-	http  *http.Client
-	limit int64
+	http    *http.Client
+	cfg     config.SourceControl
+	allowed []netip.Prefix
+	limit   int64
+
+	mu      sync.Mutex
+	granted map[string]*http.Client
 }
 
 // New builds a client of its own rather than reusing the webhook one. That client caps a
@@ -36,6 +49,9 @@ func New(cfg config.SourceControl) (*Client, error) {
 	dialer := &net.Dialer{Timeout: cfg.DialTimeout, Control: outbound.Control(allowed)}
 
 	return &Client{
+		cfg:     cfg,
+		allowed: allowed,
+		granted: make(map[string]*http.Client, 2),
 		http: &http.Client{
 			Timeout: cfg.RequestTimeout,
 			Transport: &http.Transport{
@@ -57,6 +73,10 @@ type Request struct {
 	URL      string
 	Header   http.Header
 	Body     []byte
+	// Trust is the exception an administrator granted this one connection. Everything with
+	// no exception uses the instance's ordinary client, so a mistake here can only ever
+	// widen the one connection it belongs to.
+	Trust entity.SCMTrust
 }
 
 type Response struct {
@@ -92,7 +112,16 @@ func (c *Client) Do(ctx context.Context, request Request) (Response, error) {
 		}
 	}
 
-	response, err := c.http.Do(call)
+	caller, err := c.clientFor(request.Trust)
+	if err != nil {
+		return Response{}, entity.SCMDestinationRefusedError{
+			Provider: request.Provider,
+			Reason:   err.Error(),
+			Cause:    err,
+		}
+	}
+
+	response, err := caller.Do(call)
 	if err != nil {
 		// Refused by our own dial guard, so nothing was ever asked of the forge. Reported as
 		// an unreachable repository this reads as "check the token", and somebody goes and
@@ -134,4 +163,85 @@ func (c *Client) Do(ctx context.Context, request Request) (Response, error) {
 
 func (c *Client) read(body io.Reader) ([]byte, error) {
 	return readCapped(body, c.limit)
+}
+
+// clientFor hands back the ordinary client unless this connection was granted something.
+// Building one per call would discard every kept connection and every session ticket, so the
+// few that exist are kept, keyed by exactly what makes them different.
+func (c *Client) clientFor(trust entity.SCMTrust) (*http.Client, error) {
+	if !trust.Custom() {
+		return c.http, nil
+	}
+
+	key := trustKey(trust)
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if held, found := c.granted[key]; found {
+		return held, nil
+	}
+
+	transport, err := c.transportFor(trust)
+	if err != nil {
+		return nil, err
+	}
+
+	built := &http.Client{Timeout: c.cfg.RequestTimeout, Transport: transport}
+	c.granted[key] = built
+
+	return built, nil
+}
+
+func (c *Client) transportFor(trust entity.SCMTrust) (*http.Transport, error) {
+	control := outbound.Control(c.allowed)
+	if trust.AllowPrivateAddress {
+		control = outbound.ControlAllowingPrivate(c.allowed)
+	}
+
+	dialer := &net.Dialer{Timeout: c.cfg.DialTimeout, Control: control}
+
+	transport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		TLSHandshakeTimeout:   c.cfg.DialTimeout,
+		ResponseHeaderTimeout: c.cfg.RequestTimeout,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConnsPerHost:   4,
+	}
+
+	if strings.TrimSpace(trust.CACertificate) == "" {
+		return transport, nil
+	}
+
+	certificates, err := entity.ParseSCMCertificates(trust.CACertificate)
+	if err != nil {
+		return nil, err
+	}
+
+	// The supplied authority is added to the system pool rather than replacing it. A forge
+	// on an internal address may still redirect to, or embed, something signed publicly, and
+	// a pool holding only the private root would refuse it.
+	pool, err := x509.SystemCertPool()
+	if err != nil || pool == nil {
+		pool = x509.NewCertPool()
+	}
+
+	for _, certificate := range certificates {
+		pool.AddCert(certificate)
+	}
+
+	transport.TLSClientConfig = &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}
+
+	return transport, nil
+}
+
+func trustKey(trust entity.SCMTrust) string {
+	sum := sha256.Sum256([]byte(trust.CACertificate))
+
+	if trust.AllowPrivateAddress {
+		return "private:" + hex.EncodeToString(sum[:])
+	}
+
+	return "public:" + hex.EncodeToString(sum[:])
 }

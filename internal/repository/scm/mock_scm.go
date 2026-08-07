@@ -133,17 +133,17 @@ func (mr *MockSCMConnectionMockRecorder) MarkBroken(ctx, connectionID, reason, d
 }
 
 // MarkVerified mocks base method.
-func (m *MockSCMConnection) MarkVerified(ctx context.Context, connectionID uuid.UUID, login string, at time.Time) error {
+func (m *MockSCMConnection) MarkVerified(ctx context.Context, connectionID uuid.UUID, login string, capabilities entity.SCMCapabilitySet, at time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkVerified", ctx, connectionID, login, at)
+	ret := m.ctrl.Call(m, "MarkVerified", ctx, connectionID, login, capabilities, at)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MarkVerified indicates an expected call of MarkVerified.
-func (mr *MockSCMConnectionMockRecorder) MarkVerified(ctx, connectionID, login, at any) *gomock.Call {
+func (mr *MockSCMConnectionMockRecorder) MarkVerified(ctx, connectionID, login, capabilities, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkVerified", reflect.TypeOf((*MockSCMConnection)(nil).MarkVerified), ctx, connectionID, login, at)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkVerified", reflect.TypeOf((*MockSCMConnection)(nil).MarkVerified), ctx, connectionID, login, capabilities, at)
 }
 
 // ReplaceToken mocks base method.

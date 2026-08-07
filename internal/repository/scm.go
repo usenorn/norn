@@ -24,7 +24,7 @@ type SCMConnection interface {
 	Token(ctx context.Context, connectionID uuid.UUID) (string, error)
 	ReplaceToken(ctx context.Context, connectionID uuid.UUID, token, hint, login string, at time.Time) error
 	UpdateLabel(ctx context.Context, connectionID uuid.UUID, label string) (entity.SCMConnection, error)
-	MarkVerified(ctx context.Context, connectionID uuid.UUID, login string, at time.Time) error
+	MarkVerified(ctx context.Context, connectionID uuid.UUID, login string, capabilities entity.SCMCapabilitySet, at time.Time) error
 	MarkBroken(ctx context.Context, connectionID uuid.UUID, reason entity.SCMBrokenReason, detail string, at time.Time) error
 	Delete(ctx context.Context, connectionID uuid.UUID) error
 }
@@ -35,9 +35,10 @@ type SCMRepositoryInput struct {
 }
 
 type SCMRepositorySettings struct {
-	MirrorLabel   string
-	SyncDirection entity.MirrorDirection
-	PollInterval  time.Duration
+	MirrorLabel      string
+	SyncDirection    entity.MirrorDirection
+	WebhooksDisabled bool
+	PollInterval     time.Duration
 }
 
 type SCMRepository interface {

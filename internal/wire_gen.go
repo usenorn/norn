@@ -124,6 +124,7 @@ import (
 	project2 "github.com/usenorn/norn/internal/service/project"
 	savedview2 "github.com/usenorn/norn/internal/service/savedview"
 	scm2 "github.com/usenorn/norn/internal/service/scm"
+	"github.com/usenorn/norn/internal/service/scm/gitea"
 	"github.com/usenorn/norn/internal/service/scm/github"
 	"github.com/usenorn/norn/internal/service/scm/gitlab"
 	search2 "github.com/usenorn/norn/internal/service/search"
@@ -409,7 +410,8 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	}
 	githubForge := github.New(forgeClient, sourceControl)
 	gitlabForge := gitlab.New(forgeClient, sourceControl)
-	forges := scm2.NewForges(githubForge, gitlabForge)
+	giteaForge := gitea.New(forgeClient, sourceControl)
+	forges := scm2.NewForges(githubForge, gitlabForge, giteaForge)
 	serviceSourceControl := scm2.NewConnections(scmConnection, scmRepository, scmRoute, scmTransitionRule, scmTeamSetting, scmIdentity, mirrorConflict, repositoryMembership, scmDelivery, codeLink, issueMirror, workflowState, repositoryAccount, repositoryIssue, repositoryActivity, forges, serviceAuthorizer, serviceAudit, postgresClient, app)
 	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, issueComments, serviceAttachments, bulkOperations, workflowStates, labels, apiTokens, mcpConnections, serviceWebhooks, webhookDeliveries, agents, sessions, ssoConnections, cycles, projects, savedViews, triages, notifications, searches, auditLog, directories, serviceLicensing, serviceImports, serviceSourceControl, app, instance, password, configSession, configImports)
 	callback := sso.NewCallback(ssoConnections, configSession)
@@ -736,7 +738,8 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	}
 	githubForge := github.New(forgeClient, sourceControl)
 	gitlabForge := gitlab.New(forgeClient, sourceControl)
-	forges := scm2.NewForges(githubForge, gitlabForge)
+	giteaForge := gitea.New(forgeClient, sourceControl)
+	forges := scm2.NewForges(githubForge, gitlabForge, giteaForge)
 	sourceControlSync := scm2.NewSync(scmConnection, scmRepository, scmRoute, scmTransitionRule, scmTeamSetting, scmIdentity, mirrorConflict, repositoryLabel, scmDelivery, codeLink, issueMirror, workflowState, repositoryIssue, repositoryActivity, repositoryMembership, forges, serviceAuthorizer, issues, issueComments, jobProducer, client, sourceControl, app)
 	scmDeliveryHandler := job.NewSCMDeliveryHandler(sourceControlSync)
 	scmReconcileHandler := job.NewSCMReconcileHandler(sourceControlSync)
@@ -856,7 +859,7 @@ func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, mcpclient.Set, mcpconnection.Set, mcptoken.Set, mcpauthstate.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, mcpconnection2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitlab.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, auditexport.Set, scim.Set, sourcecontrol.Set, mcpauth.Set, mcpserver.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, oidcprovider2.Set, mcpclient.Set, mcpconnection.Set, mcptoken.Set, mcpauthstate.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, mcpconnection2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitea.Set, gitlab.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, auditexport.Set, scim.Set, sourcecontrol.Set, mcpauth.Set, mcpserver.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

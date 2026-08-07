@@ -9,7 +9,9 @@
 	import * as Alert from "$lib/components/ui/alert";
 	import { Button } from "$lib/components/ui/button";
 	import * as Form from "$lib/components/ui/form";
+	import { Checkbox } from "$lib/components/ui/checkbox";
 	import { Input } from "$lib/components/ui/input";
+	import { Textarea } from "$lib/components/ui/textarea";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import {
 		brokenLabel,
@@ -17,6 +19,7 @@
 		detailOf,
 		failureMessage,
 		providerLabel,
+		requiresAddress,
 		sourceControlConnectionPath,
 		sourceControlFailure,
 		sourceControlIdentitiesPath,

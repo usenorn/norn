@@ -2550,6 +2550,39 @@ func (e SourceControlBrokenReason) Valid() bool {
 	}
 }
 
+// Defines values for SourceControlCapability.
+const (
+	Assignees    SourceControlCapability = "assignees"
+	ChangedPaths SourceControlCapability = "changed_paths"
+	Checks       SourceControlCapability = "checks"
+	Issues       SourceControlCapability = "issues"
+	Labels       SourceControlCapability = "labels"
+	Reviews      SourceControlCapability = "reviews"
+	Webhooks     SourceControlCapability = "webhooks"
+)
+
+// Valid indicates whether the value is a known member of the SourceControlCapability enum.
+func (e SourceControlCapability) Valid() bool {
+	switch e {
+	case Assignees:
+		return true
+	case ChangedPaths:
+		return true
+	case Checks:
+		return true
+	case Issues:
+		return true
+	case Labels:
+		return true
+	case Reviews:
+		return true
+	case Webhooks:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SourceControlConflictProblemCode.
 const (
 	SourceControlAlreadyConnected      SourceControlConflictProblemCode = "source_control_already_connected"
@@ -2600,6 +2633,7 @@ func (e SourceControlDeliveryOutcome) Valid() bool {
 
 // Defines values for SourceControlProvider.
 const (
+	Gitea  SourceControlProvider = "gitea"
 	Github SourceControlProvider = "github"
 	Gitlab SourceControlProvider = "gitlab"
 )
@@ -2607,6 +2641,8 @@ const (
 // Valid indicates whether the value is a known member of the SourceControlProvider enum.
 func (e SourceControlProvider) Valid() bool {
 	switch e {
+	case Gitea:
+		return true
 	case Github:
 		return true
 	case Gitlab:
@@ -3858,17 +3894,19 @@ type CodeLink struct {
 	BaseBranch *string `json:"baseBranch,omitempty"`
 
 	// Checks What the platform's own checks say. Norn reflects this and runs nothing; a suite that has not finished is pending rather than passing, because reading green off an unfinished run is worse than saying nothing.
-	Checks     *CodeChecks           `json:"checks,omitempty"`
-	ClosedAt   *time.Time            `json:"closedAt,omitempty"`
-	Connected  bool                  `json:"connected"`
-	CreatedAt  time.Time             `json:"createdAt"`
-	DetectedIn *string               `json:"detectedIn,omitempty"`
-	ExternalId string                `json:"externalId"`
-	HeadBranch *string               `json:"headBranch,omitempty"`
-	Id         openapi_types.UUID    `json:"id"`
-	Kind       CodeLinkKind          `json:"kind"`
-	MergedAt   *time.Time            `json:"mergedAt,omitempty"`
-	Number     *int32                `json:"number,omitempty"`
+	Checks     *CodeChecks        `json:"checks,omitempty"`
+	ClosedAt   *time.Time         `json:"closedAt,omitempty"`
+	Connected  bool               `json:"connected"`
+	CreatedAt  time.Time          `json:"createdAt"`
+	DetectedIn *string            `json:"detectedIn,omitempty"`
+	ExternalId string             `json:"externalId"`
+	HeadBranch *string            `json:"headBranch,omitempty"`
+	Id         openapi_types.UUID `json:"id"`
+	Kind       CodeLinkKind       `json:"kind"`
+	MergedAt   *time.Time         `json:"mergedAt,omitempty"`
+	Number     *int32             `json:"number,omitempty"`
+
+	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
 	Provider   SourceControlProvider `json:"provider"`
 	Repository string                `json:"repository"`
 	Resolving  *bool                 `json:"resolving,omitempty"`
@@ -3960,10 +3998,14 @@ type ConfirmSignUpRequest struct {
 	Token string `json:"token"`
 }
 
-// ConnectSourceControlRequest defines model for ConnectSourceControlRequest.
+// ConnectSourceControlRequest allowPrivateAddress is a deliberate exception an administrator grants this one connection so it may reach a forge on their own network. It is not an instance-wide relaxation, and it never opens loopback or the link-local range a cloud provider answers on.
 type ConnectSourceControlRequest struct {
-	BaseUrl  *string               `json:"baseUrl,omitempty"`
-	Label    *string               `json:"label,omitempty"`
+	AllowPrivateAddress *bool   `json:"allowPrivateAddress,omitempty"`
+	BaseUrl             *string `json:"baseUrl,omitempty"`
+	CaCertificate       *string `json:"caCertificate,omitempty"`
+	Label               *string `json:"label,omitempty"`
+
+	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
 	Provider SourceControlProvider `json:"provider"`
 	Token    *string               `json:"token,omitempty"`
 }
@@ -4814,11 +4856,13 @@ type IssueMirror struct {
 	ExternalNumber int32                 `json:"externalNumber"`
 	Id             openapi_types.UUID    `json:"id"`
 	Origin         IssueMirrorOrigin     `json:"origin"`
-	Provider       SourceControlProvider `json:"provider"`
-	PulledAt       *time.Time            `json:"pulledAt,omitempty"`
-	PushedAt       *time.Time            `json:"pushedAt,omitempty"`
-	Repository     string                `json:"repository"`
-	Url            string                `json:"url"`
+
+	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
+	Provider   SourceControlProvider `json:"provider"`
+	PulledAt   *time.Time            `json:"pulledAt,omitempty"`
+	PushedAt   *time.Time            `json:"pushedAt,omitempty"`
+	Repository string                `json:"repository"`
+	Url        string                `json:"url"`
 }
 
 // IssueMirrorDirection defines model for IssueMirror.Direction.
@@ -5049,9 +5093,11 @@ type MailUnavailableProblemCode string
 
 // MapSCMIdentityRequest defines model for MapSCMIdentityRequest.
 type MapSCMIdentityRequest struct {
-	AccountId openapi_types.UUID    `json:"accountId"`
-	Login     string                `json:"login"`
-	Provider  SourceControlProvider `json:"provider"`
+	AccountId openapi_types.UUID `json:"accountId"`
+	Login     string             `json:"login"`
+
+	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
+	Provider SourceControlProvider `json:"provider"`
 }
 
 // MemberPage defines model for MemberPage.
@@ -5490,11 +5536,13 @@ type ReviewVerdict string
 
 // SCMIdentity Who somebody is on a forge. It is stated by an administrator rather than discovered: a handle that resembles a name is not evidence, and acting on the guess puts work on a stranger.
 type SCMIdentity struct {
-	AccountId   openapi_types.UUID    `json:"accountId"`
-	AccountName *string               `json:"accountName,omitempty"`
-	Id          openapi_types.UUID    `json:"id"`
-	Login       string                `json:"login"`
-	Provider    SourceControlProvider `json:"provider"`
+	AccountId   openapi_types.UUID `json:"accountId"`
+	AccountName *string            `json:"accountName,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Login       string             `json:"login"`
+
+	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
+	Provider SourceControlProvider `json:"provider"`
 }
 
 // SamlAttributeMapping defines model for SamlAttributeMapping.
@@ -5787,6 +5835,9 @@ type SnoozeNotificationRequest struct {
 // SourceControlBrokenReason defines model for SourceControlBrokenReason.
 type SourceControlBrokenReason string
 
+// SourceControlCapability defines model for SourceControlCapability.
+type SourceControlCapability string
+
 // SourceControlConflictProblem defines model for SourceControlConflictProblem.
 type SourceControlConflictProblem struct {
 	Code     SourceControlConflictProblemCode `json:"code"`
@@ -5803,21 +5854,27 @@ type SourceControlConflictProblemCode string
 
 // SourceControlConnection One credential against one forge address. A token already reaches every repository its owner can see, so repositories hang off the connection rather than each carrying its own copy of the secret. The token is never returned; tokenSet says whether one is held and tokenHint carries its last few characters so a person can tell which is installed.
 type SourceControlConnection struct {
-	BaseUrl         *string                    `json:"baseUrl,omitempty"`
-	BrokenAt        *time.Time                 `json:"brokenAt,omitempty"`
-	BrokenDetail    *string                    `json:"brokenDetail,omitempty"`
-	BrokenReason    *SourceControlBrokenReason `json:"brokenReason,omitempty"`
-	CreatedAt       time.Time                  `json:"createdAt"`
-	Id              openapi_types.UUID         `json:"id"`
-	IdentityLogin   *string                    `json:"identityLogin,omitempty"`
-	Label           *string                    `json:"label,omitempty"`
-	Provider        SourceControlProvider      `json:"provider"`
-	RepositoryCount *int32                     `json:"repositoryCount,omitempty"`
-	Status          SourceControlStatus        `json:"status"`
-	TokenHint       string                     `json:"tokenHint"`
-	TokenSet        bool                       `json:"tokenSet"`
-	UpdatedAt       time.Time                  `json:"updatedAt"`
-	VerifiedAt      *time.Time                 `json:"verifiedAt,omitempty"`
+	AllowPrivateAddress *bool                      `json:"allowPrivateAddress,omitempty"`
+	BaseUrl             *string                    `json:"baseUrl,omitempty"`
+	BrokenAt            *time.Time                 `json:"brokenAt,omitempty"`
+	BrokenDetail        *string                    `json:"brokenDetail,omitempty"`
+	BrokenReason        *SourceControlBrokenReason `json:"brokenReason,omitempty"`
+	CaCertificateSet    *bool                      `json:"caCertificateSet,omitempty"`
+	Capabilities        *[]SourceControlCapability `json:"capabilities,omitempty"`
+	CreatedAt           time.Time                  `json:"createdAt"`
+	Id                  openapi_types.UUID         `json:"id"`
+	IdentityLogin       *string                    `json:"identityLogin,omitempty"`
+	Label               *string                    `json:"label,omitempty"`
+	MissingCapabilities *[]SourceControlCapability `json:"missingCapabilities,omitempty"`
+
+	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
+	Provider        SourceControlProvider `json:"provider"`
+	RepositoryCount *int32                `json:"repositoryCount,omitempty"`
+	Status          SourceControlStatus   `json:"status"`
+	TokenHint       string                `json:"tokenHint"`
+	TokenSet        bool                  `json:"tokenSet"`
+	UpdatedAt       time.Time             `json:"updatedAt"`
+	VerifiedAt      *time.Time            `json:"verifiedAt,omitempty"`
 }
 
 // SourceControlDelivery One thing the platform sent. outcome is the difference between "a link was made" and "there was nothing to make", which is the question anybody asks when a link did not appear; detail says which, in words.
@@ -5836,7 +5893,7 @@ type SourceControlDelivery struct {
 // SourceControlDeliveryOutcome defines model for SourceControlDeliveryOutcome.
 type SourceControlDeliveryOutcome string
 
-// SourceControlProvider defines model for SourceControlProvider.
+// SourceControlProvider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
 type SourceControlProvider string
 
 // SourceControlRefusedProblem defines model for SourceControlRefusedProblem.
@@ -5855,24 +5912,27 @@ type SourceControlRefusedProblemCode string
 
 // SourceControlRepository One repository reached through a connection. pollIntervalSeconds is per repository because the sweep exists for the one whose webhook never arrives, and hookInstalled is false when the token could not install it — the sweep retries, and until it succeeds the address and secret below are what a person installs by hand.
 type SourceControlRepository struct {
-	ConnectionId        openapi_types.UUID    `json:"connectionId"`
-	CreatedAt           time.Time             `json:"createdAt"`
-	DefaultBranch       *string               `json:"defaultBranch,omitempty"`
-	FullName            string                `json:"fullName"`
-	HookInstalled       bool                  `json:"hookInstalled"`
-	Id                  openapi_types.UUID    `json:"id"`
-	LastSeenAt          *time.Time            `json:"lastSeenAt,omitempty"`
-	MirrorLabel         string                `json:"mirrorLabel"`
-	PollIntervalSeconds *int32                `json:"pollIntervalSeconds,omitempty"`
-	Provider            SourceControlProvider `json:"provider"`
-	ReconcileAfter      *time.Time            `json:"reconcileAfter,omitempty"`
-	ReconciledAt        *time.Time            `json:"reconciledAt,omitempty"`
-	RouteCount          *int32                `json:"routeCount,omitempty"`
+	ConnectionId        openapi_types.UUID `json:"connectionId"`
+	CreatedAt           time.Time          `json:"createdAt"`
+	DefaultBranch       *string            `json:"defaultBranch,omitempty"`
+	FullName            string             `json:"fullName"`
+	HookInstalled       bool               `json:"hookInstalled"`
+	Id                  openapi_types.UUID `json:"id"`
+	LastSeenAt          *time.Time         `json:"lastSeenAt,omitempty"`
+	MirrorLabel         string             `json:"mirrorLabel"`
+	PollIntervalSeconds *int32             `json:"pollIntervalSeconds,omitempty"`
+
+	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
+	Provider       SourceControlProvider `json:"provider"`
+	ReconcileAfter *time.Time            `json:"reconcileAfter,omitempty"`
+	ReconciledAt   *time.Time            `json:"reconciledAt,omitempty"`
+	RouteCount     *int32                `json:"routeCount,omitempty"`
 
 	// SyncDirection Which way work may flow for a repository. A repository somebody set to read-only is never written to, however many pairings it holds.
-	SyncDirection *MirrorDirection `json:"syncDirection,omitempty"`
-	UpdatedAt     time.Time        `json:"updatedAt"`
-	Url           *string          `json:"url,omitempty"`
+	SyncDirection    *MirrorDirection `json:"syncDirection,omitempty"`
+	UpdatedAt        time.Time        `json:"updatedAt"`
+	Url              *string          `json:"url,omitempty"`
+	WebhooksDisabled *bool            `json:"webhooksDisabled,omitempty"`
 }
 
 // SourceControlRoute Sends the changes under one path to one team. Matching is by longest prefix, and a route whose prefix is empty is the repository's default rather than a separate flag that could disagree with it.
@@ -6120,7 +6180,8 @@ type UpdateSourceControlRepositoryRequest struct {
 	PollIntervalSeconds *int32  `json:"pollIntervalSeconds,omitempty"`
 
 	// SyncDirection Which way work may flow for a repository. A repository somebody set to read-only is never written to, however many pairings it holds.
-	SyncDirection *MirrorDirection `json:"syncDirection,omitempty"`
+	SyncDirection    *MirrorDirection `json:"syncDirection,omitempty"`
+	WebhooksDisabled *bool            `json:"webhooksDisabled,omitempty"`
 }
 
 // UpdateSourceControlRequest defines model for UpdateSourceControlRequest.

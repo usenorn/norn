@@ -132,6 +132,9 @@ type ForgeHookRequest struct {
 type Forge interface {
 	Provider() entity.SCMProvider
 	Endpoint() string
+	// Capabilities is what this target can do. Forges differ, and a connection that quietly
+	// does nothing is worse than one that names the half it cannot offer.
+	Capabilities() entity.SCMCapabilitySet
 
 	Verify(secret string, header http.Header, body []byte) (entity.SCMDelivery, error)
 	Translate(delivery entity.SCMDelivery) ([]ForgeEvent, error)
@@ -173,6 +176,10 @@ type ConnectSourceControlInput struct {
 	BaseURL     string
 	Label       string
 	Token       string
+	// AllowPrivateAddress is the exception an administrator grants this one connection so it
+	// may reach a forge on their own network. It is never an instance-wide relaxation.
+	AllowPrivateAddress bool
+	CACertificate       string
 }
 
 type UpdateConnectionInput struct {
@@ -197,9 +204,10 @@ type ConnectedRepository struct {
 }
 
 type UpdateRepositoryInput struct {
-	MirrorLabel   string
-	SyncDirection entity.MirrorDirection
-	PollInterval  time.Duration
+	MirrorLabel      string
+	SyncDirection    entity.MirrorDirection
+	WebhooksDisabled *bool
+	PollInterval     time.Duration
 }
 
 type MapSCMIdentityInput struct {

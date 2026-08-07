@@ -48,7 +48,7 @@ func TestTheGuardRefusesEveryAddressThatCouldReachInside(t *testing.T) {
 			t.Fatalf("parse %s: %v", address, err)
 		}
 
-		if permitted(parsed, nil) {
+		if permitted(parsed, nil, false) {
 			t.Errorf(
 				"%s is reachable. A destination on it lets anyone who can register a webhook use "+
 					"this instance to probe the network it sits in, which is the whole reason the "+
@@ -72,7 +72,7 @@ func TestTheGuardPermitsOrdinaryPublicAddresses(t *testing.T) {
 			t.Fatalf("parse %s: %v", address, err)
 		}
 
-		if !permitted(parsed, nil) {
+		if !permitted(parsed, nil, false) {
 			t.Errorf("%s was refused, so no ordinary receiver could be reached", address)
 		}
 	}
@@ -100,10 +100,10 @@ func TestAnOperatorAllowlistReopensExactlyWhatItNames(t *testing.T) {
 			t.Fatalf("parse %s: %v", probe.address, err)
 		}
 
-		if permitted(parsed, allowed) != probe.reached {
+		if permitted(parsed, allowed, false) != probe.reached {
 			t.Errorf(
 				"with 10.42.0.0/16 and 192.168.7.5/32 allowed, %s reachable = %v, want %v",
-				probe.address, permitted(parsed, allowed), probe.reached,
+				probe.address, permitted(parsed, allowed, false), probe.reached,
 			)
 		}
 	}
@@ -331,7 +331,7 @@ func TestTheClientTakesNoProxyFromTheEnvironment(t *testing.T) {
 }
 
 func TestControlRefusesNetworksThatAreNotTCP(t *testing.T) {
-	guard := control(nil)
+	guard := control(nil, false)
 
 	if err := guard("udp", "8.8.8.8:53", nil); !errors.Is(err, ErrDestinationRefused) {
 		t.Errorf("a udp dial was permitted with %v", err)
@@ -343,5 +343,47 @@ func TestControlRefusesNetworksThatAreNotTCP(t *testing.T) {
 
 	if err := guard("tcp4", "8.8.8.8:443", nil); err != nil {
 		t.Errorf("an ordinary public dial was refused: %v", err)
+	}
+}
+
+// The private exception is granted per connection for a forge on somebody's own network. It
+// must never become a way to reach this instance's own internals or a cloud metadata service.
+func TestThePrivateExceptionStopsShortOfLoopbackAndMetadata(t *testing.T) {
+	refused := []string{
+		"127.0.0.1",
+		"::1",
+		"169.254.169.254",
+		"fe80::1",
+		"0.0.0.0",
+		"224.0.0.1",
+	}
+
+	for _, address := range refused {
+		t.Run(address, func(t *testing.T) {
+			if permitted(netip.MustParseAddr(address), nil, true) {
+				t.Errorf(
+					"%s was reachable under the private exception. That exception means "+
+						"\"our forge is on the office network\", not this instance's own "+
+						"internals or the credentials of the machine it runs on",
+					address,
+				)
+			}
+		})
+	}
+
+	allowed := []string{"10.0.0.5", "192.168.1.10", "172.16.4.4", "fd00::1"}
+
+	for _, address := range allowed {
+		t.Run(address, func(t *testing.T) {
+			parsed := netip.MustParseAddr(address)
+
+			if permitted(parsed, nil, false) {
+				t.Errorf("%s was reachable without the exception being granted", address)
+			}
+
+			if !permitted(parsed, nil, true) {
+				t.Errorf("%s was refused with the exception granted; that is the whole point", address)
+			}
+		})
 	}
 }

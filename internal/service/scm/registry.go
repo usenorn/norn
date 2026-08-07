@@ -3,6 +3,7 @@ package scm
 import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
+	"github.com/usenorn/norn/internal/service/scm/gitea"
 	"github.com/usenorn/norn/internal/service/scm/github"
 	"github.com/usenorn/norn/internal/service/scm/gitlab"
 )
@@ -14,11 +15,12 @@ type registry struct {
 // NewForges takes each adapter as its own concrete type rather than a slice of the
 // interface, so wire can tell them apart and so the set of platforms this instance supports
 // is declared here instead of discovered at run time.
-func NewForges(hub *github.Forge, lab *gitlab.Forge) service.Forges {
+func NewForges(hub *github.Forge, lab *gitlab.Forge, tea *gitea.Forge) service.Forges {
 	return &registry{
 		forges: map[entity.SCMProvider]service.Forge{
 			hub.Provider(): hub,
 			lab.Provider(): lab,
+			tea.Provider(): tea,
 		},
 	}
 }

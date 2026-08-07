@@ -23,6 +23,7 @@ export type TeamSourceControlSettings =
 export type MirrorDirection = components["schemas"]["MirrorDirection"];
 export type SCMIdentity = components["schemas"]["SCMIdentity"];
 export type MirrorConflict = components["schemas"]["MirrorConflict"];
+export type SourceControlCapability = components["schemas"]["SourceControlCapability"];
 export type SourceControlDeliveryOutcome =
 	components["schemas"]["SourceControlDeliveryOutcome"];
 
@@ -173,8 +174,33 @@ export function failureMessage(failure: SourceControlFailure): string {
 	}
 }
 
+const providers: Record<SourceControlProvider, string> = {
+	github: "GitHub",
+	gitlab: "GitLab",
+	gitea: "Gitea or Forgejo",
+};
+
 export function providerLabel(provider: SourceControlProvider): string {
-	return provider === "github" ? "GitHub" : "GitLab";
+	return providers[provider];
+}
+
+const capabilities: Record<SourceControlCapability, string> = {
+	webhooks: "Webhooks",
+	reviews: "Reviews",
+	checks: "Checks",
+	changed_paths: "Which files a change touches",
+	issues: "Issue sync",
+	labels: "Labels",
+	assignees: "Assignees",
+};
+
+export function capabilityLabel(capability: SourceControlCapability): string {
+	return capabilities[capability];
+}
+
+// Gitea and Forgejo have no hosted service, so a connection to one always names an address.
+export function requiresAddress(provider: SourceControlProvider): boolean {
+	return provider === "gitea";
 }
 
 const brokenReasons: Record<SourceControlBrokenReason, string> = {

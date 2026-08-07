@@ -60,6 +60,20 @@ func (mr *MockForgeMockRecorder) AmendIssue(ctx, target, number, patch any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendIssue", reflect.TypeOf((*MockForge)(nil).AmendIssue), ctx, target, number, patch)
 }
 
+// Capabilities mocks base method.
+func (m *MockForge) Capabilities() entity.SCMCapabilitySet {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Capabilities")
+	ret0, _ := ret[0].(entity.SCMCapabilitySet)
+	return ret0
+}
+
+// Capabilities indicates an expected call of Capabilities.
+func (mr *MockForgeMockRecorder) Capabilities() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockForge)(nil).Capabilities))
+}
+
 // ChangedPaths mocks base method.
 func (m *MockForge) ChangedPaths(ctx context.Context, target entity.SCMTarget, number int) ([]string, error) {
 	m.ctrl.T.Helper()

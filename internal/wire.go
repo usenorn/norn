@@ -121,6 +121,7 @@ import (
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
 	scmsvc "github.com/usenorn/norn/internal/service/scm"
+	giteasvc "github.com/usenorn/norn/internal/service/scm/gitea"
 	githubsvc "github.com/usenorn/norn/internal/service/scm/github"
 	gitlabsvc "github.com/usenorn/norn/internal/service/scm/gitlab"
 	searchsvc "github.com/usenorn/norn/internal/service/search"
@@ -252,6 +253,7 @@ var baseSet = wire.NewSet(
 	csvfilesvc.Set,
 	scmsvc.Set,
 	githubsvc.Set,
+	giteasvc.Set,
 	gitlabsvc.Set,
 
 	dashboardhandler.Set,

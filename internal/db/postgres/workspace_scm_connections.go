@@ -18,31 +18,35 @@ import (
 	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/aarondl/sqlboiler/v4/queries/qmhelper"
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/aarondl/strmangle"
 	"github.com/friendsofgo/errors"
 )
 
 // WorkspaceSCMConnection is an object representing the database table.
 type WorkspaceSCMConnection struct {
-	ID                   string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID          string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	Provider             string    `boil:"provider" json:"provider" toml:"provider" yaml:"provider"`
-	BaseURL              string    `boil:"base_url" json:"base_url" toml:"base_url" yaml:"base_url"`
-	Label                string    `boil:"label" json:"label" toml:"label" yaml:"label"`
-	TokenSealed          []byte    `boil:"token_sealed" json:"token_sealed" toml:"token_sealed" yaml:"token_sealed"`
-	TokenHint            string    `boil:"token_hint" json:"token_hint" toml:"token_hint" yaml:"token_hint"`
-	IdentityLogin        string    `boil:"identity_login" json:"identity_login" toml:"identity_login" yaml:"identity_login"`
-	IntegrationAccountID string    `boil:"integration_account_id" json:"integration_account_id" toml:"integration_account_id" yaml:"integration_account_id"`
-	OwnerAccountID       string    `boil:"owner_account_id" json:"owner_account_id" toml:"owner_account_id" yaml:"owner_account_id"`
-	OwnerActorKind       string    `boil:"owner_actor_kind" json:"owner_actor_kind" toml:"owner_actor_kind" yaml:"owner_actor_kind"`
-	OwnerAuthMethod      string    `boil:"owner_auth_method" json:"owner_auth_method" toml:"owner_auth_method" yaml:"owner_auth_method"`
-	Status               string    `boil:"status" json:"status" toml:"status" yaml:"status"`
-	BrokenReason         string    `boil:"broken_reason" json:"broken_reason" toml:"broken_reason" yaml:"broken_reason"`
-	BrokenDetail         string    `boil:"broken_detail" json:"broken_detail" toml:"broken_detail" yaml:"broken_detail"`
-	BrokenAt             null.Time `boil:"broken_at" json:"broken_at,omitempty" toml:"broken_at" yaml:"broken_at,omitempty"`
-	VerifiedAt           null.Time `boil:"verified_at" json:"verified_at,omitempty" toml:"verified_at" yaml:"verified_at,omitempty"`
-	CreatedAt            time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt            time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID                   string            `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID          string            `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	Provider             string            `boil:"provider" json:"provider" toml:"provider" yaml:"provider"`
+	BaseURL              string            `boil:"base_url" json:"base_url" toml:"base_url" yaml:"base_url"`
+	Label                string            `boil:"label" json:"label" toml:"label" yaml:"label"`
+	TokenSealed          []byte            `boil:"token_sealed" json:"token_sealed" toml:"token_sealed" yaml:"token_sealed"`
+	TokenHint            string            `boil:"token_hint" json:"token_hint" toml:"token_hint" yaml:"token_hint"`
+	IdentityLogin        string            `boil:"identity_login" json:"identity_login" toml:"identity_login" yaml:"identity_login"`
+	IntegrationAccountID string            `boil:"integration_account_id" json:"integration_account_id" toml:"integration_account_id" yaml:"integration_account_id"`
+	OwnerAccountID       string            `boil:"owner_account_id" json:"owner_account_id" toml:"owner_account_id" yaml:"owner_account_id"`
+	OwnerActorKind       string            `boil:"owner_actor_kind" json:"owner_actor_kind" toml:"owner_actor_kind" yaml:"owner_actor_kind"`
+	OwnerAuthMethod      string            `boil:"owner_auth_method" json:"owner_auth_method" toml:"owner_auth_method" yaml:"owner_auth_method"`
+	Status               string            `boil:"status" json:"status" toml:"status" yaml:"status"`
+	BrokenReason         string            `boil:"broken_reason" json:"broken_reason" toml:"broken_reason" yaml:"broken_reason"`
+	BrokenDetail         string            `boil:"broken_detail" json:"broken_detail" toml:"broken_detail" yaml:"broken_detail"`
+	BrokenAt             null.Time         `boil:"broken_at" json:"broken_at,omitempty" toml:"broken_at" yaml:"broken_at,omitempty"`
+	VerifiedAt           null.Time         `boil:"verified_at" json:"verified_at,omitempty" toml:"verified_at" yaml:"verified_at,omitempty"`
+	CreatedAt            time.Time         `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt            time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	AllowPrivateAddress  bool              `boil:"allow_private_address" json:"allow_private_address" toml:"allow_private_address" yaml:"allow_private_address"`
+	CaCertificate        string            `boil:"ca_certificate" json:"ca_certificate" toml:"ca_certificate" yaml:"ca_certificate"`
+	Capabilities         types.StringArray `boil:"capabilities" json:"capabilities" toml:"capabilities" yaml:"capabilities"`
 
 	R *workspaceSCMConnectionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSCMConnectionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -68,6 +72,9 @@ var WorkspaceSCMConnectionColumns = struct {
 	VerifiedAt           string
 	CreatedAt            string
 	UpdatedAt            string
+	AllowPrivateAddress  string
+	CaCertificate        string
+	Capabilities         string
 }{
 	ID:                   "id",
 	WorkspaceID:          "workspace_id",
@@ -88,6 +95,9 @@ var WorkspaceSCMConnectionColumns = struct {
 	VerifiedAt:           "verified_at",
 	CreatedAt:            "created_at",
 	UpdatedAt:            "updated_at",
+	AllowPrivateAddress:  "allow_private_address",
+	CaCertificate:        "ca_certificate",
+	Capabilities:         "capabilities",
 }
 
 var WorkspaceSCMConnectionTableColumns = struct {
@@ -110,6 +120,9 @@ var WorkspaceSCMConnectionTableColumns = struct {
 	VerifiedAt           string
 	CreatedAt            string
 	UpdatedAt            string
+	AllowPrivateAddress  string
+	CaCertificate        string
+	Capabilities         string
 }{
 	ID:                   "workspace_scm_connections.id",
 	WorkspaceID:          "workspace_scm_connections.workspace_id",
@@ -130,6 +143,9 @@ var WorkspaceSCMConnectionTableColumns = struct {
 	VerifiedAt:           "workspace_scm_connections.verified_at",
 	CreatedAt:            "workspace_scm_connections.created_at",
 	UpdatedAt:            "workspace_scm_connections.updated_at",
+	AllowPrivateAddress:  "workspace_scm_connections.allow_private_address",
+	CaCertificate:        "workspace_scm_connections.ca_certificate",
+	Capabilities:         "workspace_scm_connections.capabilities",
 }
 
 // Generated where
@@ -154,6 +170,9 @@ var WorkspaceSCMConnectionWhere = struct {
 	VerifiedAt           whereHelpernull_Time
 	CreatedAt            whereHelpertime_Time
 	UpdatedAt            whereHelpertime_Time
+	AllowPrivateAddress  whereHelperbool
+	CaCertificate        whereHelperstring
+	Capabilities         whereHelpertypes_StringArray
 }{
 	ID:                   whereHelperstring{field: "\"workspace_scm_connections\".\"id\""},
 	WorkspaceID:          whereHelperstring{field: "\"workspace_scm_connections\".\"workspace_id\""},
@@ -174,6 +193,9 @@ var WorkspaceSCMConnectionWhere = struct {
 	VerifiedAt:           whereHelpernull_Time{field: "\"workspace_scm_connections\".\"verified_at\""},
 	CreatedAt:            whereHelpertime_Time{field: "\"workspace_scm_connections\".\"created_at\""},
 	UpdatedAt:            whereHelpertime_Time{field: "\"workspace_scm_connections\".\"updated_at\""},
+	AllowPrivateAddress:  whereHelperbool{field: "\"workspace_scm_connections\".\"allow_private_address\""},
+	CaCertificate:        whereHelperstring{field: "\"workspace_scm_connections\".\"ca_certificate\""},
+	Capabilities:         whereHelpertypes_StringArray{field: "\"workspace_scm_connections\".\"capabilities\""},
 }
 
 // WorkspaceSCMConnectionRels is where relationship names are stored.
@@ -270,9 +292,9 @@ func (r *workspaceSCMConnectionR) GetConnectionWorkspaceSCMRepositories() Worksp
 type workspaceSCMConnectionL struct{}
 
 var (
-	workspaceSCMConnectionAllColumns            = []string{"id", "workspace_id", "provider", "base_url", "label", "token_sealed", "token_hint", "identity_login", "integration_account_id", "owner_account_id", "owner_actor_kind", "owner_auth_method", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "created_at", "updated_at"}
+	workspaceSCMConnectionAllColumns            = []string{"id", "workspace_id", "provider", "base_url", "label", "token_sealed", "token_hint", "identity_login", "integration_account_id", "owner_account_id", "owner_actor_kind", "owner_auth_method", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "created_at", "updated_at", "allow_private_address", "ca_certificate", "capabilities"}
 	workspaceSCMConnectionColumnsWithoutDefault = []string{"workspace_id", "provider", "token_sealed", "integration_account_id", "owner_account_id"}
-	workspaceSCMConnectionColumnsWithDefault    = []string{"id", "base_url", "label", "token_hint", "identity_login", "owner_actor_kind", "owner_auth_method", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "created_at", "updated_at"}
+	workspaceSCMConnectionColumnsWithDefault    = []string{"id", "base_url", "label", "token_hint", "identity_login", "owner_actor_kind", "owner_auth_method", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "created_at", "updated_at", "allow_private_address", "ca_certificate", "capabilities"}
 	workspaceSCMConnectionPrimaryKeyColumns     = []string{"id"}
 	workspaceSCMConnectionGeneratedColumns      = []string{}
 )

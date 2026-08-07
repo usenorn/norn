@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -61,10 +62,14 @@ const connectionColumns = `
     id, workspace_id, provider, base_url, label,
     token_hint, octet_length(token_sealed) > 0, identity_login,
     integration_account_id, owner_account_id, owner_actor_kind, owner_auth_method,
-    status, broken_reason, broken_detail, broken_at, verified_at, created_at, updated_at`
+    status, broken_reason, broken_detail, broken_at, verified_at,
+    allow_private_address, ca_certificate, capabilities, created_at, updated_at`
 
 func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, error) {
-	var connection entity.SCMConnection
+	var (
+		connection   entity.SCMConnection
+		capabilities types.StringArray
+	)
 
 	err := row.Scan(
 		&connection.ID,
@@ -84,6 +89,9 @@ func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, 
 		&connection.BrokenDetail,
 		&connection.BrokenAt,
 		&connection.VerifiedAt,
+		&connection.Trust.AllowPrivateAddress,
+		&connection.Trust.CACertificate,
+		&capabilities,
 		&connection.CreatedAt,
 		&connection.UpdatedAt,
 	)
@@ -91,6 +99,7 @@ func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, 
 		return entity.SCMConnection{}, err
 	}
 
+	connection.Capabilities = entity.SCMCapabilitiesFrom(capabilities)
 	connection.IntegrationName = entity.IntegrationAccountName(
 		connection.Provider,
 		connection.DisplayName(),
@@ -102,8 +111,9 @@ func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, 
 const insertConnectionQuery = `
 INSERT INTO workspace_scm_connections (
     id, workspace_id, provider, base_url, label, token_sealed, token_hint, identity_login,
-    integration_account_id, owner_account_id, owner_actor_kind, owner_auth_method
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    integration_account_id, owner_account_id, owner_actor_kind, owner_auth_method,
+    allow_private_address, ca_certificate, capabilities
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 RETURNING` + connectionColumns
 
 func (r *connectionRepository) Create(
@@ -136,6 +146,9 @@ func (r *connectionRepository) Create(
 		connection.OwnerAccountID,
 		connection.OwnerActorKind,
 		connection.OwnerAuthMethod,
+		connection.Trust.AllowPrivateAddress,
+		connection.Trust.CACertificate,
+		types.StringArray(connection.Capabilities.Strings()),
 	))
 	if err != nil {
 		if violates(err, connectionEndpointUniqueIndex) {
@@ -314,6 +327,7 @@ func (r *connectionRepository) UpdateLabel(
 const markVerifiedQuery = `
 UPDATE workspace_scm_connections
 SET identity_login = $2,
+    capabilities = $4,
     status = 'connected',
     broken_reason = '',
     broken_detail = '',
@@ -326,9 +340,17 @@ func (r *connectionRepository) MarkVerified(
 	ctx context.Context,
 	connectionID uuid.UUID,
 	login string,
+	capabilities entity.SCMCapabilitySet,
 	at time.Time,
 ) error {
-	result, err := r.db.Querier(ctx).ExecContext(ctx, markVerifiedQuery, connectionID, login, at)
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx,
+		markVerifiedQuery,
+		connectionID,
+		login,
+		at,
+		types.StringArray(capabilities.Strings()),
+	)
 	if err != nil {
 		return fmt.Errorf("mark source control connection verified: %w", err)
 	}

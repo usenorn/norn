@@ -13,14 +13,25 @@ const token = z
 	.min(1, "Paste a personal access token.")
 	.max(500, "That is longer than any token a platform issues.");
 
-export const connectSourceControlSchema = z.object({
-	provider: z.enum(["github", "gitlab"], { error: "Choose a platform." }),
-	baseUrl: z
-		.union([z.literal(""), z.url("Enter the full address, including https://")])
-		.optional(),
-	label: z.string().trim().max(80, "Keep the label under 80 characters.").optional(),
-	token,
-});
+export const connectSourceControlSchema = z
+	.object({
+		provider: z.enum(["github", "gitlab", "gitea"], { error: "Choose a platform." }),
+		baseUrl: z
+			.union([z.literal(""), z.url("Enter the full address, including https://")])
+			.optional(),
+		label: z.string().trim().max(80, "Keep the label under 80 characters.").optional(),
+		allowPrivateAddress: z.boolean().optional(),
+		caCertificate: z
+			.string()
+			.trim()
+			.max(32768, "That is larger than any certificate bundle this instance will read.")
+			.optional(),
+		token,
+	})
+	.refine((value) => value.provider !== "gitea" || Boolean(value.baseUrl?.trim()), {
+		error: "Give the address of your Gitea or Forgejo instance.",
+		path: ["baseUrl"],
+	});
 
 export const addRepositorySchema = z.object({
 	connectionId: z.string().min(1, "Choose a connection."),
