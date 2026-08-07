@@ -7522,7 +7522,10 @@ components:
 
     SourceControlDeliveryOutcome:
       type: string
-      enum: [applied, ignored, failed]
+      description: >-
+        `processed` is what a delivery settled before outcomes existed carries: handled, but
+        the row never recorded which of the other three it was.
+      enum: [applied, ignored, failed, processed]
 
     SourceControlDelivery:
       type: object

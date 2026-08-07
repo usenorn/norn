@@ -202,10 +202,20 @@ const (
 	SCMDeliveryApplied SCMDeliveryOutcome = "applied"
 	SCMDeliveryIgnored SCMDeliveryOutcome = "ignored"
 	SCMDeliveryFailed  SCMDeliveryOutcome = "failed"
+
+	// SCMDeliveryProcessed is what a delivery settled before outcomes existed carries. It
+	// records that the delivery was handled without claiming which of the three it was,
+	// because the row it was backfilled from never knew.
+	SCMDeliveryProcessed SCMDeliveryOutcome = "processed"
 )
 
 func SCMDeliveryOutcomes() []SCMDeliveryOutcome {
-	return []SCMDeliveryOutcome{SCMDeliveryApplied, SCMDeliveryIgnored, SCMDeliveryFailed}
+	return []SCMDeliveryOutcome{
+		SCMDeliveryApplied,
+		SCMDeliveryIgnored,
+		SCMDeliveryFailed,
+		SCMDeliveryProcessed,
+	}
 }
 
 func (o SCMDeliveryOutcome) Valid() bool {

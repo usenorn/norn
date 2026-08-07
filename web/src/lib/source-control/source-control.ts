@@ -185,6 +185,7 @@ const deliveryOutcomes: Record<SourceControlDeliveryOutcome, string> = {
 	applied: "Acted on",
 	ignored: "Nothing to do",
 	failed: "Failed",
+	processed: "Handled",
 };
 
 export function deliveryOutcomeLabel(delivery: SourceControlDelivery): string {
