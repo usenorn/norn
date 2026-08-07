@@ -108,6 +108,7 @@ type SAMLConnection struct {
 	AllowIDPInitiated bool
 	Mapping           SAMLAttributeMapping
 	Provisioning      bool
+	AdminGroup        string
 	VerifiedAt        *time.Time
 	ExpiryNoticeDays  *int
 	CreatedAt         time.Time

@@ -106,6 +106,7 @@ func (s *connectionsService) SaveSAML(
 		AllowIDPInitiated: input.AllowIDPInitiated,
 		Mapping:           input.Mapping,
 		Provisioning:      input.Provisioning,
+		AdminGroup:        strings.TrimSpace(input.AdminGroup),
 	}
 
 	if err := s.keepOrMakeKeypair(ctx, &connection); err != nil {
@@ -386,6 +387,8 @@ func (s *connectionsService) CompleteSAML(
 		Subject:      identity.Subject,
 		Email:        identity.Email,
 		Name:         identity.Name,
+		Groups:       identity.Groups,
+		AdminGroup:   connection.AdminGroup,
 	})
 	if err != nil {
 		return exchange, err

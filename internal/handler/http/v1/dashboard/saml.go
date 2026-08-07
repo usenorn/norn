@@ -91,6 +91,10 @@ func (h *handler) SetWorkspaceSamlConnection(
 		input.Mapping = samlMapping(*request.Body.Mapping)
 	}
 
+	if request.Body.AdminGroup != nil {
+		input.AdminGroup = *request.Body.AdminGroup
+	}
+
 	connection, err := h.ssoConnections.SaveSAML(ctx, input)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
@@ -204,6 +208,11 @@ func (h *handler) samlConnectionDTO(
 	if connection.MetadataURL != "" {
 		providerMetadata := connection.MetadataURL
 		dto.ProviderMetadataUrl = &providerMetadata
+	}
+
+	if connection.AdminGroup != "" {
+		group := connection.AdminGroup
+		dto.AdminGroup = &group
 	}
 
 	signIn := h.oidcRedirectBase() + "/sso?workspace=" + slug

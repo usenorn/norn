@@ -115,6 +115,7 @@ export const actions: Actions = {
 				clientSecret: clientSecret || undefined,
 				scopes: parseScopes(form.data.scopes),
 				groupsClaim: form.data.groupsClaim || undefined,
+				adminGroup: form.data.adminGroup || undefined,
 				provisioning: form.data.provisioning,
 			},
 		});
@@ -161,6 +162,7 @@ export const actions: Actions = {
 						: undefined,
 				allowIdpInitiated: form.data.allowIdpInitiated,
 				provisioning: form.data.provisioning,
+				adminGroup: form.data.adminGroup || undefined,
 				mapping: {
 					email: form.data.emailAttribute || undefined,
 					name: form.data.nameAttribute || undefined,

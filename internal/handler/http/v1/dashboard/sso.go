@@ -55,6 +55,10 @@ func (h *handler) SetWorkspaceOidcConnection(
 		input.GroupsClaim = *request.Body.GroupsClaim
 	}
 
+	if request.Body.AdminGroup != nil {
+		input.AdminGroup = *request.Body.AdminGroup
+	}
+
 	if request.Body.Provisioning != nil {
 		input.Provisioning = *request.Body.Provisioning
 	}
@@ -230,6 +234,11 @@ func (h *handler) oidcConnectionDTO(connection entity.OIDCConnection) api.Worksp
 	if connection.GroupsClaim != "" {
 		claim := connection.GroupsClaim
 		dto.GroupsClaim = &claim
+	}
+
+	if connection.AdminGroup != "" {
+		group := connection.AdminGroup
+		dto.AdminGroup = &group
 	}
 
 	return dto

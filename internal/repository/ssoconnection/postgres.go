@@ -19,11 +19,14 @@ import (
 const protocolQuery = `SELECT protocol FROM workspace_sso_connections WHERE workspace_id = $1`
 
 const upsertParentQuery = `
-INSERT INTO workspace_sso_connections (workspace_id, protocol, provisioning, verified_at, created_at, updated_at)
-VALUES ($1, $2, $3, NULL, $4, $4)
+INSERT INTO workspace_sso_connections (
+    workspace_id, protocol, provisioning, admin_group, verified_at, created_at, updated_at
+)
+VALUES ($1, $2, $3, $5, NULL, $4, $4)
 ON CONFLICT (workspace_id) DO UPDATE SET
     protocol     = excluded.protocol,
     provisioning = excluded.provisioning,
+    admin_group  = excluded.admin_group,
     verified_at  = NULL,
     updated_at   = excluded.updated_at`
 
@@ -46,7 +49,7 @@ WHERE workspace_id = $1`
 
 const oidcColumns = `o.workspace_id, o.issuer, o.discovered, o.authorization_endpoint, o.token_endpoint,
        o.jwks_uri, o.userinfo_endpoint, o.client_id, o.client_secret_sealed, o.scopes,
-       o.groups_claim, s.provisioning, s.verified_at, s.created_at, s.updated_at`
+       o.groups_claim, s.provisioning, s.admin_group, s.verified_at, s.created_at, s.updated_at`
 
 const oidcByWorkspaceQuery = `
 SELECT ` + oidcColumns + `
@@ -75,7 +78,7 @@ ON CONFLICT (workspace_id) DO UPDATE SET
 const samlColumns = `m.workspace_id, m.entity_id, m.sso_url, m.slo_url, m.metadata_url,
        m.idp_certificates, m.idp_certificate_expires_at, m.sp_entity_id, m.sp_private_key_sealed,
        m.sp_certificate, m.allow_idp_initiated, m.email_attribute, m.name_attribute,
-       m.groups_attribute, m.expiry_notice_days, s.provisioning, s.verified_at,
+       m.groups_attribute, m.expiry_notice_days, s.provisioning, s.admin_group, s.verified_at,
        s.created_at, s.updated_at`
 
 const samlByWorkspaceQuery = `
@@ -178,6 +181,7 @@ func (r *connectionRepository) claim(
 	workspaceID uuid.UUID,
 	protocol entity.SSOProtocol,
 	provisioning bool,
+	adminGroup string,
 ) error {
 	held, err := r.Protocol(ctx, workspaceID)
 	if err != nil && !errors.Is(err, entity.ErrSSOConnectionNotFound) {
@@ -197,6 +201,7 @@ func (r *connectionRepository) claim(
 		string(protocol),
 		provisioning,
 		time.Now().UTC(),
+		adminGroup,
 	); err != nil {
 		return fmt.Errorf("save sso connection: %w", err)
 	}
@@ -226,6 +231,7 @@ func (r *connectionRepository) scanOIDC(row scanner) (entity.OIDCConnection, err
 		&scopes,
 		&connection.GroupsClaim,
 		&connection.Provisioning,
+		&connection.AdminGroup,
 		&verified,
 		&connection.CreatedAt,
 		&connection.UpdatedAt,
@@ -285,7 +291,7 @@ func (r *connectionRepository) SaveOIDC(
 		return entity.OIDCConnection{}, err
 	}
 
-	if err := r.claim(ctx, connection.WorkspaceID, entity.SSOProtocolOIDC, connection.Provisioning); err != nil {
+	if err := r.claim(ctx, connection.WorkspaceID, entity.SSOProtocolOIDC, connection.Provisioning, connection.AdminGroup); err != nil {
 		return entity.OIDCConnection{}, err
 	}
 
@@ -337,6 +343,7 @@ func (r *connectionRepository) scanSAML(row scanner) (entity.SAMLConnection, err
 		&connection.Mapping.Groups,
 		&notice,
 		&connection.Provisioning,
+		&connection.AdminGroup,
 		&verified,
 		&connection.CreatedAt,
 		&connection.UpdatedAt,
@@ -401,7 +408,7 @@ func (r *connectionRepository) SaveSAML(
 		return entity.SAMLConnection{}, err
 	}
 
-	if err := r.claim(ctx, connection.WorkspaceID, entity.SSOProtocolSAML, connection.Provisioning); err != nil {
+	if err := r.claim(ctx, connection.WorkspaceID, entity.SSOProtocolSAML, connection.Provisioning, connection.AdminGroup); err != nil {
 		return entity.SAMLConnection{}, err
 	}
 

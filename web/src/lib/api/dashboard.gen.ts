@@ -5049,6 +5049,8 @@ export interface components {
             secretSet: boolean;
             scopes: string[];
             groupsClaim?: string;
+            /** @description Members of this provider group become administrators; everyone else a member. */
+            adminGroup?: string;
             provisioning: boolean;
             redirectUri: string;
             /** Format: date-time */
@@ -5063,6 +5065,8 @@ export interface components {
             clientSecret?: string;
             scopes?: string[];
             groupsClaim?: string;
+            /** @description Members of this provider group become administrators; everyone else a member. */
+            adminGroup?: string;
             provisioning?: boolean;
         };
         DiscoverOidcRequest: {
@@ -5123,6 +5127,8 @@ export interface components {
             allowIdpInitiated: boolean;
             mapping: components["schemas"]["SamlAttributeMapping"];
             provisioning: boolean;
+            /** @description Members of this provider group become administrators; everyone else a member. */
+            adminGroup?: string;
             /** Format: date-time */
             certificateExpiresAt: string;
             /** Format: int32 */
@@ -5139,6 +5145,8 @@ export interface components {
             allowIdpInitiated?: boolean;
             mapping?: components["schemas"]["SamlAttributeMapping"];
             provisioning?: boolean;
+            /** @description Members of this provider group become administrators; everyone else a member. */
+            adminGroup?: string;
         };
         ReadSamlMetadataRequest: {
             metadataUrl?: string;
