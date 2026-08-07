@@ -222,6 +222,11 @@ func (s *agentsService) apply(
 		AgentID:        &agent.ID,
 		AgentAllowance: agent.Allowance(),
 		OwnerAccountID: agent.OwnerAccountID,
+		Grants: entity.APITokenGrants{{
+			WorkspaceID: proposal.WorkspaceID,
+			AllTeams:    true,
+		}},
+		Scopes: proposal.Action.Scopes(),
 	}))
 
 	switch proposal.Action {

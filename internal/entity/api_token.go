@@ -35,6 +35,90 @@ type APITokenGrant struct {
 	TeamIDs     []uuid.UUID
 }
 
+type RequestedAuthority struct {
+	AllTeams bool
+	TeamIDs  []uuid.UUID
+	Scopes   APIScopeSet
+}
+
+func AuthorityOf(actor Actor, workspaceID uuid.UUID) RequestedAuthority {
+	authority := RequestedAuthority{
+		AllTeams: true,
+		TeamIDs:  []uuid.UUID{},
+		Scopes:   actor.Scopes,
+	}
+
+	if grant, ok := actor.Grants.For(workspaceID); ok {
+		authority.AllTeams = grant.AllTeams
+		authority.TeamIDs = grant.TeamIDs
+	}
+
+	return authority
+}
+
+func NewRequestedAuthority(allTeams bool, teamIDs, scopeNames []string) RequestedAuthority {
+	authority := RequestedAuthority{AllTeams: allTeams, TeamIDs: make([]uuid.UUID, 0, len(teamIDs))}
+
+	for _, raw := range teamIDs {
+		if parsed, err := uuid.Parse(raw); err == nil {
+			authority.TeamIDs = append(authority.TeamIDs, parsed)
+		}
+	}
+
+	if scopeNames != nil {
+		authority.Scopes = NewAPIScopeSet(scopeNames)
+	}
+
+	return authority
+}
+
+func (a RequestedAuthority) TeamStrings() []string {
+	values := make([]string, 0, len(a.TeamIDs))
+
+	for _, teamID := range a.TeamIDs {
+		values = append(values, teamID.String())
+	}
+
+	return values
+}
+
+func (a RequestedAuthority) ScopeStrings() []string {
+	if a.Scopes == nil {
+		return nil
+	}
+
+	return a.Scopes.Strings()
+}
+
+func (a RequestedAuthority) Replay(
+	kind ActorKind,
+	accountID uuid.UUID,
+	method SessionAuthMethod,
+	workspaceID uuid.UUID,
+) Actor {
+	if kind == "" {
+		kind = ActorKindUser
+	}
+
+	actor := Actor{
+		Kind:       kind,
+		AccountID:  accountID,
+		AuthMethod: method,
+		Scopes:     a.Scopes,
+		Grants: APITokenGrants{{
+			WorkspaceID: workspaceID,
+			AllTeams:    a.AllTeams,
+			TeamIDs:     a.TeamIDs,
+		}},
+	}
+
+	if method == SessionAuthMethodSSO {
+		actor.SSOWorkspaceID = workspaceID
+	}
+
+	return actor
+}
+
 type APITokenGrants []APITokenGrant
 
 func (g APITokenGrants) Covers(workspaceID uuid.UUID) bool {

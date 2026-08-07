@@ -85,6 +85,7 @@ func (s *operationsService) Apply(
 		RequestedByAccount:  decision.Actor.AccountID,
 		RequestedActorKind:  decision.Actor.Kind,
 		RequestedAuthMethod: decision.Actor.AuthMethod,
+		Authority:           entity.AuthorityOf(decision.Actor, workspaceID),
 		Change:              input.Change,
 		Expected:            input.Set.Expected(),
 	})

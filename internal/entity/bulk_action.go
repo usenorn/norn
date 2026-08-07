@@ -229,6 +229,7 @@ type BulkAction struct {
 	RequestedByAccount  uuid.UUID
 	RequestedActorKind  ActorKind
 	RequestedAuthMethod SessionAuthMethod
+	Authority           RequestedAuthority
 	Change              BulkChange
 	Set                 BulkSet
 	Status              BulkActionStatus
@@ -241,16 +242,12 @@ type BulkAction struct {
 }
 
 func (a BulkAction) Requester() Actor {
-	kind := a.RequestedActorKind
-	if kind == "" {
-		kind = ActorKindUser
-	}
-
-	return Actor{
-		Kind:       kind,
-		AccountID:  a.RequestedByAccount,
-		AuthMethod: a.RequestedAuthMethod,
-	}
+	return a.Authority.Replay(
+		a.RequestedActorKind,
+		a.RequestedByAccount,
+		a.RequestedAuthMethod,
+		a.WorkspaceID,
+	)
 }
 
 type BulkActionOutcome struct {

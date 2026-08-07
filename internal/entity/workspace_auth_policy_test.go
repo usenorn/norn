@@ -76,17 +76,69 @@ func TestOnlyMachineActorsSkipTheEnforcementCheck(t *testing.T) {
 }
 
 func TestWorkRequestedEarlierStillRunsWhenTheWorkspaceRequiresSSO(t *testing.T) {
-	replayed := entity.Actor{
-		Kind:       entity.ActorKindUser,
-		AccountID:  uuid.New(),
-		AuthMethod: entity.SessionAuthMethodSSO,
+	workspaceID := uuid.New()
+	authority := entity.AuthorityOf(entity.Actor{}, workspaceID)
+
+	replayed := authority.Replay(
+		entity.ActorKindUser,
+		uuid.New(),
+		entity.SessionAuthMethodSSO,
+		workspaceID,
+	)
+
+	if !entity.AuthEnforcementSSO.PermitsActor(replayed, workspaceID) {
+		t.Fatal(
+			"an import or bulk action replaying the actor that asked for it was refused by the " +
+				"workspace it belongs to. Replay reconstructs the workspace the request was made " +
+				"against, so it has to satisfy the same check a live session would.",
+		)
 	}
 
-	if !entity.AuthEnforcementSSO.PermitsActor(replayed, uuid.New()) {
+	if entity.AuthEnforcementSSO.PermitsActor(replayed, uuid.New()) {
 		t.Fatal(
-			"an import, bulk action or approval replaying the actor that asked for it was refused. " +
-				"Those are rebuilt from what was stored about the request, so they carry no session " +
-				"and cannot name the workspace its provider signed into.",
+			"a replayed actor reached a workspace its request was never made against. Replay must " +
+				"not be a way around the cross-workspace check a live session is held to.",
+		)
+	}
+}
+
+func TestReplayCarriesOnlyTheTeamsTheRequestWasAuthorisedFor(t *testing.T) {
+	workspaceID, teamID := uuid.New(), uuid.New()
+
+	confined := entity.Actor{
+		Kind:      entity.ActorKindToken,
+		AccountID: uuid.New(),
+		Grants: entity.APITokenGrants{{
+			WorkspaceID: workspaceID,
+			TeamIDs:     []uuid.UUID{teamID},
+		}},
+		Scopes: entity.APIScopeSet{entity.NewAPIScope(entity.ResourceIssue, entity.ActionUpdate)},
+	}
+
+	replayed := entity.AuthorityOf(confined, workspaceID).
+		Replay(entity.ActorKindToken, confined.AccountID, "", workspaceID)
+
+	if replayed.ConfinedTo(uuid.New()) {
+		t.Fatal(
+			"work replayed from a stored request reached a workspace the token was never granted. " +
+				"A token confined to one workspace could start an import and have it touch every " +
+				"other one the account belongs to.",
+		)
+	}
+
+	scope := replayed.NarrowScope(entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true})
+	if scope.AllTeams || len(scope.TeamIDs) != 1 || scope.TeamIDs[0] != teamID {
+		t.Fatalf(
+			"replayed scope is %+v. A token confined to one team must not widen to every team in "+
+				"the workspace once its work runs asynchronously.",
+			scope,
+		)
+	}
+
+	if replayed.Holds(entity.NewPermission(entity.ResourceLabel, entity.ActionManage)) {
+		t.Fatal(
+			"the replayed actor held a permission the token never had, so an import could write " +
+				"resources the caller was not scoped for.",
 		)
 	}
 }
@@ -97,5 +149,43 @@ func TestSomebodyJoiningAnonymouslyIsStillAdmittedWhereAnyMethodIsAccepted(t *te
 			"an anonymous invitee was refused by a workspace that accepts any method. Accepting " +
 				"an invitation is the one flow that legitimately has no actor yet.",
 		)
+	}
+}
+
+func TestAnApprovedAgentActionCarriesOnlyWhatThatActionNeeds(t *testing.T) {
+	for name, tc := range map[string]struct {
+		action  entity.AgentAction
+		granted entity.Permission
+		denied  entity.Permission
+	}{
+		"a comment": {
+			action:  entity.AgentActionComment,
+			granted: entity.NewPermission(entity.ResourceComment, entity.ActionManage),
+			denied:  entity.NewPermission(entity.ResourceIssue, entity.ActionUpdate),
+		},
+		"a state change": {
+			action:  entity.AgentActionStateChange,
+			granted: entity.NewPermission(entity.ResourceIssue, entity.ActionUpdate),
+			denied:  entity.NewPermission(entity.ResourceIssue, entity.ActionDelete),
+		},
+		"an issue edit": {
+			action:  entity.AgentActionIssueEdit,
+			granted: entity.NewPermission(entity.ResourceIssue, entity.ActionUpdate),
+			denied:  entity.NewPermission(entity.ResourceAPIToken, entity.ActionManage),
+		},
+	} {
+		acting := entity.Actor{Kind: entity.ActorKindAgent, Scopes: tc.action.Scopes()}
+
+		if !acting.Holds(tc.granted) {
+			t.Errorf("%s: approving it did not carry the permission the action needs", name)
+		}
+
+		if acting.Holds(tc.denied) {
+			t.Errorf(
+				"%s: approving one action carried a permission it never needed. A person approves "+
+					"one described change, not everything the agent could otherwise do.",
+				name,
+			)
+		}
 	}
 }

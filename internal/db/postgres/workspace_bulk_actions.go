@@ -25,19 +25,22 @@ import (
 
 // WorkspaceBulkAction is an object representing the database table.
 type WorkspaceBulkAction struct {
-	ID                   string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID          string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	RequestedByAccountID null.String `boil:"requested_by_account_id" json:"requested_by_account_id,omitempty" toml:"requested_by_account_id" yaml:"requested_by_account_id,omitempty"`
-	Change               types.JSON  `boil:"change" json:"change" toml:"change" yaml:"change"`
-	Status               string      `boil:"status" json:"status" toml:"status" yaml:"status"`
-	Expected             null.Int    `boil:"expected" json:"expected,omitempty" toml:"expected" yaml:"expected,omitempty"`
-	Processed            int         `boil:"processed" json:"processed" toml:"processed" yaml:"processed"`
-	StartedAt            null.Time   `boil:"started_at" json:"started_at,omitempty" toml:"started_at" yaml:"started_at,omitempty"`
-	FinishedAt           null.Time   `boil:"finished_at" json:"finished_at,omitempty" toml:"finished_at" yaml:"finished_at,omitempty"`
-	CreatedAt            time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt            time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	RequestedActorKind   string      `boil:"requested_actor_kind" json:"requested_actor_kind" toml:"requested_actor_kind" yaml:"requested_actor_kind"`
-	RequestedAuthMethod  string      `boil:"requested_auth_method" json:"requested_auth_method" toml:"requested_auth_method" yaml:"requested_auth_method"`
+	ID                   string            `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID          string            `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	RequestedByAccountID null.String       `boil:"requested_by_account_id" json:"requested_by_account_id,omitempty" toml:"requested_by_account_id" yaml:"requested_by_account_id,omitempty"`
+	Change               types.JSON        `boil:"change" json:"change" toml:"change" yaml:"change"`
+	Status               string            `boil:"status" json:"status" toml:"status" yaml:"status"`
+	Expected             null.Int          `boil:"expected" json:"expected,omitempty" toml:"expected" yaml:"expected,omitempty"`
+	Processed            int               `boil:"processed" json:"processed" toml:"processed" yaml:"processed"`
+	StartedAt            null.Time         `boil:"started_at" json:"started_at,omitempty" toml:"started_at" yaml:"started_at,omitempty"`
+	FinishedAt           null.Time         `boil:"finished_at" json:"finished_at,omitempty" toml:"finished_at" yaml:"finished_at,omitempty"`
+	CreatedAt            time.Time         `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt            time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	RequestedActorKind   string            `boil:"requested_actor_kind" json:"requested_actor_kind" toml:"requested_actor_kind" yaml:"requested_actor_kind"`
+	RequestedAuthMethod  string            `boil:"requested_auth_method" json:"requested_auth_method" toml:"requested_auth_method" yaml:"requested_auth_method"`
+	RequestedAllTeams    bool              `boil:"requested_all_teams" json:"requested_all_teams" toml:"requested_all_teams" yaml:"requested_all_teams"`
+	RequestedTeamIds     types.StringArray `boil:"requested_team_ids" json:"requested_team_ids" toml:"requested_team_ids" yaml:"requested_team_ids"`
+	RequestedScopes      types.StringArray `boil:"requested_scopes" json:"requested_scopes,omitempty" toml:"requested_scopes" yaml:"requested_scopes,omitempty"`
 
 	R *workspaceBulkActionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceBulkActionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -57,6 +60,9 @@ var WorkspaceBulkActionColumns = struct {
 	UpdatedAt            string
 	RequestedActorKind   string
 	RequestedAuthMethod  string
+	RequestedAllTeams    string
+	RequestedTeamIds     string
+	RequestedScopes      string
 }{
 	ID:                   "id",
 	WorkspaceID:          "workspace_id",
@@ -71,6 +77,9 @@ var WorkspaceBulkActionColumns = struct {
 	UpdatedAt:            "updated_at",
 	RequestedActorKind:   "requested_actor_kind",
 	RequestedAuthMethod:  "requested_auth_method",
+	RequestedAllTeams:    "requested_all_teams",
+	RequestedTeamIds:     "requested_team_ids",
+	RequestedScopes:      "requested_scopes",
 }
 
 var WorkspaceBulkActionTableColumns = struct {
@@ -87,6 +96,9 @@ var WorkspaceBulkActionTableColumns = struct {
 	UpdatedAt            string
 	RequestedActorKind   string
 	RequestedAuthMethod  string
+	RequestedAllTeams    string
+	RequestedTeamIds     string
+	RequestedScopes      string
 }{
 	ID:                   "workspace_bulk_actions.id",
 	WorkspaceID:          "workspace_bulk_actions.workspace_id",
@@ -101,6 +113,9 @@ var WorkspaceBulkActionTableColumns = struct {
 	UpdatedAt:            "workspace_bulk_actions.updated_at",
 	RequestedActorKind:   "workspace_bulk_actions.requested_actor_kind",
 	RequestedAuthMethod:  "workspace_bulk_actions.requested_auth_method",
+	RequestedAllTeams:    "workspace_bulk_actions.requested_all_teams",
+	RequestedTeamIds:     "workspace_bulk_actions.requested_team_ids",
+	RequestedScopes:      "workspace_bulk_actions.requested_scopes",
 }
 
 // Generated where
@@ -128,6 +143,11 @@ func (w whereHelperint) NIN(slice []int) qm.QueryMod {
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
+func (w whereHelpertypes_StringArray) IsNull() qm.QueryMod { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpertypes_StringArray) IsNotNull() qm.QueryMod {
+	return qmhelper.WhereIsNotNull(w.field)
+}
+
 var WorkspaceBulkActionWhere = struct {
 	ID                   whereHelperstring
 	WorkspaceID          whereHelperstring
@@ -142,6 +162,9 @@ var WorkspaceBulkActionWhere = struct {
 	UpdatedAt            whereHelpertime_Time
 	RequestedActorKind   whereHelperstring
 	RequestedAuthMethod  whereHelperstring
+	RequestedAllTeams    whereHelperbool
+	RequestedTeamIds     whereHelpertypes_StringArray
+	RequestedScopes      whereHelpertypes_StringArray
 }{
 	ID:                   whereHelperstring{field: "\"workspace_bulk_actions\".\"id\""},
 	WorkspaceID:          whereHelperstring{field: "\"workspace_bulk_actions\".\"workspace_id\""},
@@ -156,6 +179,9 @@ var WorkspaceBulkActionWhere = struct {
 	UpdatedAt:            whereHelpertime_Time{field: "\"workspace_bulk_actions\".\"updated_at\""},
 	RequestedActorKind:   whereHelperstring{field: "\"workspace_bulk_actions\".\"requested_actor_kind\""},
 	RequestedAuthMethod:  whereHelperstring{field: "\"workspace_bulk_actions\".\"requested_auth_method\""},
+	RequestedAllTeams:    whereHelperbool{field: "\"workspace_bulk_actions\".\"requested_all_teams\""},
+	RequestedTeamIds:     whereHelpertypes_StringArray{field: "\"workspace_bulk_actions\".\"requested_team_ids\""},
+	RequestedScopes:      whereHelpertypes_StringArray{field: "\"workspace_bulk_actions\".\"requested_scopes\""},
 }
 
 // WorkspaceBulkActionRels is where relationship names are stored.
@@ -271,9 +297,9 @@ func (r *workspaceBulkActionR) GetBulkActionWorkspaceNotificationEvents() Worksp
 type workspaceBulkActionL struct{}
 
 var (
-	workspaceBulkActionAllColumns            = []string{"id", "workspace_id", "requested_by_account_id", "change", "status", "expected", "processed", "started_at", "finished_at", "created_at", "updated_at", "requested_actor_kind", "requested_auth_method"}
+	workspaceBulkActionAllColumns            = []string{"id", "workspace_id", "requested_by_account_id", "change", "status", "expected", "processed", "started_at", "finished_at", "created_at", "updated_at", "requested_actor_kind", "requested_auth_method", "requested_all_teams", "requested_team_ids", "requested_scopes"}
 	workspaceBulkActionColumnsWithoutDefault = []string{"workspace_id", "change"}
-	workspaceBulkActionColumnsWithDefault    = []string{"id", "requested_by_account_id", "status", "expected", "processed", "started_at", "finished_at", "created_at", "updated_at", "requested_actor_kind", "requested_auth_method"}
+	workspaceBulkActionColumnsWithDefault    = []string{"id", "requested_by_account_id", "status", "expected", "processed", "started_at", "finished_at", "created_at", "updated_at", "requested_actor_kind", "requested_auth_method", "requested_all_teams", "requested_team_ids", "requested_scopes"}
 	workspaceBulkActionPrimaryKeyColumns     = []string{"id"}
 	workspaceBulkActionGeneratedColumns      = []string{}
 )

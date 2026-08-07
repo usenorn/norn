@@ -170,6 +170,7 @@ func (s *importsService) Connect(ctx context.Context, input service.CreateImport
 		RequestedByAccount:  decision.Actor.AccountID,
 		RequestedActorKind:  decision.Actor.Kind,
 		RequestedAuthMethod: decision.Actor.AuthMethod,
+		Authority:           entity.AuthorityOf(decision.Actor, input.WorkspaceID),
 		Status:              entity.ImportDraft,
 		CreatedAt:           now,
 		UpdatedAt:           now,
