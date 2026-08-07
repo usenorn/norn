@@ -81,9 +81,13 @@ func (s *SAML) Consume(w http.ResponseWriter, r *http.Request) {
 	exchange, err := s.connections.CompleteSAML(ctx, service.CompleteSAMLInput{
 		WorkspaceSlug: workspace,
 		RelayState:    r.PostFormValue(relayStateField),
+		Correlator:    middleware.SSOCorrelatorFrom(r),
 		Response:      document,
 		Client:        middleware.ClientFrom(ctx),
 	})
+
+	http.SetCookie(w, middleware.SSOCorrelatorCookie(s.session, entity.SSOProtocolSAML, ""))
+
 	if err != nil {
 		failure(w, r, err, workspace)
 

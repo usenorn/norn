@@ -18,17 +18,17 @@ type SSOConnections interface {
 	Get(ctx context.Context, workspaceID uuid.UUID) (entity.OIDCConnection, error)
 	Save(ctx context.Context, input SaveOIDCConnectionInput) (entity.OIDCConnection, error)
 	Discover(ctx context.Context, workspaceID uuid.UUID, issuer string) (entity.OIDCEndpoints, error)
-	BeginTest(ctx context.Context, workspaceID uuid.UUID) (string, error)
-	BeginLink(ctx context.Context, workspaceID uuid.UUID) (string, error)
-	BeginLogin(ctx context.Context, input BeginOIDCLoginInput) (string, error)
+	BeginTest(ctx context.Context, workspaceID uuid.UUID) (entity.SSOHandoff, error)
+	BeginLink(ctx context.Context, workspaceID uuid.UUID) (entity.SSOHandoff, error)
+	BeginLogin(ctx context.Context, input BeginOIDCLoginInput) (entity.SSOHandoff, error)
 	Complete(ctx context.Context, input CompleteOIDCInput) (entity.SSOExchange, error)
 
 	GetSAML(ctx context.Context, workspaceID uuid.UUID) (entity.SAMLConnection, error)
 	SaveSAML(ctx context.Context, input SaveSAMLConnectionInput) (entity.SAMLConnection, error)
 	ReadSAMLMetadata(ctx context.Context, input ReadSAMLMetadataInput) (entity.SAMLDescriptor, error)
 	PublishSAMLMetadata(ctx context.Context, workspaceSlug string) ([]byte, error)
-	BeginSAMLTest(ctx context.Context, workspaceID uuid.UUID) (string, error)
-	BeginSAMLLogin(ctx context.Context, input BeginOIDCLoginInput) (string, error)
+	BeginSAMLTest(ctx context.Context, workspaceID uuid.UUID) (entity.SSOHandoff, error)
+	BeginSAMLLogin(ctx context.Context, input BeginOIDCLoginInput) (entity.SSOHandoff, error)
 	CompleteSAML(ctx context.Context, input CompleteSAMLInput) (entity.SSOExchange, error)
 	SweepCertificates(ctx context.Context) error
 }
@@ -50,9 +50,10 @@ type BeginOIDCLoginInput struct {
 }
 
 type CompleteOIDCInput struct {
-	State  string
-	Code   string
-	Client entity.SessionClient
+	State      string
+	Code       string
+	Correlator string
+	Client     entity.SessionClient
 }
 
 type SaveSAMLConnectionInput struct {
@@ -74,6 +75,7 @@ type ReadSAMLMetadataInput struct {
 type CompleteSAMLInput struct {
 	WorkspaceSlug string
 	RelayState    string
+	Correlator    string
 	Response      []byte
 	Client        entity.SessionClient
 }

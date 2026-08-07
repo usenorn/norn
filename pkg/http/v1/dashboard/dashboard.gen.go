@@ -20499,15 +20499,25 @@ type BeginOidcLoginResponseObject interface {
 	VisitBeginOidcLoginResponse(w http.ResponseWriter) error
 }
 
-type BeginOidcLogin200JSONResponse OidcAuthorization
+type BeginOidcLogin200ResponseHeaders struct {
+	SetCookie *string
+}
+
+type BeginOidcLogin200JSONResponse struct {
+	Body    OidcAuthorization
+	Headers BeginOidcLogin200ResponseHeaders
+}
 
 func (response BeginOidcLogin200JSONResponse) VisitBeginOidcLoginResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -20646,15 +20656,25 @@ type BeginSamlLoginResponseObject interface {
 	VisitBeginSamlLoginResponse(w http.ResponseWriter) error
 }
 
-type BeginSamlLogin200JSONResponse OidcAuthorization
+type BeginSamlLogin200ResponseHeaders struct {
+	SetCookie *string
+}
+
+type BeginSamlLogin200JSONResponse struct {
+	Body    OidcAuthorization
+	Headers BeginSamlLogin200ResponseHeaders
+}
 
 func (response BeginSamlLogin200JSONResponse) VisitBeginSamlLoginResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -34510,15 +34530,25 @@ type LinkWorkspaceOidcIdentityResponseObject interface {
 	VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error
 }
 
-type LinkWorkspaceOidcIdentity200JSONResponse OidcAuthorization
+type LinkWorkspaceOidcIdentity200ResponseHeaders struct {
+	SetCookie *string
+}
+
+type LinkWorkspaceOidcIdentity200JSONResponse struct {
+	Body    OidcAuthorization
+	Headers LinkWorkspaceOidcIdentity200ResponseHeaders
+}
 
 func (response LinkWorkspaceOidcIdentity200JSONResponse) VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -34608,15 +34638,25 @@ type TestWorkspaceOidcConnectionResponseObject interface {
 	VisitTestWorkspaceOidcConnectionResponse(w http.ResponseWriter) error
 }
 
-type TestWorkspaceOidcConnection200JSONResponse OidcAuthorization
+type TestWorkspaceOidcConnection200ResponseHeaders struct {
+	SetCookie *string
+}
+
+type TestWorkspaceOidcConnection200JSONResponse struct {
+	Body    OidcAuthorization
+	Headers TestWorkspaceOidcConnection200ResponseHeaders
+}
 
 func (response TestWorkspaceOidcConnection200JSONResponse) VisitTestWorkspaceOidcConnectionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -34958,15 +34998,25 @@ type TestWorkspaceSamlConnectionResponseObject interface {
 	VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error
 }
 
-type TestWorkspaceSamlConnection200JSONResponse OidcAuthorization
+type TestWorkspaceSamlConnection200ResponseHeaders struct {
+	SetCookie *string
+}
+
+type TestWorkspaceSamlConnection200JSONResponse struct {
+	Body    OidcAuthorization
+	Headers TestWorkspaceSamlConnection200ResponseHeaders
+}
 
 func (response TestWorkspaceSamlConnection200JSONResponse) VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err

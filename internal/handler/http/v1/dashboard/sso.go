@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -105,7 +106,7 @@ func (h *handler) TestWorkspaceOidcConnection(
 	ctx context.Context,
 	request api.TestWorkspaceOidcConnectionRequestObject,
 ) (api.TestWorkspaceOidcConnectionResponseObject, error) {
-	target, err := h.ssoConnections.BeginTest(ctx, request.WorkspaceId)
+	handoff, err := h.ssoConnections.BeginTest(ctx, request.WorkspaceId)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -114,14 +115,19 @@ func (h *handler) TestWorkspaceOidcConnection(
 		return nil, err
 	}
 
-	return api.TestWorkspaceOidcConnection200JSONResponse{AuthorizationUrl: target}, nil
+	cookie := h.ssoCorrelatorCookie(entity.SSOProtocolOIDC, handoff.Correlator)
+
+	return api.TestWorkspaceOidcConnection200JSONResponse{
+		Body:    api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL},
+		Headers: api.TestWorkspaceOidcConnection200ResponseHeaders{SetCookie: &cookie},
+	}, nil
 }
 
 func (h *handler) LinkWorkspaceOidcIdentity(
 	ctx context.Context,
 	request api.LinkWorkspaceOidcIdentityRequestObject,
 ) (api.LinkWorkspaceOidcIdentityResponseObject, error) {
-	target, err := h.ssoConnections.BeginLink(ctx, request.WorkspaceId)
+	handoff, err := h.ssoConnections.BeginLink(ctx, request.WorkspaceId)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -130,7 +136,12 @@ func (h *handler) LinkWorkspaceOidcIdentity(
 		return nil, err
 	}
 
-	return api.LinkWorkspaceOidcIdentity200JSONResponse{AuthorizationUrl: target}, nil
+	cookie := h.ssoCorrelatorCookie(entity.SSOProtocolOIDC, handoff.Correlator)
+
+	return api.LinkWorkspaceOidcIdentity200JSONResponse{
+		Body:    api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL},
+		Headers: api.LinkWorkspaceOidcIdentity200ResponseHeaders{SetCookie: &cookie},
+	}, nil
 }
 
 func (h *handler) GetWorkspaceSignIn(
@@ -176,7 +187,7 @@ func (h *handler) BeginOidcLogin(
 		input.ReturnTo = *request.Body.ReturnTo
 	}
 
-	target, err := h.ssoConnections.BeginLogin(ctx, input)
+	handoff, err := h.ssoConnections.BeginLogin(ctx, input)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -185,7 +196,16 @@ func (h *handler) BeginOidcLogin(
 		return nil, err
 	}
 
-	return api.BeginOidcLogin200JSONResponse{AuthorizationUrl: target}, nil
+	cookie := h.ssoCorrelatorCookie(entity.SSOProtocolOIDC, handoff.Correlator)
+
+	return api.BeginOidcLogin200JSONResponse{
+		Body:    api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL},
+		Headers: api.BeginOidcLogin200ResponseHeaders{SetCookie: &cookie},
+	}, nil
+}
+
+func (h *handler) ssoCorrelatorCookie(protocol entity.SSOProtocol, correlator string) string {
+	return middleware.SSOCorrelatorCookie(h.session, protocol, correlator).String()
 }
 
 func (h *handler) oidcConnectionDTO(connection entity.OIDCConnection) api.WorkspaceOidcConnection {

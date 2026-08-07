@@ -145,16 +145,29 @@ type SAMLAttempt struct {
 	Purpose     SSOPurpose
 	WorkspaceID uuid.UUID
 	RequestID   string
+	Correlator  string
 	ReturnTo    string
 	CreatedAt   time.Time
 }
 
 type SAMLAssertion struct {
 	ID           string
+	InResponseTo string
 	NameID       string
 	NameIDFormat string
 	Attributes   map[string][]string
 	NotOnOrAfter time.Time
+}
+
+func SAMLRequestMismatch(expected string, assertion SAMLAssertion) error {
+	if expected != "" && assertion.InResponseTo == expected {
+		return nil
+	}
+
+	return NewSSOError(
+		SSOStageResponse,
+		"The response does not answer any sign-in Norn started. Begin the sign-in again.",
+	)
 }
 
 type SAMLIdentity struct {

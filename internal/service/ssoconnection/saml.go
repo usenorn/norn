@@ -214,19 +214,19 @@ func (s *connectionsService) samlFor(
 func (s *connectionsService) BeginSAMLTest(
 	ctx context.Context,
 	workspaceID uuid.UUID,
-) (string, error) {
+) (entity.SSOHandoff, error) {
 	if err := s.authorize(ctx, workspaceID, entity.ActionUpdate); err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	workspace, err := s.workspaces.GetByID(ctx, workspaceID)
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	connection, err := s.connections.GetSAML(ctx, workspaceID)
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	return s.beginSAML(ctx, workspace, connection, entity.SSOPurposeTest, "")
@@ -235,14 +235,14 @@ func (s *connectionsService) BeginSAMLTest(
 func (s *connectionsService) BeginSAMLLogin(
 	ctx context.Context,
 	input service.BeginOIDCLoginInput,
-) (string, error) {
+) (entity.SSOHandoff, error) {
 	workspace, connection, err := s.samlFor(ctx, input.WorkspaceSlug)
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	if !connection.Verified() {
-		return "", entity.ErrSSONotVerified
+		return entity.SSOHandoff{}, entity.ErrSSONotVerified
 	}
 
 	return s.beginSAML(ctx, workspace, connection, entity.SSOPurposeLogin, input.ReturnTo)
@@ -254,10 +254,15 @@ func (s *connectionsService) beginSAML(
 	connection entity.SAMLConnection,
 	purpose entity.SSOPurpose,
 	returnTo string,
-) (string, error) {
+) (entity.SSOHandoff, error) {
 	relayState, err := opaque()
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
+	}
+
+	correlator, err := entity.NewSSOCorrelator()
+	if err != nil {
+		return entity.SSOHandoff{}, err
 	}
 
 	target, requestID, err := s.saml.AuthnRequest(
@@ -266,20 +271,29 @@ func (s *connectionsService) beginSAML(
 		relayState,
 	)
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	if err := s.requests.Put(ctx, relayState, entity.SAMLAttempt{
 		Purpose:     purpose,
 		WorkspaceID: workspace.ID,
 		RequestID:   requestID,
+		Correlator:  s.samlCorrelatorHash(correlator),
 		ReturnTo:    safeReturnTo(returnTo),
 		CreatedAt:   time.Now().UTC(),
 	}); err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
-	return target, nil
+	return entity.SSOHandoff{AuthorizationURL: target, Correlator: correlator}, nil
+}
+
+func (s *connectionsService) samlCorrelatorHash(correlator string) string {
+	if !strings.HasPrefix(s.app.BaseURL, "https://") {
+		return ""
+	}
+
+	return entity.HashSSOCorrelator(correlator)
 }
 
 func (s *connectionsService) CompleteSAML(
@@ -303,6 +317,19 @@ func (s *connectionsService) CompleteSAML(
 		return exchange, err
 	}
 
+	if solicited {
+		if attempt.WorkspaceID != workspace.ID {
+			return exchange, entity.NewSSOError(
+				entity.SSOStageResponse,
+				"This sign-in was started for a different workspace.",
+			)
+		}
+
+		if err := entity.SSOCorrelatorRefusal(attempt.Correlator, input.Correlator); err != nil {
+			return exchange, err
+		}
+	}
+
 	exchange.Purpose = attempt.Purpose
 	exchange.ReturnTo = attempt.ReturnTo
 
@@ -319,6 +346,12 @@ func (s *connectionsService) CompleteSAML(
 	)
 	if err != nil {
 		return exchange, err
+	}
+
+	if solicited {
+		if err := entity.SAMLRequestMismatch(attempt.RequestID, assertion); err != nil {
+			return exchange, err
+		}
 	}
 
 	fresh, err := s.replays.Claim(ctx, workspace.ID, assertion.ID)
@@ -393,10 +426,6 @@ func (s *connectionsService) attemptFor(
 
 	attempt, err := s.requests.Take(ctx, relayState)
 	if err != nil {
-		if errors.Is(err, entity.ErrSSOStateNotFound) && connection.AllowIDPInitiated {
-			return entity.SAMLAttempt{Purpose: entity.SSOPurposeLogin}, false, nil
-		}
-
 		return entity.SAMLAttempt{}, false, err
 	}
 

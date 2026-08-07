@@ -1,6 +1,11 @@
 package entity
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/url"
@@ -213,6 +218,49 @@ type WorkspaceSignIn struct {
 	SSO      bool
 	Protocol SSOProtocol
 	Host     string
+}
+
+const SSOCorrelatorBytes = 32
+
+type SSOHandoff struct {
+	AuthorizationURL string
+	Correlator       string
+}
+
+func NewSSOCorrelator() (string, error) {
+	raw := make([]byte, SSOCorrelatorBytes)
+	if _, err := rand.Read(raw); err != nil {
+		return "", fmt.Errorf("generate sso correlator: %w", err)
+	}
+
+	return base64.RawURLEncoding.EncodeToString(raw), nil
+}
+
+func HashSSOCorrelator(correlator string) string {
+	trimmed := strings.TrimSpace(correlator)
+	if trimmed == "" {
+		return ""
+	}
+
+	sum := sha256.Sum256([]byte(trimmed))
+
+	return hex.EncodeToString(sum[:])
+}
+
+func SSOCorrelatorRefusal(expected, presented string) error {
+	if expected == "" {
+		return nil
+	}
+
+	if subtle.ConstantTimeCompare([]byte(expected), []byte(HashSSOCorrelator(presented))) == 1 {
+		return nil
+	}
+
+	return NewSSOError(
+		SSOStageRequest,
+		"This sign-in was started in a different browser, so Norn will not finish it here. "+
+			"Start the sign-in again from this browser.",
+	)
 }
 
 type SSOExchange struct {

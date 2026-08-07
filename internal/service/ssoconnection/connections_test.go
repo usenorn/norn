@@ -664,7 +664,7 @@ func TestBeginningALoginStoresEverythingTheCallbackWillNeed(t *testing.T) {
 			return "https://login.example.com/auth?state=" + attempt.State
 		})
 
-	url, err := h.service.BeginLogin(context.Background(), service.BeginOIDCLoginInput{
+	handoff, err := h.service.BeginLogin(context.Background(), service.BeginOIDCLoginInput{
 		WorkspaceSlug: "northwind",
 		ReturnTo:      "/northwind/issues",
 	})
@@ -672,8 +672,15 @@ func TestBeginningALoginStoresEverythingTheCallbackWillNeed(t *testing.T) {
 		t.Fatalf("BeginLogin: %v", err)
 	}
 
-	if url == "" {
+	if handoff.AuthorizationURL == "" {
 		t.Fatal("no authorization URL was produced")
+	}
+
+	if handoff.Correlator == "" || stored.Correlator != entity.HashSSOCorrelator(handoff.Correlator) {
+		t.Fatal(
+			"the sign-in was stored without a correlator matching the one handed to the browser, " +
+				"so the callback cannot tell whether it is the same browser that started it",
+		)
 	}
 
 	if stored.Purpose != entity.SSOPurposeLogin {
@@ -1212,5 +1219,62 @@ func TestAnUnverifiedProviderIsNotOfferedToSignInWith(t *testing.T) {
 			"a provider nobody has completed a round trip with was offered on the sign-in " +
 				"screen, which sends people into a redirect that cannot work",
 		)
+	}
+}
+
+func TestACallbackCarryingSomebodyElsesStateIsRefused(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	h.expectWorkspace(workspaceID)
+
+	h.states.EXPECT().
+		Take(gomock.Any(), "the-state").
+		Return(entity.OIDCState{
+			Purpose:     entity.SSOPurposeLogin,
+			WorkspaceID: workspaceID,
+			Nonce:       "the-nonce",
+			Verifier:    "the-verifier",
+			Correlator:  entity.HashSSOCorrelator("the-browser-that-started-it"),
+		}, nil)
+
+	_, err := h.service.Complete(context.Background(), service.CompleteOIDCInput{
+		State:      "the-state",
+		Code:       "the-code",
+		Correlator: "a-different-browser",
+	})
+	if err == nil {
+		t.Fatal(
+			"a callback was completed by a browser that never started the sign-in. An attacker " +
+				"who starts a sign-in as themselves and gets a victim to open the callback would " +
+				"have the victim's browser issued a session for the attacker's account.",
+		)
+	}
+
+	if stage := stageOf(t, err); stage != entity.SSOStageRequest {
+		t.Fatalf("stage %q, want %q", stage, entity.SSOStageRequest)
+	}
+}
+
+func TestACallbackWithNoCorrelatorAtAllIsRefused(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	h.expectWorkspace(workspaceID)
+
+	h.states.EXPECT().
+		Take(gomock.Any(), "the-state").
+		Return(entity.OIDCState{
+			Purpose:     entity.SSOPurposeLogin,
+			WorkspaceID: workspaceID,
+			Correlator:  entity.HashSSOCorrelator("the-browser-that-started-it"),
+		}, nil)
+
+	_, err := h.service.Complete(context.Background(), service.CompleteOIDCInput{
+		State: "the-state",
+		Code:  "the-code",
+	})
+	if err == nil {
+		t.Fatal("stripping the correlator cookie was enough to complete somebody else's sign-in")
 	}
 }

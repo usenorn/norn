@@ -6073,6 +6073,7 @@ export interface operations {
             /** @description Send the browser to this address to authenticate */
             200: {
                 headers: {
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6100,6 +6101,7 @@ export interface operations {
             /** @description Send the browser to this address to authenticate */
             200: {
                 headers: {
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6637,6 +6639,7 @@ export interface operations {
             /** @description Send the browser to this address to complete the test */
             200: {
                 headers: {
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6664,6 +6667,7 @@ export interface operations {
             /** @description Send the browser to this address to complete the connection */
             200: {
                 headers: {
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6827,6 +6831,7 @@ export interface operations {
             /** @description Send the browser to this address to complete the test */
             200: {
                 headers: {
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {

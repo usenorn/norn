@@ -44,10 +44,10 @@ func (m *MockSSOConnections) EXPECT() *MockSSOConnectionsMockRecorder {
 }
 
 // BeginLink mocks base method.
-func (m *MockSSOConnections) BeginLink(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+func (m *MockSSOConnections) BeginLink(ctx context.Context, workspaceID uuid.UUID) (entity.SSOHandoff, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BeginLink", ctx, workspaceID)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(entity.SSOHandoff)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -59,10 +59,10 @@ func (mr *MockSSOConnectionsMockRecorder) BeginLink(ctx, workspaceID any) *gomoc
 }
 
 // BeginLogin mocks base method.
-func (m *MockSSOConnections) BeginLogin(ctx context.Context, input service.BeginOIDCLoginInput) (string, error) {
+func (m *MockSSOConnections) BeginLogin(ctx context.Context, input service.BeginOIDCLoginInput) (entity.SSOHandoff, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BeginLogin", ctx, input)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(entity.SSOHandoff)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -74,10 +74,10 @@ func (mr *MockSSOConnectionsMockRecorder) BeginLogin(ctx, input any) *gomock.Cal
 }
 
 // BeginSAMLLogin mocks base method.
-func (m *MockSSOConnections) BeginSAMLLogin(ctx context.Context, input service.BeginOIDCLoginInput) (string, error) {
+func (m *MockSSOConnections) BeginSAMLLogin(ctx context.Context, input service.BeginOIDCLoginInput) (entity.SSOHandoff, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BeginSAMLLogin", ctx, input)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(entity.SSOHandoff)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -89,10 +89,10 @@ func (mr *MockSSOConnectionsMockRecorder) BeginSAMLLogin(ctx, input any) *gomock
 }
 
 // BeginSAMLTest mocks base method.
-func (m *MockSSOConnections) BeginSAMLTest(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+func (m *MockSSOConnections) BeginSAMLTest(ctx context.Context, workspaceID uuid.UUID) (entity.SSOHandoff, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BeginSAMLTest", ctx, workspaceID)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(entity.SSOHandoff)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -104,10 +104,10 @@ func (mr *MockSSOConnectionsMockRecorder) BeginSAMLTest(ctx, workspaceID any) *g
 }
 
 // BeginTest mocks base method.
-func (m *MockSSOConnections) BeginTest(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+func (m *MockSSOConnections) BeginTest(ctx context.Context, workspaceID uuid.UUID) (entity.SSOHandoff, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BeginTest", ctx, workspaceID)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(entity.SSOHandoff)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

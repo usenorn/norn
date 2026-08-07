@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"strings"
+	"regexp"
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
@@ -21,6 +21,8 @@ const (
 	overviewScreen = "/settings"
 )
 
+var oauthErrorCode = regexp.MustCompile(`^[a-z_]{1,64}$`)
+
 type Callback struct {
 	connections service.SSOConnections
 	session     config.Session
@@ -35,19 +37,28 @@ func (c *Callback) Handle(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
 	if refusal := query.Get("error"); refusal != "" {
+		logging.From(ctx).Warn("provider refused the sign-in",
+			"error", refusal,
+			"error_description", query.Get("error_description"),
+		)
+
 		c.fail(w, r, entity.NewSSOError(
 			entity.SSOStageAuthorization,
-			providerRefusal(refusal, query.Get("error_description")),
+			providerRefusal(refusal),
 		), "")
 
 		return
 	}
 
 	exchange, err := c.connections.Complete(ctx, service.CompleteOIDCInput{
-		State:  query.Get("state"),
-		Code:   query.Get("code"),
-		Client: middleware.ClientFrom(ctx),
+		State:      query.Get("state"),
+		Code:       query.Get("code"),
+		Correlator: middleware.SSOCorrelatorFrom(r),
+		Client:     middleware.ClientFrom(ctx),
 	})
+
+	http.SetCookie(w, middleware.SSOCorrelatorCookie(c.session, entity.SSOProtocolOIDC, ""))
+
 	if err != nil {
 		c.fail(w, r, err, exchange.WorkspaceSlug)
 
@@ -98,10 +109,6 @@ func failure(w http.ResponseWriter, r *http.Request, err error, workspace string
 		target.Set("stage", string(failure.Stage))
 		target.Set("message", failure.Message)
 
-		if failure.Detail != "" {
-			target.Set("provider_message", failure.Detail)
-		}
-
 		if failure.Subject != "" {
 			target.Set("subject", failure.Subject)
 		}
@@ -125,9 +132,9 @@ func redirect(w http.ResponseWriter, r *http.Request, target string) {
 	http.Redirect(w, r, target, http.StatusSeeOther)
 }
 
-func providerRefusal(code, description string) string {
-	if trimmed := strings.TrimSpace(description); trimmed != "" {
-		return trimmed
+func providerRefusal(code string) string {
+	if !oauthErrorCode.MatchString(code) {
+		return "Your provider refused the sign-in."
 	}
 
 	return "Your provider refused the sign-in with " + code + "."
