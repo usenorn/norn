@@ -5,12 +5,14 @@
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
+	import Copy from "@lucide/svelte/icons/copy";
 	import Plug from "@lucide/svelte/icons/plug";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
 	import { onDate } from "$lib/time";
@@ -38,6 +40,15 @@
 	let revokeFailure = $state<ConnectionFailure | null>(null);
 	let revoking = $state<string | null>(null);
 	let narrowing = $state<MCPConnection | null>(null);
+	let copiedValue = $state("");
+
+	const serverUrl = $derived(`${page.url.origin}/mcp`);
+	const claudeCommand = $derived(`claude mcp add --transport http norn ${serverUrl}`);
+
+	async function copy(value: string) {
+		await navigator.clipboard.writeText(value);
+		copiedValue = value;
+	}
 
 	const listing = $derived<ConnectionListing>(preview?.listing ?? data.listing);
 	const workspaces = $derived(preview?.workspaces ?? data.workspaces);
@@ -182,6 +193,20 @@
 	}
 </script>
 
+{#snippet copyRow(label: string, value: string, description: string)}
+	<div class="flex flex-col gap-1 rounded-lg border border-line-subtle p-3">
+		<div class="flex items-baseline justify-between gap-2">
+			<Eyebrow class="text-ink-600">{label}</Eyebrow>
+			<Button variant="ghost" size="sm" onclick={() => copy(value)}>
+				<Copy aria-hidden="true" />
+				{copiedValue === value ? "Copied" : "Copy"}
+			</Button>
+		</div>
+		<span class="font-mono text-sm break-all text-ink-900">{value}</span>
+		<p class="text-sm leading-normal text-muted-foreground text-pretty">{description}</p>
+	</div>
+{/snippet}
+
 <svelte:head><title>AI clients · Norn</title></svelte:head>
 
 <div class="flex min-h-0 flex-1 flex-col">
@@ -217,6 +242,27 @@
 				<p class="text-sm text-muted-foreground">Loading your connections…</p>
 			{:else}
 				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Connect a client</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Norn speaks the Model Context Protocol over this one address. There is no API key to
+						paste: the client registers itself, sends you here to approve it, and you choose what
+						it reaches.
+					</p>
+				</div>
+
+				{@render copyRow(
+					"MCP server",
+					serverUrl,
+					"Give this to any client that supports a remote MCP server."
+				)}
+
+				{@render copyRow(
+					"Claude Code",
+					claudeCommand,
+					"Run this in your terminal, then approve the connection in the browser when it asks."
+				)}
+
+				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">Connected AI clients</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Each connection acts as you, across every workspace it reaches. Narrowing shrinks a
@@ -226,8 +272,8 @@
 
 				{#if current.length === 0}
 					<p class="text-sm text-muted-foreground">
-						No AI clients are connected. A client connects by opening Norn's MCP server and
-						asking for your approval.
+						Nothing is connected yet. Once you run the command above and approve the client, it
+						appears here and you can narrow or revoke it at any time.
 					</p>
 				{:else}
 					<ul class="rounded-lg border border-line-subtle bg-paper-0">
