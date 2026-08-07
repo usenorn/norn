@@ -104,7 +104,7 @@ export class RealtimeConnection {
 	close() {
 		clearTimeout(this.#staleTimer);
 		clearTimeout(this.#refetchTimer);
-		this.#pending.clear();
+		this.#refetchTimer = undefined;
 		this.#source?.close();
 		this.#source = null;
 	}
@@ -118,8 +118,13 @@ export class RealtimeConnection {
 	refetch(...invalidated: string[]) {
 		for (const key of invalidated) this.#pending.add(key);
 
-		clearTimeout(this.#refetchTimer);
-		this.#refetchTimer = setTimeout(() => void this.flush(), refetchWindowMs);
+		if (this.#refetchTimer) return;
+
+		this.#refetchTimer = setTimeout(() => {
+			this.#refetchTimer = undefined;
+
+			void this.flush();
+		}, refetchWindowMs);
 	}
 
 	flush() {

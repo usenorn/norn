@@ -30,6 +30,7 @@ export const load: PageServerLoad = async ({
 	const { workspace, teams } = await parent();
 
 	depends(keys.cycles(workspace.id));
+	depends(keys.issues(workspace.id));
 
 	if (import.meta.env.DEV && cyclePreviewStates[url.searchParams.get("state") ?? ""]) {
 		return { detail: { kind: "loading" }, progress: undefined, states: undefined };
