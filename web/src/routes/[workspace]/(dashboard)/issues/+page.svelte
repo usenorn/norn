@@ -76,6 +76,7 @@
 		type BoardPages,
 	} from "$lib/issues/paging";
 	import { columnQuery, tallyTotal } from "$lib/issues/filter";
+	import { withEdit, without, type PendingEdit } from "$lib/issues/pending";
 	import {
 		insertionIndex,
 		landing,
@@ -118,6 +119,7 @@
 
 	let pages = $state.raw<BoardPages>(noPages);
 	let moves = $state.raw<PendingMove[]>([]);
+	let edits = $state.raw<PendingEdit[]>([]);
 
 	let dragging = $state<string | null>(null);
 	let dropTarget = $state<DropTarget | null>(null);
@@ -150,6 +152,7 @@
 	$effect(() => {
 		base;
 		moves = [];
+		edits = [];
 	});
 
 	const applied = $derived(data.applied);
@@ -176,7 +179,7 @@
 			},
 			held,
 			{ name: scopeName, teams: data.teams.length },
-			{ showEmpty: display.showEmpty, moves }
+			{ showEmpty: display.showEmpty, moves, edits }
 		)
 	);
 	const columns = $derived(board.kind === "ready" ? board.columns : []);
@@ -277,26 +280,38 @@
 		issue: Issue,
 		body: Record<string, unknown>,
 		previous: Record<string, unknown>,
-		message: string
+		message: string,
+		optimistic: Partial<Issue>
 	) {
-		if (!(await patch(issue, body))) return;
+		edits = withEdit(edits, issue.id, optimistic);
+
+		if (!(await patch(issue, body, { reload: false }))) {
+			edits = without(edits, issue.id);
+
+			return;
+		}
 
 		announce(message, async () => {
 			toast = null;
+			edits = without(edits, issue.id);
+
 			await patch(asLoaded(issue), previous);
 		});
+
+		await invalidate(keys.page(page.route.id));
 	}
 
 	async function setState(issue: Issue, stateId: string) {
 		if (issue.state.id === stateId) return;
 
-		const name = states.find((state) => state.id === stateId)?.name ?? "another status";
+		const target = states.find((state) => state.id === stateId);
 
 		await change(
 			issue,
 			{ stateId },
 			{ stateId: issue.state.id },
-			`Moved ${issue.reference} to ${name}`
+			`Moved ${issue.reference} to ${target?.name ?? "another status"}`,
+			target ? { state: target } : {}
 		);
 	}
 
@@ -307,7 +322,8 @@
 			issue,
 			{ priority },
 			{ priority: issue.priority },
-			`Set ${issue.reference} to ${priorityLabel(priority).toLowerCase()}`
+			`Set ${issue.reference} to ${priorityLabel(priority).toLowerCase()}`,
+			{ priority }
 		);
 	}
 
@@ -323,7 +339,8 @@
 			held ? { assigneeId: held } : { clear: ["assignee"] },
 			accountId === ""
 				? `Unassigned ${issue.reference}`
-				: `Assigned ${issue.reference} to ${name}`
+				: `Assigned ${issue.reference} to ${name}`,
+			{ assigneeAccountId: accountId || undefined }
 		);
 	}
 
@@ -334,6 +351,9 @@
 		const name = labels.find((label) => label.id === labelId)?.name ?? "that label";
 
 		failure = null;
+		edits = withEdit(edits, issue.id, {
+			labels: labels.filter((label) => next.includes(label.id)),
+		});
 
 		const { error } = await api.PUT("/workspaces/{workspaceId}/issues/{issueId}/labels", {
 			params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
@@ -342,11 +362,10 @@
 
 		if (error) {
 			failure = issueFailureMessage(readIssueFailure(error));
+			edits = without(edits, issue.id);
 
 			return;
 		}
-
-		await invalidate(keys.page(page.route.id));
 
 		announce(
 			carries
@@ -357,6 +376,8 @@
 
 				const fresh = asLoaded(issue);
 
+				edits = without(edits, issue.id);
+
 				await api.PUT("/workspaces/{workspaceId}/issues/{issueId}/labels", {
 					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
 					body: { expectedVersion: fresh.version, labelIds: held },
@@ -365,6 +386,8 @@
 				await invalidate(keys.page(page.route.id));
 			}
 		);
+
+		await invalidate(keys.page(page.route.id));
 	}
 
 	async function loadColumn(column: IssueColumn) {

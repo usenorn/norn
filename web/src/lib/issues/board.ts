@@ -6,6 +6,7 @@ import { tabAdmits, tallyOf, tallyTotal, type IssueGroupTally } from "./filter";
 import { priorities } from "./issues";
 import { loadFor, pageOf, type ColumnLoad, type ColumnPage } from "./paging";
 import { applyMoves, keyOf, type PendingMove } from "./drop";
+import { edited, type PendingEdit } from "./pending";
 import type { Grouping, IssueTab } from "./display";
 
 export type { Issue };
@@ -228,27 +229,33 @@ export function columnsFor(
 	grouping: Grouping,
 	context: GroupingContext,
 	pages: Record<string, ColumnPage>,
-	options: { showEmpty?: boolean; moves?: PendingMove[] } = {}
+	options: { showEmpty?: boolean; moves?: PendingMove[]; edits?: PendingEdit[] } = {}
 ): IssueColumn[] {
+	const edits = options.edits ?? [];
 	const loaded = new Map<string, Issue[]>();
 	const known = new Map<string, Issue>();
+	const pristine = new Map<string, Issue>();
 
-	const bucket = (key: string, issue: Issue) => {
-		loaded.set(key, [...(loaded.get(key) ?? []), issue]);
-		known.set(issue.id, issue);
+	const bucket = (issue: Issue) => {
+		const held = edited(issue, edits);
+		const key = keyOf(grouping, held);
+
+		loaded.set(key, [...(loaded.get(key) ?? []), held]);
+		known.set(held.id, held);
+		pristine.set(issue.id, issue);
 	};
 
-	for (const issue of source.issues) bucket(keyOf(grouping, issue), issue);
+	for (const issue of source.issues) bucket(issue);
 
-	for (const [key, page] of Object.entries(pages)) {
-		for (const issue of page.issues) bucket(key, issue);
+	for (const page of Object.values(pages)) {
+		for (const issue of page.issues) bucket(issue);
 	}
 
 	for (const [key, issues] of loaded) loaded.set(key, deduped(issues));
 
 	const moves = options.moves ?? [];
 	const held = applyMoves(loaded, moves, known);
-	const shifted = tallyShift(moves, known, grouping);
+	const shifted = tallyShift(moves, edits, pristine, grouping);
 
 	const columns = slotted(grouping, context, source.issues, source.tallies).map((slot) => {
 		const issues = held.get(slot.key) ?? [];
@@ -280,22 +287,31 @@ export function columnsFor(
 
 function tallyShift(
 	moves: PendingMove[],
-	known: Map<string, Issue>,
+	edits: PendingEdit[],
+	pristine: Map<string, Issue>,
 	grouping: Grouping
 ): Map<string, number> {
 	const shifted = new Map<string, number>();
 
-	const shift = (key: string, by: number) => shifted.set(key, (shifted.get(key) ?? 0) + by);
+	const shift = (from: string, to: string) => {
+		if (from === to) return;
 
-	for (const move of moves) {
-		const issue = known.get(move.issueId);
+		shifted.set(from, (shifted.get(from) ?? 0) - 1);
+		shifted.set(to, (shifted.get(to) ?? 0) + 1);
+	};
+
+	for (const edit of edits) {
+		const issue = pristine.get(edit.issueId);
 		if (!issue) continue;
 
-		const from = keyOf(grouping, issue);
-		if (from === move.key) continue;
+		shift(keyOf(grouping, issue), keyOf(grouping, edited(issue, edits)));
+	}
 
-		shift(from, -1);
-		shift(move.key, 1);
+	for (const move of moves) {
+		const issue = pristine.get(move.issueId);
+		if (!issue) continue;
+
+		shift(keyOf(grouping, edited(issue, edits)), move.key);
 	}
 
 	return shifted;
@@ -319,7 +335,7 @@ export function boardFor(
 	context: GroupingContext,
 	pages: Record<string, ColumnPage>,
 	scope: { name: string; teams: number },
-	options: { showEmpty?: boolean; moves?: PendingMove[] } = {}
+	options: { showEmpty?: boolean; moves?: PendingMove[]; edits?: PendingEdit[] } = {}
 ): IssueBoard {
 	if (scope.teams === 0) return { kind: "no_teams" };
 
