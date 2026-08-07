@@ -16,7 +16,7 @@ type correlationKey struct{}
 func CorrelationID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		correlationID := r.Header.Get(CorrelationHeader)
-		if correlationID == "" {
+		if _, err := uuid.Parse(correlationID); err != nil {
 			correlationID = uuid.NewString()
 		}
 

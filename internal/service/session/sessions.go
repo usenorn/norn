@@ -58,6 +58,23 @@ func (s *sessionsService) authorizeSelf(ctx context.Context, action entity.Actio
 	return err
 }
 
+func (s *sessionsService) rehashIfStale(ctx context.Context, account entity.Account, password string) {
+	if !entity.PasswordNeedsRehash(account.PasswordHash) {
+		return
+	}
+
+	hashed, err := entity.HashPassword(password)
+	if err != nil {
+		return
+	}
+
+	account.PasswordHash = hashed
+
+	if _, err := s.accounts.Update(ctx, account); err != nil {
+		logging.From(ctx).WarnContext(ctx, "could not restrengthen a password hash", "error", err.Error())
+	}
+}
+
 func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput) (service.IssuedSession, error) {
 	attempts, err := s.throttle.RecordAddressAttempt(ctx, input.Client.IP)
 	if err != nil {
@@ -109,6 +126,8 @@ func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput)
 	if !matches {
 		return service.IssuedSession{}, s.recordFailure(ctx, subject, email, account.ID)
 	}
+
+	s.rehashIfStale(ctx, account, input.Password)
 
 	if err := s.throttle.Clear(ctx, subject); err != nil {
 		return service.IssuedSession{}, err
