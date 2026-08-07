@@ -24,6 +24,35 @@ export const sourceControlDetailPreviewStates: Record<string, SourceControlDetai
 							updatedAt: "2026-08-07T09:14:00Z",
 						},
 						links: [],
+						deliveries: [
+							{
+								id: "00000000-0000-4000-8000-0000000000e1",
+								event: "pull_request",
+								outcome: "applied",
+								detail: "linked 1, advanced 1",
+								attempt: 0,
+								receivedAt: "2026-08-07T09:41:00Z",
+								processedAt: "2026-08-07T09:41:01Z",
+							},
+							{
+								id: "00000000-0000-4000-8000-0000000000e2",
+								event: "push",
+								outcome: "ignored",
+								detail: "nothing in this delivery named an issue",
+								attempt: 0,
+								receivedAt: "2026-08-07T09:39:00Z",
+								processedAt: "2026-08-07T09:39:00Z",
+							},
+							{
+								id: "00000000-0000-4000-8000-0000000000e3",
+								event: "issues",
+								outcome: "failed",
+								detail: "GitHub is rate limiting this connection for 1m0s",
+								attempt: 2,
+								receivedAt: "2026-08-07T09:30:00Z",
+								processedAt: "2026-08-07T09:35:00Z",
+							},
+						],
 					},
 				},
 				broken: {
@@ -46,6 +75,7 @@ export const sourceControlDetailPreviewStates: Record<string, SourceControlDetai
 							updatedAt: "2026-08-07T06:30:00Z",
 						},
 						links: [],
+						deliveries: [],
 					},
 				},
 				hook_missing: {
@@ -66,6 +96,7 @@ export const sourceControlDetailPreviewStates: Record<string, SourceControlDetai
 							updatedAt: "2026-08-07T08:02:00Z",
 						},
 						links: [],
+						deliveries: [],
 					},
 				},
 				no_team: {
@@ -86,6 +117,7 @@ export const sourceControlDetailPreviewStates: Record<string, SourceControlDetai
 							updatedAt: "2026-08-07T09:14:00Z",
 						},
 						links: [],
+						deliveries: [],
 					},
 				},
 				destination_refused: {
@@ -107,6 +139,7 @@ export const sourceControlDetailPreviewStates: Record<string, SourceControlDetai
 							updatedAt: "2026-08-07T08:02:00Z",
 						},
 						links: [],
+						deliveries: [],
 					},
 					failure: { kind: "destination_refused" },
 				},

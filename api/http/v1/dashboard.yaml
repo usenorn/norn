@@ -4770,6 +4770,27 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/source-control/connections/{connectionId}/deliveries:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/SourceControlConnectionId'
+    get:
+      tags: [source-control]
+      operationId: listWorkspaceSourceControlDeliveries
+      summary: Read what the platform sent and what Norn did with it, newest first
+      responses:
+        '200':
+          description: The connection's recent deliveries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SourceControlDelivery' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/source-control/connections/{connectionId}/token:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -6390,6 +6411,8 @@ components:
         - member_removed
         - attachment_added
         - attachment_removed
+        - code_linked
+        - code_unlinked
 
     LicenceStatus:
       type: string
@@ -7496,6 +7519,28 @@ components:
       properties:
         connectionId: { type: string, format: uuid }
         reference: { type: string }
+
+    SourceControlDeliveryOutcome:
+      type: string
+      enum: [applied, ignored, failed]
+
+    SourceControlDelivery:
+      type: object
+      description: >-
+        One thing the platform sent. outcome is the difference between "a link was made" and
+        "there was nothing to make", which is the question anybody asks when a link did not
+        appear; detail says which, in words.
+      required: [id, event, receivedAt]
+      properties:
+        id: { type: string, format: uuid }
+        event: { type: string }
+        externalId: { type: string }
+        outcome: { $ref: '#/components/schemas/SourceControlDeliveryOutcome' }
+        detail: { type: string }
+        attempt: { type: integer, format: int32 }
+        receivedAt: { type: string, format: date-time }
+        processedAt: { type: string, format: date-time }
+        retryAfter: { type: string, format: date-time }
 
     SourceControlRefusedProblem:
       allOf:

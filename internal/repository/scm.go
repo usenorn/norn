@@ -43,9 +43,10 @@ type SCMConnection interface {
 type SCMDelivery interface {
 	Record(ctx context.Context, delivery entity.SCMDelivery) (uuid.UUID, error)
 	GetByID(ctx context.Context, deliveryID uuid.UUID) (entity.SCMDelivery, error)
-	Settle(ctx context.Context, deliveryID uuid.UUID, failure string, at time.Time) error
+	Settle(ctx context.Context, deliveryID uuid.UUID, outcome entity.SCMDeliveryOutcome, detail string, at time.Time) error
 	Reschedule(ctx context.Context, deliveryID uuid.UUID, attempt int, retryAfter time.Time, failure string) error
 	ListPending(ctx context.Context, connectionID uuid.UUID, at time.Time, limit int) ([]entity.SCMDelivery, error)
+	ListByConnection(ctx context.Context, connectionID uuid.UUID, limit int) ([]entity.SCMDelivery, error)
 	DeleteSettledBefore(ctx context.Context, before time.Time, limit int) (int, error)
 }
 

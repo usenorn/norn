@@ -148,3 +148,38 @@ func issueMirrorDTO(mirror entity.IssueMirror) api.IssueMirror {
 func pointer[T any](value T) *T {
 	return &value
 }
+
+func sourceControlDeliveryDTO(delivery entity.SCMDelivery) api.SourceControlDelivery {
+	dto := api.SourceControlDelivery{
+		Id:          delivery.ID,
+		Event:       delivery.Event,
+		ReceivedAt:  delivery.ReceivedAt,
+		ProcessedAt: delivery.ProcessedAt,
+		RetryAfter:  delivery.RetryAfter,
+		Attempt:     pointer(int32(delivery.Attempt)),
+	}
+
+	if delivery.ExternalID != "" {
+		dto.ExternalId = &delivery.ExternalID
+	}
+
+	if delivery.Outcome.Settled() {
+		outcome := api.SourceControlDeliveryOutcome(delivery.Outcome)
+		dto.Outcome = &outcome
+	}
+
+	if delivery.Detail != "" {
+		dto.Detail = &delivery.Detail
+	}
+
+	return dto
+}
+
+func sourceControlDeliveryDTOs(deliveries []entity.SCMDelivery) []api.SourceControlDelivery {
+	dtos := make([]api.SourceControlDelivery, len(deliveries))
+	for i, delivery := range deliveries {
+		dtos[i] = sourceControlDeliveryDTO(delivery)
+	}
+
+	return dtos
+}

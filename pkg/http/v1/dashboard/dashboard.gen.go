@@ -133,6 +133,8 @@ const (
 	ActivityKindAttachmentRemoved ActivityKind = "attachment_removed"
 	ActivityKindChildAdded        ActivityKind = "child_added"
 	ActivityKindChildRemoved      ActivityKind = "child_removed"
+	ActivityKindCodeLinked        ActivityKind = "code_linked"
+	ActivityKindCodeUnlinked      ActivityKind = "code_unlinked"
 	ActivityKindCommentDeleted    ActivityKind = "comment_deleted"
 	ActivityKindCommented         ActivityKind = "commented"
 	ActivityKindCreated           ActivityKind = "created"
@@ -161,6 +163,10 @@ func (e ActivityKind) Valid() bool {
 	case ActivityKindChildAdded:
 		return true
 	case ActivityKindChildRemoved:
+		return true
+	case ActivityKindCodeLinked:
+		return true
+	case ActivityKindCodeUnlinked:
 		return true
 	case ActivityKindCommentDeleted:
 		return true
@@ -2433,6 +2439,27 @@ func (e SourceControlConflictProblemCode) Valid() bool {
 	case SourceControlAlreadyMirrored:
 		return true
 	case SourceControlTeamOutsideConnection:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SourceControlDeliveryOutcome.
+const (
+	SourceControlDeliveryOutcomeApplied SourceControlDeliveryOutcome = "applied"
+	SourceControlDeliveryOutcomeFailed  SourceControlDeliveryOutcome = "failed"
+	SourceControlDeliveryOutcomeIgnored SourceControlDeliveryOutcome = "ignored"
+)
+
+// Valid indicates whether the value is a known member of the SourceControlDeliveryOutcome enum.
+func (e SourceControlDeliveryOutcome) Valid() bool {
+	switch e {
+	case SourceControlDeliveryOutcomeApplied:
+		return true
+	case SourceControlDeliveryOutcomeFailed:
+		return true
+	case SourceControlDeliveryOutcomeIgnored:
 		return true
 	default:
 		return false
@@ -5581,6 +5608,22 @@ type SourceControlConnection struct {
 	VerifiedAt    *time.Time                 `json:"verifiedAt,omitempty"`
 }
 
+// SourceControlDelivery One thing the platform sent. outcome is the difference between "a link was made" and "there was nothing to make", which is the question anybody asks when a link did not appear; detail says which, in words.
+type SourceControlDelivery struct {
+	Attempt     *int32                        `json:"attempt,omitempty"`
+	Detail      *string                       `json:"detail,omitempty"`
+	Event       string                        `json:"event"`
+	ExternalId  *string                       `json:"externalId,omitempty"`
+	Id          openapi_types.UUID            `json:"id"`
+	Outcome     *SourceControlDeliveryOutcome `json:"outcome,omitempty"`
+	ProcessedAt *time.Time                    `json:"processedAt,omitempty"`
+	ReceivedAt  time.Time                     `json:"receivedAt"`
+	RetryAfter  *time.Time                    `json:"retryAfter,omitempty"`
+}
+
+// SourceControlDeliveryOutcome defines model for SourceControlDeliveryOutcome.
+type SourceControlDeliveryOutcome string
+
 // SourceControlProvider defines model for SourceControlProvider.
 type SourceControlProvider string
 
@@ -7355,6 +7398,9 @@ type ServerInterface interface {
 	// UpdateWorkspaceSourceControlConnection Change which team a connection serves, and the label it watches for
 	// (PATCH /workspaces/{workspaceId}/source-control/connections/{connectionId})
 	UpdateWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
+	// ListWorkspaceSourceControlDeliveries Read what the platform sent and what Norn did with it, newest first
+	// (GET /workspaces/{workspaceId}/source-control/connections/{connectionId}/deliveries)
+	ListWorkspaceSourceControlDeliveries(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
 	// ReplaceWorkspaceSourceControlToken Replace the token behind a connection, proving it before it is kept
 	// (PUT /workspaces/{workspaceId}/source-control/connections/{connectionId}/token)
 	ReplaceWorkspaceSourceControlToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
@@ -8603,6 +8649,12 @@ func (_ Unimplemented) GetWorkspaceSourceControlConnection(w http.ResponseWriter
 // UpdateWorkspaceSourceControlConnection Change which team a connection serves, and the label it watches for
 // (PATCH /workspaces/{workspaceId}/source-control/connections/{connectionId})
 func (_ Unimplemented) UpdateWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceSourceControlDeliveries Read what the platform sent and what Norn did with it, newest first
+// (GET /workspaces/{workspaceId}/source-control/connections/{connectionId}/deliveries)
+func (_ Unimplemented) ListWorkspaceSourceControlDeliveries(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -14876,6 +14928,41 @@ func (siw *ServerInterfaceWrapper) UpdateWorkspaceSourceControlConnection(w http
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceSourceControlDeliveries operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceSourceControlDeliveries(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "connectionId" -------------
+	var connectionId SourceControlConnectionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceSourceControlDeliveries(w, r, workspaceId, connectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ReplaceWorkspaceSourceControlToken operation middleware
 func (siw *ServerInterfaceWrapper) ReplaceWorkspaceSourceControlToken(w http.ResponseWriter, r *http.Request) {
 
@@ -17879,6 +17966,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections/{connectionId}", wrapper.UpdateWorkspaceSourceControlConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections/{connectionId}/deliveries", wrapper.ListWorkspaceSourceControlDeliveries)
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections/{connectionId}/token", wrapper.ReplaceWorkspaceSourceControlToken)
@@ -33688,6 +33778,89 @@ func (response UpdateWorkspaceSourceControlConnection500ApplicationProblemPlusJS
 	return err
 }
 
+type ListWorkspaceSourceControlDeliveriesRequestObject struct {
+	WorkspaceId  WorkspaceId               `json:"workspaceId"`
+	ConnectionId SourceControlConnectionId `json:"connectionId"`
+}
+
+type ListWorkspaceSourceControlDeliveriesResponseObject interface {
+	VisitListWorkspaceSourceControlDeliveriesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceSourceControlDeliveries200JSONResponse []SourceControlDelivery
+
+func (response ListWorkspaceSourceControlDeliveries200JSONResponse) VisitListWorkspaceSourceControlDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlDeliveries401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSourceControlDeliveries401ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlDeliveries403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSourceControlDeliveries403ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlDeliveries404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceSourceControlDeliveries404ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlDeliveries500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceSourceControlDeliveries500ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ReplaceWorkspaceSourceControlTokenRequestObject struct {
 	WorkspaceId  WorkspaceId               `json:"workspaceId"`
 	ConnectionId SourceControlConnectionId `json:"connectionId"`
@@ -40033,6 +40206,9 @@ type StrictServerInterface interface {
 	// UpdateWorkspaceSourceControlConnection Change which team a connection serves, and the label it watches for
 	// (PATCH /workspaces/{workspaceId}/source-control/connections/{connectionId})
 	UpdateWorkspaceSourceControlConnection(ctx context.Context, request UpdateWorkspaceSourceControlConnectionRequestObject) (UpdateWorkspaceSourceControlConnectionResponseObject, error)
+	// ListWorkspaceSourceControlDeliveries Read what the platform sent and what Norn did with it, newest first
+	// (GET /workspaces/{workspaceId}/source-control/connections/{connectionId}/deliveries)
+	ListWorkspaceSourceControlDeliveries(ctx context.Context, request ListWorkspaceSourceControlDeliveriesRequestObject) (ListWorkspaceSourceControlDeliveriesResponseObject, error)
 	// ReplaceWorkspaceSourceControlToken Replace the token behind a connection, proving it before it is kept
 	// (PUT /workspaces/{workspaceId}/source-control/connections/{connectionId}/token)
 	ReplaceWorkspaceSourceControlToken(ctx context.Context, request ReplaceWorkspaceSourceControlTokenRequestObject) (ReplaceWorkspaceSourceControlTokenResponseObject, error)
@@ -45339,6 +45515,33 @@ func (sh *strictHandler) UpdateWorkspaceSourceControlConnection(w http.ResponseW
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateWorkspaceSourceControlConnectionResponseObject); ok {
 		if err := validResponse.VisitUpdateWorkspaceSourceControlConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceSourceControlDeliveries operation middleware
+func (sh *strictHandler) ListWorkspaceSourceControlDeliveries(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	var request ListWorkspaceSourceControlDeliveriesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ConnectionId = connectionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceSourceControlDeliveries(ctx, request.(ListWorkspaceSourceControlDeliveriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceSourceControlDeliveries")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceSourceControlDeliveriesResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceSourceControlDeliveriesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

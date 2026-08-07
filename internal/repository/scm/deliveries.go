@@ -24,7 +24,7 @@ func NewSCMDelivery(db *postgres.Client) repository.SCMDelivery {
 
 const deliveryColumns = `
     id, connection_id, workspace_id, external_delivery_id, event, payload,
-    attempt, retry_after, failure, received_at, processed_at`
+    attempt, retry_after, outcome, detail, failure, received_at, processed_at`
 
 func scanDelivery(row interface{ Scan(...any) error }) (entity.SCMDelivery, error) {
 	var delivery entity.SCMDelivery
@@ -38,6 +38,8 @@ func scanDelivery(row interface{ Scan(...any) error }) (entity.SCMDelivery, erro
 		&delivery.Payload,
 		&delivery.Attempt,
 		&delivery.RetryAfter,
+		&delivery.Outcome,
+		&delivery.Detail,
 		&delivery.Failure,
 		&delivery.ReceivedAt,
 		&delivery.ProcessedAt,
@@ -114,16 +116,23 @@ func (r *deliveryRepository) GetByID(
 
 const settleDeliveryQuery = `
 UPDATE workspace_scm_deliveries
-SET processed_at = $2, failure = $3, retry_after = NULL
+SET processed_at = $2, outcome = $3, detail = $4, failure = $5, retry_after = NULL
 WHERE id = $1`
 
 func (r *deliveryRepository) Settle(
 	ctx context.Context,
 	deliveryID uuid.UUID,
-	failure string,
+	outcome entity.SCMDeliveryOutcome,
+	detail string,
 	at time.Time,
 ) error {
-	result, err := r.db.Querier(ctx).ExecContext(ctx, settleDeliveryQuery, deliveryID, at, failure)
+	failure := ""
+	if outcome == entity.SCMDeliveryFailed {
+		failure = detail
+	}
+
+	result, err := r.db.Querier(ctx).
+		ExecContext(ctx, settleDeliveryQuery, deliveryID, at, outcome, detail, failure)
 	if err != nil {
 		return fmt.Errorf("settle source control delivery: %w", err)
 	}
@@ -188,6 +197,45 @@ func (r *deliveryRepository) ListPending(
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("read pending source control deliveries: %w", err)
+	}
+
+	return deliveries, nil
+}
+
+const listDeliveriesQuery = `
+SELECT` + deliveryColumns + `
+FROM workspace_scm_deliveries
+WHERE connection_id = $1
+ORDER BY received_at DESC, id
+LIMIT $2`
+
+// ListByConnection is the log a person reads when a link did not appear. It carries the
+// payload too: without it "ignored" is an answer nobody can act on.
+func (r *deliveryRepository) ListByConnection(
+	ctx context.Context,
+	connectionID uuid.UUID,
+	limit int,
+) ([]entity.SCMDelivery, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, listDeliveriesQuery, connectionID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list source control deliveries: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	deliveries := make([]entity.SCMDelivery, 0, limit)
+
+	for rows.Next() {
+		delivery, err := scanDelivery(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan source control delivery: %w", err)
+		}
+
+		deliveries = append(deliveries, delivery)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read source control deliveries: %w", err)
 	}
 
 	return deliveries, nil

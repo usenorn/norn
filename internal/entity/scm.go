@@ -192,6 +192,30 @@ type SCMRepository struct {
 	CanAdmin      bool
 }
 
+// SCMDeliveryOutcome answers the question a delivery log exists for: not "did this
+// arrive" but "why did no link appear". Applied and ignored are both successes and read
+// identically without this — one made a link, the other decided there was nothing to make.
+type SCMDeliveryOutcome string
+
+const (
+	SCMDeliveryPending SCMDeliveryOutcome = ""
+	SCMDeliveryApplied SCMDeliveryOutcome = "applied"
+	SCMDeliveryIgnored SCMDeliveryOutcome = "ignored"
+	SCMDeliveryFailed  SCMDeliveryOutcome = "failed"
+)
+
+func SCMDeliveryOutcomes() []SCMDeliveryOutcome {
+	return []SCMDeliveryOutcome{SCMDeliveryApplied, SCMDeliveryIgnored, SCMDeliveryFailed}
+}
+
+func (o SCMDeliveryOutcome) Valid() bool {
+	return o == SCMDeliveryPending || slices.Contains(SCMDeliveryOutcomes(), o)
+}
+
+func (o SCMDeliveryOutcome) Settled() bool {
+	return o != SCMDeliveryPending
+}
+
 type SCMDelivery struct {
 	ID           uuid.UUID
 	ConnectionID uuid.UUID
@@ -201,6 +225,8 @@ type SCMDelivery struct {
 	Payload      []byte
 	Attempt      int
 	RetryAfter   *time.Time
+	Outcome      SCMDeliveryOutcome
+	Detail       string
 	Failure      string
 	ReceivedAt   time.Time
 	ProcessedAt  *time.Time

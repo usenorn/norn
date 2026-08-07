@@ -36,6 +36,8 @@ type WorkspaceSCMDelivery struct {
 	Failure            string     `boil:"failure" json:"failure" toml:"failure" yaml:"failure"`
 	ReceivedAt         time.Time  `boil:"received_at" json:"received_at" toml:"received_at" yaml:"received_at"`
 	ProcessedAt        null.Time  `boil:"processed_at" json:"processed_at,omitempty" toml:"processed_at" yaml:"processed_at,omitempty"`
+	Outcome            string     `boil:"outcome" json:"outcome" toml:"outcome" yaml:"outcome"`
+	Detail             string     `boil:"detail" json:"detail" toml:"detail" yaml:"detail"`
 
 	R *workspaceSCMDeliveryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSCMDeliveryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -53,6 +55,8 @@ var WorkspaceSCMDeliveryColumns = struct {
 	Failure            string
 	ReceivedAt         string
 	ProcessedAt        string
+	Outcome            string
+	Detail             string
 }{
 	ID:                 "id",
 	ConnectionID:       "connection_id",
@@ -65,6 +69,8 @@ var WorkspaceSCMDeliveryColumns = struct {
 	Failure:            "failure",
 	ReceivedAt:         "received_at",
 	ProcessedAt:        "processed_at",
+	Outcome:            "outcome",
+	Detail:             "detail",
 }
 
 var WorkspaceSCMDeliveryTableColumns = struct {
@@ -79,6 +85,8 @@ var WorkspaceSCMDeliveryTableColumns = struct {
 	Failure            string
 	ReceivedAt         string
 	ProcessedAt        string
+	Outcome            string
+	Detail             string
 }{
 	ID:                 "workspace_scm_deliveries.id",
 	ConnectionID:       "workspace_scm_deliveries.connection_id",
@@ -91,6 +99,8 @@ var WorkspaceSCMDeliveryTableColumns = struct {
 	Failure:            "workspace_scm_deliveries.failure",
 	ReceivedAt:         "workspace_scm_deliveries.received_at",
 	ProcessedAt:        "workspace_scm_deliveries.processed_at",
+	Outcome:            "workspace_scm_deliveries.outcome",
+	Detail:             "workspace_scm_deliveries.detail",
 }
 
 // Generated where
@@ -107,6 +117,8 @@ var WorkspaceSCMDeliveryWhere = struct {
 	Failure            whereHelperstring
 	ReceivedAt         whereHelpertime_Time
 	ProcessedAt        whereHelpernull_Time
+	Outcome            whereHelperstring
+	Detail             whereHelperstring
 }{
 	ID:                 whereHelperstring{field: "\"workspace_scm_deliveries\".\"id\""},
 	ConnectionID:       whereHelperstring{field: "\"workspace_scm_deliveries\".\"connection_id\""},
@@ -119,6 +131,8 @@ var WorkspaceSCMDeliveryWhere = struct {
 	Failure:            whereHelperstring{field: "\"workspace_scm_deliveries\".\"failure\""},
 	ReceivedAt:         whereHelpertime_Time{field: "\"workspace_scm_deliveries\".\"received_at\""},
 	ProcessedAt:        whereHelpernull_Time{field: "\"workspace_scm_deliveries\".\"processed_at\""},
+	Outcome:            whereHelperstring{field: "\"workspace_scm_deliveries\".\"outcome\""},
+	Detail:             whereHelperstring{field: "\"workspace_scm_deliveries\".\"detail\""},
 }
 
 // WorkspaceSCMDeliveryRels is where relationship names are stored.
@@ -158,9 +172,9 @@ func (r *workspaceSCMDeliveryR) GetConnection() *WorkspaceSCMConnection {
 type workspaceSCMDeliveryL struct{}
 
 var (
-	workspaceSCMDeliveryAllColumns            = []string{"id", "connection_id", "workspace_id", "external_delivery_id", "event", "payload", "attempt", "retry_after", "failure", "received_at", "processed_at"}
+	workspaceSCMDeliveryAllColumns            = []string{"id", "connection_id", "workspace_id", "external_delivery_id", "event", "payload", "attempt", "retry_after", "failure", "received_at", "processed_at", "outcome", "detail"}
 	workspaceSCMDeliveryColumnsWithoutDefault = []string{"connection_id", "workspace_id", "external_delivery_id", "event", "payload"}
-	workspaceSCMDeliveryColumnsWithDefault    = []string{"id", "attempt", "retry_after", "failure", "received_at", "processed_at"}
+	workspaceSCMDeliveryColumnsWithDefault    = []string{"id", "attempt", "retry_after", "failure", "received_at", "processed_at", "outcome", "detail"}
 	workspaceSCMDeliveryPrimaryKeyColumns     = []string{"id"}
 	workspaceSCMDeliveryGeneratedColumns      = []string{}
 )

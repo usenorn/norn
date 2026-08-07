@@ -344,6 +344,21 @@ func (mr *MockSourceControlMockRecorder) Connect(ctx, input any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Connect", reflect.TypeOf((*MockSourceControl)(nil).Connect), ctx, input)
 }
 
+// Deliveries mocks base method.
+func (m *MockSourceControl) Deliveries(ctx context.Context, workspaceID, connectionID uuid.UUID) ([]entity.SCMDelivery, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Deliveries", ctx, workspaceID, connectionID)
+	ret0, _ := ret[0].([]entity.SCMDelivery)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Deliveries indicates an expected call of Deliveries.
+func (mr *MockSourceControlMockRecorder) Deliveries(ctx, workspaceID, connectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deliveries", reflect.TypeOf((*MockSourceControl)(nil).Deliveries), ctx, workspaceID, connectionID)
+}
+
 // Disconnect mocks base method.
 func (m *MockSourceControl) Disconnect(ctx context.Context, workspaceID, connectionID uuid.UUID) error {
 	m.ctrl.T.Helper()

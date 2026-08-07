@@ -18,13 +18,17 @@ export const load: PageServerLoad = async ({
 
 	const { workspace } = await parent();
 
-	const [connection, teams] = await Promise.all([
+	const [connection, teams, deliveries] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/source-control/connections/{connectionId}", {
 			params: { path: { workspaceId: workspace.id, connectionId: params.connectionId } },
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/teams", {
 			params: { path: { workspaceId: workspace.id } },
 		}),
+		locals.api.GET(
+			"/workspaces/{workspaceId}/source-control/connections/{connectionId}/deliveries",
+			{ params: { path: { workspaceId: workspace.id, connectionId: params.connectionId } } },
+		),
 	]);
 
 	const reachable = (teams.data ?? []).map((team) => ({
@@ -48,7 +52,12 @@ export const load: PageServerLoad = async ({
 	if (!connection.data) return { view: { kind: "not_found" }, teams: reachable };
 
 	return {
-		view: { kind: "detail", connection: connection.data, links: [] },
+		view: {
+			kind: "detail",
+			connection: connection.data,
+			links: [],
+			deliveries: deliveries.data ?? [],
+		},
 		teams: reachable,
 	};
 };
