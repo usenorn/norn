@@ -97,6 +97,10 @@ function groupFields(grouping: Grouping, key: string, held: Issue[]): Partial<Is
 	}
 }
 
+function settles(grouping: Grouping, ordering: Ordering): boolean {
+	return grouping !== (ordering as string);
+}
+
 function inherited(ordering: Ordering, above: Issue | undefined): Partial<Issue> {
 	if (ordering === "priority") return { priority: above?.priority ?? "none" };
 	if (ordering === "due") return { dueOn: above?.dueOn };
@@ -117,9 +121,8 @@ export function landing(
 
 	const above = without[index - 1];
 	const below = without[index];
-	const carried = inherited(ordering, above);
-
 	const grouped = groupMove(grouping, target.key);
+	const carried = settles(grouping, ordering) ? inherited(ordering, above) : {};
 	const cleared = [...(grouped.clear ?? [])];
 
 	if (ordering === "due" && !carried.dueOn) cleared.push("dueOn");
