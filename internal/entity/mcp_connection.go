@@ -28,6 +28,13 @@ var (
 	ErrMCPClientNotFound      = errors.New("mcp client not found")
 	ErrMCPAuthRequestNotFound = errors.New("mcp authorization request not found or expired")
 	ErrMCPCodeInvalid         = errors.New("mcp authorization code is invalid or already used")
+
+	ErrMCPNoWorkspaceChosen = errors.New(
+		"choose at least one workspace for this client to reach",
+	)
+	ErrMCPWorkspaceUnreachable = errors.New(
+		"that workspace is not one you can grant a client access to",
+	)
 	ErrMCPTokenNotFound       = errors.New("mcp token not found")
 	ErrMCPConnectionNotFound  = errors.New("mcp connection not found")
 	ErrMCPConnectionRevoked   = errors.New("mcp connection has been revoked")
@@ -328,4 +335,23 @@ type MCPAuthCode struct {
 	RedirectURI   string
 	Capability    MCPCapability
 	CodeChallenge string
+	Grants        APITokenGrants
+}
+
+func MCPGrantsFor(chosen []uuid.UUID, reachable []Workspace) (APITokenGrants, error) {
+	if len(chosen) == 0 {
+		return nil, ErrMCPNoWorkspaceChosen
+	}
+
+	grants := make(APITokenGrants, 0, len(chosen))
+
+	for _, workspaceID := range chosen {
+		if !slices.ContainsFunc(reachable, func(w Workspace) bool { return w.ID == workspaceID }) {
+			return nil, ErrMCPWorkspaceUnreachable
+		}
+
+		grants = append(grants, APITokenGrant{WorkspaceID: workspaceID, AllTeams: true})
+	}
+
+	return grants, nil
 }

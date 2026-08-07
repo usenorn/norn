@@ -1549,9 +1549,14 @@ paths:
     post:
       tags: [connections]
       operationId: approveMCPAuthorization
-      summary: Grant the AI client a connection that follows the caller's own membership
+      summary: Grant the AI client a connection confined to the workspaces the caller picked
       parameters:
         - $ref: '#/components/parameters/MCPRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApproveMCPAuthorizationRequest' }
       responses:
         '200':
           description: Where to send the client to finish the handshake
@@ -7195,8 +7200,22 @@ components:
         capability: { $ref: '#/components/schemas/MCPCapability' }
         workspaces:
           type: array
-          description: Every workspace the grant would reach today; future ones join automatically.
+          description: Every workspace the caller may choose from.
           items: { $ref: '#/components/schemas/MCPAuthorizationWorkspace' }
+
+    ApproveMCPAuthorizationRequest:
+      type: object
+      required: [allWorkspaces, workspaceIds]
+      properties:
+        allWorkspaces:
+          type: boolean
+          description: >-
+            Follow the caller's own membership, so workspaces they join later are reached too.
+            Choosing this is deliberate; it is never the default.
+        workspaceIds:
+          type: array
+          description: The workspaces this connection may reach when allWorkspaces is false.
+          items: { type: string, format: uuid }
 
     MCPAuthorizationDecision:
       type: object

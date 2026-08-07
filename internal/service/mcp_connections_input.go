@@ -1,6 +1,8 @@
 package service
 
 import (
+	"github.com/google/uuid"
+
 	"github.com/usenorn/norn/internal/entity"
 )
 
@@ -24,6 +26,11 @@ type MCPAuthorizationView struct {
 	ClientName string
 	Capability entity.MCPCapability
 	Workspaces []entity.Workspace
+}
+
+type ApproveMCPAuthorizationInput struct {
+	AllWorkspaces bool
+	WorkspaceIDs  []uuid.UUID
 }
 
 type MCPAuthorizationDecision struct {

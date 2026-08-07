@@ -42,7 +42,10 @@ func (h *handler) ApproveMCPAuthorization(
 	ctx context.Context,
 	request api.ApproveMCPAuthorizationRequestObject,
 ) (api.ApproveMCPAuthorizationResponseObject, error) {
-	decision, err := h.mcpConnections.Approve(ctx, request.RequestId)
+	decision, err := h.mcpConnections.Approve(ctx, request.RequestId, service.ApproveMCPAuthorizationInput{
+		AllWorkspaces: request.Body.AllWorkspaces,
+		WorkspaceIDs:  request.Body.WorkspaceIds,
+	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil

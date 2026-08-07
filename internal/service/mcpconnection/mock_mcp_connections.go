@@ -44,18 +44,18 @@ func (m *MockMCPConnections) EXPECT() *MockMCPConnectionsMockRecorder {
 }
 
 // Approve mocks base method.
-func (m *MockMCPConnections) Approve(ctx context.Context, requestID string) (service.MCPAuthorizationDecision, error) {
+func (m *MockMCPConnections) Approve(ctx context.Context, requestID string, input service.ApproveMCPAuthorizationInput) (service.MCPAuthorizationDecision, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Approve", ctx, requestID)
+	ret := m.ctrl.Call(m, "Approve", ctx, requestID, input)
 	ret0, _ := ret[0].(service.MCPAuthorizationDecision)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Approve indicates an expected call of Approve.
-func (mr *MockMCPConnectionsMockRecorder) Approve(ctx, requestID any) *gomock.Call {
+func (mr *MockMCPConnectionsMockRecorder) Approve(ctx, requestID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Approve", reflect.TypeOf((*MockMCPConnections)(nil).Approve), ctx, requestID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Approve", reflect.TypeOf((*MockMCPConnections)(nil).Approve), ctx, requestID, input)
 }
 
 // Authenticate mocks base method.

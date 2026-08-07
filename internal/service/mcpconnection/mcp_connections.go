@@ -182,8 +182,14 @@ func (s *mcpConnectionsService) DescribeAuthorization(
 func (s *mcpConnectionsService) Approve(
 	ctx context.Context,
 	requestID string,
+	input service.ApproveMCPAuthorizationInput,
 ) (service.MCPAuthorizationDecision, error) {
 	actor, err := s.self(ctx)
+	if err != nil {
+		return service.MCPAuthorizationDecision{}, err
+	}
+
+	grants, err := s.chosenGrants(ctx, actor.AccountID, input)
 	if err != nil {
 		return service.MCPAuthorizationDecision{}, err
 	}
@@ -204,6 +210,7 @@ func (s *mcpConnectionsService) Approve(
 		RedirectURI:   request.RedirectURI,
 		Capability:    request.Capability,
 		CodeChallenge: request.CodeChallenge,
+		Grants:        grants,
 	}); err != nil {
 		return service.MCPAuthorizationDecision{}, err
 	}
@@ -217,6 +224,23 @@ func (s *mcpConnectionsService) Approve(
 	}
 
 	return service.MCPAuthorizationDecision{RedirectTo: redirectTo}, nil
+}
+
+func (s *mcpConnectionsService) chosenGrants(
+	ctx context.Context,
+	accountID uuid.UUID,
+	input service.ApproveMCPAuthorizationInput,
+) (entity.APITokenGrants, error) {
+	if input.AllWorkspaces {
+		return nil, nil
+	}
+
+	reachable, err := s.workspaces.ListByAccountID(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return entity.MCPGrantsFor(input.WorkspaceIDs, reachable)
 }
 
 func (s *mcpConnectionsService) Deny(
@@ -283,6 +307,7 @@ func (s *mcpConnectionsService) Exchange(
 			ClientID:   grant.ClientID,
 			ClientName: client.Name,
 			Scopes:     entity.MCPScopesFor(grant.Capability),
+			Grants:     grant.Grants,
 		})
 		if err != nil {
 			return err

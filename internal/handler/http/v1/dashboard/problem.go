@@ -758,7 +758,10 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrMCPManageForbidden):
 		return newProblem(http.StatusForbidden, err.Error()), true
 
-	case errors.Is(err, entity.ErrMCPGrantInvalid), errors.Is(err, entity.ErrMCPScopeInvalid):
+	case errors.Is(err, entity.ErrMCPGrantInvalid),
+		errors.Is(err, entity.ErrMCPScopeInvalid),
+		errors.Is(err, entity.ErrMCPNoWorkspaceChosen),
+		errors.Is(err, entity.ErrMCPWorkspaceUnreachable):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
 	case errors.Is(err, entity.ErrWebhookNotFound),

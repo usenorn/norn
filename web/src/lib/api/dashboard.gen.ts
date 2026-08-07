@@ -1061,7 +1061,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Grant the AI client a connection that follows the caller's own membership */
+        /** Grant the AI client a connection confined to the workspaces the caller picked */
         post: operations["approveMCPAuthorization"];
         delete?: never;
         options?: never;
@@ -4329,8 +4329,14 @@ export interface components {
         MCPAuthorizationView: {
             clientName: string;
             capability: components["schemas"]["MCPCapability"];
-            /** @description Every workspace the grant would reach today; future ones join automatically. */
+            /** @description Every workspace the caller may choose from. */
             workspaces: components["schemas"]["MCPAuthorizationWorkspace"][];
+        };
+        ApproveMCPAuthorizationRequest: {
+            /** @description Follow the caller's own membership, so workspaces they join later are reached too. Choosing this is deliberate; it is never the default. */
+            allWorkspaces: boolean;
+            /** @description The workspaces this connection may reach when allWorkspaces is false. */
+            workspaceIds: string[];
         };
         MCPAuthorizationDecision: {
             redirectTo: string;
@@ -7995,7 +8001,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveMCPAuthorizationRequest"];
+            };
+        };
         responses: {
             /** @description Where to send the client to finish the handshake */
             200: {
