@@ -29,6 +29,7 @@ var TableNames = struct {
 	WorkspaceBreakGlassCodes          string
 	WorkspaceBulkActionOutcomes       string
 	WorkspaceBulkActions              string
+	WorkspaceCodeLinkReviewers        string
 	WorkspaceCodeLinkTransitions      string
 	WorkspaceCodeLinks                string
 	WorkspaceCommentMirrors           string
@@ -74,6 +75,7 @@ var TableNames = struct {
 	WorkspaceTeamCycleCadences        string
 	WorkspaceTeamMembers              string
 	WorkspaceTeamNotificationSettings string
+	WorkspaceTeamSCMSettings          string
 	WorkspaceTeamTriageSettings       string
 	WorkspaceTeams                    string
 	WorkspaceWorkflowStates           string
@@ -104,6 +106,7 @@ var TableNames = struct {
 	WorkspaceBreakGlassCodes:          "workspace_break_glass_codes",
 	WorkspaceBulkActionOutcomes:       "workspace_bulk_action_outcomes",
 	WorkspaceBulkActions:              "workspace_bulk_actions",
+	WorkspaceCodeLinkReviewers:        "workspace_code_link_reviewers",
 	WorkspaceCodeLinkTransitions:      "workspace_code_link_transitions",
 	WorkspaceCodeLinks:                "workspace_code_links",
 	WorkspaceCommentMirrors:           "workspace_comment_mirrors",
@@ -149,6 +152,7 @@ var TableNames = struct {
 	WorkspaceTeamCycleCadences:        "workspace_team_cycle_cadences",
 	WorkspaceTeamMembers:              "workspace_team_members",
 	WorkspaceTeamNotificationSettings: "workspace_team_notification_settings",
+	WorkspaceTeamSCMSettings:          "workspace_team_scm_settings",
 	WorkspaceTeamTriageSettings:       "workspace_team_triage_settings",
 	WorkspaceTeams:                    "workspace_teams",
 	WorkspaceWorkflowStates:           "workspace_workflow_states",

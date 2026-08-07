@@ -10,4 +10,5 @@ var Set = wire.NewSet(
 	NewSCMTransitionRule,
 	NewSCMRepository,
 	NewSCMRoute,
+	NewSCMTeamSetting,
 )

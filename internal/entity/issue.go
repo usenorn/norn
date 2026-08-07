@@ -56,45 +56,48 @@ func (p *IssueProgress) Add(category StateCategory, issues int) bool {
 }
 
 type Issue struct {
-	ID                 uuid.UUID
-	WorkspaceID        uuid.UUID
-	TeamID             uuid.UUID
-	TeamKey            string
-	ReferenceKey       string
-	State              IssueState
-	Labels             []Label
-	Number             int
-	Version            int
-	FieldVersions      map[string]int
-	Title              string
-	Description        string
-	Priority           IssuePriority
-	AssigneeAccountID  uuid.UUID
-	Estimate           int
-	DueOn              string
-	StateEnteredAt     time.Time
-	CompletedAt        *time.Time
-	Status             IssueStatus
-	ArchivedAt         *time.Time
-	ParentIssueID      uuid.UUID
-	ParentReference    string
-	Depth              int
-	CycleID            uuid.UUID
-	CycleNumber        int
-	ProjectID          uuid.UUID
-	ProjectName        string
-	Children           IssueProgress
-	Blocked            bool
-	CreatedByAccountID uuid.UUID
-	TriageState        TriageState
-	TriageSource       ActorKind
-	TriageDecidedBy    uuid.UUID
-	TriageDecidedName  string
-	TriageDecidedAt    *time.Time
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
-	Rank               string
-	Origin             *ImportOrigin
+	ID            uuid.UUID
+	WorkspaceID   uuid.UUID
+	TeamID        uuid.UUID
+	TeamKey       string
+	ReferenceKey  string
+	State         IssueState
+	Labels        []Label
+	Number        int
+	Version       int
+	FieldVersions map[string]int
+	// SCMAutomationSuppressed is the escape hatch. There is always an issue whose rule is
+	// wrong, and without one the team's only remedy is switching automation off for everyone.
+	SCMAutomationSuppressed bool
+	Title                   string
+	Description             string
+	Priority                IssuePriority
+	AssigneeAccountID       uuid.UUID
+	Estimate                int
+	DueOn                   string
+	StateEnteredAt          time.Time
+	CompletedAt             *time.Time
+	Status                  IssueStatus
+	ArchivedAt              *time.Time
+	ParentIssueID           uuid.UUID
+	ParentReference         string
+	Depth                   int
+	CycleID                 uuid.UUID
+	CycleNumber             int
+	ProjectID               uuid.UUID
+	ProjectName             string
+	Children                IssueProgress
+	Blocked                 bool
+	CreatedByAccountID      uuid.UUID
+	TriageState             TriageState
+	TriageSource            ActorKind
+	TriageDecidedBy         uuid.UUID
+	TriageDecidedName       string
+	TriageDecidedAt         *time.Time
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
+	Rank                    string
+	Origin                  *ImportOrigin
 }
 
 func (i Issue) Waiting() bool {

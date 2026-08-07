@@ -534,6 +534,7 @@
 						workspace={data.workspace}
 						{team}
 						rules={data.sourceControl}
+						settings={data.sourceControlSettings}
 						states={states.kind === "ready" ? states.states : []}
 						locked={busy || archived || readOnly}
 					/>

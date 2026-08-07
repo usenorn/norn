@@ -26,7 +26,7 @@ func NewCodeLink(db *postgres.Client) repository.CodeLink {
 const linkColumns = `
     id, workspace_id, issue_id,
     coalesce(repository_id, '00000000-0000-0000-0000-000000000000'::uuid),
-    provider, repository_name, kind, external_id, number, title, url, state, action, author,
+    provider, repository_name, kind, external_id, number, title, url, state, checks, author,
     head_branch, base_branch, paths, detected_in, resolving, source_updated_at,
     merged_at, closed_at, created_at, updated_at`
 
@@ -49,7 +49,7 @@ func scanLink(row interface{ Scan(...any) error }) (entity.CodeLink, error) {
 		&link.Title,
 		&link.URL,
 		&link.State,
-		&link.Action,
+		&link.Checks,
 		&link.Author,
 		&link.HeadBranch,
 		&link.BaseBranch,
@@ -77,7 +77,7 @@ func scanLink(row interface{ Scan(...any) error }) (entity.CodeLink, error) {
 const upsertLinkQuery = `
 INSERT INTO workspace_code_links (
     id, workspace_id, issue_id, repository_id, provider, repository_name, kind, external_id,
-    number, title, url, state, action, author, head_branch, base_branch, paths, detected_in,
+    number, title, url, state, checks, author, head_branch, base_branch, paths, detected_in,
     resolving, source_updated_at, merged_at, closed_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
           $19, $20, $21, $22)
@@ -87,7 +87,7 @@ SET repository_id = excluded.repository_id,
     title = excluded.title,
     url = excluded.url,
     state = excluded.state,
-    action = excluded.action,
+    checks = excluded.checks,
     author = excluded.author,
     head_branch = excluded.head_branch,
     base_branch = excluded.base_branch,
@@ -131,7 +131,7 @@ func (r *linkRepository) Upsert(
 		link.Title,
 		link.URL,
 		link.State,
-		link.Action,
+		link.Checks,
 		link.Author,
 		link.HeadBranch,
 		link.BaseBranch,
@@ -305,4 +305,31 @@ func (r *linkRepository) DetachRepository(ctx context.Context, repositoryID uuid
 	}
 
 	return nil
+}
+
+const setChecksQuery = `
+UPDATE workspace_code_links
+SET checks = $5, updated_at = now()
+WHERE workspace_id = $1 AND provider = $2 AND repository_name = $3 AND external_id = $4`
+
+func (r *linkRepository) SetChecks(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	provider entity.SCMProvider,
+	repositoryName, externalID string,
+	checks entity.CodeChecks,
+) (int, error) {
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx, setChecksQuery, workspaceID, provider, repositoryName, externalID, checks,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("record the checks on a linked change: %w", err)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("read affected rows: %w", err)
+	}
+
+	return int(affected), nil
 }

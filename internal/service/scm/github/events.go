@@ -89,6 +89,7 @@ type changePayload struct {
 		MergedAt           *time.Time `json:"merged_at"`
 		ClosedAt           *time.Time `json:"closed_at"`
 		UpdatedAt          time.Time  `json:"updated_at"`
+		MergeableState     string     `json:"mergeable_state"`
 		RequestedReviewers []struct {
 			Login string `json:"login"`
 		} `json:"requested_reviewers"`
@@ -151,6 +152,10 @@ func (f *Forge) Translate(delivery entity.SCMDelivery) ([]service.ForgeEvent, er
 		return translateIssue(delivery.Payload)
 	case "issue_comment":
 		return translateComment(delivery.Payload)
+	case "pull_request_review":
+		return translateReview(delivery.Payload)
+	case "check_suite", "check_run":
+		return translateChecks(delivery.Payload)
 	default:
 		return nil, nil
 	}
@@ -212,7 +217,10 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 			Title:      change.Title,
 			Body:       change.Body,
 			URL:        change.HTMLURL,
-			State:      changeState(change.Draft, change.State, change.MergedAt, len(change.RequestedReviewers)),
+			State:      changeState(change.Draft, change.State, change.MergedAt, change.MergeableState),
+			ReviewsMoved: payload.Action == "review_requested" ||
+				payload.Action == "review_request_removed" ||
+				payload.Action == "ready_for_review",
 			Author:     change.User.Login,
 			HeadBranch: change.Head.Ref,
 			BaseBranch: change.Base.Ref,
@@ -228,7 +236,15 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 // changeState reads merged before closed. GitHub reports a merged pull request as state
 // "closed" with a merge timestamp, so testing the state alone records every merge as an
 // abandoned change and no issue would ever advance.
-func changeState(draft bool, state string, mergedAt *time.Time, reviewers int) entity.CodeChangeState {
+//
+// mergeable_state is computed after the event is sent and is very often "unknown" here; only
+// "dirty" is a definite conflict, and anything else leaves the question to the change itself.
+func changeState(
+	draft bool,
+	state string,
+	mergedAt *time.Time,
+	mergeable string,
+) entity.CodeChangeState {
 	switch {
 	case mergedAt != nil:
 		return entity.CodeChangeMerged
@@ -236,10 +252,185 @@ func changeState(draft bool, state string, mergedAt *time.Time, reviewers int) e
 		return entity.CodeChangeClosed
 	case draft:
 		return entity.CodeChangeDraft
-	case reviewers > 0:
-		return entity.CodeChangeReviewRequested
+	case strings.EqualFold(mergeable, "dirty"):
+		return entity.CodeChangeConflicted
 	default:
 		return entity.CodeChangeOpen
+	}
+}
+
+type reviewPayload struct {
+	Action string `json:"action"`
+	Review struct {
+		State       string    `json:"state"`
+		HTMLURL     string    `json:"html_url"`
+		SubmittedAt time.Time `json:"submitted_at"`
+		User        struct {
+			Login string `json:"login"`
+		} `json:"user"`
+	} `json:"review"`
+	PullRequest struct {
+		ID                 int64      `json:"id"`
+		Number             int        `json:"number"`
+		Title              string     `json:"title"`
+		Body               string     `json:"body"`
+		HTMLURL            string     `json:"html_url"`
+		State              string     `json:"state"`
+		Draft              bool       `json:"draft"`
+		MergeableState     string     `json:"mergeable_state"`
+		MergedAt           *time.Time `json:"merged_at"`
+		ClosedAt           *time.Time `json:"closed_at"`
+		UpdatedAt          time.Time  `json:"updated_at"`
+		RequestedReviewers []struct {
+			Login string `json:"login"`
+		} `json:"requested_reviewers"`
+		User struct {
+			Login string `json:"login"`
+		} `json:"user"`
+		Head struct {
+			Ref string `json:"ref"`
+		} `json:"head"`
+		Base struct {
+			Ref string `json:"ref"`
+		} `json:"base"`
+	} `json:"pull_request"`
+	Sender struct {
+		Login string `json:"login"`
+	} `json:"sender"`
+}
+
+// translateReview carries the whole change, not only the review. Every downstream step —
+// routing by changed files, linking, driving a rule — needs the change, and a review event
+// is simply the moment one of its fields moved.
+func translateReview(body []byte) ([]service.ForgeEvent, error) {
+	var payload reviewPayload
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, fmt.Errorf("read pull request review delivery: %w", err)
+	}
+
+	change := payload.PullRequest
+
+	return []service.ForgeEvent{{
+		Kind: service.ForgeEventChangeChanged,
+		Change: service.ForgeChange{
+			ExternalID:   strconv.FormatInt(change.ID, 10),
+			Number:       change.Number,
+			Title:        change.Title,
+			Body:         change.Body,
+			URL:          change.HTMLURL,
+			State:        changeState(change.Draft, change.State, change.MergedAt, change.MergeableState),
+			ReviewsMoved: true,
+			Author:       change.User.Login,
+			HeadBranch:   change.Head.Ref,
+			BaseBranch:   change.Base.Ref,
+			UpdatedAt:    change.UpdatedAt,
+			MergedAt:     change.MergedAt,
+			ClosedAt:     change.ClosedAt,
+		},
+		Author: payload.Sender.Login,
+		At:     change.UpdatedAt,
+	}}, nil
+}
+
+// reviewVerdict drops what GitHub calls "pending": a review nobody has submitted yet is not
+// an answer, and recording it would make a change look reviewed while its author is still
+// writing the comments.
+func reviewVerdict(state string) (entity.ReviewVerdict, bool) {
+	switch strings.ToLower(state) {
+	case "approved":
+		return entity.ReviewApproved, true
+	case "changes_requested":
+		return entity.ReviewChangesRequested, true
+	case "commented":
+		return entity.ReviewCommented, true
+	case "dismissed":
+		return entity.ReviewDismissed, true
+	default:
+		return "", false
+	}
+}
+
+type checkPayload struct {
+	CheckSuite *struct {
+		Status       string `json:"status"`
+		Conclusion   string `json:"conclusion"`
+		PullRequests []struct {
+			ID     int64 `json:"id"`
+			Number int   `json:"number"`
+		} `json:"pull_requests"`
+	} `json:"check_suite"`
+	CheckRun *struct {
+		Status       string `json:"status"`
+		Conclusion   string `json:"conclusion"`
+		PullRequests []struct {
+			ID     int64 `json:"id"`
+			Number int   `json:"number"`
+		} `json:"pull_requests"`
+	} `json:"check_run"`
+	Sender struct {
+		Login string `json:"login"`
+	} `json:"sender"`
+}
+
+// translateChecks reflects the platform's own answer and computes nothing. A suite that has
+// not finished is pending rather than passing, because reading "green" off an unfinished run
+// is worse than saying nothing.
+func translateChecks(body []byte) ([]service.ForgeEvent, error) {
+	var payload checkPayload
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, fmt.Errorf("read checks delivery: %w", err)
+	}
+
+	status, conclusion := "", ""
+
+	var changes []struct {
+		ID     int64 `json:"id"`
+		Number int   `json:"number"`
+	}
+
+	switch {
+	case payload.CheckSuite != nil:
+		status, conclusion, changes = payload.CheckSuite.Status, payload.CheckSuite.Conclusion, payload.CheckSuite.PullRequests
+	case payload.CheckRun != nil:
+		status, conclusion, changes = payload.CheckRun.Status, payload.CheckRun.Conclusion, payload.CheckRun.PullRequests
+	default:
+		return nil, nil
+	}
+
+	checks := checkState(status, conclusion)
+
+	events := make([]service.ForgeEvent, 0, len(changes))
+
+	for _, change := range changes {
+		events = append(events, service.ForgeEvent{
+			Kind: service.ForgeEventChangeChanged,
+			Change: service.ForgeChange{
+				ExternalID:  strconv.FormatInt(change.ID, 10),
+				Number:      change.Number,
+				Checks:      checks,
+				KnowsChecks: true,
+			},
+			Author: payload.Sender.Login,
+		})
+	}
+
+	return events, nil
+}
+
+func checkState(status, conclusion string) entity.CodeChecks {
+	if !strings.EqualFold(status, "completed") {
+		return entity.CodeChecksPending
+	}
+
+	switch strings.ToLower(conclusion) {
+	case "success", "neutral", "skipped":
+		return entity.CodeChecksPassing
+	case "failure", "timed_out", "action_required", "cancelled", "stale", "startup_failure":
+		return entity.CodeChecksFailing
+	default:
+		return entity.CodeChecksPending
 	}
 }
 

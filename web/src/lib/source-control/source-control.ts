@@ -16,6 +16,10 @@ export type CodeLinkKind = components["schemas"]["CodeLinkKind"];
 export type CodeChangeState = components["schemas"]["CodeChangeState"];
 export type IssueMirror = components["schemas"]["IssueMirror"];
 export type SourceControlDelivery = components["schemas"]["SourceControlDelivery"];
+export type CodeChecks = components["schemas"]["CodeChecks"];
+export type ReviewVerdict = components["schemas"]["ReviewVerdict"];
+export type TeamSourceControlSettings =
+	components["schemas"]["TeamSourceControlSettings"];
 export type SourceControlDeliveryOutcome =
 	components["schemas"]["SourceControlDeliveryOutcome"];
 
@@ -213,6 +217,28 @@ const linkKinds: Record<CodeLinkKind, string> = {
 
 export function linkKindLabel(kind: CodeLinkKind): string {
 	return linkKinds[kind];
+}
+
+const checkStates: Record<CodeChecks, string> = {
+	pending: "Checks running",
+	passing: "Checks passing",
+	failing: "Checks failing",
+};
+
+export function checksLabel(checks: CodeChecks): string {
+	return checkStates[checks];
+}
+
+const reviewVerdicts: Record<ReviewVerdict, string> = {
+	requested: "asked",
+	commented: "commented",
+	approved: "approved",
+	changes_requested: "asked for changes",
+	dismissed: "dismissed",
+};
+
+export function reviewVerdictLabel(verdict: ReviewVerdict): string {
+	return reviewVerdicts[verdict];
 }
 
 export function linkTitle(link: CodeLink): string {

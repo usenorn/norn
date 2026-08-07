@@ -180,18 +180,53 @@ func codeLinkDTO(link entity.CodeLink) api.CodeLink {
 	}
 
 	dto.Resolving = pointer(link.Resolving)
-	dto.ChecksFailed = pointer(link.Action == entity.CodeChangeActionCI)
+
+	if link.Checks != entity.CodeChecksUnknown {
+		checks := api.CodeChecks(link.Checks)
+		dto.Checks = &checks
+	}
 
 	return dto
 }
 
-func codeLinkDTOs(links []entity.CodeLink) []api.CodeLink {
+func codeLinkDTOs(
+	links []entity.CodeLink,
+	reviewers map[uuid.UUID]entity.CodeReviewers,
+) []api.CodeLink {
 	dtos := make([]api.CodeLink, len(links))
+
 	for i, link := range links {
 		dtos[i] = codeLinkDTO(link)
+
+		found := reviewers[link.ID]
+		if len(found) == 0 {
+			continue
+		}
+
+		listed := make([]api.CodeReviewer, len(found))
+		for j, reviewer := range found {
+			listed[j] = api.CodeReviewer{
+				Login:      reviewer.Login,
+				Verdict:    api.ReviewVerdict(reviewer.Verdict),
+				ReviewedAt: reviewer.ReviewedAt,
+			}
+
+			if reviewer.URL != "" {
+				listed[j].Url = &reviewer.URL
+			}
+		}
+
+		dtos[i].Reviewers = &listed
 	}
 
 	return dtos
+}
+
+func teamSCMSettingsDTO(settings entity.SCMTeamSettings) api.TeamSourceControlSettings {
+	return api.TeamSourceControlSettings{
+		TeamId:         settings.TeamID,
+		BranchTemplate: settings.Template(),
+	}
 }
 
 func issueMirrorDTO(mirror entity.IssueMirror) api.IssueMirror {

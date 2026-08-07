@@ -394,7 +394,7 @@ func (h *handler) ListWorkspaceIssueCodeLinks(
 	ctx context.Context,
 	request api.ListWorkspaceIssueCodeLinksRequestObject,
 ) (api.ListWorkspaceIssueCodeLinksResponseObject, error) {
-	links, err := h.sourceControl.Links(ctx, request.WorkspaceId, request.IssueId)
+	links, reviewers, err := h.sourceControl.Links(ctx, request.WorkspaceId, request.IssueId)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -403,7 +403,7 @@ func (h *handler) ListWorkspaceIssueCodeLinks(
 		return nil, err
 	}
 
-	return api.ListWorkspaceIssueCodeLinks200JSONResponse(codeLinkDTOs(links)), nil
+	return api.ListWorkspaceIssueCodeLinks200JSONResponse(codeLinkDTOs(links, reviewers)), nil
 }
 
 func (h *handler) LinkWorkspaceIssueCode(
@@ -442,6 +442,78 @@ func (h *handler) UnlinkWorkspaceIssueCode(
 	}
 
 	return api.UnlinkWorkspaceIssueCode204Response{}, nil
+}
+
+func (h *handler) GetTeamSourceControlSettings(
+	ctx context.Context,
+	request api.GetTeamSourceControlSettingsRequestObject,
+) (api.GetTeamSourceControlSettingsResponseObject, error) {
+	settings, err := h.sourceControl.TeamSettings(ctx, request.WorkspaceId, request.TeamId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetTeamSourceControlSettings200JSONResponse(teamSCMSettingsDTO(settings)), nil
+}
+
+func (h *handler) SetTeamSourceControlSettings(
+	ctx context.Context,
+	request api.SetTeamSourceControlSettingsRequestObject,
+) (api.SetTeamSourceControlSettingsResponseObject, error) {
+	settings, err := h.sourceControl.SetTeamSettings(
+		ctx,
+		request.WorkspaceId,
+		request.TeamId,
+		service.SetTeamSCMSettingsInput{
+			BranchTemplate: optionalString(request.Body.BranchTemplate),
+		},
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SetTeamSourceControlSettings200JSONResponse(teamSCMSettingsDTO(settings)), nil
+}
+
+func (h *handler) GetWorkspaceIssueBranchName(
+	ctx context.Context,
+	request api.GetWorkspaceIssueBranchNameRequestObject,
+) (api.GetWorkspaceIssueBranchNameResponseObject, error) {
+	branch, err := h.sourceControl.BranchName(ctx, request.WorkspaceId, request.IssueId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetWorkspaceIssueBranchName200JSONResponse{Branch: branch}, nil
+}
+
+func (h *handler) SuppressWorkspaceIssueAutomation(
+	ctx context.Context,
+	request api.SuppressWorkspaceIssueAutomationRequestObject,
+) (api.SuppressWorkspaceIssueAutomationResponseObject, error) {
+	if err := h.sourceControl.SuppressAutomation(
+		ctx, request.WorkspaceId, request.IssueId, request.Body.Suppressed,
+	); err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SuppressWorkspaceIssueAutomation204Response{}, nil
 }
 
 func (h *handler) ListWorkspaceIssueMirrors(
@@ -598,6 +670,22 @@ func (r problemResponse) VisitLinkWorkspaceIssueCodeResponse(w http.ResponseWrit
 }
 
 func (r problemResponse) VisitUnlinkWorkspaceIssueCodeResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetTeamSourceControlSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceIssueBranchNameResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSuppressWorkspaceIssueAutomationResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

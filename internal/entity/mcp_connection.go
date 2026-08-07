@@ -35,15 +35,15 @@ var (
 	ErrMCPWorkspaceUnreachable = errors.New(
 		"that workspace is not one you can grant a client access to",
 	)
-	ErrMCPTokenNotFound       = errors.New("mcp token not found")
-	ErrMCPConnectionNotFound  = errors.New("mcp connection not found")
-	ErrMCPConnectionRevoked   = errors.New("mcp connection has been revoked")
-	ErrMCPScopeInvalid        = errors.New("mcp scope is not recognised")
-	ErrMCPRequestInvalid      = errors.New("mcp authorization request is malformed")
-	ErrMCPResourceInvalid     = errors.New("mcp resource indicator does not name this server")
-	ErrMCPGrantInvalid        = errors.New("mcp connection narrowing must shrink its current reach")
-	ErrMCPRedirectInvalid     = errors.New("mcp redirect uri is not registered for this client")
-	ErrMCPManageForbidden     = errors.New("mcp connections are managed by signed-in people only")
+	ErrMCPTokenNotFound      = errors.New("mcp token not found")
+	ErrMCPConnectionNotFound = errors.New("mcp connection not found")
+	ErrMCPConnectionRevoked  = errors.New("mcp connection has been revoked")
+	ErrMCPScopeInvalid       = errors.New("mcp scope is not recognised")
+	ErrMCPRequestInvalid     = errors.New("mcp authorization request is malformed")
+	ErrMCPResourceInvalid    = errors.New("mcp resource indicator does not name this server")
+	ErrMCPGrantInvalid       = errors.New("mcp connection narrowing must shrink its current reach")
+	ErrMCPRedirectInvalid    = errors.New("mcp redirect uri is not registered for this client")
+	ErrMCPManageForbidden    = errors.New("mcp connections are managed by signed-in people only")
 )
 
 type MCPCapability string

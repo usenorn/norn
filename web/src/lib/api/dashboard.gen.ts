@@ -3213,6 +3213,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/teams/{teamId}/source-control/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        /** Read this team's branch template and whether it assigns on link */
+        get: operations["getTeamSourceControlSettings"];
+        /** Change the branch template, or whether linking assigns the issue */
+        put: operations["setTeamSourceControlSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/branch-name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Get the branch name to start work on this issue */
+        get: operations["getWorkspaceIssueBranchName"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/code-automation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Stop or resume source control moving this issue */
+        put: operations["suppressWorkspaceIssueAutomation"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/code-links": {
         parameters: {
             query?: never;
@@ -4669,7 +4730,8 @@ export interface components {
             title?: string;
             url: string;
             state: components["schemas"]["CodeChangeState"];
-            checksFailed?: boolean;
+            checks?: components["schemas"]["CodeChecks"];
+            reviewers?: components["schemas"]["CodeReviewer"][];
             author?: string;
             headBranch?: string;
             baseBranch?: string;
@@ -4682,6 +4744,36 @@ export interface components {
             closedAt?: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        /**
+         * @description What the platform's own checks say. Norn reflects this and runs nothing; a suite that has not finished is pending rather than passing, because reading green off an unfinished run is worse than saying nothing.
+         * @enum {string}
+         */
+        CodeChecks: "pending" | "passing" | "failing";
+        /** @enum {string} */
+        ReviewVerdict: "requested" | "commented" | "approved" | "changes_requested" | "dismissed";
+        /** @description One person's answer on a change. Kept per reviewer rather than reduced to a single state, because "two approvals and one asking for changes" is exactly what somebody opens the issue to understand. */
+        CodeReviewer: {
+            login: string;
+            verdict: components["schemas"]["ReviewVerdict"];
+            url?: string;
+            /** Format: date-time */
+            reviewedAt?: string;
+        };
+        TeamSourceControlSettings: {
+            /** Format: uuid */
+            teamId: string;
+            branchTemplate: string;
+        };
+        SetTeamSourceControlSettingsRequest: {
+            branchTemplate?: string;
+        };
+        /** @description The branch a person copies before starting work. It is generated rather than typed because the reference in it is what creates the link in the first place. */
+        IssueBranchName: {
+            branch: string;
+        };
+        SuppressIssueAutomationRequest: {
+            suppressed: boolean;
         };
         LinkIssueCodeRequest: {
             url: string;
@@ -13003,6 +13095,121 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SourceControlTransitionRule"][];
                 };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getTeamSourceControlSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team's settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamSourceControlSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setTeamSourceControlSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTeamSourceControlSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description The settings as they now stand */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamSourceControlSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceIssueBranchName: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The branch name */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueBranchName"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    suppressWorkspaceIssueAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuppressIssueAutomationRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue's automation setting is stored */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];

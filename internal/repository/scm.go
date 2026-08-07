@@ -9,7 +9,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-//go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=SCMConnection=MockSCMConnection,SCMRepository=MockSCMRepository,SCMRoute=MockSCMRoute,SCMDelivery=MockSCMDelivery,CodeLink=MockCodeLink,IssueMirror=MockIssueMirror,SCMTransitionRule=MockSCMTransitionRule
+//go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=SCMTeamSetting=MockSCMTeamSetting,SCMConnection=MockSCMConnection,SCMRepository=MockSCMRepository,SCMRoute=MockSCMRoute,SCMDelivery=MockSCMDelivery,CodeLink=MockCodeLink,IssueMirror=MockIssueMirror,SCMTransitionRule=MockSCMTransitionRule
 
 type SCMConnectionInput struct {
 	Connection entity.SCMConnection
@@ -81,6 +81,18 @@ type CodeLink interface {
 	ClaimTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, issueID uuid.UUID, at time.Time) (bool, error)
 	Delete(ctx context.Context, workspaceID, issueID, linkID uuid.UUID) (entity.CodeLink, error)
 	DetachRepository(ctx context.Context, repositoryID uuid.UUID) error
+
+	// SetChecks touches one column on the links a change already has. A checks payload names
+	// the change and nothing else about it, so upserting from one would blank the title, the
+	// address and the state the issue is showing.
+	SetChecks(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repositoryName, externalID string, checks entity.CodeChecks) (int, error)
+	ReplaceReviewers(ctx context.Context, linkID uuid.UUID, reviewers entity.CodeReviewers) error
+	ListReviewers(ctx context.Context, linkIDs []uuid.UUID) (map[uuid.UUID]entity.CodeReviewers, error)
+}
+
+type SCMTeamSetting interface {
+	Get(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.SCMTeamSettings, error)
+	Upsert(ctx context.Context, settings entity.SCMTeamSettings) (entity.SCMTeamSettings, error)
 }
 
 type IssueMirror interface {

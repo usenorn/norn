@@ -57,15 +57,33 @@ func (s *connections) manages(
 	return decision, issue, nil
 }
 
+// Links carries the reviewers alongside. Who is blocking a change is the thing somebody
+// opens the issue to find out, and a second round trip per link to discover it would make
+// the panel the slowest part of the screen.
 func (s *connections) Links(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
-) ([]entity.CodeLink, error) {
+) ([]entity.CodeLink, map[uuid.UUID]entity.CodeReviewers, error) {
 	if _, _, err := s.reads(ctx, workspaceID, issueID); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return s.links.ListByIssue(ctx, workspaceID, issueID)
+	links, err := s.links.ListByIssue(ctx, workspaceID, issueID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ids := make([]uuid.UUID, len(links))
+	for i, link := range links {
+		ids[i] = link.ID
+	}
+
+	reviewers, err := s.links.ListReviewers(ctx, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return links, reviewers, nil
 }
 
 // Link takes the address a person pasted rather than a set of fields, because that is what

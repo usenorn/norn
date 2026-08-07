@@ -5047,6 +5047,84 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/teams/{teamId}/source-control/settings:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/TeamId'
+    get:
+      tags: [source-control]
+      operationId: getTeamSourceControlSettings
+      summary: Read this team's branch template and whether it assigns on link
+      responses:
+        '200':
+          description: The team's settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamSourceControlSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [source-control]
+      operationId: setTeamSourceControlSettings
+      summary: Change the branch template, or whether linking assigns the issue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetTeamSourceControlSettingsRequest' }
+      responses:
+        '200':
+          description: The settings as they now stand
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamSourceControlSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/branch-name:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [source-control]
+      operationId: getWorkspaceIssueBranchName
+      summary: Get the branch name to start work on this issue
+      responses:
+        '200':
+          description: The branch name
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueBranchName' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/code-automation:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    put:
+      tags: [source-control]
+      operationId: suppressWorkspaceIssueAutomation
+      summary: Stop or resume source control moving this issue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SuppressIssueAutomationRequest' }
+      responses:
+        '204': { description: The issue's automation setting is stored }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/code-links:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7743,7 +7821,10 @@ components:
         title: { type: string }
         url: { type: string }
         state: { $ref: '#/components/schemas/CodeChangeState' }
-        checksFailed: { type: boolean }
+        checks: { $ref: '#/components/schemas/CodeChecks' }
+        reviewers:
+          type: array
+          items: { $ref: '#/components/schemas/CodeReviewer' }
         author: { type: string }
         headBranch: { type: string }
         baseBranch: { type: string }
@@ -7753,6 +7834,58 @@ components:
         mergedAt: { type: string, format: date-time }
         closedAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
+
+    CodeChecks:
+      type: string
+      description: >-
+        What the platform's own checks say. Norn reflects this and runs nothing; a suite that
+        has not finished is pending rather than passing, because reading green off an
+        unfinished run is worse than saying nothing.
+      enum: [pending, passing, failing]
+
+    ReviewVerdict:
+      type: string
+      enum: [requested, commented, approved, changes_requested, dismissed]
+
+    CodeReviewer:
+      type: object
+      description: >-
+        One person's answer on a change. Kept per reviewer rather than reduced to a single
+        state, because "two approvals and one asking for changes" is exactly what somebody
+        opens the issue to understand.
+      required: [login, verdict]
+      properties:
+        login: { type: string }
+        verdict: { $ref: '#/components/schemas/ReviewVerdict' }
+        url: { type: string }
+        reviewedAt: { type: string, format: date-time }
+
+    TeamSourceControlSettings:
+      type: object
+      required: [teamId, branchTemplate]
+      properties:
+        teamId: { type: string, format: uuid }
+        branchTemplate: { type: string }
+
+    SetTeamSourceControlSettingsRequest:
+      type: object
+      properties:
+        branchTemplate: { type: string }
+
+    IssueBranchName:
+      type: object
+      description: >-
+        The branch a person copies before starting work. It is generated rather than typed
+        because the reference in it is what creates the link in the first place.
+      required: [branch]
+      properties:
+        branch: { type: string }
+
+    SuppressIssueAutomationRequest:
+      type: object
+      required: [suppressed]
+      properties:
+        suppressed: { type: boolean }
 
     LinkIssueCodeRequest:
       type: object

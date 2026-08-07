@@ -169,11 +169,13 @@ func TestAChangeThatClosedWithoutMergingIsNotAMerge(t *testing.T) {
 	}
 }
 
-func TestADraftAndAChangeAwaitingReviewAreDistinguishable(t *testing.T) {
+func TestWhatTheChangeItselfSaysIsReadOffThePayload(t *testing.T) {
 	draft := []byte(`{"pull_request":{"id":1,"state":"open","draft":true,"updated_at":"2026-08-07T10:00:00Z"}}`)
-	review := []byte(`{"pull_request":{"id":2,"state":"open","draft":false,
-      "requested_reviewers":[{"login":"someone"}],"updated_at":"2026-08-07T10:00:00Z"}}`)
 	open := []byte(`{"pull_request":{"id":3,"state":"open","draft":false,"updated_at":"2026-08-07T10:00:00Z"}}`)
+	dirty := []byte(`{"pull_request":{"id":4,"state":"open","draft":false,
+      "mergeable_state":"dirty","updated_at":"2026-08-07T10:00:00Z"}}`)
+	unknown := []byte(`{"pull_request":{"id":5,"state":"open","draft":false,
+      "mergeable_state":"unknown","updated_at":"2026-08-07T10:00:00Z"}}`)
 
 	for _, testCase := range []struct {
 		name string
@@ -181,8 +183,9 @@ func TestADraftAndAChangeAwaitingReviewAreDistinguishable(t *testing.T) {
 		want entity.CodeChangeState
 	}{
 		{"a draft", draft, entity.CodeChangeDraft},
-		{"awaiting review", review, entity.CodeChangeReviewRequested},
 		{"simply open", open, entity.CodeChangeOpen},
+		{"one that will not merge", dirty, entity.CodeChangeConflicted},
+		{"one GitHub has not worked out yet", unknown, entity.CodeChangeOpen},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			events, err := adapter().Translate(entity.SCMDelivery{Event: "pull_request", Payload: testCase.body})
@@ -194,6 +197,103 @@ func TestADraftAndAChangeAwaitingReviewAreDistinguishable(t *testing.T) {
 				t.Fatalf("state = %q, want %q", events[0].Change.State, testCase.want)
 			}
 		})
+	}
+}
+
+// A review arrives on its own event carrying one review, not the set. Rebuilding the set
+// from it would erase every other answer, so the event says only that the reviews moved and
+// the whole set is read back from the forge.
+func TestAReviewEventAsksForTheWholeSetRatherThanCarryingIt(t *testing.T) {
+	body := []byte(`{"action":"submitted",
+      "review":{"state":"changes_requested","user":{"login":"rae"}},
+      "pull_request":{"id":9,"number":7,"state":"open","draft":false,
+        "updated_at":"2026-08-07T11:00:00Z"},
+      "sender":{"login":"rae"}}`)
+
+	events, err := adapter().Translate(
+		entity.SCMDelivery{Event: "pull_request_review", Payload: body},
+	)
+	if err != nil {
+		t.Fatalf("Translate: %v", err)
+	}
+
+	if len(events) != 1 || events[0].Change.Number != 7 {
+		t.Fatalf("a review must carry the change it is about, got %+v", events)
+	}
+
+	if !events[0].Change.ReviewsMoved {
+		t.Fatal(
+			"a review event that does not report the reviews as moved leaves the stored set " +
+				"stale, and the issue keeps showing an answer nobody holds any more",
+		)
+	}
+}
+
+// A pull request event that has nothing to do with review must not send the integration
+// back to the forge for a set that cannot have changed.
+func TestAnOrdinaryPullRequestEventDoesNotReReadTheReviews(t *testing.T) {
+	body := []byte(`{"action":"edited",
+      "pull_request":{"id":9,"number":7,"state":"open","updated_at":"2026-08-07T11:00:00Z"}}`)
+
+	events, err := adapter().Translate(entity.SCMDelivery{Event: "pull_request", Payload: body})
+	if err != nil {
+		t.Fatalf("Translate: %v", err)
+	}
+
+	if events[0].Change.ReviewsMoved {
+		t.Fatal("an edit asked for the reviews to be read again; that is a call per edit for nothing")
+	}
+}
+
+func TestChecksAreReflectedAndNeverComputed(t *testing.T) {
+	cases := map[string]entity.CodeChecks{
+		`{"check_suite":{"status":"queued","pull_requests":[{"id":9,"number":7}]}}`:                             entity.CodeChecksPending,
+		`{"check_suite":{"status":"in_progress","pull_requests":[{"id":9,"number":7}]}}`:                        entity.CodeChecksPending,
+		`{"check_suite":{"status":"completed","conclusion":"success","pull_requests":[{"id":9,"number":7}]}}`:   entity.CodeChecksPassing,
+		`{"check_suite":{"status":"completed","conclusion":"skipped","pull_requests":[{"id":9,"number":7}]}}`:   entity.CodeChecksPassing,
+		`{"check_suite":{"status":"completed","conclusion":"failure","pull_requests":[{"id":9,"number":7}]}}`:   entity.CodeChecksFailing,
+		`{"check_suite":{"status":"completed","conclusion":"timed_out","pull_requests":[{"id":9,"number":7}]}}`: entity.CodeChecksFailing,
+		// A re-run arrives carrying the previous run's conclusion while the new one is queued.
+		// Reading that as green says the change passed when nothing has run yet.
+		`{"check_suite":{"status":"queued","conclusion":"success","pull_requests":[{"id":9,"number":7}]}}`:      entity.CodeChecksPending,
+		`{"check_suite":{"status":"in_progress","conclusion":"failure","pull_requests":[{"id":9,"number":7}]}}`: entity.CodeChecksPending,
+	}
+
+	for payload, want := range cases {
+		t.Run(string(want)+" "+payload[:40], func(t *testing.T) {
+			events, err := adapter().Translate(
+				entity.SCMDelivery{Event: "check_suite", Payload: []byte(payload)},
+			)
+			if err != nil {
+				t.Fatalf("Translate: %v", err)
+			}
+
+			if len(events) != 1 {
+				t.Fatalf("got %d events, want one per pull request named", len(events))
+			}
+
+			if !events[0].Change.KnowsChecks {
+				t.Fatal("a checks event must say it knows them, or nothing is written")
+			}
+
+			if events[0].Change.Checks != want {
+				t.Fatalf("checks = %q, want %q", events[0].Change.Checks, want)
+			}
+		})
+	}
+}
+
+func TestASuiteAttachedToNoPullRequestChangesNothing(t *testing.T) {
+	events, err := adapter().Translate(entity.SCMDelivery{
+		Event:   "check_suite",
+		Payload: []byte(`{"check_suite":{"status":"completed","conclusion":"failure","pull_requests":[]}}`),
+	})
+	if err != nil {
+		t.Fatalf("Translate: %v", err)
+	}
+
+	if len(events) != 0 {
+		t.Fatalf("got %d events for a suite on a branch with no pull request, want none", len(events))
 	}
 }
 

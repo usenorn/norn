@@ -74,6 +74,7 @@
 	} from "$lib/activity/activity";
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
 	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
+
 	import { sourceControlFailure, failureMessage as codeFailureMessage, type CodeLink, type SourceControlFailure } from "$lib/source-control/source-control";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
@@ -151,6 +152,12 @@
 	let codeLinkFailure = $state<SourceControlFailure | null>(null);
 	let removedCodeLinks = $state.raw<string[]>([]);
 	let unlinking = $state(false);
+	let branchName = $state("");
+	let branchCopied = $state(false);
+	let copyingBranch = $state(false);
+	let togglingAutomation = $state(false);
+	let automationOverride = $state.raw<boolean | null>(null);
+
 	let uploadSequence = 0;
 
 	const aborts = new Map<string, () => void>();
@@ -237,10 +244,71 @@
 	const codeLinks = $derived<CodeLink[]>(
 		(ready?.codeLinks ?? []).filter((link) => !removedCodeLinks.includes(link.id))
 	);
+	const automationSuppressed = $derived(automationOverride ?? false);
 	const activity = $derived<ActivityFeed>(
 		activityPreview?.feed ?? loadedActivity ?? ready?.activity ?? { kind: "loading" }
 	);
 	const shownCommentUploads = $derived(attachmentPreview?.uploads ?? commentUploads);
+
+	// The branch name is asked for rather than built here: the template belongs to the team
+	// and only the server knows it.
+	async function copyBranchName() {
+		if (!issue) return;
+
+		copyingBranch = true;
+		branchCopied = false;
+		codeLinkFailure = null;
+
+		const { data: found, error } = await api.GET(
+			"/workspaces/{workspaceId}/issues/{issueId}/branch-name",
+			{ params: { path: { workspaceId: data.workspace.id, issueId: issue.id } } },
+		);
+
+		copyingBranch = false;
+
+		if (error || !found) {
+			codeLinkFailure = sourceControlFailure(error);
+
+			return;
+		}
+
+		branchName = found.branch;
+
+		try {
+			await navigator.clipboard.writeText(found.branch);
+
+			branchCopied = true;
+		} catch {
+			// Writing to the clipboard is refused without a user gesture or over plain http.
+			// The name is shown below the button either way, so there is still something to copy.
+			branchCopied = false;
+		}
+	}
+
+	async function setAutomation(suppressed: boolean) {
+		if (!issue) return;
+
+		togglingAutomation = true;
+		codeLinkFailure = null;
+
+		const { error } = await api.PUT(
+			"/workspaces/{workspaceId}/issues/{issueId}/code-automation",
+			{
+				params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+				body: { suppressed },
+			},
+		);
+
+		togglingAutomation = false;
+
+		if (error) {
+			codeLinkFailure = sourceControlFailure(error);
+
+			return;
+		}
+
+		automationOverride = suppressed;
+	}
 
 	async function unlinkCode(link: CodeLink) {
 		if (!issue) return;
@@ -1736,6 +1804,32 @@
 							busy={unlinking}
 							onunlink={canEdit ? unlinkCode : undefined}
 						/>
+
+						{#if canEdit}
+							<div class="flex flex-wrap items-center gap-2 pt-1">
+								<Button variant="secondary" onclick={copyBranchName} disabled={copyingBranch}>
+									{branchCopied ? "Copied" : copyingBranch ? "Reading…" : "Copy branch name"}
+								</Button>
+								<Button
+									variant="ghost"
+									onclick={() => setAutomation(!automationSuppressed)}
+									disabled={togglingAutomation}
+								>
+									{automationSuppressed ? "Resume automation" : "Stop moving this issue"}
+								</Button>
+							</div>
+
+							{#if branchName}
+								<p class="font-mono text-xs break-all text-muted-foreground">{branchName}</p>
+							{/if}
+
+							{#if automationSuppressed}
+								<p class="text-xs text-muted-foreground">
+									Source control still records what happens to the code here; it just does not
+									move this issue.
+								</p>
+							{/if}
+						{/if}
 					</section>
 
 					<section class="flex flex-col gap-0.5">

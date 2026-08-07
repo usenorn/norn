@@ -222,6 +222,21 @@ func (mr *MockForgeMockRecorder) RemoveHook(ctx, target, hookID any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveHook", reflect.TypeOf((*MockForge)(nil).RemoveHook), ctx, target, hookID)
 }
 
+// RepairHook mocks base method.
+func (m *MockForge) RepairHook(ctx context.Context, request service.ForgeHookRequest, hookID string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RepairHook", ctx, request, hookID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RepairHook indicates an expected call of RepairHook.
+func (mr *MockForgeMockRecorder) RepairHook(ctx, request, hookID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepairHook", reflect.TypeOf((*MockForge)(nil).RepairHook), ctx, request, hookID)
+}
+
 // Repository mocks base method.
 func (m *MockForge) Repository(ctx context.Context, target entity.SCMTarget) (entity.SCMRemoteRepository, error) {
 	m.ctrl.T.Helper()
@@ -235,6 +250,21 @@ func (m *MockForge) Repository(ctx context.Context, target entity.SCMTarget) (en
 func (mr *MockForgeMockRecorder) Repository(ctx, target any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Repository", reflect.TypeOf((*MockForge)(nil).Repository), ctx, target)
+}
+
+// Reviews mocks base method.
+func (m *MockForge) Reviews(ctx context.Context, target entity.SCMTarget, number int) ([]service.ForgeReviewer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reviews", ctx, target, number)
+	ret0, _ := ret[0].([]service.ForgeReviewer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Reviews indicates an expected call of Reviews.
+func (mr *MockForgeMockRecorder) Reviews(ctx, target, number any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reviews", reflect.TypeOf((*MockForge)(nil).Reviews), ctx, target, number)
 }
 
 // Translate mocks base method.
@@ -374,6 +404,21 @@ func (mr *MockSourceControlMockRecorder) AddRoute(ctx, workspaceID, input any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRoute", reflect.TypeOf((*MockSourceControl)(nil).AddRoute), ctx, workspaceID, input)
 }
 
+// BranchName mocks base method.
+func (m *MockSourceControl) BranchName(ctx context.Context, workspaceID, issueID uuid.UUID) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BranchName", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BranchName indicates an expected call of BranchName.
+func (mr *MockSourceControlMockRecorder) BranchName(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BranchName", reflect.TypeOf((*MockSourceControl)(nil).BranchName), ctx, workspaceID, issueID)
+}
+
 // ClearTeamRule mocks base method.
 func (m *MockSourceControl) ClearTeamRule(ctx context.Context, workspaceID, teamID uuid.UUID, trigger entity.CodeChangeState) ([]service.TeamTransitionRule, error) {
 	m.ctrl.T.Helper()
@@ -464,12 +509,13 @@ func (mr *MockSourceControlMockRecorder) Link(ctx, workspaceID, issueID, input a
 }
 
 // Links mocks base method.
-func (m *MockSourceControl) Links(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.CodeLink, error) {
+func (m *MockSourceControl) Links(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.CodeLink, map[uuid.UUID]entity.CodeReviewers, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Links", ctx, workspaceID, issueID)
 	ret0, _ := ret[0].([]entity.CodeLink)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(map[uuid.UUID]entity.CodeReviewers)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Links indicates an expected call of Links.
@@ -611,6 +657,35 @@ func (mr *MockSourceControlMockRecorder) SetTeamRule(ctx, workspaceID, teamID, i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTeamRule", reflect.TypeOf((*MockSourceControl)(nil).SetTeamRule), ctx, workspaceID, teamID, input)
 }
 
+// SetTeamSettings mocks base method.
+func (m *MockSourceControl) SetTeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID, input service.SetTeamSCMSettingsInput) (entity.SCMTeamSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetTeamSettings", ctx, workspaceID, teamID, input)
+	ret0, _ := ret[0].(entity.SCMTeamSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetTeamSettings indicates an expected call of SetTeamSettings.
+func (mr *MockSourceControlMockRecorder) SetTeamSettings(ctx, workspaceID, teamID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTeamSettings", reflect.TypeOf((*MockSourceControl)(nil).SetTeamSettings), ctx, workspaceID, teamID, input)
+}
+
+// SuppressAutomation mocks base method.
+func (m *MockSourceControl) SuppressAutomation(ctx context.Context, workspaceID, issueID uuid.UUID, suppressed bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SuppressAutomation", ctx, workspaceID, issueID, suppressed)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SuppressAutomation indicates an expected call of SuppressAutomation.
+func (mr *MockSourceControlMockRecorder) SuppressAutomation(ctx, workspaceID, issueID, suppressed any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SuppressAutomation", reflect.TypeOf((*MockSourceControl)(nil).SuppressAutomation), ctx, workspaceID, issueID, suppressed)
+}
+
 // TeamRules mocks base method.
 func (m *MockSourceControl) TeamRules(ctx context.Context, workspaceID, teamID uuid.UUID) ([]service.TeamTransitionRule, error) {
 	m.ctrl.T.Helper()
@@ -624,6 +699,21 @@ func (m *MockSourceControl) TeamRules(ctx context.Context, workspaceID, teamID u
 func (mr *MockSourceControlMockRecorder) TeamRules(ctx, workspaceID, teamID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TeamRules", reflect.TypeOf((*MockSourceControl)(nil).TeamRules), ctx, workspaceID, teamID)
+}
+
+// TeamSettings mocks base method.
+func (m *MockSourceControl) TeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.SCMTeamSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TeamSettings", ctx, workspaceID, teamID)
+	ret0, _ := ret[0].(entity.SCMTeamSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TeamSettings indicates an expected call of TeamSettings.
+func (mr *MockSourceControlMockRecorder) TeamSettings(ctx, workspaceID, teamID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TeamSettings", reflect.TypeOf((*MockSourceControl)(nil).TeamSettings), ctx, workspaceID, teamID)
 }
 
 // Unlink mocks base method.

@@ -19,6 +19,7 @@ type connections struct {
 	repositories repository.SCMRepository
 	routes       repository.SCMRoute
 	rules        repository.SCMTransitionRule
+	teamSettings repository.SCMTeamSetting
 	deliveries   repository.SCMDelivery
 	links        repository.CodeLink
 	mirrors      repository.IssueMirror
@@ -38,6 +39,7 @@ func NewConnections(
 	repositories repository.SCMRepository,
 	routes repository.SCMRoute,
 	rules repository.SCMTransitionRule,
+	teamSettings repository.SCMTeamSetting,
 	deliveries repository.SCMDelivery,
 	links repository.CodeLink,
 	mirrors repository.IssueMirror,
@@ -56,6 +58,7 @@ func NewConnections(
 		repositories: repositories,
 		routes:       routes,
 		rules:        rules,
+		teamSettings: teamSettings,
 		deliveries:   deliveries,
 		links:        links,
 		mirrors:      mirrors,

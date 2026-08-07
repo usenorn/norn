@@ -78,6 +78,8 @@ func (s *sync) reconcileOne(
 
 	if from.repository.ExternalHookID == "" {
 		s.installMissingHook(ctx, from, target, secret)
+	} else {
+		s.repairHook(ctx, from, target, secret)
 	}
 
 	if err := s.drainPending(ctx, from, at); err != nil {
@@ -156,6 +158,40 @@ func (s *sync) installMissingHook(
 			"recording a source control hook failed",
 			"repository_id", from.repository.ID.String(),
 			"error", err.Error(),
+		)
+	}
+}
+
+// repairHook brings an already-installed hook up to the events this version needs. Adding an
+// event to the list only helps repositories connected afterwards; every one already
+// connected keeps the list its hook was created with and never receives the new event.
+func (s *sync) repairHook(
+	ctx context.Context,
+	from source,
+	target entity.SCMTarget,
+	secret string,
+) {
+	forge, err := s.forges.Lookup(from.connection.Provider)
+	if err != nil {
+		return
+	}
+
+	repaired, err := forge.RepairHook(ctx, service.ForgeHookRequest{
+		Target:      target,
+		CallbackURL: s.callback(from),
+		Secret:      secret,
+	}, from.repository.ExternalHookID)
+	if err != nil {
+		logWarn(ctx, "checking a source control hook failed", from.repository.ID, err)
+
+		return
+	}
+
+	if repaired {
+		logging.From(ctx).InfoContext(
+			ctx,
+			"a source control hook was missing events this version needs and has been updated",
+			"repository_id", from.repository.ID.String(),
 		)
 	}
 }

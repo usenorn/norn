@@ -32,6 +32,12 @@ func (s *sync) advance(
 		return nil
 	}
 
+	// An issue can opt out entirely. The link is still recorded and still renders; only the
+	// moving stops, which is the whole point of an exception.
+	if issue.SCMAutomationSuppressed {
+		return nil
+	}
+
 	rules, err := s.rules.ListByTeam(ctx, from.workspaceID(), issue.TeamID)
 	if err != nil {
 		return err

@@ -37,7 +37,6 @@ type WorkspaceCodeLink struct {
 	Title           string            `boil:"title" json:"title" toml:"title" yaml:"title"`
 	URL             string            `boil:"url" json:"url" toml:"url" yaml:"url"`
 	State           string            `boil:"state" json:"state" toml:"state" yaml:"state"`
-	Action          string            `boil:"action" json:"action" toml:"action" yaml:"action"`
 	Author          string            `boil:"author" json:"author" toml:"author" yaml:"author"`
 	HeadBranch      string            `boil:"head_branch" json:"head_branch" toml:"head_branch" yaml:"head_branch"`
 	BaseBranch      string            `boil:"base_branch" json:"base_branch" toml:"base_branch" yaml:"base_branch"`
@@ -49,6 +48,7 @@ type WorkspaceCodeLink struct {
 	ClosedAt        null.Time         `boil:"closed_at" json:"closed_at,omitempty" toml:"closed_at" yaml:"closed_at,omitempty"`
 	CreatedAt       time.Time         `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt       time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Checks          string            `boil:"checks" json:"checks" toml:"checks" yaml:"checks"`
 
 	R *workspaceCodeLinkR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceCodeLinkL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -67,7 +67,6 @@ var WorkspaceCodeLinkColumns = struct {
 	Title           string
 	URL             string
 	State           string
-	Action          string
 	Author          string
 	HeadBranch      string
 	BaseBranch      string
@@ -79,6 +78,7 @@ var WorkspaceCodeLinkColumns = struct {
 	ClosedAt        string
 	CreatedAt       string
 	UpdatedAt       string
+	Checks          string
 }{
 	ID:              "id",
 	WorkspaceID:     "workspace_id",
@@ -92,7 +92,6 @@ var WorkspaceCodeLinkColumns = struct {
 	Title:           "title",
 	URL:             "url",
 	State:           "state",
-	Action:          "action",
 	Author:          "author",
 	HeadBranch:      "head_branch",
 	BaseBranch:      "base_branch",
@@ -104,6 +103,7 @@ var WorkspaceCodeLinkColumns = struct {
 	ClosedAt:        "closed_at",
 	CreatedAt:       "created_at",
 	UpdatedAt:       "updated_at",
+	Checks:          "checks",
 }
 
 var WorkspaceCodeLinkTableColumns = struct {
@@ -119,7 +119,6 @@ var WorkspaceCodeLinkTableColumns = struct {
 	Title           string
 	URL             string
 	State           string
-	Action          string
 	Author          string
 	HeadBranch      string
 	BaseBranch      string
@@ -131,6 +130,7 @@ var WorkspaceCodeLinkTableColumns = struct {
 	ClosedAt        string
 	CreatedAt       string
 	UpdatedAt       string
+	Checks          string
 }{
 	ID:              "workspace_code_links.id",
 	WorkspaceID:     "workspace_code_links.workspace_id",
@@ -144,7 +144,6 @@ var WorkspaceCodeLinkTableColumns = struct {
 	Title:           "workspace_code_links.title",
 	URL:             "workspace_code_links.url",
 	State:           "workspace_code_links.state",
-	Action:          "workspace_code_links.action",
 	Author:          "workspace_code_links.author",
 	HeadBranch:      "workspace_code_links.head_branch",
 	BaseBranch:      "workspace_code_links.base_branch",
@@ -156,6 +155,7 @@ var WorkspaceCodeLinkTableColumns = struct {
 	ClosedAt:        "workspace_code_links.closed_at",
 	CreatedAt:       "workspace_code_links.created_at",
 	UpdatedAt:       "workspace_code_links.updated_at",
+	Checks:          "workspace_code_links.checks",
 }
 
 // Generated where
@@ -173,7 +173,6 @@ var WorkspaceCodeLinkWhere = struct {
 	Title           whereHelperstring
 	URL             whereHelperstring
 	State           whereHelperstring
-	Action          whereHelperstring
 	Author          whereHelperstring
 	HeadBranch      whereHelperstring
 	BaseBranch      whereHelperstring
@@ -185,6 +184,7 @@ var WorkspaceCodeLinkWhere = struct {
 	ClosedAt        whereHelpernull_Time
 	CreatedAt       whereHelpertime_Time
 	UpdatedAt       whereHelpertime_Time
+	Checks          whereHelperstring
 }{
 	ID:              whereHelperstring{field: "\"workspace_code_links\".\"id\""},
 	WorkspaceID:     whereHelperstring{field: "\"workspace_code_links\".\"workspace_id\""},
@@ -198,7 +198,6 @@ var WorkspaceCodeLinkWhere = struct {
 	Title:           whereHelperstring{field: "\"workspace_code_links\".\"title\""},
 	URL:             whereHelperstring{field: "\"workspace_code_links\".\"url\""},
 	State:           whereHelperstring{field: "\"workspace_code_links\".\"state\""},
-	Action:          whereHelperstring{field: "\"workspace_code_links\".\"action\""},
 	Author:          whereHelperstring{field: "\"workspace_code_links\".\"author\""},
 	HeadBranch:      whereHelperstring{field: "\"workspace_code_links\".\"head_branch\""},
 	BaseBranch:      whereHelperstring{field: "\"workspace_code_links\".\"base_branch\""},
@@ -210,6 +209,7 @@ var WorkspaceCodeLinkWhere = struct {
 	ClosedAt:        whereHelpernull_Time{field: "\"workspace_code_links\".\"closed_at\""},
 	CreatedAt:       whereHelpertime_Time{field: "\"workspace_code_links\".\"created_at\""},
 	UpdatedAt:       whereHelpertime_Time{field: "\"workspace_code_links\".\"updated_at\""},
+	Checks:          whereHelperstring{field: "\"workspace_code_links\".\"checks\""},
 }
 
 // WorkspaceCodeLinkRels is where relationship names are stored.
@@ -217,11 +217,13 @@ var WorkspaceCodeLinkRels = struct {
 	Issue                            string
 	Repository                       string
 	Workspace                        string
+	LinkWorkspaceCodeLinkReviewers   string
 	LinkWorkspaceCodeLinkTransitions string
 }{
 	Issue:                            "Issue",
 	Repository:                       "Repository",
 	Workspace:                        "Workspace",
+	LinkWorkspaceCodeLinkReviewers:   "LinkWorkspaceCodeLinkReviewers",
 	LinkWorkspaceCodeLinkTransitions: "LinkWorkspaceCodeLinkTransitions",
 }
 
@@ -230,6 +232,7 @@ type workspaceCodeLinkR struct {
 	Issue                            *WorkspaceIssue                  `boil:"Issue" json:"Issue" toml:"Issue" yaml:"Issue"`
 	Repository                       *WorkspaceSCMRepository          `boil:"Repository" json:"Repository" toml:"Repository" yaml:"Repository"`
 	Workspace                        *Workspace                       `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	LinkWorkspaceCodeLinkReviewers   WorkspaceCodeLinkReviewerSlice   `boil:"LinkWorkspaceCodeLinkReviewers" json:"LinkWorkspaceCodeLinkReviewers" toml:"LinkWorkspaceCodeLinkReviewers" yaml:"LinkWorkspaceCodeLinkReviewers"`
 	LinkWorkspaceCodeLinkTransitions WorkspaceCodeLinkTransitionSlice `boil:"LinkWorkspaceCodeLinkTransitions" json:"LinkWorkspaceCodeLinkTransitions" toml:"LinkWorkspaceCodeLinkTransitions" yaml:"LinkWorkspaceCodeLinkTransitions"`
 }
 
@@ -286,6 +289,22 @@ func (r *workspaceCodeLinkR) GetWorkspace() *Workspace {
 	return r.Workspace
 }
 
+func (o *WorkspaceCodeLink) GetLinkWorkspaceCodeLinkReviewers() WorkspaceCodeLinkReviewerSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetLinkWorkspaceCodeLinkReviewers()
+}
+
+func (r *workspaceCodeLinkR) GetLinkWorkspaceCodeLinkReviewers() WorkspaceCodeLinkReviewerSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.LinkWorkspaceCodeLinkReviewers
+}
+
 func (o *WorkspaceCodeLink) GetLinkWorkspaceCodeLinkTransitions() WorkspaceCodeLinkTransitionSlice {
 	if o == nil {
 		return nil
@@ -306,9 +325,9 @@ func (r *workspaceCodeLinkR) GetLinkWorkspaceCodeLinkTransitions() WorkspaceCode
 type workspaceCodeLinkL struct{}
 
 var (
-	workspaceCodeLinkAllColumns            = []string{"id", "workspace_id", "issue_id", "repository_id", "provider", "repository_name", "kind", "external_id", "number", "title", "url", "state", "action", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at"}
+	workspaceCodeLinkAllColumns            = []string{"id", "workspace_id", "issue_id", "repository_id", "provider", "repository_name", "kind", "external_id", "number", "title", "url", "state", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at", "checks"}
 	workspaceCodeLinkColumnsWithoutDefault = []string{"workspace_id", "issue_id", "provider", "repository_name", "kind", "external_id"}
-	workspaceCodeLinkColumnsWithDefault    = []string{"id", "repository_id", "number", "title", "url", "state", "action", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at"}
+	workspaceCodeLinkColumnsWithDefault    = []string{"id", "repository_id", "number", "title", "url", "state", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at", "checks"}
 	workspaceCodeLinkPrimaryKeyColumns     = []string{"id"}
 	workspaceCodeLinkGeneratedColumns      = []string{}
 )
@@ -649,6 +668,20 @@ func (o *WorkspaceCodeLink) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	queryMods = append(queryMods, mods...)
 
 	return Workspaces(queryMods...)
+}
+
+// LinkWorkspaceCodeLinkReviewers retrieves all the workspace_code_link_reviewer's WorkspaceCodeLinkReviewers with an executor via link_id column.
+func (o *WorkspaceCodeLink) LinkWorkspaceCodeLinkReviewers(mods ...qm.QueryMod) workspaceCodeLinkReviewerQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_code_link_reviewers\".\"link_id\"=?", o.ID),
+	)
+
+	return WorkspaceCodeLinkReviewers(queryMods...)
 }
 
 // LinkWorkspaceCodeLinkTransitions retrieves all the workspace_code_link_transition's WorkspaceCodeLinkTransitions with an executor via link_id column.
@@ -1029,6 +1062,119 @@ func (workspaceCodeLinkL) LoadWorkspace(ctx context.Context, e boil.ContextExecu
 	return nil
 }
 
+// LoadLinkWorkspaceCodeLinkReviewers allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceCodeLinkL) LoadLinkWorkspaceCodeLinkReviewers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceCodeLink any, mods queries.Applicator) error {
+	var slice []*WorkspaceCodeLink
+	var object *WorkspaceCodeLink
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceCodeLink.(*WorkspaceCodeLink)
+		if !ok {
+			object = new(WorkspaceCodeLink)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceCodeLink)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceCodeLink))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceCodeLink.(*[]*WorkspaceCodeLink)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceCodeLink)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceCodeLink))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceCodeLinkR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceCodeLinkR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_code_link_reviewers`),
+		qm.WhereIn(`workspace_code_link_reviewers.link_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_code_link_reviewers")
+	}
+
+	var resultSlice []*WorkspaceCodeLinkReviewer
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_code_link_reviewers")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_code_link_reviewers")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_code_link_reviewers")
+	}
+
+	if len(workspaceCodeLinkReviewerAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.LinkWorkspaceCodeLinkReviewers = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceCodeLinkReviewerR{}
+			}
+			foreign.R.Link = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.LinkID {
+				local.R.LinkWorkspaceCodeLinkReviewers = append(local.R.LinkWorkspaceCodeLinkReviewers, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceCodeLinkReviewerR{}
+				}
+				foreign.R.Link = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadLinkWorkspaceCodeLinkTransitions allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceCodeLinkL) LoadLinkWorkspaceCodeLinkTransitions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceCodeLink any, mods queries.Applicator) error {
@@ -1313,6 +1459,59 @@ func (o *WorkspaceCodeLink) SetWorkspace(ctx context.Context, exec boil.ContextE
 		related.R.WorkspaceCodeLinks = append(related.R.WorkspaceCodeLinks, o)
 	}
 
+	return nil
+}
+
+// AddLinkWorkspaceCodeLinkReviewers adds the given related objects to the existing relationships
+// of the workspace_code_link, optionally inserting them as new records.
+// Appends related to o.R.LinkWorkspaceCodeLinkReviewers.
+// Sets related.R.Link appropriately.
+func (o *WorkspaceCodeLink) AddLinkWorkspaceCodeLinkReviewers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCodeLinkReviewer) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.LinkID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_code_link_reviewers\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"link_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceCodeLinkReviewerPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.LinkID, rel.Login}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.LinkID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceCodeLinkR{
+			LinkWorkspaceCodeLinkReviewers: related,
+		}
+	} else {
+		o.R.LinkWorkspaceCodeLinkReviewers = append(o.R.LinkWorkspaceCodeLinkReviewers, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceCodeLinkReviewerR{
+				Link: o,
+			}
+		} else {
+			rel.R.Link = o
+		}
+	}
 	return nil
 }
 

@@ -23,27 +23,47 @@ func TestOnlyAChangeReachingAStateTheTeamRoutedDrivesTheIssue(t *testing.T) {
 	}{
 		{
 			name: "a merged change on a team that routed merges",
-			link: entity.CodeLink{Kind: entity.CodeLinkChange, State: entity.CodeChangeMerged},
+			link: entity.CodeLink{
+				Kind:      entity.CodeLinkChange,
+				State:     entity.CodeChangeMerged,
+				Resolving: true,
+			},
 			want: done,
 		},
 		{
 			name: "the same change entering review",
-			link: entity.CodeLink{Kind: entity.CodeLinkChange, State: entity.CodeChangeReviewRequested},
+			link: entity.CodeLink{
+				Kind:      entity.CodeLinkChange,
+				State:     entity.CodeChangeReviewRequested,
+				Resolving: true,
+			},
 			want: inReview,
 		},
 		{
 			name: "a state the team routed nothing for",
-			link: entity.CodeLink{Kind: entity.CodeLinkChange, State: entity.CodeChangeClosed},
+			link: entity.CodeLink{
+				Kind:      entity.CodeLinkChange,
+				State:     entity.CodeChangeClosed,
+				Resolving: true,
+			},
 			want: uuid.Nil,
 		},
 		{
 			name: "a branch, which nobody merges",
-			link: entity.CodeLink{Kind: entity.CodeLinkBranch, State: entity.CodeChangeMerged},
+			link: entity.CodeLink{
+				Kind:      entity.CodeLinkBranch,
+				State:     entity.CodeChangeMerged,
+				Resolving: true,
+			},
 			want: uuid.Nil,
 		},
 		{
 			name: "a commit landing on the default branch",
-			link: entity.CodeLink{Kind: entity.CodeLinkCommit, State: entity.CodeChangeMerged},
+			link: entity.CodeLink{
+				Kind:      entity.CodeLinkCommit,
+				State:     entity.CodeChangeMerged,
+				Resolving: true,
+			},
 			want: uuid.Nil,
 		},
 	}
@@ -125,5 +145,121 @@ func TestALinkOutlivesTheRepositoryThatFoundIt(t *testing.T) {
 			"a disconnected link still has to render on the issue, so what it needs to be " +
 				"readable cannot live on the repository row",
 		)
+	}
+}
+
+func TestChangesRequestedOutranksAnApprovalHoweverRecent(t *testing.T) {
+	cases := []struct {
+		name      string
+		reviewers entity.CodeReviewers
+		want      entity.CodeChangeState
+	}{
+		{
+			name:      "nobody has been asked",
+			reviewers: entity.CodeReviewers{},
+			want:      "",
+		},
+		{
+			name:      "asked, nobody has answered",
+			reviewers: entity.CodeReviewers{{Verdict: entity.ReviewRequested}},
+			want:      entity.CodeChangeReviewRequested,
+		},
+		{
+			name:      "one approval",
+			reviewers: entity.CodeReviewers{{Verdict: entity.ReviewApproved}},
+			want:      entity.CodeChangeApproved,
+		},
+		{
+			name: "two approvals and one asking for changes",
+			reviewers: entity.CodeReviewers{
+				{Verdict: entity.ReviewApproved},
+				{Verdict: entity.ReviewApproved},
+				{Verdict: entity.ReviewChangesRequested},
+			},
+			want: entity.CodeChangeChangesRequested,
+		},
+		{
+			name: "a comment is not an answer",
+			reviewers: entity.CodeReviewers{
+				{Verdict: entity.ReviewCommented},
+				{Verdict: entity.ReviewDismissed},
+			},
+			want: "",
+		},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			got, found := testCase.reviewers.Outcome()
+
+			if testCase.want == "" {
+				if found {
+					t.Fatalf("Outcome = %s, want no opinion at all", got)
+				}
+
+				return
+			}
+
+			if !found || got != testCase.want {
+				t.Fatalf("Outcome = %s (%t), want %s", got, found, testCase.want)
+			}
+		})
+	}
+}
+
+func TestAChangeThatOnlyMentionsAnIssueNeverMovesIt(t *testing.T) {
+	rules := entity.SCMTransitionRules{
+		{Trigger: entity.CodeChangeMerged, StateID: uuid.New()},
+	}
+
+	mentioning := entity.CodeLink{
+		Kind:      entity.CodeLinkChange,
+		State:     entity.CodeChangeMerged,
+		Resolving: false,
+	}
+
+	if _, fired := rules.For(mentioning); fired {
+		t.Fatal(
+			"a change that names an issue for context moved it. Only fixes, closes or resolves " +
+				"claims to settle an issue, and a mention must link and nothing more",
+		)
+	}
+
+	resolving := mentioning
+	resolving.Resolving = true
+
+	if _, fired := rules.For(resolving); !fired {
+		t.Fatal("a change that says it fixes the issue must drive the rule")
+	}
+}
+
+func TestWhatTheChangeIsOutranksWhatItsReviewersThink(t *testing.T) {
+	approved := entity.CodeReviewers{{Verdict: entity.ReviewApproved}}
+	blocking := entity.CodeReviewers{{Verdict: entity.ReviewChangesRequested}}
+
+	cases := []struct {
+		name      string
+		base      entity.CodeChangeState
+		reviewers entity.CodeReviewers
+		want      entity.CodeChangeState
+	}{
+		{"a merged change is finished however it was reviewed", entity.CodeChangeMerged, blocking, entity.CodeChangeMerged},
+		{"a closed change is finished too", entity.CodeChangeClosed, approved, entity.CodeChangeClosed},
+		{"a draft is not up for review yet", entity.CodeChangeDraft, approved, entity.CodeChangeDraft},
+		{"a change that will not merge is blocked on something no reviewer can fix", entity.CodeChangeConflicted, approved, entity.CodeChangeConflicted},
+		{"an open change takes its reviewers' answer", entity.CodeChangeOpen, approved, entity.CodeChangeApproved},
+		{"and their refusal", entity.CodeChangeOpen, blocking, entity.CodeChangeChangesRequested},
+		{"an open change nobody reviewed stays open", entity.CodeChangeOpen, entity.CodeReviewers{}, entity.CodeChangeOpen},
+		{"a reopened change nobody reviewed stays reopened", entity.CodeChangeReopened, entity.CodeReviewers{}, entity.CodeChangeReopened},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			got := entity.ResolveChangeState(testCase.base, testCase.reviewers)
+
+			if got != testCase.want {
+				t.Fatalf("ResolveChangeState(%s) = %s, want %s", testCase.base, got, testCase.want)
+			}
+		})
 	}
 }

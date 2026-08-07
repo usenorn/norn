@@ -24,6 +24,7 @@ type sync struct {
 	repositories repository.SCMRepository
 	routes       repository.SCMRoute
 	rules        repository.SCMTransitionRule
+	teamSettings repository.SCMTeamSetting
 	deliveries   repository.SCMDelivery
 	links        repository.CodeLink
 	mirrors      repository.IssueMirror
@@ -46,6 +47,7 @@ func NewSync(
 	repositories repository.SCMRepository,
 	routes repository.SCMRoute,
 	rules repository.SCMTransitionRule,
+	teamSettings repository.SCMTeamSetting,
 	deliveries repository.SCMDelivery,
 	links repository.CodeLink,
 	mirrors repository.IssueMirror,
@@ -67,6 +69,7 @@ func NewSync(
 		repositories: repositories,
 		routes:       routes,
 		rules:        rules,
+		teamSettings: teamSettings,
 		deliveries:   deliveries,
 		links:        links,
 		mirrors:      mirrors,
@@ -404,11 +407,11 @@ func (s *sync) linkReferences(
 	references := entity.ScanIssueReferences(text)
 	tally.references += len(references)
 
-	for _, reference := range references {
+	for _, scanned := range references {
 		issue, err := s.issues.GetVisibleByReference(
 			ctx,
 			from.workspaceID(),
-			reference,
+			scanned.Reference,
 			decision.Scope,
 		)
 		if err != nil {
@@ -425,6 +428,7 @@ func (s *sync) linkReferences(
 		link.RepositoryID = from.repository.ID
 		link.Provider = from.connection.Provider
 		link.RepositoryName = from.repository.FullName
+		link.Resolving = scanned.Resolving
 
 		tally.resolved++
 
@@ -450,9 +454,22 @@ func (s *sync) applyChange(
 	tally *deliveryTally,
 	change service.ForgeChange,
 ) error {
+	// A checks payload names the change and nothing else about it. Writing it through the
+	// ordinary path would blank the title, the address and the state the issue is showing.
+	if change.State == "" && change.KnowsChecks {
+		return s.recordChecks(ctx, from, tally, change)
+	}
+
 	text := strings.Join([]string{change.HeadBranch, change.Title, change.Body}, "\n")
 
 	paths := s.changedPaths(ctx, from, change)
+
+	reviewers, reviewed := s.reviewersOf(ctx, from, change)
+
+	state := change.State
+	if reviewed {
+		state = entity.ResolveChangeState(change.State, reviewers)
+	}
 
 	routed, err := s.teamsFor(ctx, from, paths)
 	if err != nil {
@@ -465,13 +482,12 @@ func (s *sync) applyChange(
 		Number:          change.Number,
 		Title:           change.Title,
 		URL:             change.URL,
-		State:           change.State,
-		Action:          change.Action,
+		State:           state,
+		Checks:          change.Checks,
 		Author:          change.Author,
 		HeadBranch:      change.HeadBranch,
 		BaseBranch:      change.BaseBranch,
 		Paths:           paths,
-		Resolving:       true,
 		DetectedIn:      "the change",
 		SourceUpdatedAt: stamp(change.UpdatedAt),
 		MergedAt:        change.MergedAt,
@@ -492,12 +508,80 @@ func (s *sync) applyChange(
 	}
 
 	for _, link := range links {
+		if reviewed {
+			if err := s.links.ReplaceReviewers(ctx, link.ID, reviewers); err != nil {
+				return err
+			}
+		}
+
 		if err := s.advance(ctx, from, decision, tally, link); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// recordChecks writes one column and leaves everything else alone. A change nobody linked
+// gets no row at all, which is right: a red build on work no issue claims is not this
+// integration's business.
+func (s *sync) recordChecks(
+	ctx context.Context,
+	from source,
+	tally *deliveryTally,
+	change service.ForgeChange,
+) error {
+	touched, err := s.links.SetChecks(
+		ctx,
+		from.workspaceID(),
+		from.connection.Provider,
+		from.repository.FullName,
+		change.ExternalID,
+		change.Checks,
+	)
+	if err != nil {
+		return err
+	}
+
+	tally.linked += touched
+
+	return nil
+}
+
+// reviewersOf reads the whole set from the forge. A review event carries one review, so
+// rebuilding the set from events would erase every other answer the change already had.
+func (s *sync) reviewersOf(
+	ctx context.Context,
+	from source,
+	change service.ForgeChange,
+) (entity.CodeReviewers, bool) {
+	if !change.ReviewsMoved || change.Number <= 0 {
+		return nil, false
+	}
+
+	forge, err := s.forges.Lookup(from.connection.Provider)
+	if err != nil {
+		return nil, false
+	}
+
+	found, err := forge.Reviews(ctx, from.target(), change.Number)
+	if err != nil {
+		logWarn(ctx, "reading who is reviewing a change failed", from.repository.ID, err)
+
+		return nil, false
+	}
+
+	reviewers := make(entity.CodeReviewers, 0, len(found))
+	for _, one := range found {
+		reviewers = append(reviewers, entity.CodeReviewer{
+			Login:      one.Login,
+			Verdict:    one.Verdict,
+			URL:        one.URL,
+			ReviewedAt: one.ReviewedAt,
+		})
+	}
+
+	return reviewers, true
 }
 
 // changedPaths is best-effort. A route that matches on path needs them, but a forge that
