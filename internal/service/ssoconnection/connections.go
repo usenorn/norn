@@ -222,14 +222,17 @@ func (s *connectionsService) Remove(ctx context.Context, workspaceID uuid.UUID) 
 	return nil
 }
 
-func (s *connectionsService) BeginTest(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+func (s *connectionsService) BeginTest(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+) (entity.SSOHandoff, error) {
 	if err := s.authorize(ctx, workspaceID, entity.ActionUpdate); err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	connection, err := s.connections.GetOIDC(ctx, workspaceID)
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	return s.begin(ctx, connection, entity.SSOPurposeTest, uuid.Nil, "")
@@ -238,41 +241,44 @@ func (s *connectionsService) BeginTest(ctx context.Context, workspaceID uuid.UUI
 func (s *connectionsService) BeginLogin(
 	ctx context.Context,
 	input service.BeginOIDCLoginInput,
-) (string, error) {
+) (entity.SSOHandoff, error) {
 	workspace, err := s.workspaces.GetBySlug(ctx, input.WorkspaceSlug)
 	if err != nil {
 		if errors.Is(err, entity.ErrWorkspaceNotFound) {
-			return "", entity.ErrSSOConnectionNotFound
+			return entity.SSOHandoff{}, entity.ErrSSOConnectionNotFound
 		}
 
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	connection, err := s.connections.GetOIDC(ctx, workspace.ID)
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	if !connection.Verified() {
-		return "", entity.ErrSSONotVerified
+		return entity.SSOHandoff{}, entity.ErrSSONotVerified
 	}
 
 	return s.begin(ctx, connection, entity.SSOPurposeLogin, uuid.Nil, input.ReturnTo)
 }
 
-func (s *connectionsService) BeginLink(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+func (s *connectionsService) BeginLink(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+) (entity.SSOHandoff, error) {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceSSOConnection,
 		Action:      entity.ActionRead,
 		WorkspaceID: workspaceID,
 	})
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	account := decision.Actor.Authority()
 	if account == uuid.Nil {
-		return "", entity.NewSSOError(
+		return entity.SSOHandoff{}, entity.NewSSOError(
 			entity.SSOStageMatching,
 			"Only a signed-in person can connect a provider to their own account.",
 		)
@@ -280,7 +286,7 @@ func (s *connectionsService) BeginLink(ctx context.Context, workspaceID uuid.UUI
 
 	connection, err := s.connections.GetOIDC(ctx, workspaceID)
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	return s.begin(ctx, connection, entity.SSOPurposeLink, account, "")
@@ -365,20 +371,25 @@ func (s *connectionsService) begin(
 	purpose entity.SSOPurpose,
 	accountID uuid.UUID,
 	returnTo string,
-) (string, error) {
+) (entity.SSOHandoff, error) {
 	state, err := opaque()
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	nonce, err := opaque()
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
 	verifier, err := opaque()
 	if err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
+	}
+
+	correlator, err := entity.NewSSOCorrelator()
+	if err != nil {
+		return entity.SSOHandoff{}, err
 	}
 
 	if err := s.states.Put(ctx, state, entity.OIDCState{
@@ -387,17 +398,21 @@ func (s *connectionsService) begin(
 		AccountID:   accountID,
 		Nonce:       nonce,
 		Verifier:    verifier,
+		Correlator:  entity.HashSSOCorrelator(correlator),
 		ReturnTo:    safeReturnTo(returnTo),
 		CreatedAt:   time.Now().UTC(),
 	}); err != nil {
-		return "", err
+		return entity.SSOHandoff{}, err
 	}
 
-	return s.provider.AuthCodeURL(ctx, connection, entity.OIDCAuthorization{
-		State:    state,
-		Nonce:    nonce,
-		Verifier: verifier,
-	}), nil
+	return entity.SSOHandoff{
+		AuthorizationURL: s.provider.AuthCodeURL(ctx, connection, entity.OIDCAuthorization{
+			State:    state,
+			Nonce:    nonce,
+			Verifier: verifier,
+		}),
+		Correlator: correlator,
+	}, nil
 }
 
 func (s *connectionsService) Complete(
@@ -424,6 +439,10 @@ func (s *connectionsService) Complete(
 		WorkspaceID:   attempt.WorkspaceID,
 		WorkspaceSlug: workspace.Slug,
 		ReturnTo:      attempt.ReturnTo,
+	}
+
+	if err := entity.SSOCorrelatorRefusal(attempt.Correlator, input.Correlator); err != nil {
+		return exchange, err
 	}
 
 	connection, err := s.connections.GetOIDC(ctx, attempt.WorkspaceID)

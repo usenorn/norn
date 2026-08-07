@@ -157,6 +157,7 @@ type OIDCState struct {
 	AccountID   uuid.UUID
 	Nonce       string
 	Verifier    string
+	Correlator  string
 	ReturnTo    string
 	CreatedAt   time.Time
 }

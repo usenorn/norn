@@ -133,7 +133,7 @@ func (h *handler) TestWorkspaceSamlConnection(
 	ctx context.Context,
 	request api.TestWorkspaceSamlConnectionRequestObject,
 ) (api.TestWorkspaceSamlConnectionResponseObject, error) {
-	target, err := h.ssoConnections.BeginSAMLTest(ctx, request.WorkspaceId)
+	handoff, err := h.ssoConnections.BeginSAMLTest(ctx, request.WorkspaceId)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -142,7 +142,12 @@ func (h *handler) TestWorkspaceSamlConnection(
 		return nil, err
 	}
 
-	return api.TestWorkspaceSamlConnection200JSONResponse{AuthorizationUrl: target}, nil
+	cookie := h.ssoCorrelatorCookie(entity.SSOProtocolSAML, handoff.Correlator)
+
+	return api.TestWorkspaceSamlConnection200JSONResponse{
+		Body:    api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL},
+		Headers: api.TestWorkspaceSamlConnection200ResponseHeaders{SetCookie: &cookie},
+	}, nil
 }
 
 func (h *handler) BeginSamlLogin(
@@ -155,7 +160,7 @@ func (h *handler) BeginSamlLogin(
 		input.ReturnTo = *request.Body.ReturnTo
 	}
 
-	target, err := h.ssoConnections.BeginSAMLLogin(ctx, input)
+	handoff, err := h.ssoConnections.BeginSAMLLogin(ctx, input)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -164,7 +169,12 @@ func (h *handler) BeginSamlLogin(
 		return nil, err
 	}
 
-	return api.BeginSamlLogin200JSONResponse{AuthorizationUrl: target}, nil
+	cookie := h.ssoCorrelatorCookie(entity.SSOProtocolSAML, handoff.Correlator)
+
+	return api.BeginSamlLogin200JSONResponse{
+		Body:    api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL},
+		Headers: api.BeginSamlLogin200ResponseHeaders{SetCookie: &cookie},
+	}, nil
 }
 
 func (h *handler) samlConnectionDTO(

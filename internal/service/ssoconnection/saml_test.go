@@ -458,3 +458,139 @@ func TestADifferentProviderIdentityIsRefusedForAnAlreadyLinkedAccount(t *testing
 		t.Fatalf("stage %q, want %q", stage, entity.SSOStageMatching)
 	}
 }
+
+func TestASpentRelayStateIsNotDowngradedWhereProviderInitiatedSignInIsAllowed(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	h.expectWorkspace(workspaceID)
+	h.connections.EXPECT().
+		GetSAML(gomock.Any(), workspaceID).
+		Return(samlConnection(t, workspaceID, true, false), nil)
+	h.requests.EXPECT().
+		Take(gomock.Any(), "spent").
+		Return(entity.SAMLAttempt{}, entity.ErrSSOStateNotFound)
+
+	_, err := h.service.CompleteSAML(context.Background(), service.CompleteSAMLInput{
+		WorkspaceSlug: "northwind",
+		RelayState:    "spent",
+		Response:      []byte("<Response/>"),
+	})
+
+	if !errors.Is(err, entity.ErrSSOStateNotFound) {
+		t.Fatalf(
+			"replaying a spent relay state gave %v. Turning provider-initiated sign-in on must "+
+				"not turn a used relay state into an unsolicited login, which is the one path "+
+				"that answers no request of Norn's and so checks no request id at all.",
+			err,
+		)
+	}
+}
+
+func TestARelayStateMintedInAnotherWorkspaceIsRefused(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	h.expectWorkspace(workspaceID)
+	h.connections.EXPECT().
+		GetSAML(gomock.Any(), workspaceID).
+		Return(samlConnection(t, workspaceID, false, false), nil)
+	h.requests.EXPECT().
+		Take(gomock.Any(), "borrowed").
+		Return(entity.SAMLAttempt{
+			Purpose:     entity.SSOPurposeTest,
+			WorkspaceID: uuid.New(),
+			RequestID:   "the-request",
+		}, nil)
+
+	_, err := h.service.CompleteSAML(context.Background(), service.CompleteSAMLInput{
+		WorkspaceSlug: "northwind",
+		RelayState:    "borrowed",
+		Response:      []byte("<Response/>"),
+	})
+	if err == nil {
+		t.Fatal(
+			"a relay state minted in the attacker's own workspace was accepted at another " +
+				"tenant's callback. A test attempt replayed that way marks the other tenant's " +
+				"connection verified, which is the precondition guarding SSO enforcement.",
+		)
+	}
+
+	if stage := stageOf(t, err); stage != entity.SSOStageResponse {
+		t.Fatalf("stage %q, want %q", stage, entity.SSOStageResponse)
+	}
+}
+
+func TestASAMLResponseReplayedIntoAnotherBrowserIsRefused(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	h.expectWorkspace(workspaceID)
+	h.connections.EXPECT().
+		GetSAML(gomock.Any(), workspaceID).
+		Return(samlConnection(t, workspaceID, false, false), nil)
+	h.requests.EXPECT().
+		Take(gomock.Any(), "the-relay-state").
+		Return(entity.SAMLAttempt{
+			Purpose:     entity.SSOPurposeLogin,
+			WorkspaceID: workspaceID,
+			RequestID:   "the-request",
+			Correlator:  entity.HashSSOCorrelator("the-browser-that-started-it"),
+		}, nil)
+
+	_, err := h.service.CompleteSAML(context.Background(), service.CompleteSAMLInput{
+		WorkspaceSlug: "northwind",
+		RelayState:    "the-relay-state",
+		Correlator:    "a-different-browser",
+		Response:      []byte("<Response/>"),
+	})
+	if err == nil {
+		t.Fatal("an assertion was consumed by a browser that never started the sign-in")
+	}
+
+	if stage := stageOf(t, err); stage != entity.SSOStageRequest {
+		t.Fatalf("stage %q, want %q", stage, entity.SSOStageRequest)
+	}
+}
+
+func TestBeginningASAMLLoginBindsTheAttemptToThisBrowser(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+	h.expectWorkspace(workspaceID)
+	h.connections.EXPECT().
+		GetSAML(gomock.Any(), workspaceID).
+		Return(samlConnection(t, workspaceID, false, false), nil)
+
+	var stored entity.SAMLAttempt
+
+	h.requests.EXPECT().
+		Put(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, attempt entity.SAMLAttempt) error {
+			stored = attempt
+
+			return nil
+		})
+
+	handoff, err := h.service.BeginSAMLLogin(context.Background(), service.BeginOIDCLoginInput{
+		WorkspaceSlug: "northwind",
+	})
+	if err != nil {
+		t.Fatalf("BeginSAMLLogin: %v", err)
+	}
+
+	if handoff.AuthorizationURL == "" {
+		t.Fatal("no authorization URL was produced")
+	}
+
+	if handoff.Correlator == "" || stored.Correlator != entity.HashSSOCorrelator(handoff.Correlator) {
+		t.Fatal(
+			"the attempt was stored without a correlator matching the one handed to the browser, " +
+				"so the callback cannot tell whether it is the same browser that started it",
+		)
+	}
+
+	if stored.RequestID == "" {
+		t.Fatal("the attempt kept no request id, so no assertion can be tied back to it")
+	}
+}

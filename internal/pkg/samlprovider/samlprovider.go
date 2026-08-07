@@ -360,9 +360,23 @@ func read(assertion *saml.Assertion) entity.SAMLAssertion {
 		Attributes: map[string][]string{},
 	}
 
-	if assertion.Subject != nil && assertion.Subject.NameID != nil {
-		found.NameID = assertion.Subject.NameID.Value
-		found.NameIDFormat = assertion.Subject.NameID.Format
+	if assertion.Subject != nil {
+		if assertion.Subject.NameID != nil {
+			found.NameID = assertion.Subject.NameID.Value
+			found.NameIDFormat = assertion.Subject.NameID.Format
+		}
+
+		for _, confirmation := range assertion.Subject.SubjectConfirmations {
+			if confirmation.SubjectConfirmationData == nil {
+				continue
+			}
+
+			if answered := confirmation.SubjectConfirmationData.InResponseTo; answered != "" {
+				found.InResponseTo = answered
+
+				break
+			}
+		}
 	}
 
 	if assertion.Conditions != nil {

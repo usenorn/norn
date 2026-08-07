@@ -130,14 +130,12 @@ export function exchangeFrom(url: URL): SsoExchange | null {
 	if (!stage || !isStage(stage)) return null;
 
 	const message = url.searchParams.get("message") ?? "";
-	const providerMessage = url.searchParams.get("provider_message");
 	const subject = url.searchParams.get("subject");
 	const reference = url.searchParams.get("reference") ?? "";
 
 	const diagnostics: Diagnostic[] = [{ key: "stage", value: stage }];
 
 	if (subject) diagnostics.push({ key: "subject", value: subject });
-	if (providerMessage) diagnostics.push({ key: "provider", value: providerMessage });
 
 	const failure: SsoFailure =
 		subject && (stage === "matching" || stage === "provisioning")

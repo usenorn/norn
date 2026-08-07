@@ -205,6 +205,9 @@ paths:
       responses:
         '200':
           description: Send the browser to this address to authenticate
+          headers:
+            Set-Cookie:
+              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }
@@ -226,6 +229,9 @@ paths:
       responses:
         '200':
           description: Send the browser to this address to authenticate
+          headers:
+            Set-Cookie:
+              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }
@@ -589,6 +595,9 @@ paths:
       responses:
         '200':
           description: Send the browser to this address to complete the test
+          headers:
+            Set-Cookie:
+              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }
@@ -608,6 +617,9 @@ paths:
       responses:
         '200':
           description: Send the browser to this address to complete the connection
+          headers:
+            Set-Cookie:
+              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }
@@ -716,6 +728,9 @@ paths:
       responses:
         '200':
           description: Send the browser to this address to complete the test
+          headers:
+            Set-Cookie:
+              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }

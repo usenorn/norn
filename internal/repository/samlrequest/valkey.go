@@ -22,6 +22,7 @@ type storedAttempt struct {
 	Purpose     string    `json:"purpose"`
 	WorkspaceID uuid.UUID `json:"workspace_id"`
 	RequestID   string    `json:"request_id"`
+	Correlator  string    `json:"correlator"`
 	ReturnTo    string    `json:"return_to"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -46,6 +47,7 @@ func (r *requestRepository) Put(
 		Purpose:     string(attempt.Purpose),
 		WorkspaceID: attempt.WorkspaceID,
 		RequestID:   attempt.RequestID,
+		Correlator:  attempt.Correlator,
 		ReturnTo:    attempt.ReturnTo,
 		CreatedAt:   attempt.CreatedAt,
 	})
@@ -82,6 +84,7 @@ func (r *requestRepository) Take(
 		Purpose:     entity.SSOPurpose(stored.Purpose),
 		WorkspaceID: stored.WorkspaceID,
 		RequestID:   stored.RequestID,
+		Correlator:  stored.Correlator,
 		ReturnTo:    stored.ReturnTo,
 		CreatedAt:   stored.CreatedAt,
 	}, nil

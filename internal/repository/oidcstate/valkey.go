@@ -24,6 +24,7 @@ type storedState struct {
 	AccountID   uuid.UUID `json:"account_id"`
 	Nonce       string    `json:"nonce"`
 	Verifier    string    `json:"verifier"`
+	Correlator  string    `json:"correlator"`
 	ReturnTo    string    `json:"return_to"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -46,6 +47,7 @@ func (r *stateRepository) Put(ctx context.Context, state string, attempt entity.
 		AccountID:   attempt.AccountID,
 		Nonce:       attempt.Nonce,
 		Verifier:    attempt.Verifier,
+		Correlator:  attempt.Correlator,
 		ReturnTo:    attempt.ReturnTo,
 		CreatedAt:   attempt.CreatedAt,
 	})
@@ -81,6 +83,7 @@ func (r *stateRepository) Take(ctx context.Context, state string) (entity.OIDCSt
 		AccountID:   stored.AccountID,
 		Nonce:       stored.Nonce,
 		Verifier:    stored.Verifier,
+		Correlator:  stored.Correlator,
 		ReturnTo:    stored.ReturnTo,
 		CreatedAt:   stored.CreatedAt,
 	}, nil
