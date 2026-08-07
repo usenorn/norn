@@ -15,19 +15,26 @@ import (
 // hook that was never installed all heal here, and a connection whose token was replaced
 // discovers that it works again without anybody pressing anything.
 func (s *sync) Reconcile(ctx context.Context, at time.Time) error {
-	due, err := s.connections.ClaimDue(ctx, at, s.cfg.ReconcileBatch)
+	due, err := s.repositories.ClaimDue(ctx, at, s.cfg.ReconcileBatch)
 	if err != nil {
 		return err
 	}
 
-	for _, connection := range due {
-		if err := s.reconcileOne(ctx, connection, at); err != nil {
-			// One connection's forge being unreachable must not stop the sweep for every
+	for _, stored := range due {
+		from, err := s.sourceFor(ctx, stored.ID)
+		if err != nil {
+			logWarn(ctx, "reading a repository to reconcile it failed", stored.ID, err)
+
+			continue
+		}
+
+		if err := s.reconcileOne(ctx, from, at); err != nil {
+			// One repository's forge being unreachable must not stop the sweep for every
 			// other workspace on this instance.
 			logging.From(ctx).WarnContext(
 				ctx,
-				"reconciling a source control connection failed",
-				"connection_id", connection.ID.String(),
+				"reconciling a connected repository failed",
+				"repository_id", stored.ID.String(),
 				"error", err.Error(),
 			)
 		}
@@ -38,58 +45,51 @@ func (s *sync) Reconcile(ctx context.Context, at time.Time) error {
 
 func (s *sync) reconcileOne(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	at time.Time,
 ) error {
-	credentials, err := s.connections.Credentials(ctx, connection.ID)
+	secret, err := s.repositories.WebhookSecret(ctx, from.repository.ID)
 	if err != nil {
 		return err
 	}
 
-	forge, err := s.forges.Lookup(connection.Provider)
+	forge, err := s.forges.Lookup(from.connection.Provider)
 	if err != nil {
 		return err
 	}
 
-	target := connection.Target(credentials.Token)
+	target := from.target()
 
 	// A broken connection costs one call per cycle, not a walk of its history. Reading it
 	// fully would burn a rate limit on a credential that is known not to work, and the only
 	// question worth asking is whether somebody has replaced it yet.
-	found, err := forge.Repository(ctx, target)
-	if err != nil {
-		return s.handleForgeError(ctx, connection, err)
+	if _, err := forge.Repository(ctx, target); err != nil {
+		return s.handleForgeError(ctx, from, err)
 	}
 
 	login, err := forge.Identity(ctx, target)
 	if err != nil {
-		return s.handleForgeError(ctx, connection, err)
+		return s.handleForgeError(ctx, from, err)
 	}
 
-	if err := s.connections.MarkVerified(ctx, connection.ID, found, login, at); err != nil {
+	if err := s.connections.MarkVerified(ctx, from.connection.ID, login, at); err != nil {
 		return err
 	}
 
-	if connection.Broken() {
-		// It has only just come back. Reading from the last verified point would replay
-		// however long it was broken, so the catch-up window bounds it instead.
-		connection.Status = entity.SCMConnectionConnected
+	if from.repository.ExternalHookID == "" {
+		s.installMissingHook(ctx, from, target, secret)
 	}
 
-	if connection.ExternalHookID == "" {
-		s.installMissingHook(ctx, connection, target, credentials.WebhookSecret)
-	}
-
-	if err := s.drainPending(ctx, connection, at); err != nil {
+	if err := s.drainPending(ctx, from, at); err != nil {
 		return err
 	}
 
-	decision, err := s.decide(ctx, connection)
+	decision, err := s.decide(ctx, from)
 	if err != nil {
 		if errors.Is(err, entity.ErrAccountForbidden) || errors.Is(err, entity.ErrMembershipNotFound) {
 			s.markBroken(
 				ctx,
-				connection,
+				from,
 				entity.SCMBrokenCredentialsRejected,
 				"the account that established this connection no longer has access to the workspace",
 			)
@@ -100,12 +100,12 @@ func (s *sync) reconcileOne(
 		return err
 	}
 
-	if err := s.refreshChanges(ctx, connection, target, decision, at); err != nil {
+	if err := s.refreshChanges(ctx, from, target, decision, at); err != nil {
 		return err
 	}
 
-	if err := s.pushMirrors(ctx, connection, target, decision, at); err != nil {
-		return s.handleForgeError(ctx, connection, err)
+	if err := s.pushMirrors(ctx, from, target, decision, at); err != nil {
+		return s.handleForgeError(ctx, from, err)
 	}
 
 	return nil
@@ -113,18 +113,18 @@ func (s *sync) reconcileOne(
 
 func (s *sync) handleForgeError(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	cause error,
 ) error {
 	var limited entity.SCMRateLimitedError
 	if errors.As(cause, &limited) {
 		wait := entity.ClampImportBackoff(limited.RetryAfter, s.cfg.MinBackoff, s.cfg.MaxBackoff)
 
-		return s.connections.Park(ctx, connection.ID, time.Now().UTC().Add(wait))
+		return s.repositories.Park(ctx, from.repository.ID, time.Now().UTC().Add(wait))
 	}
 
 	if reason, detail, actionable := entity.SCMBrokenBy(cause); actionable {
-		s.markBroken(ctx, connection, reason, detail)
+		s.markBroken(ctx, from, reason, detail)
 
 		return nil
 	}
@@ -134,27 +134,27 @@ func (s *sync) handleForgeError(
 
 func (s *sync) installMissingHook(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	target entity.SCMTarget,
 	secret string,
 ) {
-	hookID, err := s.forgeHook(ctx, connection, target, secret)
+	hookID, err := s.forgeHook(ctx, from, target, secret)
 	if err != nil {
 		logging.From(ctx).WarnContext(
 			ctx,
 			"installing a missing source control hook failed; the next sweep will try again",
-			"connection_id", connection.ID.String(),
+			"repository_id", from.repository.ID.String(),
 			"error", err.Error(),
 		)
 
 		return
 	}
 
-	if err := s.connections.RecordHook(ctx, connection.ID, hookID); err != nil {
+	if err := s.repositories.RecordHook(ctx, from.repository.ID, hookID); err != nil {
 		logging.From(ctx).WarnContext(
 			ctx,
 			"recording a source control hook failed",
-			"connection_id", connection.ID.String(),
+			"repository_id", from.repository.ID.String(),
 			"error", err.Error(),
 		)
 	}
@@ -162,35 +162,35 @@ func (s *sync) installMissingHook(
 
 func (s *sync) forgeHook(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	target entity.SCMTarget,
 	secret string,
 ) (string, error) {
-	forge, err := s.forges.Lookup(connection.Provider)
+	forge, err := s.forges.Lookup(from.connection.Provider)
 	if err != nil {
 		return "", err
 	}
 
 	return forge.InstallHook(ctx, service.ForgeHookRequest{
 		Target:      target,
-		CallbackURL: s.callback(connection),
+		CallbackURL: s.callback(from),
 		Secret:      secret,
 	})
 }
 
-func (s *sync) callback(connection entity.SCMConnection) string {
+func (s *sync) callback(from source) string {
 	return s.baseURL + "/v1/source-control/" +
-		string(connection.Provider) + "/" + connection.ID.String()
+		string(from.connection.Provider) + "/" + from.repository.ID.String()
 }
 
 // drainPending picks up deliveries that were stored but never carried out, which is what a
 // lost enqueue looks like from here.
 func (s *sync) drainPending(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	at time.Time,
 ) error {
-	pending, err := s.deliveries.ListPending(ctx, connection.ID, at, s.cfg.ReconcileBatch)
+	pending, err := s.deliveries.ListPending(ctx, from.repository.ID, at, s.cfg.ReconcileBatch)
 	if err != nil {
 		return err
 	}
@@ -209,17 +209,17 @@ func (s *sync) drainPending(
 // ones a forge lists by default — the merge it exists to notice has already closed.
 func (s *sync) refreshChanges(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	target entity.SCMTarget,
 	decision entity.Decision,
 	at time.Time,
 ) error {
 	since := at.Add(-s.cfg.MaxCatchUp)
-	if connection.ReconciledAt != nil && connection.ReconciledAt.After(since) {
-		since = *connection.ReconciledAt
+	if from.repository.ReconciledAt != nil && from.repository.ReconciledAt.After(since) {
+		since = *from.repository.ReconciledAt
 	}
 
-	forge, err := s.forges.Lookup(connection.Provider)
+	forge, err := s.forges.Lookup(from.connection.Provider)
 	if err != nil {
 		return err
 	}
@@ -230,14 +230,14 @@ func (s *sync) refreshChanges(
 	for calls < s.cfg.CallsPerCycle {
 		page, err := forge.Changes(ctx, target, since, cursor)
 		if err != nil {
-			return s.handleForgeError(ctx, connection, err)
+			return s.handleForgeError(ctx, from, err)
 		}
 
 		calls++
 
 		for _, change := range page.Changes {
 			// The sweep has no delivery to explain, so its tally is discarded.
-			if err := s.applyChange(ctx, connection, decision, &deliveryTally{}, change); err != nil {
+			if err := s.applyChange(ctx, from, decision, &deliveryTally{}, change); err != nil {
 				return err
 			}
 		}
@@ -253,10 +253,10 @@ func (s *sync) refreshChanges(
 		logging.From(ctx).InfoContext(
 			ctx,
 			"a reconcile cycle stopped at its call budget; the next cycle carries on from here",
-			"connection_id", connection.ID.String(),
+			"repository_id", from.repository.ID.String(),
 			"calls", calls,
 		)
 	}
 
-	return s.connections.RecordReconciled(ctx, connection.ID, "", at)
+	return s.repositories.RecordReconciled(ctx, from.repository.ID, "", at)
 }

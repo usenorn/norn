@@ -26,18 +26,18 @@ import (
 // WorkspaceSCMDelivery is an object representing the database table.
 type WorkspaceSCMDelivery struct {
 	ID                 string     `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ConnectionID       string     `boil:"connection_id" json:"connection_id" toml:"connection_id" yaml:"connection_id"`
+	RepositoryID       string     `boil:"repository_id" json:"repository_id" toml:"repository_id" yaml:"repository_id"`
 	WorkspaceID        string     `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
 	ExternalDeliveryID string     `boil:"external_delivery_id" json:"external_delivery_id" toml:"external_delivery_id" yaml:"external_delivery_id"`
 	Event              string     `boil:"event" json:"event" toml:"event" yaml:"event"`
 	Payload            types.JSON `boil:"payload" json:"payload" toml:"payload" yaml:"payload"`
 	Attempt            int        `boil:"attempt" json:"attempt" toml:"attempt" yaml:"attempt"`
 	RetryAfter         null.Time  `boil:"retry_after" json:"retry_after,omitempty" toml:"retry_after" yaml:"retry_after,omitempty"`
+	Outcome            string     `boil:"outcome" json:"outcome" toml:"outcome" yaml:"outcome"`
+	Detail             string     `boil:"detail" json:"detail" toml:"detail" yaml:"detail"`
 	Failure            string     `boil:"failure" json:"failure" toml:"failure" yaml:"failure"`
 	ReceivedAt         time.Time  `boil:"received_at" json:"received_at" toml:"received_at" yaml:"received_at"`
 	ProcessedAt        null.Time  `boil:"processed_at" json:"processed_at,omitempty" toml:"processed_at" yaml:"processed_at,omitempty"`
-	Outcome            string     `boil:"outcome" json:"outcome" toml:"outcome" yaml:"outcome"`
-	Detail             string     `boil:"detail" json:"detail" toml:"detail" yaml:"detail"`
 
 	R *workspaceSCMDeliveryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSCMDeliveryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -45,106 +45,106 @@ type WorkspaceSCMDelivery struct {
 
 var WorkspaceSCMDeliveryColumns = struct {
 	ID                 string
-	ConnectionID       string
+	RepositoryID       string
 	WorkspaceID        string
 	ExternalDeliveryID string
 	Event              string
 	Payload            string
 	Attempt            string
 	RetryAfter         string
+	Outcome            string
+	Detail             string
 	Failure            string
 	ReceivedAt         string
 	ProcessedAt        string
-	Outcome            string
-	Detail             string
 }{
 	ID:                 "id",
-	ConnectionID:       "connection_id",
+	RepositoryID:       "repository_id",
 	WorkspaceID:        "workspace_id",
 	ExternalDeliveryID: "external_delivery_id",
 	Event:              "event",
 	Payload:            "payload",
 	Attempt:            "attempt",
 	RetryAfter:         "retry_after",
+	Outcome:            "outcome",
+	Detail:             "detail",
 	Failure:            "failure",
 	ReceivedAt:         "received_at",
 	ProcessedAt:        "processed_at",
-	Outcome:            "outcome",
-	Detail:             "detail",
 }
 
 var WorkspaceSCMDeliveryTableColumns = struct {
 	ID                 string
-	ConnectionID       string
+	RepositoryID       string
 	WorkspaceID        string
 	ExternalDeliveryID string
 	Event              string
 	Payload            string
 	Attempt            string
 	RetryAfter         string
+	Outcome            string
+	Detail             string
 	Failure            string
 	ReceivedAt         string
 	ProcessedAt        string
-	Outcome            string
-	Detail             string
 }{
 	ID:                 "workspace_scm_deliveries.id",
-	ConnectionID:       "workspace_scm_deliveries.connection_id",
+	RepositoryID:       "workspace_scm_deliveries.repository_id",
 	WorkspaceID:        "workspace_scm_deliveries.workspace_id",
 	ExternalDeliveryID: "workspace_scm_deliveries.external_delivery_id",
 	Event:              "workspace_scm_deliveries.event",
 	Payload:            "workspace_scm_deliveries.payload",
 	Attempt:            "workspace_scm_deliveries.attempt",
 	RetryAfter:         "workspace_scm_deliveries.retry_after",
+	Outcome:            "workspace_scm_deliveries.outcome",
+	Detail:             "workspace_scm_deliveries.detail",
 	Failure:            "workspace_scm_deliveries.failure",
 	ReceivedAt:         "workspace_scm_deliveries.received_at",
 	ProcessedAt:        "workspace_scm_deliveries.processed_at",
-	Outcome:            "workspace_scm_deliveries.outcome",
-	Detail:             "workspace_scm_deliveries.detail",
 }
 
 // Generated where
 
 var WorkspaceSCMDeliveryWhere = struct {
 	ID                 whereHelperstring
-	ConnectionID       whereHelperstring
+	RepositoryID       whereHelperstring
 	WorkspaceID        whereHelperstring
 	ExternalDeliveryID whereHelperstring
 	Event              whereHelperstring
 	Payload            whereHelpertypes_JSON
 	Attempt            whereHelperint
 	RetryAfter         whereHelpernull_Time
+	Outcome            whereHelperstring
+	Detail             whereHelperstring
 	Failure            whereHelperstring
 	ReceivedAt         whereHelpertime_Time
 	ProcessedAt        whereHelpernull_Time
-	Outcome            whereHelperstring
-	Detail             whereHelperstring
 }{
 	ID:                 whereHelperstring{field: "\"workspace_scm_deliveries\".\"id\""},
-	ConnectionID:       whereHelperstring{field: "\"workspace_scm_deliveries\".\"connection_id\""},
+	RepositoryID:       whereHelperstring{field: "\"workspace_scm_deliveries\".\"repository_id\""},
 	WorkspaceID:        whereHelperstring{field: "\"workspace_scm_deliveries\".\"workspace_id\""},
 	ExternalDeliveryID: whereHelperstring{field: "\"workspace_scm_deliveries\".\"external_delivery_id\""},
 	Event:              whereHelperstring{field: "\"workspace_scm_deliveries\".\"event\""},
 	Payload:            whereHelpertypes_JSON{field: "\"workspace_scm_deliveries\".\"payload\""},
 	Attempt:            whereHelperint{field: "\"workspace_scm_deliveries\".\"attempt\""},
 	RetryAfter:         whereHelpernull_Time{field: "\"workspace_scm_deliveries\".\"retry_after\""},
+	Outcome:            whereHelperstring{field: "\"workspace_scm_deliveries\".\"outcome\""},
+	Detail:             whereHelperstring{field: "\"workspace_scm_deliveries\".\"detail\""},
 	Failure:            whereHelperstring{field: "\"workspace_scm_deliveries\".\"failure\""},
 	ReceivedAt:         whereHelpertime_Time{field: "\"workspace_scm_deliveries\".\"received_at\""},
 	ProcessedAt:        whereHelpernull_Time{field: "\"workspace_scm_deliveries\".\"processed_at\""},
-	Outcome:            whereHelperstring{field: "\"workspace_scm_deliveries\".\"outcome\""},
-	Detail:             whereHelperstring{field: "\"workspace_scm_deliveries\".\"detail\""},
 }
 
 // WorkspaceSCMDeliveryRels is where relationship names are stored.
 var WorkspaceSCMDeliveryRels = struct {
-	Connection string
+	Repository string
 }{
-	Connection: "Connection",
+	Repository: "Repository",
 }
 
 // workspaceSCMDeliveryR is where relationships are stored.
 type workspaceSCMDeliveryR struct {
-	Connection *WorkspaceSCMConnection `boil:"Connection" json:"Connection" toml:"Connection" yaml:"Connection"`
+	Repository *WorkspaceSCMRepository `boil:"Repository" json:"Repository" toml:"Repository" yaml:"Repository"`
 }
 
 // NewStruct creates a new relationship struct
@@ -152,29 +152,29 @@ func (*workspaceSCMDeliveryR) NewStruct() *workspaceSCMDeliveryR {
 	return &workspaceSCMDeliveryR{}
 }
 
-func (o *WorkspaceSCMDelivery) GetConnection() *WorkspaceSCMConnection {
+func (o *WorkspaceSCMDelivery) GetRepository() *WorkspaceSCMRepository {
 	if o == nil {
 		return nil
 	}
 
-	return o.R.GetConnection()
+	return o.R.GetRepository()
 }
 
-func (r *workspaceSCMDeliveryR) GetConnection() *WorkspaceSCMConnection {
+func (r *workspaceSCMDeliveryR) GetRepository() *WorkspaceSCMRepository {
 	if r == nil {
 		return nil
 	}
 
-	return r.Connection
+	return r.Repository
 }
 
 // workspaceSCMDeliveryL is where Load methods for each relationship are stored.
 type workspaceSCMDeliveryL struct{}
 
 var (
-	workspaceSCMDeliveryAllColumns            = []string{"id", "connection_id", "workspace_id", "external_delivery_id", "event", "payload", "attempt", "retry_after", "failure", "received_at", "processed_at", "outcome", "detail"}
-	workspaceSCMDeliveryColumnsWithoutDefault = []string{"connection_id", "workspace_id", "external_delivery_id", "event", "payload"}
-	workspaceSCMDeliveryColumnsWithDefault    = []string{"id", "attempt", "retry_after", "failure", "received_at", "processed_at", "outcome", "detail"}
+	workspaceSCMDeliveryAllColumns            = []string{"id", "repository_id", "workspace_id", "external_delivery_id", "event", "payload", "attempt", "retry_after", "outcome", "detail", "failure", "received_at", "processed_at"}
+	workspaceSCMDeliveryColumnsWithoutDefault = []string{"repository_id", "workspace_id", "external_delivery_id", "event", "payload"}
+	workspaceSCMDeliveryColumnsWithDefault    = []string{"id", "attempt", "retry_after", "outcome", "detail", "failure", "received_at", "processed_at"}
 	workspaceSCMDeliveryPrimaryKeyColumns     = []string{"id"}
 	workspaceSCMDeliveryGeneratedColumns      = []string{}
 )
@@ -484,20 +484,20 @@ func (q workspaceSCMDeliveryQuery) Exists(ctx context.Context, exec boil.Context
 	return count > 0, nil
 }
 
-// Connection pointed to by the foreign key.
-func (o *WorkspaceSCMDelivery) Connection(mods ...qm.QueryMod) workspaceSCMConnectionQuery {
+// Repository pointed to by the foreign key.
+func (o *WorkspaceSCMDelivery) Repository(mods ...qm.QueryMod) workspaceSCMRepositoryQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.ConnectionID),
+		qm.Where("\"id\" = ?", o.RepositoryID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	return WorkspaceSCMConnections(queryMods...)
+	return WorkspaceSCMRepositories(queryMods...)
 }
 
-// LoadConnection allows an eager lookup of values, cached into the
+// LoadRepository allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (workspaceSCMDeliveryL) LoadConnection(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMDelivery any, mods queries.Applicator) error {
+func (workspaceSCMDeliveryL) LoadRepository(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMDelivery any, mods queries.Applicator) error {
 	var slice []*WorkspaceSCMDelivery
 	var object *WorkspaceSCMDelivery
 
@@ -528,7 +528,7 @@ func (workspaceSCMDeliveryL) LoadConnection(ctx context.Context, e boil.ContextE
 		if object.R == nil {
 			object.R = &workspaceSCMDeliveryR{}
 		}
-		args[object.ConnectionID] = struct{}{}
+		args[object.RepositoryID] = struct{}{}
 
 	} else {
 		for _, obj := range slice {
@@ -536,7 +536,7 @@ func (workspaceSCMDeliveryL) LoadConnection(ctx context.Context, e boil.ContextE
 				obj.R = &workspaceSCMDeliveryR{}
 			}
 
-			args[obj.ConnectionID] = struct{}{}
+			args[obj.RepositoryID] = struct{}{}
 
 		}
 	}
@@ -553,8 +553,8 @@ func (workspaceSCMDeliveryL) LoadConnection(ctx context.Context, e boil.ContextE
 	}
 
 	query := NewQuery(
-		qm.From(`workspace_scm_connections`),
-		qm.WhereIn(`workspace_scm_connections.id in ?`, argsSlice...),
+		qm.From(`workspace_scm_repositories`),
+		qm.WhereIn(`workspace_scm_repositories.id in ?`, argsSlice...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -562,22 +562,22 @@ func (workspaceSCMDeliveryL) LoadConnection(ctx context.Context, e boil.ContextE
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load WorkspaceSCMConnection")
+		return errors.Wrap(err, "failed to eager load WorkspaceSCMRepository")
 	}
 
-	var resultSlice []*WorkspaceSCMConnection
+	var resultSlice []*WorkspaceSCMRepository
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceSCMConnection")
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceSCMRepository")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for workspace_scm_connections")
+		return errors.Wrap(err, "failed to close results of eager load for workspace_scm_repositories")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_scm_connections")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_scm_repositories")
 	}
 
-	if len(workspaceSCMConnectionAfterSelectHooks) != 0 {
+	if len(workspaceSCMRepositoryAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -591,22 +591,22 @@ func (workspaceSCMDeliveryL) LoadConnection(ctx context.Context, e boil.ContextE
 
 	if singular {
 		foreign := resultSlice[0]
-		object.R.Connection = foreign
+		object.R.Repository = foreign
 		if foreign.R == nil {
-			foreign.R = &workspaceSCMConnectionR{}
+			foreign.R = &workspaceSCMRepositoryR{}
 		}
-		foreign.R.ConnectionWorkspaceSCMDeliveries = append(foreign.R.ConnectionWorkspaceSCMDeliveries, object)
+		foreign.R.RepositoryWorkspaceSCMDeliveries = append(foreign.R.RepositoryWorkspaceSCMDeliveries, object)
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.ConnectionID == foreign.ID {
-				local.R.Connection = foreign
+			if local.RepositoryID == foreign.ID {
+				local.R.Repository = foreign
 				if foreign.R == nil {
-					foreign.R = &workspaceSCMConnectionR{}
+					foreign.R = &workspaceSCMRepositoryR{}
 				}
-				foreign.R.ConnectionWorkspaceSCMDeliveries = append(foreign.R.ConnectionWorkspaceSCMDeliveries, local)
+				foreign.R.RepositoryWorkspaceSCMDeliveries = append(foreign.R.RepositoryWorkspaceSCMDeliveries, local)
 				break
 			}
 		}
@@ -615,10 +615,10 @@ func (workspaceSCMDeliveryL) LoadConnection(ctx context.Context, e boil.ContextE
 	return nil
 }
 
-// SetConnection of the workspaceSCMDelivery to the related item.
-// Sets o.R.Connection to related.
-// Adds o to related.R.ConnectionWorkspaceSCMDeliveries.
-func (o *WorkspaceSCMDelivery) SetConnection(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceSCMConnection) error {
+// SetRepository of the workspaceSCMDelivery to the related item.
+// Sets o.R.Repository to related.
+// Adds o to related.R.RepositoryWorkspaceSCMDeliveries.
+func (o *WorkspaceSCMDelivery) SetRepository(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceSCMRepository) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -628,7 +628,7 @@ func (o *WorkspaceSCMDelivery) SetConnection(ctx context.Context, exec boil.Cont
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE \"workspace_scm_deliveries\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"connection_id"}),
+		strmangle.SetParamNames("\"", "\"", 1, []string{"repository_id"}),
 		strmangle.WhereClause("\"", "\"", 2, workspaceSCMDeliveryPrimaryKeyColumns),
 	)
 	values := []any{related.ID, o.ID}
@@ -642,21 +642,21 @@ func (o *WorkspaceSCMDelivery) SetConnection(ctx context.Context, exec boil.Cont
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.ConnectionID = related.ID
+	o.RepositoryID = related.ID
 	if o.R == nil {
 		o.R = &workspaceSCMDeliveryR{
-			Connection: related,
+			Repository: related,
 		}
 	} else {
-		o.R.Connection = related
+		o.R.Repository = related
 	}
 
 	if related.R == nil {
-		related.R = &workspaceSCMConnectionR{
-			ConnectionWorkspaceSCMDeliveries: WorkspaceSCMDeliverySlice{o},
+		related.R = &workspaceSCMRepositoryR{
+			RepositoryWorkspaceSCMDeliveries: WorkspaceSCMDeliverySlice{o},
 		}
 	} else {
-		related.R.ConnectionWorkspaceSCMDeliveries = append(related.R.ConnectionWorkspaceSCMDeliveries, o)
+		related.R.RepositoryWorkspaceSCMDeliveries = append(related.R.RepositoryWorkspaceSCMDeliveries, o)
 	}
 
 	return nil

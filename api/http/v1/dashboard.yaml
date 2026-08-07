@@ -4685,7 +4685,7 @@ paths:
     get:
       tags: [source-control]
       operationId: listWorkspaceSourceControlConnections
-      summary: List the repositories this workspace is connected to
+      summary: List the forges this workspace holds a credential for
       responses:
         '200':
           description: The workspace's source control connections
@@ -4700,7 +4700,7 @@ paths:
     post:
       tags: [source-control]
       operationId: connectWorkspaceSourceControl
-      summary: Connect a repository, returning the webhook address and secret for the only time
+      summary: Hold a credential for a forge, proving it reaches somebody before storing it
       requestBody:
         required: true
         content:
@@ -4708,10 +4708,10 @@ paths:
             schema: { $ref: '#/components/schemas/ConnectSourceControlRequest' }
       responses:
         '201':
-          description: The connection, carrying what the forge needs once
+          description: The connection
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/MintedSourceControlConnection' }
+              schema: { $ref: '#/components/schemas/SourceControlConnection' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -4728,7 +4728,7 @@ paths:
     get:
       tags: [source-control]
       operationId: getWorkspaceSourceControlConnection
-      summary: Read one connection, its health and what it is attached to
+      summary: Read one connection and its health
       responses:
         '200':
           description: The connection
@@ -4742,7 +4742,7 @@ paths:
     patch:
       tags: [source-control]
       operationId: updateWorkspaceSourceControlConnection
-      summary: Change which team a connection serves, and the label it watches for
+      summary: Rename a connection
       requestBody:
         required: true
         content:
@@ -4762,30 +4762,9 @@ paths:
     delete:
       tags: [source-control]
       operationId: disconnectWorkspaceSourceControl
-      summary: Disconnect a repository, keeping every link it has already made
+      summary: Stop using this credential, leaving every link and mirror it made readable
       responses:
-        '204': { description: The connection is gone and its links remain }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/source-control/connections/{connectionId}/deliveries:
-    parameters:
-      - $ref: '#/components/parameters/WorkspaceId'
-      - $ref: '#/components/parameters/SourceControlConnectionId'
-    get:
-      tags: [source-control]
-      operationId: listWorkspaceSourceControlDeliveries
-      summary: Read what the platform sent and what Norn did with it, newest first
-      responses:
-        '200':
-          description: The connection's recent deliveries
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/SourceControlDelivery' }
+        '204': { description: The connection is gone }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -4798,7 +4777,7 @@ paths:
     put:
       tags: [source-control]
       operationId: replaceWorkspaceSourceControlToken
-      summary: Replace the token behind a connection, proving it before it is kept
+      summary: Install a new token, proving it works before the old one is discarded
       requestBody:
         required: true
         content:
@@ -4806,7 +4785,7 @@ paths:
             schema: { $ref: '#/components/schemas/ReplaceSourceControlTokenRequest' }
       responses:
         '200':
-          description: The connection, working again
+          description: The connection, no longer broken
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SourceControlConnection' }
@@ -4825,10 +4804,10 @@ paths:
     post:
       tags: [source-control]
       operationId: verifyWorkspaceSourceControlConnection
-      summary: Ask the forge whether this connection still works
+      summary: Ask the forge now, checking every repository this credential is used for
       responses:
         '200':
-          description: The connection, with when it was last proved
+          description: The connection as the forge just described it
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SourceControlConnection' }
@@ -4839,43 +4818,233 @@ paths:
         '429': { $ref: '#/components/responses/SourceControlRateLimited' }
         '500': { $ref: '#/components/responses/Problem' }
 
-  /workspaces/{workspaceId}/teams/{teamId}/source-control:
+  /workspaces/{workspaceId}/source-control/repositories:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [source-control]
+      operationId: listWorkspaceSourceControlRepositories
+      summary: List the repositories this workspace is connected to
+      parameters:
+        - name: connectionId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: The connected repositories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SourceControlRepository' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [source-control]
+      operationId: addWorkspaceSourceControlRepository
+      summary: Connect a repository, returning the webhook address and secret for the only time
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddSourceControlRepositoryRequest' }
+      responses:
+        '201':
+          description: The repository, carrying what the forge needs once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MintedSourceControlRepository' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/SourceControlConflict' }
+        '422': { $ref: '#/components/responses/SourceControlRefused' }
+        '429': { $ref: '#/components/responses/SourceControlRateLimited' }
+        '503': { $ref: '#/components/responses/SourceControlSealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/repositories/{repositoryId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/SourceControlRepositoryId'
+    patch:
+      tags: [source-control]
+      operationId: updateWorkspaceSourceControlRepository
+      summary: Change the label a repository mirrors on, or how often it is swept
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateSourceControlRepositoryRequest' }
+      responses:
+        '200':
+          description: The repository as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceControlRepository' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [source-control]
+      operationId: removeWorkspaceSourceControlRepository
+      summary: Disconnect a repository, leaving every link and mirror it made readable
+      responses:
+        '204': { description: The repository is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/repositories/{repositoryId}/deliveries:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/SourceControlRepositoryId'
+    get:
+      tags: [source-control]
+      operationId: listWorkspaceSourceControlDeliveries
+      summary: Read what the platform sent to this repository and what came of it
+      responses:
+        '200':
+          description: The most recent deliveries, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SourceControlDelivery' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/repositories/{repositoryId}/routes:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/SourceControlRepositoryId'
+    get:
+      tags: [source-control]
+      operationId: listWorkspaceSourceControlRoutes
+      summary: List which teams the changes in this repository reach
+      responses:
+        '200':
+          description: The routes, longest prefix first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SourceControlRoute' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [source-control]
+      operationId: addWorkspaceSourceControlRoute
+      summary: Send the changes under one path to a team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddSourceControlRouteRequest' }
+      responses:
+        '201':
+          description: The route
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceControlRoute' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/SourceControlConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/routes/{routeId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/SourceControlRouteId'
+    delete:
+      tags: [source-control]
+      operationId: removeWorkspaceSourceControlRoute
+      summary: Stop sending this path to this team
+      responses:
+        '204': { description: The route is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/source-control/rules:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
       - $ref: '#/components/parameters/TeamId'
     get:
       tags: [source-control]
-      operationId: getTeamSourceControlSettings
-      summary: Read what this team does when a linked change merges
+      operationId: listTeamSourceControlRules
+      summary: Read where this team's issues go as their changes move
       responses:
         '200':
-          description: The team's setting, and whether the state it names still exists
+          description: The team's rules
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/TeamSourceControlSettings' }
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SourceControlTransitionRule' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
     put:
       tags: [source-control]
-      operationId: setTeamSourceControlSettings
-      summary: Choose whether a merged change moves an issue, and where it moves it to
+      operationId: setTeamSourceControlRule
+      summary: Send an issue to a state when its change reaches one on the forge
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/SetTeamSourceControlRequest' }
+            schema: { $ref: '#/components/schemas/SetSourceControlTransitionRuleRequest' }
       responses:
         '200':
-          description: The setting as it now stands
+          description: The team's rules as they now stand
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/TeamSourceControlSettings' }
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SourceControlTransitionRule' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/source-control/rules/{trigger}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/TeamId'
+      - name: trigger
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/CodeChangeState' }
+    delete:
+      tags: [source-control]
+      operationId: clearTeamSourceControlRule
+      summary: Stop moving issues when a change reaches this state
+      responses:
+        '200':
+          description: The team's rules as they now stand
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SourceControlTransitionRule' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/issues/{issueId}/code-links:
@@ -4935,25 +5104,27 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
-  /workspaces/{workspaceId}/issues/{issueId}/mirror:
+  /workspaces/{workspaceId}/issues/{issueId}/mirrors:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
       - $ref: '#/components/parameters/IssueId'
     get:
       tags: [source-control]
-      operationId: getWorkspaceIssueMirror
-      summary: Read the platform issue this one is kept in step with
+      operationId: listWorkspaceIssueMirrors
+      summary: Read the platform issues this one is kept in step with
       responses:
         '200':
-          description: The mirror
+          description: The mirrors
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/IssueMirror' }
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/IssueMirror' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
-    put:
+    post:
       tags: [source-control]
       operationId: mirrorWorkspaceIssue
       summary: Pair this issue with one that already exists on the platform
@@ -4963,7 +5134,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/MirrorIssueRequest' }
       responses:
-        '200':
+        '201':
           description: The mirror
           content:
             application/json:
@@ -4975,6 +5146,12 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '429': { $ref: '#/components/responses/SourceControlRateLimited' }
         '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/mirrors/{mirrorId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+      - $ref: '#/components/parameters/IssueMirrorId'
     delete:
       tags: [source-control]
       operationId: unmirrorWorkspaceIssue
@@ -5186,6 +5363,24 @@ components:
       schema:
         type: array
         items: { $ref: '#/components/schemas/WebhookDeliveryState' }
+
+    SourceControlRepositoryId:
+      name: repositoryId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    SourceControlRouteId:
+      name: routeId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    IssueMirrorId:
+      name: mirrorId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
 
     SourceControlConnectionId:
       name: connectionId
@@ -7383,62 +7578,53 @@ components:
 
     CodeChangeState:
       type: string
-      enum: [open, draft, in_review, merged, closed]
+      description: >-
+        Where a change stands on the forge. Review and conflict are states a change is in
+        rather than events that happened to it, which is what lets a rule fire on entering
+        one and lets the issue read correctly after a reload.
+      enum:
+        [draft, open, review_requested, changes_requested, approved, merged, closed,
+         reopened, conflicted]
 
     SourceControlConnection:
       type: object
       description: >-
-        A connected repository. The token is never returned; tokenSet says whether one is
+        One credential against one forge address. A token already reaches every repository
+        its owner can see, so repositories hang off the connection rather than each carrying
+        its own copy of the secret. The token is never returned; tokenSet says whether one is
         held and tokenHint carries its last few characters so a person can tell which is
-        installed. verifiedAt is when the forge last answered, which is separate from
-        updatedAt because a connection can be edited without being proved.
-      required:
-        [id, provider, repository, tokenSet, tokenHint, mirrorLabel, status, createdAt, updatedAt]
+        installed.
+      required: [id, provider, tokenSet, tokenHint, status, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         provider: { $ref: '#/components/schemas/SourceControlProvider' }
         baseUrl: { type: string }
-        repository: { type: string }
-        teamId: { type: string, format: uuid }
+        label: { type: string }
         tokenSet: { type: boolean }
         tokenHint: { type: string }
         identityLogin: { type: string }
-        hookInstalled: { type: boolean }
-        mirrorLabel: { type: string }
+        repositoryCount: { type: integer, format: int32 }
         status: { $ref: '#/components/schemas/SourceControlStatus' }
         brokenReason: { $ref: '#/components/schemas/SourceControlBrokenReason' }
         brokenDetail: { type: string }
         brokenAt: { type: string, format: date-time }
         verifiedAt: { type: string, format: date-time }
-        lastSeenAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
 
-    MintedSourceControlConnection:
-      type: object
-      required: [connection, webhookUrl, webhookSecret]
-      properties:
-        connection: { $ref: '#/components/schemas/SourceControlConnection' }
-        webhookUrl: { type: string }
-        webhookSecret: { type: string }
-
     ConnectSourceControlRequest:
       type: object
-      required: [provider, repository, token]
+      required: [provider, token]
       properties:
         provider: { $ref: '#/components/schemas/SourceControlProvider' }
         baseUrl: { type: string }
-        repository: { type: string }
-        teamId: { type: string, format: uuid }
-        mirrorLabel: { type: string }
+        label: { type: string }
         token: { type: string, writeOnly: true }
 
     UpdateSourceControlRequest:
       type: object
       properties:
-        teamId: { type: string, format: uuid }
-        clearTeam: { type: boolean }
-        mirrorLabel: { type: string }
+        label: { type: string }
 
     ReplaceSourceControlTokenRequest:
       type: object
@@ -7446,33 +7632,106 @@ components:
       properties:
         token: { type: string, writeOnly: true }
 
-    TeamSourceControlSettings:
+    SourceControlRepository:
       type: object
       description: >-
-        targetResolved is false when the team chose a state that has since been deleted. The
-        setting still reads as on, so without this a team would look configured and quietly
-        do nothing.
-      required: [teamId, advanceOnMerge, targetResolved]
+        One repository reached through a connection. pollIntervalSeconds is per repository
+        because the sweep exists for the one whose webhook never arrives, and hookInstalled
+        is false when the token could not install it — the sweep retries, and until it
+        succeeds the address and secret below are what a person installs by hand.
+      required: [id, connectionId, provider, fullName, mirrorLabel, hookInstalled, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        connectionId: { type: string, format: uuid }
+        provider: { $ref: '#/components/schemas/SourceControlProvider' }
+        fullName: { type: string }
+        defaultBranch: { type: string }
+        url: { type: string }
+        mirrorLabel: { type: string }
+        pollIntervalSeconds: { type: integer, format: int32 }
+        hookInstalled: { type: boolean }
+        routeCount: { type: integer, format: int32 }
+        lastSeenAt: { type: string, format: date-time }
+        reconciledAt: { type: string, format: date-time }
+        reconcileAfter: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    MintedSourceControlRepository:
+      type: object
+      description: >-
+        The webhook address and secret are returned once, on the call that created the
+        repository. Norn installs the hook itself when the token may; this is what a person
+        needs when it may not.
+      required: [repository, webhookUrl, webhookSecret]
+      properties:
+        repository: { $ref: '#/components/schemas/SourceControlRepository' }
+        webhookUrl: { type: string }
+        webhookSecret: { type: string }
+
+    AddSourceControlRepositoryRequest:
+      type: object
+      required: [connectionId, fullName]
+      properties:
+        connectionId: { type: string, format: uuid }
+        fullName: { type: string }
+        mirrorLabel: { type: string }
+        pollIntervalSeconds: { type: integer, format: int32 }
+
+    UpdateSourceControlRepositoryRequest:
+      type: object
+      properties:
+        mirrorLabel: { type: string }
+        pollIntervalSeconds: { type: integer, format: int32 }
+
+    SourceControlRoute:
+      type: object
+      description: >-
+        Sends the changes under one path to one team. Matching is by longest prefix, and a
+        route whose prefix is empty is the repository's default rather than a separate flag
+        that could disagree with it.
+      required: [id, repositoryId, teamId, pathPrefix, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        repositoryId: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        teamName: { type: string }
+        pathPrefix: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    AddSourceControlRouteRequest:
+      type: object
+      required: [teamId]
       properties:
         teamId: { type: string, format: uuid }
-        advanceOnMerge: { type: boolean }
-        mergedStateId: { type: string, format: uuid }
-        targetResolved: { type: boolean }
-        targetName: { type: string }
+        pathPrefix: { type: string }
 
-    SetTeamSourceControlRequest:
+    SourceControlTransitionRule:
       type: object
-      required: [advanceOnMerge]
+      description: >-
+        Moves a team's issue to a workflow state when its change reaches one on the forge.
+        stateName is empty when the state has since been deleted, which takes the rule with
+        it rather than leaving it pointing nowhere.
+      required: [id, teamId, trigger, stateId]
       properties:
-        advanceOnMerge: { type: boolean }
-        mergedStateId: { type: string, format: uuid }
-        clearState: { type: boolean }
+        id: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        trigger: { $ref: '#/components/schemas/CodeChangeState' }
+        stateId: { type: string, format: uuid }
+        stateName: { type: string }
+
+    SetSourceControlTransitionRuleRequest:
+      type: object
+      required: [trigger, stateId]
+      properties:
+        trigger: { $ref: '#/components/schemas/CodeChangeState' }
+        stateId: { type: string, format: uuid }
 
     CodeLink:
       type: object
       description: >-
         Everything needed to render the link is on the link itself, so it survives the
-        connection being removed. connected is false once that has happened.
+        repository being removed. connected is false once that has happened.
       required: [id, provider, repository, kind, externalId, url, state, connected, createdAt]
       properties:
         id: { type: string, format: uuid }
@@ -7484,9 +7743,12 @@ components:
         title: { type: string }
         url: { type: string }
         state: { $ref: '#/components/schemas/CodeChangeState' }
+        checksFailed: { type: boolean }
         author: { type: string }
+        headBranch: { type: string }
+        baseBranch: { type: string }
         detectedIn: { type: string }
-        advancedIssue: { type: boolean }
+        resolving: { type: boolean }
         connected: { type: boolean }
         mergedAt: { type: string, format: date-time }
         closedAt: { type: string, format: date-time }
@@ -7500,6 +7762,9 @@ components:
 
     IssueMirror:
       type: object
+      description: >-
+        An issue may be paired with one platform issue per repository, not one in the world:
+        the same work is often tracked in a service repository and a client one.
       required: [id, provider, repository, externalId, externalNumber, url, origin, connected]
       properties:
         id: { type: string, format: uuid }
@@ -7509,23 +7774,21 @@ components:
         externalNumber: { type: integer, format: int32 }
         url: { type: string }
         origin: { type: string, enum: [platform, norn] }
+        direction: { type: string, enum: [inbound, outbound, both] }
         connected: { type: boolean }
         pulledAt: { type: string, format: date-time }
         pushedAt: { type: string, format: date-time }
 
     MirrorIssueRequest:
       type: object
-      required: [connectionId, reference]
+      required: [repositoryId, reference]
       properties:
-        connectionId: { type: string, format: uuid }
+        repositoryId: { type: string, format: uuid }
         reference: { type: string }
 
     SourceControlDeliveryOutcome:
       type: string
-      description: >-
-        `processed` is what a delivery settled before outcomes existed carries: handled, but
-        the row never recorded which of the other three it was.
-      enum: [applied, ignored, failed, processed]
+      enum: [applied, ignored, failed]
 
     SourceControlDelivery:
       type: object
@@ -7569,6 +7832,7 @@ components:
               type: string
               enum:
                 - source_control_already_connected
+                - source_control_already_routed
                 - source_control_already_mirrored
                 - source_control_team_outside_connection
 

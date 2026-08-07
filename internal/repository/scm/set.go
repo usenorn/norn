@@ -7,5 +7,7 @@ var Set = wire.NewSet(
 	NewSCMDelivery,
 	NewCodeLink,
 	NewIssueMirror,
-	NewSCMTeamSetting,
+	NewSCMTransitionRule,
+	NewSCMRepository,
+	NewSCMRoute,
 )

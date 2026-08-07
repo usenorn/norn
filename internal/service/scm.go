@@ -19,6 +19,7 @@ type ForgeChange struct {
 	Body       string
 	URL        string
 	State      entity.CodeChangeState
+	Action     entity.CodeChangeAction
 	Author     string
 	HeadBranch string
 	BaseBranch string
@@ -118,12 +119,15 @@ type Forge interface {
 	Verify(secret string, header http.Header, body []byte) (entity.SCMDelivery, error)
 	Translate(delivery entity.SCMDelivery) ([]ForgeEvent, error)
 
-	Repository(ctx context.Context, target entity.SCMTarget) (entity.SCMRepository, error)
+	Repository(ctx context.Context, target entity.SCMTarget) (entity.SCMRemoteRepository, error)
 	Identity(ctx context.Context, target entity.SCMTarget) (string, error)
 	InstallHook(ctx context.Context, request ForgeHookRequest) (string, error)
 	RemoveHook(ctx context.Context, target entity.SCMTarget, hookID string) error
 
 	Changes(ctx context.Context, target entity.SCMTarget, since time.Time, cursor string) (ForgeChangePage, error)
+	// ChangedPaths is what routing needs and no event carries: both forges describe a change
+	// without saying which files it touches.
+	ChangedPaths(ctx context.Context, target entity.SCMTarget, number int) ([]string, error)
 	Issues(ctx context.Context, target entity.SCMTarget, label string, since time.Time, cursor string) (ForgeIssuePage, error)
 	// An issue is addressed by the number its repository counts with, not by the identity it
 	// is stored under. Both forges put the number in the path and the id in the payload, so
@@ -141,36 +145,52 @@ type Forges interface {
 
 type ConnectSourceControlInput struct {
 	WorkspaceID uuid.UUID
-	TeamID      uuid.UUID
 	Provider    entity.SCMProvider
 	BaseURL     string
-	Repository  string
+	Label       string
 	Token       string
-	MirrorLabel string
 }
 
-type ConnectedSourceControl struct {
-	Connection    entity.SCMConnection
+type UpdateConnectionInput struct {
+	Label string
+}
+
+type AddRepositoryInput struct {
+	ConnectionID uuid.UUID
+	FullName     string
+	MirrorLabel  string
+	PollInterval time.Duration
+}
+
+// ConnectedRepository carries the webhook address and secret back to whoever added the
+// repository. Norn installs the hook itself when the token may, and this is what a person
+// needs when it may not.
+type ConnectedRepository struct {
+	Repository    entity.SCMRepository
 	WebhookURL    string
 	WebhookSecret string
+	HookInstalled bool
 }
 
-type UpdateSourceControlInput struct {
-	TeamID      uuid.UUID
-	ClearTeam   bool
-	MirrorLabel string
+type UpdateRepositoryInput struct {
+	MirrorLabel  string
+	PollInterval time.Duration
 }
 
-type SetTeamSourceControlInput struct {
-	AdvanceOnMerge bool
-	MergedStateID  uuid.UUID
-	ClearState     bool
+type AddRouteInput struct {
+	RepositoryID uuid.UUID
+	TeamID       uuid.UUID
+	PathPrefix   string
 }
 
-type TeamSourceControlSettings struct {
-	Settings       entity.SCMTeamSettings
-	TargetResolved bool
-	TargetName     string
+type SetTransitionRuleInput struct {
+	Trigger entity.CodeChangeState
+	StateID uuid.UUID
+}
+
+type TeamTransitionRule struct {
+	Rule      entity.SCMTransitionRule
+	StateName string
 }
 
 type LinkIssueCodeInput struct {
@@ -178,37 +198,47 @@ type LinkIssueCodeInput struct {
 }
 
 type MirrorIssueInput struct {
-	ConnectionID uuid.UUID
+	RepositoryID uuid.UUID
 	Reference    string
 }
 
 type SourceControl interface {
-	List(ctx context.Context, workspaceID uuid.UUID) ([]entity.SCMConnection, error)
-	Get(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error)
-	Connect(ctx context.Context, input ConnectSourceControlInput) (ConnectedSourceControl, error)
-	Update(ctx context.Context, workspaceID, connectionID uuid.UUID, input UpdateSourceControlInput) (entity.SCMConnection, error)
+	ListConnections(ctx context.Context, workspaceID uuid.UUID) ([]entity.SCMConnection, error)
+	GetConnection(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error)
+	Connect(ctx context.Context, input ConnectSourceControlInput) (entity.SCMConnection, error)
+	UpdateConnection(ctx context.Context, workspaceID, connectionID uuid.UUID, input UpdateConnectionInput) (entity.SCMConnection, error)
 	ReplaceToken(ctx context.Context, workspaceID, connectionID uuid.UUID, token string) (entity.SCMConnection, error)
-	Verify(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error)
-	Deliveries(ctx context.Context, workspaceID, connectionID uuid.UUID) ([]entity.SCMDelivery, error)
+	VerifyConnection(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error)
 	Disconnect(ctx context.Context, workspaceID, connectionID uuid.UUID) error
 
-	TeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID) (TeamSourceControlSettings, error)
-	SetTeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID, input SetTeamSourceControlInput) (TeamSourceControlSettings, error)
+	ListRepositories(ctx context.Context, workspaceID, connectionID uuid.UUID) ([]entity.SCMRepository, error)
+	AddRepository(ctx context.Context, workspaceID uuid.UUID, input AddRepositoryInput) (ConnectedRepository, error)
+	UpdateRepository(ctx context.Context, workspaceID, repositoryID uuid.UUID, input UpdateRepositoryInput) (entity.SCMRepository, error)
+	RemoveRepository(ctx context.Context, workspaceID, repositoryID uuid.UUID) error
+	Deliveries(ctx context.Context, workspaceID, repositoryID uuid.UUID) ([]entity.SCMDelivery, error)
+
+	ListRoutes(ctx context.Context, workspaceID, repositoryID uuid.UUID) (entity.SCMRoutes, error)
+	AddRoute(ctx context.Context, workspaceID uuid.UUID, input AddRouteInput) (entity.SCMRoute, error)
+	RemoveRoute(ctx context.Context, workspaceID, routeID uuid.UUID) error
+
+	TeamRules(ctx context.Context, workspaceID, teamID uuid.UUID) ([]TeamTransitionRule, error)
+	SetTeamRule(ctx context.Context, workspaceID, teamID uuid.UUID, input SetTransitionRuleInput) ([]TeamTransitionRule, error)
+	ClearTeamRule(ctx context.Context, workspaceID, teamID uuid.UUID, trigger entity.CodeChangeState) ([]TeamTransitionRule, error)
 
 	Links(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.CodeLink, error)
 	Link(ctx context.Context, workspaceID, issueID uuid.UUID, input LinkIssueCodeInput) (entity.CodeLink, error)
 	Unlink(ctx context.Context, workspaceID, issueID, linkID uuid.UUID) error
 
 	Mirror(ctx context.Context, workspaceID, issueID uuid.UUID, input MirrorIssueInput) (entity.IssueMirror, error)
-	MirrorOf(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueMirror, error)
-	Unmirror(ctx context.Context, workspaceID, issueID uuid.UUID) error
+	Mirrors(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.IssueMirror, error)
+	Unmirror(ctx context.Context, workspaceID, issueID, mirrorID uuid.UUID) error
 }
 
 // SourceControlSync is the job-facing half. It is separate because everything on it runs
 // with no person waiting and rebuilds its own actor from the connection, which is a
 // different contract from the dashboard operations above.
 type SourceControlSync interface {
-	Accept(ctx context.Context, connectionID uuid.UUID, provider entity.SCMProvider, header http.Header, body []byte) (uuid.UUID, error)
+	Accept(ctx context.Context, repositoryID uuid.UUID, provider entity.SCMProvider, header http.Header, body []byte) (uuid.UUID, error)
 	Apply(ctx context.Context, deliveryID uuid.UUID) error
 	Reconcile(ctx context.Context, at time.Time) error
 }

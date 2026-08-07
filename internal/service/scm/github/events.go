@@ -237,7 +237,7 @@ func changeState(draft bool, state string, mergedAt *time.Time, reviewers int) e
 	case draft:
 		return entity.CodeChangeDraft
 	case reviewers > 0:
-		return entity.CodeChangeInReview
+		return entity.CodeChangeReviewRequested
 	default:
 		return entity.CodeChangeOpen
 	}

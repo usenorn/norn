@@ -9,17 +9,11 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-//go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=SCMConnection=MockSCMConnection,SCMDelivery=MockSCMDelivery,CodeLink=MockCodeLink,IssueMirror=MockIssueMirror,SCMTeamSetting=MockSCMTeamSetting
-
-type SCMCredentials struct {
-	Token         string
-	WebhookSecret string
-}
+//go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=SCMConnection=MockSCMConnection,SCMRepository=MockSCMRepository,SCMRoute=MockSCMRoute,SCMDelivery=MockSCMDelivery,CodeLink=MockCodeLink,IssueMirror=MockIssueMirror,SCMTransitionRule=MockSCMTransitionRule
 
 type SCMConnectionInput struct {
-	Connection    entity.SCMConnection
-	Token         string
-	WebhookSecret string
+	Connection entity.SCMConnection
+	Token      string
 }
 
 type SCMConnection interface {
@@ -27,17 +21,45 @@ type SCMConnection interface {
 	GetByID(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error)
 	GetForDelivery(ctx context.Context, connectionID uuid.UUID) (entity.SCMConnection, error)
 	ListByWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]entity.SCMConnection, error)
-	Credentials(ctx context.Context, connectionID uuid.UUID) (SCMCredentials, error)
+	Token(ctx context.Context, connectionID uuid.UUID) (string, error)
 	ReplaceToken(ctx context.Context, connectionID uuid.UUID, token, hint, login string, at time.Time) error
-	UpdateSettings(ctx context.Context, connectionID, teamID uuid.UUID, mirrorLabel string) (entity.SCMConnection, error)
-	RecordHook(ctx context.Context, connectionID uuid.UUID, externalHookID string) error
-	MarkVerified(ctx context.Context, connectionID uuid.UUID, repository entity.SCMRepository, login string, at time.Time) error
+	UpdateLabel(ctx context.Context, connectionID uuid.UUID, label string) (entity.SCMConnection, error)
+	MarkVerified(ctx context.Context, connectionID uuid.UUID, login string, at time.Time) error
 	MarkBroken(ctx context.Context, connectionID uuid.UUID, reason entity.SCMBrokenReason, detail string, at time.Time) error
-	Park(ctx context.Context, connectionID uuid.UUID, until time.Time) error
-	RecordReconciled(ctx context.Context, connectionID uuid.UUID, cursor string, at time.Time) error
-	RecordSeen(ctx context.Context, connectionID uuid.UUID, at time.Time) error
-	ClaimDue(ctx context.Context, at time.Time, limit int) ([]entity.SCMConnection, error)
 	Delete(ctx context.Context, connectionID uuid.UUID) error
+}
+
+type SCMRepositoryInput struct {
+	Repository    entity.SCMRepository
+	WebhookSecret string
+}
+
+type SCMRepositorySettings struct {
+	MirrorLabel  string
+	PollInterval time.Duration
+}
+
+type SCMRepository interface {
+	Create(ctx context.Context, input SCMRepositoryInput) (entity.SCMRepository, error)
+	GetByID(ctx context.Context, workspaceID, repositoryID uuid.UUID) (entity.SCMRepository, error)
+	GetForDelivery(ctx context.Context, repositoryID uuid.UUID) (entity.SCMRepository, error)
+	ListByConnection(ctx context.Context, connectionID uuid.UUID) ([]entity.SCMRepository, error)
+	ListByWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]entity.SCMRepository, error)
+	WebhookSecret(ctx context.Context, repositoryID uuid.UUID) (string, error)
+	UpdateSettings(ctx context.Context, repositoryID uuid.UUID, settings SCMRepositorySettings) (entity.SCMRepository, error)
+	RecordHook(ctx context.Context, repositoryID uuid.UUID, externalHookID string) error
+	RecordSeen(ctx context.Context, repositoryID uuid.UUID, at time.Time) error
+	RecordReconciled(ctx context.Context, repositoryID uuid.UUID, cursor string, at time.Time) error
+	Park(ctx context.Context, repositoryID uuid.UUID, until time.Time) error
+	ClaimDue(ctx context.Context, at time.Time, limit int) ([]entity.SCMRepository, error)
+	Delete(ctx context.Context, workspaceID, repositoryID uuid.UUID) error
+}
+
+type SCMRoute interface {
+	Create(ctx context.Context, route entity.SCMRoute) (entity.SCMRoute, error)
+	ListByRepository(ctx context.Context, repositoryID uuid.UUID) (entity.SCMRoutes, error)
+	ListByWorkspace(ctx context.Context, workspaceID uuid.UUID) (entity.SCMRoutes, error)
+	Delete(ctx context.Context, workspaceID, routeID uuid.UUID) (entity.SCMRoute, error)
 }
 
 type SCMDelivery interface {
@@ -45,38 +67,40 @@ type SCMDelivery interface {
 	GetByID(ctx context.Context, deliveryID uuid.UUID) (entity.SCMDelivery, error)
 	Settle(ctx context.Context, deliveryID uuid.UUID, outcome entity.SCMDeliveryOutcome, detail string, at time.Time) error
 	Reschedule(ctx context.Context, deliveryID uuid.UUID, attempt int, retryAfter time.Time, failure string) error
-	ListPending(ctx context.Context, connectionID uuid.UUID, at time.Time, limit int) ([]entity.SCMDelivery, error)
-	ListByConnection(ctx context.Context, connectionID uuid.UUID, limit int) ([]entity.SCMDelivery, error)
+	ListPending(ctx context.Context, repositoryID uuid.UUID, at time.Time, limit int) ([]entity.SCMDelivery, error)
+	ListByRepository(ctx context.Context, repositoryID uuid.UUID, limit int) ([]entity.SCMDelivery, error)
 	DeleteSettledBefore(ctx context.Context, before time.Time, limit int) (int, error)
 }
 
 type CodeLink interface {
 	Upsert(ctx context.Context, link entity.CodeLink) (entity.CodeLink, error)
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.CodeLink, error)
-	ListByExternalID(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repository, externalID string) ([]entity.CodeLink, error)
-	MarkAdvanced(ctx context.Context, linkID uuid.UUID) error
+	ListByExternalID(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repositoryName, externalID string) ([]entity.CodeLink, error)
+	// ClaimTransition reports false when this link has already driven the issue for this
+	// state, which is what makes a redelivered event safe to process again.
+	ClaimTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, issueID uuid.UUID, at time.Time) (bool, error)
 	Delete(ctx context.Context, workspaceID, issueID, linkID uuid.UUID) (entity.CodeLink, error)
-	DetachConnection(ctx context.Context, connectionID uuid.UUID) error
+	DetachRepository(ctx context.Context, repositoryID uuid.UUID) error
 }
 
 type IssueMirror interface {
 	Create(ctx context.Context, mirror entity.IssueMirror) (entity.IssueMirror, error)
 	GetByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueMirror, error)
-	GetByExternalID(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repository, externalID string) (entity.IssueMirror, error)
-	ListByConnection(ctx context.Context, connectionID uuid.UUID, limit int) ([]entity.IssueMirror, error)
+	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.IssueMirror, error)
+	GetByExternalID(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repositoryName, externalID string) (entity.IssueMirror, error)
+	ListByRepository(ctx context.Context, repositoryID uuid.UUID, limit int) ([]entity.IssueMirror, error)
 	RecordPull(ctx context.Context, mirrorID uuid.UUID, hashes entity.MirrorHashes, sourceUpdatedAt time.Time, version int, at time.Time) error
 	RecordPush(ctx context.Context, mirrorID uuid.UUID, hashes entity.MirrorHashes, version int, at time.Time) error
-	Delete(ctx context.Context, workspaceID, issueID uuid.UUID) error
-	DetachConnection(ctx context.Context, connectionID uuid.UUID) error
+	Delete(ctx context.Context, workspaceID, issueID, mirrorID uuid.UUID) error
+	DetachRepository(ctx context.Context, repositoryID uuid.UUID) error
 
 	CreateComment(ctx context.Context, mirror entity.CommentMirror) (entity.CommentMirror, error)
-	GetCommentByExternalID(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repository, externalID string) (entity.CommentMirror, error)
+	GetCommentByExternalID(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repositoryName, externalID string) (entity.CommentMirror, error)
 	ListCommentsByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.CommentMirror, error)
-	DetachConnectionComments(ctx context.Context, connectionID uuid.UUID) error
 }
 
-type SCMTeamSetting interface {
-	Settings(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.SCMTeamSettings, error)
-	Upsert(ctx context.Context, settings entity.SCMTeamSettings) (entity.SCMTeamSettings, error)
-	Disable(ctx context.Context, workspaceID, teamID uuid.UUID) error
+type SCMTransitionRule interface {
+	ListByTeam(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.SCMTransitionRules, error)
+	Upsert(ctx context.Context, rule entity.SCMTransitionRule) (entity.SCMTransitionRule, error)
+	Delete(ctx context.Context, workspaceID, teamID uuid.UUID, trigger entity.CodeChangeState) error
 }

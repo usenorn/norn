@@ -222,7 +222,7 @@ func changeState(draft bool, state string, reviewers int) entity.CodeChangeState
 	case draft:
 		return entity.CodeChangeDraft
 	case reviewers > 0:
-		return entity.CodeChangeInReview
+		return entity.CodeChangeReviewRequested
 	default:
 		return entity.CodeChangeOpen
 	}

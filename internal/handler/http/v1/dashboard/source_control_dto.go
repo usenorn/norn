@@ -1,6 +1,8 @@
 package dashboard
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -12,25 +14,21 @@ import (
 // few characters that tell a person which it is.
 func sourceControlDTO(connection entity.SCMConnection) api.SourceControlConnection {
 	dto := api.SourceControlConnection{
-		Id:            connection.ID,
-		Provider:      api.SourceControlProvider(connection.Provider),
-		Repository:    connection.Repository,
-		TokenSet:      connection.TokenSet,
-		TokenHint:     connection.TokenHint,
-		MirrorLabel:   connection.MirrorLabel,
-		Status:        api.SourceControlStatus(connection.Status),
-		CreatedAt:     connection.CreatedAt,
-		UpdatedAt:     connection.UpdatedAt,
-		HookInstalled: pointer(connection.ExternalHookID != ""),
+		Id:        connection.ID,
+		Provider:  api.SourceControlProvider(connection.Provider),
+		TokenSet:  connection.TokenSet,
+		TokenHint: connection.TokenHint,
+		Status:    api.SourceControlStatus(connection.Status),
+		CreatedAt: connection.CreatedAt,
+		UpdatedAt: connection.UpdatedAt,
 	}
 
 	if connection.BaseURL != "" {
 		dto.BaseUrl = &connection.BaseURL
 	}
 
-	if connection.TeamID != uuid.Nil {
-		teamID := connection.TeamID
-		dto.TeamId = &teamID
+	if connection.Label != "" {
+		dto.Label = &connection.Label
 	}
 
 	if connection.IdentityLogin != "" {
@@ -48,7 +46,6 @@ func sourceControlDTO(connection entity.SCMConnection) api.SourceControlConnecti
 
 	dto.BrokenAt = connection.BrokenAt
 	dto.VerifiedAt = connection.VerifiedAt
-	dto.LastSeenAt = connection.LastSeenAt
 
 	return dto
 }
@@ -62,33 +59,91 @@ func sourceControlDTOs(connections []entity.SCMConnection) []api.SourceControlCo
 	return dtos
 }
 
-func teamSourceControlDTO(
-	teamID uuid.UUID,
-	settings service.TeamSourceControlSettings,
-) api.TeamSourceControlSettings {
-	dto := api.TeamSourceControlSettings{
-		TeamId:         teamID,
-		AdvanceOnMerge: settings.Settings.AdvanceOnMerge,
-		TargetResolved: settings.TargetResolved,
+func sourceControlRepositoryDTO(stored entity.SCMRepository) api.SourceControlRepository {
+	dto := api.SourceControlRepository{
+		Id:            stored.ID,
+		ConnectionId:  stored.ConnectionID,
+		Provider:      api.SourceControlProvider(stored.Provider),
+		FullName:      stored.FullName,
+		MirrorLabel:   stored.MirrorLabel,
+		HookInstalled: stored.HookInstalled(),
+		CreatedAt:     stored.CreatedAt,
+		UpdatedAt:     stored.UpdatedAt,
 	}
 
-	if settings.Settings.MergedStateID != uuid.Nil {
-		stateID := settings.Settings.MergedStateID
-		dto.MergedStateId = &stateID
+	if stored.DefaultBranch != "" {
+		dto.DefaultBranch = &stored.DefaultBranch
 	}
 
-	if settings.TargetName != "" {
-		dto.TargetName = &settings.TargetName
+	if stored.URL != "" {
+		dto.Url = &stored.URL
+	}
+
+	dto.PollIntervalSeconds = pointer(int32(stored.PollInterval / time.Second))
+	dto.LastSeenAt = stored.LastSeenAt
+	dto.ReconciledAt = stored.ReconciledAt
+	dto.ReconcileAfter = stored.ReconcileAfter
+
+	return dto
+}
+
+func sourceControlRepositoryDTOs(stored []entity.SCMRepository) []api.SourceControlRepository {
+	dtos := make([]api.SourceControlRepository, len(stored))
+	for i, one := range stored {
+		dtos[i] = sourceControlRepositoryDTO(one)
+	}
+
+	return dtos
+}
+
+func sourceControlRouteDTO(route entity.SCMRoute) api.SourceControlRoute {
+	return api.SourceControlRoute{
+		Id:           route.ID,
+		RepositoryId: route.RepositoryID,
+		TeamId:       route.TeamID,
+		PathPrefix:   route.PathPrefix,
+		CreatedAt:    route.CreatedAt,
+	}
+}
+
+func sourceControlRouteDTOs(routes entity.SCMRoutes) []api.SourceControlRoute {
+	dtos := make([]api.SourceControlRoute, len(routes))
+	for i, route := range routes {
+		dtos[i] = sourceControlRouteDTO(route)
+	}
+
+	return dtos
+}
+
+func transitionRuleDTO(rule service.TeamTransitionRule) api.SourceControlTransitionRule {
+	dto := api.SourceControlTransitionRule{
+		Id:      rule.Rule.ID,
+		TeamId:  rule.Rule.TeamID,
+		Trigger: api.CodeChangeState(rule.Rule.Trigger),
+		StateId: rule.Rule.StateID,
+	}
+
+	if rule.StateName != "" {
+		dto.StateName = &rule.StateName
 	}
 
 	return dto
+}
+
+func transitionRuleDTOs(rules []service.TeamTransitionRule) []api.SourceControlTransitionRule {
+	dtos := make([]api.SourceControlTransitionRule, len(rules))
+	for i, rule := range rules {
+		dtos[i] = transitionRuleDTO(rule)
+	}
+
+	return dtos
 }
 
 func codeLinkDTO(link entity.CodeLink) api.CodeLink {
 	dto := api.CodeLink{
 		Id:         link.ID,
 		Provider:   api.SourceControlProvider(link.Provider),
-		Repository: link.Repository,
+		Repository: link.RepositoryName,
 		Kind:       api.CodeLinkKind(link.Kind),
 		ExternalId: link.ExternalID,
 		Url:        link.URL,
@@ -112,11 +167,20 @@ func codeLinkDTO(link entity.CodeLink) api.CodeLink {
 		dto.Author = &link.Author
 	}
 
+	if link.HeadBranch != "" {
+		dto.HeadBranch = &link.HeadBranch
+	}
+
+	if link.BaseBranch != "" {
+		dto.BaseBranch = &link.BaseBranch
+	}
+
 	if link.DetectedIn != "" {
 		dto.DetectedIn = &link.DetectedIn
 	}
 
-	dto.AdvancedIssue = pointer(link.AdvancedIssue)
+	dto.Resolving = pointer(link.Resolving)
+	dto.ChecksFailed = pointer(link.Action == entity.CodeChangeActionCI)
 
 	return dto
 }
@@ -131,18 +195,34 @@ func codeLinkDTOs(links []entity.CodeLink) []api.CodeLink {
 }
 
 func issueMirrorDTO(mirror entity.IssueMirror) api.IssueMirror {
-	return api.IssueMirror{
+	dto := api.IssueMirror{
 		Id:             mirror.ID,
 		Provider:       api.SourceControlProvider(mirror.Provider),
-		Repository:     mirror.Repository,
+		Repository:     mirror.RepositoryName,
 		ExternalId:     mirror.ExternalID,
 		ExternalNumber: int32(mirror.ExternalNumber),
 		Url:            mirror.URL,
 		Origin:         api.IssueMirrorOrigin(mirror.Origin),
-		Connected:      mirror.ConnectionID != uuid.Nil,
+		Connected:      mirror.RepositoryID != uuid.Nil,
 		PulledAt:       mirror.PulledAt,
 		PushedAt:       mirror.PushedAt,
 	}
+
+	if mirror.Direction != "" {
+		direction := api.IssueMirrorDirection(mirror.Direction)
+		dto.Direction = &direction
+	}
+
+	return dto
+}
+
+func issueMirrorDTOs(mirrors []entity.IssueMirror) []api.IssueMirror {
+	dtos := make([]api.IssueMirror, len(mirrors))
+	for i, mirror := range mirrors {
+		dtos[i] = issueMirrorDTO(mirror)
+	}
+
+	return dtos
 }
 
 func pointer[T any](value T) *T {

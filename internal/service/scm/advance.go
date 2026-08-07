@@ -3,6 +3,7 @@ package scm
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -12,35 +13,32 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-// advance moves an issue when the team asked for it and a linked change merged. Everything
-// that can stop it — an unconfigured team, a deleted target state, an issue already there,
-// open children, a person editing at the same moment — leaves the link recorded and the
-// issue alone. Reflecting the state of a change and moving the issue are two separate
-// promises, and the first must keep working when the second is switched off.
+// advance moves an issue when the team routed the state its change just reached. Everything
+// that can stop it — a team with no rule for this state, a deleted target state, an issue
+// already there, open children, a person editing at the same moment — leaves the link
+// recorded and the issue alone. Reflecting the state of a change and moving the issue are
+// two separate promises, and the first must keep working when the second is switched off.
 func (s *sync) advance(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	decision entity.Decision,
 	tally *deliveryTally,
 	link entity.CodeLink,
 ) error {
-	issue, err := s.issues.GetVisible(ctx, connection.WorkspaceID, link.IssueID, decision.Scope)
+	issue, err := s.issues.GetVisible(ctx, from.workspaceID(), link.IssueID, decision.Scope)
 	if err != nil {
 		// Reach was lost between recording the link and acting on it. Going quiet is right:
 		// the connection is bounded by a person's permissions and those just narrowed.
 		return nil
 	}
 
-	settings, err := s.settings.Settings(ctx, connection.WorkspaceID, issue.TeamID)
-	if errors.Is(err, entity.ErrSCMTeamSettingsNotFound) {
-		return nil
-	}
-
+	rules, err := s.rules.ListByTeam(ctx, from.workspaceID(), issue.TeamID)
 	if err != nil {
 		return err
 	}
 
-	if !settings.Advances(link) {
+	rule, routed := rules.For(link)
+	if !routed {
 		return nil
 	}
 
@@ -49,32 +47,42 @@ func (s *sync) advance(
 		return err
 	}
 
-	target, found := settings.TargetState(states)
+	target, found := rule.TargetState(states)
 	if !found {
 		logging.From(ctx).WarnContext(
 			ctx,
-			"a merged change could not advance its issue because the state the team chose no "+
-				"longer exists",
+			"a change could not advance its issue because the state the team chose no longer "+
+				"exists",
 			"issue_id", issue.ID.String(),
 			"team_id", issue.TeamID.String(),
+			"trigger", string(rule.Trigger),
 		)
 
 		return nil
 	}
 
+	// The claim comes before the move, so a redelivered event cannot move an issue a person
+	// has since moved back. A link that already drove this state is done with it.
+	claimed, err := s.links.ClaimTransition(
+		ctx, link.ID, link.State, issue.ID, time.Now().UTC(),
+	)
+	if err != nil {
+		return err
+	}
+
+	if !claimed {
+		return nil
+	}
+
 	if issue.State.ID == target.ID {
-		return s.links.MarkAdvanced(ctx, link.ID)
+		return nil
 	}
 
 	tally.advanced++
 
-	scoped := identity.WithActor(ctx, connection.Actor())
+	scoped := identity.WithActor(ctx, from.connection.Actor())
 
-	if err := s.moveIssue(scoped, issue, target.ID); err != nil {
-		return err
-	}
-
-	return s.links.MarkAdvanced(ctx, link.ID)
+	return s.moveIssue(scoped, issue, target.ID)
 }
 
 // moveIssue reads the issue's version and offers it back, so the conflict machinery decides

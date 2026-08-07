@@ -23,23 +23,34 @@ func (k CodeLinkKind) Valid() bool {
 	return slices.Contains(CodeLinkKinds(), k)
 }
 
+// CodeChangeState is where a change stands on the forge. Review and conflict are states a
+// change is in, not events that happened to it, which is what lets a rule fire on entering
+// one and lets the issue read correctly after a reload.
 type CodeChangeState string
 
 const (
-	CodeChangeOpen     CodeChangeState = "open"
-	CodeChangeDraft    CodeChangeState = "draft"
-	CodeChangeInReview CodeChangeState = "in_review"
-	CodeChangeMerged   CodeChangeState = "merged"
-	CodeChangeClosed   CodeChangeState = "closed"
+	CodeChangeDraft            CodeChangeState = "draft"
+	CodeChangeOpen             CodeChangeState = "open"
+	CodeChangeReviewRequested  CodeChangeState = "review_requested"
+	CodeChangeChangesRequested CodeChangeState = "changes_requested"
+	CodeChangeApproved         CodeChangeState = "approved"
+	CodeChangeMerged           CodeChangeState = "merged"
+	CodeChangeClosed           CodeChangeState = "closed"
+	CodeChangeReopened         CodeChangeState = "reopened"
+	CodeChangeConflicted       CodeChangeState = "conflicted"
 )
 
 func CodeChangeStates() []CodeChangeState {
 	return []CodeChangeState{
-		CodeChangeOpen,
 		CodeChangeDraft,
-		CodeChangeInReview,
+		CodeChangeOpen,
+		CodeChangeReviewRequested,
+		CodeChangeChangesRequested,
+		CodeChangeApproved,
 		CodeChangeMerged,
 		CodeChangeClosed,
+		CodeChangeReopened,
+		CodeChangeConflicted,
 	}
 }
 
@@ -55,22 +66,39 @@ func (s CodeChangeState) Settled() bool {
 	return s == CodeChangeMerged || s == CodeChangeClosed
 }
 
+func (s CodeChangeState) InReview() bool {
+	return s == CodeChangeReviewRequested ||
+		s == CodeChangeChangesRequested ||
+		s == CodeChangeApproved
+}
+
+type CodeChangeAction string
+
+const (
+	CodeChangeActionNone CodeChangeAction = ""
+	CodeChangeActionCI   CodeChangeAction = "checks_failed"
+)
+
 type CodeLink struct {
 	ID              uuid.UUID
 	WorkspaceID     uuid.UUID
 	IssueID         uuid.UUID
-	ConnectionID    uuid.UUID
+	RepositoryID    uuid.UUID
 	Provider        SCMProvider
-	Repository      string
+	RepositoryName  string
 	Kind            CodeLinkKind
 	ExternalID      string
 	Number          int
 	Title           string
 	URL             string
 	State           CodeChangeState
+	Action          CodeChangeAction
 	Author          string
+	HeadBranch      string
+	BaseBranch      string
+	Paths           []string
 	DetectedIn      string
-	AdvancedIssue   bool
+	Resolving       bool
 	SourceUpdatedAt *time.Time
 	MergedAt        *time.Time
 	ClosedAt        *time.Time
@@ -79,7 +107,7 @@ type CodeLink struct {
 }
 
 func (l CodeLink) Disconnected() bool {
-	return l.ConnectionID == uuid.Nil
+	return l.RepositoryID == uuid.Nil
 }
 
 func (l CodeLink) Supersedes(observed *time.Time) bool {
@@ -94,32 +122,49 @@ func (l CodeLink) Supersedes(observed *time.Time) bool {
 	return !l.SourceUpdatedAt.Before(*observed)
 }
 
-type SCMTeamSettings struct {
-	TeamID         uuid.UUID
-	WorkspaceID    uuid.UUID
-	AdvanceOnMerge bool
-	MergedStateID  uuid.UUID
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+// CodeLinkTransition records that a link has already driven the issue for one state. The
+// single flag it replaces could only say that something had happened once, so a second rule
+// on the same link had no way to know whether its own turn had come.
+type CodeLinkTransition struct {
+	LinkID     uuid.UUID
+	Transition CodeChangeState
+	IssueID    uuid.UUID
+	AppliedAt  time.Time
 }
 
-func (s SCMTeamSettings) Advances(link CodeLink) bool {
-	return s.AdvanceOnMerge && link.Kind == CodeLinkChange && link.State.Merged() && !link.AdvancedIssue
+// SCMTransitionRule moves a team's issue to a workflow state when its change reaches one on
+// the forge.
+type SCMTransitionRule struct {
+	ID          uuid.UUID
+	WorkspaceID uuid.UUID
+	TeamID      uuid.UUID
+	Trigger     CodeChangeState
+	StateID     uuid.UUID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
-func (s SCMTeamSettings) TargetState(states []WorkflowState) (WorkflowState, bool) {
-	if s.MergedStateID != uuid.Nil {
-		for _, state := range states {
-			if state.ID == s.MergedStateID {
-				return state, true
-			}
-		}
+type SCMTransitionRules []SCMTransitionRule
 
-		return WorkflowState{}, false
+// For reports the rule that a link entering the given state should drive, if the team has
+// one. Only a change carries a lifecycle; a branch or a commit has no state to enter.
+func (rules SCMTransitionRules) For(link CodeLink) (SCMTransitionRule, bool) {
+	if link.Kind != CodeLinkChange {
+		return SCMTransitionRule{}, false
 	}
 
+	for _, rule := range rules {
+		if rule.Trigger == link.State {
+			return rule, true
+		}
+	}
+
+	return SCMTransitionRule{}, false
+}
+
+func (r SCMTransitionRule) TargetState(states []WorkflowState) (WorkflowState, bool) {
 	for _, state := range states {
-		if state.IsCompletion {
+		if state.ID == r.StateID {
 			return state, true
 		}
 	}

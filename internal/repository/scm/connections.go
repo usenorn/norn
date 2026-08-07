@@ -24,8 +24,8 @@ func NewSCMConnection(db *postgres.Client, sealer *crypter.Crypter) repository.S
 	return &connectionRepository{db: db, crypter: sealer}
 }
 
-func (r *connectionRepository) seal(secret string) ([]byte, error) {
-	sealed, err := r.crypter.Seal([]byte(secret))
+func seal(sealer *crypter.Crypter, secret string) ([]byte, error) {
+	sealed, err := sealer.Seal([]byte(secret))
 	if err != nil {
 		if errors.Is(err, crypter.ErrKeyMissing) {
 			return nil, entity.ErrSCMEncryptionKeyMissing
@@ -37,12 +37,12 @@ func (r *connectionRepository) seal(secret string) ([]byte, error) {
 	return sealed, nil
 }
 
-func (r *connectionRepository) open(sealed []byte) (string, error) {
+func open(sealer *crypter.Crypter, sealed []byte) (string, error) {
 	if len(sealed) == 0 {
 		return "", nil
 	}
 
-	secret, err := r.crypter.Open(sealed)
+	secret, err := sealer.Open(sealed)
 	if err != nil {
 		if errors.Is(err, crypter.ErrKeyMissing) {
 			return "", entity.ErrSCMEncryptionKeyMissing
@@ -54,49 +54,36 @@ func (r *connectionRepository) open(sealed []byte) (string, error) {
 	return string(secret), nil
 }
 
-// connectionColumns never selects a sealed column. The plaintext leaves this repository
-// through Credentials alone, which is called on the way into a forge call and nowhere the
+// connectionColumns never selects the sealed column. The plaintext leaves this repository
+// through Token alone, which is called on the way into a forge call and nowhere the
 // dashboard can reach; everything else reads whether a token is set, not what it is.
 const connectionColumns = `
-    id, workspace_id, coalesce(team_id, '00000000-0000-0000-0000-000000000000'::uuid),
-    provider, base_url, repository, external_repository_id,
-    token_hint, token_sealed IS NOT NULL, identity_login, external_hook_id,
+    id, workspace_id, provider, base_url, label,
+    token_hint, octet_length(token_sealed) > 0, identity_login,
     integration_account_id, owner_account_id, owner_actor_kind, owner_auth_method,
-    mirror_label, status, broken_reason, broken_detail, broken_at, verified_at,
-    last_seen_at, reconcile_cursor, reconciled_at, reconcile_after, created_at, updated_at`
+    status, broken_reason, broken_detail, broken_at, verified_at, created_at, updated_at`
 
 func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, error) {
-	var (
-		connection entity.SCMConnection
-		teamID     uuid.UUID
-	)
+	var connection entity.SCMConnection
 
 	err := row.Scan(
 		&connection.ID,
 		&connection.WorkspaceID,
-		&teamID,
 		&connection.Provider,
 		&connection.BaseURL,
-		&connection.Repository,
-		&connection.ExternalRepositoryID,
+		&connection.Label,
 		&connection.TokenHint,
 		&connection.TokenSet,
 		&connection.IdentityLogin,
-		&connection.ExternalHookID,
 		&connection.IntegrationAccountID,
 		&connection.OwnerAccountID,
 		&connection.OwnerActorKind,
 		&connection.OwnerAuthMethod,
-		&connection.MirrorLabel,
 		&connection.Status,
 		&connection.BrokenReason,
 		&connection.BrokenDetail,
 		&connection.BrokenAt,
 		&connection.VerifiedAt,
-		&connection.LastSeenAt,
-		&connection.ReconcileCursor,
-		&connection.ReconciledAt,
-		&connection.ReconcileAfter,
 		&connection.CreatedAt,
 		&connection.UpdatedAt,
 	)
@@ -104,18 +91,19 @@ func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, 
 		return entity.SCMConnection{}, err
 	}
 
-	connection.TeamID = teamID
-	connection.IntegrationName = entity.IntegrationAccountName(connection.Provider, connection.Repository)
+	connection.IntegrationName = entity.IntegrationAccountName(
+		connection.Provider,
+		connection.DisplayName(),
+	)
 
 	return connection, nil
 }
 
 const insertConnectionQuery = `
 INSERT INTO workspace_scm_connections (
-    id, workspace_id, team_id, provider, base_url, repository, external_repository_id,
-    token_sealed, token_hint, identity_login, webhook_secret_sealed,
-    integration_account_id, owner_account_id, owner_actor_kind, owner_auth_method, mirror_label
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+    id, workspace_id, provider, base_url, label, token_sealed, token_hint, identity_login,
+    integration_account_id, owner_account_id, owner_actor_kind, owner_auth_method
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING` + connectionColumns
 
 func (r *connectionRepository) Create(
@@ -128,12 +116,7 @@ func (r *connectionRepository) Create(
 		connection.ID = uuid.New()
 	}
 
-	token, err := r.seal(input.Token)
-	if err != nil {
-		return entity.SCMConnection{}, err
-	}
-
-	secret, err := r.seal(input.WebhookSecret)
+	token, err := seal(r.crypter, input.Token)
 	if err != nil {
 		return entity.SCMConnection{}, err
 	}
@@ -143,23 +126,19 @@ func (r *connectionRepository) Create(
 		insertConnectionQuery,
 		connection.ID,
 		connection.WorkspaceID,
-		teamOrNil(connection.TeamID),
 		connection.Provider,
 		connection.BaseURL,
-		connection.Repository,
-		connection.ExternalRepositoryID,
+		connection.Label,
 		token,
 		connection.TokenHint,
 		connection.IdentityLogin,
-		secret,
 		connection.IntegrationAccountID,
 		connection.OwnerAccountID,
 		connection.OwnerActorKind,
 		connection.OwnerAuthMethod,
-		connection.MirrorLabel,
 	))
 	if err != nil {
-		if violates(err, repositoryUniqueIndex) {
+		if violates(err, connectionEndpointUniqueIndex) {
 			return entity.SCMConnection{}, entity.ErrSCMConnectionExists
 		}
 
@@ -167,14 +146,6 @@ func (r *connectionRepository) Create(
 	}
 
 	return created, nil
-}
-
-func teamOrNil(teamID uuid.UUID) any {
-	if teamID == uuid.Nil {
-		return nil
-	}
-
-	return teamID
 }
 
 const getConnectionQuery = `
@@ -248,52 +219,37 @@ func (r *connectionRepository) ListByWorkspace(
 	for rows.Next() {
 		connection, err := scanConnection(rows)
 		if err != nil {
-			return nil, fmt.Errorf("scan source control connection: %w", err)
+			return nil, fmt.Errorf("read source control connection: %w", err)
 		}
 
 		connections = append(connections, connection)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("read source control connections: %w", err)
+		return nil, fmt.Errorf("list source control connections: %w", err)
 	}
 
 	return connections, nil
 }
 
-const credentialsQuery = `
-SELECT token_sealed, webhook_secret_sealed
+const tokenQuery = `
+SELECT token_sealed
 FROM workspace_scm_connections
 WHERE id = $1`
 
-func (r *connectionRepository) Credentials(
-	ctx context.Context,
-	connectionID uuid.UUID,
-) (repository.SCMCredentials, error) {
-	var token, secret []byte
+func (r *connectionRepository) Token(ctx context.Context, connectionID uuid.UUID) (string, error) {
+	var sealed []byte
 
-	err := r.db.Querier(ctx).
-		QueryRowContext(ctx, credentialsQuery, connectionID).
-		Scan(&token, &secret)
+	err := r.db.Querier(ctx).QueryRowContext(ctx, tokenQuery, connectionID).Scan(&sealed)
 	if errors.Is(err, sql.ErrNoRows) {
-		return repository.SCMCredentials{}, entity.ErrSCMConnectionNotFound
+		return "", entity.ErrSCMConnectionNotFound
 	}
 
 	if err != nil {
-		return repository.SCMCredentials{}, fmt.Errorf("read source control credentials: %w", err)
+		return "", fmt.Errorf("read source control credentials: %w", err)
 	}
 
-	opened, err := r.open(token)
-	if err != nil {
-		return repository.SCMCredentials{}, err
-	}
-
-	signing, err := r.open(secret)
-	if err != nil {
-		return repository.SCMCredentials{}, err
-	}
-
-	return repository.SCMCredentials{Token: opened, WebhookSecret: signing}, nil
+	return open(r.crypter, sealed)
 }
 
 const replaceTokenQuery = `
@@ -306,8 +262,7 @@ SET token_sealed = $2,
     broken_detail = '',
     broken_at = NULL,
     verified_at = $5,
-    reconcile_after = NULL,
-    updated_at = $5
+    updated_at = now()
 WHERE id = $1`
 
 func (r *connectionRepository) ReplaceToken(
@@ -316,13 +271,14 @@ func (r *connectionRepository) ReplaceToken(
 	token, hint, login string,
 	at time.Time,
 ) error {
-	sealed, err := r.seal(token)
+	sealed, err := seal(r.crypter, token)
 	if err != nil {
 		return err
 	}
 
-	result, err := r.db.Querier(ctx).
-		ExecContext(ctx, replaceTokenQuery, connectionID, sealed, hint, login, at)
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx, replaceTokenQuery, connectionID, sealed, hint, login, at,
+	)
 	if err != nil {
 		return fmt.Errorf("replace source control token: %w", err)
 	}
@@ -330,24 +286,20 @@ func (r *connectionRepository) ReplaceToken(
 	return expectOne(result, entity.ErrSCMConnectionNotFound)
 }
 
-const updateSettingsQuery = `
+const updateLabelQuery = `
 UPDATE workspace_scm_connections
-SET team_id = $2, mirror_label = $3, updated_at = now()
+SET label = $2, updated_at = now()
 WHERE id = $1
 RETURNING` + connectionColumns
 
-func (r *connectionRepository) UpdateSettings(
+func (r *connectionRepository) UpdateLabel(
 	ctx context.Context,
-	connectionID, teamID uuid.UUID,
-	mirrorLabel string,
+	connectionID uuid.UUID,
+	label string,
 ) (entity.SCMConnection, error) {
-	connection, err := scanConnection(r.db.Querier(ctx).QueryRowContext(
-		ctx,
-		updateSettingsQuery,
-		connectionID,
-		teamOrNil(teamID),
-		mirrorLabel,
-	))
+	connection, err := scanConnection(
+		r.db.Querier(ctx).QueryRowContext(ctx, updateLabelQuery, connectionID, label),
+	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return entity.SCMConnection{}, entity.ErrSCMConnectionNotFound
 	}
@@ -359,45 +311,24 @@ func (r *connectionRepository) UpdateSettings(
 	return connection, nil
 }
 
-const recordHookQuery = `
-UPDATE workspace_scm_connections
-SET external_hook_id = $2, updated_at = now()
-WHERE id = $1`
-
-func (r *connectionRepository) RecordHook(
-	ctx context.Context,
-	connectionID uuid.UUID,
-	externalHookID string,
-) error {
-	result, err := r.db.Querier(ctx).ExecContext(ctx, recordHookQuery, connectionID, externalHookID)
-	if err != nil {
-		return fmt.Errorf("record source control hook: %w", err)
-	}
-
-	return expectOne(result, entity.ErrSCMConnectionNotFound)
-}
-
 const markVerifiedQuery = `
 UPDATE workspace_scm_connections
-SET external_repository_id = $2,
-    identity_login = $3,
+SET identity_login = $2,
     status = 'connected',
     broken_reason = '',
     broken_detail = '',
     broken_at = NULL,
-    verified_at = $4,
-    updated_at = $4
+    verified_at = $3,
+    updated_at = now()
 WHERE id = $1`
 
 func (r *connectionRepository) MarkVerified(
 	ctx context.Context,
 	connectionID uuid.UUID,
-	repo entity.SCMRepository,
 	login string,
 	at time.Time,
 ) error {
-	result, err := r.db.Querier(ctx).
-		ExecContext(ctx, markVerifiedQuery, connectionID, repo.ExternalID, login, at)
+	result, err := r.db.Querier(ctx).ExecContext(ctx, markVerifiedQuery, connectionID, login, at)
 	if err != nil {
 		return fmt.Errorf("mark source control connection verified: %w", err)
 	}
@@ -410,12 +341,10 @@ UPDATE workspace_scm_connections
 SET status = 'broken',
     broken_reason = $2,
     broken_detail = $3,
-    broken_at = coalesce(broken_at, $4),
-    updated_at = $4
+    broken_at = $4,
+    updated_at = now()
 WHERE id = $1`
 
-// MarkBroken keeps the first broken_at rather than restamping it, so the once-per-break
-// notice stays once per break however many calls fail behind it.
 func (r *connectionRepository) MarkBroken(
 	ctx context.Context,
 	connectionID uuid.UUID,
@@ -423,8 +352,9 @@ func (r *connectionRepository) MarkBroken(
 	detail string,
 	at time.Time,
 ) error {
-	result, err := r.db.Querier(ctx).
-		ExecContext(ctx, markBrokenQuery, connectionID, reason, detail, at)
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx, markBrokenQuery, connectionID, reason, detail, at,
+	)
 	if err != nil {
 		return fmt.Errorf("mark source control connection broken: %w", err)
 	}
@@ -432,110 +362,9 @@ func (r *connectionRepository) MarkBroken(
 	return expectOne(result, entity.ErrSCMConnectionNotFound)
 }
 
-const parkQuery = `
-UPDATE workspace_scm_connections
-SET reconcile_after = $2, updated_at = now()
+const deleteConnectionQuery = `
+DELETE FROM workspace_scm_connections
 WHERE id = $1`
-
-func (r *connectionRepository) Park(
-	ctx context.Context,
-	connectionID uuid.UUID,
-	until time.Time,
-) error {
-	result, err := r.db.Querier(ctx).ExecContext(ctx, parkQuery, connectionID, until)
-	if err != nil {
-		return fmt.Errorf("park source control connection: %w", err)
-	}
-
-	return expectOne(result, entity.ErrSCMConnectionNotFound)
-}
-
-const recordReconciledQuery = `
-UPDATE workspace_scm_connections
-SET reconcile_cursor = $2, reconciled_at = $3, reconcile_after = NULL, updated_at = $3
-WHERE id = $1`
-
-func (r *connectionRepository) RecordReconciled(
-	ctx context.Context,
-	connectionID uuid.UUID,
-	cursor string,
-	at time.Time,
-) error {
-	result, err := r.db.Querier(ctx).
-		ExecContext(ctx, recordReconciledQuery, connectionID, cursor, at)
-	if err != nil {
-		return fmt.Errorf("record source control reconcile: %w", err)
-	}
-
-	return expectOne(result, entity.ErrSCMConnectionNotFound)
-}
-
-const recordSeenQuery = `
-UPDATE workspace_scm_connections
-SET last_seen_at = $2
-WHERE id = $1`
-
-func (r *connectionRepository) RecordSeen(
-	ctx context.Context,
-	connectionID uuid.UUID,
-	at time.Time,
-) error {
-	if _, err := r.db.Querier(ctx).ExecContext(ctx, recordSeenQuery, connectionID, at); err != nil {
-		return fmt.Errorf("record source control delivery seen: %w", err)
-	}
-
-	return nil
-}
-
-// claimDueQuery takes the connections that have gone longest without a reconcile, skipping
-// any a parallel worker already holds and any parked by a rate limit. A broken connection is
-// still claimed: the sweep is what notices a replaced token and repairs it, so excluding one
-// would leave it broken until somebody happened to press a button.
-const claimDueQuery = `
-UPDATE workspace_scm_connections
-SET reconciled_at = $1
-WHERE id IN (
-    SELECT id
-    FROM workspace_scm_connections
-    WHERE (reconcile_after IS NULL OR reconcile_after <= $1)
-      AND (reconciled_at IS NULL OR reconciled_at < $2)
-    ORDER BY reconciled_at NULLS FIRST, id
-    LIMIT $3
-    FOR UPDATE SKIP LOCKED
-)
-RETURNING` + connectionColumns
-
-func (r *connectionRepository) ClaimDue(
-	ctx context.Context,
-	at time.Time,
-	limit int,
-) ([]entity.SCMConnection, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, claimDueQuery, at, at, limit)
-	if err != nil {
-		return nil, fmt.Errorf("claim source control connections: %w", err)
-	}
-
-	defer func() { _ = rows.Close() }()
-
-	connections := make([]entity.SCMConnection, 0, limit)
-
-	for rows.Next() {
-		connection, err := scanConnection(rows)
-		if err != nil {
-			return nil, fmt.Errorf("scan claimed source control connection: %w", err)
-		}
-
-		connections = append(connections, connection)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("read claimed source control connections: %w", err)
-	}
-
-	return connections, nil
-}
-
-const deleteConnectionQuery = `DELETE FROM workspace_scm_connections WHERE id = $1`
 
 func (r *connectionRepository) Delete(ctx context.Context, connectionID uuid.UUID) error {
 	result, err := r.db.Querier(ctx).ExecContext(ctx, deleteConnectionQuery, connectionID)

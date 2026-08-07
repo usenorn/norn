@@ -2,12 +2,15 @@ import type { components, operations } from "$lib/api/dashboard.gen";
 import { workspacePath } from "$lib/workspace/navigation";
 
 export type SourceControlConnection = components["schemas"]["SourceControlConnection"];
-export type MintedSourceControlConnection =
-	components["schemas"]["MintedSourceControlConnection"];
+export type SourceControlRepository = components["schemas"]["SourceControlRepository"];
+export type MintedSourceControlRepository =
+	components["schemas"]["MintedSourceControlRepository"];
+export type SourceControlRoute = components["schemas"]["SourceControlRoute"];
+export type SourceControlTransitionRule =
+	components["schemas"]["SourceControlTransitionRule"];
 export type SourceControlProvider = components["schemas"]["SourceControlProvider"];
 export type SourceControlStatus = components["schemas"]["SourceControlStatus"];
 export type SourceControlBrokenReason = components["schemas"]["SourceControlBrokenReason"];
-export type TeamSourceControlSettings = components["schemas"]["TeamSourceControlSettings"];
 export type CodeLink = components["schemas"]["CodeLink"];
 export type CodeLinkKind = components["schemas"]["CodeLinkKind"];
 export type CodeChangeState = components["schemas"]["CodeChangeState"];
@@ -24,13 +27,10 @@ export type SourceControlProblem =
 export type SourceControlView =
 	| { kind: "loading" }
 	| { kind: "empty" }
-	| { kind: "list"; connections: SourceControlConnection[] }
 	| {
-			kind: "connected";
+			kind: "list";
 			connections: SourceControlConnection[];
-			connection: SourceControlConnection;
-			webhookUrl: string;
-			webhookSecret: string;
+			repositories: SourceControlRepository[];
 	  }
 	| { kind: "sealing_unavailable" }
 	| { kind: "forbidden" }
@@ -41,12 +41,32 @@ export type SourceControlDetailView =
 	| {
 			kind: "detail";
 			connection: SourceControlConnection;
-			links: CodeLink[];
+			repositories: SourceControlRepository[];
+	  }
+	| { kind: "not_found" }
+	| { kind: "forbidden" }
+	| { kind: "unavailable" };
+
+export type SourceControlRepositoryView =
+	| { kind: "loading" }
+	| {
+			kind: "detail";
+			connection: SourceControlConnection;
+			repository: SourceControlRepository;
+			routes: SourceControlRoute[];
 			deliveries: SourceControlDelivery[];
 	  }
 	| { kind: "not_found" }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
+
+// A repository is added after its connection exists, so the webhook address and secret are
+// shown once on the screen that created it rather than being folded into a list state.
+export type MintedRepository = {
+	repository: SourceControlRepository;
+	webhookUrl: string;
+	webhookSecret: string;
+};
 
 export type SourceControlFailure =
 	| { kind: "credentials_rejected" }
@@ -54,6 +74,7 @@ export type SourceControlFailure =
 	| { kind: "destination_refused" }
 	| { kind: "provider_unsupported" }
 	| { kind: "already_connected" }
+	| { kind: "already_routed" }
 	| { kind: "already_mirrored" }
 	| { kind: "team_outside_connection" }
 	| { kind: "sealing_unavailable" }
@@ -74,6 +95,8 @@ export function sourceControlFailure(problem: SourceControlProblem): SourceContr
 				return { kind: "provider_unsupported" };
 			case "source_control_already_connected":
 				return { kind: "already_connected" };
+			case "source_control_already_routed":
+				return { kind: "already_routed" };
 			case "source_control_already_mirrored":
 				return { kind: "already_mirrored" };
 			case "source_control_team_outside_connection":
@@ -120,11 +143,13 @@ export function failureMessage(failure: SourceControlFailure): string {
 		case "provider_unsupported":
 			return "This instance does not support that platform.";
 		case "already_connected":
-			return "This workspace is already connected to that repository.";
+			return "This workspace already holds a credential for that forge.";
+		case "already_routed":
+			return "That team already has a route for this path.";
 		case "already_mirrored":
 			return "That issue is already paired with another one.";
 		case "team_outside_connection":
-			return "This issue belongs to a team the connection does not serve.";
+			return "This issue belongs to a team no route sends this repository's changes to.";
 		case "sealing_unavailable":
 			return "An operator must set NORN_SECURITY_ENCRYPTION_KEY before a token can be stored.";
 		case "rate_limited":
@@ -153,12 +178,28 @@ export function brokenLabel(connection: SourceControlConnection): string {
 }
 
 const changeStates: Record<CodeChangeState, string> = {
-	open: "Open",
 	draft: "Draft",
-	in_review: "In review",
+	open: "Open",
+	review_requested: "Review requested",
+	changes_requested: "Changes requested",
+	approved: "Approved",
 	merged: "Merged",
 	closed: "Closed",
+	reopened: "Reopened",
+	conflicted: "Conflicted",
 };
+
+export const changeStateOrder: CodeChangeState[] = [
+	"draft",
+	"open",
+	"review_requested",
+	"changes_requested",
+	"approved",
+	"merged",
+	"closed",
+	"reopened",
+	"conflicted",
+];
 
 export function changeStateLabel(state: CodeChangeState): string {
 	return changeStates[state];
@@ -185,7 +226,6 @@ const deliveryOutcomes: Record<SourceControlDeliveryOutcome, string> = {
 	applied: "Acted on",
 	ignored: "Nothing to do",
 	failed: "Failed",
-	processed: "Handled",
 };
 
 export function deliveryOutcomeLabel(delivery: SourceControlDelivery): string {
@@ -200,4 +240,23 @@ export function sourceControlPath(slug: string): string {
 
 export function sourceControlConnectionPath(slug: string, connectionId: string): string {
 	return workspacePath(slug, `/settings/source-control/${connectionId}`);
+}
+
+export function sourceControlRepositoryPath(slug: string, repositoryId: string): string {
+	return workspacePath(slug, `/settings/source-control/repositories/${repositoryId}`);
+}
+
+export function connectionLabel(connection: SourceControlConnection): string {
+	return (
+		connection.label ||
+		connection.identityLogin ||
+		connection.baseUrl ||
+		providerLabel(connection.provider)
+	);
+}
+
+// routeLabel names the default route in words. An empty prefix is what every unrouted path
+// falls to, and showing it as a blank cell reads as a missing value rather than the rule.
+export function routeLabel(route: SourceControlRoute): string {
+	return route.pathPrefix || "Everything else";
 }

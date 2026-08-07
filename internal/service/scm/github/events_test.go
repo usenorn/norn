@@ -181,7 +181,7 @@ func TestADraftAndAChangeAwaitingReviewAreDistinguishable(t *testing.T) {
 		want entity.CodeChangeState
 	}{
 		{"a draft", draft, entity.CodeChangeDraft},
-		{"awaiting review", review, entity.CodeChangeInReview},
+		{"awaiting review", review, entity.CodeChangeReviewRequested},
 		{"simply open", open, entity.CodeChangeOpen},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {

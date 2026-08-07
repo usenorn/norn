@@ -86,34 +86,27 @@ func (s *connections) Link(
 		return entity.CodeLink{}, err
 	}
 
-	available, err := s.connections.ListByWorkspace(ctx, workspaceID)
+	stored, err := s.matchRepository(ctx, workspaceID, parsed)
 	if err != nil {
 		return entity.CodeLink{}, err
 	}
 
-	connection, found := matching(available, parsed)
-	if !found {
-		return entity.CodeLink{}, entity.ValidationError{
-			Fields: []entity.FieldError{{Field: "url", Code: entity.ValidationCodeUnsupportedValue}},
-		}
-	}
-
-	if !connection.Covers(issue.TeamID) || !decision.Scope.Covers(issue.TeamID) {
-		return entity.CodeLink{}, entity.ErrSCMTeamOutsideConnection
+	if err := s.reaches(ctx, stored, issue, decision); err != nil {
+		return entity.CodeLink{}, err
 	}
 
 	link, err := s.links.Upsert(ctx, entity.CodeLink{
-		WorkspaceID:  workspaceID,
-		IssueID:      issueID,
-		ConnectionID: connection.ID,
-		Provider:     connection.Provider,
-		Repository:   connection.Repository,
-		Kind:         parsed.kind,
-		ExternalID:   parsed.externalID,
-		Number:       parsed.number,
-		URL:          input.URL,
-		State:        entity.CodeChangeOpen,
-		DetectedIn:   "a person linked it",
+		WorkspaceID:    workspaceID,
+		IssueID:        issueID,
+		RepositoryID:   stored.ID,
+		Provider:       stored.Provider,
+		RepositoryName: stored.FullName,
+		Kind:           parsed.kind,
+		ExternalID:     parsed.externalID,
+		Number:         parsed.number,
+		URL:            input.URL,
+		State:          entity.CodeChangeOpen,
+		DetectedIn:     "a person linked it",
 	})
 	if err != nil {
 		return entity.CodeLink{}, err
@@ -183,10 +176,10 @@ func (s *connections) recordActivity(
 
 func linkLabel(link entity.CodeLink) string {
 	if link.Number > 0 {
-		return link.Repository + "#" + strconv.Itoa(link.Number)
+		return link.RepositoryName + "#" + strconv.Itoa(link.Number)
 	}
 
-	return link.Repository + " " + link.ExternalID
+	return link.RepositoryName + " " + link.ExternalID
 }
 
 type codeAddress struct {
@@ -278,34 +271,93 @@ func trimGitLabMarker(segments []string) []string {
 	return kept
 }
 
-func matching(available []entity.SCMConnection, address codeAddress) (entity.SCMConnection, bool) {
-	for _, connection := range available {
-		if !strings.EqualFold(connection.Repository, address.repository) {
+// matchRepository finds the connected repository an address belongs to. The host is checked
+// against the connection's own address, so a repository of the same name on a different
+// forge is not mistaken for this one.
+func (s *connections) matchRepository(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	address codeAddress,
+) (entity.SCMRepository, error) {
+	unknown := entity.ValidationError{
+		Fields: []entity.FieldError{{Field: "url", Code: entity.ValidationCodeUnsupportedValue}},
+	}
+
+	available, err := s.repositories.ListByWorkspace(ctx, workspaceID)
+	if err != nil {
+		return entity.SCMRepository{}, err
+	}
+
+	for _, one := range available {
+		if !strings.EqualFold(one.FullName, address.repository) {
 			continue
 		}
 
-		if connection.BaseURL != "" {
-			if parsed, err := url.Parse(connection.BaseURL); err == nil &&
-				!strings.EqualFold(parsed.Host, address.host) {
-				continue
-			}
+		connection, err := s.connections.GetByID(ctx, workspaceID, one.ConnectionID)
+		if err != nil {
+			return entity.SCMRepository{}, err
 		}
 
-		return connection, true
+		if !sameHost(connection.BaseURL, address.host) {
+			continue
+		}
+
+		return one, nil
 	}
 
-	return entity.SCMConnection{}, false
+	return entity.SCMRepository{}, unknown
 }
 
-func (s *connections) MirrorOf(
-	ctx context.Context,
-	workspaceID, issueID uuid.UUID,
-) (entity.IssueMirror, error) {
-	if _, _, err := s.reads(ctx, workspaceID, issueID); err != nil {
-		return entity.IssueMirror{}, err
+// sameHost decides whether an address belongs to a connection's forge. A connection with no
+// base url follows the forge's own host and matches anything the address bar can hold; two
+// forges can each hold a project called acme/api, and linking across them would point at
+// somebody else's work.
+func sameHost(baseURL, host string) bool {
+	if baseURL == "" {
+		return true
 	}
 
-	return s.mirrors.GetByIssue(ctx, workspaceID, issueID)
+	parsed, err := url.Parse(baseURL)
+	if err != nil {
+		return false
+	}
+
+	return strings.EqualFold(parsed.Host, host)
+}
+
+// reaches is the bound on what a repository may touch. A repository routes to the teams
+// somebody routed it to and to no others, however the issue was named.
+func (s *connections) reaches(
+	ctx context.Context,
+	stored entity.SCMRepository,
+	issue entity.Issue,
+	decision entity.Decision,
+) error {
+	if !decision.Scope.Covers(issue.TeamID) {
+		return entity.ErrSCMTeamOutsideConnection
+	}
+
+	routes, err := s.routes.ListByRepository(ctx, stored.ID)
+	if err != nil {
+		return err
+	}
+
+	if !routes.Reaches(issue.TeamID) {
+		return entity.ErrSCMTeamOutsideConnection
+	}
+
+	return nil
+}
+
+func (s *connections) Mirrors(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) ([]entity.IssueMirror, error) {
+	if _, _, err := s.reads(ctx, workspaceID, issueID); err != nil {
+		return nil, err
+	}
+
+	return s.mirrors.ListByIssue(ctx, workspaceID, issueID)
 }
 
 func (s *connections) Mirror(
@@ -318,13 +370,18 @@ func (s *connections) Mirror(
 		return entity.IssueMirror{}, err
 	}
 
-	connection, err := s.connections.GetByID(ctx, workspaceID, input.ConnectionID)
+	stored, err := s.repositories.GetByID(ctx, workspaceID, input.RepositoryID)
 	if err != nil {
 		return entity.IssueMirror{}, err
 	}
 
-	if !connection.Covers(issue.TeamID) || !decision.Scope.Covers(issue.TeamID) {
-		return entity.IssueMirror{}, entity.ErrSCMTeamOutsideConnection
+	if err := s.reaches(ctx, stored, issue, decision); err != nil {
+		return entity.IssueMirror{}, err
+	}
+
+	connection, err := s.connections.GetByID(ctx, workspaceID, stored.ConnectionID)
+	if err != nil {
+		return entity.IssueMirror{}, err
 	}
 
 	number, err := strconv.Atoi(strings.TrimPrefix(strings.TrimSpace(input.Reference), "#"))
@@ -337,7 +394,7 @@ func (s *connections) Mirror(
 		}
 	}
 
-	credentials, err := s.connections.Credentials(ctx, connection.ID)
+	token, err := s.connections.Token(ctx, connection.ID)
 	if err != nil {
 		return entity.IssueMirror{}, err
 	}
@@ -347,7 +404,7 @@ func (s *connections) Mirror(
 		return entity.IssueMirror{}, err
 	}
 
-	found, err := forge.Issue(ctx, connection.Target(credentials.Token), number)
+	found, err := forge.Issue(ctx, connection.Target(stored.FullName, token), number)
 	if err != nil {
 		s.breakOn(ctx, connection, err)
 
@@ -357,13 +414,14 @@ func (s *connections) Mirror(
 	mirror, err := s.mirrors.Create(ctx, entity.IssueMirror{
 		WorkspaceID:    workspaceID,
 		IssueID:        issueID,
-		ConnectionID:   connection.ID,
-		Provider:       connection.Provider,
-		Repository:     connection.Repository,
+		RepositoryID:   stored.ID,
+		Provider:       stored.Provider,
+		RepositoryName: stored.FullName,
 		ExternalID:     found.ExternalID,
 		ExternalNumber: found.Number,
 		URL:            found.URL,
 		Origin:         entity.MirrorOriginNorn,
+		Direction:      entity.MirrorBoth,
 	})
 	if err != nil {
 		return entity.IssueMirror{}, err
@@ -382,13 +440,18 @@ func (s *connections) Mirror(
 		return entity.IssueMirror{}, err
 	}
 
-	return s.mirrors.GetByIssue(ctx, workspaceID, issueID)
+	return s.mirrors.GetByExternalID(
+		ctx, workspaceID, stored.Provider, stored.FullName, found.ExternalID,
+	)
 }
 
-func (s *connections) Unmirror(ctx context.Context, workspaceID, issueID uuid.UUID) error {
+func (s *connections) Unmirror(
+	ctx context.Context,
+	workspaceID, issueID, mirrorID uuid.UUID,
+) error {
 	if _, _, err := s.manages(ctx, workspaceID, issueID); err != nil {
 		return err
 	}
 
-	return s.mirrors.Delete(ctx, workspaceID, issueID)
+	return s.mirrors.Delete(ctx, workspaceID, issueID, mirrorID)
 }

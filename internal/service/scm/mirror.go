@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/pkg/identity"
@@ -22,31 +20,31 @@ import (
 // arriving unasked is not.
 func (s *sync) mirrorIssue(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	decision entity.Decision,
 	found service.ForgeIssue,
 ) error {
 	mirror, err := s.mirrors.GetByExternalID(
 		ctx,
-		connection.WorkspaceID,
-		connection.Provider,
-		connection.Repository,
+		from.workspaceID(),
+		from.connection.Provider,
+		from.repository.FullName,
 		found.ExternalID,
 	)
 
 	switch {
 	case errors.Is(err, entity.ErrIssueMirrorNotFound):
-		if !labelled(found.Labels, connection.MirrorLabel) {
+		if !labelled(found.Labels, from.repository.MirrorLabel) {
 			return nil
 		}
 
-		return s.openMirroredIssue(ctx, connection, decision, found)
+		return s.openMirroredIssue(ctx, from, decision, found)
 
 	case err != nil:
 		return err
 
 	default:
-		return s.reconcileMirror(ctx, connection, decision, mirror, found)
+		return s.reconcileMirror(ctx, from, decision, mirror, found)
 	}
 }
 
@@ -56,52 +54,63 @@ func labelled(labels []string, wanted string) bool {
 	})
 }
 
-// openMirroredIssue needs somewhere to put the issue. A connection attached to the whole
-// workspace names no team, and picking one would be a guess, so the issue is not created and
-// the reason is logged rather than a team being invented.
+// openMirroredIssue needs somewhere to put the issue. A platform issue names no files, so it
+// belongs to whoever holds the repository's default route; a repository routed to two teams
+// by default has no single answer and picking one would be a guess, so the issue is not
+// created and the reason is logged rather than a team being invented.
 func (s *sync) openMirroredIssue(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	decision entity.Decision,
 	found service.ForgeIssue,
 ) error {
-	if connection.TeamID == uuid.Nil {
+	teams, err := s.teamsFor(ctx, from, nil)
+	if err != nil {
+		return err
+	}
+
+	if len(teams) != 1 {
 		logging.From(ctx).InfoContext(
 			ctx,
-			"a labelled platform issue was not mirrored because the connection names no team",
-			"connection_id", connection.ID.String(),
+			"a labelled platform issue was not mirrored because its repository has no single "+
+				"team to put it in",
+			"repository_id", from.repository.ID.String(),
 			"external_id", found.ExternalID,
+			"teams", len(teams),
 		)
 
 		return nil
 	}
 
-	if !decision.Scope.Covers(connection.TeamID) {
+	teamID := teams[0]
+
+	if !decision.Scope.Covers(teamID) {
 		return nil
 	}
 
-	scoped := identity.WithActor(ctx, connection.Actor())
+	scoped := identity.WithActor(ctx, from.connection.Actor())
 
 	created, err := s.issueWriter.Create(scoped, service.CreateIssueInput{
-		WorkspaceID: connection.WorkspaceID,
-		TeamID:      connection.TeamID,
+		WorkspaceID: from.workspaceID(),
+		TeamID:      teamID,
 		Title:       found.Title,
-		Description: mirroredBody(connection, found),
+		Description: mirroredBody(from, found),
 	})
 	if err != nil {
 		return err
 	}
 
 	mirror, err := s.mirrors.Create(ctx, entity.IssueMirror{
-		WorkspaceID:    connection.WorkspaceID,
+		WorkspaceID:    from.workspaceID(),
 		IssueID:        created.ID,
-		ConnectionID:   connection.ID,
-		Provider:       connection.Provider,
-		Repository:     connection.Repository,
+		RepositoryID:   from.repository.ID,
+		Provider:       from.connection.Provider,
+		RepositoryName: from.repository.FullName,
 		ExternalID:     found.ExternalID,
 		ExternalNumber: found.Number,
 		URL:            found.URL,
 		Origin:         entity.MirrorOriginPlatform,
+		Direction:      entity.MirrorBoth,
 	})
 	if err != nil {
 		return err
@@ -110,7 +119,7 @@ func (s *sync) openMirroredIssue(
 	return s.mirrors.RecordPull(
 		ctx,
 		mirror.ID,
-		entity.HashesOf(found.Title, mirroredBody(connection, found), found.State),
+		entity.HashesOf(found.Title, mirroredBody(from, found), found.State),
 		found.UpdatedAt,
 		created.Version,
 		time.Now().UTC(),
@@ -120,15 +129,15 @@ func (s *sync) openMirroredIssue(
 // mirroredBody names the person who wrote it. The change itself is the integration's — that
 // is what the rules require — but a body with no author reads as though nobody wrote it, and
 // the platform account behind it usually has no Norn account to attribute it to.
-func mirroredBody(connection entity.SCMConnection, found service.ForgeIssue) string {
+func mirroredBody(from source, found service.ForgeIssue) string {
 	if strings.TrimSpace(found.Author) == "" {
 		return found.Body
 	}
 
 	opening := fmt.Sprintf(
 		"%s on %s by %s: %s",
-		strings.ToUpper(string(connection.Provider[:1]))+string(connection.Provider[1:]),
-		connection.Repository,
+		strings.ToUpper(string(from.connection.Provider[:1]))+string(from.connection.Provider[1:]),
+		from.repository.FullName,
 		found.Author,
 		found.URL,
 	)
@@ -146,16 +155,16 @@ func mirroredBody(connection entity.SCMConnection, found service.ForgeIssue) str
 // recorded on the issue's own feed rather than disappearing.
 func (s *sync) reconcileMirror(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	decision entity.Decision,
 	mirror entity.IssueMirror,
 	found service.ForgeIssue,
 ) error {
-	if connection.Wrote(found.Author) {
+	if from.connection.Wrote(found.Author) {
 		return nil
 	}
 
-	issue, err := s.issues.GetVisible(ctx, connection.WorkspaceID, mirror.IssueID, decision.Scope)
+	issue, err := s.issues.GetVisible(ctx, from.workspaceID(), mirror.IssueID, decision.Scope)
 	if err != nil {
 		return nil
 	}
@@ -197,7 +206,7 @@ func (s *sync) reconcileMirror(
 		case entity.MirrorWinnerNorn:
 			if mirror.SourceChanged(field.name, field.remote) {
 				overwritten = append(overwritten, entity.Activity{
-					WorkspaceID: connection.WorkspaceID,
+					WorkspaceID: from.workspaceID(),
 					Subject:     entity.IssueSubject(issue.ID),
 					Actor:       decision.ActivityActor(),
 					Kind:        entity.ActivityKindPropertyChanged,
@@ -212,11 +221,11 @@ func (s *sync) reconcileMirror(
 	}
 
 	if change.Title != nil || change.Description != nil {
-		scoped := identity.WithActor(ctx, connection.Actor())
+		scoped := identity.WithActor(ctx, from.connection.Actor())
 
 		if _, err := s.issueWriter.Update(
 			scoped,
-			connection.WorkspaceID,
+			from.workspaceID(),
 			issue.ID,
 			change,
 		); err != nil && !errors.Is(err, entity.ErrIssueStale) {
@@ -235,7 +244,7 @@ func (s *sync) reconcileMirror(
 		}
 	}
 
-	refreshed, err := s.issues.GetVisible(ctx, connection.WorkspaceID, issue.ID, decision.Scope)
+	refreshed, err := s.issues.GetVisible(ctx, from.workspaceID(), issue.ID, decision.Scope)
 	if err != nil {
 		return nil
 	}
@@ -267,20 +276,20 @@ func excerpt(value string) string {
 // here is never pushed out again because it holds a mirror row from the moment it exists.
 func (s *sync) mirrorComment(
 	ctx context.Context,
-	connection entity.SCMConnection,
+	from source,
 	decision entity.Decision,
 	found service.ForgeIssue,
 	comment service.ForgeComment,
 ) error {
-	if connection.Wrote(comment.Author) {
+	if from.connection.Wrote(comment.Author) {
 		return nil
 	}
 
 	mirror, err := s.mirrors.GetByExternalID(
 		ctx,
-		connection.WorkspaceID,
-		connection.Provider,
-		connection.Repository,
+		from.workspaceID(),
+		from.connection.Provider,
+		from.repository.FullName,
 		found.ExternalID,
 	)
 	if errors.Is(err, entity.ErrIssueMirrorNotFound) {
@@ -293,9 +302,9 @@ func (s *sync) mirrorComment(
 
 	_, err = s.mirrors.GetCommentByExternalID(
 		ctx,
-		connection.WorkspaceID,
-		connection.Provider,
-		connection.Repository,
+		from.workspaceID(),
+		from.connection.Provider,
+		from.repository.FullName,
 		comment.ExternalID,
 	)
 
@@ -306,15 +315,24 @@ func (s *sync) mirrorComment(
 		return err
 	}
 
-	issue, err := s.issues.GetVisible(ctx, connection.WorkspaceID, mirror.IssueID, decision.Scope)
-	if err != nil || !connection.Covers(issue.TeamID) {
+	issue, err := s.issues.GetVisible(ctx, from.workspaceID(), mirror.IssueID, decision.Scope)
+	if err != nil {
+		return nil
+	}
+
+	routed, err := s.reaches(ctx, from, issue.TeamID)
+	if err != nil {
+		return err
+	}
+
+	if !routed {
 		return nil
 	}
 
 	body := commentBody(comment)
-	scoped := identity.WithActor(ctx, connection.Actor())
+	scoped := identity.WithActor(ctx, from.connection.Actor())
 
-	posted, err := s.comments.Post(scoped, connection.WorkspaceID, mirror.IssueID, service.PostCommentInput{
+	posted, err := s.comments.Post(scoped, from.workspaceID(), mirror.IssueID, service.PostCommentInput{
 		Body: body,
 	})
 	if err != nil {
@@ -322,12 +340,12 @@ func (s *sync) mirrorComment(
 	}
 
 	_, err = s.mirrors.CreateComment(ctx, entity.CommentMirror{
-		WorkspaceID:     connection.WorkspaceID,
+		WorkspaceID:     from.workspaceID(),
 		IssueID:         mirror.IssueID,
 		CommentID:       posted.Comment.ID,
-		ConnectionID:    connection.ID,
-		Provider:        connection.Provider,
-		Repository:      connection.Repository,
+		MirrorID:        mirror.ID,
+		Provider:        from.connection.Provider,
+		RepositoryName:  from.repository.FullName,
 		ExternalID:      comment.ExternalID,
 		ExternalAuthor:  comment.Author,
 		Origin:          entity.MirrorOriginPlatform,

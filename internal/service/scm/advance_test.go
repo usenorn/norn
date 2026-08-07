@@ -26,22 +26,24 @@ import (
 )
 
 type advanceHarness struct {
-	connections *scmrepo.MockSCMConnection
-	deliveries  *scmrepo.MockSCMDelivery
-	links       *scmrepo.MockCodeLink
-	mirrors     *scmrepo.MockIssueMirror
-	settings    *scmrepo.MockSCMTeamSetting
-	states      *workflowstaterepo.MockWorkflowState
-	issues      *issuerepo.MockIssue
-	activity    *activityrepo.MockActivity
-	memberships *membershiprepo.MockMembership
-	forges      *scm.MockForges
-	forge       *scm.MockForge
-	authorizer  *authorizersvc.MockAuthorizer
-	issueWriter *issuesvc.MockIssues
-	comments    *issuecommentsvc.MockIssueComments
-	jobs        *jobqueuerepo.MockJobProducer
-	sync        service.SourceControlSync
+	connections  *scmrepo.MockSCMConnection
+	repositories *scmrepo.MockSCMRepository
+	routes       *scmrepo.MockSCMRoute
+	rules        *scmrepo.MockSCMTransitionRule
+	deliveries   *scmrepo.MockSCMDelivery
+	links        *scmrepo.MockCodeLink
+	mirrors      *scmrepo.MockIssueMirror
+	states       *workflowstaterepo.MockWorkflowState
+	issues       *issuerepo.MockIssue
+	activity     *activityrepo.MockActivity
+	memberships  *membershiprepo.MockMembership
+	forges       *scm.MockForges
+	forge        *scm.MockForge
+	authorizer   *authorizersvc.MockAuthorizer
+	issueWriter  *issuesvc.MockIssues
+	comments     *issuecommentsvc.MockIssueComments
+	jobs         *jobqueuerepo.MockJobProducer
+	sync         service.SourceControlSync
 }
 
 func newAdvanceHarness(t *testing.T) *advanceHarness {
@@ -50,21 +52,23 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 	ctrl := gomock.NewController(t)
 
 	h := &advanceHarness{
-		connections: scmrepo.NewMockSCMConnection(ctrl),
-		deliveries:  scmrepo.NewMockSCMDelivery(ctrl),
-		links:       scmrepo.NewMockCodeLink(ctrl),
-		mirrors:     scmrepo.NewMockIssueMirror(ctrl),
-		settings:    scmrepo.NewMockSCMTeamSetting(ctrl),
-		states:      workflowstaterepo.NewMockWorkflowState(ctrl),
-		issues:      issuerepo.NewMockIssue(ctrl),
-		activity:    activityrepo.NewMockActivity(ctrl),
-		memberships: membershiprepo.NewMockMembership(ctrl),
-		forges:      scm.NewMockForges(ctrl),
-		forge:       scm.NewMockForge(ctrl),
-		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
-		issueWriter: issuesvc.NewMockIssues(ctrl),
-		comments:    issuecommentsvc.NewMockIssueComments(ctrl),
-		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
+		connections:  scmrepo.NewMockSCMConnection(ctrl),
+		repositories: scmrepo.NewMockSCMRepository(ctrl),
+		routes:       scmrepo.NewMockSCMRoute(ctrl),
+		rules:        scmrepo.NewMockSCMTransitionRule(ctrl),
+		deliveries:   scmrepo.NewMockSCMDelivery(ctrl),
+		links:        scmrepo.NewMockCodeLink(ctrl),
+		mirrors:      scmrepo.NewMockIssueMirror(ctrl),
+		states:       workflowstaterepo.NewMockWorkflowState(ctrl),
+		issues:       issuerepo.NewMockIssue(ctrl),
+		activity:     activityrepo.NewMockActivity(ctrl),
+		memberships:  membershiprepo.NewMockMembership(ctrl),
+		forges:       scm.NewMockForges(ctrl),
+		forge:        scm.NewMockForge(ctrl),
+		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
+		issueWriter:  issuesvc.NewMockIssues(ctrl),
+		comments:     issuecommentsvc.NewMockIssueComments(ctrl),
+		jobs:         jobqueuerepo.NewMockJobProducer(ctrl),
 	}
 
 	transactor := transactorrepo.NewMockTransactor(ctrl)
@@ -77,10 +81,12 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 
 	h.sync = scm.NewSync(
 		h.connections,
+		h.repositories,
+		h.routes,
+		h.rules,
 		h.deliveries,
 		h.links,
 		h.mirrors,
-		h.settings,
 		h.states,
 		h.issues,
 		h.activity,
@@ -107,6 +113,7 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 		issueID      = uuid.New()
 		linkID       = uuid.New()
 		connectionID = uuid.New()
+		repositoryID = uuid.New()
 		ownerID      = uuid.New()
 		integration  = uuid.New()
 		todoID       = uuid.New()
@@ -116,13 +123,19 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 	connection := entity.SCMConnection{
 		ID:                   connectionID,
 		WorkspaceID:          workspaceID,
-		TeamID:               teamID,
 		Provider:             entity.SCMProviderGitHub,
-		Repository:           "acme/api",
 		IntegrationAccountID: integration,
 		OwnerAccountID:       ownerID,
-		MirrorLabel:          "norn",
 		Status:               entity.SCMConnectionConnected,
+	}
+
+	stored := entity.SCMRepository{
+		ID:           repositoryID,
+		ConnectionID: connectionID,
+		WorkspaceID:  workspaceID,
+		Provider:     entity.SCMProviderGitHub,
+		FullName:     "acme/api",
+		MirrorLabel:  "norn",
 	}
 
 	issue := entity.Issue{
@@ -134,21 +147,21 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 	}
 
 	link := entity.CodeLink{
-		ID:           linkID,
-		WorkspaceID:  workspaceID,
-		IssueID:      issueID,
-		ConnectionID: connectionID,
-		Provider:     entity.SCMProviderGitHub,
-		Repository:   "acme/api",
-		Kind:         entity.CodeLinkChange,
-		ExternalID:   "900123",
-		Number:       14,
-		State:        entity.CodeChangeMerged,
+		ID:             linkID,
+		WorkspaceID:    workspaceID,
+		IssueID:        issueID,
+		RepositoryID:   repositoryID,
+		Provider:       entity.SCMProviderGitHub,
+		RepositoryName: "acme/api",
+		Kind:           entity.CodeLinkChange,
+		ExternalID:     "900123",
+		Number:         14,
+		State:          entity.CodeChangeMerged,
 	}
 
 	delivery := entity.SCMDelivery{
 		ID:           uuid.New(),
-		ConnectionID: connectionID,
+		RepositoryID: repositoryID,
 		WorkspaceID:  workspaceID,
 		Event:        "pull_request",
 		Payload:      []byte(`{}`),
@@ -157,8 +170,20 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 	scope := entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true, IncludePrivate: true}
 
 	h.deliveries.EXPECT().GetByID(gomock.Any(), delivery.ID).Return(delivery, nil)
+	h.repositories.EXPECT().GetForDelivery(gomock.Any(), repositoryID).Return(stored, nil)
 	h.connections.EXPECT().GetForDelivery(gomock.Any(), connectionID).Return(connection, nil)
+	h.connections.EXPECT().Token(gomock.Any(), connectionID).Return("token", nil)
 	h.forges.EXPECT().Lookup(entity.SCMProviderGitHub).Return(h.forge, nil).AnyTimes()
+
+	// The change names one file, and the team owning it is the only one the link may reach.
+	h.forge.EXPECT().
+		ChangedPaths(gomock.Any(), gomock.Any(), 14).
+		Return([]string{"services/api/cache.go"}, nil)
+
+	h.routes.EXPECT().
+		ListByRepository(gomock.Any(), repositoryID).
+		Return(entity.SCMRoutes{{TeamID: teamID, RepositoryID: repositoryID}}, nil).
+		AnyTimes()
 
 	h.forge.EXPECT().Translate(gomock.Any()).Return([]service.ForgeEvent{{
 		Kind: service.ForgeEventChangeChanged,
@@ -193,9 +218,14 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 
 	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, issueID, scope).Return(issue, nil)
 
-	h.settings.EXPECT().
-		Settings(gomock.Any(), workspaceID, teamID).
-		Return(entity.SCMTeamSettings{TeamID: teamID, WorkspaceID: workspaceID, AdvanceOnMerge: true}, nil)
+	h.rules.EXPECT().
+		ListByTeam(gomock.Any(), workspaceID, teamID).
+		Return(entity.SCMTransitionRules{{
+			TeamID:      teamID,
+			WorkspaceID: workspaceID,
+			Trigger:     entity.CodeChangeMerged,
+			StateID:     doneID,
+		}}, nil)
 
 	h.states.EXPECT().ListByTeamID(gomock.Any(), teamID).Return([]entity.WorkflowState{
 		{ID: todoID, Name: "Todo"},
@@ -211,7 +241,7 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 			input service.UpdateIssueInput,
 		) (entity.Issue, error) {
 			if input.StateID == nil || *input.StateID != doneID {
-				t.Errorf("Update moved the issue to %v, want the team's completion state", input.StateID)
+				t.Errorf("Update moved the issue to %v, want the state the team routed merges to", input.StateID)
 			}
 
 			if input.ExpectedVersion != issue.Version {
@@ -225,7 +255,9 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 			return issue, nil
 		})
 
-	h.links.EXPECT().MarkAdvanced(gomock.Any(), linkID).Return(nil)
+	h.links.EXPECT().
+		ClaimTransition(gomock.Any(), linkID, entity.CodeChangeMerged, issueID, gomock.Any()).
+		Return(true, nil)
 	// The log has to say the delivery did something, not merely that it was processed.
 	h.deliveries.EXPECT().
 		Settle(gomock.Any(), delivery.ID, entity.SCMDeliveryApplied, gomock.Any(), gomock.Any()).

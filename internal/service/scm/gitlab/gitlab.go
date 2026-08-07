@@ -120,10 +120,10 @@ func (f *Forge) decode(response forge.Response, target entity.SCMTarget, into an
 func (f *Forge) Repository(
 	ctx context.Context,
 	target entity.SCMTarget,
-) (entity.SCMRepository, error) {
+) (entity.SCMRemoteRepository, error) {
 	response, err := f.call(ctx, target, http.MethodGet, "/projects/"+project(target), nil)
 	if err != nil {
-		return entity.SCMRepository{}, err
+		return entity.SCMRemoteRepository{}, err
 	}
 
 	var body struct {
@@ -140,13 +140,13 @@ func (f *Forge) Repository(
 	}
 
 	if err := f.decode(response, target, &body); err != nil {
-		return entity.SCMRepository{}, err
+		return entity.SCMRemoteRepository{}, err
 	}
 
 	// GitLab grades access numerically; 40 is maintainer, the level a project hook needs.
 	const maintainer = 40
 
-	return entity.SCMRepository{
+	return entity.SCMRemoteRepository{
 		ExternalID:    strconv.FormatInt(body.ID, 10),
 		FullName:      body.PathWithNamespace,
 		URL:           body.WebURL,
@@ -533,4 +533,47 @@ func (f *Forge) PostComment(
 		CreatedAt:  posted.CreatedAt,
 		UpdatedAt:  posted.UpdatedAt,
 	}, nil
+}
+
+type changesBody struct {
+	Changes []struct {
+		NewPath string `json:"new_path"`
+		OldPath string `json:"old_path"`
+	} `json:"changes"`
+}
+
+// ChangedPaths reads the files a merge request touches. Nothing in a webhook payload carries
+// them, and routing a change to the team that owns its area cannot be decided without them.
+// A rename is reported under both names, because either one may be what a route matches.
+func (f *Forge) ChangedPaths(
+	ctx context.Context,
+	target entity.SCMTarget,
+	number int,
+) ([]string, error) {
+	path := "/projects/" + project(target) + "/merge_requests/" + strconv.Itoa(number) + "/changes"
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body changesBody
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	paths := make([]string, 0, len(body.Changes))
+
+	for _, change := range body.Changes {
+		if change.NewPath != "" {
+			paths = append(paths, change.NewPath)
+		}
+
+		if change.OldPath != "" && change.OldPath != change.NewPath {
+			paths = append(paths, change.OldPath)
+		}
+	}
+
+	return paths, nil
 }

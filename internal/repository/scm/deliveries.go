@@ -23,7 +23,7 @@ func NewSCMDelivery(db *postgres.Client) repository.SCMDelivery {
 }
 
 const deliveryColumns = `
-    id, connection_id, workspace_id, external_delivery_id, event, payload,
+    id, repository_id, workspace_id, external_delivery_id, event, payload,
     attempt, retry_after, outcome, detail, failure, received_at, processed_at`
 
 func scanDelivery(row interface{ Scan(...any) error }) (entity.SCMDelivery, error) {
@@ -31,7 +31,7 @@ func scanDelivery(row interface{ Scan(...any) error }) (entity.SCMDelivery, erro
 
 	err := row.Scan(
 		&delivery.ID,
-		&delivery.ConnectionID,
+		&delivery.RepositoryID,
 		&delivery.WorkspaceID,
 		&delivery.ExternalID,
 		&delivery.Event,
@@ -53,7 +53,7 @@ func scanDelivery(row interface{ Scan(...any) error }) (entity.SCMDelivery, erro
 
 const recordDeliveryQuery = `
 INSERT INTO workspace_scm_deliveries (
-    id, connection_id, workspace_id, external_delivery_id, event, payload
+    id, repository_id, workspace_id, external_delivery_id, event, payload
 ) VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id`
 
@@ -74,7 +74,7 @@ func (r *deliveryRepository) Record(
 		ctx,
 		recordDeliveryQuery,
 		delivery.ID,
-		delivery.ConnectionID,
+		delivery.RepositoryID,
 		delivery.WorkspaceID,
 		delivery.ExternalID,
 		delivery.Event,
@@ -164,7 +164,7 @@ func (r *deliveryRepository) Reschedule(
 const listPendingDeliveriesQuery = `
 SELECT` + deliveryColumns + `
 FROM workspace_scm_deliveries
-WHERE connection_id = $1
+WHERE repository_id = $1
   AND processed_at IS NULL
   AND (retry_after IS NULL OR retry_after <= $2)
 ORDER BY received_at, id
@@ -172,12 +172,12 @@ LIMIT $3`
 
 func (r *deliveryRepository) ListPending(
 	ctx context.Context,
-	connectionID uuid.UUID,
+	repositoryID uuid.UUID,
 	at time.Time,
 	limit int,
 ) ([]entity.SCMDelivery, error) {
 	rows, err := r.db.Querier(ctx).
-		QueryContext(ctx, listPendingDeliveriesQuery, connectionID, at, limit)
+		QueryContext(ctx, listPendingDeliveriesQuery, repositoryID, at, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list pending source control deliveries: %w", err)
 	}
@@ -205,18 +205,18 @@ func (r *deliveryRepository) ListPending(
 const listDeliveriesQuery = `
 SELECT` + deliveryColumns + `
 FROM workspace_scm_deliveries
-WHERE connection_id = $1
+WHERE repository_id = $1
 ORDER BY received_at DESC, id
 LIMIT $2`
 
-// ListByConnection is the log a person reads when a link did not appear. It carries the
+// ListByRepository is the log a person reads when a link did not appear. It carries the
 // payload too: without it "ignored" is an answer nobody can act on.
-func (r *deliveryRepository) ListByConnection(
+func (r *deliveryRepository) ListByRepository(
 	ctx context.Context,
-	connectionID uuid.UUID,
+	repositoryID uuid.UUID,
 	limit int,
 ) ([]entity.SCMDelivery, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, listDeliveriesQuery, connectionID, limit)
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, listDeliveriesQuery, repositoryID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list source control deliveries: %w", err)
 	}

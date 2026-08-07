@@ -60,6 +60,21 @@ func (mr *MockForgeMockRecorder) AmendIssue(ctx, target, number, patch any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendIssue", reflect.TypeOf((*MockForge)(nil).AmendIssue), ctx, target, number, patch)
 }
 
+// ChangedPaths mocks base method.
+func (m *MockForge) ChangedPaths(ctx context.Context, target entity.SCMTarget, number int) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChangedPaths", ctx, target, number)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ChangedPaths indicates an expected call of ChangedPaths.
+func (mr *MockForgeMockRecorder) ChangedPaths(ctx, target, number any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangedPaths", reflect.TypeOf((*MockForge)(nil).ChangedPaths), ctx, target, number)
+}
+
 // Changes mocks base method.
 func (m *MockForge) Changes(ctx context.Context, target entity.SCMTarget, since time.Time, cursor string) (service.ForgeChangePage, error) {
 	m.ctrl.T.Helper()
@@ -208,10 +223,10 @@ func (mr *MockForgeMockRecorder) RemoveHook(ctx, target, hookID any) *gomock.Cal
 }
 
 // Repository mocks base method.
-func (m *MockForge) Repository(ctx context.Context, target entity.SCMTarget) (entity.SCMRepository, error) {
+func (m *MockForge) Repository(ctx context.Context, target entity.SCMTarget) (entity.SCMRemoteRepository, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Repository", ctx, target)
-	ret0, _ := ret[0].(entity.SCMRepository)
+	ret0, _ := ret[0].(entity.SCMRemoteRepository)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -329,11 +344,56 @@ func (m *MockSourceControl) EXPECT() *MockSourceControlMockRecorder {
 	return m.recorder
 }
 
+// AddRepository mocks base method.
+func (m *MockSourceControl) AddRepository(ctx context.Context, workspaceID uuid.UUID, input service.AddRepositoryInput) (service.ConnectedRepository, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddRepository", ctx, workspaceID, input)
+	ret0, _ := ret[0].(service.ConnectedRepository)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddRepository indicates an expected call of AddRepository.
+func (mr *MockSourceControlMockRecorder) AddRepository(ctx, workspaceID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRepository", reflect.TypeOf((*MockSourceControl)(nil).AddRepository), ctx, workspaceID, input)
+}
+
+// AddRoute mocks base method.
+func (m *MockSourceControl) AddRoute(ctx context.Context, workspaceID uuid.UUID, input service.AddRouteInput) (entity.SCMRoute, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddRoute", ctx, workspaceID, input)
+	ret0, _ := ret[0].(entity.SCMRoute)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddRoute indicates an expected call of AddRoute.
+func (mr *MockSourceControlMockRecorder) AddRoute(ctx, workspaceID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRoute", reflect.TypeOf((*MockSourceControl)(nil).AddRoute), ctx, workspaceID, input)
+}
+
+// ClearTeamRule mocks base method.
+func (m *MockSourceControl) ClearTeamRule(ctx context.Context, workspaceID, teamID uuid.UUID, trigger entity.CodeChangeState) ([]service.TeamTransitionRule, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearTeamRule", ctx, workspaceID, teamID, trigger)
+	ret0, _ := ret[0].([]service.TeamTransitionRule)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClearTeamRule indicates an expected call of ClearTeamRule.
+func (mr *MockSourceControlMockRecorder) ClearTeamRule(ctx, workspaceID, teamID, trigger any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearTeamRule", reflect.TypeOf((*MockSourceControl)(nil).ClearTeamRule), ctx, workspaceID, teamID, trigger)
+}
+
 // Connect mocks base method.
-func (m *MockSourceControl) Connect(ctx context.Context, input service.ConnectSourceControlInput) (service.ConnectedSourceControl, error) {
+func (m *MockSourceControl) Connect(ctx context.Context, input service.ConnectSourceControlInput) (entity.SCMConnection, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Connect", ctx, input)
-	ret0, _ := ret[0].(service.ConnectedSourceControl)
+	ret0, _ := ret[0].(entity.SCMConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -345,18 +405,18 @@ func (mr *MockSourceControlMockRecorder) Connect(ctx, input any) *gomock.Call {
 }
 
 // Deliveries mocks base method.
-func (m *MockSourceControl) Deliveries(ctx context.Context, workspaceID, connectionID uuid.UUID) ([]entity.SCMDelivery, error) {
+func (m *MockSourceControl) Deliveries(ctx context.Context, workspaceID, repositoryID uuid.UUID) ([]entity.SCMDelivery, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Deliveries", ctx, workspaceID, connectionID)
+	ret := m.ctrl.Call(m, "Deliveries", ctx, workspaceID, repositoryID)
 	ret0, _ := ret[0].([]entity.SCMDelivery)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Deliveries indicates an expected call of Deliveries.
-func (mr *MockSourceControlMockRecorder) Deliveries(ctx, workspaceID, connectionID any) *gomock.Call {
+func (mr *MockSourceControlMockRecorder) Deliveries(ctx, workspaceID, repositoryID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deliveries", reflect.TypeOf((*MockSourceControl)(nil).Deliveries), ctx, workspaceID, connectionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deliveries", reflect.TypeOf((*MockSourceControl)(nil).Deliveries), ctx, workspaceID, repositoryID)
 }
 
 // Disconnect mocks base method.
@@ -373,19 +433,19 @@ func (mr *MockSourceControlMockRecorder) Disconnect(ctx, workspaceID, connection
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Disconnect", reflect.TypeOf((*MockSourceControl)(nil).Disconnect), ctx, workspaceID, connectionID)
 }
 
-// Get mocks base method.
-func (m *MockSourceControl) Get(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error) {
+// GetConnection mocks base method.
+func (m *MockSourceControl) GetConnection(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, workspaceID, connectionID)
+	ret := m.ctrl.Call(m, "GetConnection", ctx, workspaceID, connectionID)
 	ret0, _ := ret[0].(entity.SCMConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get.
-func (mr *MockSourceControlMockRecorder) Get(ctx, workspaceID, connectionID any) *gomock.Call {
+// GetConnection indicates an expected call of GetConnection.
+func (mr *MockSourceControlMockRecorder) GetConnection(ctx, workspaceID, connectionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSourceControl)(nil).Get), ctx, workspaceID, connectionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConnection", reflect.TypeOf((*MockSourceControl)(nil).GetConnection), ctx, workspaceID, connectionID)
 }
 
 // Link mocks base method.
@@ -418,19 +478,49 @@ func (mr *MockSourceControlMockRecorder) Links(ctx, workspaceID, issueID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Links", reflect.TypeOf((*MockSourceControl)(nil).Links), ctx, workspaceID, issueID)
 }
 
-// List mocks base method.
-func (m *MockSourceControl) List(ctx context.Context, workspaceID uuid.UUID) ([]entity.SCMConnection, error) {
+// ListConnections mocks base method.
+func (m *MockSourceControl) ListConnections(ctx context.Context, workspaceID uuid.UUID) ([]entity.SCMConnection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List", ctx, workspaceID)
+	ret := m.ctrl.Call(m, "ListConnections", ctx, workspaceID)
 	ret0, _ := ret[0].([]entity.SCMConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// List indicates an expected call of List.
-func (mr *MockSourceControlMockRecorder) List(ctx, workspaceID any) *gomock.Call {
+// ListConnections indicates an expected call of ListConnections.
+func (mr *MockSourceControlMockRecorder) ListConnections(ctx, workspaceID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockSourceControl)(nil).List), ctx, workspaceID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConnections", reflect.TypeOf((*MockSourceControl)(nil).ListConnections), ctx, workspaceID)
+}
+
+// ListRepositories mocks base method.
+func (m *MockSourceControl) ListRepositories(ctx context.Context, workspaceID, connectionID uuid.UUID) ([]entity.SCMRepository, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListRepositories", ctx, workspaceID, connectionID)
+	ret0, _ := ret[0].([]entity.SCMRepository)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListRepositories indicates an expected call of ListRepositories.
+func (mr *MockSourceControlMockRecorder) ListRepositories(ctx, workspaceID, connectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRepositories", reflect.TypeOf((*MockSourceControl)(nil).ListRepositories), ctx, workspaceID, connectionID)
+}
+
+// ListRoutes mocks base method.
+func (m *MockSourceControl) ListRoutes(ctx context.Context, workspaceID, repositoryID uuid.UUID) (entity.SCMRoutes, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListRoutes", ctx, workspaceID, repositoryID)
+	ret0, _ := ret[0].(entity.SCMRoutes)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListRoutes indicates an expected call of ListRoutes.
+func (mr *MockSourceControlMockRecorder) ListRoutes(ctx, workspaceID, repositoryID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRoutes", reflect.TypeOf((*MockSourceControl)(nil).ListRoutes), ctx, workspaceID, repositoryID)
 }
 
 // Mirror mocks base method.
@@ -448,19 +538,47 @@ func (mr *MockSourceControlMockRecorder) Mirror(ctx, workspaceID, issueID, input
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mirror", reflect.TypeOf((*MockSourceControl)(nil).Mirror), ctx, workspaceID, issueID, input)
 }
 
-// MirrorOf mocks base method.
-func (m *MockSourceControl) MirrorOf(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueMirror, error) {
+// Mirrors mocks base method.
+func (m *MockSourceControl) Mirrors(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.IssueMirror, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MirrorOf", ctx, workspaceID, issueID)
-	ret0, _ := ret[0].(entity.IssueMirror)
+	ret := m.ctrl.Call(m, "Mirrors", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].([]entity.IssueMirror)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// MirrorOf indicates an expected call of MirrorOf.
-func (mr *MockSourceControlMockRecorder) MirrorOf(ctx, workspaceID, issueID any) *gomock.Call {
+// Mirrors indicates an expected call of Mirrors.
+func (mr *MockSourceControlMockRecorder) Mirrors(ctx, workspaceID, issueID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MirrorOf", reflect.TypeOf((*MockSourceControl)(nil).MirrorOf), ctx, workspaceID, issueID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mirrors", reflect.TypeOf((*MockSourceControl)(nil).Mirrors), ctx, workspaceID, issueID)
+}
+
+// RemoveRepository mocks base method.
+func (m *MockSourceControl) RemoveRepository(ctx context.Context, workspaceID, repositoryID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveRepository", ctx, workspaceID, repositoryID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveRepository indicates an expected call of RemoveRepository.
+func (mr *MockSourceControlMockRecorder) RemoveRepository(ctx, workspaceID, repositoryID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRepository", reflect.TypeOf((*MockSourceControl)(nil).RemoveRepository), ctx, workspaceID, repositoryID)
+}
+
+// RemoveRoute mocks base method.
+func (m *MockSourceControl) RemoveRoute(ctx context.Context, workspaceID, routeID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveRoute", ctx, workspaceID, routeID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveRoute indicates an expected call of RemoveRoute.
+func (mr *MockSourceControlMockRecorder) RemoveRoute(ctx, workspaceID, routeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRoute", reflect.TypeOf((*MockSourceControl)(nil).RemoveRoute), ctx, workspaceID, routeID)
 }
 
 // ReplaceToken mocks base method.
@@ -478,34 +596,34 @@ func (mr *MockSourceControlMockRecorder) ReplaceToken(ctx, workspaceID, connecti
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplaceToken", reflect.TypeOf((*MockSourceControl)(nil).ReplaceToken), ctx, workspaceID, connectionID, token)
 }
 
-// SetTeamSettings mocks base method.
-func (m *MockSourceControl) SetTeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID, input service.SetTeamSourceControlInput) (service.TeamSourceControlSettings, error) {
+// SetTeamRule mocks base method.
+func (m *MockSourceControl) SetTeamRule(ctx context.Context, workspaceID, teamID uuid.UUID, input service.SetTransitionRuleInput) ([]service.TeamTransitionRule, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTeamSettings", ctx, workspaceID, teamID, input)
-	ret0, _ := ret[0].(service.TeamSourceControlSettings)
+	ret := m.ctrl.Call(m, "SetTeamRule", ctx, workspaceID, teamID, input)
+	ret0, _ := ret[0].([]service.TeamTransitionRule)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SetTeamSettings indicates an expected call of SetTeamSettings.
-func (mr *MockSourceControlMockRecorder) SetTeamSettings(ctx, workspaceID, teamID, input any) *gomock.Call {
+// SetTeamRule indicates an expected call of SetTeamRule.
+func (mr *MockSourceControlMockRecorder) SetTeamRule(ctx, workspaceID, teamID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTeamSettings", reflect.TypeOf((*MockSourceControl)(nil).SetTeamSettings), ctx, workspaceID, teamID, input)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTeamRule", reflect.TypeOf((*MockSourceControl)(nil).SetTeamRule), ctx, workspaceID, teamID, input)
 }
 
-// TeamSettings mocks base method.
-func (m *MockSourceControl) TeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID) (service.TeamSourceControlSettings, error) {
+// TeamRules mocks base method.
+func (m *MockSourceControl) TeamRules(ctx context.Context, workspaceID, teamID uuid.UUID) ([]service.TeamTransitionRule, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TeamSettings", ctx, workspaceID, teamID)
-	ret0, _ := ret[0].(service.TeamSourceControlSettings)
+	ret := m.ctrl.Call(m, "TeamRules", ctx, workspaceID, teamID)
+	ret0, _ := ret[0].([]service.TeamTransitionRule)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// TeamSettings indicates an expected call of TeamSettings.
-func (mr *MockSourceControlMockRecorder) TeamSettings(ctx, workspaceID, teamID any) *gomock.Call {
+// TeamRules indicates an expected call of TeamRules.
+func (mr *MockSourceControlMockRecorder) TeamRules(ctx, workspaceID, teamID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TeamSettings", reflect.TypeOf((*MockSourceControl)(nil).TeamSettings), ctx, workspaceID, teamID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TeamRules", reflect.TypeOf((*MockSourceControl)(nil).TeamRules), ctx, workspaceID, teamID)
 }
 
 // Unlink mocks base method.
@@ -523,47 +641,62 @@ func (mr *MockSourceControlMockRecorder) Unlink(ctx, workspaceID, issueID, linkI
 }
 
 // Unmirror mocks base method.
-func (m *MockSourceControl) Unmirror(ctx context.Context, workspaceID, issueID uuid.UUID) error {
+func (m *MockSourceControl) Unmirror(ctx context.Context, workspaceID, issueID, mirrorID uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Unmirror", ctx, workspaceID, issueID)
+	ret := m.ctrl.Call(m, "Unmirror", ctx, workspaceID, issueID, mirrorID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Unmirror indicates an expected call of Unmirror.
-func (mr *MockSourceControlMockRecorder) Unmirror(ctx, workspaceID, issueID any) *gomock.Call {
+func (mr *MockSourceControlMockRecorder) Unmirror(ctx, workspaceID, issueID, mirrorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unmirror", reflect.TypeOf((*MockSourceControl)(nil).Unmirror), ctx, workspaceID, issueID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unmirror", reflect.TypeOf((*MockSourceControl)(nil).Unmirror), ctx, workspaceID, issueID, mirrorID)
 }
 
-// Update mocks base method.
-func (m *MockSourceControl) Update(ctx context.Context, workspaceID, connectionID uuid.UUID, input service.UpdateSourceControlInput) (entity.SCMConnection, error) {
+// UpdateConnection mocks base method.
+func (m *MockSourceControl) UpdateConnection(ctx context.Context, workspaceID, connectionID uuid.UUID, input service.UpdateConnectionInput) (entity.SCMConnection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, workspaceID, connectionID, input)
+	ret := m.ctrl.Call(m, "UpdateConnection", ctx, workspaceID, connectionID, input)
 	ret0, _ := ret[0].(entity.SCMConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Update indicates an expected call of Update.
-func (mr *MockSourceControlMockRecorder) Update(ctx, workspaceID, connectionID, input any) *gomock.Call {
+// UpdateConnection indicates an expected call of UpdateConnection.
+func (mr *MockSourceControlMockRecorder) UpdateConnection(ctx, workspaceID, connectionID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockSourceControl)(nil).Update), ctx, workspaceID, connectionID, input)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConnection", reflect.TypeOf((*MockSourceControl)(nil).UpdateConnection), ctx, workspaceID, connectionID, input)
 }
 
-// Verify mocks base method.
-func (m *MockSourceControl) Verify(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error) {
+// UpdateRepository mocks base method.
+func (m *MockSourceControl) UpdateRepository(ctx context.Context, workspaceID, repositoryID uuid.UUID, input service.UpdateRepositoryInput) (entity.SCMRepository, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Verify", ctx, workspaceID, connectionID)
+	ret := m.ctrl.Call(m, "UpdateRepository", ctx, workspaceID, repositoryID, input)
+	ret0, _ := ret[0].(entity.SCMRepository)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateRepository indicates an expected call of UpdateRepository.
+func (mr *MockSourceControlMockRecorder) UpdateRepository(ctx, workspaceID, repositoryID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRepository", reflect.TypeOf((*MockSourceControl)(nil).UpdateRepository), ctx, workspaceID, repositoryID, input)
+}
+
+// VerifyConnection mocks base method.
+func (m *MockSourceControl) VerifyConnection(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyConnection", ctx, workspaceID, connectionID)
 	ret0, _ := ret[0].(entity.SCMConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Verify indicates an expected call of Verify.
-func (mr *MockSourceControlMockRecorder) Verify(ctx, workspaceID, connectionID any) *gomock.Call {
+// VerifyConnection indicates an expected call of VerifyConnection.
+func (mr *MockSourceControlMockRecorder) VerifyConnection(ctx, workspaceID, connectionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Verify", reflect.TypeOf((*MockSourceControl)(nil).Verify), ctx, workspaceID, connectionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyConnection", reflect.TypeOf((*MockSourceControl)(nil).VerifyConnection), ctx, workspaceID, connectionID)
 }
 
 // MockSourceControlSync is a mock of SourceControlSync interface.
@@ -591,18 +724,18 @@ func (m *MockSourceControlSync) EXPECT() *MockSourceControlSyncMockRecorder {
 }
 
 // Accept mocks base method.
-func (m *MockSourceControlSync) Accept(ctx context.Context, connectionID uuid.UUID, provider entity.SCMProvider, header http.Header, body []byte) (uuid.UUID, error) {
+func (m *MockSourceControlSync) Accept(ctx context.Context, repositoryID uuid.UUID, provider entity.SCMProvider, header http.Header, body []byte) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Accept", ctx, connectionID, provider, header, body)
+	ret := m.ctrl.Call(m, "Accept", ctx, repositoryID, provider, header, body)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Accept indicates an expected call of Accept.
-func (mr *MockSourceControlSyncMockRecorder) Accept(ctx, connectionID, provider, header, body any) *gomock.Call {
+func (mr *MockSourceControlSyncMockRecorder) Accept(ctx, repositoryID, provider, header, body any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accept", reflect.TypeOf((*MockSourceControlSync)(nil).Accept), ctx, connectionID, provider, header, body)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accept", reflect.TypeOf((*MockSourceControlSync)(nil).Accept), ctx, repositoryID, provider, header, body)
 }
 
 // Apply mocks base method.

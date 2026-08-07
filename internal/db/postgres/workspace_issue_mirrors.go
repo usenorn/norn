@@ -27,13 +27,14 @@ type WorkspaceIssueMirror struct {
 	ID              string      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	WorkspaceID     string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
 	IssueID         string      `boil:"issue_id" json:"issue_id" toml:"issue_id" yaml:"issue_id"`
-	ConnectionID    null.String `boil:"connection_id" json:"connection_id,omitempty" toml:"connection_id" yaml:"connection_id,omitempty"`
+	RepositoryID    null.String `boil:"repository_id" json:"repository_id,omitempty" toml:"repository_id" yaml:"repository_id,omitempty"`
 	Provider        string      `boil:"provider" json:"provider" toml:"provider" yaml:"provider"`
-	Repository      string      `boil:"repository" json:"repository" toml:"repository" yaml:"repository"`
+	RepositoryName  string      `boil:"repository_name" json:"repository_name" toml:"repository_name" yaml:"repository_name"`
 	ExternalID      string      `boil:"external_id" json:"external_id" toml:"external_id" yaml:"external_id"`
 	ExternalNumber  int         `boil:"external_number" json:"external_number" toml:"external_number" yaml:"external_number"`
 	URL             string      `boil:"url" json:"url" toml:"url" yaml:"url"`
 	Origin          string      `boil:"origin" json:"origin" toml:"origin" yaml:"origin"`
+	Direction       string      `boil:"direction" json:"direction" toml:"direction" yaml:"direction"`
 	TitleHash       string      `boil:"title_hash" json:"title_hash" toml:"title_hash" yaml:"title_hash"`
 	BodyHash        string      `boil:"body_hash" json:"body_hash" toml:"body_hash" yaml:"body_hash"`
 	StateHash       string      `boil:"state_hash" json:"state_hash" toml:"state_hash" yaml:"state_hash"`
@@ -52,13 +53,14 @@ var WorkspaceIssueMirrorColumns = struct {
 	ID              string
 	WorkspaceID     string
 	IssueID         string
-	ConnectionID    string
+	RepositoryID    string
 	Provider        string
-	Repository      string
+	RepositoryName  string
 	ExternalID      string
 	ExternalNumber  string
 	URL             string
 	Origin          string
+	Direction       string
 	TitleHash       string
 	BodyHash        string
 	StateHash       string
@@ -72,13 +74,14 @@ var WorkspaceIssueMirrorColumns = struct {
 	ID:              "id",
 	WorkspaceID:     "workspace_id",
 	IssueID:         "issue_id",
-	ConnectionID:    "connection_id",
+	RepositoryID:    "repository_id",
 	Provider:        "provider",
-	Repository:      "repository",
+	RepositoryName:  "repository_name",
 	ExternalID:      "external_id",
 	ExternalNumber:  "external_number",
 	URL:             "url",
 	Origin:          "origin",
+	Direction:       "direction",
 	TitleHash:       "title_hash",
 	BodyHash:        "body_hash",
 	StateHash:       "state_hash",
@@ -94,13 +97,14 @@ var WorkspaceIssueMirrorTableColumns = struct {
 	ID              string
 	WorkspaceID     string
 	IssueID         string
-	ConnectionID    string
+	RepositoryID    string
 	Provider        string
-	Repository      string
+	RepositoryName  string
 	ExternalID      string
 	ExternalNumber  string
 	URL             string
 	Origin          string
+	Direction       string
 	TitleHash       string
 	BodyHash        string
 	StateHash       string
@@ -114,13 +118,14 @@ var WorkspaceIssueMirrorTableColumns = struct {
 	ID:              "workspace_issue_mirrors.id",
 	WorkspaceID:     "workspace_issue_mirrors.workspace_id",
 	IssueID:         "workspace_issue_mirrors.issue_id",
-	ConnectionID:    "workspace_issue_mirrors.connection_id",
+	RepositoryID:    "workspace_issue_mirrors.repository_id",
 	Provider:        "workspace_issue_mirrors.provider",
-	Repository:      "workspace_issue_mirrors.repository",
+	RepositoryName:  "workspace_issue_mirrors.repository_name",
 	ExternalID:      "workspace_issue_mirrors.external_id",
 	ExternalNumber:  "workspace_issue_mirrors.external_number",
 	URL:             "workspace_issue_mirrors.url",
 	Origin:          "workspace_issue_mirrors.origin",
+	Direction:       "workspace_issue_mirrors.direction",
 	TitleHash:       "workspace_issue_mirrors.title_hash",
 	BodyHash:        "workspace_issue_mirrors.body_hash",
 	StateHash:       "workspace_issue_mirrors.state_hash",
@@ -138,13 +143,14 @@ var WorkspaceIssueMirrorWhere = struct {
 	ID              whereHelperstring
 	WorkspaceID     whereHelperstring
 	IssueID         whereHelperstring
-	ConnectionID    whereHelpernull_String
+	RepositoryID    whereHelpernull_String
 	Provider        whereHelperstring
-	Repository      whereHelperstring
+	RepositoryName  whereHelperstring
 	ExternalID      whereHelperstring
 	ExternalNumber  whereHelperint
 	URL             whereHelperstring
 	Origin          whereHelperstring
+	Direction       whereHelperstring
 	TitleHash       whereHelperstring
 	BodyHash        whereHelperstring
 	StateHash       whereHelperstring
@@ -158,13 +164,14 @@ var WorkspaceIssueMirrorWhere = struct {
 	ID:              whereHelperstring{field: "\"workspace_issue_mirrors\".\"id\""},
 	WorkspaceID:     whereHelperstring{field: "\"workspace_issue_mirrors\".\"workspace_id\""},
 	IssueID:         whereHelperstring{field: "\"workspace_issue_mirrors\".\"issue_id\""},
-	ConnectionID:    whereHelpernull_String{field: "\"workspace_issue_mirrors\".\"connection_id\""},
+	RepositoryID:    whereHelpernull_String{field: "\"workspace_issue_mirrors\".\"repository_id\""},
 	Provider:        whereHelperstring{field: "\"workspace_issue_mirrors\".\"provider\""},
-	Repository:      whereHelperstring{field: "\"workspace_issue_mirrors\".\"repository\""},
+	RepositoryName:  whereHelperstring{field: "\"workspace_issue_mirrors\".\"repository_name\""},
 	ExternalID:      whereHelperstring{field: "\"workspace_issue_mirrors\".\"external_id\""},
 	ExternalNumber:  whereHelperint{field: "\"workspace_issue_mirrors\".\"external_number\""},
 	URL:             whereHelperstring{field: "\"workspace_issue_mirrors\".\"url\""},
 	Origin:          whereHelperstring{field: "\"workspace_issue_mirrors\".\"origin\""},
+	Direction:       whereHelperstring{field: "\"workspace_issue_mirrors\".\"direction\""},
 	TitleHash:       whereHelperstring{field: "\"workspace_issue_mirrors\".\"title_hash\""},
 	BodyHash:        whereHelperstring{field: "\"workspace_issue_mirrors\".\"body_hash\""},
 	StateHash:       whereHelperstring{field: "\"workspace_issue_mirrors\".\"state_hash\""},
@@ -178,41 +185,28 @@ var WorkspaceIssueMirrorWhere = struct {
 
 // WorkspaceIssueMirrorRels is where relationship names are stored.
 var WorkspaceIssueMirrorRels = struct {
-	Connection string
-	Issue      string
-	Workspace  string
+	Issue                         string
+	Repository                    string
+	Workspace                     string
+	MirrorWorkspaceCommentMirrors string
 }{
-	Connection: "Connection",
-	Issue:      "Issue",
-	Workspace:  "Workspace",
+	Issue:                         "Issue",
+	Repository:                    "Repository",
+	Workspace:                     "Workspace",
+	MirrorWorkspaceCommentMirrors: "MirrorWorkspaceCommentMirrors",
 }
 
 // workspaceIssueMirrorR is where relationships are stored.
 type workspaceIssueMirrorR struct {
-	Connection *WorkspaceSCMConnection `boil:"Connection" json:"Connection" toml:"Connection" yaml:"Connection"`
-	Issue      *WorkspaceIssue         `boil:"Issue" json:"Issue" toml:"Issue" yaml:"Issue"`
-	Workspace  *Workspace              `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	Issue                         *WorkspaceIssue             `boil:"Issue" json:"Issue" toml:"Issue" yaml:"Issue"`
+	Repository                    *WorkspaceSCMRepository     `boil:"Repository" json:"Repository" toml:"Repository" yaml:"Repository"`
+	Workspace                     *Workspace                  `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	MirrorWorkspaceCommentMirrors WorkspaceCommentMirrorSlice `boil:"MirrorWorkspaceCommentMirrors" json:"MirrorWorkspaceCommentMirrors" toml:"MirrorWorkspaceCommentMirrors" yaml:"MirrorWorkspaceCommentMirrors"`
 }
 
 // NewStruct creates a new relationship struct
 func (*workspaceIssueMirrorR) NewStruct() *workspaceIssueMirrorR {
 	return &workspaceIssueMirrorR{}
-}
-
-func (o *WorkspaceIssueMirror) GetConnection() *WorkspaceSCMConnection {
-	if o == nil {
-		return nil
-	}
-
-	return o.R.GetConnection()
-}
-
-func (r *workspaceIssueMirrorR) GetConnection() *WorkspaceSCMConnection {
-	if r == nil {
-		return nil
-	}
-
-	return r.Connection
 }
 
 func (o *WorkspaceIssueMirror) GetIssue() *WorkspaceIssue {
@@ -231,6 +225,22 @@ func (r *workspaceIssueMirrorR) GetIssue() *WorkspaceIssue {
 	return r.Issue
 }
 
+func (o *WorkspaceIssueMirror) GetRepository() *WorkspaceSCMRepository {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetRepository()
+}
+
+func (r *workspaceIssueMirrorR) GetRepository() *WorkspaceSCMRepository {
+	if r == nil {
+		return nil
+	}
+
+	return r.Repository
+}
+
 func (o *WorkspaceIssueMirror) GetWorkspace() *Workspace {
 	if o == nil {
 		return nil
@@ -247,13 +257,29 @@ func (r *workspaceIssueMirrorR) GetWorkspace() *Workspace {
 	return r.Workspace
 }
 
+func (o *WorkspaceIssueMirror) GetMirrorWorkspaceCommentMirrors() WorkspaceCommentMirrorSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetMirrorWorkspaceCommentMirrors()
+}
+
+func (r *workspaceIssueMirrorR) GetMirrorWorkspaceCommentMirrors() WorkspaceCommentMirrorSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.MirrorWorkspaceCommentMirrors
+}
+
 // workspaceIssueMirrorL is where Load methods for each relationship are stored.
 type workspaceIssueMirrorL struct{}
 
 var (
-	workspaceIssueMirrorAllColumns            = []string{"id", "workspace_id", "issue_id", "connection_id", "provider", "repository", "external_id", "external_number", "url", "origin", "title_hash", "body_hash", "state_hash", "synced_version", "source_updated_at", "pulled_at", "pushed_at", "created_at", "updated_at"}
-	workspaceIssueMirrorColumnsWithoutDefault = []string{"workspace_id", "issue_id", "provider", "repository", "external_id", "origin"}
-	workspaceIssueMirrorColumnsWithDefault    = []string{"id", "connection_id", "external_number", "url", "title_hash", "body_hash", "state_hash", "synced_version", "source_updated_at", "pulled_at", "pushed_at", "created_at", "updated_at"}
+	workspaceIssueMirrorAllColumns            = []string{"id", "workspace_id", "issue_id", "repository_id", "provider", "repository_name", "external_id", "external_number", "url", "origin", "direction", "title_hash", "body_hash", "state_hash", "synced_version", "source_updated_at", "pulled_at", "pushed_at", "created_at", "updated_at"}
+	workspaceIssueMirrorColumnsWithoutDefault = []string{"workspace_id", "issue_id", "provider", "repository_name", "external_id", "origin"}
+	workspaceIssueMirrorColumnsWithDefault    = []string{"id", "repository_id", "external_number", "url", "direction", "title_hash", "body_hash", "state_hash", "synced_version", "source_updated_at", "pulled_at", "pushed_at", "created_at", "updated_at"}
 	workspaceIssueMirrorPrimaryKeyColumns     = []string{"id"}
 	workspaceIssueMirrorGeneratedColumns      = []string{}
 )
@@ -563,17 +589,6 @@ func (q workspaceIssueMirrorQuery) Exists(ctx context.Context, exec boil.Context
 	return count > 0, nil
 }
 
-// Connection pointed to by the foreign key.
-func (o *WorkspaceIssueMirror) Connection(mods ...qm.QueryMod) workspaceSCMConnectionQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.ConnectionID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	return WorkspaceSCMConnections(queryMods...)
-}
-
 // Issue pointed to by the foreign key.
 func (o *WorkspaceIssueMirror) Issue(mods ...qm.QueryMod) workspaceIssueQuery {
 	queryMods := []qm.QueryMod{
@@ -583,6 +598,17 @@ func (o *WorkspaceIssueMirror) Issue(mods ...qm.QueryMod) workspaceIssueQuery {
 	queryMods = append(queryMods, mods...)
 
 	return WorkspaceIssues(queryMods...)
+}
+
+// Repository pointed to by the foreign key.
+func (o *WorkspaceIssueMirror) Repository(mods ...qm.QueryMod) workspaceSCMRepositoryQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.RepositoryID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceSCMRepositories(queryMods...)
 }
 
 // Workspace pointed to by the foreign key.
@@ -596,128 +622,18 @@ func (o *WorkspaceIssueMirror) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	return Workspaces(queryMods...)
 }
 
-// LoadConnection allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (workspaceIssueMirrorL) LoadConnection(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueMirror any, mods queries.Applicator) error {
-	var slice []*WorkspaceIssueMirror
-	var object *WorkspaceIssueMirror
-
-	if singular {
-		var ok bool
-		object, ok = maybeWorkspaceIssueMirror.(*WorkspaceIssueMirror)
-		if !ok {
-			object = new(WorkspaceIssueMirror)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssueMirror)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssueMirror))
-			}
-		}
-	} else {
-		s, ok := maybeWorkspaceIssueMirror.(*[]*WorkspaceIssueMirror)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssueMirror)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssueMirror))
-			}
-		}
+// MirrorWorkspaceCommentMirrors retrieves all the workspace_comment_mirror's WorkspaceCommentMirrors with an executor via mirror_id column.
+func (o *WorkspaceIssueMirror) MirrorWorkspaceCommentMirrors(mods ...qm.QueryMod) workspaceCommentMirrorQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
 	}
 
-	args := make(map[any]struct{})
-	if singular {
-		if object.R == nil {
-			object.R = &workspaceIssueMirrorR{}
-		}
-		if !queries.IsNil(object.ConnectionID) {
-			args[object.ConnectionID] = struct{}{}
-		}
-
-	} else {
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &workspaceIssueMirrorR{}
-			}
-
-			if !queries.IsNil(obj.ConnectionID) {
-				args[obj.ConnectionID] = struct{}{}
-			}
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	argsSlice := make([]any, len(args))
-	i := 0
-	for arg := range args {
-		argsSlice[i] = arg
-		i++
-	}
-
-	query := NewQuery(
-		qm.From(`workspace_scm_connections`),
-		qm.WhereIn(`workspace_scm_connections.id in ?`, argsSlice...),
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_comment_mirrors\".\"mirror_id\"=?", o.ID),
 	)
-	if mods != nil {
-		mods.Apply(query)
-	}
 
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load WorkspaceSCMConnection")
-	}
-
-	var resultSlice []*WorkspaceSCMConnection
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceSCMConnection")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for workspace_scm_connections")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_scm_connections")
-	}
-
-	if len(workspaceSCMConnectionAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Connection = foreign
-		if foreign.R == nil {
-			foreign.R = &workspaceSCMConnectionR{}
-		}
-		foreign.R.ConnectionWorkspaceIssueMirrors = append(foreign.R.ConnectionWorkspaceIssueMirrors, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if queries.Equal(local.ConnectionID, foreign.ID) {
-				local.R.Connection = foreign
-				if foreign.R == nil {
-					foreign.R = &workspaceSCMConnectionR{}
-				}
-				foreign.R.ConnectionWorkspaceIssueMirrors = append(foreign.R.ConnectionWorkspaceIssueMirrors, local)
-				break
-			}
-		}
-	}
-
-	return nil
+	return WorkspaceCommentMirrors(queryMods...)
 }
 
 // LoadIssue allows an eager lookup of values, cached into the
@@ -820,7 +736,7 @@ func (workspaceIssueMirrorL) LoadIssue(ctx context.Context, e boil.ContextExecut
 		if foreign.R == nil {
 			foreign.R = &workspaceIssueR{}
 		}
-		foreign.R.IssueWorkspaceIssueMirror = object
+		foreign.R.IssueWorkspaceIssueMirrors = append(foreign.R.IssueWorkspaceIssueMirrors, object)
 		return nil
 	}
 
@@ -831,7 +747,131 @@ func (workspaceIssueMirrorL) LoadIssue(ctx context.Context, e boil.ContextExecut
 				if foreign.R == nil {
 					foreign.R = &workspaceIssueR{}
 				}
-				foreign.R.IssueWorkspaceIssueMirror = local
+				foreign.R.IssueWorkspaceIssueMirrors = append(foreign.R.IssueWorkspaceIssueMirrors, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadRepository allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceIssueMirrorL) LoadRepository(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueMirror any, mods queries.Applicator) error {
+	var slice []*WorkspaceIssueMirror
+	var object *WorkspaceIssueMirror
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceIssueMirror.(*WorkspaceIssueMirror)
+		if !ok {
+			object = new(WorkspaceIssueMirror)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssueMirror)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssueMirror))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceIssueMirror.(*[]*WorkspaceIssueMirror)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssueMirror)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssueMirror))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceIssueMirrorR{}
+		}
+		if !queries.IsNil(object.RepositoryID) {
+			args[object.RepositoryID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceIssueMirrorR{}
+			}
+
+			if !queries.IsNil(obj.RepositoryID) {
+				args[obj.RepositoryID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_scm_repositories`),
+		qm.WhereIn(`workspace_scm_repositories.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceSCMRepository")
+	}
+
+	var resultSlice []*WorkspaceSCMRepository
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceSCMRepository")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_scm_repositories")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_scm_repositories")
+	}
+
+	if len(workspaceSCMRepositoryAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Repository = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceSCMRepositoryR{}
+		}
+		foreign.R.RepositoryWorkspaceIssueMirrors = append(foreign.R.RepositoryWorkspaceIssueMirrors, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.RepositoryID, foreign.ID) {
+				local.R.Repository = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceSCMRepositoryR{}
+				}
+				foreign.R.RepositoryWorkspaceIssueMirrors = append(foreign.R.RepositoryWorkspaceIssueMirrors, local)
 				break
 			}
 		}
@@ -960,89 +1000,122 @@ func (workspaceIssueMirrorL) LoadWorkspace(ctx context.Context, e boil.ContextEx
 	return nil
 }
 
-// SetConnection of the workspaceIssueMirror to the related item.
-// Sets o.R.Connection to related.
-// Adds o to related.R.ConnectionWorkspaceIssueMirrors.
-func (o *WorkspaceIssueMirror) SetConnection(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceSCMConnection) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
+// LoadMirrorWorkspaceCommentMirrors allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceIssueMirrorL) LoadMirrorWorkspaceCommentMirrors(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueMirror any, mods queries.Applicator) error {
+	var slice []*WorkspaceIssueMirror
+	var object *WorkspaceIssueMirror
 
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"workspace_issue_mirrors\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"connection_id"}),
-		strmangle.WhereClause("\"", "\"", 2, workspaceIssueMirrorPrimaryKeyColumns),
-	)
-	values := []any{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	queries.Assign(&o.ConnectionID, related.ID)
-	if o.R == nil {
-		o.R = &workspaceIssueMirrorR{
-			Connection: related,
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceIssueMirror.(*WorkspaceIssueMirror)
+		if !ok {
+			object = new(WorkspaceIssueMirror)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssueMirror)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssueMirror))
+			}
 		}
 	} else {
-		o.R.Connection = related
-	}
-
-	if related.R == nil {
-		related.R = &workspaceSCMConnectionR{
-			ConnectionWorkspaceIssueMirrors: WorkspaceIssueMirrorSlice{o},
+		s, ok := maybeWorkspaceIssueMirror.(*[]*WorkspaceIssueMirror)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssueMirror)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssueMirror))
+			}
 		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceIssueMirrorR{}
+		}
+		args[object.ID] = struct{}{}
 	} else {
-		related.R.ConnectionWorkspaceIssueMirrors = append(related.R.ConnectionWorkspaceIssueMirrors, o)
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceIssueMirrorR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
 	}
 
-	return nil
-}
-
-// RemoveConnection relationship.
-// Sets o.R.Connection to nil.
-// Removes o from all passed in related items' relationships struct.
-func (o *WorkspaceIssueMirror) RemoveConnection(ctx context.Context, exec boil.ContextExecutor, related *WorkspaceSCMConnection) error {
-	var err error
-
-	queries.SetScanner(&o.ConnectionID, nil)
-	if _, err = o.Update(ctx, exec, boil.Whitelist("connection_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	if o.R != nil {
-		o.R.Connection = nil
-	}
-	if related == nil || related.R == nil {
+	if len(args) == 0 {
 		return nil
 	}
 
-	for i, ri := range related.R.ConnectionWorkspaceIssueMirrors {
-		if queries.Equal(o.ConnectionID, ri.ConnectionID) {
-			continue
-		}
-
-		ln := len(related.R.ConnectionWorkspaceIssueMirrors)
-		if ln > 1 && i < ln-1 {
-			related.R.ConnectionWorkspaceIssueMirrors[i] = related.R.ConnectionWorkspaceIssueMirrors[ln-1]
-		}
-		related.R.ConnectionWorkspaceIssueMirrors = related.R.ConnectionWorkspaceIssueMirrors[:ln-1]
-		break
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
 	}
+
+	query := NewQuery(
+		qm.From(`workspace_comment_mirrors`),
+		qm.WhereIn(`workspace_comment_mirrors.mirror_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_comment_mirrors")
+	}
+
+	var resultSlice []*WorkspaceCommentMirror
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_comment_mirrors")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_comment_mirrors")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_comment_mirrors")
+	}
+
+	if len(workspaceCommentMirrorAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.MirrorWorkspaceCommentMirrors = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceCommentMirrorR{}
+			}
+			foreign.R.Mirror = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.MirrorID {
+				local.R.MirrorWorkspaceCommentMirrors = append(local.R.MirrorWorkspaceCommentMirrors, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceCommentMirrorR{}
+				}
+				foreign.R.Mirror = local
+				break
+			}
+		}
+	}
+
 	return nil
 }
 
 // SetIssue of the workspaceIssueMirror to the related item.
 // Sets o.R.Issue to related.
-// Adds o to related.R.IssueWorkspaceIssueMirror.
+// Adds o to related.R.IssueWorkspaceIssueMirrors.
 func (o *WorkspaceIssueMirror) SetIssue(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceIssue) error {
 	var err error
 	if insert {
@@ -1078,12 +1151,92 @@ func (o *WorkspaceIssueMirror) SetIssue(ctx context.Context, exec boil.ContextEx
 
 	if related.R == nil {
 		related.R = &workspaceIssueR{
-			IssueWorkspaceIssueMirror: o,
+			IssueWorkspaceIssueMirrors: WorkspaceIssueMirrorSlice{o},
 		}
 	} else {
-		related.R.IssueWorkspaceIssueMirror = o
+		related.R.IssueWorkspaceIssueMirrors = append(related.R.IssueWorkspaceIssueMirrors, o)
 	}
 
+	return nil
+}
+
+// SetRepository of the workspaceIssueMirror to the related item.
+// Sets o.R.Repository to related.
+// Adds o to related.R.RepositoryWorkspaceIssueMirrors.
+func (o *WorkspaceIssueMirror) SetRepository(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceSCMRepository) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_issue_mirrors\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"repository_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceIssueMirrorPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.RepositoryID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceIssueMirrorR{
+			Repository: related,
+		}
+	} else {
+		o.R.Repository = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceSCMRepositoryR{
+			RepositoryWorkspaceIssueMirrors: WorkspaceIssueMirrorSlice{o},
+		}
+	} else {
+		related.R.RepositoryWorkspaceIssueMirrors = append(related.R.RepositoryWorkspaceIssueMirrors, o)
+	}
+
+	return nil
+}
+
+// RemoveRepository relationship.
+// Sets o.R.Repository to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceIssueMirror) RemoveRepository(ctx context.Context, exec boil.ContextExecutor, related *WorkspaceSCMRepository) error {
+	var err error
+
+	queries.SetScanner(&o.RepositoryID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("repository_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Repository = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.RepositoryWorkspaceIssueMirrors {
+		if queries.Equal(o.RepositoryID, ri.RepositoryID) {
+			continue
+		}
+
+		ln := len(related.R.RepositoryWorkspaceIssueMirrors)
+		if ln > 1 && i < ln-1 {
+			related.R.RepositoryWorkspaceIssueMirrors[i] = related.R.RepositoryWorkspaceIssueMirrors[ln-1]
+		}
+		related.R.RepositoryWorkspaceIssueMirrors = related.R.RepositoryWorkspaceIssueMirrors[:ln-1]
+		break
+	}
 	return nil
 }
 
@@ -1131,6 +1284,59 @@ func (o *WorkspaceIssueMirror) SetWorkspace(ctx context.Context, exec boil.Conte
 		related.R.WorkspaceIssueMirrors = append(related.R.WorkspaceIssueMirrors, o)
 	}
 
+	return nil
+}
+
+// AddMirrorWorkspaceCommentMirrors adds the given related objects to the existing relationships
+// of the workspace_issue_mirror, optionally inserting them as new records.
+// Appends related to o.R.MirrorWorkspaceCommentMirrors.
+// Sets related.R.Mirror appropriately.
+func (o *WorkspaceIssueMirror) AddMirrorWorkspaceCommentMirrors(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCommentMirror) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.MirrorID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_comment_mirrors\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"mirror_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceCommentMirrorPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.MirrorID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceIssueMirrorR{
+			MirrorWorkspaceCommentMirrors: related,
+		}
+	} else {
+		o.R.MirrorWorkspaceCommentMirrors = append(o.R.MirrorWorkspaceCommentMirrors, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceCommentMirrorR{
+				Mirror: o,
+			}
+		} else {
+			rel.R.Mirror = o
+		}
+	}
 	return nil
 }
 

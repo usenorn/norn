@@ -126,19 +126,19 @@ type repositoryBody struct {
 func (f *Forge) Repository(
 	ctx context.Context,
 	target entity.SCMTarget,
-) (entity.SCMRepository, error) {
+) (entity.SCMRemoteRepository, error) {
 	response, err := f.call(ctx, target, http.MethodGet, "/repos/"+target.Repository, nil)
 	if err != nil {
-		return entity.SCMRepository{}, err
+		return entity.SCMRemoteRepository{}, err
 	}
 
 	var body repositoryBody
 
 	if err := f.decode(response, target, &body); err != nil {
-		return entity.SCMRepository{}, err
+		return entity.SCMRemoteRepository{}, err
 	}
 
-	return entity.SCMRepository{
+	return entity.SCMRemoteRepository{
 		ExternalID:    strconv.FormatInt(body.ID, 10),
 		FullName:      body.FullName,
 		URL:           body.HTMLURL,
@@ -561,4 +561,49 @@ func (f *Forge) PostComment(
 	}
 
 	return posted.forgeComment(), nil
+}
+
+type changedFileBody struct {
+	Filename         string `json:"filename"`
+	PreviousFilename string `json:"previous_filename"`
+}
+
+// ChangedPaths reads the files a pull request touches. Nothing in a webhook payload carries
+// them, and routing a change to the team that owns its area cannot be decided without them.
+// A rename is reported under both names, because either one may be what a route matches.
+func (f *Forge) ChangedPaths(
+	ctx context.Context,
+	target entity.SCMTarget,
+	number int,
+) ([]string, error) {
+	query := url.Values{}
+	query.Set("per_page", strconv.Itoa(f.pageSize))
+
+	path := "/repos/" + target.Repository + "/pulls/" + strconv.Itoa(number) +
+		"/files?" + query.Encode()
+
+	response, err := f.call(ctx, target, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var body []changedFileBody
+
+	if err := f.decode(response, target, &body); err != nil {
+		return nil, err
+	}
+
+	paths := make([]string, 0, len(body))
+
+	for _, file := range body {
+		if file.Filename != "" {
+			paths = append(paths, file.Filename)
+		}
+
+		if file.PreviousFilename != "" {
+			paths = append(paths, file.PreviousFilename)
+		}
+	}
+
+	return paths, nil
 }

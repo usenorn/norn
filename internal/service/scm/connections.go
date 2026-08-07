@@ -2,8 +2,6 @@ package scm
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -17,28 +15,32 @@ import (
 )
 
 type connections struct {
-	connections repository.SCMConnection
-	deliveries  repository.SCMDelivery
-	links       repository.CodeLink
-	mirrors     repository.IssueMirror
-	settings    repository.SCMTeamSetting
-	states      repository.WorkflowState
-	accounts    repository.Account
-	issues      repository.Issue
-	activity    repository.Activity
-	forges      service.Forges
-	authorizer  service.Authorizer
-	audit       service.Audit
-	transactor  repository.Transactor
-	app         config.App
+	connections  repository.SCMConnection
+	repositories repository.SCMRepository
+	routes       repository.SCMRoute
+	rules        repository.SCMTransitionRule
+	deliveries   repository.SCMDelivery
+	links        repository.CodeLink
+	mirrors      repository.IssueMirror
+	states       repository.WorkflowState
+	accounts     repository.Account
+	issues       repository.Issue
+	activity     repository.Activity
+	forges       service.Forges
+	authorizer   service.Authorizer
+	audit        service.Audit
+	transactor   repository.Transactor
+	app          config.App
 }
 
 func NewConnections(
 	connectionRepository repository.SCMConnection,
+	repositories repository.SCMRepository,
+	routes repository.SCMRoute,
+	rules repository.SCMTransitionRule,
 	deliveries repository.SCMDelivery,
 	links repository.CodeLink,
 	mirrors repository.IssueMirror,
-	settings repository.SCMTeamSetting,
 	states repository.WorkflowState,
 	accounts repository.Account,
 	issues repository.Issue,
@@ -50,20 +52,22 @@ func NewConnections(
 	app config.App,
 ) service.SourceControl {
 	return &connections{
-		connections: connectionRepository,
-		deliveries:  deliveries,
-		links:       links,
-		mirrors:     mirrors,
-		settings:    settings,
-		states:      states,
-		accounts:    accounts,
-		issues:      issues,
-		activity:    activity,
-		forges:      forges,
-		authorizer:  authorizer,
-		audit:       audit,
-		transactor:  transactor,
-		app:         app,
+		connections:  connectionRepository,
+		repositories: repositories,
+		routes:       routes,
+		rules:        rules,
+		deliveries:   deliveries,
+		links:        links,
+		mirrors:      mirrors,
+		states:       states,
+		accounts:     accounts,
+		issues:       issues,
+		activity:     activity,
+		forges:       forges,
+		authorizer:   authorizer,
+		audit:        audit,
+		transactor:   transactor,
+		app:          app,
 	}
 }
 
@@ -73,7 +77,7 @@ func (s *connections) administers(
 ) (entity.Decision, error) {
 	// Scoped, because every caller of this goes on to ask whether a team is within reach.
 	// Without it the decision carries an empty scope, which covers no team at all and turns
-	// "attach this to Engineering" into "there is no such team".
+	// "route this to Engineering" into "there is no such team".
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceWorkspace,
 		Action:      entity.ActionUpdate,
@@ -91,7 +95,7 @@ func (s *connections) administers(
 	return decision, nil
 }
 
-func (s *connections) List(
+func (s *connections) ListConnections(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 ) ([]entity.SCMConnection, error) {
@@ -102,7 +106,7 @@ func (s *connections) List(
 	return s.connections.ListByWorkspace(ctx, workspaceID)
 }
 
-func (s *connections) Get(
+func (s *connections) GetConnection(
 	ctx context.Context,
 	workspaceID, connectionID uuid.UUID,
 ) (entity.SCMConnection, error) {
@@ -114,13 +118,12 @@ func (s *connections) Get(
 }
 
 func validateConnect(input service.ConnectSourceControlInput) error {
-	fields := make([]entity.FieldError, 0, 4)
+	fields := make([]entity.FieldError, 0, 3)
 
 	for _, field := range []entity.FieldError{
-		entity.ValidateSCMRepository("repository", input.Repository),
 		entity.ValidateSCMBaseURL("baseUrl", input.BaseURL),
 		entity.ValidateSCMToken("token", input.Token),
-		entity.ValidateSCMMirrorLabel("mirrorLabel", input.MirrorLabel),
+		entity.ValidateSCMLabel("label", input.Label),
 	} {
 		if field.Field != "" {
 			fields = append(fields, field)
@@ -147,50 +150,35 @@ func validateConnect(input service.ConnectSourceControlInput) error {
 func (s *connections) Connect(
 	ctx context.Context,
 	input service.ConnectSourceControlInput,
-) (service.ConnectedSourceControl, error) {
+) (entity.SCMConnection, error) {
 	decision, err := s.administers(ctx, input.WorkspaceID)
 	if err != nil {
-		return service.ConnectedSourceControl{}, err
-	}
-
-	if input.MirrorLabel == "" {
-		input.MirrorLabel = defaultMirrorLabel
+		return entity.SCMConnection{}, err
 	}
 
 	if err := validateConnect(input); err != nil {
-		return service.ConnectedSourceControl{}, err
-	}
-
-	if input.TeamID != uuid.Nil && !decision.Scope.Covers(input.TeamID) {
-		return service.ConnectedSourceControl{}, entity.ErrTeamNotFound
+		return entity.SCMConnection{}, err
 	}
 
 	forge, err := s.forges.Lookup(input.Provider)
 	if err != nil {
-		return service.ConnectedSourceControl{}, err
+		return entity.SCMConnection{}, err
 	}
 
-	repositoryName := entity.NormalizeSCMRepository(input.Repository)
 	target := entity.SCMTarget{
-		Provider:   input.Provider,
-		BaseURL:    strings.TrimSpace(input.BaseURL),
-		Repository: repositoryName,
-		Token:      strings.TrimSpace(input.Token),
-	}
-
-	found, err := forge.Repository(ctx, target)
-	if err != nil {
-		return service.ConnectedSourceControl{}, err
+		Provider: input.Provider,
+		BaseURL:  strings.TrimSpace(input.BaseURL),
+		Token:    strings.TrimSpace(input.Token),
 	}
 
 	login, err := forge.Identity(ctx, target)
 	if err != nil {
-		return service.ConnectedSourceControl{}, err
+		return entity.SCMConnection{}, err
 	}
 
-	secret, err := entity.NewSCMWebhookSecret()
-	if err != nil {
-		return service.ConnectedSourceControl{}, fmt.Errorf("mint a webhook secret: %w", err)
+	label := strings.TrimSpace(input.Label)
+	if label == "" {
+		label = login
 	}
 
 	var created entity.SCMConnection
@@ -199,7 +187,7 @@ func (s *connections) Connect(
 		account, err := s.accounts.Create(ctx, entity.Account{
 			Status:      entity.AccountStatusActive,
 			Kind:        entity.AccountKindIntegration,
-			DisplayName: entity.IntegrationAccountName(input.Provider, repositoryName),
+			DisplayName: entity.IntegrationAccountName(input.Provider, label),
 			Timezone:    decision.Workspace.Timezone,
 		})
 		if err != nil {
@@ -209,21 +197,17 @@ func (s *connections) Connect(
 		stored, err := s.connections.Create(ctx, repository.SCMConnectionInput{
 			Connection: entity.SCMConnection{
 				WorkspaceID:          input.WorkspaceID,
-				TeamID:               input.TeamID,
 				Provider:             input.Provider,
 				BaseURL:              target.BaseURL,
-				Repository:           repositoryName,
-				ExternalRepositoryID: found.ExternalID,
+				Label:                label,
 				TokenHint:            entity.SCMTokenHint(target.Token),
 				IdentityLogin:        login,
 				IntegrationAccountID: account.ID,
 				OwnerAccountID:       decision.Actor.Authority(),
 				OwnerActorKind:       entity.ActorKindToken,
 				OwnerAuthMethod:      decision.Actor.AuthMethod,
-				MirrorLabel:          strings.TrimSpace(input.MirrorLabel),
 			},
-			Token:         target.Token,
-			WebhookSecret: secret,
+			Token: target.Token,
 		})
 		if err != nil {
 			return err
@@ -233,36 +217,13 @@ func (s *connections) Connect(
 
 		return nil
 	}); err != nil {
-		return service.ConnectedSourceControl{}, err
-	}
-
-	callback := s.callbackURL(created)
-
-	// The hook is installed after the row exists rather than before. Installing first and
-	// failing to store leaves a hook on the forge pointing at a connection that never
-	// existed, delivering into nothing with no record able to remove it.
-	hookID, err := forge.InstallHook(ctx, service.ForgeHookRequest{
-		Target:      target,
-		CallbackURL: callback,
-		Secret:      secret,
-	})
-	if err != nil {
-		logging.From(ctx).WarnContext(
-			ctx,
-			"installing the source control hook failed; the reconcile sweep will retry it",
-			"connection_id", created.ID.String(),
-			"error", err.Error(),
-		)
-	} else if err := s.connections.RecordHook(ctx, created.ID, hookID); err != nil {
-		return service.ConnectedSourceControl{}, err
-	} else {
-		created.ExternalHookID = hookID
+		return entity.SCMConnection{}, err
 	}
 
 	now := time.Now().UTC()
 
-	if err := s.connections.MarkVerified(ctx, created.ID, found, login, now); err != nil {
-		return service.ConnectedSourceControl{}, err
+	if err := s.connections.MarkVerified(ctx, created.ID, login, now); err != nil {
+		return entity.SCMConnection{}, err
 	}
 
 	created.VerifiedAt = &now
@@ -272,65 +233,34 @@ func (s *connections) Connect(
 		Action:       entity.AuditSourceControlConnected,
 		ResourceKind: "scm_connection",
 		ResourceID:   created.ID,
-		ResourceName: created.Repository,
+		ResourceName: created.DisplayName(),
 		Detail: map[string]string{
-			"provider":   string(created.Provider),
-			"repository": created.Repository,
+			"provider": string(created.Provider),
+			"identity": login,
 		},
 	})
 
-	return service.ConnectedSourceControl{
-		Connection:    created,
-		WebhookURL:    callback,
-		WebhookSecret: secret,
-	}, nil
+	return created, nil
 }
 
-const defaultMirrorLabel = "norn"
-
-func (s *connections) callbackURL(connection entity.SCMConnection) string {
-	return strings.TrimRight(s.app.BaseURL, "/") +
-		"/v1/source-control/" + string(connection.Provider) + "/" + connection.ID.String()
-}
-
-func (s *connections) Update(
+func (s *connections) UpdateConnection(
 	ctx context.Context,
 	workspaceID, connectionID uuid.UUID,
-	input service.UpdateSourceControlInput,
+	input service.UpdateConnectionInput,
 ) (entity.SCMConnection, error) {
-	decision, err := s.administers(ctx, workspaceID)
-	if err != nil {
+	if _, err := s.administers(ctx, workspaceID); err != nil {
 		return entity.SCMConnection{}, err
 	}
 
-	connection, err := s.connections.GetByID(ctx, workspaceID, connectionID)
-	if err != nil {
+	if _, err := s.connections.GetByID(ctx, workspaceID, connectionID); err != nil {
 		return entity.SCMConnection{}, err
 	}
 
-	teamID := connection.TeamID
-
-	switch {
-	case input.ClearTeam:
-		teamID = uuid.Nil
-	case input.TeamID != uuid.Nil:
-		if !decision.Scope.Covers(input.TeamID) {
-			return entity.SCMConnection{}, entity.ErrTeamNotFound
-		}
-
-		teamID = input.TeamID
+	if field := entity.ValidateSCMLabel("label", input.Label); field.Field != "" {
+		return entity.SCMConnection{}, entity.ValidationError{Fields: []entity.FieldError{field}}
 	}
 
-	label := connection.MirrorLabel
-	if input.MirrorLabel != "" {
-		if field := entity.ValidateSCMMirrorLabel("mirrorLabel", input.MirrorLabel); field.Field != "" {
-			return entity.SCMConnection{}, entity.ValidationError{Fields: []entity.FieldError{field}}
-		}
-
-		label = strings.TrimSpace(input.MirrorLabel)
-	}
-
-	return s.connections.UpdateSettings(ctx, connectionID, teamID, label)
+	return s.connections.UpdateLabel(ctx, connectionID, strings.TrimSpace(input.Label))
 }
 
 func (s *connections) ReplaceToken(
@@ -356,21 +286,15 @@ func (s *connections) ReplaceToken(
 		return entity.SCMConnection{}, err
 	}
 
-	target := connection.Target(strings.TrimSpace(token))
+	target := connection.Target("", strings.TrimSpace(token))
 
 	// The replacement is proved before it is stored, and a failure leaves the connection
 	// broken. A repair that reports success without working is worse than no repair: the
 	// screen stops saying anything is wrong and nobody looks again.
-	if _, err := forge.Repository(ctx, target); err != nil {
-		return entity.SCMConnection{}, err
-	}
-
 	login, err := forge.Identity(ctx, target)
 	if err != nil {
 		return entity.SCMConnection{}, err
 	}
-
-	now := time.Now().UTC()
 
 	if err := s.connections.ReplaceToken(
 		ctx,
@@ -378,7 +302,7 @@ func (s *connections) ReplaceToken(
 		target.Token,
 		entity.SCMTokenHint(target.Token),
 		login,
-		now,
+		time.Now().UTC(),
 	); err != nil {
 		return entity.SCMConnection{}, err
 	}
@@ -388,13 +312,16 @@ func (s *connections) ReplaceToken(
 		Action:       entity.AuditSourceControlTokenReplaced,
 		ResourceKind: "scm_connection",
 		ResourceID:   connectionID,
-		ResourceName: connection.Repository,
+		ResourceName: connection.DisplayName(),
 	})
 
 	return s.connections.GetByID(ctx, workspaceID, connectionID)
 }
 
-func (s *connections) Verify(
+// VerifyConnection reads the identity again and, when the token still works, checks every
+// repository hanging off it. A token that lost its reach to one repository is the failure a
+// person has to hear about, and the connection itself looks fine at that point.
+func (s *connections) VerifyConnection(
 	ctx context.Context,
 	workspaceID, connectionID uuid.UUID,
 ) (entity.SCMConnection, error) {
@@ -407,7 +334,7 @@ func (s *connections) Verify(
 		return entity.SCMConnection{}, err
 	}
 
-	credentials, err := s.connections.Credentials(ctx, connectionID)
+	token, err := s.connections.Token(ctx, connectionID)
 	if err != nil {
 		return entity.SCMConnection{}, err
 	}
@@ -417,28 +344,28 @@ func (s *connections) Verify(
 		return entity.SCMConnection{}, err
 	}
 
-	target := connection.Target(credentials.Token)
-
-	found, err := forge.Repository(ctx, target)
+	login, err := forge.Identity(ctx, connection.Target("", token))
 	if err != nil {
 		s.breakOn(ctx, connection, err)
 
 		return entity.SCMConnection{}, err
 	}
 
-	login, err := forge.Identity(ctx, target)
+	stored, err := s.repositories.ListByConnection(ctx, connectionID)
 	if err != nil {
-		s.breakOn(ctx, connection, err)
-
 		return entity.SCMConnection{}, err
+	}
+
+	for _, one := range stored {
+		if _, err := forge.Repository(ctx, connection.Target(one.FullName, token)); err != nil {
+			s.breakOn(ctx, connection, err)
+
+			return entity.SCMConnection{}, err
+		}
 	}
 
 	if err := s.connections.MarkVerified(
-		ctx,
-		connectionID,
-		found,
-		login,
-		time.Now().UTC(),
+		ctx, connectionID, login, time.Now().UTC(),
 	); err != nil {
 		return entity.SCMConnection{}, err
 	}
@@ -480,14 +407,14 @@ func (s *connections) breakOn(ctx context.Context, connection entity.SCMConnecti
 		Action:       entity.AuditSourceControlBroken,
 		ResourceKind: "scm_connection",
 		ResourceID:   connection.ID,
-		ResourceName: connection.Repository,
+		ResourceName: connection.DisplayName(),
 		Detail:       map[string]string{"reason": string(reason)},
 	})
 }
 
-// Disconnect cuts every link and mirror loose before deleting the connection, so what a
-// person already saw on an issue stays exactly as readable and the sealed credential this
-// instance was asked to stop using is destroyed rather than kept.
+// Disconnect removes every repository first, so each one's hook is taken off the forge and
+// its links and mirrors are cut loose rather than deleted. What a person already saw on an
+// issue stays exactly as readable, and the sealed credential is destroyed rather than kept.
 func (s *connections) Disconnect(ctx context.Context, workspaceID, connectionID uuid.UUID) error {
 	if _, err := s.administers(ctx, workspaceID); err != nil {
 		return err
@@ -498,38 +425,18 @@ func (s *connections) Disconnect(ctx context.Context, workspaceID, connectionID 
 		return err
 	}
 
-	if credentials, err := s.connections.Credentials(ctx, connectionID); err == nil &&
-		connection.ExternalHookID != "" {
-		if forge, err := s.forges.Lookup(connection.Provider); err == nil {
-			if err := forge.RemoveHook(
-				ctx,
-				connection.Target(credentials.Token),
-				connection.ExternalHookID,
-			); err != nil {
-				logging.From(ctx).WarnContext(
-					ctx,
-					"removing the source control hook failed; it will keep delivering until "+
-						"somebody removes it on the forge",
-					"connection_id", connectionID.String(),
-					"error", err.Error(),
-				)
-			}
+	stored, err := s.repositories.ListByConnection(ctx, connectionID)
+	if err != nil {
+		return err
+	}
+
+	for _, one := range stored {
+		if err := s.removeRepository(ctx, connection, one); err != nil {
+			return err
 		}
 	}
 
 	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		if err := s.links.DetachConnection(ctx, connectionID); err != nil {
-			return err
-		}
-
-		if err := s.mirrors.DetachConnection(ctx, connectionID); err != nil {
-			return err
-		}
-
-		if err := s.mirrors.DetachConnectionComments(ctx, connectionID); err != nil {
-			return err
-		}
-
 		if err := s.retireIntegrationAccount(ctx, connection.IntegrationAccountID); err != nil {
 			return err
 		}
@@ -544,7 +451,7 @@ func (s *connections) Disconnect(ctx context.Context, workspaceID, connectionID 
 		Action:       entity.AuditSourceControlDisconnected,
 		ResourceKind: "scm_connection",
 		ResourceID:   connectionID,
-		ResourceName: connection.Repository,
+		ResourceName: connection.DisplayName(),
 	})
 
 	return nil
@@ -569,141 +476,6 @@ func (s *connections) retireIntegrationAccount(ctx context.Context, accountID uu
 	_, err = s.accounts.Update(ctx, account)
 
 	return err
-}
-
-// Deliveries is the log. It is admin-only like the rest of the connection surface, because
-// a payload can carry anything the repository holds.
-func (s *connections) Deliveries(
-	ctx context.Context,
-	workspaceID, connectionID uuid.UUID,
-) ([]entity.SCMDelivery, error) {
-	if _, err := s.administers(ctx, workspaceID); err != nil {
-		return nil, err
-	}
-
-	if _, err := s.connections.GetByID(ctx, workspaceID, connectionID); err != nil {
-		return nil, err
-	}
-
-	return s.deliveries.ListByConnection(ctx, connectionID, deliveryLogSize)
-}
-
-const deliveryLogSize = 50
-
-func (s *connections) TeamSettings(
-	ctx context.Context,
-	workspaceID, teamID uuid.UUID,
-) (service.TeamSourceControlSettings, error) {
-	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
-		Resource:    entity.ResourceTeam,
-		Action:      entity.ActionRead,
-		WorkspaceID: workspaceID,
-		Scoped:      true,
-	})
-	if err != nil {
-		return service.TeamSourceControlSettings{}, err
-	}
-
-	if !decision.Scope.Covers(teamID) {
-		return service.TeamSourceControlSettings{}, entity.ErrTeamNotFound
-	}
-
-	settings, err := s.settings.Settings(ctx, workspaceID, teamID)
-	if errors.Is(err, entity.ErrSCMTeamSettingsNotFound) {
-		return service.TeamSourceControlSettings{
-			Settings: entity.SCMTeamSettings{WorkspaceID: workspaceID, TeamID: teamID},
-		}, nil
-	}
-
-	if err != nil {
-		return service.TeamSourceControlSettings{}, err
-	}
-
-	return s.resolve(ctx, settings)
-}
-
-// resolve reports whether the state a team chose still exists. A team that pointed merged
-// work at a state somebody later deleted would otherwise look configured and quietly do
-// nothing, which is the failure this whole feature is meant not to have.
-func (s *connections) resolve(
-	ctx context.Context,
-	settings entity.SCMTeamSettings,
-) (service.TeamSourceControlSettings, error) {
-	answer := service.TeamSourceControlSettings{Settings: settings}
-
-	if !settings.AdvanceOnMerge {
-		return answer, nil
-	}
-
-	states, err := s.states.ListByTeamID(ctx, settings.TeamID)
-	if err != nil {
-		return service.TeamSourceControlSettings{}, err
-	}
-
-	if target, found := settings.TargetState(states); found {
-		answer.TargetResolved = true
-		answer.TargetName = target.Name
-	}
-
-	return answer, nil
-}
-
-func (s *connections) SetTeamSettings(
-	ctx context.Context,
-	workspaceID, teamID uuid.UUID,
-	input service.SetTeamSourceControlInput,
-) (service.TeamSourceControlSettings, error) {
-	decision, err := s.administers(ctx, workspaceID)
-	if err != nil {
-		return service.TeamSourceControlSettings{}, err
-	}
-
-	if !decision.Scope.Covers(teamID) {
-		return service.TeamSourceControlSettings{}, entity.ErrTeamNotFound
-	}
-
-	stateID := input.MergedStateID
-	if input.ClearState {
-		stateID = uuid.Nil
-	}
-
-	if stateID != uuid.Nil {
-		states, err := s.states.ListByTeamID(ctx, teamID)
-		if err != nil {
-			return service.TeamSourceControlSettings{}, err
-		}
-
-		known := false
-
-		for _, state := range states {
-			if state.ID == stateID {
-				known = true
-
-				break
-			}
-		}
-
-		if !known {
-			return service.TeamSourceControlSettings{}, entity.ValidationError{
-				Fields: []entity.FieldError{{
-					Field: "mergedStateId",
-					Code:  entity.ValidationCodeUnsupportedValue,
-				}},
-			}
-		}
-	}
-
-	stored, err := s.settings.Upsert(ctx, entity.SCMTeamSettings{
-		TeamID:         teamID,
-		WorkspaceID:    workspaceID,
-		AdvanceOnMerge: input.AdvanceOnMerge,
-		MergedStateID:  stateID,
-	})
-	if err != nil {
-		return service.TeamSourceControlSettings{}, err
-	}
-
-	return s.resolve(ctx, stored)
 }
 
 func logWarn(ctx context.Context, message string, id uuid.UUID, err error) {

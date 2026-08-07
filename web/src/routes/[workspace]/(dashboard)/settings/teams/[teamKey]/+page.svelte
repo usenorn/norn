@@ -533,7 +533,7 @@
 					<TeamSourceControl
 						workspace={data.workspace}
 						{team}
-						settings={data.sourceControl}
+						rules={data.sourceControl}
 						states={states.kind === "ready" ? states.states : []}
 						locked={busy || archived || readOnly}
 					/>

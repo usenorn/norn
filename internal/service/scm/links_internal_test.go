@@ -107,34 +107,24 @@ func TestAnAddressThatNamesNoChangeIsRefusedRatherThanGuessedAt(t *testing.T) {
 	}
 }
 
-func TestAnAddressIsMatchedToAConnectionByHostAsWellAsRepository(t *testing.T) {
-	cloud := entity.SCMConnection{Repository: "acme/api", Provider: entity.SCMProviderGitLab}
-	hosted := entity.SCMConnection{
-		Repository: "acme/api",
-		Provider:   entity.SCMProviderGitLab,
-		BaseURL:    "https://gitlab.example.com",
+func TestAnAddressBelongsToAConnectionByHostAsWellAsRepository(t *testing.T) {
+	hosted := mustParse(t, "https://gitlab.example.com/acme/api/-/merge_requests/1")
+	cloud := mustParse(t, "https://gitlab.com/acme/api/-/merge_requests/1")
+
+	if !sameHost("https://gitlab.example.com", hosted.host) {
+		t.Error("an address on a self-hosted forge must belong to the connection naming that host")
 	}
 
-	address, err := parseCodeURL("https://gitlab.example.com/acme/api/-/merge_requests/1")
-	if err != nil {
-		t.Fatalf("parseCodeURL: %v", err)
-	}
-
-	matched, found := matching([]entity.SCMConnection{hosted}, address)
-	if !found || matched.BaseURL != hosted.BaseURL {
-		t.Fatal("an address on a self-hosted forge must match the connection that names that host")
-	}
-
-	if _, found := matching([]entity.SCMConnection{hosted}, mustParse(t, "https://gitlab.com/acme/api/-/merge_requests/1")); found {
-		t.Fatal(
+	if sameHost("https://gitlab.example.com", cloud.host) {
+		t.Error(
 			"a repository path that happens to match on another host was accepted. Two forges " +
 				"can hold a project of the same name and linking across them points at somebody " +
 				"else's work",
 		)
 	}
 
-	if _, found := matching([]entity.SCMConnection{cloud}, address); !found {
-		t.Fatal("a connection with no base url follows the forge's own host and must still match")
+	if !sameHost("", cloud.host) || !sameHost("", hosted.host) {
+		t.Error("a connection with no base url follows the forge's own host and must still match")
 	}
 }
 
