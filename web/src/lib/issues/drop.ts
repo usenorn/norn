@@ -97,22 +97,9 @@ function groupFields(grouping: Grouping, key: string, held: Issue[]): Partial<Is
 	}
 }
 
-function inherited(
-	ordering: Ordering,
-	above: Issue | undefined,
-	below: Issue | undefined
-): Partial<Issue> {
-	if (ordering === "priority") {
-		const carried = above?.priority ?? below?.priority;
-
-		return carried ? { priority: carried } : {};
-	}
-
-	if (ordering === "due") {
-		const carried = above?.dueOn ?? below?.dueOn;
-
-		return carried ? { dueOn: carried } : {};
-	}
+function inherited(ordering: Ordering, above: Issue | undefined): Partial<Issue> {
+	if (ordering === "priority") return { priority: above?.priority ?? "none" };
+	if (ordering === "due") return { dueOn: above?.dueOn };
 
 	return {};
 }
@@ -130,14 +117,20 @@ export function landing(
 
 	const above = without[index - 1];
 	const below = without[index];
-	const carried = inherited(ordering, above, below);
+	const carried = inherited(ordering, above);
+
+	const grouped = groupMove(grouping, target.key);
+	const cleared = [...(grouped.clear ?? [])];
+
+	if (ordering === "due" && !carried.dueOn) cleared.push("dueOn");
 
 	const move: IssueMove = {
-		...groupMove(grouping, target.key),
+		...grouped,
 		afterIssueId: above?.id,
 		beforeIssueId: below?.id,
 		...(carried.priority ? { priority: carried.priority } : {}),
 		...(carried.dueOn ? { dueOn: carried.dueOn } : {}),
+		...(cleared.length > 0 ? { clear: cleared } : {}),
 	};
 
 	return {
