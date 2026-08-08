@@ -734,6 +734,21 @@ func (mr *MockSourceControlMockRecorder) AddRoute(ctx, workspaceID, input any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRoute", reflect.TypeOf((*MockSourceControl)(nil).AddRoute), ctx, workspaceID, input)
 }
 
+// AvailableRepositories mocks base method.
+func (m *MockSourceControl) AvailableRepositories(ctx context.Context, workspaceID, connectionID uuid.UUID) ([]entity.SCMRemoteRepository, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AvailableRepositories", ctx, workspaceID, connectionID)
+	ret0, _ := ret[0].([]entity.SCMRemoteRepository)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AvailableRepositories indicates an expected call of AvailableRepositories.
+func (mr *MockSourceControlMockRecorder) AvailableRepositories(ctx, workspaceID, connectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AvailableRepositories", reflect.TypeOf((*MockSourceControl)(nil).AvailableRepositories), ctx, workspaceID, connectionID)
+}
+
 // BranchName mocks base method.
 func (m *MockSourceControl) BranchName(ctx context.Context, workspaceID, issueID uuid.UUID) (string, error) {
 	m.ctrl.T.Helper()

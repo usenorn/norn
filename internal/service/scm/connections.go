@@ -613,3 +613,38 @@ func (s *connections) retireIntegrationAccount(ctx context.Context, accountID uu
 func logWarn(ctx context.Context, message string, id uuid.UUID, err error) {
 	logging.From(ctx).WarnContext(ctx, message, "id", id.String(), "error", err.Error())
 }
+
+func (s *connections) AvailableRepositories(
+	ctx context.Context,
+	workspaceID, connectionID uuid.UUID,
+) ([]entity.SCMRemoteRepository, error) {
+	if _, err := s.administers(ctx, workspaceID); err != nil {
+		return nil, err
+	}
+
+	connection, err := s.connections.GetByID(ctx, workspaceID, connectionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !connection.UsesApp() {
+		return nil, entity.ErrSCMAppUnsupported
+	}
+
+	forgeApp, err := s.forges.App(connection.Provider)
+	if err != nil {
+		return nil, err
+	}
+
+	registered, err := s.apps.Get(ctx, connection.Provider, connection.BaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := s.credentials.token(ctx, connection)
+	if err != nil {
+		return nil, err
+	}
+
+	return forgeApp.InstallationRepositories(ctx, registered, token)
+}

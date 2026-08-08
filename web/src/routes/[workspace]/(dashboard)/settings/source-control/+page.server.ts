@@ -1,15 +1,23 @@
-import type { SourceControlView } from "$lib/source-control/source-control";
+import {
+	appNoticeFrom,
+	type SourceControlAppNotice,
+	type SourceControlAppState,
+	type SourceControlView,
+} from "$lib/source-control/source-control";
 import { keys } from "$lib/api/keys";
 import type { PageServerLoad } from "./$types";
 
 export type SourceControlPageData = {
 	view: SourceControlView;
+	application: SourceControlAppState;
+	notice?: SourceControlAppNotice;
 	teams: { id: string; key: string; name: string }[];
 };
 
 export const load: PageServerLoad = async ({
 	depends,
 	route,
+	url,
 	locals,
 	parent,
 }): Promise<SourceControlPageData> => {
@@ -17,7 +25,9 @@ export const load: PageServerLoad = async ({
 
 	const { workspace } = await parent();
 
-	const [listing, repositories, teams] = await Promise.all([
+	const handle = url.searchParams.get("installations") ?? "";
+
+	const [listing, repositories, teams, application, installations] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/source-control/connections", {
 			params: { path: { workspaceId: workspace.id } },
 		}),
@@ -27,6 +37,14 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/teams", {
 			params: { path: { workspaceId: workspace.id } },
 		}),
+		locals.api.GET("/workspaces/{workspaceId}/source-control/application", {
+			params: { path: { workspaceId: workspace.id } },
+		}),
+		handle
+			? locals.api.GET("/workspaces/{workspaceId}/source-control/application/installations", {
+					params: { path: { workspaceId: workspace.id }, query: { handle } },
+				})
+			: Promise.resolve(undefined),
 	]);
 
 	const reachable = (teams.data ?? []).map((team) => ({
@@ -35,17 +53,41 @@ export const load: PageServerLoad = async ({
 		name: team.name,
 	}));
 
+	const held = application.data;
+
+	let app: SourceControlAppState = { kind: "unsupported" };
+
+	if (held?.registered) {
+		app = {
+			kind: "registered",
+			slug: held.slug ?? "",
+			installUrl: held.installUrl ?? "",
+		};
+	} else if (held) {
+		app = { kind: "unregistered", canRegister: held.canRegister };
+	}
+
+	if (installations?.data && installations.data.length > 0) {
+		app = { kind: "choosing", handle, installations: installations.data };
+	}
+
+	const notice: SourceControlAppNotice | undefined = url.searchParams.has("registered")
+		? { kind: "registered" }
+		: appNoticeFrom(url.searchParams.get("failed"));
+
+	const common = { application: app, notice, teams: reachable };
+
 	if (listing.error) {
-		if (listing.response.status === 403) return { view: { kind: "forbidden" }, teams: reachable };
+		if (listing.response.status === 403) return { view: { kind: "forbidden" }, ...common };
 		if (listing.response.status === 503) {
-			return { view: { kind: "sealing_unavailable" }, teams: reachable };
+			return { view: { kind: "sealing_unavailable" }, ...common };
 		}
 
-		return { view: { kind: "unavailable" }, teams: reachable };
+		return { view: { kind: "unavailable" }, ...common };
 	}
 
 	if (!listing.data || listing.data.length === 0) {
-		return { view: { kind: "empty" }, teams: reachable };
+		return { view: { kind: "empty" }, ...common };
 	}
 
 	return {
@@ -54,6 +96,6 @@ export const load: PageServerLoad = async ({
 			connections: listing.data,
 			repositories: repositories.data ?? [],
 		},
-		teams: reachable,
+		...common,
 	};
 };

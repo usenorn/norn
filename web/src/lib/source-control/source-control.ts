@@ -24,6 +24,12 @@ export type MirrorDirection = components["schemas"]["MirrorDirection"];
 export type SCMIdentity = components["schemas"]["SCMIdentity"];
 export type MirrorConflict = components["schemas"]["MirrorConflict"];
 export type SourceControlCapability = components["schemas"]["SourceControlCapability"];
+export type SourceControlApplication = components["schemas"]["SourceControlApplication"];
+export type SourceControlAppRegistration =
+	components["schemas"]["SourceControlAppRegistration"];
+export type SourceControlInstallation = components["schemas"]["SourceControlInstallation"];
+export type AvailableSourceControlRepository =
+	components["schemas"]["AvailableSourceControlRepository"];
 export type IssueShipping = components["schemas"]["IssueShipping"];
 export type SCMRelease = components["schemas"]["SCMRelease"];
 export type SCMDeployment = components["schemas"]["SCMDeployment"];
@@ -76,6 +82,46 @@ export type MintedRepository = {
 	webhookUrl: string;
 	webhookSecret: string;
 };
+
+export type SourceControlAppState =
+	| { kind: "unsupported" }
+	| { kind: "unregistered"; canRegister: boolean }
+	| { kind: "registered"; slug: string; installUrl: string }
+	| { kind: "choosing"; handle: string; installations: SourceControlInstallation[] };
+
+export type SourceControlAppNotice =
+	| { kind: "registered" }
+	| { kind: "expired" }
+	| { kind: "refused" }
+	| { kind: "unregistered" }
+	| { kind: "unavailable" };
+
+export function appNoticeMessage(notice: SourceControlAppNotice): string {
+	switch (notice.kind) {
+		case "registered":
+			return "The application is registered. Install it on the repositories you want Norn to watch, then sign in to choose the installation.";
+		case "expired":
+			return "That took too long, or it had already been used. Start again.";
+		case "refused":
+			return "GitHub refused the exchange. Nothing was stored — start again.";
+		case "unregistered":
+			return "No application is registered on this instance yet.";
+		case "unavailable":
+			return "GitHub could not be reached. Nothing was changed.";
+	}
+}
+
+export function appNoticeFrom(value: string | null): SourceControlAppNotice | undefined {
+	switch (value) {
+		case "expired":
+		case "refused":
+		case "unregistered":
+		case "unavailable":
+			return { kind: value };
+		default:
+			return undefined;
+	}
+}
 
 export type SourceControlFailure =
 	| { kind: "credentials_rejected" }

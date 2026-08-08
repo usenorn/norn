@@ -1,5 +1,7 @@
 import type {
 	MintedRepository,
+	SourceControlAppNotice,
+	SourceControlAppState,
 	SourceControlDetailView,
 	SourceControlFailure,
 	SourceControlView,
@@ -9,6 +11,8 @@ export type SourceControlPreview = {
 	view?: SourceControlView;
 	failure?: SourceControlFailure;
 	minted?: MintedRepository;
+	application?: SourceControlAppState;
+	notice?: SourceControlAppNotice;
 };
 
 export type SourceControlDetailPreview = {
@@ -21,6 +25,48 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 	? {
 			loading: { view: { kind: "loading" } },
 			empty: { view: { kind: "empty" } },
+			app_unregistered: {
+				view: { kind: "empty" },
+				application: { kind: "unregistered", canRegister: true },
+			},
+			app_unavailable: {
+				view: { kind: "empty" },
+				application: { kind: "unregistered", canRegister: false },
+			},
+			app_registered: {
+				view: { kind: "empty" },
+				application: {
+					kind: "registered",
+					slug: "norn-northwind",
+					installUrl: "https://github.com/apps/norn-northwind/installations/new",
+				},
+				notice: { kind: "registered" },
+			},
+			app_choosing: {
+				view: { kind: "empty" },
+				application: {
+					kind: "choosing",
+					handle: "preview-handle",
+					installations: [
+						{ externalId: "884411", accountLogin: "flagroll", accountKind: "organization" },
+						{ externalId: "884412", accountLogin: "rae", accountKind: "user" },
+					],
+				},
+			},
+			app_expired: {
+				view: { kind: "empty" },
+				application: {
+					kind: "registered",
+					slug: "norn-northwind",
+					installUrl: "https://github.com/apps/norn-northwind/installations/new",
+				},
+				notice: { kind: "expired" },
+			},
+			app_refused: {
+				view: { kind: "empty" },
+				application: { kind: "unregistered", canRegister: true },
+				notice: { kind: "refused" },
+			},
 			list: {
 				view: {
 					kind: "list",
@@ -29,7 +75,7 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 							id: "00000000-0000-4000-8000-0000000000a1",
 							provider: "github",
 							label: "northwind-bot",
-							authKind: 'token',
+							authKind: "token",
 							tokenSet: true,
 							tokenHint: "9f2c",
 							identityLogin: "northwind-bot",
@@ -44,7 +90,7 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 							provider: "gitlab",
 							baseUrl: "https://gitlab.northwind.example",
 							label: "platform deploy key",
-							authKind: 'token',
+							authKind: "token",
 							tokenSet: true,
 							tokenHint: "31bd",
 							repositoryCount: 1,
@@ -92,7 +138,7 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 							provider: "gitea",
 							baseUrl: "https://git.internal.northwind.example",
 							label: "internal forge",
-							authKind: 'token',
+							authKind: "token",
 							tokenSet: true,
 							tokenHint: "4d1a",
 							identityLogin: "norn-bot",
@@ -140,7 +186,7 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 							id: "00000000-0000-4000-8000-0000000000a1",
 							provider: "github",
 							label: "northwind-bot",
-							authKind: 'token',
+							authKind: "token",
 							tokenSet: true,
 							tokenHint: "9f2c",
 							repositoryCount: 1,
@@ -174,7 +220,7 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 							id: "00000000-0000-4000-8000-0000000000a3",
 							provider: "github",
 							label: "northwind-bot",
-							authKind: 'token',
+							authKind: "token",
 							tokenSet: true,
 							tokenHint: "77ab",
 							repositoryCount: 1,
@@ -197,7 +243,7 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 							id: "00000000-0000-4000-8000-0000000000a1",
 							provider: "github",
 							label: "northwind-bot",
-							authKind: 'token',
+							authKind: "token",
 							tokenSet: true,
 							tokenHint: "9f2c",
 							repositoryCount: 1,

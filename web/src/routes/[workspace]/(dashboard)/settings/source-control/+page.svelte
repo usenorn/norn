@@ -13,6 +13,7 @@
 	import { Input } from "$lib/components/ui/input";
 	import { Textarea } from "$lib/components/ui/textarea";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import GithubAppPanel from "$lib/source-control/github-app-panel.svelte";
 	import {
 		brokenLabel,
 		connectionLabel,
@@ -24,6 +25,7 @@
 		sourceControlFailure,
 		sourceControlIdentitiesPath,
 		sourceControlRepositoryPath,
+		type AvailableSourceControlRepository,
 		type MintedRepository,
 		type SourceControlFailure,
 		type SourceControlView,
@@ -168,6 +170,44 @@
 
 	const shown = $derived(failure ?? preview?.failure);
 	const shownMinted = $derived(minted ?? preview?.minted);
+	const shownApplication = $derived(preview?.application ?? data.application);
+	const shownNotice = $derived(preview?.notice ?? data.notice);
+
+	const chosenConnection = $derived(
+		connections.find((connection) => connection.id === $repositoryFields.connectionId),
+	);
+
+	let offered = $state.raw<AvailableSourceControlRepository[]>([]);
+	let offering = $state(false);
+
+	$effect(() => {
+		const connection = chosenConnection;
+
+		if (!connection || connection.authKind !== "app") {
+			offered = [];
+
+			return;
+		}
+
+		let current = true;
+		offering = true;
+
+		api
+			.GET(
+				"/workspaces/{workspaceId}/source-control/connections/{connectionId}/available-repositories",
+				{ params: { path: { workspaceId: workspace.id, connectionId: connection.id } } },
+			)
+			.then(({ data: reachable }) => {
+				if (!current) return;
+
+				offered = reachable ?? [];
+				offering = false;
+			});
+
+		return () => {
+			current = false;
+		};
+	});
 </script>
 
 <svelte:head><title>Source control · {workspace.name} · Norn</title></svelte:head>
@@ -245,6 +285,13 @@
 				<Alert.Description>{failureDetail || failureMessage(shown)}</Alert.Description>
 			</Alert.Root>
 		{/if}
+
+		<GithubAppPanel
+			workspaceId={workspace.id}
+			workspaceSlug={workspace.slug}
+			application={shownApplication}
+			notice={shownNotice}
+		/>
 
 		<section class="flex flex-col gap-2 rounded-lg border border-line-subtle p-4">
 			<h2 class="text-md font-medium tracking-snug text-ink-900">Platform identities</h2>
@@ -344,6 +391,10 @@
 			class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4"
 		>
 			<h2 class="text-md font-medium tracking-snug text-ink-900">Hold a credential</h2>
+			<p class="text-sm leading-normal text-muted-foreground text-pretty">
+				GitLab and Gitea have no application to install, so they are reached with a token. GitHub
+				accepts one too, until an application is set up.
+			</p>
 
 			<Form.Field form={connectForm} name="provider">
 				<Form.Control>
@@ -455,9 +506,39 @@
 					<Form.Control>
 						{#snippet children({ props })}
 							<Form.Label>Repository</Form.Label>
-							<Input {...props} bind:value={$repositoryFields.fullName} placeholder="acme/api" />
+							{#if chosenConnection?.authKind === "app"}
+								<select
+									{...props}
+									bind:value={$repositoryFields.fullName}
+									disabled={offering || offered.length === 0}
+									class="h-9 rounded-md border border-line-subtle bg-transparent px-3 text-sm text-ink-900"
+								>
+									<option value="">
+										{#if offering}
+											Reading what the installation reaches…
+										{:else if offered.length === 0}
+											This installation was granted no repositories
+										{:else}
+											Choose a repository
+										{/if}
+									</option>
+									{#each offered as available (available.externalId)}
+										<option value={available.fullName}>{available.fullName}</option>
+									{/each}
+								</select>
+							{:else}
+								<Input {...props} bind:value={$repositoryFields.fullName} placeholder="acme/api" />
+							{/if}
 						{/snippet}
 					</Form.Control>
+					<Form.Description>
+						{#if chosenConnection?.authKind === "app"}
+							Only what you granted the installation is listed. Grant more on GitHub and it
+							appears here.
+						{:else}
+							Write it the way the platform does, as owner/name.
+						{/if}
+					</Form.Description>
 					<Form.FieldErrors />
 				</Form.Field>
 
