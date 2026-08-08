@@ -11,6 +11,7 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/forge"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	agentrepo "github.com/usenorn/norn/internal/repository/agent"
 	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
@@ -122,7 +123,9 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		h.issues,
 		h.activity,
 		h.memberships,
+		scmrepo.NewMockSCMApp(ctrl),
 		h.forges,
+		forge.NewCredentials(),
 		h.authorizer,
 		h.issueWriter,
 		h.comments,

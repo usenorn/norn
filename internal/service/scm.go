@@ -165,8 +165,17 @@ type Forge interface {
 	PostComment(ctx context.Context, target entity.SCMTarget, number int, body string) (ForgeComment, error)
 }
 
+type ForgeApp interface {
+	MintInstallationToken(
+		ctx context.Context,
+		app entity.SCMApp,
+		installationID string,
+	) (entity.SCMCredential, error)
+}
+
 type Forges interface {
 	Lookup(provider entity.SCMProvider) (Forge, error)
+	App(provider entity.SCMProvider) (ForgeApp, error)
 	Providers() []entity.SCMProvider
 }
 

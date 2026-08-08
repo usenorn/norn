@@ -128,10 +128,18 @@ type SCMConnection struct {
 	BrokenDetail         string
 	BrokenAt             *time.Time
 	VerifiedAt           *time.Time
+	AuthKind             SCMAuthKind
+	AppID                uuid.UUID
+	InstallationID       string
+	AccountLogin         string
 	Trust                SCMTrust
 	Capabilities         SCMCapabilitySet
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
+}
+
+func (c SCMConnection) UsesApp() bool {
+	return c.AuthKind == SCMAuthApp
 }
 
 func (c SCMConnection) Broken() bool {

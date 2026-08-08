@@ -10,6 +10,7 @@ import (
 
 type registry struct {
 	forges map[entity.SCMProvider]service.Forge
+	apps   map[entity.SCMProvider]service.ForgeApp
 }
 
 func NewForges(hub *github.Forge, lab *gitlab.Forge, tea *gitea.Forge) service.Forges {
@@ -19,7 +20,19 @@ func NewForges(hub *github.Forge, lab *gitlab.Forge, tea *gitea.Forge) service.F
 			lab.Provider(): lab,
 			tea.Provider(): tea,
 		},
+		apps: map[entity.SCMProvider]service.ForgeApp{
+			hub.Provider(): hub,
+		},
 	}
+}
+
+func (r *registry) App(provider entity.SCMProvider) (service.ForgeApp, error) {
+	app, known := r.apps[provider]
+	if !known {
+		return nil, entity.ErrSCMAppUnsupported
+	}
+
+	return app, nil
 }
 
 func (r *registry) Lookup(provider entity.SCMProvider) (service.Forge, error) {

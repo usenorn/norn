@@ -13,6 +13,7 @@ var Set = wire.NewSet(
 	NewSCMTeamSetting,
 	NewSCMIdentity,
 	NewMirrorConflict,
+	NewSCMApp,
 	NewSCMRelease,
 	NewSCMDeployment,
 )

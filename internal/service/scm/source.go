@@ -33,7 +33,7 @@ func (s *sync) sourceFor(ctx context.Context, repositoryID uuid.UUID) (source, e
 		return source{}, err
 	}
 
-	token, err := s.connections.Token(ctx, connection.ID)
+	token, err := s.credentials.token(ctx, connection)
 	if err != nil {
 		return source{}, err
 	}

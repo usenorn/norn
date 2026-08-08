@@ -14,6 +14,7 @@ import (
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/observability/logging"
+	"github.com/usenorn/norn/internal/pkg/forge"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
@@ -41,6 +42,7 @@ type sync struct {
 	activity     repository.Activity
 	memberships  repository.Membership
 	forges       service.Forges
+	credentials  *credentials
 	authorizer   service.Authorizer
 	issueWriter  service.Issues
 	comments     service.IssueComments
@@ -70,7 +72,9 @@ func NewSync(
 	issues repository.Issue,
 	activity repository.Activity,
 	memberships repository.Membership,
+	apps repository.SCMApp,
 	forges service.Forges,
+	cache *forge.Credentials,
 	authorizer service.Authorizer,
 	issueWriter service.Issues,
 	comments service.IssueComments,
@@ -80,6 +84,7 @@ func NewSync(
 	app config.App,
 ) service.SourceControlSync {
 	return &sync{
+		credentials:  newCredentials(connections, apps, forges, cache),
 		connections:  connections,
 		repositories: repositories,
 		routes:       routes,

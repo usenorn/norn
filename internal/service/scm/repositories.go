@@ -89,7 +89,7 @@ func (s *connections) AddRepository(
 		return service.ConnectedRepository{}, err
 	}
 
-	token, err := s.connections.Token(ctx, connection.ID)
+	token, err := s.credentials.token(ctx, connection)
 	if err != nil {
 		return service.ConnectedRepository{}, err
 	}
@@ -303,7 +303,7 @@ func (s *connections) removeHook(
 	connection entity.SCMConnection,
 	stored entity.SCMRepository,
 ) {
-	token, err := s.connections.Token(ctx, connection.ID)
+	token, err := s.credentials.token(ctx, connection)
 	if err != nil {
 		logWarn(ctx, "reading the token to remove a hook failed", stored.ID, err)
 

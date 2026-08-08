@@ -10,6 +10,7 @@ import (
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/observability/logging"
+	"github.com/usenorn/norn/internal/pkg/forge"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 )
@@ -34,6 +35,7 @@ type connections struct {
 	issues       repository.Issue
 	activity     repository.Activity
 	forges       service.Forges
+	credentials  *credentials
 	authorizer   service.Authorizer
 	audit        service.Audit
 	transactor   repository.Transactor
@@ -59,13 +61,16 @@ func NewConnections(
 	accounts repository.Account,
 	issues repository.Issue,
 	activity repository.Activity,
+	apps repository.SCMApp,
 	forges service.Forges,
+	cache *forge.Credentials,
 	authorizer service.Authorizer,
 	audit service.Audit,
 	transactor repository.Transactor,
 	app config.App,
 ) service.SourceControl {
 	return &connections{
+		credentials:  newCredentials(connectionRepository, apps, forges, cache),
 		connections:  connectionRepository,
 		repositories: repositories,
 		routes:       routes,
@@ -361,7 +366,7 @@ func (s *connections) VerifyConnection(
 		return entity.SCMConnection{}, err
 	}
 
-	token, err := s.connections.Token(ctx, connectionID)
+	token, err := s.credentials.token(ctx, connection)
 	if err != nil {
 		return entity.SCMConnection{}, err
 	}
