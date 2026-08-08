@@ -847,6 +847,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrSCMAppExists):
 		return sourceControlConflict(api.SourceControlAlreadyConnected, err), true
 
+	case errors.Is(err, entity.ErrSCMAppTokenUnsupported):
+		return sourceControlRefused(api.SourceControlProviderUnsupported, err), true
+
 	case errors.Is(err, entity.ErrSCMAppRefused),
 		errors.Is(err, entity.ErrSCMAppTokenUnavailable),
 		errors.Is(err, entity.ErrSCMPrivateKeyInvalid):

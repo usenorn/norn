@@ -2,6 +2,7 @@ package scm
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,6 +27,61 @@ func newCredentials(
 	cache *forge.Credentials,
 ) *credentials {
 	return &credentials{connections: connections, apps: apps, forges: forges, cache: cache}
+}
+
+func (c *credentials) application(
+	ctx context.Context,
+	provider entity.SCMProvider,
+	baseURL string,
+) (entity.SCMApp, error) {
+	endpoint := strings.TrimSpace(baseURL)
+
+	if endpoint == "" {
+		forge, err := c.forges.Lookup(provider)
+		if err != nil {
+			return entity.SCMApp{}, err
+		}
+
+		endpoint = forge.Endpoint()
+	}
+
+	return c.apps.Get(ctx, provider, endpoint)
+}
+
+func (c *credentials) identify(
+	ctx context.Context,
+	target entity.SCMTarget,
+	kind entity.SCMAuthKind,
+	accountLogin string,
+) (string, error) {
+	forge, err := c.forges.Lookup(target.Provider)
+	if err != nil {
+		return "", err
+	}
+
+	if kind != entity.SCMAuthApp {
+		return forge.Identity(ctx, target)
+	}
+
+	registered, err := c.application(ctx, target.Provider, target.BaseURL)
+	if err != nil {
+		return "", err
+	}
+
+	forgeApp, err := c.forges.App(target.Provider)
+	if err != nil {
+		return "", err
+	}
+
+	if _, err := forgeApp.InstallationRepositories(ctx, registered, target.Token); err != nil {
+		return "", err
+	}
+
+	if registered.Slug != "" {
+		return registered.Slug + entity.SCMAppLoginSuffix, nil
+	}
+
+	return accountLogin, nil
 }
 
 func (c *credentials) token(

@@ -226,10 +226,20 @@
 						<dd class="text-ink-900">{view.connection.identityLogin}</dd>
 					</div>
 				{/if}
-				<div class="flex flex-col gap-0.5">
-					<dt class="text-muted-foreground">Token</dt>
-					<dd class="text-ink-900">Ending {view.connection.tokenHint}</dd>
-				</div>
+				{#if view.connection.authKind === "app"}
+					<div class="flex flex-col gap-0.5">
+						<dt class="text-muted-foreground">Credential</dt>
+						<dd class="text-ink-900">
+							An installation on {view.connection.accountLogin ?? "the platform"}. Norn mints a
+							short-lived token as it works; nobody's personal token is held.
+						</dd>
+					</div>
+				{:else}
+					<div class="flex flex-col gap-0.5">
+						<dt class="text-muted-foreground">Token</dt>
+						<dd class="text-ink-900">Ending {view.connection.tokenHint}</dd>
+					</div>
+				{/if}
 				{#if view.connection.baseUrl}
 					<div class="flex flex-col gap-0.5">
 						<dt class="text-muted-foreground">Address</dt>
@@ -305,6 +315,15 @@
 			{/if}
 		</section>
 
+		{#if view.connection.authKind === "app"}
+			<section class="flex flex-col gap-2 rounded-lg border border-line-subtle p-4">
+				<h2 class="text-md font-medium tracking-snug text-ink-900">Change what this reaches</h2>
+				<p class="text-sm leading-normal text-muted-foreground text-pretty">
+					There is no token to replace. Widen or narrow what Norn sees by changing the
+					repositories the installation is granted, on the platform.
+				</p>
+			</section>
+		{:else}
 		<form
 			method="POST"
 			use:tokenEnhance
@@ -331,12 +350,13 @@
 				</Button>
 			</div>
 		</form>
+		{/if}
 
 		<section class="flex flex-col gap-3 rounded-lg border border-destructive/40 p-4">
 			<h2 class="text-md font-medium tracking-snug text-ink-900">Stop using this credential</h2>
 			<p class="text-sm leading-normal text-muted-foreground text-pretty">
 				Every repository under it is disconnected and its webhook removed. Links and mirrors
-				already on issues stay exactly as readable; the stored token is destroyed.
+				already on issues stay exactly as readable.
 			</p>
 
 			{#if confirmingDisconnect}
