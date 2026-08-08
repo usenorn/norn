@@ -356,6 +356,45 @@ func (mr *MockForgeMockRecorder) Verify(secret, header, body any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Verify", reflect.TypeOf((*MockForge)(nil).Verify), secret, header, body)
 }
 
+// MockForgeApp is a mock of ForgeApp interface.
+type MockForgeApp struct {
+	ctrl     *gomock.Controller
+	recorder *MockForgeAppMockRecorder
+	isgomock struct{}
+}
+
+// MockForgeAppMockRecorder is the mock recorder for MockForgeApp.
+type MockForgeAppMockRecorder struct {
+	mock *MockForgeApp
+}
+
+// NewMockForgeApp creates a new mock instance.
+func NewMockForgeApp(ctrl *gomock.Controller) *MockForgeApp {
+	mock := &MockForgeApp{ctrl: ctrl}
+	mock.recorder = &MockForgeAppMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockForgeApp) EXPECT() *MockForgeAppMockRecorder {
+	return m.recorder
+}
+
+// MintInstallationToken mocks base method.
+func (m *MockForgeApp) MintInstallationToken(ctx context.Context, app entity.SCMApp, installationID string) (entity.SCMCredential, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MintInstallationToken", ctx, app, installationID)
+	ret0, _ := ret[0].(entity.SCMCredential)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MintInstallationToken indicates an expected call of MintInstallationToken.
+func (mr *MockForgeAppMockRecorder) MintInstallationToken(ctx, app, installationID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MintInstallationToken", reflect.TypeOf((*MockForgeApp)(nil).MintInstallationToken), ctx, app, installationID)
+}
+
 // MockForges is a mock of Forges interface.
 type MockForges struct {
 	ctrl     *gomock.Controller
@@ -378,6 +417,21 @@ func NewMockForges(ctrl *gomock.Controller) *MockForges {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockForges) EXPECT() *MockForgesMockRecorder {
 	return m.recorder
+}
+
+// App mocks base method.
+func (m *MockForges) App(provider entity.SCMProvider) (service.ForgeApp, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "App", provider)
+	ret0, _ := ret[0].(service.ForgeApp)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// App indicates an expected call of App.
+func (mr *MockForgesMockRecorder) App(provider any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "App", reflect.TypeOf((*MockForges)(nil).App), provider)
 }
 
 // Lookup mocks base method.

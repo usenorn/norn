@@ -391,7 +391,7 @@ func (s *connections) Mirror(
 		}
 	}
 
-	token, err := s.connections.Token(ctx, connection.ID)
+	token, err := s.credentials.token(ctx, connection)
 	if err != nil {
 		return entity.IssueMirror{}, err
 	}

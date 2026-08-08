@@ -24,27 +24,27 @@ import (
 
 // WorkspaceSCMRepository is an object representing the database table.
 type WorkspaceSCMRepository struct {
-	ID                  string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ConnectionID        string    `boil:"connection_id" json:"connection_id" toml:"connection_id" yaml:"connection_id"`
-	WorkspaceID         string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	Provider            string    `boil:"provider" json:"provider" toml:"provider" yaml:"provider"`
-	FullName            string    `boil:"full_name" json:"full_name" toml:"full_name" yaml:"full_name"`
-	ExternalID          string    `boil:"external_id" json:"external_id" toml:"external_id" yaml:"external_id"`
-	DefaultBranch       string    `boil:"default_branch" json:"default_branch" toml:"default_branch" yaml:"default_branch"`
-	URL                 string    `boil:"url" json:"url" toml:"url" yaml:"url"`
-	WebhookSecretSealed []byte    `boil:"webhook_secret_sealed" json:"webhook_secret_sealed" toml:"webhook_secret_sealed" yaml:"webhook_secret_sealed"`
-	ExternalHookID      string    `boil:"external_hook_id" json:"external_hook_id" toml:"external_hook_id" yaml:"external_hook_id"`
-	MirrorLabel         string    `boil:"mirror_label" json:"mirror_label" toml:"mirror_label" yaml:"mirror_label"`
-	PollInterval        string    `boil:"poll_interval" json:"poll_interval" toml:"poll_interval" yaml:"poll_interval"`
-	ReconcileCursor     string    `boil:"reconcile_cursor" json:"reconcile_cursor" toml:"reconcile_cursor" yaml:"reconcile_cursor"`
-	ReconciledAt        null.Time `boil:"reconciled_at" json:"reconciled_at,omitempty" toml:"reconciled_at" yaml:"reconciled_at,omitempty"`
-	ReconcileAfter      null.Time `boil:"reconcile_after" json:"reconcile_after,omitempty" toml:"reconcile_after" yaml:"reconcile_after,omitempty"`
-	LastSeenAt          null.Time `boil:"last_seen_at" json:"last_seen_at,omitempty" toml:"last_seen_at" yaml:"last_seen_at,omitempty"`
-	CreatedAt           time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt           time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	SyncDirection       string    `boil:"sync_direction" json:"sync_direction" toml:"sync_direction" yaml:"sync_direction"`
-	WebhooksDisabled    bool      `boil:"webhooks_disabled" json:"webhooks_disabled" toml:"webhooks_disabled" yaml:"webhooks_disabled"`
-	BackfilledAt        null.Time `boil:"backfilled_at" json:"backfilled_at,omitempty" toml:"backfilled_at" yaml:"backfilled_at,omitempty"`
+	ID                  string     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ConnectionID        string     `boil:"connection_id" json:"connection_id" toml:"connection_id" yaml:"connection_id"`
+	WorkspaceID         string     `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	Provider            string     `boil:"provider" json:"provider" toml:"provider" yaml:"provider"`
+	FullName            string     `boil:"full_name" json:"full_name" toml:"full_name" yaml:"full_name"`
+	ExternalID          string     `boil:"external_id" json:"external_id" toml:"external_id" yaml:"external_id"`
+	DefaultBranch       string     `boil:"default_branch" json:"default_branch" toml:"default_branch" yaml:"default_branch"`
+	URL                 string     `boil:"url" json:"url" toml:"url" yaml:"url"`
+	WebhookSecretSealed null.Bytes `boil:"webhook_secret_sealed" json:"webhook_secret_sealed,omitempty" toml:"webhook_secret_sealed" yaml:"webhook_secret_sealed,omitempty"`
+	ExternalHookID      string     `boil:"external_hook_id" json:"external_hook_id" toml:"external_hook_id" yaml:"external_hook_id"`
+	MirrorLabel         string     `boil:"mirror_label" json:"mirror_label" toml:"mirror_label" yaml:"mirror_label"`
+	PollInterval        string     `boil:"poll_interval" json:"poll_interval" toml:"poll_interval" yaml:"poll_interval"`
+	ReconcileCursor     string     `boil:"reconcile_cursor" json:"reconcile_cursor" toml:"reconcile_cursor" yaml:"reconcile_cursor"`
+	ReconciledAt        null.Time  `boil:"reconciled_at" json:"reconciled_at,omitempty" toml:"reconciled_at" yaml:"reconciled_at,omitempty"`
+	ReconcileAfter      null.Time  `boil:"reconcile_after" json:"reconcile_after,omitempty" toml:"reconcile_after" yaml:"reconcile_after,omitempty"`
+	LastSeenAt          null.Time  `boil:"last_seen_at" json:"last_seen_at,omitempty" toml:"last_seen_at" yaml:"last_seen_at,omitempty"`
+	CreatedAt           time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt           time.Time  `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	SyncDirection       string     `boil:"sync_direction" json:"sync_direction" toml:"sync_direction" yaml:"sync_direction"`
+	WebhooksDisabled    bool       `boil:"webhooks_disabled" json:"webhooks_disabled" toml:"webhooks_disabled" yaml:"webhooks_disabled"`
+	BackfilledAt        null.Time  `boil:"backfilled_at" json:"backfilled_at,omitempty" toml:"backfilled_at" yaml:"backfilled_at,omitempty"`
 
 	R *workspaceSCMRepositoryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSCMRepositoryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -153,7 +153,7 @@ var WorkspaceSCMRepositoryWhere = struct {
 	ExternalID          whereHelperstring
 	DefaultBranch       whereHelperstring
 	URL                 whereHelperstring
-	WebhookSecretSealed whereHelper__byte
+	WebhookSecretSealed whereHelpernull_Bytes
 	ExternalHookID      whereHelperstring
 	MirrorLabel         whereHelperstring
 	PollInterval        whereHelperstring
@@ -175,7 +175,7 @@ var WorkspaceSCMRepositoryWhere = struct {
 	ExternalID:          whereHelperstring{field: "\"workspace_scm_repositories\".\"external_id\""},
 	DefaultBranch:       whereHelperstring{field: "\"workspace_scm_repositories\".\"default_branch\""},
 	URL:                 whereHelperstring{field: "\"workspace_scm_repositories\".\"url\""},
-	WebhookSecretSealed: whereHelper__byte{field: "\"workspace_scm_repositories\".\"webhook_secret_sealed\""},
+	WebhookSecretSealed: whereHelpernull_Bytes{field: "\"workspace_scm_repositories\".\"webhook_secret_sealed\""},
 	ExternalHookID:      whereHelperstring{field: "\"workspace_scm_repositories\".\"external_hook_id\""},
 	MirrorLabel:         whereHelperstring{field: "\"workspace_scm_repositories\".\"mirror_label\""},
 	PollInterval:        whereHelperstring{field: "\"workspace_scm_repositories\".\"poll_interval\""},
@@ -361,8 +361,8 @@ type workspaceSCMRepositoryL struct{}
 
 var (
 	workspaceSCMRepositoryAllColumns            = []string{"id", "connection_id", "workspace_id", "provider", "full_name", "external_id", "default_branch", "url", "webhook_secret_sealed", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled", "backfilled_at"}
-	workspaceSCMRepositoryColumnsWithoutDefault = []string{"connection_id", "workspace_id", "provider", "full_name", "webhook_secret_sealed"}
-	workspaceSCMRepositoryColumnsWithDefault    = []string{"id", "external_id", "default_branch", "url", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled", "backfilled_at"}
+	workspaceSCMRepositoryColumnsWithoutDefault = []string{"connection_id", "workspace_id", "provider", "full_name"}
+	workspaceSCMRepositoryColumnsWithDefault    = []string{"id", "external_id", "default_branch", "url", "webhook_secret_sealed", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled", "backfilled_at"}
 	workspaceSCMRepositoryPrimaryKeyColumns     = []string{"id"}
 	workspaceSCMRepositoryGeneratedColumns      = []string{}
 )

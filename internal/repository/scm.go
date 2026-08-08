@@ -9,7 +9,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-//go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=SCMRelease=MockSCMRelease,SCMDeployment=MockSCMDeployment,SCMIdentity=MockSCMIdentity,MirrorConflict=MockMirrorConflict,SCMTeamSetting=MockSCMTeamSetting,SCMConnection=MockSCMConnection,SCMRepository=MockSCMRepository,SCMRoute=MockSCMRoute,SCMDelivery=MockSCMDelivery,CodeLink=MockCodeLink,IssueMirror=MockIssueMirror,SCMTransitionRule=MockSCMTransitionRule
+//go:generate go tool mockgen -source=scm.go -destination=scm/mock_scm.go -package=scm -mock_names=SCMApp=MockSCMApp,SCMRelease=MockSCMRelease,SCMDeployment=MockSCMDeployment,SCMIdentity=MockSCMIdentity,MirrorConflict=MockMirrorConflict,SCMTeamSetting=MockSCMTeamSetting,SCMConnection=MockSCMConnection,SCMRepository=MockSCMRepository,SCMRoute=MockSCMRoute,SCMDelivery=MockSCMDelivery,CodeLink=MockCodeLink,IssueMirror=MockIssueMirror,SCMTransitionRule=MockSCMTransitionRule
 
 type SCMConnectionInput struct {
 	Connection entity.SCMConnection
@@ -87,6 +87,21 @@ type CodeLink interface {
 	SetChecks(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repositoryName, externalID string, checks entity.CodeChecks) (int, error)
 	ReplaceReviewers(ctx context.Context, linkID uuid.UUID, reviewers entity.CodeReviewers) error
 	ListReviewers(ctx context.Context, linkIDs []uuid.UUID) (map[uuid.UUID]entity.CodeReviewers, error)
+}
+
+type SCMAppInput struct {
+	App           entity.SCMApp
+	PrivateKey    string
+	WebhookSecret string
+	ClientSecret  string
+}
+
+type SCMApp interface {
+	Upsert(ctx context.Context, input SCMAppInput) (entity.SCMApp, error)
+	Get(ctx context.Context, provider entity.SCMProvider, baseURL string) (entity.SCMApp, error)
+	GetByID(ctx context.Context, appID uuid.UUID) (entity.SCMApp, error)
+	Secrets(ctx context.Context, appID uuid.UUID) (entity.SCMApp, error)
+	List(ctx context.Context) ([]entity.SCMApp, error)
 }
 
 type SCMRelease interface {

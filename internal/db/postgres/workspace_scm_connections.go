@@ -30,7 +30,7 @@ type WorkspaceSCMConnection struct {
 	Provider             string            `boil:"provider" json:"provider" toml:"provider" yaml:"provider"`
 	BaseURL              string            `boil:"base_url" json:"base_url" toml:"base_url" yaml:"base_url"`
 	Label                string            `boil:"label" json:"label" toml:"label" yaml:"label"`
-	TokenSealed          []byte            `boil:"token_sealed" json:"token_sealed" toml:"token_sealed" yaml:"token_sealed"`
+	TokenSealed          null.Bytes        `boil:"token_sealed" json:"token_sealed,omitempty" toml:"token_sealed" yaml:"token_sealed,omitempty"`
 	TokenHint            string            `boil:"token_hint" json:"token_hint" toml:"token_hint" yaml:"token_hint"`
 	IdentityLogin        string            `boil:"identity_login" json:"identity_login" toml:"identity_login" yaml:"identity_login"`
 	IntegrationAccountID string            `boil:"integration_account_id" json:"integration_account_id" toml:"integration_account_id" yaml:"integration_account_id"`
@@ -47,6 +47,10 @@ type WorkspaceSCMConnection struct {
 	AllowPrivateAddress  bool              `boil:"allow_private_address" json:"allow_private_address" toml:"allow_private_address" yaml:"allow_private_address"`
 	CaCertificate        string            `boil:"ca_certificate" json:"ca_certificate" toml:"ca_certificate" yaml:"ca_certificate"`
 	Capabilities         types.StringArray `boil:"capabilities" json:"capabilities" toml:"capabilities" yaml:"capabilities"`
+	AuthKind             string            `boil:"auth_kind" json:"auth_kind" toml:"auth_kind" yaml:"auth_kind"`
+	AppID                null.String       `boil:"app_id" json:"app_id,omitempty" toml:"app_id" yaml:"app_id,omitempty"`
+	InstallationID       string            `boil:"installation_id" json:"installation_id" toml:"installation_id" yaml:"installation_id"`
+	AccountLogin         string            `boil:"account_login" json:"account_login" toml:"account_login" yaml:"account_login"`
 
 	R *workspaceSCMConnectionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSCMConnectionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -75,6 +79,10 @@ var WorkspaceSCMConnectionColumns = struct {
 	AllowPrivateAddress  string
 	CaCertificate        string
 	Capabilities         string
+	AuthKind             string
+	AppID                string
+	InstallationID       string
+	AccountLogin         string
 }{
 	ID:                   "id",
 	WorkspaceID:          "workspace_id",
@@ -98,6 +106,10 @@ var WorkspaceSCMConnectionColumns = struct {
 	AllowPrivateAddress:  "allow_private_address",
 	CaCertificate:        "ca_certificate",
 	Capabilities:         "capabilities",
+	AuthKind:             "auth_kind",
+	AppID:                "app_id",
+	InstallationID:       "installation_id",
+	AccountLogin:         "account_login",
 }
 
 var WorkspaceSCMConnectionTableColumns = struct {
@@ -123,6 +135,10 @@ var WorkspaceSCMConnectionTableColumns = struct {
 	AllowPrivateAddress  string
 	CaCertificate        string
 	Capabilities         string
+	AuthKind             string
+	AppID                string
+	InstallationID       string
+	AccountLogin         string
 }{
 	ID:                   "workspace_scm_connections.id",
 	WorkspaceID:          "workspace_scm_connections.workspace_id",
@@ -146,6 +162,10 @@ var WorkspaceSCMConnectionTableColumns = struct {
 	AllowPrivateAddress:  "workspace_scm_connections.allow_private_address",
 	CaCertificate:        "workspace_scm_connections.ca_certificate",
 	Capabilities:         "workspace_scm_connections.capabilities",
+	AuthKind:             "workspace_scm_connections.auth_kind",
+	AppID:                "workspace_scm_connections.app_id",
+	InstallationID:       "workspace_scm_connections.installation_id",
+	AccountLogin:         "workspace_scm_connections.account_login",
 }
 
 // Generated where
@@ -156,7 +176,7 @@ var WorkspaceSCMConnectionWhere = struct {
 	Provider             whereHelperstring
 	BaseURL              whereHelperstring
 	Label                whereHelperstring
-	TokenSealed          whereHelper__byte
+	TokenSealed          whereHelpernull_Bytes
 	TokenHint            whereHelperstring
 	IdentityLogin        whereHelperstring
 	IntegrationAccountID whereHelperstring
@@ -173,13 +193,17 @@ var WorkspaceSCMConnectionWhere = struct {
 	AllowPrivateAddress  whereHelperbool
 	CaCertificate        whereHelperstring
 	Capabilities         whereHelpertypes_StringArray
+	AuthKind             whereHelperstring
+	AppID                whereHelpernull_String
+	InstallationID       whereHelperstring
+	AccountLogin         whereHelperstring
 }{
 	ID:                   whereHelperstring{field: "\"workspace_scm_connections\".\"id\""},
 	WorkspaceID:          whereHelperstring{field: "\"workspace_scm_connections\".\"workspace_id\""},
 	Provider:             whereHelperstring{field: "\"workspace_scm_connections\".\"provider\""},
 	BaseURL:              whereHelperstring{field: "\"workspace_scm_connections\".\"base_url\""},
 	Label:                whereHelperstring{field: "\"workspace_scm_connections\".\"label\""},
-	TokenSealed:          whereHelper__byte{field: "\"workspace_scm_connections\".\"token_sealed\""},
+	TokenSealed:          whereHelpernull_Bytes{field: "\"workspace_scm_connections\".\"token_sealed\""},
 	TokenHint:            whereHelperstring{field: "\"workspace_scm_connections\".\"token_hint\""},
 	IdentityLogin:        whereHelperstring{field: "\"workspace_scm_connections\".\"identity_login\""},
 	IntegrationAccountID: whereHelperstring{field: "\"workspace_scm_connections\".\"integration_account_id\""},
@@ -196,15 +220,21 @@ var WorkspaceSCMConnectionWhere = struct {
 	AllowPrivateAddress:  whereHelperbool{field: "\"workspace_scm_connections\".\"allow_private_address\""},
 	CaCertificate:        whereHelperstring{field: "\"workspace_scm_connections\".\"ca_certificate\""},
 	Capabilities:         whereHelpertypes_StringArray{field: "\"workspace_scm_connections\".\"capabilities\""},
+	AuthKind:             whereHelperstring{field: "\"workspace_scm_connections\".\"auth_kind\""},
+	AppID:                whereHelpernull_String{field: "\"workspace_scm_connections\".\"app_id\""},
+	InstallationID:       whereHelperstring{field: "\"workspace_scm_connections\".\"installation_id\""},
+	AccountLogin:         whereHelperstring{field: "\"workspace_scm_connections\".\"account_login\""},
 }
 
 // WorkspaceSCMConnectionRels is where relationship names are stored.
 var WorkspaceSCMConnectionRels = struct {
+	App                                string
 	IntegrationAccount                 string
 	OwnerAccount                       string
 	Workspace                          string
 	ConnectionWorkspaceSCMRepositories string
 }{
+	App:                                "App",
 	IntegrationAccount:                 "IntegrationAccount",
 	OwnerAccount:                       "OwnerAccount",
 	Workspace:                          "Workspace",
@@ -213,6 +243,7 @@ var WorkspaceSCMConnectionRels = struct {
 
 // workspaceSCMConnectionR is where relationships are stored.
 type workspaceSCMConnectionR struct {
+	App                                *SCMApp                     `boil:"App" json:"App" toml:"App" yaml:"App"`
 	IntegrationAccount                 *Account                    `boil:"IntegrationAccount" json:"IntegrationAccount" toml:"IntegrationAccount" yaml:"IntegrationAccount"`
 	OwnerAccount                       *Account                    `boil:"OwnerAccount" json:"OwnerAccount" toml:"OwnerAccount" yaml:"OwnerAccount"`
 	Workspace                          *Workspace                  `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
@@ -222,6 +253,22 @@ type workspaceSCMConnectionR struct {
 // NewStruct creates a new relationship struct
 func (*workspaceSCMConnectionR) NewStruct() *workspaceSCMConnectionR {
 	return &workspaceSCMConnectionR{}
+}
+
+func (o *WorkspaceSCMConnection) GetApp() *SCMApp {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetApp()
+}
+
+func (r *workspaceSCMConnectionR) GetApp() *SCMApp {
+	if r == nil {
+		return nil
+	}
+
+	return r.App
 }
 
 func (o *WorkspaceSCMConnection) GetIntegrationAccount() *Account {
@@ -292,9 +339,9 @@ func (r *workspaceSCMConnectionR) GetConnectionWorkspaceSCMRepositories() Worksp
 type workspaceSCMConnectionL struct{}
 
 var (
-	workspaceSCMConnectionAllColumns            = []string{"id", "workspace_id", "provider", "base_url", "label", "token_sealed", "token_hint", "identity_login", "integration_account_id", "owner_account_id", "owner_actor_kind", "owner_auth_method", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "created_at", "updated_at", "allow_private_address", "ca_certificate", "capabilities"}
-	workspaceSCMConnectionColumnsWithoutDefault = []string{"workspace_id", "provider", "token_sealed", "integration_account_id", "owner_account_id"}
-	workspaceSCMConnectionColumnsWithDefault    = []string{"id", "base_url", "label", "token_hint", "identity_login", "owner_actor_kind", "owner_auth_method", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "created_at", "updated_at", "allow_private_address", "ca_certificate", "capabilities"}
+	workspaceSCMConnectionAllColumns            = []string{"id", "workspace_id", "provider", "base_url", "label", "token_sealed", "token_hint", "identity_login", "integration_account_id", "owner_account_id", "owner_actor_kind", "owner_auth_method", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "created_at", "updated_at", "allow_private_address", "ca_certificate", "capabilities", "auth_kind", "app_id", "installation_id", "account_login"}
+	workspaceSCMConnectionColumnsWithoutDefault = []string{"workspace_id", "provider", "integration_account_id", "owner_account_id"}
+	workspaceSCMConnectionColumnsWithDefault    = []string{"id", "base_url", "label", "token_sealed", "token_hint", "identity_login", "owner_actor_kind", "owner_auth_method", "status", "broken_reason", "broken_detail", "broken_at", "verified_at", "created_at", "updated_at", "allow_private_address", "ca_certificate", "capabilities", "auth_kind", "app_id", "installation_id", "account_login"}
 	workspaceSCMConnectionPrimaryKeyColumns     = []string{"id"}
 	workspaceSCMConnectionGeneratedColumns      = []string{}
 )
@@ -604,6 +651,17 @@ func (q workspaceSCMConnectionQuery) Exists(ctx context.Context, exec boil.Conte
 	return count > 0, nil
 }
 
+// App pointed to by the foreign key.
+func (o *WorkspaceSCMConnection) App(mods ...qm.QueryMod) scmAppQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.AppID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return SCMApps(queryMods...)
+}
+
 // IntegrationAccount pointed to by the foreign key.
 func (o *WorkspaceSCMConnection) IntegrationAccount(mods ...qm.QueryMod) accountQuery {
 	queryMods := []qm.QueryMod{
@@ -649,6 +707,130 @@ func (o *WorkspaceSCMConnection) ConnectionWorkspaceSCMRepositories(mods ...qm.Q
 	)
 
 	return WorkspaceSCMRepositories(queryMods...)
+}
+
+// LoadApp allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceSCMConnectionL) LoadApp(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceSCMConnection any, mods queries.Applicator) error {
+	var slice []*WorkspaceSCMConnection
+	var object *WorkspaceSCMConnection
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceSCMConnection.(*WorkspaceSCMConnection)
+		if !ok {
+			object = new(WorkspaceSCMConnection)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceSCMConnection)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceSCMConnection))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceSCMConnection.(*[]*WorkspaceSCMConnection)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceSCMConnection)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceSCMConnection))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceSCMConnectionR{}
+		}
+		if !queries.IsNil(object.AppID) {
+			args[object.AppID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceSCMConnectionR{}
+			}
+
+			if !queries.IsNil(obj.AppID) {
+				args[obj.AppID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`scm_apps`),
+		qm.WhereIn(`scm_apps.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load SCMApp")
+	}
+
+	var resultSlice []*SCMApp
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice SCMApp")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for scm_apps")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for scm_apps")
+	}
+
+	if len(scmAppAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.App = foreign
+		if foreign.R == nil {
+			foreign.R = &scmAppR{}
+		}
+		foreign.R.AppWorkspaceSCMConnections = append(foreign.R.AppWorkspaceSCMConnections, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.AppID, foreign.ID) {
+				local.R.App = foreign
+				if foreign.R == nil {
+					foreign.R = &scmAppR{}
+				}
+				foreign.R.AppWorkspaceSCMConnections = append(foreign.R.AppWorkspaceSCMConnections, local)
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadIntegrationAccount allows an eager lookup of values, cached into the
@@ -1121,6 +1303,86 @@ func (workspaceSCMConnectionL) LoadConnectionWorkspaceSCMRepositories(ctx contex
 		}
 	}
 
+	return nil
+}
+
+// SetApp of the workspaceSCMConnection to the related item.
+// Sets o.R.App to related.
+// Adds o to related.R.AppWorkspaceSCMConnections.
+func (o *WorkspaceSCMConnection) SetApp(ctx context.Context, exec boil.ContextExecutor, insert bool, related *SCMApp) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_scm_connections\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"app_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceSCMConnectionPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.AppID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceSCMConnectionR{
+			App: related,
+		}
+	} else {
+		o.R.App = related
+	}
+
+	if related.R == nil {
+		related.R = &scmAppR{
+			AppWorkspaceSCMConnections: WorkspaceSCMConnectionSlice{o},
+		}
+	} else {
+		related.R.AppWorkspaceSCMConnections = append(related.R.AppWorkspaceSCMConnections, o)
+	}
+
+	return nil
+}
+
+// RemoveApp relationship.
+// Sets o.R.App to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceSCMConnection) RemoveApp(ctx context.Context, exec boil.ContextExecutor, related *SCMApp) error {
+	var err error
+
+	queries.SetScanner(&o.AppID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("app_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.App = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.AppWorkspaceSCMConnections {
+		if queries.Equal(o.AppID, ri.AppID) {
+			continue
+		}
+
+		ln := len(related.R.AppWorkspaceSCMConnections)
+		if ln > 1 && i < ln-1 {
+			related.R.AppWorkspaceSCMConnections[i] = related.R.AppWorkspaceSCMConnections[ln-1]
+		}
+		related.R.AppWorkspaceSCMConnections = related.R.AppWorkspaceSCMConnections[:ln-1]
+		break
+	}
 	return nil
 }
 

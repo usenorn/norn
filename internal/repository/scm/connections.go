@@ -38,6 +38,26 @@ func seal(sealer *crypter.Crypter, secret string) ([]byte, error) {
 	return sealed, nil
 }
 
+func credential(
+	sealer *crypter.Crypter,
+	kind entity.SCMAuthKind,
+	token string,
+) ([]byte, error) {
+	if kind == entity.SCMAuthApp {
+		return nil, nil
+	}
+
+	return seal(sealer, token)
+}
+
+func appOrNil(appID uuid.UUID) *uuid.UUID {
+	if appID == uuid.Nil {
+		return nil
+	}
+
+	return &appID
+}
+
 func open(sealer *crypter.Crypter, sealed []byte) (string, error) {
 	if len(sealed) == 0 {
 		return "", nil
@@ -57,9 +77,11 @@ func open(sealer *crypter.Crypter, sealed []byte) (string, error) {
 
 const connectionColumns = `
     id, workspace_id, provider, base_url, label,
-    token_hint, octet_length(token_sealed) > 0, identity_login,
+    token_hint, coalesce(octet_length(token_sealed), 0) > 0, identity_login,
     integration_account_id, owner_account_id, owner_actor_kind, owner_auth_method,
     status, broken_reason, broken_detail, broken_at, verified_at,
+    auth_kind, coalesce(app_id, '00000000-0000-0000-0000-000000000000'::uuid),
+    installation_id, account_login,
     allow_private_address, ca_certificate, capabilities, created_at, updated_at`
 
 func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, error) {
@@ -86,6 +108,10 @@ func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, 
 		&connection.BrokenDetail,
 		&connection.BrokenAt,
 		&connection.VerifiedAt,
+		&connection.AuthKind,
+		&connection.AppID,
+		&connection.InstallationID,
+		&connection.AccountLogin,
 		&connection.Trust.AllowPrivateAddress,
 		&connection.Trust.CACertificate,
 		&capabilities,
@@ -109,8 +135,9 @@ const insertConnectionQuery = `
 INSERT INTO workspace_scm_connections (
     id, workspace_id, provider, base_url, label, token_sealed, token_hint, identity_login,
     integration_account_id, owner_account_id, owner_actor_kind, owner_auth_method,
+    auth_kind, app_id, installation_id, account_login,
     allow_private_address, ca_certificate, capabilities
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
 RETURNING` + connectionColumns
 
 func (r *connectionRepository) Create(
@@ -123,7 +150,11 @@ func (r *connectionRepository) Create(
 		connection.ID = uuid.New()
 	}
 
-	token, err := seal(r.crypter, input.Token)
+	if connection.AuthKind == "" {
+		connection.AuthKind = entity.SCMAuthToken
+	}
+
+	token, err := credential(r.crypter, connection.AuthKind, input.Token)
 	if err != nil {
 		return entity.SCMConnection{}, err
 	}
@@ -143,6 +174,10 @@ func (r *connectionRepository) Create(
 		connection.OwnerAccountID,
 		connection.OwnerActorKind,
 		connection.OwnerAuthMethod,
+		connection.AuthKind,
+		appOrNil(connection.AppID),
+		connection.InstallationID,
+		connection.AccountLogin,
 		connection.Trust.AllowPrivateAddress,
 		connection.Trust.CACertificate,
 		types.StringArray(connection.Capabilities.Strings()),
@@ -254,6 +289,10 @@ func (r *connectionRepository) Token(ctx context.Context, connectionID uuid.UUID
 
 	if err != nil {
 		return "", fmt.Errorf("read source control credentials: %w", err)
+	}
+
+	if len(sealed) == 0 {
+		return "", entity.ErrSCMInstallationNotFound
 	}
 
 	return open(r.crypter, sealed)

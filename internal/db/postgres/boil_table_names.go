@@ -22,6 +22,7 @@ var TableNames = struct {
 	MCPConnectionGrants               string
 	MCPConnections                    string
 	MCPTokens                         string
+	SCMApps                           string
 	WorkspaceActivity                 string
 	WorkspaceAgentProposals           string
 	WorkspaceAgents                   string
@@ -104,6 +105,7 @@ var TableNames = struct {
 	MCPConnectionGrants:               "mcp_connection_grants",
 	MCPConnections:                    "mcp_connections",
 	MCPTokens:                         "mcp_tokens",
+	SCMApps:                           "scm_apps",
 	WorkspaceActivity:                 "workspace_activity",
 	WorkspaceAgentProposals:           "workspace_agent_proposals",
 	WorkspaceAgents:                   "workspace_agents",

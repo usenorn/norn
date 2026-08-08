@@ -26,7 +26,7 @@ func NewSCMRepository(db *postgres.Client, sealer *crypter.Crypter) repository.S
 
 const repositoryColumns = `
     id, connection_id, workspace_id, provider, full_name, external_id, default_branch, url,
-    octet_length(webhook_secret_sealed) > 0, external_hook_id, mirror_label, sync_direction,
+    coalesce(octet_length(webhook_secret_sealed), 0) > 0, external_hook_id, mirror_label, sync_direction,
     webhooks_disabled,
     extract(epoch FROM poll_interval), reconcile_cursor, reconciled_at, reconcile_after,
     last_seen_at, backfilled_at, created_at, updated_at`
@@ -90,9 +90,15 @@ func (r *repositoryRepository) Create(
 		stored.PollInterval = entity.SCMDefaultPollInterval
 	}
 
-	secret, err := seal(r.crypter, input.WebhookSecret)
-	if err != nil {
-		return entity.SCMRepository{}, err
+	var (
+		secret []byte
+		err    error
+	)
+
+	if input.WebhookSecret != "" {
+		if secret, err = seal(r.crypter, input.WebhookSecret); err != nil {
+			return entity.SCMRepository{}, err
+		}
 	}
 
 	created, err := scanRepository(r.db.Querier(ctx).QueryRowContext(
