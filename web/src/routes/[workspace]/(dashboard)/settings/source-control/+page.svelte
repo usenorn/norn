@@ -334,6 +334,10 @@
 										<TriangleAlert class="size-icon-row shrink-0" aria-hidden="true" />
 										Not working — {brokenLabel(connection)}.
 									</p>
+								{:else if connection.verifiedAt && connection.authKind === "app"}
+									<p class="text-sm text-muted-foreground">
+										Working. Acting as {connection.identityLogin ?? "an installation"}.
+									</p>
 								{:else if connection.verifiedAt}
 									<p class="text-sm text-muted-foreground">
 										Working. Token ending {connection.tokenHint}.
