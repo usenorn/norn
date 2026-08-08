@@ -18,6 +18,7 @@ const (
 	ConnectedPath  = "/v1/source-control/github-app/connected"
 
 	sourceControlScreen = "/settings/source-control"
+	entryScreen         = "/"
 )
 
 type AppEdge struct {
@@ -116,7 +117,7 @@ func reason(err error) string {
 
 func screen(workspace string) string {
 	if workspace == "" {
-		return sourceControlScreen
+		return entryScreen
 	}
 
 	return "/" + workspace + sourceControlScreen
