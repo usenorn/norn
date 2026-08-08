@@ -58,7 +58,9 @@ func (s *sync) reconcileOne(
 		return s.handleForgeError(ctx, from, err)
 	}
 
-	login, err := forge.Identity(ctx, target)
+	login, err := s.credentials.identify(
+		ctx, target, from.connection.AuthKind, from.connection.AccountLogin,
+	)
 	if err != nil {
 		return s.handleForgeError(ctx, from, err)
 	}

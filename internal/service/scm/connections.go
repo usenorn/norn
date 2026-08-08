@@ -189,7 +189,7 @@ func (s *connections) credentialFor(
 		return heldCredential{}, entity.ErrSCMInstallationNotFound
 	}
 
-	registered, err := s.apps.Get(ctx, input.Provider, strings.TrimSpace(input.BaseURL))
+	registered, err := s.credentials.application(ctx, input.Provider, input.BaseURL)
 	if err != nil {
 		return heldCredential{}, err
 	}
@@ -304,7 +304,7 @@ func (s *connections) Connect(
 		Trust:    held.trust,
 	}
 
-	login, err := forge.Identity(ctx, target)
+	login, err := s.credentials.identify(ctx, target, held.kind, held.accountLogin)
 	if err != nil {
 		return entity.SCMConnection{}, err
 	}
@@ -426,6 +426,10 @@ func (s *connections) ReplaceToken(
 		return entity.SCMConnection{}, err
 	}
 
+	if connection.UsesApp() {
+		return entity.SCMConnection{}, entity.ErrSCMAppTokenUnsupported
+	}
+
 	forge, err := s.forges.Lookup(connection.Provider)
 	if err != nil {
 		return entity.SCMConnection{}, err
@@ -483,7 +487,9 @@ func (s *connections) VerifyConnection(
 		return entity.SCMConnection{}, err
 	}
 
-	login, err := forge.Identity(ctx, connection.Target("", token))
+	login, err := s.credentials.identify(
+		ctx, connection.Target("", token), connection.AuthKind, connection.AccountLogin,
+	)
 	if err != nil {
 		s.breakOn(ctx, connection, err)
 
@@ -636,7 +642,7 @@ func (s *connections) AvailableRepositories(
 		return nil, err
 	}
 
-	registered, err := s.apps.Get(ctx, connection.Provider, connection.BaseURL)
+	registered, err := s.credentials.application(ctx, connection.Provider, connection.BaseURL)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,27 @@ export const sourceControlDetailPreviewStates: Record<string, SourceControlDetai
 	import.meta.env.DEV
 		? {
 				loading: { view: { kind: "loading" } },
+			installation: {
+				view: {
+					kind: "detail",
+					connection: {
+						id: "00000000-0000-4000-8000-0000000000a3",
+						provider: "github",
+						authKind: "app",
+						label: "flagroll",
+						accountLogin: "flagroll",
+						tokenSet: false,
+						tokenHint: "",
+						identityLogin: "norn-northwind[bot]",
+						repositoryCount: 1,
+						status: "connected",
+						verifiedAt: "2026-08-08T09:14:00Z",
+						createdAt: "2026-08-08T09:14:00Z",
+						updatedAt: "2026-08-08T09:14:00Z",
+					},
+					repositories: [],
+				},
+			},
 				detail: {
 					view: {
 						kind: "detail",
