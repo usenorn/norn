@@ -82,6 +82,8 @@ func statements() map[string]string {
 		"getAppQuery":                       getAppQuery,
 		"getAppByIDQuery":                   getAppByIDQuery,
 		"appSecretsQuery":                   appSecretsQuery,
+		"getConnectionByInstallationQuery":  getConnectionByInstallationQuery,
+		"getRepositoryByFullNameQuery":      getRepositoryByFullNameQuery,
 		"listAppsQuery":                     listAppsQuery,
 		"updateLabelQuery":                  updateLabelQuery,
 		"updateRepositorySettingsQuery":     updateRepositorySettingsQuery,

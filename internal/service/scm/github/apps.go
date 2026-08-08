@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -300,4 +301,28 @@ func (f *Forge) InstallationRepositories(
 	}
 
 	return found, nil
+}
+
+func (f *Forge) Route(body []byte) (entity.SCMDeliveryRoute, error) {
+	var payload struct {
+		Installation struct {
+			ID int64 `json:"id"`
+		} `json:"installation"`
+		Repository struct {
+			FullName string `json:"full_name"`
+		} `json:"repository"`
+	}
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return entity.SCMDeliveryRoute{}, entity.ErrSCMSignatureInvalid
+	}
+
+	if payload.Installation.ID == 0 || payload.Repository.FullName == "" {
+		return entity.SCMDeliveryRoute{}, entity.ErrSCMSignatureInvalid
+	}
+
+	return entity.SCMDeliveryRoute{
+		InstallationID: strconv.FormatInt(payload.Installation.ID, 10),
+		FullName:       payload.Repository.FullName,
+	}, nil
 }

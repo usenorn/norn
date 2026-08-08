@@ -4679,6 +4679,93 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/source-control/application:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [source-control]
+      operationId: getWorkspaceSourceControlApplication
+      summary: Say whether this instance can act as an installed application, and where to install it
+      responses:
+        '200':
+          description: The application this instance holds, if it holds one
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceControlApplication' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/application/registration:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [source-control]
+      operationId: beginWorkspaceSourceControlAppRegistration
+      summary: Begin registering this instance's own application on a forge
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                organization: { type: string }
+      responses:
+        '200':
+          description: What the browser posts to the forge
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceControlAppRegistration' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/SourceControlConflict' }
+        '422': { $ref: '#/components/responses/SourceControlRefused' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/application/authorization:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [source-control]
+      operationId: beginWorkspaceSourceControlAppAuthorization
+      summary: Begin signing in to the forge to choose which installation to use
+      responses:
+        '200':
+          description: Where to send the browser
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceControlAppAuthorization' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/source-control/application/installations:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [source-control]
+      operationId: listWorkspaceSourceControlInstallations
+      summary: List the installations the sign-in just found
+      parameters:
+        - name: handle
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The installations to choose between
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SourceControlInstallation' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/source-control/connections:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7784,14 +7871,16 @@ components:
         its own copy of the secret. The token is never returned; tokenSet says whether one is
         held and tokenHint carries its last few characters so a person can tell which is
         installed.
-      required: [id, provider, tokenSet, tokenHint, status, createdAt, updatedAt]
+      required: [id, provider, authKind, tokenSet, tokenHint, status, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         provider: { $ref: '#/components/schemas/SourceControlProvider' }
+        authKind: { $ref: '#/components/schemas/SourceControlAuthKind' }
         baseUrl: { type: string }
         label: { type: string }
         tokenSet: { type: boolean }
         tokenHint: { type: string }
+        accountLogin: { type: string }
         identityLogin: { type: string }
         repositoryCount: { type: integer, format: int32 }
         allowPrivateAddress: { type: boolean }
@@ -7817,7 +7906,7 @@ components:
         connection so it may reach a forge on their own network. It is not an instance-wide
         relaxation, and it never opens loopback or the link-local range a cloud provider
         answers on.
-      required: [provider, token]
+      required: [provider]
       properties:
         provider: { $ref: '#/components/schemas/SourceControlProvider' }
         baseUrl: { type: string }
@@ -7825,6 +7914,56 @@ components:
         allowPrivateAddress: { type: boolean }
         caCertificate: { type: string, writeOnly: true }
         token: { type: string, writeOnly: true }
+        installationHandle: { type: string, writeOnly: true }
+        installationId: { type: string, writeOnly: true }
+
+    SourceControlAuthKind:
+      type: string
+      enum: [token, app]
+
+    SourceControlApplication:
+      type: object
+      description: >-
+        Whether this instance can act as an installed application on a forge, and where a
+        person goes to install it. An instance handed an application in its own configuration
+        cannot register a second one, so canRegister is false there.
+      required: [provider, registered, canRegister]
+      properties:
+        provider: { $ref: '#/components/schemas/SourceControlProvider' }
+        registered: { type: boolean }
+        canRegister: { type: boolean }
+        slug: { type: string }
+        installUrl: { type: string }
+
+    SourceControlAppRegistration:
+      type: object
+      description: >-
+        What the browser posts to the forge to create an application. The manifest is passed
+        through untouched as one form field; state comes back on the redirect and is spent
+        once.
+      required: [target, state, manifest]
+      properties:
+        target: { type: string }
+        state: { type: string }
+        manifest: { type: string }
+
+    SourceControlAppAuthorization:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
+
+    SourceControlInstallation:
+      type: object
+      description: >-
+        One place the application is installed that the signed-in person administers. The
+        handle that produced this list is what connects it, and it is spent when one is
+        chosen.
+      required: [externalId, accountLogin]
+      properties:
+        externalId: { type: string }
+        accountLogin: { type: string }
+        accountKind: { type: string }
 
     UpdateSourceControlRequest:
       type: object

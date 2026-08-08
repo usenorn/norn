@@ -101,6 +101,8 @@ func newImportHarness(t *testing.T) *importHarness {
 		licensingsvc.NewMockLicensing(ctrl),
 		h.imports,
 		scmsvc.NewMockSourceControl(ctrl),
+		scmsvc.NewMockSourceControlApps(ctrl),
+		config.SourceControl{},
 		config.App{Version: "test"},
 		config.Instance{},
 		config.Password{},

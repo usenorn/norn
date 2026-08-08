@@ -172,6 +172,8 @@ type ForgeApp interface {
 		installationID string,
 	) (entity.SCMCredential, error)
 
+	Route(body []byte) (entity.SCMDeliveryRoute, error)
+
 	ManifestTarget(baseURL, organization string) string
 	ConvertManifest(ctx context.Context, baseURL, code string) (entity.SCMApp, error)
 
@@ -202,8 +204,14 @@ type ConnectSourceControlInput struct {
 	BaseURL             string
 	Label               string
 	Token               string
+	InstallationHandle  string
+	InstallationID      string
 	AllowPrivateAddress bool
 	CACertificate       string
+}
+
+func (i ConnectSourceControlInput) UsesApp() bool {
+	return i.InstallationHandle != "" || i.InstallationID != ""
 }
 
 type UpdateConnectionInput struct {
@@ -342,6 +350,7 @@ type SourceControl interface {
 
 type SourceControlSync interface {
 	Accept(ctx context.Context, repositoryID uuid.UUID, provider entity.SCMProvider, header http.Header, body []byte) (uuid.UUID, error)
+	AcceptFromApp(ctx context.Context, provider entity.SCMProvider, header http.Header, body []byte) (uuid.UUID, error)
 	Apply(ctx context.Context, deliveryID uuid.UUID) error
 	Reconcile(ctx context.Context, at time.Time) error
 	Backfill(ctx context.Context, repositoryID uuid.UUID) error

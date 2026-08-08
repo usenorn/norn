@@ -55,6 +55,21 @@ func (mr *MockSCMAppStateMockRecorder) Put(ctx, state, attempt any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockSCMAppState)(nil).Put), ctx, state, attempt)
 }
 
+// Read mocks base method.
+func (m *MockSCMAppState) Read(ctx context.Context, state string) (entity.SCMAppState, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Read", ctx, state)
+	ret0, _ := ret[0].(entity.SCMAppState)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Read indicates an expected call of Read.
+func (mr *MockSCMAppStateMockRecorder) Read(ctx, state any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockSCMAppState)(nil).Read), ctx, state)
+}
+
 // Take mocks base method.
 func (m *MockSCMAppState) Take(ctx context.Context, state string) (entity.SCMAppState, error) {
 	m.ctrl.T.Helper()

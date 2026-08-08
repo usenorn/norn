@@ -52,8 +52,10 @@ type advanceHarness struct {
 	issues       *issuerepo.MockIssue
 	activity     *activityrepo.MockActivity
 	memberships  *membershiprepo.MockMembership
+	apps         *scmrepo.MockSCMApp
 	forges       *scm.MockForges
 	forge        *scm.MockForge
+	forgeApp     *scm.MockForgeApp
 	authorizer   *authorizersvc.MockAuthorizer
 	issueWriter  *issuesvc.MockIssues
 	comments     *issuecommentsvc.MockIssueComments
@@ -67,7 +69,9 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 	ctrl := gomock.NewController(t)
 
 	h := &advanceHarness{
+		forgeApp:     scm.NewMockForgeApp(ctrl),
 		connections:  scmrepo.NewMockSCMConnection(ctrl),
+		apps:         scmrepo.NewMockSCMApp(ctrl),
 		repositories: scmrepo.NewMockSCMRepository(ctrl),
 		routes:       scmrepo.NewMockSCMRoute(ctrl),
 		rules:        scmrepo.NewMockSCMTransitionRule(ctrl),
@@ -123,7 +127,7 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		h.issues,
 		h.activity,
 		h.memberships,
-		scmrepo.NewMockSCMApp(ctrl),
+		h.apps,
 		h.forges,
 		forge.NewCredentials(),
 		h.authorizer,

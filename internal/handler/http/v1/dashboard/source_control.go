@@ -35,11 +35,13 @@ func (h *handler) ConnectWorkspaceSourceControl(
 	request api.ConnectWorkspaceSourceControlRequestObject,
 ) (api.ConnectWorkspaceSourceControlResponseObject, error) {
 	connection, err := h.sourceControl.Connect(ctx, service.ConnectSourceControlInput{
-		WorkspaceID: request.WorkspaceId,
-		Provider:    entity.SCMProvider(request.Body.Provider),
-		BaseURL:     optionalString(request.Body.BaseUrl),
-		Label:       optionalString(request.Body.Label),
-		Token:       optionalString(request.Body.Token),
+		WorkspaceID:        request.WorkspaceId,
+		Provider:           entity.SCMProvider(request.Body.Provider),
+		BaseURL:            optionalString(request.Body.BaseUrl),
+		Label:              optionalString(request.Body.Label),
+		Token:              optionalString(request.Body.Token),
+		InstallationHandle: optionalString(request.Body.InstallationHandle),
+		InstallationID:     optionalString(request.Body.InstallationId),
 		AllowPrivateAddress: request.Body.AllowPrivateAddress != nil &&
 			*request.Body.AllowPrivateAddress,
 		CACertificate: optionalString(request.Body.CaCertificate),

@@ -8,7 +8,10 @@ import (
 	"github.com/google/uuid"
 )
 
-const SCMPrivateKeyMaxLen = 16384
+const (
+	SCMPrivateKeyMaxLen   = 16384
+	SCMInstallationMaxLen = 64
+)
 
 var (
 	ErrSCMAppNotFound          = errors.New("no source control application is registered")
@@ -103,6 +106,40 @@ type SCMInstallation struct {
 	AccountLogin string
 	AccountKind  string
 	Repositories int
+}
+
+type SCMDeliveryRoute struct {
+	InstallationID string
+	FullName       string
+}
+
+type SCMInstallations []SCMInstallation
+
+func (installations SCMInstallations) Find(externalID string) (SCMInstallation, bool) {
+	if externalID == "" {
+		return SCMInstallation{}, false
+	}
+
+	for _, installation := range installations {
+		if installation.ExternalID == externalID {
+			return installation, true
+		}
+	}
+
+	return SCMInstallation{}, false
+}
+
+func ValidateSCMInstallation(externalID string) FieldError {
+	trimmed := strings.TrimSpace(externalID)
+
+	switch {
+	case trimmed == "":
+		return FieldError{Field: "installationId", Code: ValidationCodeRequired}
+	case len(trimmed) > SCMInstallationMaxLen:
+		return FieldError{Field: "installationId", Code: ValidationCodeTooLong}
+	default:
+		return FieldError{}
+	}
 }
 
 func SupportsApp(provider SCMProvider) bool {

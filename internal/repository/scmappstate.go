@@ -10,5 +10,6 @@ import (
 
 type SCMAppState interface {
 	Put(ctx context.Context, state string, attempt entity.SCMAppState) error
+	Read(ctx context.Context, state string) (entity.SCMAppState, error)
 	Take(ctx context.Context, state string) (entity.SCMAppState, error)
 }

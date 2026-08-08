@@ -483,6 +483,21 @@ func (mr *MockForgeAppMockRecorder) MintInstallationToken(ctx, app, installation
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MintInstallationToken", reflect.TypeOf((*MockForgeApp)(nil).MintInstallationToken), ctx, app, installationID)
 }
 
+// Route mocks base method.
+func (m *MockForgeApp) Route(body []byte) (entity.SCMDeliveryRoute, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Route", body)
+	ret0, _ := ret[0].(entity.SCMDeliveryRoute)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Route indicates an expected call of Route.
+func (mr *MockForgeAppMockRecorder) Route(body any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Route", reflect.TypeOf((*MockForgeApp)(nil).Route), body)
+}
+
 // MockForges is a mock of Forges interface.
 type MockForges struct {
 	ctrl     *gomock.Controller
@@ -1215,6 +1230,21 @@ func (m *MockSourceControlSync) Accept(ctx context.Context, repositoryID uuid.UU
 func (mr *MockSourceControlSyncMockRecorder) Accept(ctx, repositoryID, provider, header, body any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accept", reflect.TypeOf((*MockSourceControlSync)(nil).Accept), ctx, repositoryID, provider, header, body)
+}
+
+// AcceptFromApp mocks base method.
+func (m *MockSourceControlSync) AcceptFromApp(ctx context.Context, provider entity.SCMProvider, header http.Header, body []byte) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AcceptFromApp", ctx, provider, header, body)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AcceptFromApp indicates an expected call of AcceptFromApp.
+func (mr *MockSourceControlSyncMockRecorder) AcceptFromApp(ctx, provider, header, body any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptFromApp", reflect.TypeOf((*MockSourceControlSync)(nil).AcceptFromApp), ctx, provider, header, body)
 }
 
 // Apply mocks base method.
