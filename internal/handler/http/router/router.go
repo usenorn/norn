@@ -42,6 +42,7 @@ func New(
 	auditEdge *auditexport.Edge,
 	scimEdge *scim.Edge,
 	sourceControlEdge *sourcecontrol.Edge,
+	sourceControlApps *sourcecontrol.AppEdge,
 	mcpAuth *mcpauth.Edge,
 	mcpEdge *mcpserver.Edge,
 ) http.Handler {
@@ -62,6 +63,9 @@ func New(
 	bounded.Get(sso.CallbackPath, callback.Handle)
 	bounded.Get(sso.MetadataPath, samlEdge.Metadata)
 	bounded.Post(sso.ACSPath, samlEdge.Consume)
+
+	bounded.Get(sourcecontrol.RegisteredPath, sourceControlApps.Registered)
+	bounded.Get(sourcecontrol.ConnectedPath, sourceControlApps.Connected)
 
 	bounded.Get(mcpauth.ResourceMetadataPath, mcpAuth.ProtectedResource)
 	bounded.Get(mcpauth.ResourceMetadataMCPPath, mcpAuth.ProtectedResource)

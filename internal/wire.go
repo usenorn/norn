@@ -81,6 +81,7 @@ import (
 	samlrequestrepo "github.com/usenorn/norn/internal/repository/samlrequest"
 	savedviewrepo "github.com/usenorn/norn/internal/repository/savedview"
 	scmrepo "github.com/usenorn/norn/internal/repository/scm"
+	scmappstaterepo "github.com/usenorn/norn/internal/repository/scmappstate"
 	searchrepo "github.com/usenorn/norn/internal/repository/search"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
@@ -207,6 +208,7 @@ var baseSet = wire.NewSet(
 	samlrequestrepo.Set,
 	samlreplayrepo.Set,
 	oidcstaterepo.Set,
+	scmappstaterepo.Set,
 	oidcproviderrepo.Set,
 	mcpclientrepo.Set,
 	mcpconnectionrepo.Set,

@@ -313,6 +313,18 @@ type SourceControl struct {
 	MaxBackoff          time.Duration `mapstructure:"max_backoff"`
 	DeliveryRetention   time.Duration `mapstructure:"delivery_retention"`
 	AllowedDestinations []string      `mapstructure:"allowed_destinations"`
+
+	AppStateTTL            time.Duration `mapstructure:"app_state_ttl"`
+	GitHubAppID            string        `mapstructure:"github_app_id"`
+	GitHubAppSlug          string        `mapstructure:"github_app_slug"`
+	GitHubAppClientID      string        `mapstructure:"github_app_client_id"`
+	GitHubAppClientSecret  string        `mapstructure:"github_app_client_secret"`
+	GitHubAppPrivateKey    string        `mapstructure:"github_app_private_key"`
+	GitHubAppWebhookSecret string        `mapstructure:"github_app_webhook_secret"`
+}
+
+func (c SourceControl) GitHubAppConfigured() bool {
+	return c.GitHubAppID != "" && c.GitHubAppPrivateKey != "" && c.GitHubAppWebhookSecret != ""
 }
 
 type MCP struct {

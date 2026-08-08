@@ -17,6 +17,8 @@ var (
 	ErrSCMAppUnsupported       = errors.New("this platform has no application to install")
 	ErrSCMPrivateKeyInvalid    = errors.New("that is not a private key this instance can read")
 	ErrSCMAppTokenUnavailable  = errors.New("the forge issued no token for that installation")
+	ErrSCMAppStateNotFound     = errors.New("that registration has already been used, or it expired")
+	ErrSCMAppRefused           = errors.New("the forge refused the registration")
 )
 
 type SCMAuthKind string
@@ -119,5 +121,68 @@ func ValidateSCMPrivateKey(field, key string) FieldError {
 		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
 	default:
 		return FieldError{}
+	}
+}
+
+type SCMAppPurpose string
+
+const (
+	SCMAppRegister SCMAppPurpose = "register"
+	SCMAppConnect  SCMAppPurpose = "connect"
+	SCMAppChosen   SCMAppPurpose = "chosen"
+)
+
+func (p SCMAppPurpose) Valid() bool {
+	return p == SCMAppRegister || p == SCMAppConnect || p == SCMAppChosen
+}
+
+type SCMAppState struct {
+	Purpose       SCMAppPurpose
+	Provider      SCMProvider
+	WorkspaceID   uuid.UUID
+	WorkspaceSlug string
+	AccountID     uuid.UUID
+	Organization  string
+	Installations []SCMInstallation
+	CreatedAt     time.Time
+}
+
+type SCMAppManifest struct {
+	Name           string            `json:"name"`
+	URL            string            `json:"url"`
+	HookAttributes map[string]string `json:"hook_attributes"`
+	RedirectURL    string            `json:"redirect_url"`
+	CallbackURLs   []string          `json:"callback_urls"`
+	Public         bool              `json:"public"`
+	DefaultEvents  []string          `json:"default_events"`
+	DefaultPermMap map[string]string `json:"default_permissions"`
+}
+
+type SCMAppRegistration struct {
+	Target   string
+	State    string
+	Manifest SCMAppManifest
+}
+
+func SCMAppEvents() []string {
+	return []string{
+		"pull_request",
+		"pull_request_review",
+		"push",
+		"issues",
+		"issue_comment",
+		"release",
+		"deployment_status",
+	}
+}
+
+func SCMAppPermissions() map[string]string {
+	return map[string]string{
+		"contents":      "read",
+		"metadata":      "read",
+		"pull_requests": "write",
+		"issues":        "write",
+		"deployments":   "read",
+		"members":       "read",
 	}
 }
