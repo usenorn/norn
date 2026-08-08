@@ -51,6 +51,10 @@ func TestEveryFieldOfAnExchangeSurvivesBeingStored(t *testing.T) {
 		WorkspaceSlug: "northwind",
 		AccountID:     uuid.New(),
 		Organization:  "flagroll",
+		Trust: entity.SCMTrust{
+			AllowPrivateAddress: true,
+			CACertificate:       "-----BEGIN CERTIFICATE-----",
+		},
 		Installations: []entity.SCMInstallation{
 			{ExternalID: "884411", AccountLogin: "flagroll", AccountKind: "organization"},
 		},
@@ -83,6 +87,15 @@ func TestEveryFieldOfAnExchangeSurvivesBeingStored(t *testing.T) {
 
 	if read.WorkspaceID != written.WorkspaceID || read.AccountID != written.AccountID {
 		t.Errorf("the workspace or account identifier did not survive: %+v", read)
+	}
+
+	if read.Trust != written.Trust {
+		t.Errorf(
+			"the trust granted for the registration came back %+v, want %+v. Without it the "+
+				"conversion cannot reach an enterprise instance on a private address, and the "+
+				"registration the administrator started fails at the last step",
+			read.Trust, written.Trust,
+		)
 	}
 
 	if read.Organization != written.Organization {

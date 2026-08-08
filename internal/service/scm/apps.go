@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -142,7 +143,11 @@ func (s *apps) Registration(
 		WorkspaceSlug: decision.Workspace.Slug,
 		AccountID:     decision.Actor.AccountID,
 		Organization:  input.Organization,
-		CreatedAt:     time.Now(),
+		Trust: entity.SCMTrust{
+			AllowPrivateAddress: input.AllowPrivateAddress,
+			CACertificate:       strings.TrimSpace(input.CACertificate),
+		},
+		CreatedAt: time.Now(),
 	})
 	if err != nil {
 		return entity.SCMAppRegistration{}, err
@@ -184,12 +189,13 @@ func (s *apps) CompleteRegistration(
 
 	endpoint := s.endpoint(attempt.Provider)
 
-	registered, err := forgeApp.ConvertManifest(ctx, endpoint, code)
+	registered, err := forgeApp.ConvertManifest(ctx, entity.SCMApp{
+		BaseURL: endpoint,
+		Trust:   attempt.Trust,
+	}, code)
 	if err != nil {
 		return attempt, err
 	}
-
-	registered.BaseURL = endpoint
 
 	if _, err := s.apps.Upsert(ctx, repository.SCMAppInput{
 		App:           registered,

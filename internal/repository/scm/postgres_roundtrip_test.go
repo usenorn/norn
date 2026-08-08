@@ -28,6 +28,7 @@ type ground struct {
 	appID       uuid.UUID
 	connections repository.SCMConnection
 	repository  repository.SCMRepository
+	apps        repository.SCMApp
 }
 
 func lay(ctx context.Context, db *postgres.Client, sealer *crypter.Crypter) (ground, error) {
@@ -37,6 +38,7 @@ func lay(ctx context.Context, db *postgres.Client, sealer *crypter.Crypter) (gro
 		appID:       uuid.New(),
 		connections: NewSCMConnection(db, sealer),
 		repository:  NewSCMRepository(db, sealer),
+		apps:        NewSCMApp(db, sealer),
 	}
 
 	statements := []struct {
@@ -287,4 +289,71 @@ func installationConnection(on ground) entity.SCMConnection {
 		OwnerAccountID:       on.accountID,
 		OwnerActorKind:       entity.ActorKindUser,
 	}
+}
+
+func TestAnApplicationKeepsItsKeysAndTheTrustItWasGranted(t *testing.T) {
+	rolledBack(t, func(ctx context.Context, on ground) error {
+		stored, err := on.apps.Upsert(ctx, repository.SCMAppInput{
+			App: entity.SCMApp{
+				Provider:      entity.SCMProviderGitHub,
+				BaseURL:       "https://ghe.northwind.example/api/v3",
+				Slug:          "norn-northwind",
+				ExternalAppID: "4711",
+				ClientID:      "Iv1.deadbeef",
+				Trust: entity.SCMTrust{
+					AllowPrivateAddress: true,
+					CACertificate:       "-----BEGIN CERTIFICATE-----",
+				},
+			},
+			PrivateKey:    "-----BEGIN RSA PRIVATE KEY-----",
+			WebhookSecret: "the-hook-secret",
+			ClientSecret:  "the-client-secret",
+		})
+		if err != nil {
+			return fmt.Errorf("register an application: %w", err)
+		}
+
+		if !stored.Trust.AllowPrivateAddress || stored.Trust.CACertificate == "" {
+			return fmt.Errorf(
+				"the trust came back as %+v. An enterprise instance on a private network is "+
+					"unreachable without it, and the application would be stored unusable",
+				stored.Trust,
+			)
+		}
+
+		read, err := on.apps.Get(ctx, entity.SCMProviderGitHub, "https://ghe.northwind.example/api/v3")
+		if err != nil {
+			return fmt.Errorf("read it back: %w", err)
+		}
+
+		if read.Trust != stored.Trust || read.Slug != "norn-northwind" {
+			return fmt.Errorf("the application read back as %+v", read)
+		}
+
+		if read.PrivateKey != "" || read.WebhookSecret != "" || read.ClientSecret != "" {
+			return errors.New(
+				"listing an application carried its secrets. Only the call that needs them should " +
+					"open them, so an ordinary read cannot leak a key",
+			)
+		}
+
+		secrets, err := on.apps.Secrets(ctx, stored.ID)
+		if err != nil {
+			return fmt.Errorf("open its secrets: %w", err)
+		}
+
+		if secrets.PrivateKey == "" || secrets.WebhookSecret == "" || secrets.ClientSecret == "" {
+			return fmt.Errorf("a sealed secret did not open: %+v", secrets)
+		}
+
+		if secrets.Trust != stored.Trust {
+			return fmt.Errorf(
+				"the sealed read lost the trust (%+v). Minting an installation token goes through "+
+					"it, so the connection would work until the first token expired",
+				secrets.Trust,
+			)
+		}
+
+		return nil
+	})
 }

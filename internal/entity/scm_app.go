@@ -51,6 +51,7 @@ type SCMApp struct {
 	ClientSecret  string
 	PrivateKey    string
 	WebhookSecret string
+	Trust         SCMTrust
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -182,6 +183,7 @@ type SCMAppState struct {
 	WorkspaceSlug string
 	AccountID     uuid.UUID
 	Organization  string
+	Trust         SCMTrust
 	Installations []SCMInstallation
 	CreatedAt     time.Time
 }

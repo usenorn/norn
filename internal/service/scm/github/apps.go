@@ -24,6 +24,7 @@ func (f *Forge) appTarget(app entity.SCMApp, now time.Time) (entity.SCMTarget, e
 		Provider: entity.SCMProviderGitHub,
 		BaseURL:  app.BaseURL,
 		Token:    signed,
+		Trust:    app.Trust,
 	}, nil
 }
 
@@ -88,13 +89,18 @@ func (f *Forge) ManifestTarget(baseURL, organization string) string {
 
 func (f *Forge) ConvertManifest(
 	ctx context.Context,
-	baseURL, code string,
+	intended entity.SCMApp,
+	code string,
 ) (entity.SCMApp, error) {
 	if code == "" {
 		return entity.SCMApp{}, entity.ErrSCMAppRefused
 	}
 
-	target := entity.SCMTarget{Provider: entity.SCMProviderGitHub, BaseURL: baseURL}
+	target := entity.SCMTarget{
+		Provider: entity.SCMProviderGitHub,
+		BaseURL:  intended.BaseURL,
+		Trust:    intended.Trust,
+	}
 
 	response, err := f.call(
 		ctx,
@@ -130,7 +136,8 @@ func (f *Forge) ConvertManifest(
 
 	return entity.SCMApp{
 		Provider:      entity.SCMProviderGitHub,
-		BaseURL:       baseURL,
+		BaseURL:       intended.BaseURL,
+		Trust:         intended.Trust,
 		Slug:          body.Slug,
 		ExternalAppID: strconv.FormatInt(body.ID, 10),
 		ClientID:      body.ClientID,
@@ -166,6 +173,7 @@ func (f *Forge) ExchangeCode(
 
 	response, err := f.client.Do(ctx, forge.Request{
 		Provider: entity.SCMProviderGitHub,
+		Trust:    app.Trust,
 		Method:   http.MethodPost,
 		URL:      f.webBase(app.BaseURL) + "/login/oauth/access_token",
 		Header: http.Header{
@@ -184,7 +192,11 @@ func (f *Forge) ExchangeCode(
 		ErrorDescription string `json:"error_description"`
 	}
 
-	target := entity.SCMTarget{Provider: entity.SCMProviderGitHub, BaseURL: app.BaseURL}
+	target := entity.SCMTarget{
+		Provider: entity.SCMProviderGitHub,
+		BaseURL:  app.BaseURL,
+		Trust:    app.Trust,
+	}
 
 	if err := f.decode(response, target, &body); err != nil {
 		return "", err
@@ -206,6 +218,7 @@ func (f *Forge) Installations(
 		Provider: entity.SCMProviderGitHub,
 		BaseURL:  app.BaseURL,
 		Token:    userToken,
+		Trust:    app.Trust,
 	}
 
 	response, err := f.call(
@@ -260,6 +273,7 @@ func (f *Forge) InstallationRepositories(
 		Provider: entity.SCMProviderGitHub,
 		BaseURL:  app.BaseURL,
 		Token:    credential,
+		Trust:    app.Trust,
 	}
 
 	found := make([]entity.SCMRemoteRepository, 0)

@@ -19,14 +19,16 @@ import (
 const stateKeyPrefix = "scm-app-state:"
 
 type storedState struct {
-	Purpose       string                   `json:"purpose"`
-	Provider      string                   `json:"provider"`
-	WorkspaceID   uuid.UUID                `json:"workspace_id"`
-	WorkspaceSlug string                   `json:"workspace_slug"`
-	AccountID     uuid.UUID                `json:"account_id"`
-	Organization  string                   `json:"organization"`
-	Installations []entity.SCMInstallation `json:"installations"`
-	CreatedAt     time.Time                `json:"created_at"`
+	Purpose             string                   `json:"purpose"`
+	Provider            string                   `json:"provider"`
+	WorkspaceID         uuid.UUID                `json:"workspace_id"`
+	WorkspaceSlug       string                   `json:"workspace_slug"`
+	AccountID           uuid.UUID                `json:"account_id"`
+	Organization        string                   `json:"organization"`
+	AllowPrivateAddress bool                     `json:"allow_private_address"`
+	CACertificate       string                   `json:"ca_certificate"`
+	Installations       []entity.SCMInstallation `json:"installations"`
+	CreatedAt           time.Time                `json:"created_at"`
 }
 
 type stateRepository struct {
@@ -42,14 +44,16 @@ func key(state string) string { return stateKeyPrefix + state }
 
 func (r *stateRepository) Put(ctx context.Context, state string, attempt entity.SCMAppState) error {
 	payload, err := json.Marshal(storedState{
-		Purpose:       string(attempt.Purpose),
-		Provider:      string(attempt.Provider),
-		WorkspaceID:   attempt.WorkspaceID,
-		WorkspaceSlug: attempt.WorkspaceSlug,
-		AccountID:     attempt.AccountID,
-		Organization:  attempt.Organization,
-		Installations: attempt.Installations,
-		CreatedAt:     attempt.CreatedAt,
+		Purpose:             string(attempt.Purpose),
+		Provider:            string(attempt.Provider),
+		WorkspaceID:         attempt.WorkspaceID,
+		WorkspaceSlug:       attempt.WorkspaceSlug,
+		AccountID:           attempt.AccountID,
+		Organization:        attempt.Organization,
+		AllowPrivateAddress: attempt.Trust.AllowPrivateAddress,
+		CACertificate:       attempt.Trust.CACertificate,
+		Installations:       attempt.Installations,
+		CreatedAt:           attempt.CreatedAt,
 	})
 	if err != nil {
 		return fmt.Errorf("encode source control application state: %w", err)
@@ -105,6 +109,10 @@ func (r *stateRepository) load(
 		WorkspaceSlug: stored.WorkspaceSlug,
 		AccountID:     stored.AccountID,
 		Organization:  stored.Organization,
+		Trust: entity.SCMTrust{
+			AllowPrivateAddress: stored.AllowPrivateAddress,
+			CACertificate:       stored.CACertificate,
+		},
 		Installations: stored.Installations,
 		CreatedAt:     stored.CreatedAt,
 	}, nil

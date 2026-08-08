@@ -6,6 +6,9 @@
 	import { api } from "$lib/api";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
+	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+	import { Label } from "$lib/components/ui/label/index.js";
+	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import {
 		appNoticeMessage,
 		detailOf,
@@ -33,6 +36,8 @@
 	let manifestBody = $state("");
 	let manifestForm = $state.raw<HTMLFormElement | undefined>(undefined);
 
+	let onOwnNetwork = $state(false);
+	let authority = $state("");
 	let working = $state(false);
 	let chosen = $state("");
 	let failure = $state.raw<SourceControlFailure | undefined>(undefined);
@@ -51,7 +56,13 @@
 
 		const { data, error } = await api.POST(
 			"/workspaces/{workspaceId}/source-control/application/registration",
-			{ params: { path: { workspaceId } }, body: {} },
+			{
+				params: { path: { workspaceId } },
+				body: {
+					allowPrivateAddress: onOwnNetwork || undefined,
+					caCertificate: authority.trim() || undefined,
+				},
+			},
 		);
 
 		working = false;
@@ -187,6 +198,38 @@
 			This instance holds no GitHub application yet. Registering one takes you to GitHub to
 			confirm; it hands back the keys, and nothing is copied by hand.
 		</p>
+		<div class="flex items-start gap-2.5">
+			<Checkbox
+				id="application-on-own-network"
+				checked={onOwnNetwork}
+				disabled={working}
+				onCheckedChange={(checked) => (onOwnNetwork = checked === true)}
+			/>
+			<div class="flex flex-col gap-0.5">
+				<Label for="application-on-own-network">This instance is on our own network</Label>
+				<p class="text-sm leading-normal text-muted-foreground text-pretty">
+					Grant this application the exception it needs to reach an enterprise instance on a
+					private address. Leave it off for github.com.
+				</p>
+			</div>
+		</div>
+
+		{#if onOwnNetwork}
+			<div class="flex flex-col gap-1.5">
+				<Label for="application-authority">Certificate authority</Label>
+				<Textarea
+					id="application-authority"
+					bind:value={authority}
+					disabled={working}
+					rows={4}
+					placeholder="-----BEGIN CERTIFICATE-----"
+				/>
+				<p class="text-sm leading-normal text-muted-foreground text-pretty">
+					Only needed when the instance presents a certificate no public authority signed.
+				</p>
+			</div>
+		{/if}
+
 		<Button disabled={working} onclick={register} class="self-start">
 			{working ? "Opening GitHub…" : "Register the application"}
 		</Button>

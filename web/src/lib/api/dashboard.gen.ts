@@ -4835,6 +4835,8 @@ export interface components {
             canRegister: boolean;
             slug?: string;
             installUrl?: string;
+            allowPrivateAddress?: boolean;
+            caCertificateSet?: boolean;
         };
         /** @description What the browser posts to the forge to create an application. The manifest is passed through untouched as one form field; state comes back on the redirect and is spent once. */
         SourceControlAppRegistration: {
@@ -12905,6 +12907,8 @@ export interface operations {
             content: {
                 "application/json": {
                     organization?: string;
+                    allowPrivateAddress?: boolean;
+                    caCertificate?: string;
                 };
             };
         };
