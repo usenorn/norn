@@ -79,6 +79,7 @@ func New(
 	// own byte cap rather than the dashboard's, which is sized for a form.
 	deliveries := base.With(chimiddleware.Timeout(cfg.RequestTimeout))
 	deliveries.Post(sourcecontrol.DeliveryPath, sourceControlEdge.Deliver)
+	deliveries.Post(sourcecontrol.AppDeliveryPath, sourceControlEdge.DeliverToApp)
 
 	transfers := base.With(chimiddleware.Timeout(attachmentCfg.TransferTimeout))
 	transfers.Put(blob.UploadPath, blobEdge.Receive)

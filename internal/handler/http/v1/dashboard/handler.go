@@ -43,6 +43,8 @@ type handler struct {
 	licensing         service.Licensing
 	imports           service.Imports
 	sourceControl     service.SourceControl
+	sourceControlApps service.SourceControlApps
+	sourceControlCfg  config.SourceControl
 	app               config.App
 	instance          config.Instance
 	password          config.Password
@@ -80,6 +82,8 @@ func New(
 	licensing service.Licensing,
 	imports service.Imports,
 	sourceControl service.SourceControl,
+	sourceControlApps service.SourceControlApps,
+	sourceControlCfg config.SourceControl,
 	app config.App,
 	instance config.Instance,
 	password config.Password,
@@ -116,6 +120,8 @@ func New(
 		licensing:         licensing,
 		imports:           imports,
 		sourceControl:     sourceControl,
+		sourceControlApps: sourceControlApps,
+		sourceControlCfg:  sourceControlCfg,
 		app:               app,
 		instance:          instance,
 		password:          password,

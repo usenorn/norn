@@ -151,6 +151,30 @@ func (r *repositoryRepository) GetByID(
 	return stored, nil
 }
 
+const getRepositoryByFullNameQuery = `
+SELECT` + repositoryColumns + `
+FROM workspace_scm_repositories
+WHERE connection_id = $1 AND lower(full_name) = lower($2)`
+
+func (r *repositoryRepository) GetByFullName(
+	ctx context.Context,
+	connectionID uuid.UUID,
+	fullName string,
+) (entity.SCMRepository, error) {
+	stored, err := scanRepository(r.db.Querier(ctx).QueryRowContext(
+		ctx, getRepositoryByFullNameQuery, connectionID, fullName,
+	))
+	if errors.Is(err, sql.ErrNoRows) {
+		return entity.SCMRepository{}, entity.ErrSCMRepositoryNotFound
+	}
+
+	if err != nil {
+		return entity.SCMRepository{}, fmt.Errorf("read source control repository: %w", err)
+	}
+
+	return stored, nil
+}
+
 const getRepositoryForDeliveryQuery = `
 SELECT` + repositoryColumns + `
 FROM workspace_scm_repositories

@@ -43,6 +43,7 @@ type sync struct {
 	memberships  repository.Membership
 	forges       service.Forges
 	credentials  *credentials
+	apps         repository.SCMApp
 	authorizer   service.Authorizer
 	issueWriter  service.Issues
 	comments     service.IssueComments
@@ -85,6 +86,7 @@ func NewSync(
 ) service.SourceControlSync {
 	return &sync{
 		credentials:  newCredentials(connections, apps, forges, cache),
+		apps:         apps,
 		connections:  connections,
 		repositories: repositories,
 		routes:       routes,
@@ -167,7 +169,64 @@ func (s *sync) Accept(
 		return uuid.Nil, entity.ErrSCMSignatureInvalid
 	}
 
-	delivery.RepositoryID = repositoryID
+	return s.hold(ctx, stored, delivery)
+}
+
+func (s *sync) AcceptFromApp(
+	ctx context.Context,
+	provider entity.SCMProvider,
+	header http.Header,
+	body []byte,
+) (uuid.UUID, error) {
+	forgeApp, err := s.forges.App(provider)
+	if err != nil {
+		return uuid.Nil, entity.ErrSCMSignatureInvalid
+	}
+
+	route, err := forgeApp.Route(body)
+	if err != nil {
+		return uuid.Nil, entity.ErrSCMSignatureInvalid
+	}
+
+	forge, err := s.forges.Lookup(provider)
+	if err != nil {
+		return uuid.Nil, entity.ErrSCMSignatureInvalid
+	}
+
+	registered, err := s.apps.Get(ctx, provider, forge.Endpoint())
+	if err != nil {
+		return uuid.Nil, entity.ErrSCMSignatureInvalid
+	}
+
+	secrets, err := s.apps.Secrets(ctx, registered.ID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	delivery, err := forge.Verify(secrets.WebhookSecret, header, body)
+	if err != nil {
+		return uuid.Nil, entity.ErrSCMSignatureInvalid
+	}
+
+	connection, err := s.connections.GetByInstallation(ctx, registered.ID, route.InstallationID)
+	if err != nil {
+		return uuid.Nil, entity.ErrSCMSignatureInvalid
+	}
+
+	stored, err := s.repositories.GetByFullName(ctx, connection.ID, route.FullName)
+	if err != nil {
+		return uuid.Nil, entity.ErrSCMSignatureInvalid
+	}
+
+	return s.hold(ctx, stored, delivery)
+}
+
+func (s *sync) hold(
+	ctx context.Context,
+	stored entity.SCMRepository,
+	delivery entity.SCMDelivery,
+) (uuid.UUID, error) {
+	delivery.RepositoryID = stored.ID
 	delivery.WorkspaceID = stored.WorkspaceID
 
 	if delivery.ExternalID == "" {
@@ -179,11 +238,11 @@ func (s *sync) Accept(
 		return uuid.Nil, err
 	}
 
-	if err := s.repositories.RecordSeen(ctx, repositoryID, time.Now().UTC()); err != nil {
+	if err := s.repositories.RecordSeen(ctx, stored.ID, time.Now().UTC()); err != nil {
 		logging.From(ctx).WarnContext(
 			ctx,
 			"recording a source control delivery arrival failed",
-			"repository_id", repositoryID.String(),
+			"repository_id", stored.ID.String(),
 			"error", err.Error(),
 		)
 	}

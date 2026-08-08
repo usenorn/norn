@@ -36,6 +36,8 @@ type connections struct {
 	activity     repository.Activity
 	forges       service.Forges
 	credentials  *credentials
+	apps         repository.SCMApp
+	appStates    repository.SCMAppState
 	authorizer   service.Authorizer
 	audit        service.Audit
 	transactor   repository.Transactor
@@ -62,6 +64,7 @@ func NewConnections(
 	issues repository.Issue,
 	activity repository.Activity,
 	apps repository.SCMApp,
+	appStates repository.SCMAppState,
 	forges service.Forges,
 	cache *forge.Credentials,
 	authorizer service.Authorizer,
@@ -71,6 +74,8 @@ func NewConnections(
 ) service.SourceControl {
 	return &connections{
 		credentials:  newCredentials(connectionRepository, apps, forges, cache),
+		apps:         apps,
+		appStates:    appStates,
 		connections:  connectionRepository,
 		repositories: repositories,
 		routes:       routes,
@@ -140,18 +145,112 @@ func (s *connections) GetConnection(
 	return s.connections.GetByID(ctx, workspaceID, connectionID)
 }
 
+type heldCredential struct {
+	kind         entity.SCMAuthKind
+	token        string
+	stored       string
+	trust        entity.SCMTrust
+	appID        uuid.UUID
+	installation string
+	accountLogin string
+}
+
+func (s *connections) credentialFor(
+	ctx context.Context,
+	input service.ConnectSourceControlInput,
+) (heldCredential, error) {
+	if !input.UsesApp() {
+		token := strings.TrimSpace(input.Token)
+
+		return heldCredential{
+			kind:   entity.SCMAuthToken,
+			token:  token,
+			stored: token,
+			trust: entity.SCMTrust{
+				AllowPrivateAddress: input.AllowPrivateAddress,
+				CACertificate:       strings.TrimSpace(input.CACertificate),
+			},
+		}, nil
+	}
+
+	stash, err := s.appStates.Take(ctx, input.InstallationHandle)
+	if err != nil {
+		return heldCredential{}, err
+	}
+
+	if stash.Purpose != entity.SCMAppChosen ||
+		stash.WorkspaceID != input.WorkspaceID ||
+		stash.Provider != input.Provider {
+		return heldCredential{}, entity.ErrSCMAppStateNotFound
+	}
+
+	chosen, found := entity.SCMInstallations(stash.Installations).Find(input.InstallationID)
+	if !found {
+		return heldCredential{}, entity.ErrSCMInstallationNotFound
+	}
+
+	registered, err := s.apps.Get(ctx, input.Provider, strings.TrimSpace(input.BaseURL))
+	if err != nil {
+		return heldCredential{}, err
+	}
+
+	secrets, err := s.apps.Secrets(ctx, registered.ID)
+	if err != nil {
+		return heldCredential{}, err
+	}
+
+	forgeApp, err := s.forges.App(input.Provider)
+	if err != nil {
+		return heldCredential{}, err
+	}
+
+	minted, err := forgeApp.MintInstallationToken(ctx, secrets, chosen.ExternalID)
+	if err != nil {
+		return heldCredential{}, err
+	}
+
+	return heldCredential{
+		kind:         entity.SCMAuthApp,
+		token:        minted.Token,
+		appID:        registered.ID,
+		installation: chosen.ExternalID,
+		accountLogin: chosen.AccountLogin,
+	}, nil
+}
+
 func validateConnect(input service.ConnectSourceControlInput) error {
 	fields := make([]entity.FieldError, 0, 3)
 
-	for _, field := range []entity.FieldError{
+	checks := []entity.FieldError{
 		entity.ValidateSCMBaseURL("baseUrl", input.BaseURL),
-		entity.ValidateSCMToken("token", input.Token),
 		entity.ValidateSCMLabel("label", input.Label),
 		entity.ValidateSCMCertificate("caCertificate", input.CACertificate),
-	} {
+	}
+
+	if input.UsesApp() {
+		checks = append(checks, entity.ValidateSCMInstallation(input.InstallationID))
+
+		if input.InstallationHandle == "" {
+			checks = append(checks, entity.FieldError{
+				Field: "installationHandle",
+				Code:  entity.ValidationCodeRequired,
+			})
+		}
+	} else {
+		checks = append(checks, entity.ValidateSCMToken("token", input.Token))
+	}
+
+	for _, field := range checks {
 		if field.Field != "" {
 			fields = append(fields, field)
 		}
+	}
+
+	if input.UsesApp() && !entity.SupportsApp(input.Provider) {
+		fields = append(fields, entity.FieldError{
+			Field: "installationId",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
 	}
 
 	if !input.Provider.Valid() {
@@ -193,16 +292,16 @@ func (s *connections) Connect(
 		return entity.SCMConnection{}, err
 	}
 
-	trust := entity.SCMTrust{
-		AllowPrivateAddress: input.AllowPrivateAddress,
-		CACertificate:       strings.TrimSpace(input.CACertificate),
+	held, err := s.credentialFor(ctx, input)
+	if err != nil {
+		return entity.SCMConnection{}, err
 	}
 
 	target := entity.SCMTarget{
 		Provider: input.Provider,
 		BaseURL:  strings.TrimSpace(input.BaseURL),
-		Token:    strings.TrimSpace(input.Token),
-		Trust:    trust,
+		Token:    held.token,
+		Trust:    held.trust,
 	}
 
 	login, err := forge.Identity(ctx, target)
@@ -211,6 +310,10 @@ func (s *connections) Connect(
 	}
 
 	label := strings.TrimSpace(input.Label)
+	if label == "" {
+		label = held.accountLogin
+	}
+
 	if label == "" {
 		label = login
 	}
@@ -234,16 +337,20 @@ func (s *connections) Connect(
 				Provider:             input.Provider,
 				BaseURL:              target.BaseURL,
 				Label:                label,
-				TokenHint:            entity.SCMTokenHint(target.Token),
+				TokenHint:            entity.SCMTokenHint(held.stored),
 				IdentityLogin:        login,
 				IntegrationAccountID: account.ID,
 				OwnerAccountID:       decision.Actor.Authority(),
 				OwnerActorKind:       entity.ActorKindToken,
 				OwnerAuthMethod:      decision.Actor.AuthMethod,
-				Trust:                trust,
+				AuthKind:             held.kind,
+				AppID:                held.appID,
+				InstallationID:       held.installation,
+				AccountLogin:         held.accountLogin,
+				Trust:                held.trust,
 				Capabilities:         forge.Capabilities(),
 			},
-			Token: target.Token,
+			Token: held.stored,
 		})
 		if err != nil {
 			return err

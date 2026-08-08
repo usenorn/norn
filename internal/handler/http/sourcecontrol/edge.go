@@ -14,7 +14,12 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-const DeliveryPath = "/v1/source-control/{provider}/{connectionId}"
+const (
+	DeliveryPath = "/v1/source-control/{provider}/{repositoryId}"
+
+	AppDeliveryBase = "/v1/source-control/github-app"
+	AppDeliveryPath = AppDeliveryBase + "/deliveries"
+)
 
 type Edge struct {
 	sync  service.SourceControlSync
@@ -25,57 +30,83 @@ func New(sync service.SourceControlSync, cfg config.SourceControl) *Edge {
 	return &Edge{sync: sync, limit: cfg.MaxDeliveryBytes}
 }
 
-// Deliver reads the body once, whole, before anything else looks at it. GitHub signs the
-// exact bytes it sent, so a payload that has been through a decoder is no longer the payload
-// that was signed and the mismatch would read as a wrong secret. The cap is this route's
-// own: the dashboard's is sized for a form, and a forge sends what it likes.
 func (e *Edge) Deliver(w http.ResponseWriter, r *http.Request) {
 	provider := entity.SCMProvider(chi.URLParam(r, "provider"))
 
-	connectionID, err := uuid.Parse(chi.URLParam(r, "connectionId"))
+	repositoryID, err := uuid.Parse(chi.URLParam(r, "repositoryId"))
 	if err != nil {
 		e.refuse(w)
 
 		return
 	}
 
+	body, ok := e.read(w, r)
+	if !ok {
+		return
+	}
+
+	deliveryID, err := e.sync.Accept(r.Context(), repositoryID, provider, r.Header, body)
+
+	e.settle(w, r, repositoryID.String(), deliveryID, err)
+}
+
+func (e *Edge) DeliverToApp(w http.ResponseWriter, r *http.Request) {
+	body, ok := e.read(w, r)
+	if !ok {
+		return
+	}
+
+	deliveryID, err := e.sync.AcceptFromApp(
+		r.Context(), entity.SCMProviderGitHub, r.Header, body,
+	)
+
+	e.settle(w, r, "", deliveryID, err)
+}
+
+func (e *Edge) read(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, e.limit))
-	if err != nil {
-		var tooLarge *http.MaxBytesError
-		if errors.As(err, &tooLarge) {
-			// Saying so plainly matters: refused as a bad signature this reads as a broken
-			// secret, and somebody would rotate a credential that was never the problem.
-			http.Error(
-				w,
-				"the delivery is larger than this instance accepts",
-				http.StatusRequestEntityTooLarge,
-			)
-
-			return
-		}
-
-		e.refuse(w)
-
-		return
+	if err == nil {
+		return body, true
 	}
 
-	deliveryID, err := e.sync.Accept(r.Context(), connectionID, provider, r.Header, body)
+	var tooLarge *http.MaxBytesError
+	if errors.As(err, &tooLarge) {
+		http.Error(
+			w,
+			"the delivery is larger than this instance accepts",
+			http.StatusRequestEntityTooLarge,
+		)
 
+		return nil, false
+	}
+
+	e.refuse(w)
+
+	return nil, false
+}
+
+func (e *Edge) settle(
+	w http.ResponseWriter,
+	r *http.Request,
+	repository string,
+	deliveryID uuid.UUID,
+	err error,
+) {
 	switch {
 	case errors.Is(err, entity.ErrSCMSignatureInvalid),
-		errors.Is(err, entity.ErrSCMConnectionNotFound):
+		errors.Is(err, entity.ErrSCMConnectionNotFound),
+		errors.Is(err, entity.ErrSCMRepositoryNotFound),
+		errors.Is(err, entity.ErrSCMAppNotFound):
 		e.refuse(w)
 
 	case errors.Is(err, entity.ErrSCMDeliveryDuplicate):
-		// The forge is redelivering something already held. Answering success is what stops
-		// it retrying, and the stored copy is what stops it being applied twice.
 		w.WriteHeader(http.StatusOK)
 
 	case err != nil:
 		logging.From(r.Context()).ErrorContext(
 			r.Context(),
 			"accepting a source control delivery failed",
-			"connection_id", connectionID.String(),
+			"repository_id", repository,
 			"error", err.Error(),
 		)
 
@@ -85,7 +116,7 @@ func (e *Edge) Deliver(w http.ResponseWriter, r *http.Request) {
 		logging.From(r.Context()).InfoContext(
 			r.Context(),
 			"source control delivery accepted",
-			"connection_id", connectionID.String(),
+			"repository_id", repository,
 			"delivery_id", deliveryID.String(),
 		)
 
@@ -93,9 +124,6 @@ func (e *Edge) Deliver(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// refuse answers a connection that does not exist and a delivery that did not verify with
-// exactly the same words, so this endpoint cannot be asked which connections an instance
-// holds.
 func (e *Edge) refuse(w http.ResponseWriter) {
 	http.Error(w, "the delivery did not verify", http.StatusUnauthorized)
 }

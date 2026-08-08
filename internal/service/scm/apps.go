@@ -318,7 +318,7 @@ func (s *apps) Choice(
 		return service.SCMAppChoice{}, err
 	}
 
-	held, err := s.states.Take(ctx, handle)
+	held, err := s.states.Read(ctx, handle)
 	if err != nil {
 		return service.SCMAppChoice{}, err
 	}

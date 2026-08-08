@@ -274,6 +274,30 @@ func (r *connectionRepository) ListByWorkspace(
 	return connections, nil
 }
 
+const getConnectionByInstallationQuery = `
+SELECT` + connectionColumns + `
+FROM workspace_scm_connections
+WHERE auth_kind = 'app' AND app_id = $1 AND installation_id = $2`
+
+func (r *connectionRepository) GetByInstallation(
+	ctx context.Context,
+	appID uuid.UUID,
+	installationID string,
+) (entity.SCMConnection, error) {
+	connection, err := scanConnection(r.db.Querier(ctx).QueryRowContext(
+		ctx, getConnectionByInstallationQuery, appID, installationID,
+	))
+	if errors.Is(err, sql.ErrNoRows) {
+		return entity.SCMConnection{}, entity.ErrSCMConnectionNotFound
+	}
+
+	if err != nil {
+		return entity.SCMConnection{}, fmt.Errorf("read source control connection: %w", err)
+	}
+
+	return connection, nil
+}
+
 const tokenQuery = `
 SELECT token_sealed
 FROM workspace_scm_connections

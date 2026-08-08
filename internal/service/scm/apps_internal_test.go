@@ -245,7 +245,7 @@ func TestAStashBelongingToAnotherWorkspaceIsNotHandedOver(t *testing.T) {
 	held := appsFor(t, cloudConfig())
 
 	held.states.EXPECT().
-		Take(gomock.Any(), "the-handle").
+		Read(gomock.Any(), "the-handle").
 		Return(entity.SCMAppState{
 			Purpose:     entity.SCMAppChosen,
 			Provider:    entity.SCMProviderGitHub,

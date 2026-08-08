@@ -16,11 +16,16 @@ func sourceControlDTO(connection entity.SCMConnection) api.SourceControlConnecti
 	dto := api.SourceControlConnection{
 		Id:        connection.ID,
 		Provider:  api.SourceControlProvider(connection.Provider),
+		AuthKind:  api.SourceControlAuthKind(connection.AuthKind),
 		TokenSet:  connection.TokenSet,
 		TokenHint: connection.TokenHint,
 		Status:    api.SourceControlStatus(connection.Status),
 		CreatedAt: connection.CreatedAt,
 		UpdatedAt: connection.UpdatedAt,
+	}
+
+	if connection.AccountLogin != "" {
+		dto.AccountLogin = &connection.AccountLogin
 	}
 
 	if connection.BaseURL != "" {

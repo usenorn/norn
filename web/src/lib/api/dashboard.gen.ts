@@ -2987,6 +2987,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/source-control/application": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Say whether this instance can act as an installed application, and where to install it */
+        get: operations["getWorkspaceSourceControlApplication"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/source-control/application/registration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin registering this instance's own application on a forge */
+        post: operations["beginWorkspaceSourceControlAppRegistration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/source-control/application/authorization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin signing in to the forge to choose which installation to use */
+        post: operations["beginWorkspaceSourceControlAppAuthorization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/source-control/application/installations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the installations the sign-in just found */
+        get: operations["listWorkspaceSourceControlInstallations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/source-control/connections": {
         parameters: {
             query?: never;
@@ -4694,10 +4770,12 @@ export interface components {
             /** Format: uuid */
             id: string;
             provider: components["schemas"]["SourceControlProvider"];
+            authKind: components["schemas"]["SourceControlAuthKind"];
             baseUrl?: string;
             label?: string;
             tokenSet: boolean;
             tokenHint: string;
+            accountLogin?: string;
             identityLogin?: string;
             /** Format: int32 */
             repositoryCount?: number;
@@ -4724,7 +4802,34 @@ export interface components {
             label?: string;
             allowPrivateAddress?: boolean;
             caCertificate?: string;
-            token: string;
+            token?: string;
+            installationHandle?: string;
+            installationId?: string;
+        };
+        /** @enum {string} */
+        SourceControlAuthKind: "token" | "app";
+        /** @description Whether this instance can act as an installed application on a forge, and where a person goes to install it. An instance handed an application in its own configuration cannot register a second one, so canRegister is false there. */
+        SourceControlApplication: {
+            provider: components["schemas"]["SourceControlProvider"];
+            registered: boolean;
+            canRegister: boolean;
+            slug?: string;
+            installUrl?: string;
+        };
+        /** @description What the browser posts to the forge to create an application. The manifest is passed through untouched as one form field; state comes back on the redirect and is spent once. */
+        SourceControlAppRegistration: {
+            target: string;
+            state: string;
+            manifest: string;
+        };
+        SourceControlAppAuthorization: {
+            url: string;
+        };
+        /** @description One place the application is installed that the signed-in person administers. The handle that produced this list is what connects it, and it is spent when one is chosen. */
+        SourceControlInstallation: {
+            externalId: string;
+            accountLogin: string;
+            accountKind?: string;
         };
         UpdateSourceControlRequest: {
             label?: string;
@@ -12732,6 +12837,118 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceSourceControlApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The application this instance holds, if it holds one */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceControlApplication"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    beginWorkspaceSourceControlAppRegistration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    organization?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description What the browser posts to the forge */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceControlAppRegistration"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["SourceControlConflict"];
+            422: components["responses"]["SourceControlRefused"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    beginWorkspaceSourceControlAppAuthorization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Where to send the browser */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceControlAppAuthorization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceSourceControlInstallations: {
+        parameters: {
+            query: {
+                handle: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The installations to choose between */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceControlInstallation"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

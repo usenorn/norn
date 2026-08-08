@@ -88,6 +88,21 @@ func (mr *MockSCMConnectionMockRecorder) GetByID(ctx, workspaceID, connectionID 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockSCMConnection)(nil).GetByID), ctx, workspaceID, connectionID)
 }
 
+// GetByInstallation mocks base method.
+func (m *MockSCMConnection) GetByInstallation(ctx context.Context, appID uuid.UUID, installationID string) (entity.SCMConnection, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByInstallation", ctx, appID, installationID)
+	ret0, _ := ret[0].(entity.SCMConnection)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByInstallation indicates an expected call of GetByInstallation.
+func (mr *MockSCMConnectionMockRecorder) GetByInstallation(ctx, appID, installationID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByInstallation", reflect.TypeOf((*MockSCMConnection)(nil).GetByInstallation), ctx, appID, installationID)
+}
+
 // GetForDelivery mocks base method.
 func (m *MockSCMConnection) GetForDelivery(ctx context.Context, connectionID uuid.UUID) (entity.SCMConnection, error) {
 	m.ctrl.T.Helper()
@@ -256,6 +271,21 @@ func (m *MockSCMRepository) Delete(ctx context.Context, workspaceID, repositoryI
 func (mr *MockSCMRepositoryMockRecorder) Delete(ctx, workspaceID, repositoryID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSCMRepository)(nil).Delete), ctx, workspaceID, repositoryID)
+}
+
+// GetByFullName mocks base method.
+func (m *MockSCMRepository) GetByFullName(ctx context.Context, connectionID uuid.UUID, fullName string) (entity.SCMRepository, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByFullName", ctx, connectionID, fullName)
+	ret0, _ := ret[0].(entity.SCMRepository)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByFullName indicates an expected call of GetByFullName.
+func (mr *MockSCMRepositoryMockRecorder) GetByFullName(ctx, connectionID, fullName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByFullName", reflect.TypeOf((*MockSCMRepository)(nil).GetByFullName), ctx, connectionID, fullName)
 }
 
 // GetByID mocks base method.

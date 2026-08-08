@@ -20,6 +20,7 @@ type SCMConnection interface {
 	Create(ctx context.Context, input SCMConnectionInput) (entity.SCMConnection, error)
 	GetByID(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error)
 	GetForDelivery(ctx context.Context, connectionID uuid.UUID) (entity.SCMConnection, error)
+	GetByInstallation(ctx context.Context, appID uuid.UUID, installationID string) (entity.SCMConnection, error)
 	ListByWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]entity.SCMConnection, error)
 	Token(ctx context.Context, connectionID uuid.UUID) (string, error)
 	ReplaceToken(ctx context.Context, connectionID uuid.UUID, token, hint, login string, at time.Time) error
@@ -45,6 +46,7 @@ type SCMRepository interface {
 	Create(ctx context.Context, input SCMRepositoryInput) (entity.SCMRepository, error)
 	GetByID(ctx context.Context, workspaceID, repositoryID uuid.UUID) (entity.SCMRepository, error)
 	GetForDelivery(ctx context.Context, repositoryID uuid.UUID) (entity.SCMRepository, error)
+	GetByFullName(ctx context.Context, connectionID uuid.UUID, fullName string) (entity.SCMRepository, error)
 	ListByConnection(ctx context.Context, connectionID uuid.UUID) ([]entity.SCMRepository, error)
 	ListByWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]entity.SCMRepository, error)
 	WebhookSecret(ctx context.Context, repositoryID uuid.UUID) (string, error)

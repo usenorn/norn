@@ -818,7 +818,10 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrSCMRepositoryNotFound),
 		errors.Is(err, entity.ErrSCMRouteNotFound),
 		errors.Is(err, entity.ErrSCMIdentityNotFound),
-		errors.Is(err, entity.ErrSCMTransitionRuleNotFound):
+		errors.Is(err, entity.ErrSCMTransitionRuleNotFound),
+		errors.Is(err, entity.ErrSCMAppNotFound),
+		errors.Is(err, entity.ErrSCMInstallationNotFound),
+		errors.Is(err, entity.ErrSCMAppStateNotFound):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
 	case errors.Is(err, entity.ErrSCMIdentityExists):
@@ -837,8 +840,17 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrSCMTeamOutsideConnection):
 		return sourceControlConflict(api.SourceControlTeamOutsideConnection, err), true
 
-	case errors.Is(err, entity.ErrSCMProviderUnsupported):
+	case errors.Is(err, entity.ErrSCMProviderUnsupported),
+		errors.Is(err, entity.ErrSCMAppUnsupported):
 		return sourceControlRefused(api.SourceControlProviderUnsupported, err), true
+
+	case errors.Is(err, entity.ErrSCMAppExists):
+		return sourceControlConflict(api.SourceControlAlreadyConnected, err), true
+
+	case errors.Is(err, entity.ErrSCMAppRefused),
+		errors.Is(err, entity.ErrSCMAppTokenUnavailable),
+		errors.Is(err, entity.ErrSCMPrivateKeyInvalid):
+		return sourceControlRefused(api.SourceControlCredentialsRejected, err), true
 
 	case errors.Is(err, entity.ErrSCMEncryptionKeyMissing):
 		base := baseProblem(http.StatusServiceUnavailable, err.Error())

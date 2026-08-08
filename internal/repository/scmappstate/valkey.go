@@ -60,18 +60,35 @@ func (r *stateRepository) Put(ctx context.Context, state string, attempt entity.
 	return nil
 }
 
+func (r *stateRepository) Read(ctx context.Context, state string) (entity.SCMAppState, error) {
+	return r.load(ctx, state, false)
+}
+
 func (r *stateRepository) Take(ctx context.Context, state string) (entity.SCMAppState, error) {
+	return r.load(ctx, state, true)
+}
+
+func (r *stateRepository) load(
+	ctx context.Context,
+	state string,
+	spend bool,
+) (entity.SCMAppState, error) {
 	if state == "" {
 		return entity.SCMAppState{}, entity.ErrSCMAppStateNotFound
 	}
 
-	payload, err := r.client.GetDel(ctx, key(state)).Bytes()
+	read := r.client.Get(ctx, key(state))
+	if spend {
+		read = r.client.GetDel(ctx, key(state))
+	}
+
+	payload, err := read.Bytes()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return entity.SCMAppState{}, entity.ErrSCMAppStateNotFound
 		}
 
-		return entity.SCMAppState{}, fmt.Errorf("take source control application state: %w", err)
+		return entity.SCMAppState{}, fmt.Errorf("read source control application state: %w", err)
 	}
 
 	var stored storedState

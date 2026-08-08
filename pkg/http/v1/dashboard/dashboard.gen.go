@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"time"
@@ -2556,6 +2557,24 @@ func (e SignUpUnusableProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for SourceControlAuthKind.
+const (
+	SourceControlAuthKindApp   SourceControlAuthKind = "app"
+	SourceControlAuthKindToken SourceControlAuthKind = "token"
+)
+
+// Valid indicates whether the value is a known member of the SourceControlAuthKind enum.
+func (e SourceControlAuthKind) Valid() bool {
+	switch e {
+	case SourceControlAuthKindApp:
+		return true
+	case SourceControlAuthKindToken:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SourceControlBrokenReason.
 const (
 	CredentialsRejected   SourceControlBrokenReason = "credentials_rejected"
@@ -4036,6 +4055,8 @@ type ConnectSourceControlRequest struct {
 	AllowPrivateAddress *bool   `json:"allowPrivateAddress,omitempty"`
 	BaseUrl             *string `json:"baseUrl,omitempty"`
 	CaCertificate       *string `json:"caCertificate,omitempty"`
+	InstallationHandle  *string `json:"installationHandle,omitempty"`
+	InstallationId      *string `json:"installationId,omitempty"`
 	Label               *string `json:"label,omitempty"`
 
 	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
@@ -5893,6 +5914,32 @@ type SnoozeNotificationRequest struct {
 	Until time.Time `json:"until"`
 }
 
+// SourceControlAppAuthorization defines model for SourceControlAppAuthorization.
+type SourceControlAppAuthorization struct {
+	Url string `json:"url"`
+}
+
+// SourceControlAppRegistration What the browser posts to the forge to create an application. The manifest is passed through untouched as one form field; state comes back on the redirect and is spent once.
+type SourceControlAppRegistration struct {
+	Manifest string `json:"manifest"`
+	State    string `json:"state"`
+	Target   string `json:"target"`
+}
+
+// SourceControlApplication Whether this instance can act as an installed application on a forge, and where a person goes to install it. An instance handed an application in its own configuration cannot register a second one, so canRegister is false there.
+type SourceControlApplication struct {
+	CanRegister bool    `json:"canRegister"`
+	InstallUrl  *string `json:"installUrl,omitempty"`
+
+	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
+	Provider   SourceControlProvider `json:"provider"`
+	Registered bool                  `json:"registered"`
+	Slug       *string               `json:"slug,omitempty"`
+}
+
+// SourceControlAuthKind defines model for SourceControlAuthKind.
+type SourceControlAuthKind string
+
 // SourceControlBrokenReason defines model for SourceControlBrokenReason.
 type SourceControlBrokenReason string
 
@@ -5915,7 +5962,9 @@ type SourceControlConflictProblemCode string
 
 // SourceControlConnection One credential against one forge address. A token already reaches every repository its owner can see, so repositories hang off the connection rather than each carrying its own copy of the secret. The token is never returned; tokenSet says whether one is held and tokenHint carries its last few characters so a person can tell which is installed.
 type SourceControlConnection struct {
+	AccountLogin        *string                    `json:"accountLogin,omitempty"`
 	AllowPrivateAddress *bool                      `json:"allowPrivateAddress,omitempty"`
+	AuthKind            SourceControlAuthKind      `json:"authKind"`
 	BaseUrl             *string                    `json:"baseUrl,omitempty"`
 	BrokenAt            *time.Time                 `json:"brokenAt,omitempty"`
 	BrokenDetail        *string                    `json:"brokenDetail,omitempty"`
@@ -5953,6 +6002,13 @@ type SourceControlDelivery struct {
 
 // SourceControlDeliveryOutcome defines model for SourceControlDeliveryOutcome.
 type SourceControlDeliveryOutcome string
+
+// SourceControlInstallation One place the application is installed that the signed-in person administers. The handle that produced this list is what connects it, and it is spent when one is chosen.
+type SourceControlInstallation struct {
+	AccountKind  *string `json:"accountKind,omitempty"`
+	AccountLogin string  `json:"accountLogin"`
+	ExternalId   string  `json:"externalId"`
+}
 
 // SourceControlProvider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
 type SourceControlProvider string
@@ -6981,6 +7037,16 @@ type SearchWorkspaceParams struct {
 	Limit *int32        `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListWorkspaceSourceControlInstallationsParams defines parameters for ListWorkspaceSourceControlInstallations.
+type ListWorkspaceSourceControlInstallationsParams struct {
+	Handle string `form:"handle" json:"handle"`
+}
+
+// BeginWorkspaceSourceControlAppRegistrationJSONBody defines parameters for BeginWorkspaceSourceControlAppRegistration.
+type BeginWorkspaceSourceControlAppRegistrationJSONBody struct {
+	Organization *string `json:"organization,omitempty"`
+}
+
 // ListWorkspaceSourceControlRepositoriesParams defines parameters for ListWorkspaceSourceControlRepositories.
 type ListWorkspaceSourceControlRepositoriesParams struct {
 	ConnectionId *openapi_types.UUID `form:"connectionId,omitempty" json:"connectionId,omitempty"`
@@ -7201,6 +7267,9 @@ type ReorderWorkspaceSavedViewsJSONRequestBody = ReorderSavedViewsRequest
 
 // UpdateWorkspaceSavedViewJSONRequestBody defines body for UpdateWorkspaceSavedView for application/json ContentType.
 type UpdateWorkspaceSavedViewJSONRequestBody = UpdateSavedViewRequest
+
+// BeginWorkspaceSourceControlAppRegistrationJSONRequestBody defines body for BeginWorkspaceSourceControlAppRegistration for application/json ContentType.
+type BeginWorkspaceSourceControlAppRegistrationJSONRequestBody BeginWorkspaceSourceControlAppRegistrationJSONBody
 
 // ConnectWorkspaceSourceControlJSONRequestBody defines body for ConnectWorkspaceSourceControl for application/json ContentType.
 type ConnectWorkspaceSourceControlJSONRequestBody = ConnectSourceControlRequest
@@ -7813,6 +7882,18 @@ type ServerInterface interface {
 	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
 	// (GET /workspaces/{workspaceId}/search)
 	SearchWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchWorkspaceParams)
+	// GetWorkspaceSourceControlApplication Say whether this instance can act as an installed application, and where to install it
+	// (GET /workspaces/{workspaceId}/source-control/application)
+	GetWorkspaceSourceControlApplication(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// BeginWorkspaceSourceControlAppAuthorization Begin signing in to the forge to choose which installation to use
+	// (POST /workspaces/{workspaceId}/source-control/application/authorization)
+	BeginWorkspaceSourceControlAppAuthorization(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListWorkspaceSourceControlInstallations List the installations the sign-in just found
+	// (GET /workspaces/{workspaceId}/source-control/application/installations)
+	ListWorkspaceSourceControlInstallations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceSourceControlInstallationsParams)
+	// BeginWorkspaceSourceControlAppRegistration Begin registering this instance's own application on a forge
+	// (POST /workspaces/{workspaceId}/source-control/application/registration)
+	BeginWorkspaceSourceControlAppRegistration(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// ListWorkspaceSourceControlConnections List the forges this workspace holds a credential for
 	// (GET /workspaces/{workspaceId}/source-control/connections)
 	ListWorkspaceSourceControlConnections(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -9112,6 +9193,30 @@ func (_ Unimplemented) UpdateWorkspaceSavedView(w http.ResponseWriter, r *http.R
 // SearchWorkspace Find issues, comments, projects, teams and people by typing words
 // (GET /workspaces/{workspaceId}/search)
 func (_ Unimplemented) SearchWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchWorkspaceParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceSourceControlApplication Say whether this instance can act as an installed application, and where to install it
+// (GET /workspaces/{workspaceId}/source-control/application)
+func (_ Unimplemented) GetWorkspaceSourceControlApplication(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// BeginWorkspaceSourceControlAppAuthorization Begin signing in to the forge to choose which installation to use
+// (POST /workspaces/{workspaceId}/source-control/application/authorization)
+func (_ Unimplemented) BeginWorkspaceSourceControlAppAuthorization(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceSourceControlInstallations List the installations the sign-in just found
+// (GET /workspaces/{workspaceId}/source-control/application/installations)
+func (_ Unimplemented) ListWorkspaceSourceControlInstallations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceSourceControlInstallationsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// BeginWorkspaceSourceControlAppRegistration Begin registering this instance's own application on a forge
+// (POST /workspaces/{workspaceId}/source-control/application/registration)
+func (_ Unimplemented) BeginWorkspaceSourceControlAppRegistration(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -15491,6 +15596,126 @@ func (siw *ServerInterfaceWrapper) SearchWorkspace(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// GetWorkspaceSourceControlApplication operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceSourceControlApplication(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceSourceControlApplication(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// BeginWorkspaceSourceControlAppAuthorization operation middleware
+func (siw *ServerInterfaceWrapper) BeginWorkspaceSourceControlAppAuthorization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BeginWorkspaceSourceControlAppAuthorization(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceSourceControlInstallations operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceSourceControlInstallations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceSourceControlInstallationsParams
+
+	// ------------- Required query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceSourceControlInstallations(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// BeginWorkspaceSourceControlAppRegistration operation middleware
+func (siw *ServerInterfaceWrapper) BeginWorkspaceSourceControlAppRegistration(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BeginWorkspaceSourceControlAppRegistration(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceSourceControlConnections operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceSourceControlConnections(w http.ResponseWriter, r *http.Request) {
 
@@ -19115,6 +19340,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/search", wrapper.SearchWorkspace)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/application", wrapper.GetWorkspaceSourceControlApplication)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/source-control/application/registration", wrapper.BeginWorkspaceSourceControlAppRegistration)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/source-control/application/authorization", wrapper.BeginWorkspaceSourceControlAppAuthorization)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/application/installations", wrapper.ListWorkspaceSourceControlInstallations)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections", wrapper.ListWorkspaceSourceControlConnections)
@@ -34848,6 +35085,340 @@ func (response SearchWorkspace500ApplicationProblemPlusJSONResponse) VisitSearch
 	return err
 }
 
+type GetWorkspaceSourceControlApplicationRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceSourceControlApplicationResponseObject interface {
+	VisitGetWorkspaceSourceControlApplicationResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceSourceControlApplication200JSONResponse SourceControlApplication
+
+func (response GetWorkspaceSourceControlApplication200JSONResponse) VisitGetWorkspaceSourceControlApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSourceControlApplication401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSourceControlApplication401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSourceControlApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSourceControlApplication403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceSourceControlApplication403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSourceControlApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceSourceControlApplication500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceSourceControlApplication500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceSourceControlApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppAuthorizationRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type BeginWorkspaceSourceControlAppAuthorizationResponseObject interface {
+	VisitBeginWorkspaceSourceControlAppAuthorizationResponse(w http.ResponseWriter) error
+}
+
+type BeginWorkspaceSourceControlAppAuthorization200JSONResponse SourceControlAppAuthorization
+
+func (response BeginWorkspaceSourceControlAppAuthorization200JSONResponse) VisitBeginWorkspaceSourceControlAppAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppAuthorization401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response BeginWorkspaceSourceControlAppAuthorization401ApplicationProblemPlusJSONResponse) VisitBeginWorkspaceSourceControlAppAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppAuthorization403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response BeginWorkspaceSourceControlAppAuthorization403ApplicationProblemPlusJSONResponse) VisitBeginWorkspaceSourceControlAppAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppAuthorization404ApplicationProblemPlusJSONResponse Problem
+
+func (response BeginWorkspaceSourceControlAppAuthorization404ApplicationProblemPlusJSONResponse) VisitBeginWorkspaceSourceControlAppAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppAuthorization500ApplicationProblemPlusJSONResponse Problem
+
+func (response BeginWorkspaceSourceControlAppAuthorization500ApplicationProblemPlusJSONResponse) VisitBeginWorkspaceSourceControlAppAuthorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlInstallationsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceSourceControlInstallationsParams
+}
+
+type ListWorkspaceSourceControlInstallationsResponseObject interface {
+	VisitListWorkspaceSourceControlInstallationsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceSourceControlInstallations200JSONResponse []SourceControlInstallation
+
+func (response ListWorkspaceSourceControlInstallations200JSONResponse) VisitListWorkspaceSourceControlInstallationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlInstallations401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSourceControlInstallations401ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlInstallationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlInstallations403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSourceControlInstallations403ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlInstallationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlInstallations404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceSourceControlInstallations404ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlInstallationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlInstallations500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceSourceControlInstallations500ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlInstallationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppRegistrationRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *BeginWorkspaceSourceControlAppRegistrationJSONRequestBody
+}
+
+type BeginWorkspaceSourceControlAppRegistrationResponseObject interface {
+	VisitBeginWorkspaceSourceControlAppRegistrationResponse(w http.ResponseWriter) error
+}
+
+type BeginWorkspaceSourceControlAppRegistration200JSONResponse SourceControlAppRegistration
+
+func (response BeginWorkspaceSourceControlAppRegistration200JSONResponse) VisitBeginWorkspaceSourceControlAppRegistrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppRegistration401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response BeginWorkspaceSourceControlAppRegistration401ApplicationProblemPlusJSONResponse) VisitBeginWorkspaceSourceControlAppRegistrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppRegistration403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response BeginWorkspaceSourceControlAppRegistration403ApplicationProblemPlusJSONResponse) VisitBeginWorkspaceSourceControlAppRegistrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppRegistration409ApplicationProblemPlusJSONResponse struct {
+	SourceControlConflictApplicationProblemPlusJSONResponse
+}
+
+func (response BeginWorkspaceSourceControlAppRegistration409ApplicationProblemPlusJSONResponse) VisitBeginWorkspaceSourceControlAppRegistrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppRegistration422ApplicationProblemPlusJSONResponse struct {
+	SourceControlRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response BeginWorkspaceSourceControlAppRegistration422ApplicationProblemPlusJSONResponse) VisitBeginWorkspaceSourceControlAppRegistrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginWorkspaceSourceControlAppRegistration500ApplicationProblemPlusJSONResponse Problem
+
+func (response BeginWorkspaceSourceControlAppRegistration500ApplicationProblemPlusJSONResponse) VisitBeginWorkspaceSourceControlAppRegistrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceSourceControlConnectionsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -42948,6 +43519,18 @@ type StrictServerInterface interface {
 	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
 	// (GET /workspaces/{workspaceId}/search)
 	SearchWorkspace(ctx context.Context, request SearchWorkspaceRequestObject) (SearchWorkspaceResponseObject, error)
+	// GetWorkspaceSourceControlApplication Say whether this instance can act as an installed application, and where to install it
+	// (GET /workspaces/{workspaceId}/source-control/application)
+	GetWorkspaceSourceControlApplication(ctx context.Context, request GetWorkspaceSourceControlApplicationRequestObject) (GetWorkspaceSourceControlApplicationResponseObject, error)
+	// BeginWorkspaceSourceControlAppAuthorization Begin signing in to the forge to choose which installation to use
+	// (POST /workspaces/{workspaceId}/source-control/application/authorization)
+	BeginWorkspaceSourceControlAppAuthorization(ctx context.Context, request BeginWorkspaceSourceControlAppAuthorizationRequestObject) (BeginWorkspaceSourceControlAppAuthorizationResponseObject, error)
+	// ListWorkspaceSourceControlInstallations List the installations the sign-in just found
+	// (GET /workspaces/{workspaceId}/source-control/application/installations)
+	ListWorkspaceSourceControlInstallations(ctx context.Context, request ListWorkspaceSourceControlInstallationsRequestObject) (ListWorkspaceSourceControlInstallationsResponseObject, error)
+	// BeginWorkspaceSourceControlAppRegistration Begin registering this instance's own application on a forge
+	// (POST /workspaces/{workspaceId}/source-control/application/registration)
+	BeginWorkspaceSourceControlAppRegistration(ctx context.Context, request BeginWorkspaceSourceControlAppRegistrationRequestObject) (BeginWorkspaceSourceControlAppRegistrationResponseObject, error)
 	// ListWorkspaceSourceControlConnections List the forges this workspace holds a credential for
 	// (GET /workspaces/{workspaceId}/source-control/connections)
 	ListWorkspaceSourceControlConnections(ctx context.Context, request ListWorkspaceSourceControlConnectionsRequestObject) (ListWorkspaceSourceControlConnectionsResponseObject, error)
@@ -48280,6 +48863,121 @@ func (sh *strictHandler) SearchWorkspace(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SearchWorkspaceResponseObject); ok {
 		if err := validResponse.VisitSearchWorkspaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceSourceControlApplication operation middleware
+func (sh *strictHandler) GetWorkspaceSourceControlApplication(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceSourceControlApplicationRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceSourceControlApplication(ctx, request.(GetWorkspaceSourceControlApplicationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceSourceControlApplication")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceSourceControlApplicationResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceSourceControlApplicationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// BeginWorkspaceSourceControlAppAuthorization operation middleware
+func (sh *strictHandler) BeginWorkspaceSourceControlAppAuthorization(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request BeginWorkspaceSourceControlAppAuthorizationRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BeginWorkspaceSourceControlAppAuthorization(ctx, request.(BeginWorkspaceSourceControlAppAuthorizationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BeginWorkspaceSourceControlAppAuthorization")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BeginWorkspaceSourceControlAppAuthorizationResponseObject); ok {
+		if err := validResponse.VisitBeginWorkspaceSourceControlAppAuthorizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceSourceControlInstallations operation middleware
+func (sh *strictHandler) ListWorkspaceSourceControlInstallations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceSourceControlInstallationsParams) {
+	var request ListWorkspaceSourceControlInstallationsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceSourceControlInstallations(ctx, request.(ListWorkspaceSourceControlInstallationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceSourceControlInstallations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceSourceControlInstallationsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceSourceControlInstallationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// BeginWorkspaceSourceControlAppRegistration operation middleware
+func (sh *strictHandler) BeginWorkspaceSourceControlAppRegistration(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request BeginWorkspaceSourceControlAppRegistrationRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body BeginWorkspaceSourceControlAppRegistrationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BeginWorkspaceSourceControlAppRegistration(ctx, request.(BeginWorkspaceSourceControlAppRegistrationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BeginWorkspaceSourceControlAppRegistration")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BeginWorkspaceSourceControlAppRegistrationResponseObject); ok {
+		if err := validResponse.VisitBeginWorkspaceSourceControlAppRegistrationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
