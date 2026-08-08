@@ -14,6 +14,48 @@ export const sourceControlRepositoryPreviewStates: Record<
 > = import.meta.env.DEV
 	? {
 			loading: { view: { kind: "loading" } },
+			installation: {
+				view: {
+					kind: "detail",
+					connection: {
+						id: "00000000-0000-4000-8000-0000000000a3",
+						provider: "github",
+						authKind: "app",
+						label: "flagroll",
+						accountLogin: "flagroll",
+						tokenSet: false,
+						tokenHint: "",
+						identityLogin: "norn-northwind[bot]",
+						status: "connected",
+						verifiedAt: "2026-08-08T09:14:00Z",
+						createdAt: "2026-08-08T09:14:00Z",
+						updatedAt: "2026-08-08T09:14:00Z",
+					},
+					repository: {
+						id: "00000000-0000-4000-8000-0000000000b3",
+						connectionId: "00000000-0000-4000-8000-0000000000a3",
+						provider: "github",
+						fullName: "flagroll/platform",
+						defaultBranch: "main",
+						mirrorLabel: "norn",
+						pollIntervalSeconds: 300,
+						hookInstalled: false,
+						routeCount: 1,
+						createdAt: "2026-08-08T09:14:00Z",
+						updatedAt: "2026-08-08T09:14:00Z",
+					},
+					routes: [
+						{
+							id: "00000000-0000-4000-8000-0000000000c3",
+							repositoryId: "00000000-0000-4000-8000-0000000000b3",
+							teamId: "00000000-0000-4000-8000-0000000000d1",
+							pathPrefix: "",
+							createdAt: "2026-08-08T09:15:00Z",
+						},
+					],
+					deliveries: [],
+				},
+			},
 			detail: {
 				view: {
 					kind: "detail",

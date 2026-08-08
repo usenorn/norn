@@ -142,6 +142,10 @@ func (c SCMConnection) UsesApp() bool {
 	return c.AuthKind == SCMAuthApp
 }
 
+func (c SCMConnection) DeliversCentrally() bool {
+	return c.UsesApp()
+}
+
 func (c SCMConnection) Broken() bool {
 	return c.Status == SCMConnectionBroken
 }

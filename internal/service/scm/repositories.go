@@ -109,9 +109,14 @@ func (s *connections) AddRepository(
 		return service.ConnectedRepository{}, err
 	}
 
-	secret, err := entity.NewSCMWebhookSecret()
-	if err != nil {
-		return service.ConnectedRepository{}, fmt.Errorf("mint a webhook secret: %w", err)
+	central := connection.DeliversCentrally()
+
+	var secret string
+
+	if !central {
+		if secret, err = entity.NewSCMWebhookSecret(); err != nil {
+			return service.ConnectedRepository{}, fmt.Errorf("mint a webhook secret: %w", err)
+		}
 	}
 
 	created, err := s.repositories.Create(ctx, repository.SCMRepositoryInput{
@@ -134,22 +139,28 @@ func (s *connections) AddRepository(
 
 	callback := s.callbackURL(created)
 
-	hookID, err := forge.InstallHook(ctx, service.ForgeHookRequest{
-		Target:      target,
-		CallbackURL: callback,
-		Secret:      secret,
-	})
-	if err != nil {
-		logging.From(ctx).WarnContext(
-			ctx,
-			"installing the source control hook failed; the reconcile sweep will retry it",
-			"repository_id", created.ID.String(),
-			"error", err.Error(),
-		)
-	} else if err := s.repositories.RecordHook(ctx, created.ID, hookID); err != nil {
-		return service.ConnectedRepository{}, err
-	} else {
-		created.ExternalHookID = hookID
+	if !central {
+		hookID, err := forge.InstallHook(ctx, service.ForgeHookRequest{
+			Target:      target,
+			CallbackURL: callback,
+			Secret:      secret,
+		})
+
+		switch {
+		case err != nil:
+			logging.From(ctx).WarnContext(
+				ctx,
+				"installing the source control hook failed; the reconcile sweep will retry it",
+				"repository_id", created.ID.String(),
+				"error", err.Error(),
+			)
+		default:
+			if err := s.repositories.RecordHook(ctx, created.ID, hookID); err != nil {
+				return service.ConnectedRepository{}, err
+			}
+
+			created.ExternalHookID = hookID
+		}
 	}
 
 	if err := s.jobs.EnqueueSCMBackfill(ctx, entity.SCMBackfillPayload{

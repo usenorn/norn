@@ -274,7 +274,15 @@
 			<Alert.Description>{failureMessage({ kind: "unavailable" })}</Alert.Description>
 		</Alert.Root>
 	{:else}
-		{#if !view.repository.hookInstalled && !view.repository.webhooksDisabled}
+		{#if view.connection.authKind === "app"}
+			<Alert.Root variant="muted">
+				<Alert.Title>Deliveries arrive through the application</Alert.Title>
+				<Alert.Description>
+					The application has one webhook for everything it is installed on, so this repository
+					needs none of its own. Changes are noticed at once.
+				</Alert.Description>
+			</Alert.Root>
+		{:else if !view.repository.hookInstalled && !view.repository.webhooksDisabled}
 			<Alert.Root>
 				<TriangleAlert aria-hidden="true" />
 				<Alert.Title>The webhook is not installed</Alert.Title>
@@ -441,7 +449,9 @@
 		<section class="flex flex-col gap-3 rounded-lg border border-destructive/40 p-4">
 			<h2 class="text-md font-medium tracking-snug text-ink-900">Disconnect this repository</h2>
 			<p class="text-sm leading-normal text-muted-foreground text-pretty">
-				Its webhook is removed and its routes go with it. Links and mirrors already on issues
+				{view.connection.authKind === "app"
+					? "Its routes go with it."
+					: "Its webhook is removed and its routes go with it."} Links and mirrors already on issues
 				stay exactly as readable. The credential itself is untouched.
 			</p>
 

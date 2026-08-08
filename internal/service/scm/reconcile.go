@@ -72,6 +72,7 @@ func (s *sync) reconcileOne(
 	}
 
 	switch {
+	case from.connection.DeliversCentrally():
 	case from.repository.PollsOnly():
 	case from.repository.ExternalHookID == "":
 		s.installMissingHook(ctx, from, target, secret)
