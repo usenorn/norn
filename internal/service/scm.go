@@ -312,6 +312,7 @@ type SourceControl interface {
 	UpdateConnection(ctx context.Context, workspaceID, connectionID uuid.UUID, input UpdateConnectionInput) (entity.SCMConnection, error)
 	ReplaceToken(ctx context.Context, workspaceID, connectionID uuid.UUID, token string) (entity.SCMConnection, error)
 	VerifyConnection(ctx context.Context, workspaceID, connectionID uuid.UUID) (entity.SCMConnection, error)
+	AvailableRepositories(ctx context.Context, workspaceID, connectionID uuid.UUID) ([]entity.SCMRemoteRepository, error)
 	Disconnect(ctx context.Context, workspaceID, connectionID uuid.UUID) error
 
 	ListRepositories(ctx context.Context, workspaceID, connectionID uuid.UUID) ([]entity.SCMRepository, error)

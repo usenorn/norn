@@ -4905,6 +4905,29 @@ paths:
         '429': { $ref: '#/components/responses/SourceControlRateLimited' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/source-control/connections/{connectionId}/available-repositories:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/SourceControlConnectionId'
+    get:
+      tags: [source-control]
+      operationId: listWorkspaceSourceControlAvailableRepositories
+      summary: List the repositories this installation was granted, to choose from rather than type
+      responses:
+        '200':
+          description: The repositories the installation reaches
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AvailableSourceControlRepository' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/SourceControlRefused' }
+        '429': { $ref: '#/components/responses/SourceControlRateLimited' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/source-control/repositories:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7952,6 +7975,18 @@ components:
       required: [url]
       properties:
         url: { type: string }
+
+    AvailableSourceControlRepository:
+      type: object
+      description: >-
+        One repository the installation was granted. Choosing from these is the difference
+        between connecting a repository and guessing at its name.
+      required: [externalId, fullName]
+      properties:
+        externalId: { type: string }
+        fullName: { type: string }
+        defaultBranch: { type: string }
+        private: { type: boolean }
 
     SourceControlInstallation:
       type: object

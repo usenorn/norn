@@ -3145,6 +3145,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/source-control/connections/{connectionId}/available-repositories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        /** List the repositories this installation was granted, to choose from rather than type */
+        get: operations["listWorkspaceSourceControlAvailableRepositories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/source-control/repositories": {
         parameters: {
             query?: never;
@@ -4824,6 +4844,13 @@ export interface components {
         };
         SourceControlAppAuthorization: {
             url: string;
+        };
+        /** @description One repository the installation was granted. Choosing from these is the difference between connecting a repository and guessing at its name. */
+        AvailableSourceControlRepository: {
+            externalId: string;
+            fullName: string;
+            defaultBranch?: string;
+            private?: boolean;
         };
         /** @description One place the application is installed that the signed-in person administers. The handle that produced this list is what connects it, and it is spent when one is chosen. */
         SourceControlInstallation: {
@@ -13148,6 +13175,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourceControlConnection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["SourceControlRefused"];
+            429: components["responses"]["SourceControlRateLimited"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceSourceControlAvailableRepositories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                connectionId: components["parameters"]["SourceControlConnectionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The repositories the installation reaches */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailableSourceControlRepository"][];
                 };
             };
             401: components["responses"]["Problem"];

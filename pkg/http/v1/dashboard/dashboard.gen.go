@@ -3844,6 +3844,14 @@ type AuditUnlicensedProblemCode string
 // AuthEnforcement defines model for AuthEnforcement.
 type AuthEnforcement string
 
+// AvailableSourceControlRepository One repository the installation was granted. Choosing from these is the difference between connecting a repository and guessing at its name.
+type AvailableSourceControlRepository struct {
+	DefaultBranch *string `json:"defaultBranch,omitempty"`
+	ExternalId    string  `json:"externalId"`
+	FullName      string  `json:"fullName"`
+	Private       *bool   `json:"private,omitempty"`
+}
+
 // BeginOidcLoginRequest defines model for BeginOidcLoginRequest.
 type BeginOidcLoginRequest struct {
 	ReturnTo  *string `json:"returnTo,omitempty"`
@@ -7909,6 +7917,9 @@ type ServerInterface interface {
 	// UpdateWorkspaceSourceControlConnection Rename a connection
 	// (PATCH /workspaces/{workspaceId}/source-control/connections/{connectionId})
 	UpdateWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
+	// ListWorkspaceSourceControlAvailableRepositories List the repositories this installation was granted, to choose from rather than type
+	// (GET /workspaces/{workspaceId}/source-control/connections/{connectionId}/available-repositories)
+	ListWorkspaceSourceControlAvailableRepositories(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
 	// ReplaceWorkspaceSourceControlToken Install a new token, proving it works before the old one is discarded
 	// (PUT /workspaces/{workspaceId}/source-control/connections/{connectionId}/token)
 	ReplaceWorkspaceSourceControlToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId)
@@ -9247,6 +9258,12 @@ func (_ Unimplemented) GetWorkspaceSourceControlConnection(w http.ResponseWriter
 // UpdateWorkspaceSourceControlConnection Rename a connection
 // (PATCH /workspaces/{workspaceId}/source-control/connections/{connectionId})
 func (_ Unimplemented) UpdateWorkspaceSourceControlConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceSourceControlAvailableRepositories List the repositories this installation was granted, to choose from rather than type
+// (GET /workspaces/{workspaceId}/source-control/connections/{connectionId}/available-repositories)
+func (_ Unimplemented) ListWorkspaceSourceControlAvailableRepositories(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -15873,6 +15890,41 @@ func (siw *ServerInterfaceWrapper) UpdateWorkspaceSourceControlConnection(w http
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceSourceControlAvailableRepositories operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceSourceControlAvailableRepositories(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "connectionId" -------------
+	var connectionId SourceControlConnectionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceSourceControlAvailableRepositories(w, r, workspaceId, connectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ReplaceWorkspaceSourceControlToken operation middleware
 func (siw *ServerInterfaceWrapper) ReplaceWorkspaceSourceControlToken(w http.ResponseWriter, r *http.Request) {
 
@@ -19373,6 +19425,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections/{connectionId}/verify", wrapper.VerifyWorkspaceSourceControlConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections/{connectionId}/available-repositories", wrapper.ListWorkspaceSourceControlAvailableRepositories)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/repositories", wrapper.ListWorkspaceSourceControlRepositories)
@@ -35892,6 +35947,121 @@ func (response UpdateWorkspaceSourceControlConnection500ApplicationProblemPlusJS
 	return err
 }
 
+type ListWorkspaceSourceControlAvailableRepositoriesRequestObject struct {
+	WorkspaceId  WorkspaceId               `json:"workspaceId"`
+	ConnectionId SourceControlConnectionId `json:"connectionId"`
+}
+
+type ListWorkspaceSourceControlAvailableRepositoriesResponseObject interface {
+	VisitListWorkspaceSourceControlAvailableRepositoriesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceSourceControlAvailableRepositories200JSONResponse []AvailableSourceControlRepository
+
+func (response ListWorkspaceSourceControlAvailableRepositories200JSONResponse) VisitListWorkspaceSourceControlAvailableRepositoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlAvailableRepositories401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSourceControlAvailableRepositories401ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlAvailableRepositoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlAvailableRepositories403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSourceControlAvailableRepositories403ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlAvailableRepositoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlAvailableRepositories404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceSourceControlAvailableRepositories404ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlAvailableRepositoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlAvailableRepositories422ApplicationProblemPlusJSONResponse struct {
+	SourceControlRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSourceControlAvailableRepositories422ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlAvailableRepositoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlAvailableRepositories429ApplicationProblemPlusJSONResponse struct {
+	SourceControlRateLimitedApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceSourceControlAvailableRepositories429ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlAvailableRepositoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceSourceControlAvailableRepositories500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceSourceControlAvailableRepositories500ApplicationProblemPlusJSONResponse) VisitListWorkspaceSourceControlAvailableRepositoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ReplaceWorkspaceSourceControlTokenRequestObject struct {
 	WorkspaceId  WorkspaceId               `json:"workspaceId"`
 	ConnectionId SourceControlConnectionId `json:"connectionId"`
@@ -43546,6 +43716,9 @@ type StrictServerInterface interface {
 	// UpdateWorkspaceSourceControlConnection Rename a connection
 	// (PATCH /workspaces/{workspaceId}/source-control/connections/{connectionId})
 	UpdateWorkspaceSourceControlConnection(ctx context.Context, request UpdateWorkspaceSourceControlConnectionRequestObject) (UpdateWorkspaceSourceControlConnectionResponseObject, error)
+	// ListWorkspaceSourceControlAvailableRepositories List the repositories this installation was granted, to choose from rather than type
+	// (GET /workspaces/{workspaceId}/source-control/connections/{connectionId}/available-repositories)
+	ListWorkspaceSourceControlAvailableRepositories(ctx context.Context, request ListWorkspaceSourceControlAvailableRepositoriesRequestObject) (ListWorkspaceSourceControlAvailableRepositoriesResponseObject, error)
 	// ReplaceWorkspaceSourceControlToken Install a new token, proving it works before the old one is discarded
 	// (PUT /workspaces/{workspaceId}/source-control/connections/{connectionId}/token)
 	ReplaceWorkspaceSourceControlToken(ctx context.Context, request ReplaceWorkspaceSourceControlTokenRequestObject) (ReplaceWorkspaceSourceControlTokenResponseObject, error)
@@ -49125,6 +49298,33 @@ func (sh *strictHandler) UpdateWorkspaceSourceControlConnection(w http.ResponseW
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateWorkspaceSourceControlConnectionResponseObject); ok {
 		if err := validResponse.VisitUpdateWorkspaceSourceControlConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceSourceControlAvailableRepositories operation middleware
+func (sh *strictHandler) ListWorkspaceSourceControlAvailableRepositories(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId SourceControlConnectionId) {
+	var request ListWorkspaceSourceControlAvailableRepositoriesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ConnectionId = connectionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceSourceControlAvailableRepositories(ctx, request.(ListWorkspaceSourceControlAvailableRepositoriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceSourceControlAvailableRepositories")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceSourceControlAvailableRepositoriesResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceSourceControlAvailableRepositoriesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

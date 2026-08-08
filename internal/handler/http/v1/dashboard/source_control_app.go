@@ -161,3 +161,41 @@ func (r problemResponse) VisitListWorkspaceSourceControlInstallationsResponse(
 ) error {
 	return r.write(w)
 }
+
+func (h *handler) ListWorkspaceSourceControlAvailableRepositories(
+	ctx context.Context,
+	request api.ListWorkspaceSourceControlAvailableRepositoriesRequestObject,
+) (api.ListWorkspaceSourceControlAvailableRepositoriesResponseObject, error) {
+	found, err := h.sourceControl.AvailableRepositories(
+		ctx, request.WorkspaceId, request.ConnectionId,
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	dtos := make([]api.AvailableSourceControlRepository, len(found))
+
+	for i, repository := range found {
+		dtos[i] = api.AvailableSourceControlRepository{
+			ExternalId: repository.ExternalID,
+			FullName:   repository.FullName,
+			Private:    pointer(repository.Private),
+		}
+
+		if repository.DefaultBranch != "" {
+			dtos[i].DefaultBranch = &repository.DefaultBranch
+		}
+	}
+
+	return api.ListWorkspaceSourceControlAvailableRepositories200JSONResponse(dtos), nil
+}
+
+func (r problemResponse) VisitListWorkspaceSourceControlAvailableRepositoriesResponse(
+	w http.ResponseWriter,
+) error {
+	return r.write(w)
+}
