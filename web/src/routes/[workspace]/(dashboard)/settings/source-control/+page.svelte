@@ -173,6 +173,12 @@
 	const shownApplication = $derived(preview?.application ?? data.application);
 	const shownNotice = $derived(preview?.notice ?? data.notice);
 
+	function deliversCentrally(connectionId: string): boolean {
+		return connections.some(
+			(connection) => connection.id === connectionId && connection.authKind === "app",
+		);
+	}
+
 	const chosenConnection = $derived(
 		connections.find((connection) => connection.id === $repositoryFields.connectionId),
 	);
@@ -255,7 +261,10 @@
 					{shownMinted.repository.fullName} is connected
 				</h2>
 				<p class="text-sm leading-normal text-muted-foreground text-pretty">
-					{#if shownMinted.repository.hookInstalled}
+					{#if deliversCentrally(shownMinted.repository.connectionId)}
+						Deliveries arrive through the application's own webhook, so this repository needs
+						none of its own.
+					{:else if shownMinted.repository.hookInstalled}
 						Norn installed the webhook for you. If you ever need to add it by hand, this is the
 						only time the secret is shown.
 					{:else}
@@ -263,16 +272,18 @@
 						Add it by hand; this is the only time the secret is shown.
 					{/if}
 				</p>
-				<dl class="flex flex-col gap-2 text-sm">
-					<div class="flex flex-col gap-0.5">
-						<dt class="text-muted-foreground">Payload address</dt>
-						<dd class="font-mono text-xs break-all text-ink-900">{shownMinted.webhookUrl}</dd>
-					</div>
-					<div class="flex flex-col gap-0.5">
-						<dt class="text-muted-foreground">Secret</dt>
-						<dd class="font-mono text-xs break-all text-ink-900">{shownMinted.webhookSecret}</dd>
-					</div>
-				</dl>
+				{#if !deliversCentrally(shownMinted.repository.connectionId)}
+					<dl class="flex flex-col gap-2 text-sm">
+						<div class="flex flex-col gap-0.5">
+							<dt class="text-muted-foreground">Payload address</dt>
+							<dd class="font-mono text-xs break-all text-ink-900">{shownMinted.webhookUrl}</dd>
+						</div>
+						<div class="flex flex-col gap-0.5">
+							<dt class="text-muted-foreground">Secret</dt>
+							<dd class="font-mono text-xs break-all text-ink-900">{shownMinted.webhookSecret}</dd>
+						</div>
+					</dl>
+				{/if}
 				<Button
 					variant="secondary"
 					href={sourceControlRepositoryPath(workspace.slug, shownMinted.repository.id)}
@@ -372,7 +383,7 @@
 									{providerLabel(repository.provider)} · {repository.fullName}
 								</p>
 								<p class="text-sm text-muted-foreground">
-									{#if !repository.hookInstalled}
+									{#if !repository.hookInstalled && !deliversCentrally(repository.connectionId)}
 										The webhook is not installed — the sweep is carrying it.
 									{:else if repository.routeCount === 0}
 										No team is routed yet, so nothing here reaches an issue.
