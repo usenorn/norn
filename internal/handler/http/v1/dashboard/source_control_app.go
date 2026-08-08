@@ -32,6 +32,8 @@ func (h *handler) GetWorkspaceSourceControlApplication(
 	case err == nil:
 		dto.Registered = registered.Registered()
 		dto.Slug = &registered.Slug
+		dto.AllowPrivateAddress = pointer(registered.Trust.AllowPrivateAddress)
+		dto.CaCertificateSet = pointer(registered.Trust.CACertificate != "")
 
 		install := registered.InstallURL()
 		dto.InstallUrl = &install
@@ -53,9 +55,16 @@ func (h *handler) BeginWorkspaceSourceControlAppRegistration(
 	ctx context.Context,
 	request api.BeginWorkspaceSourceControlAppRegistrationRequestObject,
 ) (api.BeginWorkspaceSourceControlAppRegistrationResponseObject, error) {
-	organization := ""
+	var (
+		organization string
+		private      bool
+		authority    string
+	)
+
 	if request.Body != nil {
 		organization = strings.TrimSpace(optionalString(request.Body.Organization))
+		private = request.Body.AllowPrivateAddress != nil && *request.Body.AllowPrivateAddress
+		authority = optionalString(request.Body.CaCertificate)
 	}
 
 	base := strings.TrimRight(h.app.BaseURL, "/")
@@ -68,6 +77,9 @@ func (h *handler) BeginWorkspaceSourceControlAppRegistration(
 		HookURL:      base + sourcecontrol.AppDeliveryPath,
 		RedirectURL:  base + sourcecontrol.RegisteredPath,
 		CallbackURL:  base + sourcecontrol.ConnectedPath,
+
+		AllowPrivateAddress: private,
+		CACertificate:       authority,
 	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

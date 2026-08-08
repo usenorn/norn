@@ -5936,8 +5936,10 @@ type SourceControlAppRegistration struct {
 
 // SourceControlApplication Whether this instance can act as an installed application on a forge, and where a person goes to install it. An instance handed an application in its own configuration cannot register a second one, so canRegister is false there.
 type SourceControlApplication struct {
-	CanRegister bool    `json:"canRegister"`
-	InstallUrl  *string `json:"installUrl,omitempty"`
+	AllowPrivateAddress *bool   `json:"allowPrivateAddress,omitempty"`
+	CaCertificateSet    *bool   `json:"caCertificateSet,omitempty"`
+	CanRegister         bool    `json:"canRegister"`
+	InstallUrl          *string `json:"installUrl,omitempty"`
 
 	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
 	Provider   SourceControlProvider `json:"provider"`
@@ -7052,7 +7054,9 @@ type ListWorkspaceSourceControlInstallationsParams struct {
 
 // BeginWorkspaceSourceControlAppRegistrationJSONBody defines parameters for BeginWorkspaceSourceControlAppRegistration.
 type BeginWorkspaceSourceControlAppRegistrationJSONBody struct {
-	Organization *string `json:"organization,omitempty"`
+	AllowPrivateAddress *bool   `json:"allowPrivateAddress,omitempty"`
+	CaCertificate       *string `json:"caCertificate,omitempty"`
+	Organization        *string `json:"organization,omitempty"`
 }
 
 // ListWorkspaceSourceControlRepositoriesParams defines parameters for ListWorkspaceSourceControlRepositories.

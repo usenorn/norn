@@ -2,6 +2,7 @@ package github_test
 
 import (
 	"context"
+	"encoding/pem"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -99,7 +100,7 @@ func TestAManifestThatConvertsToNothingUsableIsRefused(t *testing.T) {
 				_, _ = w.Write([]byte(held.body))
 			}))
 
-			_, err := forgeFor.ConvertManifest(context.Background(), address, "the-code")
+			_, err := forgeFor.ConvertManifest(context.Background(), entity.SCMApp{BaseURL: address}, "the-code")
 
 			if err == nil {
 				t.Fatal(
@@ -126,7 +127,7 @@ func TestAConvertedApplicationCarriesEverythingItNeeds(t *testing.T) {
         }`))
 	}))
 
-	converted, err := held.ConvertManifest(context.Background(), address, "the-code")
+	converted, err := held.ConvertManifest(context.Background(), entity.SCMApp{BaseURL: address}, "the-code")
 	if err != nil {
 		t.Fatalf("ConvertManifest: %v", err)
 	}
@@ -170,7 +171,7 @@ func TestConvertingAManifestIsNotSentAsAnEmptyCredential(t *testing.T) {
 		_, _ = w.Write([]byte(`{"id":4711,"slug":"norn","pem":"key","webhook_secret":"hook"}`))
 	}))
 
-	if _, err := held.ConvertManifest(context.Background(), address, "the-code"); err != nil {
+	if _, err := held.ConvertManifest(context.Background(), entity.SCMApp{BaseURL: address}, "the-code"); err != nil {
 		t.Fatalf("ConvertManifest: %v", err)
 	}
 
@@ -235,6 +236,69 @@ func TestASignInThatTheForgeRefusedSaysWhatItSaid(t *testing.T) {
 		t.Fatalf(
 			"the refusal reads %q. The forge said exactly what was wrong and it was dropped, so "+
 				"an operator reading the log learns nothing beyond that it failed",
+			err,
+		)
+	}
+}
+
+func onPrivateAuthority(t *testing.T, handler http.Handler) (*github.Forge, string, string) {
+	t.Helper()
+
+	server := httptest.NewTLSServer(handler)
+	t.Cleanup(server.Close)
+
+	cfg := config.SourceControl{
+		GitHubEndpoint:      server.URL,
+		PageSize:            20,
+		RequestTimeout:      5 * time.Second,
+		DialTimeout:         2 * time.Second,
+		MaxResponseSize:     1 << 20,
+		AllowedDestinations: []string{"127.0.0.1/32", "::1/128"},
+	}
+
+	client, err := forge.New(cfg)
+	if err != nil {
+		t.Fatalf("build a forge client: %v", err)
+	}
+
+	authority := pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: server.Certificate().Raw,
+	})
+
+	return github.New(client, cfg), server.URL, string(authority)
+}
+
+func TestAnApplicationOnAPrivateAuthorityIsReachedOnlyWithTheOneItWasGiven(t *testing.T) {
+	held, address, authority := onPrivateAuthority(
+		t,
+		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"repositories":[]}`))
+		}),
+	)
+
+	unknown := entity.SCMApp{BaseURL: address, ExternalAppID: "4711"}
+
+	if _, err := held.InstallationRepositories(
+		context.Background(), unknown, "ghs-installation",
+	); err == nil {
+		t.Fatal(
+			"a certificate no public authority signed was accepted. The application's stored " +
+				"authority would then be decoration, and any certificate would do",
+		)
+	}
+
+	trusted := unknown
+	trusted.Trust = entity.SCMTrust{CACertificate: authority}
+
+	if _, err := held.InstallationRepositories(
+		context.Background(), trusted, "ghs-installation",
+	); err != nil {
+		t.Fatalf(
+			"the authority stored with the application did not open the call: %v. An enterprise "+
+				"instance behind its own authority is reachable no other way, so an installation "+
+				"there could never be read",
 			err,
 		)
 	}

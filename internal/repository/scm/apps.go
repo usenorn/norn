@@ -24,7 +24,8 @@ func NewSCMApp(db *postgres.Client, sealer *crypter.Crypter) repository.SCMApp {
 }
 
 const appColumns = `
-    id, provider, base_url, slug, external_app_id, client_id, created_at, updated_at`
+    id, provider, base_url, slug, external_app_id, client_id,
+    allow_private_address, ca_certificate, created_at, updated_at`
 
 func scanApp(row interface{ Scan(...any) error }) (entity.SCMApp, error) {
 	var app entity.SCMApp
@@ -36,6 +37,8 @@ func scanApp(row interface{ Scan(...any) error }) (entity.SCMApp, error) {
 		&app.Slug,
 		&app.ExternalAppID,
 		&app.ClientID,
+		&app.Trust.AllowPrivateAddress,
+		&app.Trust.CACertificate,
 		&app.CreatedAt,
 		&app.UpdatedAt,
 	)
@@ -49,8 +52,8 @@ func scanApp(row interface{ Scan(...any) error }) (entity.SCMApp, error) {
 const upsertAppQuery = `
 INSERT INTO scm_apps (
     id, provider, base_url, slug, external_app_id, client_id, client_secret_sealed,
-    private_key_sealed, webhook_secret_sealed
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    private_key_sealed, webhook_secret_sealed, allow_private_address, ca_certificate
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 ON CONFLICT (provider, base_url) DO UPDATE
 SET slug = EXCLUDED.slug,
     external_app_id = EXCLUDED.external_app_id,
@@ -58,6 +61,8 @@ SET slug = EXCLUDED.slug,
     client_secret_sealed = EXCLUDED.client_secret_sealed,
     private_key_sealed = EXCLUDED.private_key_sealed,
     webhook_secret_sealed = EXCLUDED.webhook_secret_sealed,
+    allow_private_address = EXCLUDED.allow_private_address,
+    ca_certificate = EXCLUDED.ca_certificate,
     updated_at = now()
 RETURNING` + appColumns
 
@@ -101,6 +106,8 @@ func (r *appRepository) Upsert(
 		client,
 		key,
 		secret,
+		app.Trust.AllowPrivateAddress,
+		app.Trust.CACertificate,
 	))
 	if err != nil {
 		return entity.SCMApp{}, fmt.Errorf("register a source control application: %w", err)
@@ -167,6 +174,8 @@ func (r *appRepository) Secrets(ctx context.Context, appID uuid.UUID) (entity.SC
 		&app.Slug,
 		&app.ExternalAppID,
 		&app.ClientID,
+		&app.Trust.AllowPrivateAddress,
+		&app.Trust.CACertificate,
 		&app.CreatedAt,
 		&app.UpdatedAt,
 		&key,

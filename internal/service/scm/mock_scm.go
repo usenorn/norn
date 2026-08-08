@@ -395,18 +395,18 @@ func (mr *MockForgeAppMockRecorder) AuthorizeURL(app, state, redirect any) *gomo
 }
 
 // ConvertManifest mocks base method.
-func (m *MockForgeApp) ConvertManifest(ctx context.Context, baseURL, code string) (entity.SCMApp, error) {
+func (m *MockForgeApp) ConvertManifest(ctx context.Context, intended entity.SCMApp, code string) (entity.SCMApp, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ConvertManifest", ctx, baseURL, code)
+	ret := m.ctrl.Call(m, "ConvertManifest", ctx, intended, code)
 	ret0, _ := ret[0].(entity.SCMApp)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ConvertManifest indicates an expected call of ConvertManifest.
-func (mr *MockForgeAppMockRecorder) ConvertManifest(ctx, baseURL, code any) *gomock.Call {
+func (mr *MockForgeAppMockRecorder) ConvertManifest(ctx, intended, code any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertManifest", reflect.TypeOf((*MockForgeApp)(nil).ConvertManifest), ctx, baseURL, code)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertManifest", reflect.TypeOf((*MockForgeApp)(nil).ConvertManifest), ctx, intended, code)
 }
 
 // ExchangeCode mocks base method.

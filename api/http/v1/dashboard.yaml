@@ -4709,8 +4709,14 @@ paths:
           application/json:
             schema:
               type: object
+              description: >-
+                allowPrivateAddress and caCertificate are the same deliberate exception a
+                connection grants, made once for the application: an enterprise instance on
+                a private network is unreachable without them.
               properties:
                 organization: { type: string }
+                allowPrivateAddress: { type: boolean }
+                caCertificate: { type: string, writeOnly: true }
       responses:
         '200':
           description: What the browser posts to the forge
@@ -7957,6 +7963,8 @@ components:
         canRegister: { type: boolean }
         slug: { type: string }
         installUrl: { type: string }
+        allowPrivateAddress: { type: boolean }
+        caCertificateSet: { type: boolean }
 
     SourceControlAppRegistration:
       type: object

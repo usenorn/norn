@@ -175,7 +175,7 @@ type ForgeApp interface {
 	Route(body []byte) (entity.SCMDeliveryRoute, error)
 
 	ManifestTarget(baseURL, organization string) string
-	ConvertManifest(ctx context.Context, baseURL, code string) (entity.SCMApp, error)
+	ConvertManifest(ctx context.Context, intended entity.SCMApp, code string) (entity.SCMApp, error)
 
 	AuthorizeURL(app entity.SCMApp, state, redirect string) string
 	ExchangeCode(ctx context.Context, app entity.SCMApp, code, redirect string) (string, error)
@@ -287,13 +287,15 @@ type SCMAppChoice struct {
 }
 
 type RegisterSCMAppInput struct {
-	WorkspaceID  uuid.UUID
-	Organization string
-	InstanceURL  string
-	InstanceName string
-	HookURL      string
-	RedirectURL  string
-	CallbackURL  string
+	WorkspaceID         uuid.UUID
+	Organization        string
+	InstanceURL         string
+	InstanceName        string
+	HookURL             string
+	RedirectURL         string
+	CallbackURL         string
+	AllowPrivateAddress bool
+	CACertificate       string
 }
 
 type SourceControlApps interface {

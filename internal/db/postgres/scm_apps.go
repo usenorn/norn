@@ -35,6 +35,8 @@ type SCMApp struct {
 	WebhookSecretSealed []byte     `boil:"webhook_secret_sealed" json:"webhook_secret_sealed" toml:"webhook_secret_sealed" yaml:"webhook_secret_sealed"`
 	CreatedAt           time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt           time.Time  `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	AllowPrivateAddress bool       `boil:"allow_private_address" json:"allow_private_address" toml:"allow_private_address" yaml:"allow_private_address"`
+	CaCertificate       string     `boil:"ca_certificate" json:"ca_certificate" toml:"ca_certificate" yaml:"ca_certificate"`
 
 	R *scmAppR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L scmAppL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -52,6 +54,8 @@ var SCMAppColumns = struct {
 	WebhookSecretSealed string
 	CreatedAt           string
 	UpdatedAt           string
+	AllowPrivateAddress string
+	CaCertificate       string
 }{
 	ID:                  "id",
 	Provider:            "provider",
@@ -64,6 +68,8 @@ var SCMAppColumns = struct {
 	WebhookSecretSealed: "webhook_secret_sealed",
 	CreatedAt:           "created_at",
 	UpdatedAt:           "updated_at",
+	AllowPrivateAddress: "allow_private_address",
+	CaCertificate:       "ca_certificate",
 }
 
 var SCMAppTableColumns = struct {
@@ -78,6 +84,8 @@ var SCMAppTableColumns = struct {
 	WebhookSecretSealed string
 	CreatedAt           string
 	UpdatedAt           string
+	AllowPrivateAddress string
+	CaCertificate       string
 }{
 	ID:                  "scm_apps.id",
 	Provider:            "scm_apps.provider",
@@ -90,6 +98,8 @@ var SCMAppTableColumns = struct {
 	WebhookSecretSealed: "scm_apps.webhook_secret_sealed",
 	CreatedAt:           "scm_apps.created_at",
 	UpdatedAt:           "scm_apps.updated_at",
+	AllowPrivateAddress: "scm_apps.allow_private_address",
+	CaCertificate:       "scm_apps.ca_certificate",
 }
 
 // Generated where
@@ -130,6 +140,8 @@ var SCMAppWhere = struct {
 	WebhookSecretSealed whereHelper__byte
 	CreatedAt           whereHelpertime_Time
 	UpdatedAt           whereHelpertime_Time
+	AllowPrivateAddress whereHelperbool
+	CaCertificate       whereHelperstring
 }{
 	ID:                  whereHelperstring{field: "\"scm_apps\".\"id\""},
 	Provider:            whereHelperstring{field: "\"scm_apps\".\"provider\""},
@@ -142,6 +154,8 @@ var SCMAppWhere = struct {
 	WebhookSecretSealed: whereHelper__byte{field: "\"scm_apps\".\"webhook_secret_sealed\""},
 	CreatedAt:           whereHelpertime_Time{field: "\"scm_apps\".\"created_at\""},
 	UpdatedAt:           whereHelpertime_Time{field: "\"scm_apps\".\"updated_at\""},
+	AllowPrivateAddress: whereHelperbool{field: "\"scm_apps\".\"allow_private_address\""},
+	CaCertificate:       whereHelperstring{field: "\"scm_apps\".\"ca_certificate\""},
 }
 
 // SCMAppRels is where relationship names are stored.
@@ -181,9 +195,9 @@ func (r *scmAppR) GetAppWorkspaceSCMConnections() WorkspaceSCMConnectionSlice {
 type scmAppL struct{}
 
 var (
-	scmAppAllColumns            = []string{"id", "provider", "base_url", "slug", "external_app_id", "client_id", "client_secret_sealed", "private_key_sealed", "webhook_secret_sealed", "created_at", "updated_at"}
+	scmAppAllColumns            = []string{"id", "provider", "base_url", "slug", "external_app_id", "client_id", "client_secret_sealed", "private_key_sealed", "webhook_secret_sealed", "created_at", "updated_at", "allow_private_address", "ca_certificate"}
 	scmAppColumnsWithoutDefault = []string{"provider", "external_app_id", "private_key_sealed", "webhook_secret_sealed"}
-	scmAppColumnsWithDefault    = []string{"id", "base_url", "slug", "client_id", "client_secret_sealed", "created_at", "updated_at"}
+	scmAppColumnsWithDefault    = []string{"id", "base_url", "slug", "client_id", "client_secret_sealed", "created_at", "updated_at", "allow_private_address", "ca_certificate"}
 	scmAppPrimaryKeyColumns     = []string{"id"}
 	scmAppGeneratedColumns      = []string{}
 )
