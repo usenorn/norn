@@ -171,6 +171,23 @@ type ForgeApp interface {
 		app entity.SCMApp,
 		installationID string,
 	) (entity.SCMCredential, error)
+
+	ManifestTarget(baseURL, organization string) string
+	ConvertManifest(ctx context.Context, baseURL, code string) (entity.SCMApp, error)
+
+	AuthorizeURL(app entity.SCMApp, state, redirect string) string
+	ExchangeCode(ctx context.Context, app entity.SCMApp, code, redirect string) (string, error)
+
+	Installations(
+		ctx context.Context,
+		app entity.SCMApp,
+		userToken string,
+	) ([]entity.SCMInstallation, error)
+	InstallationRepositories(
+		ctx context.Context,
+		app entity.SCMApp,
+		credential string,
+	) ([]entity.SCMRemoteRepository, error)
 }
 
 type Forges interface {
@@ -252,6 +269,32 @@ type LinkIssueCodeInput struct {
 type MirrorIssueInput struct {
 	RepositoryID uuid.UUID
 	Reference    string
+}
+
+type SCMAppChoice struct {
+	Handle        string
+	WorkspaceID   uuid.UUID
+	WorkspaceSlug string
+	Installations []entity.SCMInstallation
+}
+
+type RegisterSCMAppInput struct {
+	WorkspaceID  uuid.UUID
+	Organization string
+	InstanceURL  string
+	InstanceName string
+	HookURL      string
+	RedirectURL  string
+	CallbackURL  string
+}
+
+type SourceControlApps interface {
+	Application(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider) (entity.SCMApp, error)
+	Registration(ctx context.Context, input RegisterSCMAppInput) (entity.SCMAppRegistration, error)
+	CompleteRegistration(ctx context.Context, code, state string) (entity.SCMAppState, error)
+	Authorization(ctx context.Context, workspaceID uuid.UUID, callbackURL string) (string, error)
+	CompleteAuthorization(ctx context.Context, code, state, callbackURL string) (SCMAppChoice, error)
+	Choice(ctx context.Context, workspaceID uuid.UUID, handle string) (SCMAppChoice, error)
 }
 
 type SourceControl interface {

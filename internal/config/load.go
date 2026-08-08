@@ -585,6 +585,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("linear.page_size", 100)
 
 	v.SetDefault("source_control.github_endpoint", "https://api.github.com")
+	v.SetDefault("source_control.app_state_ttl", 10*time.Minute)
 	v.SetDefault("source_control.gitlab_endpoint", "https://gitlab.com")
 	v.SetDefault("source_control.request_timeout", 30*time.Second)
 	v.SetDefault("source_control.dial_timeout", 5*time.Second)
