@@ -157,3 +157,54 @@ func TestTheSignInAddressPointsAtTheForgeRatherThanItsApi(t *testing.T) {
 		)
 	}
 }
+
+func TestConvertingAManifestIsNotSentAsAnEmptyCredential(t *testing.T) {
+	var sent http.Header
+
+	held, address := reachable(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sent = r.Header.Clone()
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":4711,"slug":"norn","pem":"key","webhook_secret":"hook"}`))
+	}))
+
+	if _, err := held.ConvertManifest(context.Background(), address, "the-code"); err != nil {
+		t.Fatalf("ConvertManifest: %v", err)
+	}
+
+	if _, carried := sent["Authorization"]; carried {
+		t.Fatalf(
+			"the conversion carried an Authorization header of %q. It takes no credential, and a "+
+				"forge handed an empty bearer answers 401 rather than treating the call as "+
+				"unauthenticated — which loses the only copy of the application's key",
+			sent.Get("Authorization"),
+		)
+	}
+}
+
+func TestACallThatHasACredentialStillCarriesIt(t *testing.T) {
+	var sent http.Header
+
+	held, address := reachable(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sent = r.Header.Clone()
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"installations":[]}`))
+	}))
+
+	if _, err := held.Installations(
+		context.Background(),
+		entity.SCMApp{BaseURL: address, ExternalAppID: "4711"},
+		"gho-the-user-token",
+	); err != nil {
+		t.Fatalf("Installations: %v", err)
+	}
+
+	if sent.Get("Authorization") != "Bearer gho-the-user-token" {
+		t.Fatalf(
+			"a call that has a credential sent %q. Dropping it would make every authenticated "+
+				"read fail",
+			sent.Get("Authorization"),
+		)
+	}
+}

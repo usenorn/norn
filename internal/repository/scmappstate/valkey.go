@@ -22,6 +22,7 @@ type storedState struct {
 	Purpose       string                   `json:"purpose"`
 	Provider      string                   `json:"provider"`
 	WorkspaceID   uuid.UUID                `json:"workspace_id"`
+	WorkspaceSlug string                   `json:"workspace_slug"`
 	AccountID     uuid.UUID                `json:"account_id"`
 	Organization  string                   `json:"organization"`
 	Installations []entity.SCMInstallation `json:"installations"`
@@ -44,6 +45,7 @@ func (r *stateRepository) Put(ctx context.Context, state string, attempt entity.
 		Purpose:       string(attempt.Purpose),
 		Provider:      string(attempt.Provider),
 		WorkspaceID:   attempt.WorkspaceID,
+		WorkspaceSlug: attempt.WorkspaceSlug,
 		AccountID:     attempt.AccountID,
 		Organization:  attempt.Organization,
 		Installations: attempt.Installations,
@@ -100,6 +102,7 @@ func (r *stateRepository) load(
 		Purpose:       entity.SCMAppPurpose(stored.Purpose),
 		Provider:      entity.SCMProvider(stored.Provider),
 		WorkspaceID:   stored.WorkspaceID,
+		WorkspaceSlug: stored.WorkspaceSlug,
 		AccountID:     stored.AccountID,
 		Organization:  stored.Organization,
 		Installations: stored.Installations,
