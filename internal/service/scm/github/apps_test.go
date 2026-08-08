@@ -2,8 +2,10 @@ package github_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -205,6 +207,35 @@ func TestACallThatHasACredentialStillCarriesIt(t *testing.T) {
 			"a call that has a credential sent %q. Dropping it would make every authenticated "+
 				"read fail",
 			sent.Get("Authorization"),
+		)
+	}
+}
+
+func TestASignInThatTheForgeRefusedSaysWhatItSaid(t *testing.T) {
+	held, address := reachable(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+            "error":"incorrect_client_credentials",
+            "error_description":"The client_id and/or client_secret passed are incorrect."
+        }`))
+	}))
+
+	_, err := held.ExchangeCode(
+		context.Background(),
+		entity.SCMApp{BaseURL: address, ClientID: "Iv1.deadbeef"},
+		"the-code",
+		"https://norn.example/v1/source-control/github-app/connected",
+	)
+
+	if !errors.Is(err, entity.ErrSCMAppRefused) {
+		t.Fatalf("ExchangeCode returned %v, want the refusal sentinel", err)
+	}
+
+	if !strings.Contains(err.Error(), "client_secret") {
+		t.Fatalf(
+			"the refusal reads %q. The forge said exactly what was wrong and it was dropped, so "+
+				"an operator reading the log learns nothing beyond that it failed",
+			err,
 		)
 	}
 }

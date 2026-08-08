@@ -194,16 +194,35 @@ func TestWhatIsStashedForTheScreenCarriesNoCredential(t *testing.T) {
 			WorkspaceSlug: "northwind",
 		}, nil)
 
+	sealed := registered
+	sealed.ClientSecret = "the-client-secret"
+	sealed.PrivateKey = "-----BEGIN RSA PRIVATE KEY-----"
+
 	held.registry.EXPECT().
 		Get(gomock.Any(), entity.SCMProviderGitHub, gomock.Any()).
 		Return(registered, nil)
 
-	held.forgeApp.EXPECT().
-		ExchangeCode(gomock.Any(), registered, "the-code", gomock.Any()).
-		Return("gho-the-user-token", nil)
+	held.registry.EXPECT().
+		Secrets(gomock.Any(), registered.ID).
+		Return(sealed, nil)
 
 	held.forgeApp.EXPECT().
-		Installations(gomock.Any(), registered, "gho-the-user-token").
+		ExchangeCode(gomock.Any(), gomock.Any(), "the-code", gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, app entity.SCMApp, _, _ string,
+		) (string, error) {
+			if app.ClientSecret == "" {
+				return "", errors.New(
+					"the exchange was made without a client secret. The forge answers such a " +
+						"call with no token at all, so the sign-in can never complete",
+				)
+			}
+
+			return "gho-the-user-token", nil
+		})
+
+	held.forgeApp.EXPECT().
+		Installations(gomock.Any(), gomock.Any(), "gho-the-user-token").
 		Return([]entity.SCMInstallation{{ExternalID: "884411", AccountLogin: "flagroll"}}, nil)
 
 	held.states.EXPECT().
