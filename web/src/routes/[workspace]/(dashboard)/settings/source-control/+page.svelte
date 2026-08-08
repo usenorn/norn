@@ -179,28 +179,32 @@
 
 	let offered = $state.raw<AvailableSourceControlRepository[]>([]);
 	let offering = $state(false);
+	let offerUnreadable = $state(false);
 
 	$effect(() => {
 		const connection = chosenConnection;
 
 		if (!connection || connection.authKind !== "app") {
 			offered = [];
+			offerUnreadable = false;
 
 			return;
 		}
 
 		let current = true;
 		offering = true;
+		offerUnreadable = false;
 
 		api
 			.GET(
 				"/workspaces/{workspaceId}/source-control/connections/{connectionId}/available-repositories",
 				{ params: { path: { workspaceId: workspace.id, connectionId: connection.id } } },
 			)
-			.then(({ data: reachable }) => {
+			.then(({ data: reachable, error: unreadable }) => {
 				if (!current) return;
 
 				offered = reachable ?? [];
+				offerUnreadable = Boolean(unreadable);
 				offering = false;
 			});
 
@@ -516,6 +520,8 @@
 									<option value="">
 										{#if offering}
 											Reading what the installation reaches…
+										{:else if offerUnreadable}
+											GitHub could not be asked what this installation reaches
 										{:else if offered.length === 0}
 											This installation was granted no repositories
 										{:else}
@@ -532,7 +538,9 @@
 						{/snippet}
 					</Form.Control>
 					<Form.Description>
-						{#if chosenConnection?.authKind === "app"}
+						{#if chosenConnection?.authKind === "app" && offerUnreadable}
+							The connection may have stopped working. Verify it, then try again.
+						{:else if chosenConnection?.authKind === "app"}
 							Only what you granted the installation is listed. Grant more on GitHub and it
 							appears here.
 						{:else}

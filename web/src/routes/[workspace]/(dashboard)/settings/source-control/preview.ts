@@ -53,6 +53,34 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 					],
 				},
 			},
+			app_connected: {
+				view: {
+					kind: "list",
+					connections: [
+						{
+							id: "00000000-0000-4000-8000-0000000000a3",
+							provider: "github",
+							authKind: "app",
+							label: "flagroll",
+							accountLogin: "flagroll",
+							tokenSet: false,
+							tokenHint: "",
+							identityLogin: "norn-northwind[bot]",
+							repositoryCount: 0,
+							status: "connected",
+							verifiedAt: "2026-08-08T09:14:00Z",
+							createdAt: "2026-08-08T09:14:00Z",
+							updatedAt: "2026-08-08T09:14:00Z",
+						},
+					],
+					repositories: [],
+				},
+				application: {
+					kind: "registered",
+					slug: "norn-northwind",
+					installUrl: "https://github.com/apps/norn-northwind/installations/new",
+				},
+			},
 			app_expired: {
 				view: { kind: "empty" },
 				application: {
