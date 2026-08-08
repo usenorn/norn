@@ -270,17 +270,22 @@ func (s *apps) CompleteAuthorization(
 		return choice, err
 	}
 
+	secrets, err := s.apps.Secrets(ctx, registered.ID)
+	if err != nil {
+		return choice, err
+	}
+
 	forgeApp, err := s.forges.App(attempt.Provider)
 	if err != nil {
 		return choice, err
 	}
 
-	token, err := forgeApp.ExchangeCode(ctx, registered, code, callbackURL)
+	token, err := forgeApp.ExchangeCode(ctx, secrets, code, callbackURL)
 	if err != nil {
 		return choice, err
 	}
 
-	installations, err := forgeApp.Installations(ctx, registered, token)
+	installations, err := forgeApp.Installations(ctx, secrets, token)
 	if err != nil {
 		return choice, err
 	}

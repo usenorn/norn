@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -178,8 +179,9 @@ func (f *Forge) ExchangeCode(
 	}
 
 	var body struct {
-		AccessToken string `json:"access_token"`
-		Error       string `json:"error"`
+		AccessToken      string `json:"access_token"`
+		Error            string `json:"error"`
+		ErrorDescription string `json:"error_description"`
 	}
 
 	target := entity.SCMTarget{Provider: entity.SCMProviderGitHub, BaseURL: app.BaseURL}
@@ -189,7 +191,7 @@ func (f *Forge) ExchangeCode(
 	}
 
 	if body.AccessToken == "" {
-		return "", entity.ErrSCMAppRefused
+		return "", fmt.Errorf("%w: %s", entity.ErrSCMAppRefused, refusal(body.Error, body.ErrorDescription))
 	}
 
 	return body.AccessToken, nil
@@ -325,4 +327,15 @@ func (f *Forge) Route(body []byte) (entity.SCMDeliveryRoute, error) {
 		InstallationID: strconv.FormatInt(payload.Installation.ID, 10),
 		FullName:       payload.Repository.FullName,
 	}, nil
+}
+
+func refusal(code, described string) string {
+	switch {
+	case described != "":
+		return described
+	case code != "":
+		return code
+	default:
+		return "the forge returned no token and named no reason"
+	}
 }
