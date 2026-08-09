@@ -2,7 +2,7 @@
 	import { type VariantProps, tv } from "tailwind-variants";
 
 	export const inputVariants = tv({
-		base: "h-control-md w-full min-w-0 rounded-none border-0 border-b bg-transparent px-1 text-md text-ink-900 outline-none transition-colors duration-110 ease-out placeholder:text-muted-foreground disabled:pointer-events-none disabled:border-dashed disabled:text-ink-300 file:inline-flex file:h-control-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground",
+		base: "h-control-md w-full min-w-0 rounded-none border-0 border-b bg-transparent px-1 text-md text-ink-900 outline-none motion-control placeholder:text-muted-foreground disabled:pointer-events-none disabled:border-dashed disabled:text-ink-300 file:inline-flex file:h-control-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground",
 		variants: {
 			variant: {
 				default:

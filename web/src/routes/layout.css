@@ -1,6 +1,6 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
 @import 'shadcn-svelte/tailwind.css';
+@import './motion.css';
 @import '@fontsource/ibm-plex-sans/400.css';
 @import '@fontsource/ibm-plex-sans/500.css';
 @import '@fontsource/ibm-plex-sans/400-italic.css';
@@ -210,22 +210,6 @@
 	--drop-shadow-xl: 0 0 #0000;
 	--drop-shadow-2xl: 0 0 #0000;
 
-	--animate-sweep: sweep 1.1s var(--ease-in-out) infinite;
-
-	@keyframes sweep {
-		from {
-			transform: translateX(-105%);
-		}
-		to {
-			transform: translateX(305%);
-		}
-	}
-
-	--ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
-	--ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-	--ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
-	--ease-exit: cubic-bezier(0.4, 0, 1, 1);
-
 	--spacing-row: var(--row-height);
 	--spacing-row-x: var(--row-pad-x);
 	--spacing-control-xs: 20px;
@@ -430,16 +414,5 @@
 		background: var(--ink-300);
 		background-clip: content-box;
 		border: 3px solid transparent;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	*,
-	*::before,
-	*::after {
-		animation-duration: 0.01ms !important;
-		animation-iteration-count: 1 !important;
-		transition-duration: 0.01ms !important;
-		scroll-behavior: auto !important;
 	}
 }

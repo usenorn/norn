@@ -119,7 +119,7 @@
 			<Layers class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			<a
 				href={teamCyclesPath(slug, page.params.teamKey ?? "")}
-				class="text-md font-medium tracking-snug whitespace-nowrap text-muted-foreground transition-colors duration-110 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="text-md font-medium tracking-snug whitespace-nowrap text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			>
 				Cycles
 			</a>
@@ -140,7 +140,7 @@
 			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
 		>
 			{#if detail.kind === "loading"}
-				<div class="h-40 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+				<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 			{:else if detail.kind === "not_found"}
 				<div class="flex flex-col gap-2">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">No cycle here</h2>
@@ -353,7 +353,7 @@
 									</span>
 									<a
 										href={workspacePath(slug, `/issues/${change.issueReference}`)}
-										class="min-w-0 truncate text-sm text-ink-900 transition-colors duration-110 ease-out hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+										class="min-w-0 truncate text-sm text-ink-900 motion-control hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 									>
 										{change.issueTitle}
 									</a>
@@ -374,7 +374,7 @@
 									</span>
 									<a
 										href={workspacePath(slug, `/issues/${change.issueReference}`)}
-										class="min-w-0 truncate text-sm text-ink-900 transition-colors duration-110 ease-out hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+										class="min-w-0 truncate text-sm text-ink-900 motion-control hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 									>
 										{change.issueTitle}
 									</a>

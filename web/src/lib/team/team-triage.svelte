@@ -131,7 +131,7 @@
 	{/if}
 
 	{#if current.kind === "loading"}
-		<div class="h-24 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+		<div class="h-24 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 	{:else if current.kind === "unavailable"}
 		<p class="text-sm leading-normal text-muted-foreground">
 			We could not read this team's triage settings.

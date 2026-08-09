@@ -26,12 +26,12 @@
 	{#if indeterminate}
 		<div
 			data-slot="progress-indicator"
-			class="h-full w-1/3 rounded-xs bg-primary motion-safe:animate-sweep"
+			class="h-full w-1/3 rounded-xs bg-primary animate-sweep"
 		></div>
 	{:else}
 		<div
 			data-slot="progress-indicator"
-			class="size-full flex-1 rounded-xs bg-primary transition-transform duration-240 ease-out"
+			class="size-full flex-1 rounded-xs bg-primary motion-fill"
 			style="transform: translateX(-{100 - (100 * (value ?? 0)) / (max ?? 1)}%)"
 		></div>
 	{/if}

@@ -25,6 +25,7 @@
 	import Markdown from "$lib/issues/markdown.svelte";
 	import PropertyPicker from "$lib/issues/property-picker.svelte";
 	import { api } from "$lib/api";
+	import { lift } from "$lib/motion";
 	import { priorityLabel } from "$lib/issues/issues";
 	import { initialsOf } from "$lib/team/members";
 	import { onDateAndTime } from "$lib/time";
@@ -299,7 +300,7 @@
 					<a
 						href={sourcePath(choice.value)}
 						aria-current={tab === choice.value ? "page" : undefined}
-						class="inline-flex h-5.5 flex-none cursor-pointer items-center gap-1.5 rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase transition-colors duration-70 ease-out {tab ===
+						class="inline-flex h-5.5 flex-none cursor-pointer items-center gap-1.5 rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase motion-control {tab ===
 						choice.value
 							? 'bg-primary text-primary-foreground'
 							: 'text-ink-600 hover:bg-accent'}"
@@ -339,15 +340,15 @@
 			<div class="w-81.5 flex-none border-r border-line-default p-3" aria-busy="true">
 				{#each [1, 2, 3, 4, 5] as row (row)}
 					<div class="mb-3 flex flex-col gap-2">
-						<span class="block h-3 w-4/5 animate-pulse rounded-xs bg-paper-2"></span>
-						<span class="block h-2.5 w-2/5 animate-pulse rounded-xs bg-paper-2"></span>
+						<span class="block h-3 w-4/5 animate-breathe rounded-xs bg-paper-2"></span>
+						<span class="block h-2.5 w-2/5 animate-breathe rounded-xs bg-paper-2"></span>
 					</div>
 				{/each}
 			</div>
 			<div class="flex-1 p-7">
-				<span class="mb-4 block h-5 w-1/2 animate-pulse rounded-xs bg-paper-3"></span>
-				<span class="mb-2 block h-3 w-full animate-pulse rounded-xs bg-paper-2"></span>
-				<span class="block h-3 w-4/5 animate-pulse rounded-xs bg-paper-2"></span>
+				<span class="mb-4 block h-5 w-1/2 animate-breathe rounded-xs bg-paper-3"></span>
+				<span class="mb-2 block h-3 w-full animate-breathe rounded-xs bg-paper-2"></span>
+				<span class="block h-3 w-4/5 animate-breathe rounded-xs bg-paper-2"></span>
 			</div>
 		</div>
 	{:else if listing.kind === "unavailable"}
@@ -388,7 +389,7 @@
 									cursor = index;
 									closeFlow();
 								}}
-								class="flex w-full cursor-pointer gap-2.25 border-b border-line-subtle px-3 py-2.25 text-left transition-colors duration-70 ease-out hover:bg-accent {index ===
+								class="flex w-full cursor-pointer gap-2.25 border-b border-line-subtle px-3 py-2.25 text-left motion-control hover:bg-accent {index ===
 								at_cursor
 									? 'rule-inset bg-surface-cursor'
 									: ''}"
@@ -525,7 +526,8 @@
 
 					{#if flow === "accept"}
 						<div
-							class="notch absolute right-4 bottom-14 left-4 z-50 max-w-130 sm:left-7 motion-safe:animate-pop"
+							class="notch absolute right-4 bottom-14 left-4 z-50 max-w-130 sm:left-7"
+							transition:lift
 						>
 							<div class="flex flex-col gap-3 p-3.5">
 								<Eyebrow class="text-ink-600">Accept as issue</Eyebrow>
@@ -547,7 +549,8 @@
 
 					{#if flow === "decline"}
 						<div
-							class="notch absolute right-4 bottom-14 left-4 z-50 max-w-130 sm:left-7 motion-safe:animate-pop"
+							class="notch absolute right-4 bottom-14 left-4 z-50 max-w-130 sm:left-7"
+							transition:lift
 						>
 							<div class="flex flex-col gap-2.5 p-3.5">
 								<Eyebrow class="text-ink-600">Decline · pick a reason</Eyebrow>
@@ -557,7 +560,7 @@
 											type="button"
 											aria-pressed={reason === choice.value}
 											onclick={() => (reason = choice.value)}
-											class="flex h-7 w-full cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left text-md transition-colors duration-70 ease-out hover:bg-accent {reason ===
+											class="flex h-7 w-full cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left text-md motion-control hover:bg-accent {reason ===
 											choice.value
 												? 'bg-surface-selected text-ink-900'
 												: 'text-ink-600'}"
@@ -589,7 +592,8 @@
 
 					{#if flow === "merge"}
 						<div
-							class="notch absolute right-4 bottom-14 left-4 z-50 max-w-130 sm:left-7 motion-safe:animate-pop"
+							class="notch absolute right-4 bottom-14 left-4 z-50 max-w-130 sm:left-7"
+							transition:lift
 						>
 							<div class="flex flex-col gap-2.5 p-3.5">
 								<Eyebrow class="text-ink-600">Mark as duplicate · choose the original</Eyebrow>
@@ -608,7 +612,7 @@
 										<button
 											{...props}
 											type="button"
-											class="flex h-control-md w-full cursor-pointer items-center gap-2 rounded-md border border-line-default bg-paper-0 px-2.5 text-left text-md text-ink-900 transition-colors duration-70 ease-out hover:bg-accent aria-expanded:bg-accent"
+											class="flex h-control-md w-full cursor-pointer items-center gap-2 rounded-md border border-line-default bg-paper-0 px-2.5 text-left text-md text-ink-900 motion-control hover:bg-accent aria-expanded:bg-accent"
 										>
 											{#if duplicateOf}
 												<StatusIcon category={duplicateOf.state.category} decorative />

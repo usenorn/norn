@@ -15,7 +15,7 @@
 </script>
 
 {#if panel.kind === "loading"}
-	<div class="h-12 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+	<div class="h-12 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 {:else if panel.kind === "unavailable"}
 	<p class="text-sm text-muted-foreground">We could not read this issue's files.</p>
 {:else if panel.kind === "empty"}
@@ -27,7 +27,7 @@
 				<a
 					href={attachment.contentPath}
 					download={attachment.fileName}
-					class="flex min-w-0 flex-1 items-center gap-2 py-2 pl-3 transition-colors duration-70 ease-out hover:bg-accent"
+					class="flex min-w-0 flex-1 items-center gap-2 py-2 pl-3 motion-control hover:bg-accent"
 				>
 					{#if attachment.inline}
 						<ImageIcon class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

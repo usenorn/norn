@@ -324,7 +324,7 @@
 				</div>
 
 				{#if board.kind === "loading"}
-					<div class="h-40 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+					<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 				{:else if board.kind === "unavailable"}
 					<p class="text-sm leading-normal text-muted-foreground">
 						We could not load this workspace's labels.
@@ -575,7 +575,7 @@
 											aria-pressed={$formData.color === color}
 											aria-label={colorLabels[color]}
 											onclick={() => ($formData.color = color as LabelColor)}
-											class="inline-flex items-center gap-1.5 rounded-sm border px-2 py-1 text-sm transition-colors duration-70 ease-out disabled:opacity-50 aria-pressed:border-primary aria-pressed:bg-accent"
+											class="inline-flex items-center gap-1.5 rounded-sm border px-2 py-1 text-sm motion-control disabled:opacity-50 aria-pressed:border-primary aria-pressed:bg-accent"
 											class:border-line-default={$formData.color !== color}
 										>
 											<span

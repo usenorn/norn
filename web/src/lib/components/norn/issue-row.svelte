@@ -90,7 +90,7 @@
 	{ondragstart}
 	{ondragend}
 	class={cn(
-		"group/row relative flex min-h-12 items-center gap-3 border-b border-line-subtle bg-card px-4 py-1.5 transition-none sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 hover:bg-accent hover:transition-colors hover:duration-70 hover:ease-out data-[cursor=true]:rule-lead data-[cursor=true]:bg-surface-cursor data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40",
+		"group/row relative flex min-h-12 items-center gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 hover:bg-accent data-[cursor=true]:rule-lead data-[cursor=true]:bg-surface-cursor data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40",
 		draggable && "cursor-grab active:cursor-grabbing",
 		className
 	)}
@@ -103,11 +103,11 @@
 			aria-label="Select {issue.reference}"
 			onclick={(event) => onselect(event.shiftKey)}
 			data-on={selected || cursor}
-			class="relative z-1 -mr-0.5 hidden h-row w-4 flex-none cursor-pointer items-center justify-center opacity-0 sm:flex transition-opacity duration-70 ease-out group-hover/row:opacity-100 focus-visible:opacity-100 data-[on=true]:opacity-100"
+			class="relative z-1 -mr-0.5 hidden h-row w-4 flex-none cursor-pointer items-center justify-center opacity-0 sm:flex motion-control group-hover/row:opacity-100 focus-visible:opacity-100 data-[on=true]:opacity-100"
 		>
 			<span
 				data-on={selected}
-				class="flex size-3.25 items-center justify-center rounded-xs border border-line-strong text-primary-foreground transition-colors duration-110 ease-out data-[on=true]:border-primary data-[on=true]:bg-primary"
+				class="flex size-3.25 items-center justify-center rounded-xs border border-line-strong text-primary-foreground motion-control data-[on=true]:border-primary data-[on=true]:bg-primary"
 			>
 				{#if selected}
 					<Check class="size-2.5" aria-hidden="true" />

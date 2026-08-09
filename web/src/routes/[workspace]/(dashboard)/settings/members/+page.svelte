@@ -481,7 +481,7 @@
 				{#if listing.kind === "loading"}
 					<ul class="flex flex-col gap-px" aria-busy="true">
 						{#each [0, 1, 2] as row (row)}
-							<li class="h-14 animate-pulse rounded-md bg-paper-2"></li>
+							<li class="h-14 animate-breathe rounded-md bg-paper-2"></li>
 						{/each}
 					</ul>
 				{:else if listing.kind === "unavailable"}

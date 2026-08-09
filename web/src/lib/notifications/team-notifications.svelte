@@ -100,7 +100,7 @@
 	{/if}
 
 	{#if setting.kind === "loading"}
-		<div class="h-40 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+		<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 	{:else if setting.kind === "unavailable"}
 		<p class="text-sm leading-normal text-muted-foreground">
 			We could not load these settings. Nothing changed &mdash; wait a moment and try again.

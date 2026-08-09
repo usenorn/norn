@@ -2,7 +2,7 @@
 	import { type VariantProps, tv } from "tailwind-variants";
 
 	export const alertVariants = tv({
-		base: "group/alert rule-lead relative grid w-full gap-0.5 rounded-lg border border-line-default bg-card px-3 py-2.5 text-left text-md has-data-[placement=corner]:relative has-data-[placement=corner]:pr-18 has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2.5 *:[svg]:row-span-2 *:[svg]:mt-px *:[svg:not([class*='size-'])]:size-icon-row",
+		base: "group/alert rule-lead animate-mark relative grid w-full gap-0.5 rounded-lg border border-line-default bg-card px-3 py-2.5 text-left text-md has-data-[placement=corner]:relative has-data-[placement=corner]:pr-18 has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2.5 *:[svg]:row-span-2 *:[svg]:mt-px *:[svg:not([class*='size-'])]:size-icon-row",
 		variants: {
 			variant: {
 				default: "[--rule-lead-color:var(--ink-400)] *:[svg]:text-ink-400",

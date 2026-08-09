@@ -50,7 +50,7 @@
 							>
 								<a
 									href={at(`/issues/${relation.issue.reference}`)}
-									class="-mx-1 flex h-row min-w-0 flex-1 items-center gap-2.25 rounded-sm px-1 transition-colors duration-70 ease-out hover:bg-accent"
+									class="-mx-1 flex h-row min-w-0 flex-1 items-center gap-2.25 rounded-sm px-1 motion-control hover:bg-accent"
 								>
 									<span
 										class="w-19 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"

@@ -91,7 +91,7 @@
 			{/if}
 
 			{#if panel.kind === "loading"}
-				<div class="h-60 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+				<div class="h-60 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 			{:else if panel.kind === "unavailable"}
 				<p class="text-md leading-normal text-muted-foreground">
 					We could not load your notification settings. Nothing changed &mdash; wait a moment and

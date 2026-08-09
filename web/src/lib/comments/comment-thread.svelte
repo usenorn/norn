@@ -260,7 +260,7 @@
 	{/if}
 
 	{#if thread.kind === "loading"}
-		<div class="h-24 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+		<div class="h-24 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 	{:else if thread.kind === "unavailable"}
 		<p class="text-sm text-muted-foreground">We could not read this conversation.</p>
 	{:else}
@@ -269,7 +269,7 @@
 				type="button"
 				disabled={working}
 				onclick={onmore}
-				class="flex h-7 w-full cursor-pointer items-center justify-center rounded-md border border-line-default font-mono text-xs text-muted-foreground transition-colors duration-70 ease-out hover:bg-accent hover:text-ink-600"
+				class="flex h-7 w-full cursor-pointer items-center justify-center rounded-md border border-line-default font-mono text-xs text-muted-foreground motion-control hover:bg-accent hover:text-ink-600"
 			>
 				{working ? "Loading" : "Load earlier comments"}
 			</button>

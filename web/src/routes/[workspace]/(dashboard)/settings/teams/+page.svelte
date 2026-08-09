@@ -291,7 +291,7 @@
 			{#if listing.kind === "loading"}
 				<ul class="flex flex-col gap-px" aria-busy="true">
 					{#each [0, 1, 2] as row (row)}
-						<li class="h-12 animate-pulse rounded-md bg-paper-2"></li>
+						<li class="h-12 animate-breathe rounded-md bg-paper-2"></li>
 					{/each}
 				</ul>
 			{:else if listing.kind === "empty"}
@@ -307,7 +307,7 @@
 								href={tabHref(candidate)}
 								data-active={tab === candidate}
 								aria-current={tab === candidate ? "page" : undefined}
-								class="relative -mb-px border-b-2 border-transparent pb-1.5 text-sm font-medium text-muted-foreground transition-colors duration-110 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring data-[active=true]:border-primary data-[active=true]:text-ink-900"
+								class="relative -mb-px border-b-2 border-transparent pb-1.5 text-sm font-medium text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring data-[active=true]:border-primary data-[active=true]:text-ink-900"
 							>
 								{candidate === "active" ? "Active" : "Archived"}
 							</a>
@@ -324,7 +324,7 @@
 								<li class="border-b border-line-subtle last:border-b-0">
 									<a
 										href={teamHref(team)}
-										class="flex flex-wrap items-center gap-2 px-3 py-2.5 transition-colors duration-110 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+										class="flex flex-wrap items-center gap-2 px-3 py-2.5 motion-control hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
 									>
 										{#if team.visibility === "private"}
 											<Lock class="size-icon-row shrink-0 text-muted-foreground" aria-hidden="true" />

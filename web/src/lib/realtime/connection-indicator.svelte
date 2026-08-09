@@ -26,7 +26,7 @@
 	title={labels[state]}
 >
 	<span
-		class={cn("size-1.5 shrink-0 rounded-full", dots[state], state === "reconnecting" && "animate-pulse")}
+		class={cn("size-1.5 shrink-0 rounded-full", dots[state], state === "reconnecting" && "animate-breathe")}
 		aria-hidden="true"
 	></span>
 	<span class="sr-only" role="status" aria-live="polite">{labels[state]}</span>

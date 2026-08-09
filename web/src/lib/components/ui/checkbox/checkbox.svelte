@@ -17,7 +17,7 @@
 	bind:ref
 	data-slot="checkbox"
 	class={cn(
-		"keycap peer relative flex size-[15px] shrink-0 items-center justify-center rounded-xs border border-input bg-card text-primary-foreground outline-none transition-colors duration-110 ease-out after:absolute after:-inset-x-3 after:-inset-y-2 hover:border-ink-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring group-has-disabled/field:opacity-45 aria-invalid:border-destructive data-checked:border-primary-active data-checked:bg-primary data-checked:[--keycap-lip:var(--primary-active)] disabled:pointer-events-none disabled:opacity-45",
+		"keycap peer relative flex size-[15px] shrink-0 items-center justify-center rounded-xs border border-input bg-card text-primary-foreground outline-none motion-control after:absolute after:-inset-x-3 after:-inset-y-2 hover:border-ink-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring group-has-disabled/field:opacity-45 aria-invalid:border-destructive data-checked:border-primary-active data-checked:bg-primary data-checked:[--keycap-lip:var(--primary-active)] disabled:pointer-events-none disabled:opacity-45",
 		className
 	)}
 	bind:checked
