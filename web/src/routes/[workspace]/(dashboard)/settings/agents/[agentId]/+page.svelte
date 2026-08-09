@@ -69,7 +69,7 @@
 	<div class="flex h-11 flex-none items-center gap-3 border-b border-line-subtle px-4">
 		<a
 			href={agentsPath(workspace.slug)}
-			class="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-ink-900"
+			class="flex items-center gap-1.5 text-sm text-muted-foreground motion-control hover:text-ink-900"
 		>
 			<ArrowLeft class="size-4" aria-hidden="true" />
 			<span>Agents</span>

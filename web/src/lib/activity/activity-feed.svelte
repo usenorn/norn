@@ -43,7 +43,7 @@
 </script>
 
 {#if feed.kind === "loading"}
-	<div class="h-16 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+	<div class="h-16 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 {:else if feed.kind === "unavailable"}
 	<p class="text-sm text-muted-foreground">We could not read this history.</p>
 {:else if feed.kind === "empty" || shown.length === 0}

@@ -22,7 +22,7 @@
 			aria-valuemax={total}
 			aria-label="{progress.complete} of {total} done"
 		>
-			<span class="block h-[3px] rounded-xs bg-primary" style="width: {done}%"></span>
+			<span class="motion-fill block h-[3px] rounded-xs bg-primary" style="width: {done}%"></span>
 		</span>
 		{#if label}
 			<span class="font-mono text-xs text-muted-foreground tabular-nums">

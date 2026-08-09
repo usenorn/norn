@@ -123,7 +123,7 @@
 	>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger
-				class="flex h-8.5 w-full items-center gap-2 rounded-md px-1.5 text-left transition-colors duration-110 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="flex h-8.5 w-full items-center gap-2 rounded-md px-1.5 text-left motion-control hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 				aria-label="Switch workspace"
 			>
 				<WorkspaceMark name={data.workspace.name} />
@@ -254,7 +254,7 @@
 		<button
 			type="button"
 			onclick={() => (searching = true)}
-			class="keycap mt-2.5 mb-1 flex h-control-md w-full items-center gap-2 rounded-sm border border-line-default bg-card px-2 text-md text-muted-foreground transition-colors duration-110 ease-out [--keycap-lip:var(--paper-2)] hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+			class="keycap mt-2.5 mb-1 flex h-control-md w-full items-center gap-2 rounded-sm border border-line-default bg-card px-2 text-md text-muted-foreground motion-control [--keycap-lip:var(--paper-2)] hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 		>
 			<Search class="size-icon-toolbar shrink-0" aria-hidden="true" />
 			<span class="flex-1 text-left">Search</span>

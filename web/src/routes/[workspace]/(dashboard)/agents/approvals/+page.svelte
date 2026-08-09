@@ -71,7 +71,7 @@
 		<h1 class="text-sm font-medium tracking-snug text-ink-900">Waiting for approval</h1>
 		<a
 			href={agentsPath(workspace.slug)}
-			class="text-xs text-muted-foreground transition-colors hover:text-ink-900"
+			class="text-xs text-muted-foreground motion-control hover:text-ink-900"
 		>
 			Agents
 		</a>

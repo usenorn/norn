@@ -258,7 +258,7 @@
 			<Users class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			<a
 				href={workspacePath(slug, "/settings/teams")}
-				class="text-md font-medium tracking-snug whitespace-nowrap text-muted-foreground transition-colors duration-110 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="text-md font-medium tracking-snug whitespace-nowrap text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			>
 				Teams
 			</a>
@@ -274,7 +274,7 @@
 			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
 		>
 			{#if settings.kind === "loading"}
-				<div class="h-40 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+				<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 			{:else if settings.kind === "not_found"}
 				<div class="flex flex-col gap-2">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">No team here</h2>
@@ -416,7 +416,7 @@
 					{/if}
 
 					{#if roster.kind === "loading"}
-						<div class="h-20 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+						<div class="h-20 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 					{:else if roster.kind === "unavailable"}
 						<p class="text-sm leading-normal text-muted-foreground">
 							We could not load who is on this team.

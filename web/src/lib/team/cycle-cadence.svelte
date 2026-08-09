@@ -125,7 +125,7 @@
 	{/if}
 
 	{#if current.kind === "loading"}
-		<div class="h-24 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+		<div class="h-24 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 	{:else if current.kind === "unavailable"}
 		<Alert.Root variant="destructive">
 			<CircleX aria-hidden="true" />

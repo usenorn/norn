@@ -93,7 +93,7 @@
 					<span class="font-mono text-sm">ENG-412</span>.
 				</p>
 			{:else if listing.kind === "searching"}
-				<div class="h-40 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+				<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 			{:else if listing.kind === "unavailable"}
 				<p class="text-md leading-normal text-muted-foreground">
 					We could not run that search. Nothing changed &mdash; wait a moment and try again.

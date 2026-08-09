@@ -1,0 +1,203 @@
+:root {
+	--duration-none: 0ms;
+	--duration-hover: 70ms;
+	--duration-fast: 110ms;
+	--duration-base: 160ms;
+	--duration-slow: 240ms;
+	--duration-panel: 320ms;
+
+	--transition-control:
+		background-color var(--duration-hover) var(--ease-out),
+		border-color var(--duration-hover) var(--ease-out),
+		color var(--duration-hover) var(--ease-out),
+		box-shadow var(--duration-hover) var(--ease-out);
+	--transition-row: background-color var(--duration-hover) var(--ease-out);
+}
+
+@layer base {
+	a,
+	button,
+	summary,
+	[role='button'],
+	[role='tab'] {
+		transition: var(--transition-control);
+	}
+}
+
+@keyframes pop {
+	from {
+		opacity: 0;
+		transform: translateY(-3px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes lift {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes mark {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes scrim {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes dismiss {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+@keyframes flash {
+	from {
+		background-color: var(--surface-cursor);
+	}
+	to {
+		background-color: transparent;
+	}
+}
+
+@keyframes breathe {
+	0%,
+	100% {
+		opacity: 0.45;
+	}
+	50% {
+		opacity: 0.8;
+	}
+}
+
+@keyframes sweep {
+	from {
+		transform: translateX(-105%);
+	}
+	to {
+		transform: translateX(305%);
+	}
+}
+
+@theme inline {
+	--ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+	--ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+	--animate-pop: pop var(--duration-base) var(--ease-entrance) both;
+	--animate-lift: lift var(--duration-base) var(--ease-entrance) both;
+	--animate-mark: mark var(--duration-fast) var(--ease-out) both;
+	--animate-scrim: scrim var(--duration-fast) var(--ease-out) both;
+	--animate-dismiss: dismiss var(--duration-fast) var(--ease-exit) both;
+	--animate-flash: flash var(--duration-slow) var(--ease-exit) both;
+	--animate-breathe: breathe 1.6s var(--ease-in-out) infinite;
+	--animate-sweep: sweep 1.1s var(--ease-in-out) infinite;
+}
+
+@utility motion-row {
+	transition: none;
+
+	&:hover {
+		transition: var(--transition-row);
+	}
+
+	&[data-cursor='true'],
+	&[data-selected='true'] {
+		transition: none;
+	}
+}
+
+@utility motion-control {
+	transition:
+		var(--transition-control),
+		opacity var(--duration-hover) var(--ease-out),
+		transform var(--duration-hover) var(--ease-out);
+}
+
+@utility motion-drag {
+	transition: transform var(--duration-fast) var(--ease-out);
+	will-change: transform;
+
+	&[data-dragging='true'] {
+		transition: none;
+	}
+}
+
+@utility motion-slot {
+	transition: transform var(--duration-base) var(--ease-out);
+}
+
+@utility motion-fill {
+	transition:
+		width var(--duration-slow) var(--ease-in-out),
+		transform var(--duration-slow) var(--ease-in-out);
+}
+
+@utility motion-panel {
+	transition: transform var(--duration-panel) var(--ease-entrance);
+}
+
+@utility motion-stagger {
+	& > * {
+		animation: mark var(--duration-fast) var(--ease-out) both;
+	}
+
+	& > *:nth-child(2) {
+		animation-delay: 18ms;
+	}
+
+	& > *:nth-child(3) {
+		animation-delay: 36ms;
+	}
+
+	& > *:nth-child(4) {
+		animation-delay: 54ms;
+	}
+
+	& > *:nth-child(5) {
+		animation-delay: 72ms;
+	}
+
+	& > *:nth-child(n + 6) {
+		animation-delay: 90ms;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	.animate-breathe,
+	.animate-sweep {
+		animation: none !important;
+	}
+}

@@ -29,7 +29,7 @@
 	data-active={active}
 	aria-current={active ? "page" : undefined}
 	class={cn(
-		"flex h-6.75 w-full items-center gap-2 rounded-xs px-2 text-md font-medium tracking-snug text-ink-600 transition-colors duration-110 ease-out hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[active=true]:rule-inset data-[active=true]:bg-accent data-[active=true]:text-ink-900",
+		"flex h-6.75 w-full items-center gap-2 rounded-xs px-2 text-md font-medium tracking-snug text-ink-600 motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[active=true]:rule-inset data-[active=true]:bg-accent data-[active=true]:text-ink-900",
 		indent && "pl-6",
 		className
 	)}

@@ -53,7 +53,7 @@
 									type="button"
 									disabled={working}
 									aria-label="Change status on {child.reference}"
-									class="inline-flex h-6 w-5.5 cursor-pointer items-center justify-center rounded-sm transition-colors duration-70 ease-out hover:bg-paper-2 aria-expanded:bg-paper-2"
+									class="inline-flex h-6 w-5.5 cursor-pointer items-center justify-center rounded-sm motion-control hover:bg-paper-2 aria-expanded:bg-paper-2"
 								>
 									<StatusIcon category={child.state.category} name={child.state.name} />
 								</button>
@@ -72,7 +72,7 @@
 
 				<a
 					href={at(`/issues/${child.reference}`)}
-					class="flex min-w-0 flex-1 items-center gap-2.25 after:absolute after:inset-0 after:-mx-1 after:rounded-sm after:transition-colors after:duration-70 after:ease-out group-hover/child:after:bg-accent"
+					class="flex min-w-0 flex-1 items-center gap-2.25 after:absolute after:inset-0 after:-mx-1 after:rounded-sm after:motion-control group-hover/child:after:bg-accent"
 				>
 					<span class="relative z-1 font-mono text-xs text-muted-foreground">
 						{child.reference}

@@ -57,7 +57,7 @@
 			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
 		>
 			{#if listing.kind === "loading"}
-				<div class="h-40 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+				<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 			{:else if listing.kind === "not_found"}
 				<div class="flex flex-col gap-2">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">No team here</h2>
@@ -118,7 +118,7 @@
 								<li class="border-b border-line-subtle last:border-b-0">
 									<a
 										href={cyclePath(slug, cycle)}
-										class="flex items-center justify-between gap-3 px-3 py-2.5 transition-colors duration-110 ease-out hover:bg-paper-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+										class="flex items-center justify-between gap-3 px-3 py-2.5 motion-control hover:bg-paper-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
 									>
 										<span class="flex min-w-0 flex-col gap-0.5">
 											<span class="truncate text-md text-ink-900">{cycle.name}</span>

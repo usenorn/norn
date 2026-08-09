@@ -2,7 +2,7 @@
 	import { type VariantProps, tv } from "tailwind-variants";
 
 	export const textareaVariants = tv({
-		base: "flex field-sizing-content min-h-18 w-full rounded-none border-0 border-b bg-transparent px-1 py-1.5 text-md leading-normal text-ink-900 outline-none transition-colors duration-110 ease-out placeholder:text-muted-foreground disabled:pointer-events-none disabled:border-dashed disabled:text-ink-300",
+		base: "flex field-sizing-content min-h-18 w-full rounded-none border-0 border-b bg-transparent px-1 py-1.5 text-md leading-normal text-ink-900 outline-none motion-control placeholder:text-muted-foreground disabled:pointer-events-none disabled:border-dashed disabled:text-ink-300",
 		variants: {
 			variant: {
 				default:

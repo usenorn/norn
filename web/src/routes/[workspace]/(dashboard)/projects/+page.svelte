@@ -178,7 +178,7 @@
 			{#if listing.kind === "loading"}
 				<ul class="flex flex-col gap-px" aria-busy="true">
 					{#each [0, 1, 2] as row (row)}
-						<li class="h-14 animate-pulse rounded-md bg-paper-2"></li>
+						<li class="h-14 animate-breathe rounded-md bg-paper-2"></li>
 					{/each}
 				</ul>
 			{:else if listing.kind === "unavailable"}
@@ -207,7 +207,7 @@
 								<li class="border-b border-line-subtle last:border-b-0">
 									<a
 										href={projectPath(slug, project)}
-										class="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 transition-colors duration-110 ease-out hover:bg-paper-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+										class="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 motion-control hover:bg-paper-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
 									>
 										<span class="min-w-0 flex-[1_1_140px] truncate text-md text-ink-900">
 											{project.name}

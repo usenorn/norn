@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from "svelte";
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
@@ -44,6 +45,7 @@
 	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
 	import { rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
 	import { api } from "$lib/api";
+	import { flash } from "$lib/motion";
 	import {
 		backlogStates,
 		boardFor,
@@ -635,7 +637,7 @@
 		liveBulk = null;
 	}
 
-	async function poll(actionId: string) {
+	async function poll(actionId: string, touched: string[]) {
 		const { data: latest } = await api.GET(
 			"/workspaces/{workspaceId}/bulk-actions/{bulkActionId}",
 			{ params: { path: { workspaceId: data.workspace.id, bulkActionId: actionId } } }
@@ -647,15 +649,26 @@
 
 		if (settled(latest.status)) {
 			await invalidate(keys.page(page.route.id));
+			await markChanged(touched);
 
 			return;
 		}
 
-		polling = setTimeout(() => poll(actionId), 700);
+		polling = setTimeout(() => poll(actionId, touched), 700);
+	}
+
+	async function markChanged(issueIds: string[]) {
+		await tick();
+
+		for (const id of issueIds) {
+			flash(document.querySelector(`[data-issue="${id}"]`));
+		}
 	}
 
 	async function applyBulk(change: Record<string, unknown>) {
 		if (selected.size === 0) return;
+
+		const touched = [...selected];
 
 		applying = true;
 		liveBulk = null;
@@ -680,8 +693,9 @@
 				selected.clear();
 				anchor = null;
 				await invalidate(keys.page(page.route.id));
+				await markChanged(touched);
 			} else {
-				polling = setTimeout(() => poll(result.id), 700);
+				polling = setTimeout(() => poll(result.id, touched), 700);
 			}
 		} catch {
 			failure = "Something went wrong and nothing changed. Wait a moment and try again.";
@@ -898,7 +912,7 @@
 	<div
 		aria-hidden="true"
 		data-open={dropTarget?.key === key && dropTarget.index === index}
-		class="pointer-events-none -my-0.5 h-1 rounded-full bg-primary opacity-0 transition-opacity duration-70 ease-out data-[open=true]:opacity-100"
+		class="pointer-events-none -my-0.5 h-1 rounded-full bg-primary opacity-0 motion-control data-[open=true]:opacity-100"
 	></div>
 {/snippet}
 
@@ -1136,7 +1150,7 @@
 								role="tab"
 								aria-selected={data.tab === tab}
 								data-active={data.tab === tab}
-								class="relative inline-flex h-7.5 items-center gap-1.5 text-md font-medium whitespace-nowrap text-muted-foreground transition-colors duration-110 ease-out after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-transparent after:transition-colors after:duration-110 after:ease-out hover:text-ink-900 hover:after:bg-line-strong data-[active=true]:text-ink-900 data-[active=true]:after:bg-primary"
+								class="relative inline-flex h-7.5 items-center gap-1.5 text-md font-medium whitespace-nowrap text-muted-foreground motion-control after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-transparent after:motion-control hover:text-ink-900 hover:after:bg-line-strong data-[active=true]:text-ink-900 data-[active=true]:after:bg-primary"
 							>
 								{tabLabels[tab]}
 								{#if counts}
@@ -1378,7 +1392,7 @@
 									<a
 										href={linkWith({ hide: hiddenParam(display.shown, property) })}
 										data-on={display.shown.includes(property)}
-										class="inline-flex h-5.5 items-center rounded-sm border border-line-default bg-card px-2 text-xs font-medium text-ink-600 transition-colors duration-110 ease-out hover:text-ink-900 data-[on=true]:border-primary data-[on=true]:bg-primary data-[on=true]:text-primary-foreground"
+										class="inline-flex h-5.5 items-center rounded-sm border border-line-default bg-card px-2 text-xs font-medium text-ink-600 motion-control hover:text-ink-900 data-[on=true]:border-primary data-[on=true]:bg-primary data-[on=true]:text-primary-foreground"
 									>
 										{rowPropertyLabels[property]}
 									</a>
@@ -1583,7 +1597,7 @@
 								class="inline-flex h-6 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-accent"
 							>
 								<ChevronDown
-									class="size-3.25 text-muted-foreground transition-transform duration-110 ease-out {shut
+									class="size-3.25 text-muted-foreground motion-control {shut
 										? '-rotate-90'
 										: ''}"
 									aria-hidden="true"
@@ -1656,7 +1670,7 @@
 							ondragleave={(event) => onDragLeave(event, column.key)}
 							ondrop={(event) => void onDrop(event, column.key)}
 							data-dropping={dropTarget?.key === column.key}
-							class="group/column flex w-60 flex-none sm:w-62.5 flex-col gap-2 rounded-lg border border-transparent p-1 transition-colors duration-70 ease-out data-[dropping=true]:border-dashed data-[dropping=true]:border-ink-400 data-[dropping=true]:bg-accent"
+							class="group/column flex w-60 flex-none sm:w-62.5 flex-col gap-2 rounded-lg border border-transparent p-1 motion-control data-[dropping=true]:border-dashed data-[dropping=true]:border-ink-400 data-[dropping=true]:bg-accent"
 						>
 							<div class="flex h-7 items-center gap-2 px-1">
 								{@render columnMark(column)}
@@ -1724,7 +1738,7 @@
 								type="button"
 								disabled={!team}
 								onclick={() => raise(seedFor(column.key))}
-								class="flex h-7.5 w-full cursor-pointer items-center gap-1.75 rounded-md border border-dashed border-line-strong px-2 text-sm text-ink-600 opacity-0 transition-opacity duration-70 ease-out group-hover/column:opacity-100 focus-visible:opacity-100 hover:bg-accent hover:text-foreground disabled:pointer-events-none"
+								class="flex h-7.5 w-full cursor-pointer items-center gap-1.75 rounded-md border border-dashed border-line-strong px-2 text-sm text-ink-600 opacity-0 motion-control group-hover/column:opacity-100 focus-visible:opacity-100 hover:bg-accent hover:text-foreground disabled:pointer-events-none"
 							>
 								<Plus class="size-3.5" aria-hidden="true" />
 								New issue

@@ -252,7 +252,7 @@
 								<li class="border-b border-line-subtle last:border-b-0">
 									<a
 										href={webhookPath(workspace.slug, webhook.id)}
-										class="flex flex-col gap-1.5 p-3 transition-colors hover:bg-accent"
+										class="flex flex-col gap-1.5 p-3 motion-control hover:bg-accent"
 									>
 										<div class="flex flex-wrap items-center gap-2">
 											<span class="truncate text-sm text-ink-900">{webhook.name}</span>

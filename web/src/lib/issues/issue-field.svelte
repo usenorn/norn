@@ -48,7 +48,7 @@
 					{...props}
 					type="button"
 					aria-label="{label}: change"
-					class="-ml-1.75 flex min-h-6 min-w-0 flex-1 items-center gap-1.75 rounded-sm px-1.75 py-0.5 text-left text-md text-ink-900 transition-colors duration-70 ease-out hover:bg-accent aria-expanded:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+					class="-ml-1.75 flex min-h-6 min-w-0 flex-1 items-center gap-1.75 rounded-sm px-1.75 py-0.5 text-left text-md text-ink-900 motion-control hover:bg-accent aria-expanded:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 				>
 					{@render glyph?.()}
 					{@render value()}

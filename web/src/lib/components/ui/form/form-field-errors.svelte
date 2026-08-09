@@ -16,7 +16,7 @@
 
 <FormPrimitive.FieldErrors
 	bind:ref
-	class={cn("flex flex-col gap-1 text-sm text-destructive", className)}
+	class={cn("animate-mark flex flex-col gap-1 text-sm text-destructive", className)}
 	{...restProps}
 >
 	{#snippet children({ errors, errorProps })}

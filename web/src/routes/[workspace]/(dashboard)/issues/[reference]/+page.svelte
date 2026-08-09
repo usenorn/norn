@@ -1246,7 +1246,7 @@
 		<div class="flex min-w-0 flex-1 items-center gap-1.75">
 			<a
 				href={at("/issues")}
-				class="text-md whitespace-nowrap text-ink-600 transition-colors duration-110 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			>
 				Issues
 			</a>
@@ -1255,7 +1255,7 @@
 					<span class="text-sm text-text-disabled" aria-hidden="true">/</span>
 					<a
 						href={at(`/projects/${issue.projectId}`)}
-						class="hidden text-md whitespace-nowrap text-ink-600 transition-colors duration-110 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline"
+						class="hidden text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline"
 					>
 						{issue.projectName}
 					</a>
@@ -1443,19 +1443,19 @@
 		<div class="flex min-h-0 flex-1">
 			<div class="min-w-0 flex-1 px-8 py-6">
 				<div class="mx-auto flex max-w-192 flex-col gap-3.5" aria-busy="true">
-					<span class="h-6 w-3/5 animate-pulse rounded-xs bg-paper-3"></span>
-					<span class="h-3 w-1/3 animate-pulse rounded-xs bg-paper-2"></span>
+					<span class="h-6 w-3/5 animate-breathe rounded-xs bg-paper-3"></span>
+					<span class="h-3 w-1/3 animate-breathe rounded-xs bg-paper-2"></span>
 					<span class="my-1.5 h-px bg-line-subtle"></span>
 					{#each ["w-full", "w-11/12", "w-3/4", "w-1/2"] as width (width)}
-						<span class="h-3 {width} animate-pulse rounded-xs bg-paper-2"></span>
+						<span class="h-3 {width} animate-breathe rounded-xs bg-paper-2"></span>
 					{/each}
 				</div>
 			</div>
 			<aside class="hidden w-75 flex-none flex-col gap-3 border-l border-line-default p-3.5 lg:flex">
 				{#each [1, 2, 3, 4, 5, 6] as row (row)}
 					<span class="flex items-center gap-2.5">
-						<span class="h-2.5 w-15 animate-pulse rounded-xs bg-paper-2"></span>
-						<span class="h-3 flex-1 animate-pulse rounded-xs bg-paper-3"></span>
+						<span class="h-2.5 w-15 animate-breathe rounded-xs bg-paper-2"></span>
+						<span class="h-3 flex-1 animate-breathe rounded-xs bg-paper-3"></span>
 					</span>
 				{/each}
 			</aside>
@@ -1550,7 +1550,7 @@
 						{#if issue.parentReference}
 							<a
 								href={at(`/issues/${issue.parentReference}`)}
-								class="-ml-1.25 inline-flex h-5.5 w-max max-w-full items-center gap-1.75 rounded-chip border border-line-default pr-1.75 pl-1.25 transition-colors duration-70 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+								class="-ml-1.25 inline-flex h-5.5 w-max max-w-full items-center gap-1.75 rounded-chip border border-line-default pr-1.75 pl-1.25 motion-control hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 							>
 								<CornerDownLeft class="size-3.25 text-muted-foreground" aria-hidden="true" />
 								<span class="font-mono text-xs text-muted-foreground">{issue.parentReference}</span>
@@ -1598,7 +1598,7 @@
 								disabled={!canEdit}
 								onclick={() => startEditing("title")}
 								title={canEdit ? "Click to rename" : ""}
-								class="-mx-2.25 -my-1.25 rounded-md px-2.25 py-1.25 text-left transition-colors duration-70 ease-out enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+								class="-mx-2.25 -my-1.25 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 							>
 								<h1
 									class="text-2xl leading-tight font-medium tracking-title text-ink-900 text-pretty {closedIssue
@@ -1678,7 +1678,7 @@
 									type="button"
 									disabled={!canEdit}
 									onclick={() => startEditing("description")}
-									class="-mx-2.25 -my-1.75 rounded-md px-2.25 py-1.75 text-left transition-colors duration-70 ease-out enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+									class="-mx-2.25 -my-1.75 rounded-md px-2.25 py-1.75 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
 									<Markdown source={issue.description} />
 								</button>
@@ -1687,7 +1687,7 @@
 									type="button"
 									disabled={!canEdit}
 									onclick={() => startEditing("description")}
-									class="-mx-2.25 -my-1.75 rounded-md px-2.25 py-1.75 text-left text-md text-muted-foreground transition-colors duration-70 ease-out enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+									class="-mx-2.25 -my-1.75 rounded-md px-2.25 py-1.75 text-left text-md text-muted-foreground motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
 									{canEdit ? "Add a description" : "No description."}
 								</button>
@@ -1898,7 +1898,7 @@
 										type="button"
 										aria-pressed={shown === choice.key}
 										onclick={() => (shown = choice.key as "all" | "comments")}
-										class="h-5 cursor-pointer rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase transition-colors duration-70 ease-out {shown ===
+										class="h-5 cursor-pointer rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase motion-control {shown ===
 										choice.key
 											? 'bg-primary text-primary-foreground'
 											: 'text-ink-600 hover:bg-accent'}"
@@ -2113,7 +2113,7 @@
 											{...props}
 											type="button"
 											aria-label="Due date: change"
-											class="-ml-1.75 flex min-h-6 min-w-0 flex-1 cursor-pointer items-center gap-1.75 rounded-sm px-1.75 py-0.5 text-left text-md transition-colors duration-70 ease-out hover:bg-accent aria-expanded:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+											class="-ml-1.75 flex min-h-6 min-w-0 flex-1 cursor-pointer items-center gap-1.75 rounded-sm px-1.75 py-0.5 text-left text-md motion-control hover:bg-accent aria-expanded:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 										>
 											<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
 											<span
@@ -2312,7 +2312,7 @@
 							title="Copy"
 							onclick={() =>
 								copy(`${page.url.origin}${at(`/issues/${issue.reference}`)}`, `Copied a link to ${issue.reference}`)}
-							class="flex min-w-0 cursor-pointer items-center gap-1.5 font-mono text-xs text-muted-foreground transition-colors duration-70 ease-out hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							class="flex min-w-0 cursor-pointer items-center gap-1.5 font-mono text-xs text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 						>
 							<span class="min-w-0 truncate">{issueLink}</span>
 							<Copy class="size-3 flex-none" aria-hidden="true" />

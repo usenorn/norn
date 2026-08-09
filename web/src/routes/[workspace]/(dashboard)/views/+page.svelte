@@ -215,7 +215,7 @@
 			{/if}
 
 			{#if listing.kind === "loading"}
-				<div class="h-40 animate-pulse rounded-lg bg-paper-2" aria-busy="true"></div>
+				<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 			{:else if listing.kind === "unavailable"}
 				<p class="text-sm leading-normal text-muted-foreground">
 					We could not load your saved views. Nothing changed &mdash; wait a moment and try again.
