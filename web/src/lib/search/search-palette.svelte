@@ -7,6 +7,9 @@
 	import Users from "@lucide/svelte/icons/users";
 	import * as Command from "$lib/components/ui/command/index.js";
 	import { api } from "$lib/api";
+	import { destinations } from "$lib/shortcuts/destinations";
+	import { holdShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { displayKeys, isApplePlatform, shortcutOf } from "$lib/shortcuts/shortcuts";
 	import {
 		kindLabels,
 		listingFor,
@@ -26,6 +29,10 @@
 		workspaceId: string;
 		workspaceSlug: string;
 	} = $props();
+
+	const apple = isApplePlatform();
+
+	holdShortcuts(() => open);
 
 	let typed = $state("");
 	let listing = $state.raw<SearchListing>({ kind: "idle" });
@@ -101,6 +108,16 @@
 	<Command.List>
 		{#if listing.kind === "idle"}
 			<Command.Empty>Type to search this workspace.</Command.Empty>
+			<Command.Group heading="Go to">
+				{#each destinations(workspaceSlug) as destination (destination.id)}
+					<Command.Item value={destination.id} onSelect={() => go(destination.href)}>
+						<span class="flex-1">{destination.label}</span>
+						<Command.Shortcut>
+							{displayKeys(shortcutOf(destination.id).keys[0], apple)}
+						</Command.Shortcut>
+					</Command.Item>
+				{/each}
+			</Command.Group>
 		{:else if listing.kind === "searching"}
 			<Command.Loading>Searching…</Command.Loading>
 		{:else if listing.kind === "unavailable"}

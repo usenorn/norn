@@ -1,3 +1,7 @@
+<script lang="ts" module>
+	export type BulkPicker = "state" | "assignee" | "cycle" | "more";
+</script>
+
 <script lang="ts">
 	import Archive from "@lucide/svelte/icons/archive";
 	import Ellipsis from "@lucide/svelte/icons/ellipsis";
@@ -42,6 +46,18 @@
 		onclear: () => void;
 	} = $props();
 
+	let pickingState = $state(false);
+	let pickingAssignee = $state(false);
+	let pickingCycle = $state(false);
+	let pickingMore = $state(false);
+
+	export function pick(what: BulkPicker) {
+		pickingState = what === "state";
+		pickingAssignee = what === "assignee";
+		pickingCycle = what === "cycle";
+		pickingMore = what === "more";
+	}
+
 	const stateOptions = $derived<PickerOption[]>(
 		states.map((state) => ({ value: state.id, label: state.name }))
 	);
@@ -73,7 +89,12 @@
 
 	<span class="h-4 w-px bg-line-inverse" aria-hidden="true"></span>
 
-	<PropertyPicker options={stateOptions} placeholder="Set status…" onpick={onstate}>
+	<PropertyPicker
+		bind:open={pickingState}
+		options={stateOptions}
+		placeholder="Set status…"
+		onpick={onstate}
+	>
 		{#snippet trigger(props)}
 			<Button
 				{...props}
@@ -93,7 +114,12 @@
 		{/snippet}
 	</PropertyPicker>
 
-	<PropertyPicker options={assigneeOptions} placeholder="Assign to…" onpick={onassignee}>
+	<PropertyPicker
+		bind:open={pickingAssignee}
+		options={assigneeOptions}
+		placeholder="Assign to…"
+		onpick={onassignee}
+	>
 		{#snippet trigger(props)}
 			<Button {...props} variant="outline" size="sm" disabled={working} class={barButton}>
 				Assign
@@ -113,6 +139,7 @@
 	</PropertyPicker>
 
 	<PropertyPicker
+		bind:open={pickingCycle}
 		options={cycleOptions}
 		placeholder="Move to cycle…"
 		empty="No cycle is open on this team"
@@ -125,7 +152,7 @@
 		{/snippet}
 	</PropertyPicker>
 
-	<DropdownMenu.Root>
+	<DropdownMenu.Root bind:open={pickingMore}>
 		<DropdownMenu.Trigger>
 			{#snippet child({ props })}
 				<Button

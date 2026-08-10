@@ -5,9 +5,13 @@
 	import Funnel from "@lucide/svelte/icons/funnel";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Settings from "@lucide/svelte/icons/settings";
-	import Kbd from "$lib/components/norn/kbd.svelte";
+	import ShortcutHints from "$lib/shortcuts/shortcut-hints.svelte";
+	import RoamIndicator from "$lib/shortcuts/roam/roam-indicator.svelte";
+	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { registerRoam } from "$lib/shortcuts/roam/roam.svelte";
 	import TaskRow from "$lib/components/norn/task-row.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
+	import { goto } from "$app/navigation";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { bucketsOf } from "$lib/tasks/tasks";
 	import type { TaskBucket } from "$lib/tasks/types";
@@ -75,23 +79,25 @@
 	let cursor = $state(0);
 	const flat = $derived(buckets.flatMap((bucket) => bucket.tasks));
 
-	function onkeydown(event: KeyboardEvent) {
-		if (event.metaKey || event.ctrlKey || event.altKey) return;
-		const target = event.target as HTMLElement | null;
-		if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)))
-			return;
-		if (event.key === "j" || event.key === "ArrowDown") {
-			event.preventDefault();
-			cursor = Math.min(cursor + 1, flat.length - 1);
-		} else if (event.key === "k" || event.key === "ArrowUp") {
-			event.preventDefault();
-			cursor = Math.max(cursor - 1, 0);
-		}
-	}
+	bindShortcuts({
+		"cursor-down": () => (cursor = Math.min(cursor + 1, flat.length - 1)),
+		"cursor-up": () => (cursor = Math.max(cursor - 1, 0)),
+	});
+
+	registerRoam(() => ({
+		up: () => (cursor = Math.max(cursor - 1, 0)),
+		down: () => (cursor = Math.min(cursor + 1, flat.length - 1)),
+		left: () => false,
+		right: () => false,
+		enter: () => {
+			const task = flat[cursor];
+
+			if (task) void goto(workspacePath(data.workspace.slug, `/issues/${task.id}`));
+		},
+	}));
 </script>
 
 <svelte:head><title>My tasks · Norn</title></svelte:head>
-<svelte:window {onkeydown} />
 
 <div class="flex min-h-0 flex-1 flex-col">
 	<div class="flex-none border-b border-line-default">
@@ -185,14 +191,7 @@
 	<div
 		class="hidden h-7.5 flex-none items-center justify-end gap-4 border-t border-line-subtle bg-card px-3.5 md:flex"
 	>
-		<span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-			<Kbd keys="C" />new task
-		</span>
-		<span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-			<Kbd keys="⌘ K" />go anywhere
-		</span>
-		<span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-			<Kbd keys="↑ ↓" />move
-		</span>
+		<ShortcutHints ids={["cursor-down", "search", "help"]} />
+		<RoamIndicator />
 	</div>
 </div>

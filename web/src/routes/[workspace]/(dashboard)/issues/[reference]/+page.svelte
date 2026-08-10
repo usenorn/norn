@@ -42,6 +42,7 @@
 	import { initialsOf } from "$lib/team/members";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
+	import { useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
@@ -1197,6 +1198,14 @@
 		editingField = null;
 	}
 
+	const shortcuts = useShortcuts();
+
+	$effect(() => {
+		if (!canEdit || editingField) return;
+
+		return shortcuts.register("issue-edit", () => startEditing("description"));
+	});
+
 	function onKey(event: KeyboardEvent) {
 		const target = event.target as HTMLElement | null;
 		const typing = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA";
@@ -1219,12 +1228,6 @@
 			return;
 		}
 
-		if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
-
-		if ((event.key === "e" || event.key === "E") && canEdit && !editingField) {
-			event.preventDefault();
-			startEditing("description");
-		}
 	}
 </script>
 
