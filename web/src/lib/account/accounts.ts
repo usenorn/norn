@@ -51,6 +51,22 @@ export function defaultSlot(accounts: SignedInAccount[]): string | null {
 	return (current ?? accounts[0])?.defaultSlot ?? null;
 }
 
+// A selector that names no signed-in session must fall back rather than resolve to nothing: a
+// route that redirects to sign-in on an unresolved session, and a sign-in that redirects back to
+// where it came from, otherwise bounce between each other for as long as the slot stays in the URL.
+export function actingOf(
+	accounts: SignedInAccount[],
+	url: URL,
+	slug: string | undefined
+): ActingSession | undefined {
+	const named = url.searchParams.get(sessionParam);
+	const reached = slug ? reachOfSlug(accounts, slug, named)?.workspace.slot : undefined;
+	const slot = reached ?? (accountOfSlot(accounts, named) ? named : null) ?? defaultSlot(accounts);
+	const account = accountOfSlot(accounts, slot);
+
+	return slot && account ? { slot, accountId: account.account.id } : undefined;
+}
+
 export function initialsOf(name: string): string {
 	const parts = name.trim().split(/\s+/).filter(Boolean);
 

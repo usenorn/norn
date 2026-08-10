@@ -67,9 +67,10 @@
 	const realtime = provideRealtime();
 
 	const workspaceId = $derived(data.workspace.id);
+	const memberSlot = $derived(data.member.slot);
 
 	$effect(() => {
-		realtime.open(workspaceId, data.member.slot);
+		realtime.open(workspaceId, memberSlot);
 
 		return () => realtime.close();
 	});
