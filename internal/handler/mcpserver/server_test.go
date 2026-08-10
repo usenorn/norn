@@ -28,6 +28,20 @@ import (
 	"github.com/usenorn/norn/internal/handler/mcpserver"
 )
 
+var toolScopes = entity.APIScopeSet{
+	entity.NewAPIScope(entity.ResourceWorkspace, entity.ActionRead),
+	entity.NewAPIScope(entity.ResourceMembership, entity.ActionRead),
+	entity.NewAPIScope(entity.ResourceTeam, entity.ActionRead),
+	entity.NewAPIScope(entity.ResourceTeamMembership, entity.ActionRead),
+	entity.NewAPIScope(entity.ResourceIssue, entity.ActionRead),
+	entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage),
+	entity.NewAPIScope(entity.ResourceCycle, entity.ActionRead),
+	entity.NewAPIScope(entity.ResourceLabel, entity.ActionRead),
+	entity.NewAPIScope(entity.ResourceProject, entity.ActionRead),
+	entity.NewAPIScope(entity.ResourceComment, entity.ActionRead),
+	entity.NewAPIScope(entity.ResourceComment, entity.ActionManage),
+}
+
 type harness struct {
 	issues     *issuesvc.MockIssues
 	workspaces *workspacesvc.MockWorkspaces
@@ -46,7 +60,7 @@ func newHarness(t *testing.T) *harness {
 		actor: entity.Actor{
 			Kind:      entity.ActorKindToken,
 			AccountID: uuid.New(),
-			Scopes:    entity.MCPScopesFor(entity.MCPCapabilityWrite),
+			Scopes:    toolScopes,
 		},
 	}
 

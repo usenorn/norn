@@ -9,7 +9,6 @@ import (
 	auditexportedge "github.com/usenorn/norn/internal/handler/http/auditexport"
 	blobedge "github.com/usenorn/norn/internal/handler/http/blob"
 	eventsedge "github.com/usenorn/norn/internal/handler/http/events"
-	mcpauthedge "github.com/usenorn/norn/internal/handler/http/mcpauth"
 	"github.com/usenorn/norn/internal/handler/http/router"
 	scimedge "github.com/usenorn/norn/internal/handler/http/scim"
 	sourcecontroledge "github.com/usenorn/norn/internal/handler/http/sourcecontrol"
@@ -63,11 +62,7 @@ import (
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	labelgrouprepo "github.com/usenorn/norn/internal/repository/labelgroup"
 	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
-	mcpauthstaterepo "github.com/usenorn/norn/internal/repository/mcpauthstate"
-	mcpclientrepo "github.com/usenorn/norn/internal/repository/mcpclient"
-	mcpconnectionrepo "github.com/usenorn/norn/internal/repository/mcpconnection"
 	mcpthrottlerepo "github.com/usenorn/norn/internal/repository/mcpthrottle"
-	mcptokenrepo "github.com/usenorn/norn/internal/repository/mcptoken"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	notificationrepo "github.com/usenorn/norn/internal/repository/notification"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
@@ -117,7 +112,6 @@ import (
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
-	mcpconnectionsvc "github.com/usenorn/norn/internal/service/mcpconnection"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
@@ -210,10 +204,6 @@ var baseSet = wire.NewSet(
 	oidcstaterepo.Set,
 	scmappstaterepo.Set,
 	oidcproviderrepo.Set,
-	mcpclientrepo.Set,
-	mcpconnectionrepo.Set,
-	mcptokenrepo.Set,
-	mcpauthstaterepo.Set,
 	mcpthrottlerepo.Set,
 	webhookrepo.Set,
 	webhooksenderrepo.Set,
@@ -241,7 +231,6 @@ var baseSet = wire.NewSet(
 	agentsvc.Set,
 	agentholdsvc.Set,
 	apitokensvc.Set,
-	mcpconnectionsvc.Set,
 	webhooksvc.Set,
 	sessionsvc.Set,
 	authorizersvc.Set,
@@ -265,7 +254,6 @@ var baseSet = wire.NewSet(
 	auditexportedge.Set,
 	scimedge.Set,
 	sourcecontroledge.Set,
-	mcpauthedge.Set,
 	mcpserveredge.Set,
 	router.Set,
 	job.Set,

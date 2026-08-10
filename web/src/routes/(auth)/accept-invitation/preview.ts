@@ -45,8 +45,28 @@ export const acceptInvitationPreviewStates: Record<string, AcceptInvitation> = i
 				expiresAt: "2026-08-04T09:00:00Z",
 				teams: ["Mobile"],
 				role: "member",
+				slot: "b2c3d4e5",
 			},
-			address_mismatch: { kind: "address_mismatch", email: "rae@northwind.co" },
+			address_mismatch: {
+				kind: "address_mismatch",
+				email: "rae@northwind.co",
+				signedIn: [
+					{
+						account: {
+							id: "00000000-0000-4000-8000-0000000000a1",
+							status: "active",
+							email: "jun@northwind.co",
+							displayName: "Jun Park",
+							timezone: "UTC",
+							hasPassword: true,
+							createdAt: "2026-07-01T09:00:00Z",
+						},
+						defaultSlot: "a1b2c3d4",
+						workspaces: [],
+						current: true,
+					},
+				],
+			},
 			sso_required: {
 				kind: "sso_required",
 				workspace: { slug: "northwind", name: "Northwind" },

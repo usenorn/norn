@@ -3,7 +3,6 @@ package dashboard
 import (
 	"context"
 
-	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -57,9 +56,7 @@ func (h *handler) RevokeAllSessions(ctx context.Context, _ api.RevokeAllSessions
 		return nil, err
 	}
 
-	cookie := middleware.ExpiredSessionCookie(h.session).String()
+	h.expireSessionsOf(ctx, accountID)
 
-	return api.RevokeAllSessions204Response{
-		Headers: api.RevokeAllSessions204ResponseHeaders{SetCookie: &cookie},
-	}, nil
+	return api.RevokeAllSessions204Response{}, nil
 }

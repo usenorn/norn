@@ -58,12 +58,12 @@ export const load: PageServerLoad = async ({
 }): Promise<IssuesPageData> => {
 	depends(keys.page(route.id));
 
-	const { workspace, teams, views, now } = await parent();
+	const { workspace, teams, views, now, member } = await parent();
 
 	depends(keys.issues(workspace.id));
 
 	const q = url.searchParams;
-	const remembered = displayCookie(workspace.id);
+	const remembered = displayCookie(member.id, workspace.id);
 	const chosen = carriesDisplay(q) ? q : new URLSearchParams(cookies.get(remembered) ?? "");
 
 	const facets = readFacets(q);

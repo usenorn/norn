@@ -79,7 +79,7 @@ func (c *Callback) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, middleware.IssuedSessionCookie(c.session, exchange.Token))
+	http.SetCookie(w, middleware.IssuedSessionCookie(c.session, exchange.Session, exchange.Token))
 
 	target := exchange.ReturnTo
 	if target == "" {

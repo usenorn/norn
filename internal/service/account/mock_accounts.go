@@ -90,11 +90,12 @@ func (mr *MockAccountsMockRecorder) ConfirmEmailChange(ctx, token any) *gomock.C
 }
 
 // ConfirmPasswordReset mocks base method.
-func (m *MockAccounts) ConfirmPasswordReset(ctx context.Context, token, password string) error {
+func (m *MockAccounts) ConfirmPasswordReset(ctx context.Context, token, password string) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfirmPasswordReset", ctx, token, password)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ConfirmPasswordReset indicates an expected call of ConfirmPasswordReset.
@@ -321,6 +322,21 @@ func (m *MockAccounts) SetPassword(ctx context.Context, accountID uuid.UUID, pas
 func (mr *MockAccountsMockRecorder) SetPassword(ctx, accountID, password any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPassword", reflect.TypeOf((*MockAccounts)(nil).SetPassword), ctx, accountID, password)
+}
+
+// SignedIn mocks base method.
+func (m *MockAccounts) SignedIn(ctx context.Context) ([]service.SignedInAccount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SignedIn", ctx)
+	ret0, _ := ret[0].([]service.SignedInAccount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SignedIn indicates an expected call of SignedIn.
+func (mr *MockAccountsMockRecorder) SignedIn(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignedIn", reflect.TypeOf((*MockAccounts)(nil).SignedIn), ctx)
 }
 
 // UpdateProfile mocks base method.

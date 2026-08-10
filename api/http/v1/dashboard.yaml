@@ -21,7 +21,6 @@ tags:
   - name: triage
   - name: states
   - name: tokens
-  - name: connections
   - name: webhooks
   - name: agents
   - name: sso
@@ -99,9 +98,6 @@ paths:
       responses:
         '200':
           description: The account the link created
-          headers:
-            Set-Cookie:
-              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Account' }
@@ -121,11 +117,11 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/SignInRequest' }
       responses:
-        '204':
+        '200':
           description: A session cookie was issued
-          headers:
-            Set-Cookie:
-              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssuedSession' }
         '401': { $ref: '#/components/responses/SignInRejected' }
         '423': { $ref: '#/components/responses/AccountLocked' }
         '429': { $ref: '#/components/responses/TooManyAttempts' }
@@ -167,9 +163,6 @@ paths:
       responses:
         '204':
           description: The password was replaced and every session ended
-          headers:
-            Set-Cookie:
-              schema: { type: string }
         '400': { $ref: '#/components/responses/PasswordResetLinkExpired' }
         '409': { $ref: '#/components/responses/PasswordResetLinkUsed' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -185,9 +178,6 @@ paths:
       responses:
         '204':
           description: The session was discarded
-          headers:
-            Set-Cookie:
-              schema: { type: string }
         '401': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
@@ -205,9 +195,6 @@ paths:
       responses:
         '200':
           description: Send the browser to this address to authenticate
-          headers:
-            Set-Cookie:
-              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }
@@ -229,9 +216,6 @@ paths:
       responses:
         '200':
           description: Send the browser to this address to authenticate
-          headers:
-            Set-Cookie:
-              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }
@@ -309,9 +293,6 @@ paths:
       responses:
         '204':
           description: The password was established and the session was rotated
-          headers:
-            Set-Cookie:
-              schema: { type: string }
         '401': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -329,9 +310,6 @@ paths:
       responses:
         '204':
           description: The password was replaced and the session was rotated
-          headers:
-            Set-Cookie:
-              schema: { type: string }
         '401': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -433,6 +411,38 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /accounts/signed-in:
+    get:
+      tags: [accounts]
+      operationId: listSignedInAccounts
+      summary: Every account this browser is signed in to, with the workspaces each one holds
+      description: >-
+        Answers for every session cookie on the request rather than for one of them, so it needs
+        no acting session. A cookie whose session has ended is expired on this response, so the
+        browser stops presenting it.
+      responses:
+        '200':
+          description: The accounts signed in on this browser
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SignedInAccount' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [auth]
+      operationId: signOutEveryAccount
+      summary: End every session this browser holds, for every account signed in on it
+      description: >-
+        Ends only the sessions this browser presented. The same accounts stay signed in on their
+        other devices.
+      responses:
+        '204':
+          description: Every presented session was ended
+        '401': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /sessions:
     get:
       tags: [sessions]
@@ -455,9 +465,6 @@ paths:
       responses:
         '204':
           description: Every session was revoked
-          headers:
-            Set-Cookie:
-              schema: { type: string }
         '401': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
@@ -595,9 +602,6 @@ paths:
       responses:
         '200':
           description: Send the browser to this address to complete the test
-          headers:
-            Set-Cookie:
-              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }
@@ -617,9 +621,6 @@ paths:
       responses:
         '200':
           description: Send the browser to this address to complete the connection
-          headers:
-            Set-Cookie:
-              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }
@@ -728,9 +729,6 @@ paths:
       responses:
         '200':
           description: Send the browser to this address to complete the test
-          headers:
-            Set-Cookie:
-              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OidcAuthorization' }
@@ -1525,154 +1523,6 @@ paths:
               schema: { $ref: '#/components/schemas/DirectoryAvailability' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /mcp/authorizations/{requestId}:
-    get:
-      tags: [connections]
-      operationId: describeMCPAuthorization
-      summary: What an AI client is asking to be granted, for the consent screen
-      parameters:
-        - $ref: '#/components/parameters/MCPRequestId'
-      responses:
-        '200':
-          description: The pending authorization request
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/MCPAuthorizationView' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /mcp/authorizations/{requestId}/approve:
-    post:
-      tags: [connections]
-      operationId: approveMCPAuthorization
-      summary: Grant the AI client a connection confined to the workspaces the caller picked
-      parameters:
-        - $ref: '#/components/parameters/MCPRequestId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/ApproveMCPAuthorizationRequest' }
-      responses:
-        '200':
-          description: Where to send the client to finish the handshake
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/MCPAuthorizationDecision' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /mcp/authorizations/{requestId}/deny:
-    post:
-      tags: [connections]
-      operationId: denyMCPAuthorization
-      summary: Refuse the AI client and send it away empty-handed
-      parameters:
-        - $ref: '#/components/parameters/MCPRequestId'
-      responses:
-        '200':
-          description: Where to send the client to report the refusal
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/MCPAuthorizationDecision' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /mcp/connections:
-    get:
-      tags: [connections]
-      operationId: listMCPConnections
-      summary: List the caller's live AI client connections
-      responses:
-        '200':
-          description: The caller's connections
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/MCPConnection' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /mcp/connections/{connectionId}:
-    patch:
-      tags: [connections]
-      operationId: narrowMCPConnection
-      summary: Shrink what a connection may reach, without re-authorizing
-      parameters:
-        - $ref: '#/components/parameters/MCPConnectionId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/NarrowMCPConnectionRequest' }
-      responses:
-        '200':
-          description: The connection after narrowing
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/MCPConnection' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '422': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-    delete:
-      tags: [connections]
-      operationId: revokeMCPConnection
-      summary: Revoke a connection, cutting it off from the next operation on
-      parameters:
-        - $ref: '#/components/parameters/MCPConnectionId'
-      responses:
-        '204':
-          description: The connection was revoked
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/mcp-connections:
-    get:
-      tags: [connections]
-      operationId: listWorkspaceMCPConnections
-      summary: The AI client connections able to reach this workspace, for its admins
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-      responses:
-        '200':
-          description: The connections reaching this workspace, with their owners
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/WorkspaceMCPConnection' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/mcp-connections/{connectionId}:
-    delete:
-      tags: [connections]
-      operationId: revokeWorkspaceMCPConnection
-      summary: Revoke a connection reaching this workspace, as its admin
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/MCPConnectionId'
-      responses:
-        '204':
-          description: The connection was revoked everywhere it reached
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/webhooks:
@@ -3571,9 +3421,6 @@ paths:
       responses:
         '200':
           description: The membership the invitation granted
-          headers:
-            Set-Cookie:
-              schema: { type: string }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AcceptedInvitation' }
@@ -5464,6 +5311,11 @@ components:
       type: apiKey
       in: cookie
       name: norn_session
+      description: >-
+        The cookie is norn_session_<slot>, one per signed-in session, HttpOnly and host-only, and
+        a browser may present several at once. Which one acts is named by the X-Norn-Session
+        header, or by the s query parameter for the one caller that cannot set a header. Naming a
+        session the request did not present authenticates nobody and never falls back to another.
 
   parameters:
     WorkspaceId:
@@ -5483,16 +5335,6 @@ components:
       schema: { type: string, format: uuid }
     TokenId:
       name: tokenId
-      in: path
-      required: true
-      schema: { type: string, format: uuid }
-    MCPRequestId:
-      name: requestId
-      in: path
-      required: true
-      schema: { type: string }
-    MCPConnectionId:
-      name: connectionId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -7040,9 +6882,6 @@ components:
         - agent.registered
         - agent.disabled
         - agent.proposal_decided
-        - mcp_connection.authorized
-        - mcp_connection.narrowed
-        - mcp_connection.revoked
         - webhook.registered
         - webhook.removed
         - webhook.disabled
@@ -7652,6 +7491,45 @@ components:
               enum: [agent_action_held]
             proposalId: { type: string, format: uuid }
 
+    IssuedSession:
+      type: object
+      required: [slot]
+      properties:
+        slot:
+          type: string
+          description: >-
+            The session this call issued. Name it to act as the account that just signed in,
+            which a browser already holding other sessions has no other way to know.
+
+    SignedInWorkspace:
+      type: object
+      required: [workspace, slot, reachable]
+      properties:
+        workspace: { $ref: '#/components/schemas/Workspace' }
+        slot:
+          type: string
+          description: The session to name when acting in this workspace.
+        reachable:
+          type: boolean
+          description: >-
+            False when the workspace requires single sign-on and no session on this browser was
+            issued by its provider.
+
+    SignedInAccount:
+      type: object
+      required: [account, defaultSlot, workspaces, current]
+      properties:
+        account: { $ref: '#/components/schemas/Account' }
+        defaultSlot:
+          type: string
+          description: The session to name for anything this account owns outside a workspace.
+        workspaces:
+          type: array
+          items: { $ref: '#/components/schemas/SignedInWorkspace' }
+        current:
+          type: boolean
+          description: True for the account the request that asked was acting as.
+
     APIScope:
       type: string
 
@@ -7710,85 +7588,6 @@ components:
           type: array
           items: { $ref: '#/components/schemas/APITokenGrant' }
         expiresAt: { type: string, format: date-time }
-
-    MCPCapability:
-      type: string
-      description: What the connection may do — read everything its owner can see, or also write.
-      enum: [read, write]
-
-    MCPConnection:
-      type: object
-      required: [id, clientName, capability, followsMembership, grants, createdAt]
-      properties:
-        id: { type: string, format: uuid }
-        clientName: { type: string }
-        capability: { $ref: '#/components/schemas/MCPCapability' }
-        followsMembership:
-          type: boolean
-          description: >-
-            When true the connection reaches every workspace its owner belongs to, including
-            ones joined after authorization. When false it is narrowed to the listed grants.
-        grants:
-          type: array
-          items: { $ref: '#/components/schemas/APITokenGrant' }
-        lastUsedAt: { type: string, format: date-time }
-        createdAt: { type: string, format: date-time }
-
-    WorkspaceMCPConnection:
-      type: object
-      required: [connection, ownerName, ownerEmail]
-      properties:
-        connection: { $ref: '#/components/schemas/MCPConnection' }
-        ownerName: { type: string }
-        ownerEmail: { type: string }
-
-    MCPAuthorizationWorkspace:
-      type: object
-      required: [id, slug, name]
-      properties:
-        id: { type: string, format: uuid }
-        slug: { type: string }
-        name: { type: string }
-
-    MCPAuthorizationView:
-      type: object
-      required: [clientName, capability, workspaces]
-      properties:
-        clientName: { type: string }
-        capability: { $ref: '#/components/schemas/MCPCapability' }
-        workspaces:
-          type: array
-          description: Every workspace the caller may choose from.
-          items: { $ref: '#/components/schemas/MCPAuthorizationWorkspace' }
-
-    ApproveMCPAuthorizationRequest:
-      type: object
-      required: [allWorkspaces, workspaceIds]
-      properties:
-        allWorkspaces:
-          type: boolean
-          description: >-
-            Follow the caller's own membership, so workspaces they join later are reached too.
-            Choosing this is deliberate; it is never the default.
-        workspaceIds:
-          type: array
-          description: The workspaces this connection may reach when allWorkspaces is false.
-          items: { type: string, format: uuid }
-
-    MCPAuthorizationDecision:
-      type: object
-      required: [redirectTo]
-      properties:
-        redirectTo: { type: string }
-
-    NarrowMCPConnectionRequest:
-      type: object
-      properties:
-        capability: { $ref: '#/components/schemas/MCPCapability' }
-        grants:
-          type: array
-          description: Replaces the connection's reach; must shrink it, never widen it.
-          items: { $ref: '#/components/schemas/APITokenGrant' }
 
     WebhookEventType:
       type: string

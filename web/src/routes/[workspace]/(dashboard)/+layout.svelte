@@ -13,6 +13,7 @@
 	import BadgeCheck from "@lucide/svelte/icons/badge-check";
 	import Bell from "@lucide/svelte/icons/bell";
 	import Bot from "@lucide/svelte/icons/bot";
+	import AccountSwitcher from "$lib/account/account-switcher.svelte";
 	import SearchPalette from "$lib/search/search-palette.svelte";
 	import ConnectionIndicator from "$lib/realtime/connection-indicator.svelte";
 	import StaleBanner from "$lib/realtime/stale-banner.svelte";
@@ -54,7 +55,6 @@
 				: data.narrowed)
 	);
 
-	const signOutFormId = "sign-out-form";
 
 	const slug = $derived(data.workspace.slug);
 	const pathname = $derived(page.url.pathname);
@@ -69,7 +69,7 @@
 	const workspaceId = $derived(data.workspace.id);
 
 	$effect(() => {
-		realtime.open(workspaceId);
+		realtime.open(workspaceId, data.member.slot);
 
 		return () => realtime.close();
 	});
@@ -121,135 +121,11 @@
 	<aside
 		class="hidden w-sidebar flex-none flex-col overflow-y-auto border-r border-line-default bg-card px-2 py-2.5 md:flex"
 	>
-		<DropdownMenu.Root>
-			<DropdownMenu.Trigger
-				class="flex h-8.5 w-full items-center gap-2 rounded-md px-1.5 text-left motion-control hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-				aria-label="Switch workspace"
-			>
-				<WorkspaceMark name={data.workspace.name} />
-				<span class="min-w-0 flex-1 truncate text-md font-medium tracking-snug text-ink-900">
-					{data.workspace.name}
-				</span>
-				<ChevronsUpDown class="size-icon-row shrink-0 text-muted-foreground" aria-hidden="true" />
-			</DropdownMenu.Trigger>
-			<DropdownMenu.Content align="start" sideOffset={4}>
-				<DropdownMenu.Label>Workspaces</DropdownMenu.Label>
-				{#each data.workspaces as option (option.slug)}
-					<DropdownMenu.Item>
-						{#snippet child({ props })}
-							<a href={workspacePath(option.slug, "/my-tasks")} {...props}>
-								<WorkspaceMark name={option.name} class="size-4.5 rounded-xs text-2xs" />
-								<span class="min-w-0 flex-1 truncate">{option.name}</span>
-								{#if option.slug === slug}
-									<Check class="text-ink-600" aria-hidden="true" />
-								{/if}
-							</a>
-						{/snippet}
-					</DropdownMenu.Item>
-				{/each}
-				<DropdownMenu.Separator />
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href={workspacePath(slug, "/settings")} {...props}>
-							<Settings aria-hidden="true" />
-							Workspace settings
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href={workspacePath(slug, "/settings/teams")} {...props}>
-							<Users aria-hidden="true" />
-							Teams
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href={workspacePath(slug, "/settings/members")} {...props}>
-							<UserRound aria-hidden="true" />
-							Members
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href={workspacePath(slug, "/settings/labels")} {...props}>
-							<Tags aria-hidden="true" />
-							Labels
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href={workspacePath(slug, "/settings/notifications")} {...props}>
-							<Bell aria-hidden="true" />
-							Notifications
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href={workspacePath(slug, "/settings/agents")} {...props}>
-							<Bot aria-hidden="true" />
-							Agents
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href={workspacePath(slug, "/settings/authentication")} {...props}>
-							<KeyRound aria-hidden="true" />
-							Authentication
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href={workspacePath(slug, "/settings/directory")} {...props}>
-							<Network aria-hidden="true" />
-							Directory
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Separator />
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href="/settings/tokens" {...props}>
-							<Terminal aria-hidden="true" />
-							Your API tokens
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href="/settings/licence" {...props}>
-							<BadgeCheck aria-hidden="true" />
-							Licence
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Separator />
-				<DropdownMenu.Item>
-					{#snippet child({ props })}
-						<a href="/create-workspace" {...props}>
-							<Plus aria-hidden="true" />
-							Create a workspace
-						</a>
-					{/snippet}
-				</DropdownMenu.Item>
-				<DropdownMenu.Item variant="destructive">
-					{#snippet child({ props })}
-						<button type="submit" form={signOutFormId} {...props}>
-							<LogOut aria-hidden="true" />
-							Sign out
-						</button>
-					{/snippet}
-				</DropdownMenu.Item>
-			</DropdownMenu.Content>
-		</DropdownMenu.Root>
-
-		<form id={signOutFormId} method="POST" action="/sign-out" class="hidden"></form>
+		<AccountSwitcher
+			accounts={data.accounts}
+			actingAccountId={data.member.id}
+			workspace={{ slug, name: data.workspace.name }}
+		/>
 
 		<button
 			type="button"
@@ -406,9 +282,12 @@
 			<Button variant="ghost" size="icon" aria-label="Search" onclick={() => (searching = true)}>
 				<Search class="size-icon-toolbar" aria-hidden="true" />
 			</Button>
-			<Avatar.Root size="sm">
-				<Avatar.Fallback>{initials}</Avatar.Fallback>
-			</Avatar.Root>
+			<AccountSwitcher
+				accounts={data.accounts}
+				actingAccountId={data.member.id}
+				workspace={{ slug, name: data.workspace.name }}
+				trigger="avatar"
+			/>
 		</header>
 
 		<main class="flex min-h-0 flex-1 flex-col">

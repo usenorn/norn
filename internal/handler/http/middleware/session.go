@@ -1,14 +1,24 @@
 package middleware
 
 import (
-	"errors"
 	"net/http"
+	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/observability/logging"
+	"github.com/usenorn/norn/internal/pkg/httpcookie"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/service"
+)
+
+const (
+	sessionSelectorHeader = "X-Norn-Session"
+	sessionSelectorQuery  = "s"
+	hostCookiePrefix      = "__Host-"
+	workspacePathSegment  = "/v1/workspaces/"
 )
 
 func Session(sessions service.Sessions, cfg config.Session) func(http.Handler) http.Handler {
@@ -20,39 +30,65 @@ func Session(sessions service.Sessions, cfg config.Session) func(http.Handler) h
 				return
 			}
 
-			cookie, err := r.Cookie(cfg.CookieName)
-			if err != nil || cookie.Value == "" {
+			presented := presentedSessions(r, cfg)
+			if len(presented) == 0 {
 				next.ServeHTTP(w, r)
 
 				return
 			}
 
-			session, err := sessions.Validate(r.Context(), cookie.Value)
+			resolved, err := sessions.Resolve(r.Context(), service.ResolveSessionsInput{
+				Presented:   presented,
+				Selector:    sessionSelector(r),
+				WorkspaceID: workspaceInPath(r.URL.Path),
+			})
 			if err != nil {
-				if errors.Is(err, entity.ErrSessionNotFound) || errors.Is(err, entity.ErrSessionRevoked) {
-					http.SetCookie(w, ExpiredSessionCookie(cfg))
-					next.ServeHTTP(w, r)
-
-					return
-				}
-
-				logging.From(r.Context()).ErrorContext(r.Context(), "validating session failed", "error", err.Error())
+				logging.From(r.Context()).ErrorContext(
+					r.Context(), "resolving sessions failed", "error", err.Error(),
+				)
 				WriteProblem(w, r, http.StatusInternalServerError, "")
 
 				return
 			}
 
-			ctx := identity.WithSession(r.Context(), session)
-			ctx = logging.With(ctx, "account_id", session.AccountID.String(), "session_id", session.ID.String())
+			for _, slot := range resolved.Dead {
+				httpcookie.Pending(r.Context()).Add(ExpiredSessionCookie(cfg, slot))
+			}
+
+			if len(resolved.Held) == 0 {
+				next.ServeHTTP(w, r)
+
+				return
+			}
+
+			ctx := identity.WithSignedIn(r.Context(), resolved.Held)
+
+			if resolved.Found {
+				ctx = identity.WithSession(ctx, resolved.Acting)
+				ctx = logging.With(
+					ctx,
+					"account_id", resolved.Acting.AccountID.String(),
+					"session_id", resolved.Acting.ID.String(),
+				)
+			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func SessionCookie(cfg config.Session, token string, maxAge int) *http.Cookie {
+func SessionCookieName(cfg config.Session, slot string) string {
+	name := cfg.CookieName + "_" + slot
+	if cfg.Secure {
+		return hostCookiePrefix + name
+	}
+
+	return name
+}
+
+func SessionCookie(cfg config.Session, slot, token string, maxAge int) *http.Cookie {
 	return &http.Cookie{
-		Name:     cfg.CookieName,
+		Name:     SessionCookieName(cfg, slot),
 		Value:    token,
 		Path:     cfg.CookiePath,
 		Domain:   cfg.Domain,
@@ -63,12 +99,62 @@ func SessionCookie(cfg config.Session, token string, maxAge int) *http.Cookie {
 	}
 }
 
-func IssuedSessionCookie(cfg config.Session, token string) *http.Cookie {
-	return SessionCookie(cfg, token, int(cfg.AbsoluteLifetime.Seconds()))
+func IssuedSessionCookie(cfg config.Session, session entity.Session, token string) *http.Cookie {
+	return SessionCookie(cfg, session.Slot, token, int(cfg.AbsoluteLifetime.Seconds()))
 }
 
-func ExpiredSessionCookie(cfg config.Session) *http.Cookie {
-	return SessionCookie(cfg, "", -1)
+func ExpiredSessionCookie(cfg config.Session, slot string) *http.Cookie {
+	return SessionCookie(cfg, slot, "", -1)
+}
+
+func sessionCookiePrefix(cfg config.Session) string {
+	if cfg.Secure {
+		return hostCookiePrefix + cfg.CookieName + "_"
+	}
+
+	return cfg.CookieName + "_"
+}
+
+func presentedSessions(r *http.Request, cfg config.Session) []service.PresentedSession {
+	prefix := sessionCookiePrefix(cfg)
+	presented := make([]service.PresentedSession, 0, 2)
+
+	for _, cookie := range r.Cookies() {
+		slot, carried := strings.CutPrefix(cookie.Name, prefix)
+		if !carried || slot == "" || cookie.Value == "" {
+			continue
+		}
+
+		presented = append(presented, service.PresentedSession{Slot: slot, Token: cookie.Value})
+	}
+
+	return presented
+}
+
+func sessionSelector(r *http.Request) string {
+	if selector := r.Header.Get(sessionSelectorHeader); selector != "" {
+		return selector
+	}
+
+	return r.URL.Query().Get(sessionSelectorQuery)
+}
+
+// The one caller that cannot name a session is a workspace-scoped GET whose address was written
+// into an issue body long before the browser held several: an attachment renders as an image.
+func workspaceInPath(path string) uuid.UUID {
+	rest, found := strings.CutPrefix(path, workspacePathSegment)
+	if !found {
+		return uuid.Nil
+	}
+
+	segment, _, _ := strings.Cut(rest, "/")
+
+	workspaceID, err := uuid.Parse(segment)
+	if err != nil {
+		return uuid.Nil
+	}
+
+	return workspaceID
 }
 
 func sameSite(name string) http.SameSite {

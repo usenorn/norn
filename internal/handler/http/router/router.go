@@ -10,7 +10,6 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/auditexport"
 	"github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
-	"github.com/usenorn/norn/internal/handler/http/mcpauth"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/handler/http/scim"
 	"github.com/usenorn/norn/internal/handler/http/sourcecontrol"
@@ -32,7 +31,6 @@ func New(
 	mcpCfg config.MCP,
 	sessions service.Sessions,
 	tokens service.APITokens,
-	connections service.MCPConnections,
 	mcpThrottle repository.MCPThrottle,
 	dashboard api.StrictServerInterface,
 	callback *sso.Callback,
@@ -43,7 +41,6 @@ func New(
 	scimEdge *scim.Edge,
 	sourceControlEdge *sourcecontrol.Edge,
 	sourceControlApps *sourcecontrol.AppEdge,
-	mcpAuth *mcpauth.Edge,
 	mcpEdge *mcpserver.Edge,
 ) http.Handler {
 	base := chi.NewRouter()
@@ -52,6 +49,7 @@ func New(
 		middleware.CorrelationID,
 		middleware.AccessLog,
 		middleware.SecurityHeaders,
+		middleware.Cookies,
 		middleware.ClientCapture(cfg),
 		middleware.SameOrigin(appCfg, sessionCfg),
 	)
@@ -67,14 +65,6 @@ func New(
 	bounded.Get(sourcecontrol.RegisteredPath, sourceControlApps.Registered)
 	bounded.Get(sourcecontrol.ConnectedPath, sourceControlApps.Connected)
 
-	bounded.Get(mcpauth.ResourceMetadataPath, mcpAuth.ProtectedResource)
-	bounded.Get(mcpauth.ResourceMetadataMCPPath, mcpAuth.ProtectedResource)
-	bounded.Get(mcpauth.AuthServerMetadataPath, mcpAuth.AuthorizationServer)
-	bounded.Post(mcpauth.RegisterPath, mcpAuth.Register)
-	bounded.Get(mcpauth.AuthorizePath, mcpAuth.Authorize)
-	bounded.Post(mcpauth.TokenPath, mcpAuth.Token)
-	bounded.Post(mcpauth.RevokePath, mcpAuth.Revoke)
-
 	// A forge chooses its own payload size and its own timeout, so this route carries its
 	// own byte cap rather than the dashboard's, which is sized for a form.
 	deliveries := base.With(chimiddleware.Timeout(cfg.RequestTimeout))
@@ -86,7 +76,9 @@ func New(
 	transfers.Get(blob.DownloadPath, blobEdge.Serve)
 
 	mcpOps := base.With(
-		middleware.MCPBearer(connections, appCfg, mcpCfg),
+		middleware.MCPEnabled(mcpCfg),
+		middleware.BearerToken(tokens),
+		middleware.RequireToken,
 		middleware.MCPRateLimit(mcpThrottle, mcpCfg),
 		maxRequestBytes(cfg.MaxRequestBytes),
 		chimiddleware.Timeout(cfg.RequestTimeout),

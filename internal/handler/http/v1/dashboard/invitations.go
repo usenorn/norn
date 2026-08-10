@@ -6,6 +6,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/pkg/httpcookie"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -145,15 +146,14 @@ func (h *handler) AcceptInvitation(ctx context.Context, request api.AcceptInvita
 	}
 
 	response := api.AcceptInvitation200JSONResponse{
-		Body: api.AcceptedInvitation{
-			Workspace:  workspaceDTO(accepted.Workspace),
-			Membership: membershipDTO(entity.WorkspaceMember{Membership: accepted.Membership}),
-		},
+		Workspace:  workspaceDTO(accepted.Workspace),
+		Membership: membershipDTO(entity.WorkspaceMember{Membership: accepted.Membership}),
 	}
 
 	if accepted.SignedIn {
-		cookie := middleware.IssuedSessionCookie(h.session, accepted.Session.Token).String()
-		response.Headers.SetCookie = &cookie
+		httpcookie.Pending(ctx).Add(
+			middleware.IssuedSessionCookie(h.session, accepted.Session.Session, accepted.Session.Token),
+		)
 	}
 
 	return response, nil

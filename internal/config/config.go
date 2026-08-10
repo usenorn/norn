@@ -329,10 +329,6 @@ func (c SourceControl) GitHubAppConfigured() bool {
 
 type MCP struct {
 	Enabled           bool          `mapstructure:"enabled"`
-	AccessTokenTTL    time.Duration `mapstructure:"access_token_ttl"`
-	RefreshTokenTTL   time.Duration `mapstructure:"refresh_token_ttl"`
-	AuthRequestTTL    time.Duration `mapstructure:"auth_request_ttl"`
-	AuthCodeTTL       time.Duration `mapstructure:"auth_code_ttl"`
 	RequestsPerWindow int           `mapstructure:"requests_per_window"`
 	RateWindow        time.Duration `mapstructure:"rate_window"`
 }

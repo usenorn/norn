@@ -1,5 +1,6 @@
 import { error, redirect } from "@sveltejs/kit";
 import { keys } from "$lib/api/keys";
+import { reachOfSlug, type SignedInAccount } from "$lib/account/accounts";
 import type { components } from "$lib/api/dashboard.gen";
 import type { TeamCycle } from "$lib/cycles/cycles";
 import type { Project } from "$lib/projects/projects";
@@ -14,7 +15,8 @@ export type WorkspaceScope = {
 	now: string;
 	workspace: WorkspaceSummary;
 	workspaces: WorkspaceSummary[];
-	member: { id: string; name: string };
+	accounts: SignedInAccount[];
+	member: { id: string; name: string; email: string; slot: string };
 	teams: Team[] | null;
 	cycles: TeamCycle[];
 	projects: Project[];
@@ -28,18 +30,18 @@ export const load: LayoutServerLoad = async ({
 	depends,
 	locals,
 	params,
+	parent,
 }): Promise<WorkspaceScope> => {
+	const { accounts, acting } = await parent();
 
-	const [workspaces, account] = await Promise.all([
-		locals.api.GET("/workspaces"),
-		locals.api.GET("/accounts/me"),
-	]);
+	if (!acting) redirect(307, "/sign-in");
 
-	if (workspaces.error || !workspaces.data) redirect(307, "/sign-in");
+	const reach = reachOfSlug(accounts, params.workspace, acting.slot);
 
-	const workspace = workspaces.data.find((candidate) => candidate.slug === params.workspace);
+	if (!reach) error(404, "That workspace does not exist, or you are not a member of it.");
 
-	if (!workspace) error(404, "That workspace does not exist, or you are not a member of it.");
+	const workspace = reach.workspace.workspace;
+	const signedIn = reach.account;
 
 	depends(keys.workspaceScope(workspace.id));
 	depends(keys.projects(workspace.id));
@@ -67,8 +69,14 @@ export const load: LayoutServerLoad = async ({
 		narrowed: requiresProvider(teams.error),
 		now: new Date().toISOString(),
 		workspace,
-		workspaces: workspaces.data,
-		member: { id: account.data?.id ?? "", name: account.data?.displayName ?? "" },
+		workspaces: signedIn.workspaces.map((reach) => reach.workspace),
+		accounts,
+		member: {
+			id: signedIn.account.id,
+			name: signedIn.account.displayName,
+			email: signedIn.account.email,
+			slot: reach.workspace.slot,
+		},
 		teams: teams.data ?? null,
 		cycles: cycles.data ?? [],
 		projects: projects.data ?? [],

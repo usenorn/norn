@@ -7,6 +7,7 @@
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Info from "@lucide/svelte/icons/info";
+	import { sessionParam } from "$lib/account/accounts";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
@@ -165,7 +166,11 @@
 			case "confirm":
 				return `You were invited as ${roleLabels[invitation.role]}. There is nothing else to set up.`;
 			case "address_mismatch":
-				return `This invitation was issued to ${invitation.email}. Sign out and open the link again with that address.`;
+				return invitation.signedIn.length > 0
+					? `This invitation was issued to ${invitation.email}. You are signed in as ${invitation.signedIn
+							.map((account) => account.account.email)
+							.join(" and ")}. Add that address to this browser to accept it.`
+					: `This invitation was issued to ${invitation.email}. Sign in with that address to accept it.`;
 			case "sso_required":
 				return "Accept the invitation by signing in with your identity provider. There is no password to set.";
 			case "joined":
@@ -414,7 +419,12 @@
 				{/if}
 
 				{#if invitation.kind === "confirm"}
-					<form id={confirmFormId} method="POST" action="?/confirm" use:confirmEnhance>
+					<form
+						id={confirmFormId}
+						method="POST"
+						action={`?/confirm&${sessionParam}=${invitation.slot}`}
+						use:confirmEnhance
+					>
 						<input type="hidden" name="timezone" value={timezone} />
 						<input type="hidden" name="token" value={data.token ?? ""} />
 					</form>
@@ -425,6 +435,14 @@
 				{:else if action.form}
 					<Button type="submit" form={action.form} class="w-full" disabled={busy}>
 						{action.label}
+					</Button>
+				{/if}
+
+				{#if invitation.kind === "address_mismatch"}
+					<Button
+						href={`/sign-in?add=1&return=${encodeURIComponent(page.url.pathname + page.url.search)}`}
+					>
+						Sign in as {invitation.email}
 					</Button>
 				{/if}
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/pkg/httpcookie"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -55,10 +56,9 @@ func (h *handler) ConfirmSignUp(ctx context.Context, request api.ConfirmSignUpRe
 		return nil, err
 	}
 
-	cookie := middleware.IssuedSessionCookie(h.session, confirmed.Session.Token).String()
+	httpcookie.Pending(ctx).Add(
+		middleware.IssuedSessionCookie(h.session, confirmed.Session.Session, confirmed.Session.Token),
+	)
 
-	return api.ConfirmSignUp200JSONResponse{
-		Body:    accountDTO(confirmed.Account),
-		Headers: api.ConfirmSignUp200ResponseHeaders{SetCookie: &cookie},
-	}, nil
+	return api.ConfirmSignUp200JSONResponse(accountDTO(confirmed.Account)), nil
 }

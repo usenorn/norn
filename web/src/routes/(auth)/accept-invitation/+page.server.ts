@@ -41,19 +41,19 @@ async function invitationFor(
 
 	if (!token) return { token: null, invitation: { kind: "no_token" }, signedInAs: "" };
 
-	const [preview, account] = await Promise.all([
+	const [preview, signedIn] = await Promise.all([
 		locals.api.POST("/invitations/preview", { body: { token } }),
-		locals.api.GET("/accounts/me"),
+		locals.signedIn,
 	]);
 
-	const signedInAs = account.data?.displayName ?? account.data?.email ?? "";
+	const signedInAs = signedIn.map((account) => account.account.email).join(", ");
 
 	if (preview.error) return { token, invitation: linkFailure(preview.error), signedInAs };
 	if (!preview.data) return { token, invitation: { kind: "unavailable" }, signedInAs };
 
 	return {
 		token,
-		invitation: invitationState(preview.data, account.data?.email ?? null),
+		invitation: invitationState(preview.data, signedIn),
 		signedInAs,
 	};
 }

@@ -1,12 +1,16 @@
 <script lang="ts">
 	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
+	import AccountSwitcher from "$lib/account/account-switcher.svelte";
+	import { withSlot } from "$lib/account/accounts";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();
 
 	const back = $derived(
-		data.workspaces.length > 0 ? workspacePath(data.workspaces[0].slug, "/settings") : "/"
+		data.workspaces.length > 0
+			? withSlot(workspacePath(data.workspaces[0].slug, "/settings"), data.account.slot)
+			: "/"
 	);
 </script>
 
@@ -19,6 +23,14 @@
 			<ArrowLeft class="size-4" aria-hidden="true" />
 			<span>Back to {data.workspaces[0]?.name ?? "Norn"}</span>
 		</a>
+
+		<div class="flex-1"></div>
+
+		<AccountSwitcher
+			accounts={data.accounts}
+			actingAccountId={data.account.id}
+			trigger="avatar"
+		/>
 	</header>
 
 	<main class="flex min-h-0 flex-1 flex-col">

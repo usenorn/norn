@@ -26,6 +26,7 @@ const (
 
 type storedSession struct {
 	ID                uuid.UUID  `json:"id"`
+	Slot              string     `json:"slot"`
 	AccountID         uuid.UUID  `json:"account_id"`
 	WorkspaceID       uuid.UUID  `json:"workspace_id"`
 	AuthMethod        string     `json:"auth_method"`
@@ -42,6 +43,7 @@ type storedSession struct {
 func toStored(session entity.Session) storedSession {
 	return storedSession{
 		ID:                session.ID,
+		Slot:              session.Slot,
 		AccountID:         session.AccountID,
 		WorkspaceID:       session.WorkspaceID,
 		AuthMethod:        string(session.AuthMethod),
@@ -59,6 +61,7 @@ func toStored(session entity.Session) storedSession {
 func toEntity(tokenHash string, stored storedSession) entity.Session {
 	return entity.Session{
 		ID:          stored.ID,
+		Slot:        stored.Slot,
 		TokenHash:   tokenHash,
 		AccountID:   stored.AccountID,
 		WorkspaceID: stored.WorkspaceID,

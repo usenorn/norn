@@ -7,6 +7,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/pkg/httpcookie"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -102,9 +103,9 @@ func (h *handler) SetPassword(ctx context.Context, request api.SetPasswordReques
 		return nil, err
 	}
 
-	cookie := middleware.IssuedSessionCookie(h.session, issued.Token).String()
+	httpcookie.Pending(ctx).Add(middleware.IssuedSessionCookie(h.session, issued.Session, issued.Token))
 
-	return api.SetPassword204Response{Headers: api.SetPassword204ResponseHeaders{SetCookie: &cookie}}, nil
+	return api.SetPassword204Response{}, nil
 }
 
 func (h *handler) ChangePassword(ctx context.Context, request api.ChangePasswordRequestObject) (api.ChangePasswordResponseObject, error) {
@@ -122,9 +123,9 @@ func (h *handler) ChangePassword(ctx context.Context, request api.ChangePassword
 		return nil, err
 	}
 
-	cookie := middleware.IssuedSessionCookie(h.session, issued.Token).String()
+	httpcookie.Pending(ctx).Add(middleware.IssuedSessionCookie(h.session, issued.Session, issued.Token))
 
-	return api.ChangePassword204Response{Headers: api.ChangePassword204ResponseHeaders{SetCookie: &cookie}}, nil
+	return api.ChangePassword204Response{}, nil
 }
 
 func (h *handler) GetPendingEmailChange(ctx context.Context, _ api.GetPendingEmailChangeRequestObject) (api.GetPendingEmailChangeResponseObject, error) {

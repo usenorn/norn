@@ -127,10 +127,6 @@ func RoleGrants(role MembershipRole, resource Resource, action Action) bool {
 		return role == MembershipRoleAdmin
 	}
 
-	if resource == ResourceMCPConnection {
-		return role == MembershipRoleAdmin
-	}
-
 	if action == ActionUpdate && resource != ResourceWorkspace {
 		return false
 	}

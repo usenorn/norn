@@ -756,19 +756,6 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrAPITokenGrantMissing):
 		return apiTokenUnusableProblem(api.TokenGrantMissing, err), true
 
-	case errors.Is(err, entity.ErrMCPConnectionNotFound),
-		errors.Is(err, entity.ErrMCPAuthRequestNotFound):
-		return newProblem(http.StatusNotFound, err.Error()), true
-
-	case errors.Is(err, entity.ErrMCPManageForbidden):
-		return newProblem(http.StatusForbidden, err.Error()), true
-
-	case errors.Is(err, entity.ErrMCPGrantInvalid),
-		errors.Is(err, entity.ErrMCPScopeInvalid),
-		errors.Is(err, entity.ErrMCPNoWorkspaceChosen),
-		errors.Is(err, entity.ErrMCPWorkspaceUnreachable):
-		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
-
 	case errors.Is(err, entity.ErrWebhookNotFound),
 		errors.Is(err, entity.ErrWebhookDeliveryNotFound):
 		return newProblem(http.StatusNotFound, err.Error()), true
@@ -1287,38 +1274,6 @@ func (r problemResponse) VisitListAPITokensResponse(w http.ResponseWriter) error
 	return r.write(w)
 }
 
-func (r problemResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitListMCPConnectionsResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
 func (r problemResponse) VisitListWorkspaceWebhooksResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
@@ -1718,6 +1673,14 @@ func (r problemResponse) VisitChangeWorkspaceMemberRoleResponse(w http.ResponseW
 }
 
 func (r problemResponse) VisitRemoveWorkspaceMemberResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListSignedInAccountsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSignOutEveryAccountResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

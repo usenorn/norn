@@ -302,7 +302,8 @@
 					<h2 class="text-md font-medium tracking-snug text-ink-900">Agents</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Agents act under a person's authority and never carry more than that person can do.
-						Teams can hold what they change until somebody agrees.
+						Teams can hold what they change until somebody agrees. Registering one is also how
+						an AI client reaches this workspace over MCP.
 					</p>
 				</div>
 
@@ -446,24 +447,6 @@
 					<Button variant="secondary" href="/settings/tokens">Your tokens</Button>
 					<Button variant="ghost" href={workspacePath(workspace.slug, "/settings/members")}>
 						Tokens reaching {workspace.name}
-					</Button>
-				</div>
-			</section>
-
-			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
-				<div class="flex flex-col gap-1">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">AI clients</h2>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						One approval connects an AI client to every workspace you belong to, without
-						re-authorizing per workspace. A connection acts as its owner and narrows the moment
-						their access does.
-					</p>
-				</div>
-
-				<div class="flex flex-wrap gap-2">
-					<Button variant="secondary" href="/settings/connections">Your AI clients</Button>
-					<Button variant="ghost" href={workspacePath(workspace.slug, "/settings/connections")}>
-						Connections reaching {workspace.name}
 					</Button>
 				</div>
 			</section>

@@ -2,12 +2,15 @@ package dashboard
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/config"
+	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/pkg/httpcookie"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
@@ -26,7 +29,6 @@ type handler struct {
 	workflowStates    service.WorkflowStates
 	labels            service.Labels
 	apiTokens         service.APITokens
-	mcpConnections    service.MCPConnections
 	webhooks          service.Webhooks
 	webhookDeliveries service.WebhookDeliveries
 	agents            service.Agents
@@ -65,7 +67,6 @@ func New(
 	workflowStates service.WorkflowStates,
 	labels service.Labels,
 	apiTokens service.APITokens,
-	mcpConnections service.MCPConnections,
 	webhooks service.Webhooks,
 	webhookDeliveries service.WebhookDeliveries,
 	agents service.Agents,
@@ -103,7 +104,6 @@ func New(
 		workflowStates:    workflowStates,
 		labels:            labels,
 		apiTokens:         apiTokens,
-		mcpConnections:    mcpConnections,
 		webhooks:          webhooks,
 		webhookDeliveries: webhookDeliveries,
 		agents:            agents,
@@ -146,6 +146,10 @@ func (h *handler) GetInstance(_ context.Context, _ api.GetInstanceRequestObject)
 }
 
 func (h *handler) SignIn(ctx context.Context, request api.SignInRequestObject) (api.SignInResponseObject, error) {
+	if len(identity.SignedIn(ctx)) >= entity.MaxSignedInAccounts {
+		return newProblem(http.StatusConflict, entity.ErrTooManySignedInAccounts.Error()), nil
+	}
+
 	issued, err := h.sessions.SignIn(ctx, service.SignInInput{
 		Email:    request.Body.Email,
 		Password: request.Body.Password,
@@ -159,9 +163,9 @@ func (h *handler) SignIn(ctx context.Context, request api.SignInRequestObject) (
 		return nil, err
 	}
 
-	cookie := middleware.IssuedSessionCookie(h.session, issued.Token).String()
+	httpcookie.Pending(ctx).Add(middleware.IssuedSessionCookie(h.session, issued.Session, issued.Token))
 
-	return api.SignIn204Response{Headers: api.SignIn204ResponseHeaders{SetCookie: &cookie}}, nil
+	return api.SignIn200JSONResponse{Slot: issued.Session.Slot}, nil
 }
 
 func (h *handler) RequestPasswordReset(ctx context.Context, request api.RequestPasswordResetRequestObject) (api.RequestPasswordResetResponseObject, error) {
@@ -181,7 +185,8 @@ func (h *handler) RequestPasswordReset(ctx context.Context, request api.RequestP
 }
 
 func (h *handler) ConfirmPasswordReset(ctx context.Context, request api.ConfirmPasswordResetRequestObject) (api.ConfirmPasswordResetResponseObject, error) {
-	if err := h.accounts.ConfirmPasswordReset(ctx, request.Body.Token, request.Body.Password); err != nil {
+	accountID, err := h.accounts.ConfirmPasswordReset(ctx, request.Body.Token, request.Body.Password)
+	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
 		}
@@ -189,11 +194,9 @@ func (h *handler) ConfirmPasswordReset(ctx context.Context, request api.ConfirmP
 		return nil, err
 	}
 
-	cookie := middleware.ExpiredSessionCookie(h.session).String()
+	h.expireSessionsOf(ctx, accountID)
 
-	return api.ConfirmPasswordReset204Response{
-		Headers: api.ConfirmPasswordReset204ResponseHeaders{SetCookie: &cookie},
-	}, nil
+	return api.ConfirmPasswordReset204Response{}, nil
 }
 
 func (h *handler) SignOut(ctx context.Context, _ api.SignOutRequestObject) (api.SignOutResponseObject, error) {
@@ -210,9 +213,23 @@ func (h *handler) SignOut(ctx context.Context, _ api.SignOutRequestObject) (api.
 		return nil, err
 	}
 
-	cookie := middleware.ExpiredSessionCookie(h.session).String()
+	httpcookie.Pending(ctx).Add(middleware.ExpiredSessionCookie(h.session, session.Slot))
 
-	return api.SignOut204Response{Headers: api.SignOut204ResponseHeaders{SetCookie: &cookie}}, nil
+	return api.SignOut204Response{}, nil
+}
+
+// A password reset is unauthenticated, so the account whose sessions just ended is the only way
+// to know which of the browser's cookies are now dead.
+func (h *handler) expireSessionsOf(ctx context.Context, accountID uuid.UUID) {
+	for _, session := range identity.SignedIn(ctx) {
+		if session.AccountID == accountID {
+			h.expireSession(ctx, session.Slot)
+		}
+	}
+}
+
+func (h *handler) expireSession(ctx context.Context, slot string) {
+	httpcookie.Pending(ctx).Add(middleware.ExpiredSessionCookie(h.session, slot))
 }
 
 func (h *handler) currentAccountID(ctx context.Context) (uuid.UUID, bool) {

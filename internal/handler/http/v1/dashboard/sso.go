@@ -6,6 +6,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/pkg/httpcookie"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -119,12 +120,9 @@ func (h *handler) TestWorkspaceOidcConnection(
 		return nil, err
 	}
 
-	cookie := h.ssoCorrelatorCookie(entity.SSOProtocolOIDC, handoff.Correlator)
+	h.fileSSOCorrelator(ctx, entity.SSOProtocolOIDC, handoff.Correlator)
 
-	return api.TestWorkspaceOidcConnection200JSONResponse{
-		Body:    api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL},
-		Headers: api.TestWorkspaceOidcConnection200ResponseHeaders{SetCookie: &cookie},
-	}, nil
+	return api.TestWorkspaceOidcConnection200JSONResponse(api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL}), nil
 }
 
 func (h *handler) LinkWorkspaceOidcIdentity(
@@ -140,12 +138,9 @@ func (h *handler) LinkWorkspaceOidcIdentity(
 		return nil, err
 	}
 
-	cookie := h.ssoCorrelatorCookie(entity.SSOProtocolOIDC, handoff.Correlator)
+	h.fileSSOCorrelator(ctx, entity.SSOProtocolOIDC, handoff.Correlator)
 
-	return api.LinkWorkspaceOidcIdentity200JSONResponse{
-		Body:    api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL},
-		Headers: api.LinkWorkspaceOidcIdentity200ResponseHeaders{SetCookie: &cookie},
-	}, nil
+	return api.LinkWorkspaceOidcIdentity200JSONResponse(api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL}), nil
 }
 
 func (h *handler) GetWorkspaceSignIn(
@@ -200,16 +195,13 @@ func (h *handler) BeginOidcLogin(
 		return nil, err
 	}
 
-	cookie := h.ssoCorrelatorCookie(entity.SSOProtocolOIDC, handoff.Correlator)
+	h.fileSSOCorrelator(ctx, entity.SSOProtocolOIDC, handoff.Correlator)
 
-	return api.BeginOidcLogin200JSONResponse{
-		Body:    api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL},
-		Headers: api.BeginOidcLogin200ResponseHeaders{SetCookie: &cookie},
-	}, nil
+	return api.BeginOidcLogin200JSONResponse(api.OidcAuthorization{AuthorizationUrl: handoff.AuthorizationURL}), nil
 }
 
-func (h *handler) ssoCorrelatorCookie(protocol entity.SSOProtocol, correlator string) string {
-	return middleware.SSOCorrelatorCookie(h.session, protocol, correlator).String()
+func (h *handler) fileSSOCorrelator(ctx context.Context, protocol entity.SSOProtocol, correlator string) {
+	httpcookie.Pending(ctx).Add(middleware.SSOCorrelatorCookie(h.session, protocol, correlator))
 }
 
 func (h *handler) oidcConnectionDTO(connection entity.OIDCConnection) api.WorkspaceOidcConnection {

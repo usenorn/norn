@@ -15,8 +15,10 @@ import (
 )
 
 const (
-	SessionTokenBytes = 32
-	UserAgentMaxLen   = 512
+	SessionTokenBytes   = 32
+	SessionSlotBytes    = 8
+	UserAgentMaxLen     = 512
+	MaxSignedInAccounts = 10
 )
 
 var (
@@ -24,6 +26,9 @@ var (
 	ErrSessionRevoked           = errors.New("session was revoked")
 	ErrSessionExpired           = errors.New("session expired")
 	ErrSessionAuthMethodUnknown = errors.New("session auth method is not one Norn issues")
+	ErrTooManySignedInAccounts  = errors.New(
+		"too many accounts are signed in on this browser; sign out of one first",
+	)
 )
 
 type SessionAuthMethod string
@@ -50,6 +55,7 @@ type SessionClient struct {
 
 type Session struct {
 	ID                uuid.UUID
+	Slot              string
 	TokenHash         string
 	AccountID         uuid.UUID
 	WorkspaceID       uuid.UUID
@@ -70,6 +76,15 @@ func NewSessionToken() (string, string, error) {
 	token := base64.RawURLEncoding.EncodeToString(raw)
 
 	return token, HashSessionToken(token), nil
+}
+
+func NewSessionSlot() (string, error) {
+	raw := make([]byte, SessionSlotBytes)
+	if _, err := rand.Read(raw); err != nil {
+		return "", fmt.Errorf("generate session slot: %w", err)
+	}
+
+	return base64.RawURLEncoding.EncodeToString(raw), nil
 }
 
 func HashSessionToken(token string) string {

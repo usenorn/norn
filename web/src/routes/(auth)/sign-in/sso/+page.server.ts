@@ -9,8 +9,8 @@ import type { Actions, PageServerLoad } from "./$types";
 
 const unknownWorkspace = "No workspace at that address. Check it with whoever invited you.";
 
-export const load: PageServerLoad = async ({ locals }) => {
-	await leaveIfSignedIn(locals.api);
+export const load: PageServerLoad = async ({ locals, url }) => {
+	await leaveIfSignedIn(locals, url);
 
 	return { form: await superValidate(zod4(workspaceEntrySchema)) };
 };

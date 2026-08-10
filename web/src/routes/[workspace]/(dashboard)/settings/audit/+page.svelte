@@ -10,6 +10,7 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Label } from "$lib/components/ui/label/index.js";
 	import { api } from "$lib/api";
+	import { sessionHeader } from "$lib/account/accounts";
 	import {
 		actionLabel,
 		actorLabel,
@@ -128,7 +129,10 @@
 		exportFailed = false;
 
 		try {
-			const response = await fetch(exportPath(), { credentials: "same-origin" });
+			const response = await fetch(exportPath(), {
+				credentials: "same-origin",
+				headers: { [sessionHeader]: page.data.acting?.slot ?? "" },
+			});
 
 			if (!response.ok) {
 				exportFailed = true;

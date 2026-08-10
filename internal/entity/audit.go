@@ -62,10 +62,6 @@ const (
 	AuditAgentDisabled   AuditAction = "agent.disabled"
 	AuditAgentProposal   AuditAction = "agent.proposal_decided"
 
-	AuditConnectionAuthorized AuditAction = "mcp_connection.authorized"
-	AuditConnectionNarrowed   AuditAction = "mcp_connection.narrowed"
-	AuditConnectionRevoked    AuditAction = "mcp_connection.revoked"
-
 	AuditWebhookRegistered AuditAction = "webhook.registered"
 	AuditWebhookRemoved    AuditAction = "webhook.removed"
 	AuditWebhookDisabled   AuditAction = "webhook.disabled"
@@ -101,7 +97,6 @@ func AuditActions() []AuditAction {
 		AuditSSOIdentityLinked, AuditSSOIdentityRefused, AuditSSOAccountOpened,
 		AuditTokenMinted, AuditTokenRevoked,
 		AuditAgentRegistered, AuditAgentDisabled, AuditAgentProposal,
-		AuditConnectionAuthorized, AuditConnectionNarrowed, AuditConnectionRevoked,
 		AuditWebhookRegistered, AuditWebhookRemoved, AuditWebhookDisabled,
 		AuditWorkspaceUpdated, AuditWorkspaceDeletion, AuditWorkspaceRestored, AuditWorkspacePurged,
 		AuditDirectoryConnected, AuditDirectoryDisconnected, AuditDirectoryTokenRotated,
