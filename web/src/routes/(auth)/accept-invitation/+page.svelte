@@ -7,7 +7,7 @@
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Info from "@lucide/svelte/icons/info";
-	import { sessionParam } from "$lib/account/accounts";
+	import { sessionParam, withSlot } from "$lib/account/accounts";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
@@ -234,7 +234,7 @@
 			case "joined":
 				return {
 					label: `Open ${invitation.workspace.name}`,
-					href: `/${invitation.workspace.slug}`,
+					href: withSlot(`/${invitation.workspace.slug}`, invitation.slot ?? null),
 					form: null,
 					onclick: null,
 				};

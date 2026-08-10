@@ -6,6 +6,7 @@
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Info from "@lucide/svelte/icons/info";
+	import { authPath } from "$lib/auth/return-to";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -305,7 +306,9 @@
 					</Button>
 				{/if}
 				{#if action.href !== "/sign-in"}
-					<Button href="/sign-in" variant="ghost" class="w-full">Back to sign in</Button>
+					<Button href={authPath(page.url, "/sign-in")} variant="ghost" class="w-full">
+						Back to sign in
+					</Button>
 				{/if}
 			</div>
 		</div>

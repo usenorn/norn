@@ -1,6 +1,8 @@
 import { redirect } from "@sveltejs/kit";
 import { keys } from "$lib/api/keys";
 import { signUpConfirmFailure } from "$lib/auth/sign-up";
+import { safeReturn } from "$lib/auth/return-to";
+import { withSlot } from "$lib/account/accounts";
 import type { SignUpConfirmation } from "$lib/auth/types";
 import { signUpConfirmPreviewStates } from "./preview";
 import type { Actions, PageServerLoad } from "./$types";
@@ -20,7 +22,7 @@ export const load: PageServerLoad = ({ depends, route, url }): ConfirmSignUpData
 };
 
 export const actions: Actions = {
-	default: async ({ locals, request }) => {
+	default: async ({ locals, request, url }) => {
 		const token = String((await request.formData()).get("token") ?? "");
 
 		if (!token) return { confirmation: { kind: "no_token" } as SignUpConfirmation };
@@ -30,6 +32,8 @@ export const actions: Actions = {
 		if (error) return { confirmation: signUpConfirmFailure(error) };
 		if (!data) return { confirmation: { kind: "unavailable" } as SignUpConfirmation };
 
-		redirect(303, "/");
+		// The browser may already hold other sessions, and only the account this link just created
+		// should be the one it lands in.
+		redirect(303, withSlot(safeReturn(url.searchParams.get("return")), data.slot));
 	},
 };

@@ -9,6 +9,7 @@
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import Info from "@lucide/svelte/icons/info";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
+	import { authPath } from "$lib/auth/return-to";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -546,7 +547,7 @@
 	<div class="flex w-full max-w-98 flex-col items-center gap-2">
 		<p class="text-center text-sm leading-normal text-muted-foreground text-pretty">
 			Already have an account?
-			<a href="/sign-in" class="text-link hover:text-link-hover hover:underline">Sign in</a>
+			<a href={authPath(page.url, "/sign-in")} class="text-link hover:text-link-hover hover:underline">Sign in</a>
 		</p>
 		<p class="text-center text-sm leading-normal text-muted-foreground text-pretty">
 			Joining a team that already uses Norn?

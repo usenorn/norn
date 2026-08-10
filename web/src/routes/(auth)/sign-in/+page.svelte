@@ -16,7 +16,7 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { signInSchema } from "$lib/auth/sign-in-schema";
 	import { clockTime } from "$lib/auth/sign-in";
-	import { safeReturn } from "$lib/auth/return-to";
+	import { authPath, safeReturn } from "$lib/auth/return-to";
 	import type { SignInFailure } from "$lib/auth/types";
 	import { ssoEntryPoint } from "$lib/auth/workspace-sign-in";
 	import { signInPreviewStates } from "./preview";
@@ -209,7 +209,7 @@
 								<div class="flex flex-wrap items-baseline justify-between gap-x-2">
 									<Form.Label>Password</Form.Label>
 									<a
-										href="/reset-password"
+										href={authPath(page.url, "/reset-password")}
 										class="text-sm text-link hover:text-link-hover hover:underline"
 									>
 										Forgot password?
@@ -270,7 +270,7 @@
 
 			{#if !showSso}
 				<a
-					href="/sign-in/sso"
+					href={authPath(page.url, "/sign-in/sso")}
 					class="text-center text-sm text-link hover:text-link-hover hover:underline"
 				>
 					Sign in with single sign-on
@@ -284,7 +284,7 @@
 			{footer}
 		</p>
 		{#if showSignupLink}
-			<a href="/sign-up" class="text-sm text-link hover:text-link-hover hover:underline">
+			<a href={authPath(page.url, "/sign-up")} class="text-sm text-link hover:text-link-hover hover:underline">
 				Create an account
 			</a>
 		{/if}

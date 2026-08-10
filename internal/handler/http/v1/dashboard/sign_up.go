@@ -60,5 +60,8 @@ func (h *handler) ConfirmSignUp(ctx context.Context, request api.ConfirmSignUpRe
 		middleware.IssuedSessionCookie(h.session, confirmed.Session.Session, confirmed.Session.Token),
 	)
 
-	return api.ConfirmSignUp200JSONResponse(accountDTO(confirmed.Account)), nil
+	return api.ConfirmSignUp200JSONResponse{
+		Account: accountDTO(confirmed.Account),
+		Slot:    confirmed.Session.Session.Slot,
+	}, nil
 }

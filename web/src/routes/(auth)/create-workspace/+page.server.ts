@@ -1,5 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { keys } from "$lib/api/keys";
+import { sessionParam, withSlot } from "$lib/account/accounts";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import {
@@ -32,7 +33,9 @@ export const load: PageServerLoad = async ({ depends, route, parent }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ locals, request }) => {
+	default: async ({ locals, request, url }) => {
+		const slot = url.searchParams.get(sessionParam);
+
 		const form = await superValidate<CreateWorkspaceForm, WorkspaceCreationFailure>(
 			request,
 			zod4(createWorkspaceSchema)
@@ -48,7 +51,9 @@ export const actions: Actions = {
 			},
 		});
 
-		if (data) redirect(303, `/invite-teammates?workspace=${data.slug}`);
+		if (data) {
+			redirect(303, withSlot(`/invite-teammates?workspace=${data.slug}`, slot));
+		}
 
 		if (error && "code" in error && error.code === "team_key_taken") {
 			return message(form, {

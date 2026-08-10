@@ -100,7 +100,7 @@ paths:
           description: The account the link created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Account' }
+              schema: { $ref: '#/components/schemas/ConfirmedSignUp' }
         '400': { $ref: '#/components/responses/SignUpLinkExpired' }
         '409': { $ref: '#/components/responses/SignUpLinkUnusable' }
         '500': { $ref: '#/components/responses/Problem' }
@@ -9420,6 +9420,21 @@ components:
       properties:
         workspace: { $ref: '#/components/schemas/Workspace' }
         membership: { $ref: '#/components/schemas/Membership' }
+        slot:
+          type: string
+          description: >-
+            Present when accepting also signed the person in. Name it to act as the account that
+            joined, which a browser already holding other sessions has no other way to know.
+
+    ConfirmedSignUp:
+      type: object
+      required: [account, slot]
+      properties:
+        account: { $ref: '#/components/schemas/Account' }
+        slot:
+          type: string
+          description: >-
+            The session this call issued. Name it to act as the account the link created.
 
     NotificationPage:
       type: object
