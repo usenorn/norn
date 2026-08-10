@@ -32,6 +32,11 @@ export type RealtimeHandler = (event: RealtimeEvent) => void;
 
 export const staleAfterMs = 30_000;
 
+// A stream that is accepted and then never answered fires neither `open` nor `error`, so the only
+// thing that can move it off "connecting" is a deadline of our own. Without one the indicator
+// reports a connection attempt that stopped existing for as long as the tab stays open.
+export const connectTimeoutMs = 15_000;
+
 export const refetchWindowMs = 400;
 
 const key = Symbol("norn.realtime");
@@ -42,6 +47,7 @@ export class RealtimeConnection {
 	#source: EventSource | null = null;
 	#handlers = new Set<RealtimeHandler>();
 	#staleTimer: ReturnType<typeof setTimeout> | undefined;
+	#connectTimer: ReturnType<typeof setTimeout> | undefined;
 	#refetchTimer: ReturnType<typeof setTimeout> | undefined;
 	#pending = new Set<string>();
 	#workspaceId = "";
@@ -79,29 +85,37 @@ export class RealtimeConnection {
 		this.#topics = topics;
 		this.state = "connecting";
 
-		const query = new URLSearchParams({ topics });
+		this.#connect();
+	}
 
-		if (slot) query.set(sessionParam, slot);
+	#connect() {
+		const query = new URLSearchParams({ topics: this.#topics });
 
-		const source = new EventSource(`/v1/workspaces/${workspaceId}/events?${query}`);
+		if (this.#slot) query.set(sessionParam, this.#slot);
+
+		const source = new EventSource(`/v1/workspaces/${this.#workspaceId}/events?${query}`);
+
+		this.#connectTimer = setTimeout(() => this.#reconnect(), connectTimeoutMs);
 
 		source.onopen = () => {
+			clearTimeout(this.#connectTimer);
 			clearTimeout(this.#staleTimer);
+			this.#staleTimer = undefined;
 			this.state = "live";
 		};
 
 		source.onerror = () => {
+			clearTimeout(this.#connectTimer);
+
 			if (source.readyState === EventSource.CLOSED) {
 				this.state = "off";
 				clearTimeout(this.#staleTimer);
+				this.#staleTimer = undefined;
 
 				return;
 			}
 
-			if (this.state !== "stale") this.state = "reconnecting";
-
-			clearTimeout(this.#staleTimer);
-			this.#staleTimer = setTimeout(() => (this.state = "stale"), staleAfterMs);
+			this.#degrade();
 		};
 
 		source.addEventListener("resync", () => void invalidateAll());
@@ -113,9 +127,34 @@ export class RealtimeConnection {
 		this.#source = source;
 	}
 
+	// The browser only retries a stream it saw fail, so one that never answered has to be replaced
+	// deliberately or it is never spoken about again.
+	#reconnect() {
+		this.#source?.close();
+		this.#source = null;
+		this.#degrade();
+		this.#connect();
+	}
+
+	// Armed once per outage rather than per attempt, so a stream that keeps failing to open still
+	// reaches the state that says so instead of being pushed back out of reach by its own retries.
+	#degrade() {
+		if (this.state !== "stale") this.state = "reconnecting";
+
+		if (this.#staleTimer !== undefined) return;
+
+		this.#staleTimer = setTimeout(() => {
+			this.state = "stale";
+			this.#staleTimer = undefined;
+		}, staleAfterMs);
+	}
+
 	close() {
 		clearTimeout(this.#staleTimer);
+		clearTimeout(this.#connectTimer);
 		clearTimeout(this.#refetchTimer);
+		this.#staleTimer = undefined;
+		this.#connectTimer = undefined;
 		this.#refetchTimer = undefined;
 		this.#source?.close();
 		this.#source = null;
