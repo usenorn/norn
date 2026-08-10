@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 
@@ -20,6 +21,7 @@ func (s *accountsService) SignedIn(ctx context.Context) ([]service.SignedInAccou
 
 	accounts := make([]service.SignedInAccount, 0, len(held))
 	position := make(map[uuid.UUID]int, len(held))
+	policies := make(map[uuid.UUID]entity.WorkspaceAuthPolicy, len(held))
 
 	for _, session := range held {
 		if err := s.authorizeSelf(identity.WithSession(ctx, session), entity.ActionRead, session.AccountID); err != nil {
@@ -30,7 +32,11 @@ func (s *accountsService) SignedIn(ctx context.Context) ([]service.SignedInAccou
 
 		if !seen {
 			entry, err := s.signedInAccount(ctx, session)
-			if err != nil {
+
+			switch {
+			case errors.Is(err, entity.ErrAccountNotFound):
+				continue
+			case err != nil:
 				return nil, err
 			}
 
@@ -43,7 +49,7 @@ func (s *accountsService) SignedIn(ctx context.Context) ([]service.SignedInAccou
 			accounts[index].Current = true
 		}
 
-		if err := s.attachReach(ctx, &accounts[index], session); err != nil {
+		if err := s.attachReach(ctx, &accounts[index], session, policies); err != nil {
 			return nil, err
 		}
 	}
@@ -88,6 +94,7 @@ func (s *accountsService) attachReach(
 	ctx context.Context,
 	entry *service.SignedInAccount,
 	session entity.Session,
+	policies map[uuid.UUID]entity.WorkspaceAuthPolicy,
 ) error {
 	actor := entity.UserActor(session)
 
@@ -96,9 +103,16 @@ func (s *accountsService) attachReach(
 			continue
 		}
 
-		policy, err := s.authPolicies.Get(ctx, reach.Workspace.ID)
-		if err != nil {
-			return err
+		policy, cached := policies[reach.Workspace.ID]
+
+		if !cached {
+			fetched, err := s.authPolicies.Get(ctx, reach.Workspace.ID)
+			if err != nil {
+				return err
+			}
+
+			policies[reach.Workspace.ID] = fetched
+			policy = fetched
 		}
 
 		if policy.Enforcement.PermitsActor(actor, reach.Workspace.ID) {
