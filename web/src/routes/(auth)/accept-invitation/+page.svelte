@@ -379,7 +379,7 @@
 						<span class="font-mono text-xs break-all text-muted-foreground">{invitation.email}</span>
 					</div>
 					<a
-						href="/sign-in?return={encodeURIComponent(page.url.pathname + page.url.search)}"
+						href="/sign-in?add=1&return={encodeURIComponent(page.url.pathname + page.url.search)}"
 						class="flex-none text-sm text-link hover:text-link-hover hover:underline"
 					>
 						Switch
