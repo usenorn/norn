@@ -5825,6 +5825,13 @@ export interface components {
         AcceptedInvitation: {
             workspace: components["schemas"]["Workspace"];
             membership: components["schemas"]["Membership"];
+            /** @description Present when accepting also signed the person in. Name it to act as the account that joined, which a browser already holding other sessions has no other way to know. */
+            slot?: string;
+        };
+        ConfirmedSignUp: {
+            account: components["schemas"]["Account"];
+            /** @description The session this call issued. Name it to act as the account the link created. */
+            slot: string;
         };
         NotificationPage: {
             notifications: components["schemas"]["Notification"][];
@@ -6460,7 +6467,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Account"];
+                    "application/json": components["schemas"]["ConfirmedSignUp"];
                 };
             };
             400: components["responses"]["SignUpLinkExpired"];

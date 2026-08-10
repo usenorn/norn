@@ -154,6 +154,8 @@ func (h *handler) AcceptInvitation(ctx context.Context, request api.AcceptInvita
 		httpcookie.Pending(ctx).Add(
 			middleware.IssuedSessionCookie(h.session, accepted.Session.Session, accepted.Session.Token),
 		)
+
+		response.Slot = &accepted.Session.Session.Slot
 	}
 
 	return response, nil

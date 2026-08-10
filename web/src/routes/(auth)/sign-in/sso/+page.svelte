@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
+	import { authPath } from "$lib/auth/return-to";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
@@ -66,7 +68,7 @@
 		<p class="text-center text-sm leading-normal text-muted-foreground text-pretty">
 			Not sure which address? Whoever invited you can send the link again.
 		</p>
-		<a href="/sign-in" class="text-sm text-link hover:text-link-hover hover:underline">
+		<a href={authPath(page.url, "/sign-in")} class="text-sm text-link hover:text-link-hover hover:underline">
 			Sign in with a password instead
 		</a>
 		<InstanceLine instance={data.auth} />

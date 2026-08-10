@@ -1,5 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 import { keys } from "$lib/api/keys";
+import { reachOfSlug, withSlot } from "$lib/account/accounts";
 import type { Team } from "$lib/team/teams";
 import { invitePreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
@@ -10,7 +11,7 @@ export type InviteTarget = { id: string; slug: string; name: string; defaultTeam
 
 export type InviteData = { target: InviteTarget; teams: Team[]; members: string[] };
 
-export const load: PageServerLoad = async ({ depends, route, locals, url }): Promise<InviteData> => {
+export const load: PageServerLoad = async ({ depends, route, locals, parent, url }): Promise<InviteData> => {
 	depends(keys.page(route.id));
 
 	if (import.meta.env.DEV && invitePreviewStates[url.searchParams.get("state") ?? ""]) {
@@ -45,14 +46,17 @@ export const load: PageServerLoad = async ({ depends, route, locals, url }): Pro
 		};
 	}
 
-	const { data, error } = await locals.api.GET("/workspaces");
+	const { accounts, acting } = await parent();
 
-	if (error || !data) redirect(307, "/sign-in");
+	if (!acting) redirect(307, "/sign-in");
 
+	const signedIn = accounts.find((candidate) => candidate.account.id === acting.accountId);
 	const slug = url.searchParams.get("workspace");
-	const target = (slug && data.find((workspace) => workspace.slug === slug)) || data[0];
+	const target =
+		(slug && reachOfSlug(accounts, slug, acting.slot)?.workspace.workspace) ||
+		signedIn?.workspaces[0]?.workspace;
 
-	if (!target) redirect(307, "/create-workspace");
+	if (!target) redirect(307, withSlot("/create-workspace", acting.slot));
 
 	const [teams, members] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams", {

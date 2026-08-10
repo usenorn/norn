@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from "$app/state";
+	import { authPath } from "$lib/auth/return-to";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import Wordmark from "$lib/components/norn/wordmark.svelte";
 	import type { LayoutProps } from "./$types";
@@ -8,7 +10,7 @@
 
 <div class="flex min-h-dvh flex-col bg-background">
 	<header class="flex flex-none flex-wrap items-center gap-2 px-6 pt-5">
-		<a href="/sign-in" class="inline-flex" aria-label="Norn">
+		<a href={authPath(page.url, "/sign-in")} class="inline-flex" aria-label="Norn">
 			<Wordmark />
 		</a>
 		{#if data.auth.selfHosted}

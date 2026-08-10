@@ -88,6 +88,7 @@ async function accept(
 		return message(form, {
 			kind: "joined",
 			workspace: { slug: data.workspace.slug, name: data.workspace.name },
+			slot: data.slot,
 		});
 	}
 

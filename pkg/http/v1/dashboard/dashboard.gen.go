@@ -3486,7 +3486,10 @@ type AcceptInvitationRequest struct {
 // AcceptedInvitation defines model for AcceptedInvitation.
 type AcceptedInvitation struct {
 	Membership Membership `json:"membership"`
-	Workspace  Workspace  `json:"workspace"`
+
+	// Slot Present when accepting also signed the person in. Name it to act as the account that joined, which a browser already holding other sessions has no other way to know.
+	Slot      *string   `json:"slot,omitempty"`
+	Workspace Workspace `json:"workspace"`
 }
 
 // Account defines model for Account.
@@ -4020,6 +4023,14 @@ type ConfirmPasswordResetRequest struct {
 // ConfirmSignUpRequest defines model for ConfirmSignUpRequest.
 type ConfirmSignUpRequest struct {
 	Token string `json:"token"`
+}
+
+// ConfirmedSignUp defines model for ConfirmedSignUp.
+type ConfirmedSignUp struct {
+	Account Account `json:"account"`
+
+	// Slot The session this call issued. Name it to act as the account the link created.
+	Slot string `json:"slot"`
 }
 
 // ConnectSourceControlRequest allowPrivateAddress is a deliberate exception an administrator grants this one connection so it may reach a forge on their own network. It is not an instance-wide relaxation, and it never opens loopback or the link-local range a cloud provider answers on.
@@ -20701,7 +20712,7 @@ type ConfirmSignUpResponseObject interface {
 	VisitConfirmSignUpResponse(w http.ResponseWriter) error
 }
 
-type ConfirmSignUp200JSONResponse Account
+type ConfirmSignUp200JSONResponse ConfirmedSignUp
 
 func (response ConfirmSignUp200JSONResponse) VisitConfirmSignUpResponse(w http.ResponseWriter) error {
 

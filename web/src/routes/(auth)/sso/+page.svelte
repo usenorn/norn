@@ -4,6 +4,7 @@
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
+	import { authPath } from "$lib/auth/return-to";
 	import Diagnostics from "$lib/components/norn/diagnostics.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import StepList, { type Step } from "$lib/components/norn/step-list.svelte";
@@ -153,7 +154,7 @@
 
 			<StepList {steps} class="w-full" />
 
-			<Button href="/sign-in" variant="ghost" size="sm">{escape}</Button>
+			<Button href={authPath(page.url, "/sign-in")} variant="ghost" size="sm">{escape}</Button>
 		</div>
 	{:else}
 		{@const ReportIcon = report.icon}
@@ -184,7 +185,7 @@
 
 					<div class="flex flex-wrap gap-2">
 						<Button href={retry}>{report.primary}</Button>
-						<Button href="/sign-in" variant="secondary">{report.secondary}</Button>
+						<Button href={authPath(page.url, "/sign-in")} variant="secondary">{report.secondary}</Button>
 					</div>
 				</div>
 			</div>

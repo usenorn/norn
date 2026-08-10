@@ -26,7 +26,7 @@ export type AcceptInvitation =
 	| ({ kind: "confirm"; role: MembershipRole; slot: string } & InvitationDetail)
 	| { kind: "address_mismatch"; email: string; signedIn: SignedInAccount[] }
 	| ({ kind: "sso_required" } & InvitationDetail)
-	| { kind: "joined"; workspace: InvitationWorkspace }
+	| { kind: "joined"; workspace: InvitationWorkspace; slot?: string }
 	| { kind: "unavailable" };
 
 type PreviewResponses = operations["previewInvitation"]["responses"];
