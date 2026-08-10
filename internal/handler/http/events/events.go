@@ -1,6 +1,7 @@
 package events
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/handler/http/v1/dashboard"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/service"
 )
@@ -65,7 +67,12 @@ func (e *Edge) Serve(w http.ResponseWriter, r *http.Request) {
 
 	issueID, _ := uuid.Parse(r.URL.Query().Get("issue"))
 
-	actor, _ := identity.Actor(r.Context())
+	actor, signedIn := identity.Actor(r.Context())
+	if !signedIn {
+		middleware.WriteProblem(w, r, http.StatusUnauthorized, "a valid session is required")
+
+		return
+	}
 
 	release, admitted := e.admit(actor.Authority())
 	if !admitted {
@@ -79,17 +86,38 @@ func (e *Edge) Serve(w http.ResponseWriter, r *http.Request) {
 
 	defer release()
 
-	subscription, err := e.events.Subscribe(r.Context(), service.SubscribeInput{
+	handshake, settled := context.WithTimeout(r.Context(), entity.EventHandshakeTimeout)
+	started := time.Now()
+
+	subscription, err := e.events.Subscribe(handshake, service.SubscribeInput{
 		WorkspaceID:  workspaceID,
 		Subscription: entity.ParseEventSubscription(r.URL.Query().Get("topics"), issueID),
 		Cursor:       r.Header.Get("Last-Event-ID"),
 	})
+
+	settled()
+
 	if err != nil {
 		status, detail := problem(err)
+
+		logging.From(r.Context()).ErrorContext(
+			r.Context(), "opening a live update stream failed",
+			"workspace_id", workspaceID,
+			"status", status,
+			"waited_ms", time.Since(started).Milliseconds(),
+			"error", err,
+		)
+
 		middleware.WriteProblem(w, r, status, detail)
 
 		return
 	}
+
+	logging.From(r.Context()).InfoContext(
+		r.Context(), "live update stream opened",
+		"workspace_id", workspaceID,
+		"waited_ms", time.Since(started).Milliseconds(),
+	)
 
 	defer subscription.Close()
 

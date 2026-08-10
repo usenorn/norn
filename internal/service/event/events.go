@@ -75,7 +75,10 @@ func (s *eventsService) Subscribe(
 	owner := s.hubFor(ctx, input.WorkspaceID, cursor)
 	owner.add(target)
 
-	go s.rescope(ctx, input.WorkspaceID, target)
+	// Subscribing is bounded so a stalled dependency cannot hold the handshake open forever, but
+	// re-scoping outlives that bound and ends with the subscriber instead, the same way the hub
+	// detaches from the request that first opened it.
+	go s.rescope(context.WithoutCancel(ctx), input.WorkspaceID, target)
 
 	return &service.Subscription{
 		Events: target.events,
