@@ -1,5 +1,5 @@
 import type { RequestEvent } from "@sveltejs/kit";
-import { reachOfSlug, sessionParam, type SignedInAccount } from "$lib/account/accounts";
+import { actingOf, type SignedInAccount } from "$lib/account/accounts";
 import { apiForEvent, hasSession } from "./server";
 
 // The directory is read through an unselected client, because it answers for every cookie on the
@@ -14,20 +14,14 @@ export function signedInAccounts(event: RequestEvent): Promise<SignedInAccount[]
 		.catch(() => []);
 }
 
-// A workspace address decides which session acts in it, so a selector can only choose between
-// sessions that reach that workspace — never override it. Anywhere else the selector is the only
-// thing that names a session, and with one signed in it names itself.
+// The header this resolves and the identity the page renders have to be the same session, or a
+// slot the directory does not know is sent as a selector — which the API answers by authenticating
+// nobody — while the screen reports the account it fell back to, and a refusal reads as a
+// permission the person does not have.
 export function actingSlot(event: RequestEvent): Promise<string | null> {
 	if (!hasSession(event.cookies)) return Promise.resolve(null);
 
-	const named = event.url.searchParams.get(sessionParam);
-	const slug = event.params.workspace;
-
-	if (!slug) return Promise.resolve(named);
-
-	return event.locals.signedIn.then((accounts) => {
-		const reach = reachOfSlug(accounts, slug, named);
-
-		return reach?.workspace.slot ?? named;
-	});
+	return event.locals.signedIn.then(
+		(accounts) => actingOf(accounts, event.url, event.params.workspace)?.slot ?? null
+	);
 }
