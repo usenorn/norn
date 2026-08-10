@@ -120,6 +120,15 @@
 					<DropdownMenu.Item disabled>No workspaces yet</DropdownMenu.Item>
 				{/if}
 
+				<DropdownMenu.Item>
+					{#snippet child({ props })}
+						<a href={withSlot("/create-workspace", signedIn.defaultSlot)} {...props}>
+							<Plus aria-hidden="true" />
+							New workspace
+						</a>
+					{/snippet}
+				</DropdownMenu.Item>
+
 				<DropdownMenu.Sub>
 					<DropdownMenu.SubTrigger>Account settings</DropdownMenu.SubTrigger>
 					<DropdownMenu.SubContent>

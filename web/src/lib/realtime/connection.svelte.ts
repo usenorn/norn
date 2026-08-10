@@ -32,9 +32,6 @@ export type RealtimeHandler = (event: RealtimeEvent) => void;
 
 export const staleAfterMs = 30_000;
 
-// A stream that is accepted and then never answered fires neither `open` nor `error`, so the only
-// thing that can move it off "connecting" is a deadline of our own. Without one the indicator
-// reports a connection attempt that stopped existing for as long as the tab stays open.
 export const connectTimeoutMs = 15_000;
 
 export const refetchWindowMs = 400;
@@ -127,8 +124,6 @@ export class RealtimeConnection {
 		this.#source = source;
 	}
 
-	// The browser only retries a stream it saw fail, so one that never answered has to be replaced
-	// deliberately or it is never spoken about again.
 	#reconnect() {
 		this.#source?.close();
 		this.#source = null;
@@ -136,8 +131,6 @@ export class RealtimeConnection {
 		this.#connect();
 	}
 
-	// Armed once per outage rather than per attempt, so a stream that keeps failing to open still
-	// reaches the state that says so instead of being pushed back out of reach by its own retries.
 	#degrade() {
 		if (this.state !== "stale") this.state = "reconnecting";
 

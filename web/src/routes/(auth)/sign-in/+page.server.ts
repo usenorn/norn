@@ -46,8 +46,8 @@ export const actions: Actions = {
 			return message(form, failure ?? { kind: "unavailable" }, { status: 401 });
 		}
 
-		// The browser may now hold several sessions, and nothing else on the way back would say
-		// which one this sign-in issued.
-		redirect(303, withSlot(safeReturn(url.searchParams.get("return")), data.slot));
+		const landing = addingAccount(url) ? "/" : safeReturn(url.searchParams.get("return"));
+
+		redirect(303, withSlot(landing, data.slot));
 	},
 };

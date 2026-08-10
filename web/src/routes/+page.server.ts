@@ -14,5 +14,5 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	if (!first) redirect(307, withSlot("/create-workspace", acting.slot));
 
-	redirect(307, `/${first.workspace.slug}`);
+	redirect(307, withSlot(`/${first.workspace.slug}`, first.slot));
 };

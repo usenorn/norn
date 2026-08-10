@@ -58,9 +58,6 @@ func (s *fanOut) FanOut(ctx context.Context) (int, error) {
 
 	queued := 0
 
-	// Claiming marks the whole batch fanned out and commits before any of it is spread, so an
-	// entry abandoned here is never selected again. Every entry gets its turn and the failures
-	// travel back together.
 	var failures []error
 
 	for _, entry := range entries {

@@ -25,8 +25,6 @@ export function accountOfSlot(
 	);
 }
 
-// Two signed-in accounts can both be members of one workspace. `preferred` is how the switcher
-// says which of them the person picked; without it the earliest signed in acts, deterministically.
 export function reachOfSlug(
 	accounts: SignedInAccount[],
 	slug: string,
@@ -51,9 +49,6 @@ export function defaultSlot(accounts: SignedInAccount[]): string | null {
 	return (current ?? accounts[0])?.defaultSlot ?? null;
 }
 
-// A selector that names no signed-in session must fall back rather than resolve to nothing: a
-// route that redirects to sign-in on an unresolved session, and a sign-in that redirects back to
-// where it came from, otherwise bounce between each other for as long as the slot stays in the URL.
 export function actingOf(
 	accounts: SignedInAccount[],
 	url: URL,

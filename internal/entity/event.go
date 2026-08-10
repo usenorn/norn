@@ -16,10 +16,6 @@ const (
 	EventBlockSeconds     = 30
 	EventScopeRefresh     = 2 * time.Minute
 	EventRetryDelay       = 2 * time.Second
-	// A live-update stream is the one request with no timeout, because it is meant to stay open.
-	// That exemption has to stop at the handshake: everything before the first byte still talks to
-	// the database and the cache, and without a bound a stalled dependency leaves the browser on a
-	// socket that never answers, which it reports as neither open nor failed.
 	EventHandshakeTimeout = 10 * time.Second
 )
 

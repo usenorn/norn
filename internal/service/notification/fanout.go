@@ -26,9 +26,6 @@ func (s *notificationsService) FanOut(ctx context.Context) (int, error) {
 
 	delivered := 0
 
-	// Claiming marks the whole batch fanned out and commits before any of it is delivered, so an
-	// event abandoned here is never selected again. Every event gets its turn and the failures
-	// travel back together.
 	var failures []error
 
 	for _, event := range events {
