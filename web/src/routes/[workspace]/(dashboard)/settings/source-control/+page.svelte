@@ -187,12 +187,16 @@
 	let offering = $state(false);
 	let offerUnreadable = $state(false);
 
-	$effect(() => {
-		const connection = chosenConnection;
+	const offeringConnectionId = $derived(
+		chosenConnection?.authKind === "app" ? chosenConnection.id : "",
+	);
+	const offeringWorkspaceId = $derived(workspace.id);
 
-		if (!connection || connection.authKind !== "app") {
+	$effect(() => {
+		if (!offeringConnectionId) {
 			offered = [];
 			offerUnreadable = false;
+			offering = false;
 
 			return;
 		}
@@ -204,7 +208,11 @@
 		api
 			.GET(
 				"/workspaces/{workspaceId}/source-control/connections/{connectionId}/available-repositories",
-				{ params: { path: { workspaceId: workspace.id, connectionId: connection.id } } },
+				{
+					params: {
+						path: { workspaceId: offeringWorkspaceId, connectionId: offeringConnectionId },
+					},
+				},
 			)
 			.then(({ data: reachable, error: unreadable }) => {
 				if (!current) return;
@@ -216,6 +224,7 @@
 
 		return () => {
 			current = false;
+			offering = false;
 		};
 	});
 </script>

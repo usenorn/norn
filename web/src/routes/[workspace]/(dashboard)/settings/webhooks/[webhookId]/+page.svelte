@@ -114,13 +114,15 @@
 	});
 	const { form: formData, enhance, submitting } = form;
 
+	const storedUrl = $derived(live?.webhook.url);
+	const storedEvents = $derived(live ? live.webhook.events.join(" ") : undefined);
+
 	$effect(() => {
-		if (!live) return;
+		if (storedUrl === undefined || storedEvents === undefined) return;
 
-		const url = live.webhook.url;
-		const events = [...live.webhook.events];
+		const events = storedEvents ? storedEvents.split(" ") : [];
 
-		formData.update((entered) => ({ ...entered, url, events }), { taint: false });
+		formData.update((entered) => ({ ...entered, url: storedUrl, events }), { taint: false });
 	});
 
 	const pending = $derived(busy || $submitting || replaying !== null);
