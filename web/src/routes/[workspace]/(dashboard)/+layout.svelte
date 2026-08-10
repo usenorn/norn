@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/state";
+	import { goto } from "$app/navigation";
 	import Check from "@lucide/svelte/icons/check";
 	import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down";
 	import Layers from "@lucide/svelte/icons/layers";
@@ -26,6 +27,10 @@
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Users from "@lucide/svelte/icons/users";
 	import Kbd from "$lib/components/norn/kbd.svelte";
+	import ShortcutHelp from "$lib/shortcuts/shortcut-help.svelte";
+	import { bindShortcuts, provideShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { destinations } from "$lib/shortcuts/destinations";
+	import { bindRoam, provideRoam } from "$lib/shortcuts/roam/roam.svelte";
 	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
 	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
 	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
@@ -92,22 +97,24 @@
 	});
 
 
-	function openSearch(event: KeyboardEvent) {
-		if (event.key !== "k" || !(event.metaKey || event.ctrlKey)) return;
+	const shortcuts = provideShortcuts();
 
-		const target = event.target as HTMLElement | null;
+	let helping = $state(false);
 
-		if (
-			target instanceof HTMLInputElement ||
-			target instanceof HTMLTextAreaElement ||
-			target?.isContentEditable
-		) {
-			return;
-		}
+	bindRoam(provideRoam());
 
-		event.preventDefault();
-		searching = true;
-	}
+	bindShortcuts({
+		search: () => (searching = true),
+		help: () => (helping = true),
+	});
+
+	$effect(() => {
+		const released = destinations(slug).map((destination) =>
+			shortcuts.register(destination.id, () => void goto(destination.href))
+		);
+
+		return () => released.forEach((release) => release());
+	});
 
 	const nav = $derived(primaryNav(slug, data.waiting, data.unread));
 	const views = $derived(viewEntries(slug, data.views ?? []));
@@ -138,7 +145,7 @@
 			<Kbd keys="⌘ K" />
 		</button>
 
-		<nav aria-label="Workspace">
+		<nav aria-label="Workspace" data-roam="nav">
 			{#each nav as entry (entry.href)}
 				<SidebarItem
 					href={entry.href}
@@ -329,7 +336,9 @@
 	</div>
 </div>
 
-<svelte:window onkeydown={openSearch} />
+<svelte:window onkeydown={(event) => shortcuts.handle(event)} />
+
+<ShortcutHelp bind:open={helping} />
 
 <SearchPalette
 	bind:open={searching}

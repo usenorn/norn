@@ -38,7 +38,15 @@
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import Toast from "$lib/components/norn/toast.svelte";
 	import LabelDot from "$lib/labels/label-dot.svelte";
-	import BulkBar from "$lib/issues/bulk-bar.svelte";
+	import BulkBar, { type BulkPicker } from "$lib/issues/bulk-bar.svelte";
+	import ShortcutHints from "$lib/shortcuts/shortcut-hints.svelte";
+	import RoamIndicator from "$lib/shortcuts/roam/roam-indicator.svelte";
+	import {
+		bindShortcuts,
+		holdShortcuts,
+		useShortcuts,
+	} from "$lib/shortcuts/registry.svelte";
+	import { registerRoam } from "$lib/shortcuts/roam/roam.svelte";
 	import BulkResult from "$lib/issues/bulk-result.svelte";
 	import IssueCard from "$lib/issues/issue-card.svelte";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
@@ -724,69 +732,72 @@
 		}
 	}
 
-	function onkeydown(event: KeyboardEvent) {
-		if (event.metaKey || event.ctrlKey || event.altKey) return;
+	const shortcuts = useShortcuts();
 
-		const target = event.target as HTMLElement | null;
+	let bulkBar = $state.raw<{ pick: (what: BulkPicker) => void } | undefined>(undefined);
 
-		if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)))
-			return;
+	holdShortcuts(() => creating);
 
-		if (creating) return;
-
-		if (event.key === "x" || event.key === " ") {
+	bindShortcuts({
+		"select-toggle": () => {
 			const issue = flat[cursor];
 
-			if (issue) {
-				event.preventDefault();
-				toggle(issue.id);
-			}
-
-			return;
-		}
-
-		if (event.key === "c" || event.key === "C") {
-			event.preventDefault();
-			raise();
-
-			return;
-		}
-
-		if (event.key === "f" || event.key === "F") {
-			event.preventDefault();
+			if (issue) toggle(issue.id);
+		},
+		"issue-new": raise,
+		"issue-filter": () => {
 			filterCategory = null;
 			filterOpen = true;
+		},
+		"issue-list": () => void goto(linkWith({ layout: null })),
+		"issue-board": () => void goto(linkWith({ layout: "board" })),
+		"cursor-down": () => (cursor = Math.min(cursor + 1, flat.length - 1)),
+		"cursor-up": () => (cursor = Math.max(cursor - 1, 0)),
+	});
 
-			return;
+	registerRoam(() => ({
+		up: () => (cursor = Math.max(cursor - 1, 0)),
+		down: () => (cursor = Math.min(cursor + 1, flat.length - 1)),
+		left: () => step(-1),
+		right: () => step(1),
+		enter: () => {
+			const issue = flat[cursor];
+
+			if (issue) void goto(at(`/issues/${issue.reference}`));
+		},
+	}));
+
+	function step(by: number): boolean {
+		const here = columns.findIndex((column) => {
+			const start = offsets.get(column.key) ?? 0;
+
+			return cursor >= start && cursor < start + column.issues.length;
+		});
+
+		for (let next = (here < 0 ? 0 : here) + by; next >= 0 && next < columns.length; next += by) {
+			if (columns[next].issues.length === 0) continue;
+
+			cursor = offsets.get(columns[next].key) ?? 0;
+
+			return true;
 		}
 
-		if (event.key === "1") {
-			void goto(linkWith({ layout: null }));
-
-			return;
-		}
-
-		if (event.key === "2") {
-			void goto(linkWith({ layout: "board" }));
-
-			return;
-		}
-
-		if (event.key === "Escape" && selected.size > 0) {
-			event.preventDefault();
-			clearSelection();
-
-			return;
-		}
-
-		if (event.key === "j" || event.key === "ArrowDown") {
-			event.preventDefault();
-			cursor = Math.min(cursor + 1, flat.length - 1);
-		} else if (event.key === "k" || event.key === "ArrowUp") {
-			event.preventDefault();
-			cursor = Math.max(cursor - 1, 0);
-		}
+		return false;
 	}
+
+	$effect(() => {
+		if (selected.size === 0) return;
+
+		const released = [
+			shortcuts.register("select-clear", clearSelection),
+			shortcuts.register("bulk-status", () => bulkBar?.pick("state")),
+			shortcuts.register("bulk-assignee", () => bulkBar?.pick("assignee")),
+			shortcuts.register("bulk-priority", () => bulkBar?.pick("more")),
+			shortcuts.register("bulk-cycle", () => bulkBar?.pick("cycle")),
+		];
+
+		return () => released.forEach((release) => release());
+	});
 
 	const facetOptions = $derived.by((): PickerOption[] => {
 		const valuesFor = (kind: FacetKind): PickerOption[] => {
@@ -906,7 +917,6 @@
 </script>
 
 <svelte:head><title>Issues · Norn</title></svelte:head>
-<svelte:window {onkeydown} />
 
 {#snippet dropGap(key: string, index: number)}
 	<div
@@ -1699,6 +1709,7 @@
 									{@render dropGap(column.key, index)}
 									<IssueCard
 										{issue}
+										cursor={(offsets.get(column.key) ?? 0) + index === cursor}
 										href={at(`/issues/${issue.reference}`)}
 										assignee={names.get(issue.assigneeAccountId ?? "") ?? ""}
 										now={data.now}
@@ -1764,6 +1775,7 @@
 
 	{#if selected.size > 0}
 		<BulkBar
+			bind:this={bulkBar}
 			count={selected.size}
 			states={sharedStates}
 			{members}
@@ -1786,27 +1798,10 @@
 				{total === 1 ? "issue" : "issues"}
 			</span>
 			<span class="flex-1"></span>
-			<span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys="↑ ↓" />move
-			</span>
-			<span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys="X" />select
-			</span>
-			<span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys="F" />filter
-			</span>
-			<span class="hidden items-center gap-1.5 text-xs text-muted-foreground lg:inline-flex">
-				<Kbd keys="1" />list
-			</span>
-			<span class="hidden items-center gap-1.5 text-xs text-muted-foreground lg:inline-flex">
-				<Kbd keys="2" />board
-			</span>
-			<span class="hidden items-center gap-1.5 text-xs text-muted-foreground lg:inline-flex">
-				<Kbd keys="C" />new issue
-			</span>
-			<span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys="⌘ K" />go anywhere
-			</span>
+			<ShortcutHints
+				ids={["cursor-down", "select-toggle", "issue-filter", "issue-new", "help"]}
+			/>
+			<RoamIndicator />
 		</div>
 	{/if}
 </div>
