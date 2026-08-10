@@ -9,5 +9,6 @@ export const keys = {
 	projects: (workspaceId: string) => `norn:projects:${workspaceId}`,
 	cycles: (workspaceId: string) => `norn:cycles:${workspaceId}`,
 	views: (workspaceId: string) => `norn:views:${workspaceId}`,
-	account: () => "norn:account",
+	account: (accountId: string) => `norn:account:${accountId}`,
+	signedIn: () => "norn:signed-in",
 };

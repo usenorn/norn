@@ -16,7 +16,7 @@ func SameOrigin(app config.App, session config.Session) func(http.Handler) http.
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if readOnly(r.Method) || !carriesSession(r, session.CookieName) {
+			if readOnly(r.Method) || !carriesSession(r, session) {
 				next.ServeHTTP(w, r)
 
 				return
@@ -47,10 +47,18 @@ func readOnly(method string) bool {
 	}
 }
 
-func carriesSession(r *http.Request, name string) bool {
-	cookie, err := r.Cookie(name)
+// Deliberately a prefix match rather than a parse: over-matching only means checking the origin
+// of a request that did not need it, while under-matching would silently switch the check off.
+func carriesSession(r *http.Request, cfg config.Session) bool {
+	prefix := sessionCookiePrefix(cfg)
 
-	return err == nil && cookie.Value != ""
+	for _, cookie := range r.Cookies() {
+		if strings.HasPrefix(cookie.Name, prefix) && cookie.Value != "" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func claimedOrigin(r *http.Request) string {

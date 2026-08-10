@@ -11,6 +11,7 @@ import (
 type (
 	actorKey    struct{}
 	sessionKey  struct{}
+	signedInKey struct{}
 	approvalKey struct{}
 	clientKey   struct{}
 )
@@ -69,4 +70,14 @@ func CurrentSession(ctx context.Context) (entity.Session, bool) {
 	session, ok := ctx.Value(sessionKey{}).(entity.Session)
 
 	return session, ok
+}
+
+func WithSignedIn(ctx context.Context, sessions []entity.Session) context.Context {
+	return context.WithValue(ctx, signedInKey{}, sessions)
+}
+
+func SignedIn(ctx context.Context) []entity.Session {
+	sessions, _ := ctx.Value(signedInKey{}).([]entity.Session)
+
+	return sessions
 }

@@ -13,7 +13,7 @@ import (
 )
 
 var errWorkspaceUnknown = errors.New(
-	"workspace not found; call norn_list_workspaces to see the workspaces this connection reaches",
+	"workspace not found; call norn_list_workspaces to see the workspaces this token reaches",
 )
 
 func (t *toolset) resolveWorkspace(ctx context.Context, ref string) (entity.Workspace, error) {

@@ -24,7 +24,6 @@ const (
 	ResourceNotification   Resource = "notification"
 	ResourceAPIToken       Resource = "api_token"
 	ResourceAgent          Resource = "agent"
-	ResourceMCPConnection  Resource = "mcp_connection"
 	ResourceAuthPolicy     Resource = "auth_policy"
 	ResourceSSOConnection  Resource = "sso_connection"
 	ResourceAccount        Resource = "account"

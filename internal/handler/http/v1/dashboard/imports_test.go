@@ -35,7 +35,6 @@ import (
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
-	mcpconnectionsvc "github.com/usenorn/norn/internal/service/mcpconnection"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
@@ -84,7 +83,6 @@ func newImportHarness(t *testing.T) *importHarness {
 		workflowstatesvc.NewMockWorkflowStates(ctrl),
 		labelsvc.NewMockLabels(ctrl),
 		apitokensvc.NewMockAPITokens(ctrl),
-		mcpconnectionsvc.NewMockMCPConnections(ctrl),
 		webhooksvc.NewMockWebhooks(ctrl),
 		webhooksvc.NewMockWebhookDeliveries(ctrl),
 		agentsvc.NewMockAgents(ctrl),

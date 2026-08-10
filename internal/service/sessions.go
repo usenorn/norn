@@ -14,7 +14,10 @@ type Sessions interface {
 	SignIn(ctx context.Context, input SignInInput) (IssuedSession, error)
 	Start(ctx context.Context, input StartSessionInput) (IssuedSession, error)
 	Validate(ctx context.Context, token string) (entity.Session, error)
+	Inspect(ctx context.Context, token string) (entity.Session, error)
+	Resolve(ctx context.Context, input ResolveSessionsInput) (ResolvedSessions, error)
 	SignOut(ctx context.Context, sessionID uuid.UUID) error
+	SignOutAll(ctx context.Context) error
 	List(ctx context.Context, accountID uuid.UUID) ([]entity.Session, error)
 	Revoke(ctx context.Context, accountID, sessionID uuid.UUID) error
 	RevokeAllByAccountID(ctx context.Context, accountID uuid.UUID) error

@@ -364,9 +364,6 @@ const (
 	AuditActionInvitationAccepted           AuditAction = "invitation.accepted"
 	AuditActionInvitationCreated            AuditAction = "invitation.created"
 	AuditActionInvitationRevoked            AuditAction = "invitation.revoked"
-	AuditActionMcpConnectionAuthorized      AuditAction = "mcp_connection.authorized"
-	AuditActionMcpConnectionNarrowed        AuditAction = "mcp_connection.narrowed"
-	AuditActionMcpConnectionRevoked         AuditAction = "mcp_connection.revoked"
 	AuditActionMembershipAdded              AuditAction = "membership.added"
 	AuditActionMembershipAuditAccessChanged AuditAction = "membership.audit_access_changed"
 	AuditActionMembershipRemoved            AuditAction = "membership.removed"
@@ -431,12 +428,6 @@ func (e AuditAction) Valid() bool {
 	case AuditActionInvitationCreated:
 		return true
 	case AuditActionInvitationRevoked:
-		return true
-	case AuditActionMcpConnectionAuthorized:
-		return true
-	case AuditActionMcpConnectionNarrowed:
-		return true
-	case AuditActionMcpConnectionRevoked:
 		return true
 	case AuditActionMembershipAdded:
 		return true
@@ -1978,24 +1969,6 @@ func (e LicenceStatus) Valid() bool {
 	case LicenceStatusExpired:
 		return true
 	case LicenceStatusGrace:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for MCPCapability.
-const (
-	Read  MCPCapability = "read"
-	Write MCPCapability = "write"
-)
-
-// Valid indicates whether the value is a known member of the MCPCapability enum.
-func (e MCPCapability) Valid() bool {
-	switch e {
-	case Read:
-		return true
-	case Write:
 		return true
 	default:
 		return false
@@ -3718,15 +3691,6 @@ type AgentUnusableProblem struct {
 // AgentUnusableProblemCode defines model for AgentUnusableProblem.Code.
 type AgentUnusableProblemCode string
 
-// ApproveMCPAuthorizationRequest defines model for ApproveMCPAuthorizationRequest.
-type ApproveMCPAuthorizationRequest struct {
-	// AllWorkspaces Follow the caller's own membership, so workspaces they join later are reached too. Choosing this is deliberate; it is never the default.
-	AllWorkspaces bool `json:"allWorkspaces"`
-
-	// WorkspaceIds The workspaces this connection may reach when allWorkspaces is false.
-	WorkspaceIds []openapi_types.UUID `json:"workspaceIds"`
-}
-
 // Attachment defines model for Attachment.
 type Attachment struct {
 	ByteSize  int64               `json:"byteSize"`
@@ -5037,6 +5001,12 @@ type IssuedInvitation struct {
 	Url        string     `json:"url"`
 }
 
+// IssuedSession defines model for IssuedSession.
+type IssuedSession struct {
+	// Slot The session this call issued. Name it to act as the account that just signed in, which a browser already holding other sessions has no other way to know.
+	Slot string `json:"slot"`
+}
+
 // Label defines model for Label.
 type Label struct {
 	Color       LabelColor          `json:"color"`
@@ -5104,45 +5074,6 @@ type LicenceStatus string
 // LinkIssueCodeRequest defines model for LinkIssueCodeRequest.
 type LinkIssueCodeRequest struct {
 	Url string `json:"url"`
-}
-
-// MCPAuthorizationDecision defines model for MCPAuthorizationDecision.
-type MCPAuthorizationDecision struct {
-	RedirectTo string `json:"redirectTo"`
-}
-
-// MCPAuthorizationView defines model for MCPAuthorizationView.
-type MCPAuthorizationView struct {
-	// Capability What the connection may do — read everything its owner can see, or also write.
-	Capability MCPCapability `json:"capability"`
-	ClientName string        `json:"clientName"`
-
-	// Workspaces Every workspace the caller may choose from.
-	Workspaces []MCPAuthorizationWorkspace `json:"workspaces"`
-}
-
-// MCPAuthorizationWorkspace defines model for MCPAuthorizationWorkspace.
-type MCPAuthorizationWorkspace struct {
-	Id   openapi_types.UUID `json:"id"`
-	Name string             `json:"name"`
-	Slug string             `json:"slug"`
-}
-
-// MCPCapability What the connection may do — read everything its owner can see, or also write.
-type MCPCapability string
-
-// MCPConnection defines model for MCPConnection.
-type MCPConnection struct {
-	// Capability What the connection may do — read everything its owner can see, or also write.
-	Capability MCPCapability `json:"capability"`
-	ClientName string        `json:"clientName"`
-	CreatedAt  time.Time     `json:"createdAt"`
-
-	// FollowsMembership When true the connection reaches every workspace its owner belongs to, including ones joined after authorization. When false it is narrowed to the listed grants.
-	FollowsMembership bool               `json:"followsMembership"`
-	Grants            []APITokenGrant    `json:"grants"`
-	Id                openapi_types.UUID `json:"id"`
-	LastUsedAt        *time.Time         `json:"lastUsedAt,omitempty"`
 }
 
 // MailUnavailableProblem defines model for MailUnavailableProblem.
@@ -5295,15 +5226,6 @@ type MoveIssueRequest struct {
 	AcknowledgeLabelLoss *bool              `json:"acknowledgeLabelLoss,omitempty"`
 	ExpectedVersion      int32              `json:"expectedVersion"`
 	TeamId               openapi_types.UUID `json:"teamId"`
-}
-
-// NarrowMCPConnectionRequest defines model for NarrowMCPConnectionRequest.
-type NarrowMCPConnectionRequest struct {
-	// Capability What the connection may do — read everything its owner can see, or also write.
-	Capability *MCPCapability `json:"capability,omitempty"`
-
-	// Grants Replaces the connection's reach; must shrink it, never widen it.
-	Grants *[]APITokenGrant `json:"grants,omitempty"`
 }
 
 // Notification defines model for Notification.
@@ -5917,6 +5839,28 @@ type SignUpUnusableProblem struct {
 // SignUpUnusableProblemCode defines model for SignUpUnusableProblem.Code.
 type SignUpUnusableProblemCode string
 
+// SignedInAccount defines model for SignedInAccount.
+type SignedInAccount struct {
+	Account Account `json:"account"`
+
+	// Current True for the account the request that asked was acting as.
+	Current bool `json:"current"`
+
+	// DefaultSlot The session to name for anything this account owns outside a workspace.
+	DefaultSlot string              `json:"defaultSlot"`
+	Workspaces  []SignedInWorkspace `json:"workspaces"`
+}
+
+// SignedInWorkspace defines model for SignedInWorkspace.
+type SignedInWorkspace struct {
+	// Reachable False when the workspace requires single sign-on and no session on this browser was issued by its provider.
+	Reachable bool `json:"reachable"`
+
+	// Slot The session to name when acting in this workspace.
+	Slot      string    `json:"slot"`
+	Workspace Workspace `json:"workspace"`
+}
+
 // SnoozeNotificationRequest defines model for SnoozeNotificationRequest.
 type SnoozeNotificationRequest struct {
 	Until time.Time `json:"until"`
@@ -6524,13 +6468,6 @@ type WorkspaceDeletedProblem struct {
 // WorkspaceDeletedProblemCode defines model for WorkspaceDeletedProblem.Code.
 type WorkspaceDeletedProblemCode string
 
-// WorkspaceMCPConnection defines model for WorkspaceMCPConnection.
-type WorkspaceMCPConnection struct {
-	Connection MCPConnection `json:"connection"`
-	OwnerEmail string        `json:"ownerEmail"`
-	OwnerName  string        `json:"ownerName"`
-}
-
 // WorkspaceOidcConnection defines model for WorkspaceOidcConnection.
 type WorkspaceOidcConnection struct {
 	// AdminGroup Members of this provider group become administrators; everyone else a member.
@@ -6685,12 +6622,6 @@ type IssueMirrorId = openapi_types.UUID
 
 // LabelId defines model for LabelId.
 type LabelId = openapi_types.UUID
-
-// MCPConnectionId defines model for MCPConnectionId.
-type MCPConnectionId = openapi_types.UUID
-
-// MCPRequestId defines model for MCPRequestId.
-type MCPRequestId = string
 
 // NotificationSubjectId defines model for NotificationSubjectId.
 type NotificationSubjectId = openapi_types.UUID
@@ -7127,12 +7058,6 @@ type AcceptInvitationJSONRequestBody = AcceptInvitationRequest
 // PreviewInvitationJSONRequestBody defines body for PreviewInvitation for application/json ContentType.
 type PreviewInvitationJSONRequestBody = PreviewInvitationRequest
 
-// ApproveMCPAuthorizationJSONRequestBody defines body for ApproveMCPAuthorization for application/json ContentType.
-type ApproveMCPAuthorizationJSONRequestBody = ApproveMCPAuthorizationRequest
-
-// NarrowMCPConnectionJSONRequestBody defines body for NarrowMCPConnection for application/json ContentType.
-type NarrowMCPConnectionJSONRequestBody = NarrowMCPConnectionRequest
-
 // BeginOidcLoginJSONRequestBody defines body for BeginOidcLogin for application/json ContentType.
 type BeginOidcLoginJSONRequestBody = BeginOidcLoginRequest
 
@@ -7402,6 +7327,12 @@ type ServerInterface interface {
 	// ChangePassword Replace the current password, revoking every other session
 	// (PUT /accounts/me/password)
 	ChangePassword(w http.ResponseWriter, r *http.Request)
+	// SignOutEveryAccount End every session this browser holds, for every account signed in on it
+	// (DELETE /accounts/signed-in)
+	SignOutEveryAccount(w http.ResponseWriter, r *http.Request)
+	// ListSignedInAccounts Every account this browser is signed in to, with the workspaces each one holds
+	// (GET /accounts/signed-in)
+	ListSignedInAccounts(w http.ResponseWriter, r *http.Request)
 	// DownloadAccountAvatar Trade a session for a short-lived link to an avatar
 	// (GET /accounts/{accountId}/avatar)
 	DownloadAccountAvatar(w http.ResponseWriter, r *http.Request, accountId openapi_types.UUID)
@@ -7441,24 +7372,6 @@ type ServerInterface interface {
 	// PreviewInvitation Describe an invitation link before anyone acts on it
 	// (POST /invitations/preview)
 	PreviewInvitation(w http.ResponseWriter, r *http.Request)
-	// DescribeMCPAuthorization What an AI client is asking to be granted, for the consent screen
-	// (GET /mcp/authorizations/{requestId})
-	DescribeMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId)
-	// ApproveMCPAuthorization Grant the AI client a connection confined to the workspaces the caller picked
-	// (POST /mcp/authorizations/{requestId}/approve)
-	ApproveMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId)
-	// DenyMCPAuthorization Refuse the AI client and send it away empty-handed
-	// (POST /mcp/authorizations/{requestId}/deny)
-	DenyMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId)
-	// ListMCPConnections List the caller's live AI client connections
-	// (GET /mcp/connections)
-	ListMCPConnections(w http.ResponseWriter, r *http.Request)
-	// RevokeMCPConnection Revoke a connection, cutting it off from the next operation on
-	// (DELETE /mcp/connections/{connectionId})
-	RevokeMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId)
-	// NarrowMCPConnection Shrink what a connection may reach, without re-authorizing
-	// (PATCH /mcp/connections/{connectionId})
-	NarrowMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId)
 	// RevokeAllSessions Revoke every session for the account, including the current one
 	// (DELETE /sessions)
 	RevokeAllSessions(w http.ResponseWriter, r *http.Request)
@@ -7789,12 +7702,6 @@ type ServerInterface interface {
 	// GetWorkspaceLabelUsage How many issues carry this label, within the actor's scope
 	// (GET /workspaces/{workspaceId}/labels/{labelId}/usage)
 	GetWorkspaceLabelUsage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, labelId LabelId)
-	// ListWorkspaceMCPConnections The AI client connections able to reach this workspace, for its admins
-	// (GET /workspaces/{workspaceId}/mcp-connections)
-	ListWorkspaceMCPConnections(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
-	// RevokeWorkspaceMCPConnection Revoke a connection reaching this workspace, as its admin
-	// (DELETE /workspaces/{workspaceId}/mcp-connections/{connectionId})
-	RevokeWorkspaceMCPConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId MCPConnectionId)
 	// ListWorkspaceMembers List workspace members, searchable and paged by cursor
 	// (GET /workspaces/{workspaceId}/members)
 	ListWorkspaceMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceMembersParams)
@@ -8227,6 +8134,18 @@ func (_ Unimplemented) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// SignOutEveryAccount End every session this browser holds, for every account signed in on it
+// (DELETE /accounts/signed-in)
+func (_ Unimplemented) SignOutEveryAccount(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListSignedInAccounts Every account this browser is signed in to, with the workspaces each one holds
+// (GET /accounts/signed-in)
+func (_ Unimplemented) ListSignedInAccounts(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // DownloadAccountAvatar Trade a session for a short-lived link to an avatar
 // (GET /accounts/{accountId}/avatar)
 func (_ Unimplemented) DownloadAccountAvatar(w http.ResponseWriter, r *http.Request, accountId openapi_types.UUID) {
@@ -8302,42 +8221,6 @@ func (_ Unimplemented) AcceptInvitation(w http.ResponseWriter, r *http.Request) 
 // PreviewInvitation Describe an invitation link before anyone acts on it
 // (POST /invitations/preview)
 func (_ Unimplemented) PreviewInvitation(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// DescribeMCPAuthorization What an AI client is asking to be granted, for the consent screen
-// (GET /mcp/authorizations/{requestId})
-func (_ Unimplemented) DescribeMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ApproveMCPAuthorization Grant the AI client a connection confined to the workspaces the caller picked
-// (POST /mcp/authorizations/{requestId}/approve)
-func (_ Unimplemented) ApproveMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// DenyMCPAuthorization Refuse the AI client and send it away empty-handed
-// (POST /mcp/authorizations/{requestId}/deny)
-func (_ Unimplemented) DenyMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ListMCPConnections List the caller's live AI client connections
-// (GET /mcp/connections)
-func (_ Unimplemented) ListMCPConnections(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// RevokeMCPConnection Revoke a connection, cutting it off from the next operation on
-// (DELETE /mcp/connections/{connectionId})
-func (_ Unimplemented) RevokeMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// NarrowMCPConnection Shrink what a connection may reach, without re-authorizing
-// (PATCH /mcp/connections/{connectionId})
-func (_ Unimplemented) NarrowMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8998,18 +8881,6 @@ func (_ Unimplemented) MergeWorkspaceLabel(w http.ResponseWriter, r *http.Reques
 // GetWorkspaceLabelUsage How many issues carry this label, within the actor's scope
 // (GET /workspaces/{workspaceId}/labels/{labelId}/usage)
 func (_ Unimplemented) GetWorkspaceLabelUsage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, labelId LabelId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ListWorkspaceMCPConnections The AI client connections able to reach this workspace, for its admins
-// (GET /workspaces/{workspaceId}/mcp-connections)
-func (_ Unimplemented) ListWorkspaceMCPConnections(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// RevokeWorkspaceMCPConnection Revoke a connection reaching this workspace, as its admin
-// (DELETE /workspaces/{workspaceId}/mcp-connections/{connectionId})
-func (_ Unimplemented) RevokeWorkspaceMCPConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId MCPConnectionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -9896,6 +9767,34 @@ func (siw *ServerInterfaceWrapper) ChangePassword(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// SignOutEveryAccount operation middleware
+func (siw *ServerInterfaceWrapper) SignOutEveryAccount(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SignOutEveryAccount(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListSignedInAccounts operation middleware
+func (siw *ServerInterfaceWrapper) ListSignedInAccounts(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSignedInAccounts(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DownloadAccountAvatar operation middleware
 func (siw *ServerInterfaceWrapper) DownloadAccountAvatar(w http.ResponseWriter, r *http.Request) {
 
@@ -10191,150 +10090,6 @@ func (siw *ServerInterfaceWrapper) PreviewInvitation(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PreviewInvitation(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// DescribeMCPAuthorization operation middleware
-func (siw *ServerInterfaceWrapper) DescribeMCPAuthorization(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "requestId" -------------
-	var requestId MCPRequestId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "requestId", chi.URLParam(r, "requestId"), &requestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "requestId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DescribeMCPAuthorization(w, r, requestId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ApproveMCPAuthorization operation middleware
-func (siw *ServerInterfaceWrapper) ApproveMCPAuthorization(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "requestId" -------------
-	var requestId MCPRequestId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "requestId", chi.URLParam(r, "requestId"), &requestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "requestId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ApproveMCPAuthorization(w, r, requestId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// DenyMCPAuthorization operation middleware
-func (siw *ServerInterfaceWrapper) DenyMCPAuthorization(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "requestId" -------------
-	var requestId MCPRequestId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "requestId", chi.URLParam(r, "requestId"), &requestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "requestId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DenyMCPAuthorization(w, r, requestId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListMCPConnections operation middleware
-func (siw *ServerInterfaceWrapper) ListMCPConnections(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListMCPConnections(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RevokeMCPConnection operation middleware
-func (siw *ServerInterfaceWrapper) RevokeMCPConnection(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "connectionId" -------------
-	var connectionId MCPConnectionId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeMCPConnection(w, r, connectionId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// NarrowMCPConnection operation middleware
-func (siw *ServerInterfaceWrapper) NarrowMCPConnection(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "connectionId" -------------
-	var connectionId MCPConnectionId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.NarrowMCPConnection(w, r, connectionId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -14240,67 +13995,6 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceLabelUsage(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWorkspaceLabelUsage(w, r, workspaceId, labelId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListWorkspaceMCPConnections operation middleware
-func (siw *ServerInterfaceWrapper) ListWorkspaceMCPConnections(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "workspaceId" -------------
-	var workspaceId WorkspaceId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListWorkspaceMCPConnections(w, r, workspaceId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RevokeWorkspaceMCPConnection operation middleware
-func (siw *ServerInterfaceWrapper) RevokeWorkspaceMCPConnection(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "workspaceId" -------------
-	var workspaceId WorkspaceId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "connectionId" -------------
-	var connectionId MCPConnectionId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "connectionId", chi.URLParam(r, "connectionId"), &connectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "connectionId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeWorkspaceMCPConnection(w, r, workspaceId, connectionId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -18789,6 +18483,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Put(options.BaseURL+"/accounts/me/avatar", wrapper.UploadAvatar)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/accounts/signed-in", wrapper.SignOutEveryAccount)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/accounts/signed-in", wrapper.ListSignedInAccounts)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/sessions", wrapper.RevokeAllSessions)
 	})
 	r.Group(func(r chi.Router) {
@@ -18958,30 +18658,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/directory/availability", wrapper.GetWorkspaceDirectoryAvailability)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/mcp/authorizations/{requestId}", wrapper.DescribeMCPAuthorization)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/mcp/authorizations/{requestId}/approve", wrapper.ApproveMCPAuthorization)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/mcp/authorizations/{requestId}/deny", wrapper.DenyMCPAuthorization)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/mcp/connections", wrapper.ListMCPConnections)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/mcp/connections/{connectionId}", wrapper.RevokeMCPConnection)
-	})
-	r.Group(func(r chi.Router) {
-		r.Patch(options.BaseURL+"/mcp/connections/{connectionId}", wrapper.NarrowMCPConnection)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/workspaces/{workspaceId}/mcp-connections", wrapper.ListWorkspaceMCPConnections)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/mcp-connections/{connectionId}", wrapper.RevokeWorkspaceMCPConnection)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/webhooks", wrapper.ListWorkspaceWebhooks)
@@ -20224,18 +19900,10 @@ type SetPasswordResponseObject interface {
 	VisitSetPasswordResponse(w http.ResponseWriter) error
 }
 
-type SetPassword204ResponseHeaders struct {
-	SetCookie *string
-}
-
 type SetPassword204Response struct {
-	Headers SetPassword204ResponseHeaders
 }
 
 func (response SetPassword204Response) VisitSetPasswordResponse(w http.ResponseWriter) error {
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(204)
 	return nil
 }
@@ -20322,18 +19990,10 @@ type ChangePasswordResponseObject interface {
 	VisitChangePasswordResponse(w http.ResponseWriter) error
 }
 
-type ChangePassword204ResponseHeaders struct {
-	SetCookie *string
-}
-
 type ChangePassword204Response struct {
-	Headers ChangePassword204ResponseHeaders
 }
 
 func (response ChangePassword204Response) VisitChangePasswordResponse(w http.ResponseWriter) error {
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(204)
 	return nil
 }
@@ -20408,6 +20068,102 @@ func (response ChangePassword503ApplicationProblemPlusJSONResponse) VisitChangeP
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SignOutEveryAccountRequestObject struct {
+}
+
+type SignOutEveryAccountResponseObject interface {
+	VisitSignOutEveryAccountResponse(w http.ResponseWriter) error
+}
+
+type SignOutEveryAccount204Response struct {
+}
+
+func (response SignOutEveryAccount204Response) VisitSignOutEveryAccountResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type SignOutEveryAccount401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SignOutEveryAccount401ApplicationProblemPlusJSONResponse) VisitSignOutEveryAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SignOutEveryAccount500ApplicationProblemPlusJSONResponse Problem
+
+func (response SignOutEveryAccount500ApplicationProblemPlusJSONResponse) VisitSignOutEveryAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSignedInAccountsRequestObject struct {
+}
+
+type ListSignedInAccountsResponseObject interface {
+	VisitListSignedInAccountsResponse(w http.ResponseWriter) error
+}
+
+type ListSignedInAccounts200JSONResponse []SignedInAccount
+
+func (response ListSignedInAccounts200JSONResponse) VisitListSignedInAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSignedInAccounts401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListSignedInAccounts401ApplicationProblemPlusJSONResponse) VisitListSignedInAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSignedInAccounts500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListSignedInAccounts500ApplicationProblemPlusJSONResponse) VisitListSignedInAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -20492,20 +20248,18 @@ type SignInResponseObject interface {
 	VisitSignInResponse(w http.ResponseWriter) error
 }
 
-type SignIn204ResponseHeaders struct {
-	SetCookie *string
-}
+type SignIn200JSONResponse IssuedSession
 
-type SignIn204Response struct {
-	Headers SignIn204ResponseHeaders
-}
+func (response SignIn200JSONResponse) VisitSignInResponse(w http.ResponseWriter) error {
 
-func (response SignIn204Response) VisitSignInResponse(w http.ResponseWriter) error {
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
 	}
-	w.WriteHeader(204)
-	return nil
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type SignIn401ApplicationProblemPlusJSONResponse struct {
@@ -20582,18 +20336,10 @@ type SignOutResponseObject interface {
 	VisitSignOutResponse(w http.ResponseWriter) error
 }
 
-type SignOut204ResponseHeaders struct {
-	SetCookie *string
-}
-
 type SignOut204Response struct {
-	Headers SignOut204ResponseHeaders
 }
 
 func (response SignOut204Response) VisitSignOutResponse(w http.ResponseWriter) error {
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(204)
 	return nil
 }
@@ -20723,18 +20469,10 @@ type ConfirmPasswordResetResponseObject interface {
 	VisitConfirmPasswordResetResponse(w http.ResponseWriter) error
 }
 
-type ConfirmPasswordReset204ResponseHeaders struct {
-	SetCookie *string
-}
-
 type ConfirmPasswordReset204Response struct {
-	Headers ConfirmPasswordReset204ResponseHeaders
 }
 
 func (response ConfirmPasswordReset204Response) VisitConfirmPasswordResetResponse(w http.ResponseWriter) error {
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(204)
 	return nil
 }
@@ -20963,25 +20701,15 @@ type ConfirmSignUpResponseObject interface {
 	VisitConfirmSignUpResponse(w http.ResponseWriter) error
 }
 
-type ConfirmSignUp200ResponseHeaders struct {
-	SetCookie *string
-}
-
-type ConfirmSignUp200JSONResponse struct {
-	Body    Account
-	Headers ConfirmSignUp200ResponseHeaders
-}
+type ConfirmSignUp200JSONResponse Account
 
 func (response ConfirmSignUp200JSONResponse) VisitConfirmSignUpResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -21250,25 +20978,15 @@ type AcceptInvitationResponseObject interface {
 	VisitAcceptInvitationResponse(w http.ResponseWriter) error
 }
 
-type AcceptInvitation200ResponseHeaders struct {
-	SetCookie *string
-}
-
-type AcceptInvitation200JSONResponse struct {
-	Body    AcceptedInvitation
-	Headers AcceptInvitation200ResponseHeaders
-}
+type AcceptInvitation200JSONResponse AcceptedInvitation
 
 func (response AcceptInvitation200JSONResponse) VisitAcceptInvitationResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -21485,493 +21203,6 @@ func (response PreviewInvitation500ApplicationProblemPlusJSONResponse) VisitPrev
 	return err
 }
 
-type DescribeMCPAuthorizationRequestObject struct {
-	RequestId MCPRequestId `json:"requestId"`
-}
-
-type DescribeMCPAuthorizationResponseObject interface {
-	VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error
-}
-
-type DescribeMCPAuthorization200JSONResponse MCPAuthorizationView
-
-func (response DescribeMCPAuthorization200JSONResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DescribeMCPAuthorization401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response DescribeMCPAuthorization401ApplicationProblemPlusJSONResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DescribeMCPAuthorization403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response DescribeMCPAuthorization403ApplicationProblemPlusJSONResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DescribeMCPAuthorization404ApplicationProblemPlusJSONResponse Problem
-
-func (response DescribeMCPAuthorization404ApplicationProblemPlusJSONResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DescribeMCPAuthorization500ApplicationProblemPlusJSONResponse Problem
-
-func (response DescribeMCPAuthorization500ApplicationProblemPlusJSONResponse) VisitDescribeMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ApproveMCPAuthorizationRequestObject struct {
-	RequestId MCPRequestId `json:"requestId"`
-	Body      *ApproveMCPAuthorizationJSONRequestBody
-}
-
-type ApproveMCPAuthorizationResponseObject interface {
-	VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error
-}
-
-type ApproveMCPAuthorization200JSONResponse MCPAuthorizationDecision
-
-func (response ApproveMCPAuthorization200JSONResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ApproveMCPAuthorization401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response ApproveMCPAuthorization401ApplicationProblemPlusJSONResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ApproveMCPAuthorization403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response ApproveMCPAuthorization403ApplicationProblemPlusJSONResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ApproveMCPAuthorization404ApplicationProblemPlusJSONResponse Problem
-
-func (response ApproveMCPAuthorization404ApplicationProblemPlusJSONResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ApproveMCPAuthorization500ApplicationProblemPlusJSONResponse Problem
-
-func (response ApproveMCPAuthorization500ApplicationProblemPlusJSONResponse) VisitApproveMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DenyMCPAuthorizationRequestObject struct {
-	RequestId MCPRequestId `json:"requestId"`
-}
-
-type DenyMCPAuthorizationResponseObject interface {
-	VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error
-}
-
-type DenyMCPAuthorization200JSONResponse MCPAuthorizationDecision
-
-func (response DenyMCPAuthorization200JSONResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DenyMCPAuthorization401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response DenyMCPAuthorization401ApplicationProblemPlusJSONResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DenyMCPAuthorization403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response DenyMCPAuthorization403ApplicationProblemPlusJSONResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DenyMCPAuthorization404ApplicationProblemPlusJSONResponse Problem
-
-func (response DenyMCPAuthorization404ApplicationProblemPlusJSONResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DenyMCPAuthorization500ApplicationProblemPlusJSONResponse Problem
-
-func (response DenyMCPAuthorization500ApplicationProblemPlusJSONResponse) VisitDenyMCPAuthorizationResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListMCPConnectionsRequestObject struct {
-}
-
-type ListMCPConnectionsResponseObject interface {
-	VisitListMCPConnectionsResponse(w http.ResponseWriter) error
-}
-
-type ListMCPConnections200JSONResponse []MCPConnection
-
-func (response ListMCPConnections200JSONResponse) VisitListMCPConnectionsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListMCPConnections401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response ListMCPConnections401ApplicationProblemPlusJSONResponse) VisitListMCPConnectionsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListMCPConnections403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response ListMCPConnections403ApplicationProblemPlusJSONResponse) VisitListMCPConnectionsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListMCPConnections500ApplicationProblemPlusJSONResponse Problem
-
-func (response ListMCPConnections500ApplicationProblemPlusJSONResponse) VisitListMCPConnectionsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RevokeMCPConnectionRequestObject struct {
-	ConnectionId MCPConnectionId `json:"connectionId"`
-}
-
-type RevokeMCPConnectionResponseObject interface {
-	VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error
-}
-
-type RevokeMCPConnection204Response struct {
-}
-
-func (response RevokeMCPConnection204Response) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type RevokeMCPConnection401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response RevokeMCPConnection401ApplicationProblemPlusJSONResponse) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RevokeMCPConnection403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response RevokeMCPConnection403ApplicationProblemPlusJSONResponse) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RevokeMCPConnection404ApplicationProblemPlusJSONResponse Problem
-
-func (response RevokeMCPConnection404ApplicationProblemPlusJSONResponse) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RevokeMCPConnection500ApplicationProblemPlusJSONResponse Problem
-
-func (response RevokeMCPConnection500ApplicationProblemPlusJSONResponse) VisitRevokeMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type NarrowMCPConnectionRequestObject struct {
-	ConnectionId MCPConnectionId `json:"connectionId"`
-	Body         *NarrowMCPConnectionJSONRequestBody
-}
-
-type NarrowMCPConnectionResponseObject interface {
-	VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error
-}
-
-type NarrowMCPConnection200JSONResponse MCPConnection
-
-func (response NarrowMCPConnection200JSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type NarrowMCPConnection401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response NarrowMCPConnection401ApplicationProblemPlusJSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type NarrowMCPConnection403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response NarrowMCPConnection403ApplicationProblemPlusJSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type NarrowMCPConnection404ApplicationProblemPlusJSONResponse Problem
-
-func (response NarrowMCPConnection404ApplicationProblemPlusJSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type NarrowMCPConnection422ApplicationProblemPlusJSONResponse Problem
-
-func (response NarrowMCPConnection422ApplicationProblemPlusJSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type NarrowMCPConnection500ApplicationProblemPlusJSONResponse Problem
-
-func (response NarrowMCPConnection500ApplicationProblemPlusJSONResponse) VisitNarrowMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type RevokeAllSessionsRequestObject struct {
 }
 
@@ -21979,18 +21210,10 @@ type RevokeAllSessionsResponseObject interface {
 	VisitRevokeAllSessionsResponse(w http.ResponseWriter) error
 }
 
-type RevokeAllSessions204ResponseHeaders struct {
-	SetCookie *string
-}
-
 type RevokeAllSessions204Response struct {
-	Headers RevokeAllSessions204ResponseHeaders
 }
 
 func (response RevokeAllSessions204Response) VisitRevokeAllSessionsResponse(w http.ResponseWriter) error {
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(204)
 	return nil
 }
@@ -22144,25 +21367,15 @@ type BeginOidcLoginResponseObject interface {
 	VisitBeginOidcLoginResponse(w http.ResponseWriter) error
 }
 
-type BeginOidcLogin200ResponseHeaders struct {
-	SetCookie *string
-}
-
-type BeginOidcLogin200JSONResponse struct {
-	Body    OidcAuthorization
-	Headers BeginOidcLogin200ResponseHeaders
-}
+type BeginOidcLogin200JSONResponse OidcAuthorization
 
 func (response BeginOidcLogin200JSONResponse) VisitBeginOidcLoginResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -22301,25 +21514,15 @@ type BeginSamlLoginResponseObject interface {
 	VisitBeginSamlLoginResponse(w http.ResponseWriter) error
 }
 
-type BeginSamlLogin200ResponseHeaders struct {
-	SetCookie *string
-}
-
-type BeginSamlLogin200JSONResponse struct {
-	Body    OidcAuthorization
-	Headers BeginSamlLogin200ResponseHeaders
-}
+type BeginSamlLogin200JSONResponse OidcAuthorization
 
 func (response BeginSamlLogin200JSONResponse) VisitBeginSamlLoginResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -32035,151 +31238,6 @@ func (response GetWorkspaceLabelUsage500ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
-type ListWorkspaceMCPConnectionsRequestObject struct {
-	WorkspaceId WorkspaceId `json:"workspaceId"`
-}
-
-type ListWorkspaceMCPConnectionsResponseObject interface {
-	VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error
-}
-
-type ListWorkspaceMCPConnections200JSONResponse []WorkspaceMCPConnection
-
-func (response ListWorkspaceMCPConnections200JSONResponse) VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceMCPConnections401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response ListWorkspaceMCPConnections401ApplicationProblemPlusJSONResponse) VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceMCPConnections403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response ListWorkspaceMCPConnections403ApplicationProblemPlusJSONResponse) VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceMCPConnections500ApplicationProblemPlusJSONResponse Problem
-
-func (response ListWorkspaceMCPConnections500ApplicationProblemPlusJSONResponse) VisitListWorkspaceMCPConnectionsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RevokeWorkspaceMCPConnectionRequestObject struct {
-	WorkspaceId  WorkspaceId     `json:"workspaceId"`
-	ConnectionId MCPConnectionId `json:"connectionId"`
-}
-
-type RevokeWorkspaceMCPConnectionResponseObject interface {
-	VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error
-}
-
-type RevokeWorkspaceMCPConnection204Response struct {
-}
-
-func (response RevokeWorkspaceMCPConnection204Response) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type RevokeWorkspaceMCPConnection401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response RevokeWorkspaceMCPConnection401ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RevokeWorkspaceMCPConnection403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response RevokeWorkspaceMCPConnection403ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RevokeWorkspaceMCPConnection404ApplicationProblemPlusJSONResponse Problem
-
-func (response RevokeWorkspaceMCPConnection404ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RevokeWorkspaceMCPConnection500ApplicationProblemPlusJSONResponse Problem
-
-func (response RevokeWorkspaceMCPConnection500ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceMCPConnectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type ListWorkspaceMembersRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	Params      ListWorkspaceMembersParams
@@ -37972,25 +37030,15 @@ type LinkWorkspaceOidcIdentityResponseObject interface {
 	VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error
 }
 
-type LinkWorkspaceOidcIdentity200ResponseHeaders struct {
-	SetCookie *string
-}
-
-type LinkWorkspaceOidcIdentity200JSONResponse struct {
-	Body    OidcAuthorization
-	Headers LinkWorkspaceOidcIdentity200ResponseHeaders
-}
+type LinkWorkspaceOidcIdentity200JSONResponse OidcAuthorization
 
 func (response LinkWorkspaceOidcIdentity200JSONResponse) VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -38080,25 +37128,15 @@ type TestWorkspaceOidcConnectionResponseObject interface {
 	VisitTestWorkspaceOidcConnectionResponse(w http.ResponseWriter) error
 }
 
-type TestWorkspaceOidcConnection200ResponseHeaders struct {
-	SetCookie *string
-}
-
-type TestWorkspaceOidcConnection200JSONResponse struct {
-	Body    OidcAuthorization
-	Headers TestWorkspaceOidcConnection200ResponseHeaders
-}
+type TestWorkspaceOidcConnection200JSONResponse OidcAuthorization
 
 func (response TestWorkspaceOidcConnection200JSONResponse) VisitTestWorkspaceOidcConnectionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -38440,25 +37478,15 @@ type TestWorkspaceSamlConnectionResponseObject interface {
 	VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error
 }
 
-type TestWorkspaceSamlConnection200ResponseHeaders struct {
-	SetCookie *string
-}
-
-type TestWorkspaceSamlConnection200JSONResponse struct {
-	Body    OidcAuthorization
-	Headers TestWorkspaceSamlConnection200ResponseHeaders
-}
+type TestWorkspaceSamlConnection200JSONResponse OidcAuthorization
 
 func (response TestWorkspaceSamlConnection200JSONResponse) VisitTestWorkspaceSamlConnectionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.SetCookie != nil {
-		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
-	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -43201,6 +42229,12 @@ type StrictServerInterface interface {
 	// ChangePassword Replace the current password, revoking every other session
 	// (PUT /accounts/me/password)
 	ChangePassword(ctx context.Context, request ChangePasswordRequestObject) (ChangePasswordResponseObject, error)
+	// SignOutEveryAccount End every session this browser holds, for every account signed in on it
+	// (DELETE /accounts/signed-in)
+	SignOutEveryAccount(ctx context.Context, request SignOutEveryAccountRequestObject) (SignOutEveryAccountResponseObject, error)
+	// ListSignedInAccounts Every account this browser is signed in to, with the workspaces each one holds
+	// (GET /accounts/signed-in)
+	ListSignedInAccounts(ctx context.Context, request ListSignedInAccountsRequestObject) (ListSignedInAccountsResponseObject, error)
 	// DownloadAccountAvatar Trade a session for a short-lived link to an avatar
 	// (GET /accounts/{accountId}/avatar)
 	DownloadAccountAvatar(ctx context.Context, request DownloadAccountAvatarRequestObject) (DownloadAccountAvatarResponseObject, error)
@@ -43240,24 +42274,6 @@ type StrictServerInterface interface {
 	// PreviewInvitation Describe an invitation link before anyone acts on it
 	// (POST /invitations/preview)
 	PreviewInvitation(ctx context.Context, request PreviewInvitationRequestObject) (PreviewInvitationResponseObject, error)
-	// DescribeMCPAuthorization What an AI client is asking to be granted, for the consent screen
-	// (GET /mcp/authorizations/{requestId})
-	DescribeMCPAuthorization(ctx context.Context, request DescribeMCPAuthorizationRequestObject) (DescribeMCPAuthorizationResponseObject, error)
-	// ApproveMCPAuthorization Grant the AI client a connection confined to the workspaces the caller picked
-	// (POST /mcp/authorizations/{requestId}/approve)
-	ApproveMCPAuthorization(ctx context.Context, request ApproveMCPAuthorizationRequestObject) (ApproveMCPAuthorizationResponseObject, error)
-	// DenyMCPAuthorization Refuse the AI client and send it away empty-handed
-	// (POST /mcp/authorizations/{requestId}/deny)
-	DenyMCPAuthorization(ctx context.Context, request DenyMCPAuthorizationRequestObject) (DenyMCPAuthorizationResponseObject, error)
-	// ListMCPConnections List the caller's live AI client connections
-	// (GET /mcp/connections)
-	ListMCPConnections(ctx context.Context, request ListMCPConnectionsRequestObject) (ListMCPConnectionsResponseObject, error)
-	// RevokeMCPConnection Revoke a connection, cutting it off from the next operation on
-	// (DELETE /mcp/connections/{connectionId})
-	RevokeMCPConnection(ctx context.Context, request RevokeMCPConnectionRequestObject) (RevokeMCPConnectionResponseObject, error)
-	// NarrowMCPConnection Shrink what a connection may reach, without re-authorizing
-	// (PATCH /mcp/connections/{connectionId})
-	NarrowMCPConnection(ctx context.Context, request NarrowMCPConnectionRequestObject) (NarrowMCPConnectionResponseObject, error)
 	// RevokeAllSessions Revoke every session for the account, including the current one
 	// (DELETE /sessions)
 	RevokeAllSessions(ctx context.Context, request RevokeAllSessionsRequestObject) (RevokeAllSessionsResponseObject, error)
@@ -43588,12 +42604,6 @@ type StrictServerInterface interface {
 	// GetWorkspaceLabelUsage How many issues carry this label, within the actor's scope
 	// (GET /workspaces/{workspaceId}/labels/{labelId}/usage)
 	GetWorkspaceLabelUsage(ctx context.Context, request GetWorkspaceLabelUsageRequestObject) (GetWorkspaceLabelUsageResponseObject, error)
-	// ListWorkspaceMCPConnections The AI client connections able to reach this workspace, for its admins
-	// (GET /workspaces/{workspaceId}/mcp-connections)
-	ListWorkspaceMCPConnections(ctx context.Context, request ListWorkspaceMCPConnectionsRequestObject) (ListWorkspaceMCPConnectionsResponseObject, error)
-	// RevokeWorkspaceMCPConnection Revoke a connection reaching this workspace, as its admin
-	// (DELETE /workspaces/{workspaceId}/mcp-connections/{connectionId})
-	RevokeWorkspaceMCPConnection(ctx context.Context, request RevokeWorkspaceMCPConnectionRequestObject) (RevokeWorkspaceMCPConnectionResponseObject, error)
 	// ListWorkspaceMembers List workspace members, searchable and paged by cursor
 	// (GET /workspaces/{workspaceId}/members)
 	ListWorkspaceMembers(ctx context.Context, request ListWorkspaceMembersRequestObject) (ListWorkspaceMembersResponseObject, error)
@@ -44301,6 +43311,54 @@ func (sh *strictHandler) ChangePassword(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// SignOutEveryAccount operation middleware
+func (sh *strictHandler) SignOutEveryAccount(w http.ResponseWriter, r *http.Request) {
+	var request SignOutEveryAccountRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SignOutEveryAccount(ctx, request.(SignOutEveryAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SignOutEveryAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SignOutEveryAccountResponseObject); ok {
+		if err := validResponse.VisitSignOutEveryAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListSignedInAccounts operation middleware
+func (sh *strictHandler) ListSignedInAccounts(w http.ResponseWriter, r *http.Request) {
+	var request ListSignedInAccountsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListSignedInAccounts(ctx, request.(ListSignedInAccountsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListSignedInAccounts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListSignedInAccountsResponseObject); ok {
+		if err := validResponse.VisitListSignedInAccountsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // DownloadAccountAvatar operation middleware
 func (sh *strictHandler) DownloadAccountAvatar(w http.ResponseWriter, r *http.Request, accountId openapi_types.UUID) {
 	var request DownloadAccountAvatarRequestObject
@@ -44659,174 +43717,6 @@ func (sh *strictHandler) PreviewInvitation(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PreviewInvitationResponseObject); ok {
 		if err := validResponse.VisitPreviewInvitationResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// DescribeMCPAuthorization operation middleware
-func (sh *strictHandler) DescribeMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
-	var request DescribeMCPAuthorizationRequestObject
-
-	request.RequestId = requestId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.DescribeMCPAuthorization(ctx, request.(DescribeMCPAuthorizationRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "DescribeMCPAuthorization")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(DescribeMCPAuthorizationResponseObject); ok {
-		if err := validResponse.VisitDescribeMCPAuthorizationResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ApproveMCPAuthorization operation middleware
-func (sh *strictHandler) ApproveMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
-	var request ApproveMCPAuthorizationRequestObject
-
-	request.RequestId = requestId
-
-	var body ApproveMCPAuthorizationJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ApproveMCPAuthorization(ctx, request.(ApproveMCPAuthorizationRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ApproveMCPAuthorization")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ApproveMCPAuthorizationResponseObject); ok {
-		if err := validResponse.VisitApproveMCPAuthorizationResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// DenyMCPAuthorization operation middleware
-func (sh *strictHandler) DenyMCPAuthorization(w http.ResponseWriter, r *http.Request, requestId MCPRequestId) {
-	var request DenyMCPAuthorizationRequestObject
-
-	request.RequestId = requestId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.DenyMCPAuthorization(ctx, request.(DenyMCPAuthorizationRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "DenyMCPAuthorization")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(DenyMCPAuthorizationResponseObject); ok {
-		if err := validResponse.VisitDenyMCPAuthorizationResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListMCPConnections operation middleware
-func (sh *strictHandler) ListMCPConnections(w http.ResponseWriter, r *http.Request) {
-	var request ListMCPConnectionsRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListMCPConnections(ctx, request.(ListMCPConnectionsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListMCPConnections")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListMCPConnectionsResponseObject); ok {
-		if err := validResponse.VisitListMCPConnectionsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// RevokeMCPConnection operation middleware
-func (sh *strictHandler) RevokeMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId) {
-	var request RevokeMCPConnectionRequestObject
-
-	request.ConnectionId = connectionId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RevokeMCPConnection(ctx, request.(RevokeMCPConnectionRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RevokeMCPConnection")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RevokeMCPConnectionResponseObject); ok {
-		if err := validResponse.VisitRevokeMCPConnectionResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// NarrowMCPConnection operation middleware
-func (sh *strictHandler) NarrowMCPConnection(w http.ResponseWriter, r *http.Request, connectionId MCPConnectionId) {
-	var request NarrowMCPConnectionRequestObject
-
-	request.ConnectionId = connectionId
-
-	var body NarrowMCPConnectionJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.NarrowMCPConnection(ctx, request.(NarrowMCPConnectionRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "NarrowMCPConnection")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(NarrowMCPConnectionResponseObject); ok {
-		if err := validResponse.VisitNarrowMCPConnectionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -48015,59 +46905,6 @@ func (sh *strictHandler) GetWorkspaceLabelUsage(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceLabelUsageResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceLabelUsageResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListWorkspaceMCPConnections operation middleware
-func (sh *strictHandler) ListWorkspaceMCPConnections(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
-	var request ListWorkspaceMCPConnectionsRequestObject
-
-	request.WorkspaceId = workspaceId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListWorkspaceMCPConnections(ctx, request.(ListWorkspaceMCPConnectionsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListWorkspaceMCPConnections")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListWorkspaceMCPConnectionsResponseObject); ok {
-		if err := validResponse.VisitListWorkspaceMCPConnectionsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// RevokeWorkspaceMCPConnection operation middleware
-func (sh *strictHandler) RevokeWorkspaceMCPConnection(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, connectionId MCPConnectionId) {
-	var request RevokeWorkspaceMCPConnectionRequestObject
-
-	request.WorkspaceId = workspaceId
-	request.ConnectionId = connectionId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RevokeWorkspaceMCPConnection(ctx, request.(RevokeWorkspaceMCPConnectionRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RevokeWorkspaceMCPConnection")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RevokeWorkspaceMCPConnectionResponseObject); ok {
-		if err := validResponse.VisitRevokeWorkspaceMCPConnectionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

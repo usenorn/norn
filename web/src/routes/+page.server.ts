@@ -1,15 +1,18 @@
 import { redirect } from "@sveltejs/kit";
-import { keys } from "$lib/api/keys";
+import { withSlot } from "$lib/account/accounts";
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ depends, route, locals }) => {
-	depends(keys.page(route.id));
+export const load: PageServerLoad = async ({ parent }) => {
+	const { accounts, acting } = await parent();
 
-	const { data, error } = await locals.api.GET("/workspaces");
+	if (!acting) redirect(307, "/sign-in");
 
-	if (error || !data) redirect(307, "/sign-in");
+	const signedIn =
+		accounts.find((candidate) => candidate.account.id === acting.accountId) ?? accounts[0];
 
-	const [first] = data;
+	const [first] = signedIn?.workspaces ?? [];
 
-	redirect(307, first ? `/${first.slug}` : "/create-workspace");
+	if (!first) redirect(307, withSlot("/create-workspace", acting.slot));
+
+	redirect(307, `/${first.workspace.slug}`);
 };

@@ -2,13 +2,27 @@ import createClient, { type Client } from "openapi-fetch";
 import { parseSetCookie } from "set-cookie-parser";
 import { env } from "$env/dynamic/private";
 import type { Cookies, RequestEvent } from "@sveltejs/kit";
+import { sessionHeader } from "$lib/account/accounts";
 import type { paths } from "./dashboard.gen";
 
 export const correlationHeader = "x-correlation-id";
 
+const sessionCookiePrefix = "norn_session_";
+const hostCookiePrefix = "__Host-";
+
 const loopbackOrigin = "http://127.0.0.1:8080";
 
 const verbatim = { decode: (value: string) => value };
+
+export function hasSession(cookies: Cookies): boolean {
+	return cookies
+		.getAll(verbatim)
+		.some(
+			({ name }) =>
+				name.startsWith(sessionCookiePrefix) ||
+				name.startsWith(hostCookiePrefix + sessionCookiePrefix)
+		);
+}
 
 function cookieHeader(cookies: Cookies): string {
 	return cookies
@@ -71,11 +85,16 @@ function clientAddress(event: RequestEvent): string | undefined {
 	}
 }
 
-export function apiForEvent(event: RequestEvent): Client<paths> {
+export function apiForEvent(event: RequestEvent, acting?: Promise<string | null>): Client<paths> {
 	return createClient<paths>({
 		baseUrl: `${env.INTERNAL_API_ORIGIN || loopbackOrigin}/v1`,
 		fetch: async (request) => {
 			const address = clientAddress(event);
+			const slot = acting ? await acting : null;
+
+			if (slot) {
+				request.headers.set(sessionHeader, slot);
+			}
 
 			request.headers.set("cookie", cookieHeader(event.cookies));
 			request.headers.set("origin", event.url.origin);

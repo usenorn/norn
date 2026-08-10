@@ -43,6 +43,21 @@ func (m *MockSessions) EXPECT() *MockSessionsMockRecorder {
 	return m.recorder
 }
 
+// Inspect mocks base method.
+func (m *MockSessions) Inspect(ctx context.Context, token string) (entity.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Inspect", ctx, token)
+	ret0, _ := ret[0].(entity.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Inspect indicates an expected call of Inspect.
+func (mr *MockSessionsMockRecorder) Inspect(ctx, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Inspect", reflect.TypeOf((*MockSessions)(nil).Inspect), ctx, token)
+}
+
 // List mocks base method.
 func (m *MockSessions) List(ctx context.Context, accountID uuid.UUID) ([]entity.Session, error) {
 	m.ctrl.T.Helper()
@@ -56,6 +71,21 @@ func (m *MockSessions) List(ctx context.Context, accountID uuid.UUID) ([]entity.
 func (mr *MockSessionsMockRecorder) List(ctx, accountID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockSessions)(nil).List), ctx, accountID)
+}
+
+// Resolve mocks base method.
+func (m *MockSessions) Resolve(ctx context.Context, input service.ResolveSessionsInput) (service.ResolvedSessions, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Resolve", ctx, input)
+	ret0, _ := ret[0].(service.ResolvedSessions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Resolve indicates an expected call of Resolve.
+func (mr *MockSessionsMockRecorder) Resolve(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resolve", reflect.TypeOf((*MockSessions)(nil).Resolve), ctx, input)
 }
 
 // Revoke mocks base method.
@@ -128,6 +158,20 @@ func (m *MockSessions) SignOut(ctx context.Context, sessionID uuid.UUID) error {
 func (mr *MockSessionsMockRecorder) SignOut(ctx, sessionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignOut", reflect.TypeOf((*MockSessions)(nil).SignOut), ctx, sessionID)
+}
+
+// SignOutAll mocks base method.
+func (m *MockSessions) SignOutAll(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SignOutAll", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SignOutAll indicates an expected call of SignOutAll.
+func (mr *MockSessionsMockRecorder) SignOutAll(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignOutAll", reflect.TypeOf((*MockSessions)(nil).SignOutAll), ctx)
 }
 
 // Start mocks base method.

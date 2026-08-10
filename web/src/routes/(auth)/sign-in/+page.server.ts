@@ -4,7 +4,8 @@ import { zod4 } from "sveltekit-superforms/adapters";
 import { signInSchema } from "$lib/auth/sign-in-schema";
 import { signInFailure } from "$lib/auth/sign-in";
 import { safeReturn } from "$lib/auth/return-to";
-import { leaveIfSignedIn } from "$lib/auth/signed-in";
+import { withSlot } from "$lib/account/accounts";
+import { addingAccount, leaveIfSignedIn } from "$lib/auth/signed-in";
 import { reachWorkspaceSignIn, type WorkspaceEntry } from "$lib/auth/workspace-sign-in";
 import type { SignInFailure } from "$lib/auth/types";
 import type { Actions, PageServerLoad } from "./$types";
@@ -12,9 +13,11 @@ import type { Actions, PageServerLoad } from "./$types";
 type SignInForm = Infer<typeof signInSchema>;
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	await leaveIfSignedIn(locals.api);
+	await leaveIfSignedIn(locals, url);
 
 	return {
+		adding: addingAccount(url) && (await locals.signedIn).length > 0,
+		cancelTo: safeReturn(url.searchParams.get("return")),
 		entry: (await reachWorkspaceSignIn(
 			locals.api,
 			url.searchParams.get("workspace") ?? ""
@@ -33,14 +36,18 @@ export const actions: Actions = {
 
 		if (!form.valid) return fail(400, { form });
 
-		const { error } = await locals.api.POST("/auth/login", {
+		const { data, error } = await locals.api.POST("/auth/login", {
 			body: { email: form.data.email, password },
 		});
 
-		if (error) {
-			return message(form, signInFailure(error) ?? { kind: "unavailable" }, { status: 401 });
+		if (error || !data) {
+			const failure = error ? signInFailure(error) : null;
+
+			return message(form, failure ?? { kind: "unavailable" }, { status: 401 });
 		}
 
-		redirect(303, safeReturn(url.searchParams.get("return")));
+		// The browser may now hold several sessions, and nothing else on the way back would say
+		// which one this sign-in issued.
+		redirect(303, withSlot(safeReturn(url.searchParams.get("return")), data.slot));
 	},
 };

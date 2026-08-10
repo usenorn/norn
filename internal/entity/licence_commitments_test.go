@@ -121,7 +121,8 @@ func TestNothingInTheLicenceCountsAnything(t *testing.T) {
 
 func TestTheThingsPromisedFreeConsultNoLicence(t *testing.T) {
 	paths := []string{
-		filepath.Join("..", "service", "mcpconnection"),
+		filepath.Join("..", "handler", "mcpserver"),
+		filepath.Join("..", "service", "agent"),
 		filepath.Join("..", "service", "ssoconnection"),
 		filepath.Join("..", "service", "apitoken"),
 		filepath.Join("..", "service", "webhook"),

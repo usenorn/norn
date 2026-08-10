@@ -3,6 +3,7 @@
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
+	import UserPlus from "@lucide/svelte/icons/user-plus";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
@@ -136,6 +137,20 @@
 				<h1 class="text-2xl font-medium tracking-title text-ink-900">Sign in</h1>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
 			</div>
+
+			{#if data.adding}
+				<Alert.Root variant="muted">
+					<UserPlus aria-hidden="true" />
+					<Alert.Title>You're already signed in</Alert.Title>
+					<Alert.Description>
+						Signing in adds a second account to this browser. You can switch between them at any
+						time, and sign out of either on its own.
+					</Alert.Description>
+					<Alert.Action>
+						<Button href={data.cancelTo} variant="secondary" size="sm">Cancel</Button>
+					</Alert.Action>
+				</Alert.Root>
+			{/if}
 
 			{#if notice}
 				{@const NoticeIcon = notice.icon}

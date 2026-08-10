@@ -1,5 +1,6 @@
 import type { components, operations } from "$lib/api/dashboard.gen";
 import type { MembershipRole } from "./members";
+import type { SignedInAccount } from "$lib/account/accounts";
 
 export type InvitationWorkspace = components["schemas"]["InvitationWorkspace"];
 
@@ -22,8 +23,8 @@ export type AcceptInvitation =
 	| { kind: "already_accepted" }
 	| ({ kind: "create_account"; role: MembershipRole } & InvitationDetail)
 	| ({ kind: "sign_in_required" } & InvitationDetail)
-	| ({ kind: "confirm"; role: MembershipRole } & InvitationDetail)
-	| { kind: "address_mismatch"; email: string }
+	| ({ kind: "confirm"; role: MembershipRole; slot: string } & InvitationDetail)
+	| { kind: "address_mismatch"; email: string; signedIn: SignedInAccount[] }
 	| ({ kind: "sso_required" } & InvitationDetail)
 	| { kind: "joined"; workspace: InvitationWorkspace }
 	| { kind: "unavailable" };
@@ -64,7 +65,11 @@ export function linkFailure(
 		case "invitation_accepted":
 			return { kind: "already_accepted" };
 		case "invitation_address_mismatch":
-			return { kind: "address_mismatch", email: problem.invitedEmail ?? context?.email ?? "" };
+			return {
+				kind: "address_mismatch",
+				email: problem.invitedEmail ?? context?.email ?? "",
+				signedIn: [],
+			};
 		case "account_exists":
 			return context ? { kind: "sign_in_required", ...context } : { kind: "already_accepted" };
 		default:
@@ -74,7 +79,7 @@ export function linkFailure(
 
 export function invitationState(
 	preview: InvitationPreview,
-	signedInAs: string | null
+	signedIn: SignedInAccount[]
 ): AcceptInvitation {
 	const { workspace, email, role } = preview;
 
@@ -89,11 +94,15 @@ export function invitationState(
 
 	if (preview.ssoEnforced) return { kind: "sso_required", ...detail };
 
-	if (signedInAs) {
-		return signedInAs.toLowerCase() === email.toLowerCase()
-			? { kind: "confirm", role, ...detail }
-			: { kind: "address_mismatch", email };
-	}
+	// An invitation names one address, so among several signed-in accounts only the one holding it
+	// may accept; the rest are offered as a reason to sign in as the invitee instead.
+	const invitee = signedIn.find(
+		(candidate) => candidate.account.email.toLowerCase() === email.toLowerCase()
+	);
+
+	if (invitee) return { kind: "confirm", role, slot: invitee.defaultSlot, ...detail };
+
+	if (signedIn.length > 0) return { kind: "address_mismatch", email, signedIn };
 
 	return preview.accountExists
 		? { kind: "sign_in_required", ...detail }

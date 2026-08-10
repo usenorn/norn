@@ -212,7 +212,7 @@ func TestConfirmingAResetMarksTheLinkUsedAndEndsEverySession(t *testing.T) {
 	h.expectSessionsRevoked(accountID)
 	h.throttle.EXPECT().Clear(gomock.Any(), entity.HashSignInSubject(resetEmail)).Return(nil)
 
-	if err := h.service.ConfirmPasswordReset(context.Background(), token, "a brand new password"); err != nil {
+	if _, err := h.service.ConfirmPasswordReset(context.Background(), token, "a brand new password"); err != nil {
 		t.Fatalf("ConfirmPasswordReset: %v", err)
 	}
 }
@@ -246,7 +246,7 @@ func TestConfirmingAResetStoresAVerifiableHashOfTheNewPassword(t *testing.T) {
 	h.expectSessionsRevoked(accountID)
 	h.throttle.EXPECT().Clear(gomock.Any(), gomock.Any()).Return(nil)
 
-	if err := h.service.ConfirmPasswordReset(context.Background(), token, newPassword); err != nil {
+	if _, err := h.service.ConfirmPasswordReset(context.Background(), token, newPassword); err != nil {
 		t.Fatalf("ConfirmPasswordReset: %v", err)
 	}
 
@@ -269,7 +269,7 @@ func TestAnExpiredResetLinkLeavesThePasswordUnchanged(t *testing.T) {
 
 	h.passwordResets.EXPECT().GetByTokenHash(gomock.Any(), gomock.Any()).Return(expired, nil)
 
-	err := h.service.ConfirmPasswordReset(context.Background(), "a-reset-token", "a brand new password")
+	_, err := h.service.ConfirmPasswordReset(context.Background(), "a-reset-token", "a brand new password")
 	if !errors.Is(err, entity.ErrPasswordResetExpired) {
 		t.Fatalf("ConfirmPasswordReset error = %v, want ErrPasswordResetExpired", err)
 	}
@@ -285,7 +285,7 @@ func TestAnAlreadyUsedResetLinkIsRejected(t *testing.T) {
 
 	h.passwordResets.EXPECT().GetByTokenHash(gomock.Any(), gomock.Any()).Return(used, nil)
 
-	err := h.service.ConfirmPasswordReset(context.Background(), "a-reset-token", "a brand new password")
+	_, err := h.service.ConfirmPasswordReset(context.Background(), "a-reset-token", "a brand new password")
 	if !errors.Is(err, entity.ErrPasswordResetAlreadyUsed) {
 		t.Fatalf("ConfirmPasswordReset error = %v, want ErrPasswordResetAlreadyUsed", err)
 	}
@@ -294,7 +294,7 @@ func TestAnAlreadyUsedResetLinkIsRejected(t *testing.T) {
 func TestAnEmptyResetTokenIsRejectedWithoutALookup(t *testing.T) {
 	h := newHarness(t)
 
-	err := h.service.ConfirmPasswordReset(context.Background(), "", "a brand new password")
+	_, err := h.service.ConfirmPasswordReset(context.Background(), "", "a brand new password")
 	if !errors.Is(err, entity.ErrPasswordResetTokenInvalid) {
 		t.Fatalf("ConfirmPasswordReset error = %v, want ErrPasswordResetTokenInvalid", err)
 	}
@@ -308,7 +308,7 @@ func TestConfirmingAResetIsRefusedWhenEveryWorkspaceEnforcesSSO(t *testing.T) {
 	h.accounts.EXPECT().GetByID(gomock.Any(), accountID).Return(activeAccount(accountID), nil)
 	h.expectSSOEnforcedEverywhere(accountID)
 
-	err := h.service.ConfirmPasswordReset(context.Background(), "a-reset-token", "a brand new password")
+	_, err := h.service.ConfirmPasswordReset(context.Background(), "a-reset-token", "a brand new password")
 	if !errors.Is(err, entity.ErrWorkspacePasswordAuthDisabled) {
 		t.Fatalf("ConfirmPasswordReset error = %v, want ErrWorkspacePasswordAuthDisabled", err)
 	}

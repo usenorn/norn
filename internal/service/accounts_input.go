@@ -54,3 +54,16 @@ type ConfirmedSignUp struct {
 	Account entity.Account
 	Session IssuedSession
 }
+
+type SignedInWorkspace struct {
+	Workspace entity.Workspace
+	Slot      string
+	Reachable bool
+}
+
+type SignedInAccount struct {
+	Account     entity.Account
+	DefaultSlot string
+	Workspaces  []SignedInWorkspace
+	Current     bool
+}

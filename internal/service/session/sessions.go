@@ -209,10 +209,16 @@ func (s *sessionsService) issue(
 		return service.IssuedSession{}, err
 	}
 
+	slot, err := entity.NewSessionSlot()
+	if err != nil {
+		return service.IssuedSession{}, err
+	}
+
 	now := time.Now().UTC()
 
 	session := entity.Session{
 		ID:                uuid.New(),
+		Slot:              slot,
 		TokenHash:         tokenHash,
 		AccountID:         accountID,
 		WorkspaceID:       workspaceID,
@@ -246,7 +252,7 @@ func (s *sessionsService) issue(
 	return service.IssuedSession{Session: session, Token: token}, nil
 }
 
-func (s *sessionsService) Validate(ctx context.Context, token string) (entity.Session, error) {
+func (s *sessionsService) Inspect(ctx context.Context, token string) (entity.Session, error) {
 	if token == "" {
 		return entity.Session{}, entity.ErrSessionNotFound
 	}
@@ -256,9 +262,7 @@ func (s *sessionsService) Validate(ctx context.Context, token string) (entity.Se
 		return entity.Session{}, err
 	}
 
-	now := time.Now().UTC()
-
-	if session.ExpiredAt(now) {
+	if session.ExpiredAt(time.Now().UTC()) {
 		return entity.Session{}, entity.ErrSessionNotFound
 	}
 
@@ -270,6 +274,17 @@ func (s *sessionsService) Validate(ctx context.Context, token string) (entity.Se
 	if session.RevokedAt(revokedAt) {
 		return entity.Session{}, entity.ErrSessionRevoked
 	}
+
+	return session, nil
+}
+
+func (s *sessionsService) Validate(ctx context.Context, token string) (entity.Session, error) {
+	session, err := s.Inspect(ctx, token)
+	if err != nil {
+		return entity.Session{}, err
+	}
+
+	now := time.Now().UTC()
 
 	if !session.NeedsRefresh(now, s.cfg.RefreshInterval) {
 		return session, nil
@@ -312,6 +327,31 @@ func (s *sessionsService) SignOut(ctx context.Context, sessionID uuid.UUID) erro
 		ResourceKind: string(entity.ResourceSession),
 		ResourceID:   sessionID,
 	})
+
+	return nil
+}
+
+func (s *sessionsService) SignOutAll(ctx context.Context) error {
+	held := identity.SignedIn(ctx)
+	if len(held) == 0 {
+		return entity.ErrAccountForbidden
+	}
+
+	for _, session := range held {
+		if err := s.sessions.DeleteByID(ctx, session.AccountID, session.ID); err != nil {
+			return err
+		}
+
+		s.audit.Record(ctx, entity.AuditEntry{
+			Action: entity.AuditSignedOut,
+			Actor: entity.AuditActor{
+				Kind:      entity.ActorKindUser,
+				AccountID: session.AccountID,
+			},
+			ResourceKind: string(entity.ResourceSession),
+			ResourceID:   session.ID,
+		})
+	}
 
 	return nil
 }

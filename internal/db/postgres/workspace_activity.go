@@ -185,44 +185,25 @@ var WorkspaceActivityWhere = struct {
 
 // WorkspaceActivityRels is where relationship names are stored.
 var WorkspaceActivityRels = struct {
-	ActorConnection string
-	ActorAccount    string
-	ActorToken      string
-	BulkAction      string
+	ActorAccount string
+	ActorToken   string
+	BulkAction   string
 }{
-	ActorConnection: "ActorConnection",
-	ActorAccount:    "ActorAccount",
-	ActorToken:      "ActorToken",
-	BulkAction:      "BulkAction",
+	ActorAccount: "ActorAccount",
+	ActorToken:   "ActorToken",
+	BulkAction:   "BulkAction",
 }
 
 // workspaceActivityR is where relationships are stored.
 type workspaceActivityR struct {
-	ActorConnection *MCPConnection       `boil:"ActorConnection" json:"ActorConnection" toml:"ActorConnection" yaml:"ActorConnection"`
-	ActorAccount    *Account             `boil:"ActorAccount" json:"ActorAccount" toml:"ActorAccount" yaml:"ActorAccount"`
-	ActorToken      *APIToken            `boil:"ActorToken" json:"ActorToken" toml:"ActorToken" yaml:"ActorToken"`
-	BulkAction      *WorkspaceBulkAction `boil:"BulkAction" json:"BulkAction" toml:"BulkAction" yaml:"BulkAction"`
+	ActorAccount *Account             `boil:"ActorAccount" json:"ActorAccount" toml:"ActorAccount" yaml:"ActorAccount"`
+	ActorToken   *APIToken            `boil:"ActorToken" json:"ActorToken" toml:"ActorToken" yaml:"ActorToken"`
+	BulkAction   *WorkspaceBulkAction `boil:"BulkAction" json:"BulkAction" toml:"BulkAction" yaml:"BulkAction"`
 }
 
 // NewStruct creates a new relationship struct
 func (*workspaceActivityR) NewStruct() *workspaceActivityR {
 	return &workspaceActivityR{}
-}
-
-func (o *WorkspaceActivity) GetActorConnection() *MCPConnection {
-	if o == nil {
-		return nil
-	}
-
-	return o.R.GetActorConnection()
-}
-
-func (r *workspaceActivityR) GetActorConnection() *MCPConnection {
-	if r == nil {
-		return nil
-	}
-
-	return r.ActorConnection
 }
 
 func (o *WorkspaceActivity) GetActorAccount() *Account {
@@ -589,17 +570,6 @@ func (q workspaceActivityQuery) Exists(ctx context.Context, exec boil.ContextExe
 	return count > 0, nil
 }
 
-// ActorConnection pointed to by the foreign key.
-func (o *WorkspaceActivity) ActorConnection(mods ...qm.QueryMod) mcpConnectionQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.ActorConnectionID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	return MCPConnections(queryMods...)
-}
-
 // ActorAccount pointed to by the foreign key.
 func (o *WorkspaceActivity) ActorAccount(mods ...qm.QueryMod) accountQuery {
 	queryMods := []qm.QueryMod{
@@ -631,130 +601,6 @@ func (o *WorkspaceActivity) BulkAction(mods ...qm.QueryMod) workspaceBulkActionQ
 	queryMods = append(queryMods, mods...)
 
 	return WorkspaceBulkActions(queryMods...)
-}
-
-// LoadActorConnection allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (workspaceActivityL) LoadActorConnection(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceActivity any, mods queries.Applicator) error {
-	var slice []*WorkspaceActivity
-	var object *WorkspaceActivity
-
-	if singular {
-		var ok bool
-		object, ok = maybeWorkspaceActivity.(*WorkspaceActivity)
-		if !ok {
-			object = new(WorkspaceActivity)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceActivity)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceActivity))
-			}
-		}
-	} else {
-		s, ok := maybeWorkspaceActivity.(*[]*WorkspaceActivity)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceActivity)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceActivity))
-			}
-		}
-	}
-
-	args := make(map[any]struct{})
-	if singular {
-		if object.R == nil {
-			object.R = &workspaceActivityR{}
-		}
-		if !queries.IsNil(object.ActorConnectionID) {
-			args[object.ActorConnectionID] = struct{}{}
-		}
-
-	} else {
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &workspaceActivityR{}
-			}
-
-			if !queries.IsNil(obj.ActorConnectionID) {
-				args[obj.ActorConnectionID] = struct{}{}
-			}
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	argsSlice := make([]any, len(args))
-	i := 0
-	for arg := range args {
-		argsSlice[i] = arg
-		i++
-	}
-
-	query := NewQuery(
-		qm.From(`mcp_connections`),
-		qm.WhereIn(`mcp_connections.id in ?`, argsSlice...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load MCPConnection")
-	}
-
-	var resultSlice []*MCPConnection
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice MCPConnection")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for mcp_connections")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for mcp_connections")
-	}
-
-	if len(mcpConnectionAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.ActorConnection = foreign
-		if foreign.R == nil {
-			foreign.R = &mcpConnectionR{}
-		}
-		foreign.R.ActorConnectionWorkspaceActivities = append(foreign.R.ActorConnectionWorkspaceActivities, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if queries.Equal(local.ActorConnectionID, foreign.ID) {
-				local.R.ActorConnection = foreign
-				if foreign.R == nil {
-					foreign.R = &mcpConnectionR{}
-				}
-				foreign.R.ActorConnectionWorkspaceActivities = append(foreign.R.ActorConnectionWorkspaceActivities, local)
-				break
-			}
-		}
-	}
-
-	return nil
 }
 
 // LoadActorAccount allows an eager lookup of values, cached into the
@@ -1126,86 +972,6 @@ func (workspaceActivityL) LoadBulkAction(ctx context.Context, e boil.ContextExec
 		}
 	}
 
-	return nil
-}
-
-// SetActorConnection of the workspaceActivity to the related item.
-// Sets o.R.ActorConnection to related.
-// Adds o to related.R.ActorConnectionWorkspaceActivities.
-func (o *WorkspaceActivity) SetActorConnection(ctx context.Context, exec boil.ContextExecutor, insert bool, related *MCPConnection) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"workspace_activity\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"actor_connection_id"}),
-		strmangle.WhereClause("\"", "\"", 2, workspaceActivityPrimaryKeyColumns),
-	)
-	values := []any{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	queries.Assign(&o.ActorConnectionID, related.ID)
-	if o.R == nil {
-		o.R = &workspaceActivityR{
-			ActorConnection: related,
-		}
-	} else {
-		o.R.ActorConnection = related
-	}
-
-	if related.R == nil {
-		related.R = &mcpConnectionR{
-			ActorConnectionWorkspaceActivities: WorkspaceActivitySlice{o},
-		}
-	} else {
-		related.R.ActorConnectionWorkspaceActivities = append(related.R.ActorConnectionWorkspaceActivities, o)
-	}
-
-	return nil
-}
-
-// RemoveActorConnection relationship.
-// Sets o.R.ActorConnection to nil.
-// Removes o from all passed in related items' relationships struct.
-func (o *WorkspaceActivity) RemoveActorConnection(ctx context.Context, exec boil.ContextExecutor, related *MCPConnection) error {
-	var err error
-
-	queries.SetScanner(&o.ActorConnectionID, nil)
-	if _, err = o.Update(ctx, exec, boil.Whitelist("actor_connection_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	if o.R != nil {
-		o.R.ActorConnection = nil
-	}
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.ActorConnectionWorkspaceActivities {
-		if queries.Equal(o.ActorConnectionID, ri.ActorConnectionID) {
-			continue
-		}
-
-		ln := len(related.R.ActorConnectionWorkspaceActivities)
-		if ln > 1 && i < ln-1 {
-			related.R.ActorConnectionWorkspaceActivities[i] = related.R.ActorConnectionWorkspaceActivities[ln-1]
-		}
-		related.R.ActorConnectionWorkspaceActivities = related.R.ActorConnectionWorkspaceActivities[:ln-1]
-		break
-	}
 	return nil
 }
 

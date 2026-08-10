@@ -104,47 +104,50 @@ func (s *accountsService) RequestPasswordReset(ctx context.Context, input servic
 	return expiresAt, nil
 }
 
-func (s *accountsService) ConfirmPasswordReset(ctx context.Context, token, password string) error {
+func (s *accountsService) ConfirmPasswordReset(
+	ctx context.Context,
+	token, password string,
+) (uuid.UUID, error) {
 	if token == "" {
-		return entity.ErrPasswordResetTokenInvalid
+		return uuid.Nil, entity.ErrPasswordResetTokenInvalid
 	}
 
 	reset, err := s.passwordResets.GetByTokenHash(ctx, entity.HashPasswordResetToken(token))
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	if reset.Used() {
-		return entity.ErrPasswordResetAlreadyUsed
+		return uuid.Nil, entity.ErrPasswordResetAlreadyUsed
 	}
 
 	now := time.Now().UTC()
 
 	if reset.ExpiredAt(now) {
-		return entity.ErrPasswordResetExpired
+		return uuid.Nil, entity.ErrPasswordResetExpired
 	}
 
 	account, err := s.activeAccount(ctx, reset.AccountID)
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	ssoOnly, err := s.ssoEnforcedEverywhere(ctx, account.ID)
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	if ssoOnly {
-		return entity.ErrWorkspacePasswordAuthDisabled
+		return uuid.Nil, entity.ErrWorkspacePasswordAuthDisabled
 	}
 
 	if err := s.validateNewPassword(ctx, "password", account, password); err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	hash, err := entity.HashPassword(password)
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	account.PasswordHash = hash
@@ -165,7 +168,7 @@ func (s *accountsService) ConfirmPasswordReset(ctx context.Context, token, passw
 		return s.sessions.RevokeAllByAccountID(identity.Into(ctx, account.ID), account.ID)
 	})
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	s.audit.Record(ctx, entity.AuditEntry{
@@ -178,7 +181,11 @@ func (s *accountsService) ConfirmPasswordReset(ctx context.Context, token, passw
 		ResourceID:   account.ID,
 	})
 
-	return s.throttle.Clear(ctx, entity.HashSignInSubject(entity.NormalizeEmail(account.Email)))
+	if err := s.throttle.Clear(ctx, entity.HashSignInSubject(entity.NormalizeEmail(account.Email))); err != nil {
+		return uuid.Nil, err
+	}
+
+	return account.ID, nil
 }
 
 func (s *accountsService) SendPasswordReset(ctx context.Context, resetID uuid.UUID, token string) error {

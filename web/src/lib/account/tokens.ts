@@ -36,6 +36,8 @@ export type ScopeGroup = { resource: string; title: string; scopes: APIScope[] }
 
 export const scopeGroups: ScopeGroup[] = [
 	{ resource: "issue", title: "Issues", scopes: ["issue:read", "issue:manage"] },
+	{ resource: "comment", title: "Comments", scopes: ["comment:read", "comment:manage"] },
+	{ resource: "cycle", title: "Cycles", scopes: ["cycle:read"] },
 	{ resource: "project", title: "Projects", scopes: ["project:read", "project:manage"] },
 	{ resource: "label", title: "Labels", scopes: ["label:read", "label:manage"] },
 	{ resource: "team", title: "Teams", scopes: ["team:read", "team:manage"] },
@@ -68,6 +70,7 @@ export const scopeLabels: Record<string, string> = {
 	"team_membership:manage": "Change team rosters",
 	"issue:read": "Read issues",
 	"issue:manage": "Raise and change issues",
+	"cycle:read": "Read cycles",
 	"label:read": "Read labels",
 	"label:manage": "Create and change labels",
 	"project:read": "Read projects",

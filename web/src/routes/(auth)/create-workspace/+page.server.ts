@@ -13,13 +13,18 @@ import type { Actions, PageServerLoad } from "./$types";
 
 type CreateWorkspaceForm = Infer<typeof createWorkspaceSchema>;
 
-export const load: PageServerLoad = async ({ depends, route, locals }) => {
+export const load: PageServerLoad = async ({ depends, route, parent }) => {
 	depends(keys.page(route.id));
 
-	const { data } = await locals.api.GET("/workspaces");
+	const { accounts, acting } = await parent();
+	const owner = accounts.find((candidate) => candidate.account.id === acting?.accountId);
 
 	return {
-		workspace: { existingWorkspace: data?.[0]?.name ?? null } as WorkspaceContext,
+		owner: owner?.account ?? null,
+		choices: accounts.length,
+		workspace: {
+			existingWorkspace: owner?.workspaces[0]?.workspace.name ?? null,
+		} as WorkspaceContext,
 		form: await superValidate<CreateWorkspaceForm, WorkspaceCreationFailure>(
 			zod4(createWorkspaceSchema)
 		),

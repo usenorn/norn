@@ -56,6 +56,7 @@ var reservedWorkspaceSlugs = map[string]struct{}{
 	"reset-password":    {},
 	"settings":          {},
 	"sign-in":           {},
+	"sign-out":          {},
 	"sign-up":           {},
 	"sso":               {},
 	"privacy":           {},

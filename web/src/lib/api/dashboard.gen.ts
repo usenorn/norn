@@ -281,6 +281,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/signed-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every account this browser is signed in to, with the workspaces each one holds
+         * @description Answers for every session cookie on the request rather than for one of them, so it needs no acting session. A cookie whose session has ended is expired on this response, so the browser stops presenting it.
+         */
+        get: operations["listSignedInAccounts"];
+        put?: never;
+        post?: never;
+        /**
+         * End every session this browser holds, for every account signed in on it
+         * @description Ends only the sessions this browser presented. The same accounts stay signed in on their other devices.
+         */
+        delete: operations["signOutEveryAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sessions": {
         parameters: {
             query?: never;
@@ -1030,126 +1054,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/mcp/authorizations/{requestId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** What an AI client is asking to be granted, for the consent screen */
-        get: operations["describeMCPAuthorization"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/mcp/authorizations/{requestId}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Grant the AI client a connection confined to the workspaces the caller picked */
-        post: operations["approveMCPAuthorization"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/mcp/authorizations/{requestId}/deny": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Refuse the AI client and send it away empty-handed */
-        post: operations["denyMCPAuthorization"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/mcp/connections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List the caller's live AI client connections */
-        get: operations["listMCPConnections"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/mcp/connections/{connectionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Revoke a connection, cutting it off from the next operation on */
-        delete: operations["revokeMCPConnection"];
-        options?: never;
-        head?: never;
-        /** Shrink what a connection may reach, without re-authorizing */
-        patch: operations["narrowMCPConnection"];
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/mcp-connections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The AI client connections able to reach this workspace, for its admins */
-        get: operations["listWorkspaceMCPConnections"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/mcp-connections/{connectionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Revoke a connection reaching this workspace, as its admin */
-        delete: operations["revokeWorkspaceMCPConnection"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4252,7 +4156,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "agent.disabled" | "agent.proposal_decided" | "mcp_connection.authorized" | "mcp_connection.narrowed" | "mcp_connection.revoked" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "agent.disabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -4668,6 +4572,25 @@ export interface components {
             /** Format: uuid */
             proposalId: string;
         };
+        IssuedSession: {
+            /** @description The session this call issued. Name it to act as the account that just signed in, which a browser already holding other sessions has no other way to know. */
+            slot: string;
+        };
+        SignedInWorkspace: {
+            workspace: components["schemas"]["Workspace"];
+            /** @description The session to name when acting in this workspace. */
+            slot: string;
+            /** @description False when the workspace requires single sign-on and no session on this browser was issued by its provider. */
+            reachable: boolean;
+        };
+        SignedInAccount: {
+            account: components["schemas"]["Account"];
+            /** @description The session to name for anything this account owns outside a workspace. */
+            defaultSlot: string;
+            workspaces: components["schemas"]["SignedInWorkspace"][];
+            /** @description True for the account the request that asked was acting as. */
+            current: boolean;
+        };
         APIScope: string;
         APITokenGrant: {
             /** Format: uuid */
@@ -4704,55 +4627,6 @@ export interface components {
             grants: components["schemas"]["APITokenGrant"][];
             /** Format: date-time */
             expiresAt?: string;
-        };
-        /**
-         * @description What the connection may do — read everything its owner can see, or also write.
-         * @enum {string}
-         */
-        MCPCapability: "read" | "write";
-        MCPConnection: {
-            /** Format: uuid */
-            id: string;
-            clientName: string;
-            capability: components["schemas"]["MCPCapability"];
-            /** @description When true the connection reaches every workspace its owner belongs to, including ones joined after authorization. When false it is narrowed to the listed grants. */
-            followsMembership: boolean;
-            grants: components["schemas"]["APITokenGrant"][];
-            /** Format: date-time */
-            lastUsedAt?: string;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        WorkspaceMCPConnection: {
-            connection: components["schemas"]["MCPConnection"];
-            ownerName: string;
-            ownerEmail: string;
-        };
-        MCPAuthorizationWorkspace: {
-            /** Format: uuid */
-            id: string;
-            slug: string;
-            name: string;
-        };
-        MCPAuthorizationView: {
-            clientName: string;
-            capability: components["schemas"]["MCPCapability"];
-            /** @description Every workspace the caller may choose from. */
-            workspaces: components["schemas"]["MCPAuthorizationWorkspace"][];
-        };
-        ApproveMCPAuthorizationRequest: {
-            /** @description Follow the caller's own membership, so workspaces they join later are reached too. Choosing this is deliberate; it is never the default. */
-            allWorkspaces: boolean;
-            /** @description The workspaces this connection may reach when allWorkspaces is false. */
-            workspaceIds: string[];
-        };
-        MCPAuthorizationDecision: {
-            redirectTo: string;
-        };
-        NarrowMCPConnectionRequest: {
-            capability?: components["schemas"]["MCPCapability"];
-            /** @description Replaces the connection's reach; must shrink it, never widen it. */
-            grants?: components["schemas"]["APITokenGrant"][];
         };
         /** @enum {string} */
         WebhookEventType: "issue.created" | "issue.updated" | "issue.status_changed" | "issue.deleted" | "issue.triaged" | "issue.merged" | "comment.posted" | "comment.edited" | "comment.deleted" | "project.created" | "project.updated" | "project.deleted" | "project.members_changed" | "project.status_posted" | "cycle.started" | "cycle.closed" | "cycle.cadence_changed" | "membership.added" | "membership.changed" | "membership.removed" | "team_membership.added" | "team_membership.removed";
@@ -6445,8 +6319,6 @@ export interface components {
         AccountId: string;
         InvitationId: string;
         TokenId: string;
-        MCPRequestId: string;
-        MCPConnectionId: string;
         AgentId: string;
         ProposalId: string;
         StateId: string;
@@ -6585,7 +6457,6 @@ export interface operations {
             /** @description The account the link created */
             200: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6611,12 +6482,13 @@ export interface operations {
         };
         responses: {
             /** @description A session cookie was issued */
-            204: {
+            200: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["IssuedSession"];
+                };
             };
             401: components["responses"]["SignInRejected"];
             423: components["responses"]["AccountLocked"];
@@ -6668,7 +6540,6 @@ export interface operations {
             /** @description The password was replaced and every session ended */
             204: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -6693,7 +6564,6 @@ export interface operations {
             /** @description The session was discarded */
             204: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -6718,7 +6588,6 @@ export interface operations {
             /** @description Send the browser to this address to authenticate */
             200: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6746,7 +6615,6 @@ export interface operations {
             /** @description Send the browser to this address to authenticate */
             200: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6867,7 +6735,6 @@ export interface operations {
             /** @description The password was replaced and the session was rotated */
             204: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -6895,7 +6762,6 @@ export interface operations {
             /** @description The password was established and the session was rotated */
             204: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -7039,6 +6905,48 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
+    listSignedInAccounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The accounts signed in on this browser */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignedInAccount"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    signOutEveryAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every presented session was ended */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
     listSessions: {
         parameters: {
             query?: never;
@@ -7073,7 +6981,6 @@ export interface operations {
             /** @description Every session was revoked */
             204: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -7284,7 +7191,6 @@ export interface operations {
             /** @description Send the browser to this address to complete the test */
             200: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -7312,7 +7218,6 @@ export interface operations {
             /** @description Send the browser to this address to complete the connection */
             200: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -7476,7 +7381,6 @@ export interface operations {
             /** @description Send the browser to this address to complete the test */
             200: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -8602,216 +8506,6 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    describeMCPAuthorization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                requestId: components["parameters"]["MCPRequestId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The pending authorization request */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MCPAuthorizationView"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    approveMCPAuthorization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                requestId: components["parameters"]["MCPRequestId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApproveMCPAuthorizationRequest"];
-            };
-        };
-        responses: {
-            /** @description Where to send the client to finish the handshake */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MCPAuthorizationDecision"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    denyMCPAuthorization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                requestId: components["parameters"]["MCPRequestId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Where to send the client to report the refusal */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MCPAuthorizationDecision"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    listMCPConnections: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The caller's connections */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MCPConnection"][];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    revokeMCPConnection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                connectionId: components["parameters"]["MCPConnectionId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The connection was revoked */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    narrowMCPConnection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                connectionId: components["parameters"]["MCPConnectionId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NarrowMCPConnectionRequest"];
-            };
-        };
-        responses: {
-            /** @description The connection after narrowing */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MCPConnection"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    listWorkspaceMCPConnections: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The connections reaching this workspace, with their owners */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceMCPConnection"][];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    revokeWorkspaceMCPConnection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                connectionId: components["parameters"]["MCPConnectionId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The connection was revoked everywhere it reached */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };
@@ -11368,7 +11062,6 @@ export interface operations {
             /** @description The membership the invitation granted */
             200: {
                 headers: {
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {

@@ -3,6 +3,7 @@
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
+	import AccountIdentity from "$lib/account/account-identity.svelte";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import StepList, { type Step } from "$lib/components/norn/step-list.svelte";
@@ -118,6 +119,16 @@
 			<div class="flex flex-col gap-1.5">
 				<Eyebrow>{eyebrow}</Eyebrow>
 				<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>
+
+				{#if data.owner && data.choices > 1}
+					<div
+						class="flex items-center gap-2 rounded-md border border-line-subtle p-2.5"
+						data-testid="workspace-owner"
+					>
+						<AccountIdentity account={data.owner} />
+						<span class="ml-auto shrink-0 text-xs text-muted-foreground">Administrator</span>
+					</div>
+				{/if}
 				<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
 			</div>
 

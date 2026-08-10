@@ -23,6 +23,8 @@
 		agentScopeLabels,
 		approvalsPath,
 		failureMessage,
+		mcpAddCommand,
+		mcpServerUrl,
 		type AgentFailure,
 		type AgentListing,
 	} from "$lib/agents/agents";
@@ -82,7 +84,10 @@
 	);
 
 	const registered = $derived(listing.kind === "registered" ? listing : issued);
-	const copied = $derived(copiedValue === registered?.value);
+	const serverUrl = $derived(mcpServerUrl(page.url.origin));
+	const addCommand = $derived(
+		registered ? mcpAddCommand(registered.agent.name, page.url.origin, registered.value) : ""
+	);
 	const showForm = $derived(listing.kind !== "forbidden" && listing.kind !== "unavailable");
 
 	const ownerName = $derived(
@@ -114,10 +119,9 @@
 		formData.update((entered) => ({ ...entered, teamIds: [...next] }));
 	}
 
-	async function copyValue() {
-		if (!registered) return;
-		await navigator.clipboard.writeText(registered.value);
-		copiedValue = registered.value;
+	async function copy(text: string) {
+		await navigator.clipboard.writeText(text);
+		copiedValue = text;
 	}
 
 	async function disable(agentId: string) {
@@ -204,9 +208,31 @@
 						{registered.value}
 					</p>
 					<div>
-						<Button variant="secondary" size="sm" onclick={copyValue}>
-							{copied ? "Copied" : "Copy credential"}
+						<Button variant="secondary" size="sm" onclick={() => copy(registered.value)}>
+							{copiedValue === registered.value ? "Copied" : "Copy credential"}
 						</Button>
+					</div>
+
+					<div class="flex flex-col gap-2 border-t border-line-subtle pt-3">
+						<h3 class="text-sm font-medium tracking-snug text-ink-900">
+							Connect an AI client to {workspace.name}
+						</h3>
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							This is the whole setup. Everything the client does arrives as {registered.agent
+								.name}, bounded by the permissions above, and stops the moment you disable it. The
+							credential lasts a year and cannot be extended.
+						</p>
+						<p class="rounded-md bg-paper-100 p-3 font-mono text-xs break-all text-ink-900">
+							{addCommand}
+						</p>
+						<div class="flex flex-wrap gap-2">
+							<Button variant="secondary" size="sm" onclick={() => copy(addCommand)}>
+								{copiedValue === addCommand ? "Copied" : "Copy command"}
+							</Button>
+							<Button variant="ghost" size="sm" onclick={() => copy(serverUrl)}>
+								{copiedValue === serverUrl ? "Copied" : "Copy server URL"}
+							</Button>
+						</div>
 					</div>
 				</section>
 			{/if}

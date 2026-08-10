@@ -23,3 +23,21 @@ type IssuedSession struct {
 	Session entity.Session
 	Token   string
 }
+
+type PresentedSession struct {
+	Slot  string
+	Token string
+}
+
+type ResolveSessionsInput struct {
+	Presented   []PresentedSession
+	Selector    string
+	WorkspaceID uuid.UUID
+}
+
+type ResolvedSessions struct {
+	Held   []entity.Session
+	Acting entity.Session
+	Found  bool
+	Dead   []string
+}

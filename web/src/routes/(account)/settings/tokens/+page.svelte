@@ -15,6 +15,7 @@
 	import { api } from "$lib/api";
 	import { keys } from "$lib/api/keys";
 	import { onDate } from "$lib/time";
+	import { mcpAddCommand, mcpServerUrl } from "$lib/agents/agents";
 	import { mintTokenSchema, type GrantInput } from "$lib/account/mint-token-schema";
 	import {
 		daysUntil,
@@ -73,7 +74,10 @@
 
 	const minted = $derived(revealed ?? (listing.kind === "minted" ? listing : null));
 
-	const copied = $derived(minted !== null && copiedValue === minted.value);
+	const serverUrl = $derived(mcpServerUrl(page.url.origin));
+	const addCommand = $derived(
+		minted ? mcpAddCommand(minted.token.name, page.url.origin, minted.value) : ""
+	);
 
 	const busy = $derived(preview?.busy || $submitting || revoking !== null);
 
@@ -132,10 +136,9 @@
 		formData.update((entered) => ({ ...entered, scopes: [...next] }));
 	}
 
-	async function copyValue() {
-		if (!minted) return;
-		await navigator.clipboard.writeText(minted.value);
-		copiedValue = minted.value;
+	async function copy(text: string) {
+		await navigator.clipboard.writeText(text);
+		copiedValue = text;
 	}
 
 	async function revoke(tokenId: string) {
@@ -233,9 +236,29 @@
 						{minted.value}
 					</p>
 					<div>
-						<Button variant="secondary" size="sm" onclick={copyValue}>
-							{copied ? "Copied" : "Copy token"}
+						<Button variant="secondary" size="sm" onclick={() => copy(minted.value)}>
+							{copiedValue === minted.value ? "Copied" : "Copy token"}
 						</Button>
+					</div>
+
+					<div class="flex flex-col gap-2 border-t border-line-subtle pt-3">
+						<h3 class="text-sm font-medium tracking-snug text-ink-900">Connect an AI client</h3>
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							A token reaches Norn's MCP server as you, in the workspaces and teams you granted it.
+							To have an AI client act under its own name, with its own limits and approvals,
+							register an agent in a workspace instead.
+						</p>
+						<p class="rounded-md bg-paper-100 p-3 font-mono text-xs break-all text-ink-900">
+							{addCommand}
+						</p>
+						<div class="flex flex-wrap gap-2">
+							<Button variant="secondary" size="sm" onclick={() => copy(addCommand)}>
+								{copiedValue === addCommand ? "Copied" : "Copy command"}
+							</Button>
+							<Button variant="ghost" size="sm" onclick={() => copy(serverUrl)}>
+								{copiedValue === serverUrl ? "Copied" : "Copy server URL"}
+							</Button>
+						</div>
 					</div>
 				</section>
 			{/if}

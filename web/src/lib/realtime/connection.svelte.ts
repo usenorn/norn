@@ -1,6 +1,7 @@
 import { getContext, setContext } from "svelte";
 import { invalidate, invalidateAll } from "$app/navigation";
 import { keys } from "$lib/api/keys";
+import { sessionParam } from "$lib/account/accounts";
 import type { components } from "$lib/api/dashboard.gen";
 
 export type Issue = components["schemas"]["Issue"];
@@ -44,6 +45,7 @@ export class RealtimeConnection {
 	#refetchTimer: ReturnType<typeof setTimeout> | undefined;
 	#pending = new Set<string>();
 	#workspaceId = "";
+	#slot = "";
 	#topics = "workspace,inbox";
 
 	get connected(): boolean {
@@ -54,24 +56,34 @@ export class RealtimeConnection {
 		return this.state === "stale" || this.state === "off";
 	}
 
-	open(workspaceId: string, topics = "workspace,inbox") {
+	open(workspaceId: string, slot: string, topics = "workspace,inbox") {
 		if (typeof EventSource === "undefined") {
 			this.state = "off";
 
 			return;
 		}
 
-		if (this.#source && this.#workspaceId === workspaceId && this.#topics === topics) return;
+		if (
+			this.#source &&
+			this.#workspaceId === workspaceId &&
+			this.#slot === slot &&
+			this.#topics === topics
+		) {
+			return;
+		}
 
 		this.close();
 
 		this.#workspaceId = workspaceId;
+		this.#slot = slot;
 		this.#topics = topics;
 		this.state = "connecting";
 
-		const source = new EventSource(
-			`/v1/workspaces/${workspaceId}/events?topics=${encodeURIComponent(topics)}`
-		);
+		const query = new URLSearchParams({ topics });
+
+		if (slot) query.set(sessionParam, slot);
+
+		const source = new EventSource(`/v1/workspaces/${workspaceId}/events?${query}`);
 
 		source.onopen = () => {
 			clearTimeout(this.#staleTimer);

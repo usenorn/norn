@@ -114,8 +114,8 @@ export function writeDisplay(
 	return params;
 }
 
-export function displayCookie(workspaceId: string): string {
-	return `norn.issues.${workspaceId}`;
+export function displayCookie(accountId: string, workspaceId: string): string {
+	return `norn.issues.${accountId}.${workspaceId}`;
 }
 
 export function hiddenParam(shown: RowProperty[], toggled: RowProperty): string | null {

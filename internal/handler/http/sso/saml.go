@@ -102,7 +102,7 @@ func (s *SAML) Consume(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, middleware.IssuedSessionCookie(s.session, exchange.Token))
+	http.SetCookie(w, middleware.IssuedSessionCookie(s.session, exchange.Session, exchange.Token))
 
 	if exchange.ReturnTo != "" {
 		target = exchange.ReturnTo

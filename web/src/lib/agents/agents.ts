@@ -65,6 +65,7 @@ export const holdLabels: { key: keyof AgentSettings; title: string; detail: stri
 
 export const agentScopeGroups: { title: string; scopes: APIScope[] }[] = [
 	{ title: "Issues", scopes: ["issue:read", "issue:manage"] },
+	{ title: "Cycles", scopes: ["cycle:read"] },
 	{ title: "Projects", scopes: ["project:read", "project:manage"] },
 	{ title: "Labels", scopes: ["label:read", "label:manage"] },
 	{ title: "Teams", scopes: ["team:read", "team:manage"] },
@@ -76,6 +77,7 @@ export const agentScopeGroups: { title: string; scopes: APIScope[] }[] = [
 export const agentScopeLabels: Record<string, string> = {
 	"issue:read": "Read issues",
 	"issue:manage": "Raise and change issues",
+	"cycle:read": "Read cycles",
 	"project:read": "Read projects",
 	"project:manage": "Create and change projects",
 	"label:read": "Read labels",
@@ -140,6 +142,26 @@ export function proposalSummary(proposal: AgentProposal): string {
 		case "issue_edit":
 			return proposal.title ? `the title “${proposal.title}”` : "an edit";
 	}
+}
+
+export function mcpServerUrl(origin: string): string {
+	return `${origin}/mcp`;
+}
+
+export function mcpServerName(agentName: string): string {
+	const slug = agentName
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "");
+
+	return slug || "norn";
+}
+
+export function mcpAddCommand(agentName: string, origin: string, value: string): string {
+	return (
+		`claude mcp add --transport http ${mcpServerName(agentName)} ${mcpServerUrl(origin)} ` +
+		`--header "Authorization: Bearer ${value}"`
+	);
 }
 
 export function agentsPath(workspace: string): string {

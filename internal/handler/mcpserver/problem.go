@@ -35,6 +35,25 @@ func toolFailure(ctx context.Context, err error) error {
 		return errors.New(validation.Error())
 	}
 
+	var held entity.AgentActionHeldError
+	if errors.As(err, &held) {
+		return fmt.Errorf(
+			"this workspace holds changes like this one until a person approves them; it is "+
+				"waiting as proposal %s and will apply if they accept it. Do not retry it",
+			held.ProposalID,
+		)
+	}
+
+	if errors.Is(err, entity.ErrAgentRateLimited) {
+		return errors.New(
+			"this agent has spent its actions for the minute; wait and make the change again",
+		)
+	}
+
+	if errors.Is(err, entity.ErrAgentDisabled) {
+		return errors.New("this agent has been disabled; its credential no longer works")
+	}
+
 	var stale entity.IssueStaleError
 	if errors.As(err, &stale) {
 		return fmt.Errorf(
@@ -53,8 +72,8 @@ func toolFailure(ctx context.Context, err error) error {
 
 	if errors.Is(err, entity.ErrAccountForbidden) {
 		return errors.New(
-			"this connection is not permitted to do that; its consent may be read-only or " +
-				"narrowed",
+			"this token is not permitted to do that; its permissions may not cover the change, " +
+				"or the workspace or team may be outside what it was granted",
 		)
 	}
 

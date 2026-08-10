@@ -23,7 +23,7 @@ type Accounts interface {
 	ConfirmEmailChange(ctx context.Context, token string) (entity.Account, error)
 	SendEmailChangeConfirmation(ctx context.Context, changeID uuid.UUID, token string) error
 	RequestPasswordReset(ctx context.Context, input RequestPasswordResetInput) (time.Time, error)
-	ConfirmPasswordReset(ctx context.Context, token, password string) error
+	ConfirmPasswordReset(ctx context.Context, token, password string) (uuid.UUID, error)
 	SendPasswordReset(ctx context.Context, resetID uuid.UUID, token string) error
 	SendPasswordResetSSONotice(ctx context.Context, accountID uuid.UUID) error
 	UploadAvatar(ctx context.Context, accountID uuid.UUID, upload AvatarUpload) (entity.Account, error)
@@ -33,4 +33,5 @@ type Accounts interface {
 	ChangePassword(ctx context.Context, accountID uuid.UUID, currentPassword, newPassword string) (IssuedSession, error)
 	Deactivate(ctx context.Context, accountID uuid.UUID) (entity.Account, error)
 	Delete(ctx context.Context, accountID uuid.UUID) error
+	SignedIn(ctx context.Context) ([]SignedInAccount, error)
 }
