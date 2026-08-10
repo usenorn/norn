@@ -178,6 +178,8 @@
 		await goto(next, { replaceState: true, noScroll: true });
 	}
 
+	const usageWorkspaceId = $derived(data.workspace.id);
+
 	$effect(() => {
 		const id = removalId;
 
@@ -191,7 +193,7 @@
 
 		api
 			.GET("/workspaces/{workspaceId}/labels/{labelId}/usage", {
-				params: { path: { workspaceId: data.workspace.id, labelId: id } },
+				params: { path: { workspaceId: usageWorkspaceId, labelId: id } },
 			})
 			.then(({ data: read }) => {
 				if (read) usage = read.issues;
