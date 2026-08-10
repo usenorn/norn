@@ -2,6 +2,8 @@ package webhook
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -56,10 +58,17 @@ func (s *fanOut) FanOut(ctx context.Context) (int, error) {
 
 	queued := 0
 
+	// Claiming marks the whole batch fanned out and commits before any of it is spread, so an
+	// entry abandoned here is never selected again. Every entry gets its turn and the failures
+	// travel back together.
+	var failures []error
+
 	for _, entry := range entries {
 		delivered, err := s.spread(ctx, entry)
 		if err != nil {
-			return queued, err
+			failures = append(failures, fmt.Errorf("spread webhook outbox entry %s: %w", entry.ID, err))
+
+			continue
 		}
 
 		queued += delivered
@@ -71,7 +80,7 @@ func (s *fanOut) FanOut(ctx context.Context) (int, error) {
 		)
 	}
 
-	return queued, nil
+	return queued, errors.Join(failures...)
 }
 
 func (s *fanOut) spread(ctx context.Context, entry entity.WebhookOutboxEntry) (int, error) {

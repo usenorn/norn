@@ -2,6 +2,8 @@ package notification
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -24,16 +26,23 @@ func (s *notificationsService) FanOut(ctx context.Context) (int, error) {
 
 	delivered := 0
 
+	// Claiming marks the whole batch fanned out and commits before any of it is delivered, so an
+	// event abandoned here is never selected again. Every event gets its turn and the failures
+	// travel back together.
+	var failures []error
+
 	for _, event := range events {
 		count, err := s.fanOut(ctx, event)
 		if err != nil {
-			return delivered, err
+			failures = append(failures, fmt.Errorf("fan out notification event %s: %w", event.ID, err))
+
+			continue
 		}
 
 		delivered += count
 	}
 
-	return delivered, nil
+	return delivered, errors.Join(failures...)
 }
 
 func (s *notificationsService) fanOut(ctx context.Context, event entity.NotificationEvent) (int, error) {
