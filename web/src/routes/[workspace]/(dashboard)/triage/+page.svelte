@@ -25,6 +25,7 @@
 	import Markdown from "$lib/issues/markdown.svelte";
 	import PropertyPicker from "$lib/issues/property-picker.svelte";
 	import { api } from "$lib/api";
+	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { lift } from "$lib/motion";
 	import { priorityLabel } from "$lib/issues/issues";
 	import { initialsOf } from "$lib/team/members";
@@ -217,50 +218,25 @@
 		);
 	}
 
-	function onKey(event: KeyboardEvent) {
-		const target = event.target as HTMLElement | null;
+	const shortcuts = useShortcuts();
 
-		if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") {
-			if (event.key === "Escape") closeFlow();
+	bindShortcuts({
+		"triage-close": closeFlow,
+		"cursor-down": () => move(1),
+		"cursor-up": () => move(-1),
+	});
 
-			return;
-		}
-
-		if (event.metaKey || event.ctrlKey || event.altKey) return;
-
-		if (event.key === "Escape") {
-			closeFlow();
-
-			return;
-		}
-
-		if (event.key === "j" || event.key === "ArrowDown") {
-			event.preventDefault();
-			move(1);
-
-			return;
-		}
-
-		if (event.key === "k" || event.key === "ArrowUp") {
-			event.preventDefault();
-			move(-1);
-
-			return;
-		}
-
+	$effect(() => {
 		if (readOnly || !item) return;
 
-		if (event.key === "a" || event.key === "A") {
-			event.preventDefault();
-			open("accept");
-		} else if (event.key === "d" || event.key === "D") {
-			event.preventDefault();
-			open("decline");
-		} else if (event.key === "m" || event.key === "M") {
-			event.preventDefault();
-			open("merge");
-		}
-	}
+		const released = [
+			shortcuts.register("triage-accept", () => open("accept")),
+			shortcuts.register("triage-decline", () => open("decline")),
+			shortcuts.register("triage-move", () => open("merge")),
+		];
+
+		return () => released.forEach((release) => release());
+	});
 
 	const sourceGlyph = { user: UserRound, token: Plug, agent: Bot };
 </script>
@@ -271,7 +247,6 @@
 {/snippet}
 
 <svelte:head><title>Triage · {data.workspace.name} · Norn</title></svelte:head>
-<svelte:window onkeydown={onKey} />
 
 <div class="flex min-h-0 flex-1 flex-col">
 	<div class="flex-none border-b border-line-default">
