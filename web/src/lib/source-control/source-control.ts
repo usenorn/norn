@@ -86,7 +86,7 @@ export type MintedRepository = {
 export type SourceControlAppState =
 	| { kind: "unsupported" }
 	| { kind: "unregistered"; canRegister: boolean }
-	| { kind: "registered"; slug: string; installUrl: string }
+	| { kind: "registered"; slug: string; installUrl: string; installed: boolean }
 	| { kind: "choosing"; handle: string; installations: SourceControlInstallation[] };
 
 export type SourceControlAppNotice =

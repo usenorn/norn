@@ -13,6 +13,7 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 )
@@ -63,12 +64,43 @@ func (s *apps) Application(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	provider entity.SCMProvider,
-) (entity.SCMApp, error) {
+) (service.SCMApplication, error) {
 	if _, err := s.administers(ctx, workspaceID); err != nil {
-		return entity.SCMApp{}, err
+		return service.SCMApplication{}, err
 	}
 
-	return s.application(ctx, provider)
+	held, err := s.application(ctx, provider)
+	if err != nil {
+		return service.SCMApplication{}, err
+	}
+
+	return service.SCMApplication{
+		App:       held,
+		Installed: s.installedAnywhere(ctx, held),
+		Reachable: true,
+	}, nil
+}
+
+func (s *apps) installedAnywhere(ctx context.Context, app entity.SCMApp) bool {
+	forgeApp, err := s.forges.App(app.Provider)
+	if err != nil {
+		return false
+	}
+
+	installations, err := forgeApp.AppInstallations(ctx, app)
+	if err != nil {
+		logging.From(ctx).WarnContext(
+			ctx,
+			"asking the forge whether the application is installed failed, so the screen offers "+
+				"both steps rather than hiding one",
+			"provider", string(app.Provider),
+			"error", err.Error(),
+		)
+
+		return true
+	}
+
+	return len(installations) > 0
 }
 
 func (s *apps) application(

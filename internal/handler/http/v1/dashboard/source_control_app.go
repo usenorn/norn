@@ -30,12 +30,15 @@ func (h *handler) GetWorkspaceSourceControlApplication(
 
 	switch {
 	case err == nil:
-		dto.Registered = registered.Registered()
-		dto.Slug = &registered.Slug
-		dto.AllowPrivateAddress = pointer(registered.Trust.AllowPrivateAddress)
-		dto.CaCertificateSet = pointer(registered.Trust.CACertificate != "")
+		app := registered.App
 
-		install := registered.InstallURL()
+		dto.Registered = app.Registered()
+		dto.Slug = &app.Slug
+		dto.AllowPrivateAddress = pointer(app.Trust.AllowPrivateAddress)
+		dto.CaCertificateSet = pointer(app.Trust.CACertificate != "")
+		dto.Installed = pointer(registered.Installed)
+
+		install := app.InstallURL()
 		dto.InstallUrl = &install
 
 	case errors.Is(err, entity.ErrSCMAppNotFound):

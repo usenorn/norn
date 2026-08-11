@@ -24,9 +24,12 @@ type appHarness struct {
 	forgeApp   *MockForgeApp
 	authorizer *authorizermock.MockAuthorizer
 	workspace  uuid.UUID
+
+	installations []entity.SCMInstallation
+	installErr    error
 }
 
-func appsFor(t *testing.T, cfg config.SourceControl) appHarness {
+func appsFor(t *testing.T, cfg config.SourceControl) *appHarness {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
@@ -39,6 +42,14 @@ func appsFor(t *testing.T, cfg config.SourceControl) appHarness {
 	authorizer := authorizermock.NewMockAuthorizer(ctrl)
 
 	forges.EXPECT().App(entity.SCMProviderGitHub).Return(forgeApp, nil).AnyTimes()
+	harness := &appHarness{}
+
+	forgeApp.EXPECT().
+		AppInstallations(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(context.Context, entity.SCMApp) ([]entity.SCMInstallation, error) {
+			return harness.installations, harness.installErr
+		}).
+		AnyTimes()
 	forges.EXPECT().Lookup(entity.SCMProviderGitHub).Return(hub, nil).AnyTimes()
 	hub.EXPECT().Endpoint().Return("https://api.github.com").AnyTimes()
 
@@ -53,16 +64,16 @@ func appsFor(t *testing.T, cfg config.SourceControl) appHarness {
 		}, nil).
 		AnyTimes()
 
-	held := NewApps(registry, states, forges, authorizer, cfg)
+	service := NewApps(registry, states, forges, authorizer, cfg)
 
-	return appHarness{
-		service:    held.(*apps),
-		registry:   registry,
-		states:     states,
-		forgeApp:   forgeApp,
-		authorizer: authorizer,
-		workspace:  workspace,
-	}
+	harness.service = service.(*apps)
+	harness.registry = registry
+	harness.states = states
+	harness.forgeApp = forgeApp
+	harness.authorizer = authorizer
+	harness.workspace = workspace
+
+	return harness
 }
 
 func cloudConfig() config.SourceControl {
@@ -109,8 +120,8 @@ func TestTheCloudApplicationIsAdoptedFromConfigurationOnce(t *testing.T) {
 			t.Fatalf("attempt %d: %v", attempt, err)
 		}
 
-		if found.ID != stored.ID {
-			t.Fatalf("attempt %d returned application %s, want %s", attempt, found.ID, stored.ID)
+		if found.App.ID != stored.ID {
+			t.Fatalf("attempt %d returned application %s, want %s", attempt, found.App.ID, stored.ID)
 		}
 	}
 }
@@ -293,5 +304,69 @@ func registerInput(workspaceID uuid.UUID) service.RegisterSCMAppInput {
 		HookURL:      "https://norn.example/v1/source-control/github-app",
 		RedirectURL:  "https://norn.example/v1/source-control/github-app/registered",
 		CallbackURL:  "https://norn.example/v1/source-control/github-app/connected",
+	}
+}
+
+func TestAForgeThatCannotBeAskedNeverHidesTheConnectStep(t *testing.T) {
+	held := appsFor(t, cloudConfig())
+
+	stored := entity.SCMApp{
+		ID:            uuid.New(),
+		Provider:      entity.SCMProviderGitHub,
+		BaseURL:       "https://api.github.com",
+		Slug:          "nornbot",
+		ExternalAppID: "4711",
+	}
+
+	held.registry.EXPECT().
+		Get(gomock.Any(), entity.SCMProviderGitHub, "https://api.github.com").
+		Return(stored, nil)
+
+	held.installErr = errors.New("github is unreachable")
+
+	found, err := held.service.Application(
+		context.Background(), held.workspace, entity.SCMProviderGitHub,
+	)
+	if err != nil {
+		t.Fatalf("Application: %v", err)
+	}
+
+	if !found.Installed {
+		t.Fatal(
+			"a forge Norn could not reach was reported as not installed, so the screen would " +
+				"hide the connect step and strand somebody whose app is installed perfectly well",
+		)
+	}
+}
+
+func TestAnApplicationNobodyHasInstalledSaysSo(t *testing.T) {
+	held := appsFor(t, cloudConfig())
+
+	stored := entity.SCMApp{
+		ID:            uuid.New(),
+		Provider:      entity.SCMProviderGitHub,
+		BaseURL:       "https://api.github.com",
+		Slug:          "nornbot",
+		ExternalAppID: "4711",
+	}
+
+	held.registry.EXPECT().
+		Get(gomock.Any(), entity.SCMProviderGitHub, "https://api.github.com").
+		Return(stored, nil)
+
+	held.installations = []entity.SCMInstallation{}
+
+	found, err := held.service.Application(
+		context.Background(), held.workspace, entity.SCMProviderGitHub,
+	)
+	if err != nil {
+		t.Fatalf("Application: %v", err)
+	}
+
+	if found.Installed {
+		t.Fatal(
+			"an application with no installations reported itself installed, so the screen " +
+				"offers a connect that can only come back empty",
+		)
 	}
 }

@@ -179,20 +179,67 @@
 		</ul>
 	{:else if application.kind === "registered"}
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
-			Norn acts as an installed application rather than as one person. Install it on the
-			repositories you want watched, then sign in to choose the installation. Nobody's personal
-			token is involved, and the connection survives them leaving.
+			Norn acts as an installed application rather than as one person. Nobody's personal token
+			is involved, and the connection survives them leaving.
 		</p>
-		<div class="flex flex-col gap-2 sm:flex-row">
-			<Button disabled={working} onclick={signIn}>
-				{working ? "Opening GitHub…" : "Connect GitHub"}
-			</Button>
-			{#if application.installUrl}
-				<Button variant="secondary" href={application.installUrl} rel="external">
-					Install it on repositories
-				</Button>
-			{/if}
-		</div>
+
+		<ol class="flex flex-col gap-4">
+			<li class="flex min-w-0 gap-3">
+				<span
+					class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-2xs {application.installed
+						? 'border-success/40 text-success'
+						: 'border-line-strong text-ink-900'}"
+					aria-hidden="true"
+				>
+					{application.installed ? "✓" : "1"}
+				</span>
+				<div class="flex min-w-0 flex-1 flex-col gap-1.5">
+					<p class="text-sm leading-normal text-ink-900 text-pretty">
+						{application.installed
+							? "Installed on GitHub. Add or remove repositories there whenever you like."
+							: "Install it on the organisation and repositories you want watched."}
+					</p>
+					{#if application.installUrl}
+						<Button
+							variant={application.installed ? "secondary" : "default"}
+							size="sm"
+							class="w-max"
+							href={application.installUrl}
+							rel="external"
+						>
+							{application.installed ? "Change what it can see" : "Install on GitHub"}
+						</Button>
+					{/if}
+				</div>
+			</li>
+
+			<li class="flex min-w-0 gap-3">
+				<span
+					class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-2xs {application.installed
+						? 'border-line-strong text-ink-900'
+						: 'border-line-subtle text-muted-foreground'}"
+					aria-hidden="true"
+				>
+					2
+				</span>
+				<div class="flex min-w-0 flex-1 flex-col gap-1.5">
+					<p
+						class="text-sm leading-normal text-pretty {application.installed
+							? 'text-ink-900'
+							: 'text-muted-foreground'}"
+					>
+						{application.installed
+							? "Sign in to GitHub and choose which installation Norn acts through."
+							: "Then sign in to choose which installation Norn acts through. There is nothing to choose until it is installed."}
+					</p>
+					{#if application.installed}
+						<Button size="sm" class="w-max" disabled={working} onclick={signIn}>
+							{working ? "Opening GitHub…" : "Connect GitHub"}
+						</Button>
+					{/if}
+				</div>
+			</li>
+		</ol>
 	{:else if application.kind === "unregistered" && application.canRegister}
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			This instance holds no GitHub application yet. Registering one takes you to GitHub to

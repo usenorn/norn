@@ -8423,6 +8423,13 @@ components:
         canRegister: { type: boolean }
         slug: { type: string }
         installUrl: { type: string }
+        installed:
+          type: boolean
+          description: >-
+            Whether the application is installed anywhere yet. Connecting lists the
+            installations a person can reach, so with none there is nothing to choose and the
+            screen offers installing first. True when the forge could not be asked, so an
+            unreachable forge never hides a step.
         allowPrivateAddress: { type: boolean }
         caCertificateSet: { type: boolean }
 

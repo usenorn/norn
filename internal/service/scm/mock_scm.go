@@ -380,6 +380,21 @@ func (m *MockForgeApp) EXPECT() *MockForgeAppMockRecorder {
 	return m.recorder
 }
 
+// AppInstallations mocks base method.
+func (m *MockForgeApp) AppInstallations(ctx context.Context, app entity.SCMApp) ([]entity.SCMInstallation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AppInstallations", ctx, app)
+	ret0, _ := ret[0].([]entity.SCMInstallation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AppInstallations indicates an expected call of AppInstallations.
+func (mr *MockForgeAppMockRecorder) AppInstallations(ctx, app any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppInstallations", reflect.TypeOf((*MockForgeApp)(nil).AppInstallations), ctx, app)
+}
+
 // AuthorizeURL mocks base method.
 func (m *MockForgeApp) AuthorizeURL(app entity.SCMApp, state, redirect string) string {
 	m.ctrl.T.Helper()
@@ -591,10 +606,10 @@ func (m *MockSourceControlApps) EXPECT() *MockSourceControlAppsMockRecorder {
 }
 
 // Application mocks base method.
-func (m *MockSourceControlApps) Application(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider) (entity.SCMApp, error) {
+func (m *MockSourceControlApps) Application(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider) (service.SCMApplication, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Application", ctx, workspaceID, provider)
-	ret0, _ := ret[0].(entity.SCMApp)
+	ret0, _ := ret[0].(service.SCMApplication)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
