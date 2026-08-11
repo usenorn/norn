@@ -76,10 +76,13 @@ type changePayload struct {
 		WorkInProg     bool   `json:"work_in_progress"`
 		MergeStatus    string `json:"merge_status"`
 		MergeCommitSHA string `json:"merge_commit_sha"`
-		DetailedMerge  string `json:"detailed_merge_status"`
-		Action         string `json:"action"`
-		UpdatedAt      string `json:"updated_at"`
-		Author         struct {
+		LastCommit     struct {
+			ID string `json:"id"`
+		} `json:"last_commit"`
+		DetailedMerge string `json:"detailed_merge_status"`
+		Action        string `json:"action"`
+		UpdatedAt     string `json:"updated_at"`
+		Author        struct {
 			Username string `json:"username"`
 		} `json:"author"`
 	} `json:"object_attributes"`
@@ -203,6 +206,7 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 			State:          state,
 			Author:         change.Author.Username,
 			HeadBranch:     change.SourceBranch,
+			HeadSHA:        change.LastCommit.ID,
 			BaseBranch:     change.TargetBranch,
 			UpdatedAt:      updatedAt,
 			MergeCommitSHA: change.MergeCommitSHA,

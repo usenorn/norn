@@ -212,10 +212,15 @@ var AccountRels = struct {
 	OwnerAccountWorkspaceAgents                 string
 	IssuedByWorkspaceBreakGlassCodes            string
 	RequestedByAccountWorkspaceBulkActions      string
+	ActorAccountWorkspaceCheckEvidences         string
+	ScrubbedByAccountWorkspaceCheckEvidences    string
 	ActorAccountWorkspaceCycleScopeChanges      string
 	ClosedByWorkspaceCycles                     string
 	AcceptedByAccountWorkspaceInvitations       string
 	InvitedByAccountWorkspaceInvitations        string
+	ApprovedByAccountWorkspaceIssueChecks       string
+	CreatedByAccountWorkspaceIssueChecks        string
+	ResolvedByAccountWorkspaceIssueChecks       string
 	WorkspaceIssueCommentMentions               string
 	WorkspaceIssueCommentReactions              string
 	DelegatedByAccountWorkspaceIssueDelegations string
@@ -245,10 +250,15 @@ var AccountRels = struct {
 	OwnerAccountWorkspaceAgents:                 "OwnerAccountWorkspaceAgents",
 	IssuedByWorkspaceBreakGlassCodes:            "IssuedByWorkspaceBreakGlassCodes",
 	RequestedByAccountWorkspaceBulkActions:      "RequestedByAccountWorkspaceBulkActions",
+	ActorAccountWorkspaceCheckEvidences:         "ActorAccountWorkspaceCheckEvidences",
+	ScrubbedByAccountWorkspaceCheckEvidences:    "ScrubbedByAccountWorkspaceCheckEvidences",
 	ActorAccountWorkspaceCycleScopeChanges:      "ActorAccountWorkspaceCycleScopeChanges",
 	ClosedByWorkspaceCycles:                     "ClosedByWorkspaceCycles",
 	AcceptedByAccountWorkspaceInvitations:       "AcceptedByAccountWorkspaceInvitations",
 	InvitedByAccountWorkspaceInvitations:        "InvitedByAccountWorkspaceInvitations",
+	ApprovedByAccountWorkspaceIssueChecks:       "ApprovedByAccountWorkspaceIssueChecks",
+	CreatedByAccountWorkspaceIssueChecks:        "CreatedByAccountWorkspaceIssueChecks",
+	ResolvedByAccountWorkspaceIssueChecks:       "ResolvedByAccountWorkspaceIssueChecks",
 	WorkspaceIssueCommentMentions:               "WorkspaceIssueCommentMentions",
 	WorkspaceIssueCommentReactions:              "WorkspaceIssueCommentReactions",
 	DelegatedByAccountWorkspaceIssueDelegations: "DelegatedByAccountWorkspaceIssueDelegations",
@@ -281,10 +291,15 @@ type accountR struct {
 	OwnerAccountWorkspaceAgents                 WorkspaceAgentSlice                `boil:"OwnerAccountWorkspaceAgents" json:"OwnerAccountWorkspaceAgents" toml:"OwnerAccountWorkspaceAgents" yaml:"OwnerAccountWorkspaceAgents"`
 	IssuedByWorkspaceBreakGlassCodes            WorkspaceBreakGlassCodeSlice       `boil:"IssuedByWorkspaceBreakGlassCodes" json:"IssuedByWorkspaceBreakGlassCodes" toml:"IssuedByWorkspaceBreakGlassCodes" yaml:"IssuedByWorkspaceBreakGlassCodes"`
 	RequestedByAccountWorkspaceBulkActions      WorkspaceBulkActionSlice           `boil:"RequestedByAccountWorkspaceBulkActions" json:"RequestedByAccountWorkspaceBulkActions" toml:"RequestedByAccountWorkspaceBulkActions" yaml:"RequestedByAccountWorkspaceBulkActions"`
+	ActorAccountWorkspaceCheckEvidences         WorkspaceCheckEvidenceSlice        `boil:"ActorAccountWorkspaceCheckEvidences" json:"ActorAccountWorkspaceCheckEvidences" toml:"ActorAccountWorkspaceCheckEvidences" yaml:"ActorAccountWorkspaceCheckEvidences"`
+	ScrubbedByAccountWorkspaceCheckEvidences    WorkspaceCheckEvidenceSlice        `boil:"ScrubbedByAccountWorkspaceCheckEvidences" json:"ScrubbedByAccountWorkspaceCheckEvidences" toml:"ScrubbedByAccountWorkspaceCheckEvidences" yaml:"ScrubbedByAccountWorkspaceCheckEvidences"`
 	ActorAccountWorkspaceCycleScopeChanges      WorkspaceCycleScopeChangeSlice     `boil:"ActorAccountWorkspaceCycleScopeChanges" json:"ActorAccountWorkspaceCycleScopeChanges" toml:"ActorAccountWorkspaceCycleScopeChanges" yaml:"ActorAccountWorkspaceCycleScopeChanges"`
 	ClosedByWorkspaceCycles                     WorkspaceCycleSlice                `boil:"ClosedByWorkspaceCycles" json:"ClosedByWorkspaceCycles" toml:"ClosedByWorkspaceCycles" yaml:"ClosedByWorkspaceCycles"`
 	AcceptedByAccountWorkspaceInvitations       WorkspaceInvitationSlice           `boil:"AcceptedByAccountWorkspaceInvitations" json:"AcceptedByAccountWorkspaceInvitations" toml:"AcceptedByAccountWorkspaceInvitations" yaml:"AcceptedByAccountWorkspaceInvitations"`
 	InvitedByAccountWorkspaceInvitations        WorkspaceInvitationSlice           `boil:"InvitedByAccountWorkspaceInvitations" json:"InvitedByAccountWorkspaceInvitations" toml:"InvitedByAccountWorkspaceInvitations" yaml:"InvitedByAccountWorkspaceInvitations"`
+	ApprovedByAccountWorkspaceIssueChecks       WorkspaceIssueCheckSlice           `boil:"ApprovedByAccountWorkspaceIssueChecks" json:"ApprovedByAccountWorkspaceIssueChecks" toml:"ApprovedByAccountWorkspaceIssueChecks" yaml:"ApprovedByAccountWorkspaceIssueChecks"`
+	CreatedByAccountWorkspaceIssueChecks        WorkspaceIssueCheckSlice           `boil:"CreatedByAccountWorkspaceIssueChecks" json:"CreatedByAccountWorkspaceIssueChecks" toml:"CreatedByAccountWorkspaceIssueChecks" yaml:"CreatedByAccountWorkspaceIssueChecks"`
+	ResolvedByAccountWorkspaceIssueChecks       WorkspaceIssueCheckSlice           `boil:"ResolvedByAccountWorkspaceIssueChecks" json:"ResolvedByAccountWorkspaceIssueChecks" toml:"ResolvedByAccountWorkspaceIssueChecks" yaml:"ResolvedByAccountWorkspaceIssueChecks"`
 	WorkspaceIssueCommentMentions               WorkspaceIssueCommentMentionSlice  `boil:"WorkspaceIssueCommentMentions" json:"WorkspaceIssueCommentMentions" toml:"WorkspaceIssueCommentMentions" yaml:"WorkspaceIssueCommentMentions"`
 	WorkspaceIssueCommentReactions              WorkspaceIssueCommentReactionSlice `boil:"WorkspaceIssueCommentReactions" json:"WorkspaceIssueCommentReactions" toml:"WorkspaceIssueCommentReactions" yaml:"WorkspaceIssueCommentReactions"`
 	DelegatedByAccountWorkspaceIssueDelegations WorkspaceIssueDelegationSlice      `boil:"DelegatedByAccountWorkspaceIssueDelegations" json:"DelegatedByAccountWorkspaceIssueDelegations" toml:"DelegatedByAccountWorkspaceIssueDelegations" yaml:"DelegatedByAccountWorkspaceIssueDelegations"`
@@ -485,6 +500,38 @@ func (r *accountR) GetRequestedByAccountWorkspaceBulkActions() WorkspaceBulkActi
 	return r.RequestedByAccountWorkspaceBulkActions
 }
 
+func (o *Account) GetActorAccountWorkspaceCheckEvidences() WorkspaceCheckEvidenceSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetActorAccountWorkspaceCheckEvidences()
+}
+
+func (r *accountR) GetActorAccountWorkspaceCheckEvidences() WorkspaceCheckEvidenceSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.ActorAccountWorkspaceCheckEvidences
+}
+
+func (o *Account) GetScrubbedByAccountWorkspaceCheckEvidences() WorkspaceCheckEvidenceSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetScrubbedByAccountWorkspaceCheckEvidences()
+}
+
+func (r *accountR) GetScrubbedByAccountWorkspaceCheckEvidences() WorkspaceCheckEvidenceSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.ScrubbedByAccountWorkspaceCheckEvidences
+}
+
 func (o *Account) GetActorAccountWorkspaceCycleScopeChanges() WorkspaceCycleScopeChangeSlice {
 	if o == nil {
 		return nil
@@ -547,6 +594,54 @@ func (r *accountR) GetInvitedByAccountWorkspaceInvitations() WorkspaceInvitation
 	}
 
 	return r.InvitedByAccountWorkspaceInvitations
+}
+
+func (o *Account) GetApprovedByAccountWorkspaceIssueChecks() WorkspaceIssueCheckSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetApprovedByAccountWorkspaceIssueChecks()
+}
+
+func (r *accountR) GetApprovedByAccountWorkspaceIssueChecks() WorkspaceIssueCheckSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.ApprovedByAccountWorkspaceIssueChecks
+}
+
+func (o *Account) GetCreatedByAccountWorkspaceIssueChecks() WorkspaceIssueCheckSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetCreatedByAccountWorkspaceIssueChecks()
+}
+
+func (r *accountR) GetCreatedByAccountWorkspaceIssueChecks() WorkspaceIssueCheckSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.CreatedByAccountWorkspaceIssueChecks
+}
+
+func (o *Account) GetResolvedByAccountWorkspaceIssueChecks() WorkspaceIssueCheckSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetResolvedByAccountWorkspaceIssueChecks()
+}
+
+func (r *accountR) GetResolvedByAccountWorkspaceIssueChecks() WorkspaceIssueCheckSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.ResolvedByAccountWorkspaceIssueChecks
 }
 
 func (o *Account) GetWorkspaceIssueCommentMentions() WorkspaceIssueCommentMentionSlice {
@@ -1288,6 +1383,34 @@ func (o *Account) RequestedByAccountWorkspaceBulkActions(mods ...qm.QueryMod) wo
 	return WorkspaceBulkActions(queryMods...)
 }
 
+// ActorAccountWorkspaceCheckEvidences retrieves all the workspace_check_evidence's WorkspaceCheckEvidences with an executor via actor_account_id column.
+func (o *Account) ActorAccountWorkspaceCheckEvidences(mods ...qm.QueryMod) workspaceCheckEvidenceQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_check_evidence\".\"actor_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceCheckEvidences(queryMods...)
+}
+
+// ScrubbedByAccountWorkspaceCheckEvidences retrieves all the workspace_check_evidence's WorkspaceCheckEvidences with an executor via scrubbed_by_account_id column.
+func (o *Account) ScrubbedByAccountWorkspaceCheckEvidences(mods ...qm.QueryMod) workspaceCheckEvidenceQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_check_evidence\".\"scrubbed_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceCheckEvidences(queryMods...)
+}
+
 // ActorAccountWorkspaceCycleScopeChanges retrieves all the workspace_cycle_scope_change's WorkspaceCycleScopeChanges with an executor via actor_account_id column.
 func (o *Account) ActorAccountWorkspaceCycleScopeChanges(mods ...qm.QueryMod) workspaceCycleScopeChangeQuery {
 	var queryMods []qm.QueryMod
@@ -1342,6 +1465,48 @@ func (o *Account) InvitedByAccountWorkspaceInvitations(mods ...qm.QueryMod) work
 	)
 
 	return WorkspaceInvitations(queryMods...)
+}
+
+// ApprovedByAccountWorkspaceIssueChecks retrieves all the workspace_issue_check's WorkspaceIssueChecks with an executor via approved_by_account_id column.
+func (o *Account) ApprovedByAccountWorkspaceIssueChecks(mods ...qm.QueryMod) workspaceIssueCheckQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_checks\".\"approved_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueChecks(queryMods...)
+}
+
+// CreatedByAccountWorkspaceIssueChecks retrieves all the workspace_issue_check's WorkspaceIssueChecks with an executor via created_by_account_id column.
+func (o *Account) CreatedByAccountWorkspaceIssueChecks(mods ...qm.QueryMod) workspaceIssueCheckQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_checks\".\"created_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueChecks(queryMods...)
+}
+
+// ResolvedByAccountWorkspaceIssueChecks retrieves all the workspace_issue_check's WorkspaceIssueChecks with an executor via resolved_by_account_id column.
+func (o *Account) ResolvedByAccountWorkspaceIssueChecks(mods ...qm.QueryMod) workspaceIssueCheckQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_checks\".\"resolved_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueChecks(queryMods...)
 }
 
 // WorkspaceIssueCommentMentions retrieves all the workspace_issue_comment_mention's WorkspaceIssueCommentMentions with an executor.
@@ -2829,6 +2994,232 @@ func (accountL) LoadRequestedByAccountWorkspaceBulkActions(ctx context.Context, 
 	return nil
 }
 
+// LoadActorAccountWorkspaceCheckEvidences allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadActorAccountWorkspaceCheckEvidences(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_check_evidence`),
+		qm.WhereIn(`workspace_check_evidence.actor_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_check_evidence")
+	}
+
+	var resultSlice []*WorkspaceCheckEvidence
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_check_evidence")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_check_evidence")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_check_evidence")
+	}
+
+	if len(workspaceCheckEvidenceAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ActorAccountWorkspaceCheckEvidences = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceCheckEvidenceR{}
+			}
+			foreign.R.ActorAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ActorAccountID) {
+				local.R.ActorAccountWorkspaceCheckEvidences = append(local.R.ActorAccountWorkspaceCheckEvidences, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceCheckEvidenceR{}
+				}
+				foreign.R.ActorAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadScrubbedByAccountWorkspaceCheckEvidences allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadScrubbedByAccountWorkspaceCheckEvidences(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_check_evidence`),
+		qm.WhereIn(`workspace_check_evidence.scrubbed_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_check_evidence")
+	}
+
+	var resultSlice []*WorkspaceCheckEvidence
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_check_evidence")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_check_evidence")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_check_evidence")
+	}
+
+	if len(workspaceCheckEvidenceAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ScrubbedByAccountWorkspaceCheckEvidences = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceCheckEvidenceR{}
+			}
+			foreign.R.ScrubbedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ScrubbedByAccountID) {
+				local.R.ScrubbedByAccountWorkspaceCheckEvidences = append(local.R.ScrubbedByAccountWorkspaceCheckEvidences, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceCheckEvidenceR{}
+				}
+				foreign.R.ScrubbedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadActorAccountWorkspaceCycleScopeChanges allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (accountL) LoadActorAccountWorkspaceCycleScopeChanges(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
@@ -3273,6 +3664,345 @@ func (accountL) LoadInvitedByAccountWorkspaceInvitations(ctx context.Context, e 
 					foreign.R = &workspaceInvitationR{}
 				}
 				foreign.R.InvitedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadApprovedByAccountWorkspaceIssueChecks allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadApprovedByAccountWorkspaceIssueChecks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_checks`),
+		qm.WhereIn(`workspace_issue_checks.approved_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_checks")
+	}
+
+	var resultSlice []*WorkspaceIssueCheck
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_checks")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_checks")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_checks")
+	}
+
+	if len(workspaceIssueCheckAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ApprovedByAccountWorkspaceIssueChecks = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueCheckR{}
+			}
+			foreign.R.ApprovedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ApprovedByAccountID) {
+				local.R.ApprovedByAccountWorkspaceIssueChecks = append(local.R.ApprovedByAccountWorkspaceIssueChecks, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueCheckR{}
+				}
+				foreign.R.ApprovedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadCreatedByAccountWorkspaceIssueChecks allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadCreatedByAccountWorkspaceIssueChecks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_checks`),
+		qm.WhereIn(`workspace_issue_checks.created_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_checks")
+	}
+
+	var resultSlice []*WorkspaceIssueCheck
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_checks")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_checks")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_checks")
+	}
+
+	if len(workspaceIssueCheckAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.CreatedByAccountWorkspaceIssueChecks = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueCheckR{}
+			}
+			foreign.R.CreatedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.CreatedByAccountID) {
+				local.R.CreatedByAccountWorkspaceIssueChecks = append(local.R.CreatedByAccountWorkspaceIssueChecks, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueCheckR{}
+				}
+				foreign.R.CreatedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadResolvedByAccountWorkspaceIssueChecks allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadResolvedByAccountWorkspaceIssueChecks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_checks`),
+		qm.WhereIn(`workspace_issue_checks.resolved_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_checks")
+	}
+
+	var resultSlice []*WorkspaceIssueCheck
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_checks")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_checks")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_checks")
+	}
+
+	if len(workspaceIssueCheckAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ResolvedByAccountWorkspaceIssueChecks = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueCheckR{}
+			}
+			foreign.R.ResolvedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ResolvedByAccountID) {
+				local.R.ResolvedByAccountWorkspaceIssueChecks = append(local.R.ResolvedByAccountWorkspaceIssueChecks, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueCheckR{}
+				}
+				foreign.R.ResolvedByAccount = local
 				break
 			}
 		}
@@ -6078,6 +6808,260 @@ func (o *Account) RemoveRequestedByAccountWorkspaceBulkActions(ctx context.Conte
 	return nil
 }
 
+// AddActorAccountWorkspaceCheckEvidences adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.ActorAccountWorkspaceCheckEvidences.
+// Sets related.R.ActorAccount appropriately.
+func (o *Account) AddActorAccountWorkspaceCheckEvidences(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCheckEvidence) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ActorAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_check_evidence\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"actor_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceCheckEvidencePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ActorAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			ActorAccountWorkspaceCheckEvidences: related,
+		}
+	} else {
+		o.R.ActorAccountWorkspaceCheckEvidences = append(o.R.ActorAccountWorkspaceCheckEvidences, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceCheckEvidenceR{
+				ActorAccount: o,
+			}
+		} else {
+			rel.R.ActorAccount = o
+		}
+	}
+	return nil
+}
+
+// SetActorAccountWorkspaceCheckEvidences removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.ActorAccount's ActorAccountWorkspaceCheckEvidences accordingly.
+// Replaces o.R.ActorAccountWorkspaceCheckEvidences with related.
+// Sets related.R.ActorAccount's ActorAccountWorkspaceCheckEvidences accordingly.
+func (o *Account) SetActorAccountWorkspaceCheckEvidences(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCheckEvidence) error {
+	query := "update \"workspace_check_evidence\" set \"actor_account_id\" = null where \"actor_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ActorAccountWorkspaceCheckEvidences {
+			queries.SetScanner(&rel.ActorAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.ActorAccount = nil
+		}
+		o.R.ActorAccountWorkspaceCheckEvidences = nil
+	}
+
+	return o.AddActorAccountWorkspaceCheckEvidences(ctx, exec, insert, related...)
+}
+
+// RemoveActorAccountWorkspaceCheckEvidences relationships from objects passed in.
+// Removes related items from R.ActorAccountWorkspaceCheckEvidences (uses pointer comparison, removal does not keep order)
+// Sets related.R.ActorAccount.
+func (o *Account) RemoveActorAccountWorkspaceCheckEvidences(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceCheckEvidence) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ActorAccountID, nil)
+		if rel.R != nil {
+			rel.R.ActorAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("actor_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ActorAccountWorkspaceCheckEvidences {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ActorAccountWorkspaceCheckEvidences)
+			if ln > 1 && i < ln-1 {
+				o.R.ActorAccountWorkspaceCheckEvidences[i] = o.R.ActorAccountWorkspaceCheckEvidences[ln-1]
+			}
+			o.R.ActorAccountWorkspaceCheckEvidences = o.R.ActorAccountWorkspaceCheckEvidences[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddScrubbedByAccountWorkspaceCheckEvidences adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.ScrubbedByAccountWorkspaceCheckEvidences.
+// Sets related.R.ScrubbedByAccount appropriately.
+func (o *Account) AddScrubbedByAccountWorkspaceCheckEvidences(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCheckEvidence) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ScrubbedByAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_check_evidence\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"scrubbed_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceCheckEvidencePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ScrubbedByAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			ScrubbedByAccountWorkspaceCheckEvidences: related,
+		}
+	} else {
+		o.R.ScrubbedByAccountWorkspaceCheckEvidences = append(o.R.ScrubbedByAccountWorkspaceCheckEvidences, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceCheckEvidenceR{
+				ScrubbedByAccount: o,
+			}
+		} else {
+			rel.R.ScrubbedByAccount = o
+		}
+	}
+	return nil
+}
+
+// SetScrubbedByAccountWorkspaceCheckEvidences removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.ScrubbedByAccount's ScrubbedByAccountWorkspaceCheckEvidences accordingly.
+// Replaces o.R.ScrubbedByAccountWorkspaceCheckEvidences with related.
+// Sets related.R.ScrubbedByAccount's ScrubbedByAccountWorkspaceCheckEvidences accordingly.
+func (o *Account) SetScrubbedByAccountWorkspaceCheckEvidences(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCheckEvidence) error {
+	query := "update \"workspace_check_evidence\" set \"scrubbed_by_account_id\" = null where \"scrubbed_by_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ScrubbedByAccountWorkspaceCheckEvidences {
+			queries.SetScanner(&rel.ScrubbedByAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.ScrubbedByAccount = nil
+		}
+		o.R.ScrubbedByAccountWorkspaceCheckEvidences = nil
+	}
+
+	return o.AddScrubbedByAccountWorkspaceCheckEvidences(ctx, exec, insert, related...)
+}
+
+// RemoveScrubbedByAccountWorkspaceCheckEvidences relationships from objects passed in.
+// Removes related items from R.ScrubbedByAccountWorkspaceCheckEvidences (uses pointer comparison, removal does not keep order)
+// Sets related.R.ScrubbedByAccount.
+func (o *Account) RemoveScrubbedByAccountWorkspaceCheckEvidences(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceCheckEvidence) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ScrubbedByAccountID, nil)
+		if rel.R != nil {
+			rel.R.ScrubbedByAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("scrubbed_by_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ScrubbedByAccountWorkspaceCheckEvidences {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ScrubbedByAccountWorkspaceCheckEvidences)
+			if ln > 1 && i < ln-1 {
+				o.R.ScrubbedByAccountWorkspaceCheckEvidences[i] = o.R.ScrubbedByAccountWorkspaceCheckEvidences[ln-1]
+			}
+			o.R.ScrubbedByAccountWorkspaceCheckEvidences = o.R.ScrubbedByAccountWorkspaceCheckEvidences[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
 // AddActorAccountWorkspaceCycleScopeChanges adds the given related objects to the existing relationships
 // of the account, optionally inserting them as new records.
 // Appends related to o.R.ActorAccountWorkspaceCycleScopeChanges.
@@ -6579,6 +7563,387 @@ func (o *Account) RemoveInvitedByAccountWorkspaceInvitations(ctx context.Context
 				o.R.InvitedByAccountWorkspaceInvitations[i] = o.R.InvitedByAccountWorkspaceInvitations[ln-1]
 			}
 			o.R.InvitedByAccountWorkspaceInvitations = o.R.InvitedByAccountWorkspaceInvitations[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddApprovedByAccountWorkspaceIssueChecks adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.ApprovedByAccountWorkspaceIssueChecks.
+// Sets related.R.ApprovedByAccount appropriately.
+func (o *Account) AddApprovedByAccountWorkspaceIssueChecks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCheck) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ApprovedByAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_checks\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"approved_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueCheckPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ApprovedByAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			ApprovedByAccountWorkspaceIssueChecks: related,
+		}
+	} else {
+		o.R.ApprovedByAccountWorkspaceIssueChecks = append(o.R.ApprovedByAccountWorkspaceIssueChecks, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueCheckR{
+				ApprovedByAccount: o,
+			}
+		} else {
+			rel.R.ApprovedByAccount = o
+		}
+	}
+	return nil
+}
+
+// SetApprovedByAccountWorkspaceIssueChecks removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.ApprovedByAccount's ApprovedByAccountWorkspaceIssueChecks accordingly.
+// Replaces o.R.ApprovedByAccountWorkspaceIssueChecks with related.
+// Sets related.R.ApprovedByAccount's ApprovedByAccountWorkspaceIssueChecks accordingly.
+func (o *Account) SetApprovedByAccountWorkspaceIssueChecks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCheck) error {
+	query := "update \"workspace_issue_checks\" set \"approved_by_account_id\" = null where \"approved_by_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ApprovedByAccountWorkspaceIssueChecks {
+			queries.SetScanner(&rel.ApprovedByAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.ApprovedByAccount = nil
+		}
+		o.R.ApprovedByAccountWorkspaceIssueChecks = nil
+	}
+
+	return o.AddApprovedByAccountWorkspaceIssueChecks(ctx, exec, insert, related...)
+}
+
+// RemoveApprovedByAccountWorkspaceIssueChecks relationships from objects passed in.
+// Removes related items from R.ApprovedByAccountWorkspaceIssueChecks (uses pointer comparison, removal does not keep order)
+// Sets related.R.ApprovedByAccount.
+func (o *Account) RemoveApprovedByAccountWorkspaceIssueChecks(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceIssueCheck) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ApprovedByAccountID, nil)
+		if rel.R != nil {
+			rel.R.ApprovedByAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("approved_by_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ApprovedByAccountWorkspaceIssueChecks {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ApprovedByAccountWorkspaceIssueChecks)
+			if ln > 1 && i < ln-1 {
+				o.R.ApprovedByAccountWorkspaceIssueChecks[i] = o.R.ApprovedByAccountWorkspaceIssueChecks[ln-1]
+			}
+			o.R.ApprovedByAccountWorkspaceIssueChecks = o.R.ApprovedByAccountWorkspaceIssueChecks[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddCreatedByAccountWorkspaceIssueChecks adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.CreatedByAccountWorkspaceIssueChecks.
+// Sets related.R.CreatedByAccount appropriately.
+func (o *Account) AddCreatedByAccountWorkspaceIssueChecks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCheck) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.CreatedByAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_checks\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"created_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueCheckPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.CreatedByAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			CreatedByAccountWorkspaceIssueChecks: related,
+		}
+	} else {
+		o.R.CreatedByAccountWorkspaceIssueChecks = append(o.R.CreatedByAccountWorkspaceIssueChecks, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueCheckR{
+				CreatedByAccount: o,
+			}
+		} else {
+			rel.R.CreatedByAccount = o
+		}
+	}
+	return nil
+}
+
+// SetCreatedByAccountWorkspaceIssueChecks removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.CreatedByAccount's CreatedByAccountWorkspaceIssueChecks accordingly.
+// Replaces o.R.CreatedByAccountWorkspaceIssueChecks with related.
+// Sets related.R.CreatedByAccount's CreatedByAccountWorkspaceIssueChecks accordingly.
+func (o *Account) SetCreatedByAccountWorkspaceIssueChecks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCheck) error {
+	query := "update \"workspace_issue_checks\" set \"created_by_account_id\" = null where \"created_by_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.CreatedByAccountWorkspaceIssueChecks {
+			queries.SetScanner(&rel.CreatedByAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.CreatedByAccount = nil
+		}
+		o.R.CreatedByAccountWorkspaceIssueChecks = nil
+	}
+
+	return o.AddCreatedByAccountWorkspaceIssueChecks(ctx, exec, insert, related...)
+}
+
+// RemoveCreatedByAccountWorkspaceIssueChecks relationships from objects passed in.
+// Removes related items from R.CreatedByAccountWorkspaceIssueChecks (uses pointer comparison, removal does not keep order)
+// Sets related.R.CreatedByAccount.
+func (o *Account) RemoveCreatedByAccountWorkspaceIssueChecks(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceIssueCheck) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.CreatedByAccountID, nil)
+		if rel.R != nil {
+			rel.R.CreatedByAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("created_by_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.CreatedByAccountWorkspaceIssueChecks {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.CreatedByAccountWorkspaceIssueChecks)
+			if ln > 1 && i < ln-1 {
+				o.R.CreatedByAccountWorkspaceIssueChecks[i] = o.R.CreatedByAccountWorkspaceIssueChecks[ln-1]
+			}
+			o.R.CreatedByAccountWorkspaceIssueChecks = o.R.CreatedByAccountWorkspaceIssueChecks[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddResolvedByAccountWorkspaceIssueChecks adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.ResolvedByAccountWorkspaceIssueChecks.
+// Sets related.R.ResolvedByAccount appropriately.
+func (o *Account) AddResolvedByAccountWorkspaceIssueChecks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCheck) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ResolvedByAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_checks\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"resolved_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueCheckPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ResolvedByAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			ResolvedByAccountWorkspaceIssueChecks: related,
+		}
+	} else {
+		o.R.ResolvedByAccountWorkspaceIssueChecks = append(o.R.ResolvedByAccountWorkspaceIssueChecks, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueCheckR{
+				ResolvedByAccount: o,
+			}
+		} else {
+			rel.R.ResolvedByAccount = o
+		}
+	}
+	return nil
+}
+
+// SetResolvedByAccountWorkspaceIssueChecks removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.ResolvedByAccount's ResolvedByAccountWorkspaceIssueChecks accordingly.
+// Replaces o.R.ResolvedByAccountWorkspaceIssueChecks with related.
+// Sets related.R.ResolvedByAccount's ResolvedByAccountWorkspaceIssueChecks accordingly.
+func (o *Account) SetResolvedByAccountWorkspaceIssueChecks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCheck) error {
+	query := "update \"workspace_issue_checks\" set \"resolved_by_account_id\" = null where \"resolved_by_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ResolvedByAccountWorkspaceIssueChecks {
+			queries.SetScanner(&rel.ResolvedByAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.ResolvedByAccount = nil
+		}
+		o.R.ResolvedByAccountWorkspaceIssueChecks = nil
+	}
+
+	return o.AddResolvedByAccountWorkspaceIssueChecks(ctx, exec, insert, related...)
+}
+
+// RemoveResolvedByAccountWorkspaceIssueChecks relationships from objects passed in.
+// Removes related items from R.ResolvedByAccountWorkspaceIssueChecks (uses pointer comparison, removal does not keep order)
+// Sets related.R.ResolvedByAccount.
+func (o *Account) RemoveResolvedByAccountWorkspaceIssueChecks(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceIssueCheck) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ResolvedByAccountID, nil)
+		if rel.R != nil {
+			rel.R.ResolvedByAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("resolved_by_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ResolvedByAccountWorkspaceIssueChecks {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ResolvedByAccountWorkspaceIssueChecks)
+			if ln > 1 && i < ln-1 {
+				o.R.ResolvedByAccountWorkspaceIssueChecks[i] = o.R.ResolvedByAccountWorkspaceIssueChecks[ln-1]
+			}
+			o.R.ResolvedByAccountWorkspaceIssueChecks = o.R.ResolvedByAccountWorkspaceIssueChecks[:ln-1]
 			break
 		}
 	}

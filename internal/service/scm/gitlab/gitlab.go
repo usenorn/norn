@@ -239,6 +239,7 @@ type changeBody struct {
 	MergeCommitSHA string     `json:"merge_commit_sha"`
 	DetailedMerge  string     `json:"detailed_merge_status"`
 	SourceBranch   string     `json:"source_branch"`
+	SHA            string     `json:"sha"`
 	TargetBranch   string     `json:"target_branch"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 	MergedAt       *time.Time `json:"merged_at"`
@@ -305,6 +306,7 @@ func (f *Forge) Changes(
 			ReviewsMoved:   true,
 			Author:         change.Author.Username,
 			HeadBranch:     change.SourceBranch,
+			HeadSHA:        change.SHA,
 			BaseBranch:     change.TargetBranch,
 			UpdatedAt:      change.UpdatedAt,
 			MergedAt:       change.MergedAt,

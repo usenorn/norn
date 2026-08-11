@@ -73,6 +73,21 @@ func (mr *MockIssueDelegationMockRecorder) ListByIssue(ctx, workspaceID, issueID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByIssue", reflect.TypeOf((*MockIssueDelegation)(nil).ListByIssue), ctx, workspaceID, issueID)
 }
 
+// Open mocks base method.
+func (m *MockIssueDelegation) Open(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueDelegation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Open", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].(entity.IssueDelegation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Open indicates an expected call of Open.
+func (mr *MockIssueDelegationMockRecorder) Open(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Open", reflect.TypeOf((*MockIssueDelegation)(nil).Open), ctx, workspaceID, issueID)
+}
+
 // Recall mocks base method.
 func (m *MockIssueDelegation) Recall(ctx context.Context, workspaceID uuid.UUID, recall repository.RecallDelegation) (entity.IssueDelegation, error) {
 	m.ctrl.T.Helper()

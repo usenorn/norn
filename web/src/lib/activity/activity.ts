@@ -96,6 +96,20 @@ export function changeLine(change: ActivityChange): string {
 			return `Handed this to ${change.toValue}`;
 		case "recalled":
 			return `Took this back from ${change.fromValue}`;
+		case "check_added":
+			return `Added a check: ${change.toValue}`;
+		case "check_removed":
+			return `Removed the check: ${change.toValue}`;
+		case "check_approved":
+			return `Approved the check: ${change.toValue}`;
+		case "check_declined":
+			return `Declined the check: ${change.toValue}`;
+		case "check_waived":
+			return `Waived the check: ${change.toValue}`;
+		case "check_gap_declared":
+			return `Declared a gap against: ${change.toValue}`;
+		case "evidence_added":
+			return `Filed evidence for: ${change.toValue}`;
 		case "triaged":
 			return triageLine(change);
 		case "property_changed":

@@ -35,6 +35,10 @@ INSERT INTO workspace_issue_delegations (
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
+const openDelegationQuery = `
+SELECT` + delegationColumns + delegationJoins + `
+WHERE d.workspace_id = $1 AND d.issue_id = $2 AND d.recalled_at IS NULL`
+
 const delegationsByIssueQuery = `
 SELECT` + delegationColumns + delegationJoins + `
 WHERE d.workspace_id = $1 AND d.issue_id = $2
@@ -128,6 +132,27 @@ func scanDelegation(row scanner) (entity.IssueDelegation, error) {
 		if delegation.RecalledByAccountID, err = uuid.Parse(recalledBy); err != nil {
 			return entity.IssueDelegation{}, fmt.Errorf("parse delegation recaller id: %w", err)
 		}
+	}
+
+	return delegation, nil
+}
+
+func (r *delegationRepository) Open(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) (entity.IssueDelegation, error) {
+	delegation, err := scanDelegation(r.db.Querier(ctx).QueryRowContext(
+		ctx,
+		openDelegationQuery,
+		workspaceID.String(),
+		issueID.String(),
+	))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.IssueDelegation{}, entity.ErrIssueDelegationNotFound
+		}
+
+		return entity.IssueDelegation{}, fmt.Errorf("find open issue delegation: %w", err)
 	}
 
 	return delegation, nil

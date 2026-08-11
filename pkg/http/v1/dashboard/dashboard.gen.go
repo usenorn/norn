@@ -135,6 +135,12 @@ const (
 	ActivityKindArchived          ActivityKind = "archived"
 	ActivityKindAttachmentAdded   ActivityKind = "attachment_added"
 	ActivityKindAttachmentRemoved ActivityKind = "attachment_removed"
+	ActivityKindCheckAdded        ActivityKind = "check_added"
+	ActivityKindCheckApproved     ActivityKind = "check_approved"
+	ActivityKindCheckDeclined     ActivityKind = "check_declined"
+	ActivityKindCheckGapDeclared  ActivityKind = "check_gap_declared"
+	ActivityKindCheckRemoved      ActivityKind = "check_removed"
+	ActivityKindCheckWaived       ActivityKind = "check_waived"
 	ActivityKindChildAdded        ActivityKind = "child_added"
 	ActivityKindChildRemoved      ActivityKind = "child_removed"
 	ActivityKindCodeLinked        ActivityKind = "code_linked"
@@ -144,6 +150,7 @@ const (
 	ActivityKindCreated           ActivityKind = "created"
 	ActivityKindDelegated         ActivityKind = "delegated"
 	ActivityKindDeleted           ActivityKind = "deleted"
+	ActivityKindEvidenceAdded     ActivityKind = "evidence_added"
 	ActivityKindMemberAdded       ActivityKind = "member_added"
 	ActivityKindMemberRemoved     ActivityKind = "member_removed"
 	ActivityKindPropertyChanged   ActivityKind = "property_changed"
@@ -166,6 +173,18 @@ func (e ActivityKind) Valid() bool {
 		return true
 	case ActivityKindAttachmentRemoved:
 		return true
+	case ActivityKindCheckAdded:
+		return true
+	case ActivityKindCheckApproved:
+		return true
+	case ActivityKindCheckDeclined:
+		return true
+	case ActivityKindCheckGapDeclared:
+		return true
+	case ActivityKindCheckRemoved:
+		return true
+	case ActivityKindCheckWaived:
+		return true
 	case ActivityKindChildAdded:
 		return true
 	case ActivityKindChildRemoved:
@@ -183,6 +202,8 @@ func (e ActivityKind) Valid() bool {
 	case ActivityKindDelegated:
 		return true
 	case ActivityKindDeleted:
+		return true
+	case ActivityKindEvidenceAdded:
 		return true
 	case ActivityKindMemberAdded:
 		return true
@@ -646,6 +667,105 @@ func (e BulkOutcome) Valid() bool {
 	}
 }
 
+// Defines values for CheckApproval.
+const (
+	CheckApprovalApproved CheckApproval = "approved"
+	CheckApprovalDeclined CheckApproval = "declined"
+	CheckApprovalPending  CheckApproval = "pending"
+)
+
+// Valid indicates whether the value is a known member of the CheckApproval enum.
+func (e CheckApproval) Valid() bool {
+	switch e {
+	case CheckApprovalApproved:
+		return true
+	case CheckApprovalDeclined:
+		return true
+	case CheckApprovalPending:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CheckConflictProblemCode.
+const (
+	CheckConflictProblemCodeCheckDecided             CheckConflictProblemCode = "check_decided"
+	CheckConflictProblemCodeCheckDecisionNotPersonal CheckConflictProblemCode = "check_decision_not_personal"
+	CheckConflictProblemCodeCheckDeclined            CheckConflictProblemCode = "check_declined"
+	CheckConflictProblemCodeCheckLimitReached        CheckConflictProblemCode = "check_limit_reached"
+	CheckConflictProblemCodeCheckSettled             CheckConflictProblemCode = "check_settled"
+	CheckConflictProblemCodeCheckWaiverNotPersonal   CheckConflictProblemCode = "check_waiver_not_personal"
+	CheckConflictProblemCodeEvidenceEmpty            CheckConflictProblemCode = "evidence_empty"
+)
+
+// Valid indicates whether the value is a known member of the CheckConflictProblemCode enum.
+func (e CheckConflictProblemCode) Valid() bool {
+	switch e {
+	case CheckConflictProblemCodeCheckDecided:
+		return true
+	case CheckConflictProblemCodeCheckDecisionNotPersonal:
+		return true
+	case CheckConflictProblemCodeCheckDeclined:
+		return true
+	case CheckConflictProblemCodeCheckLimitReached:
+		return true
+	case CheckConflictProblemCodeCheckSettled:
+		return true
+	case CheckConflictProblemCodeCheckWaiverNotPersonal:
+		return true
+	case CheckConflictProblemCodeEvidenceEmpty:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CheckMethod.
+const (
+	CheckMethodCommand     CheckMethod = "command"
+	CheckMethodManual      CheckMethod = "manual"
+	CheckMethodObservation CheckMethod = "observation"
+	CheckMethodRegression  CheckMethod = "regression"
+)
+
+// Valid indicates whether the value is a known member of the CheckMethod enum.
+func (e CheckMethod) Valid() bool {
+	switch e {
+	case CheckMethodCommand:
+		return true
+	case CheckMethodManual:
+		return true
+	case CheckMethodObservation:
+		return true
+	case CheckMethodRegression:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CheckResolution.
+const (
+	CheckResolutionGap    CheckResolution = "gap"
+	CheckResolutionNone   CheckResolution = "none"
+	CheckResolutionWaived CheckResolution = "waived"
+)
+
+// Valid indicates whether the value is a known member of the CheckResolution enum.
+func (e CheckResolution) Valid() bool {
+	switch e {
+	case CheckResolutionGap:
+		return true
+	case CheckResolutionNone:
+		return true
+	case CheckResolutionWaived:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CodeChangeState.
 const (
 	CodeChangeStateApproved         CodeChangeState = "approved"
@@ -910,6 +1030,24 @@ func (e CycleScopeChangeKind) Valid() bool {
 	}
 }
 
+// Defines values for DecideIssueCheckRequestApproval.
+const (
+	DecideIssueCheckRequestApprovalApproved DecideIssueCheckRequestApproval = "approved"
+	DecideIssueCheckRequestApprovalDeclined DecideIssueCheckRequestApproval = "declined"
+)
+
+// Valid indicates whether the value is a known member of the DecideIssueCheckRequestApproval enum.
+func (e DecideIssueCheckRequestApproval) Valid() bool {
+	switch e {
+	case DecideIssueCheckRequestApprovalApproved:
+		return true
+	case DecideIssueCheckRequestApprovalDeclined:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DirectoryAbsentPolicy.
 const (
 	Deactivate DirectoryAbsentPolicy = "deactivate"
@@ -1012,6 +1150,60 @@ const (
 func (e EnforcementRefusedProblemCode) Valid() bool {
 	switch e {
 	case EnforcementRefusedProblemCodeEnforcementRefused:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EvidenceChannel.
+const (
+	EvidenceChannelCommand    EvidenceChannel = "command"
+	EvidenceChannelDatabase   EvidenceChannel = "database"
+	EvidenceChannelHttp       EvidenceChannel = "http"
+	EvidenceChannelHuman      EvidenceChannel = "human"
+	EvidenceChannelLog        EvidenceChannel = "log"
+	EvidenceChannelScreenshot EvidenceChannel = "screenshot"
+)
+
+// Valid indicates whether the value is a known member of the EvidenceChannel enum.
+func (e EvidenceChannel) Valid() bool {
+	switch e {
+	case EvidenceChannelCommand:
+		return true
+	case EvidenceChannelDatabase:
+		return true
+	case EvidenceChannelHttp:
+		return true
+	case EvidenceChannelHuman:
+		return true
+	case EvidenceChannelLog:
+		return true
+	case EvidenceChannelScreenshot:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EvidenceVerdict.
+const (
+	EvidenceVerdictAbsentNegative EvidenceVerdict = "absent_negative"
+	EvidenceVerdictFailed         EvidenceVerdict = "failed"
+	EvidenceVerdictInconclusive   EvidenceVerdict = "inconclusive"
+	EvidenceVerdictPassed         EvidenceVerdict = "passed"
+)
+
+// Valid indicates whether the value is a known member of the EvidenceVerdict enum.
+func (e EvidenceVerdict) Valid() bool {
+	switch e {
+	case EvidenceVerdictAbsentNegative:
+		return true
+	case EvidenceVerdictFailed:
+		return true
+	case EvidenceVerdictInconclusive:
+		return true
+	case EvidenceVerdictPassed:
 		return true
 	default:
 		return false
@@ -1794,25 +1986,25 @@ func (e IssueMirrorOrigin) Valid() bool {
 
 // Defines values for IssuePriority.
 const (
-	High   IssuePriority = "high"
-	Low    IssuePriority = "low"
-	Medium IssuePriority = "medium"
-	None   IssuePriority = "none"
-	Urgent IssuePriority = "urgent"
+	IssuePriorityHigh   IssuePriority = "high"
+	IssuePriorityLow    IssuePriority = "low"
+	IssuePriorityMedium IssuePriority = "medium"
+	IssuePriorityNone   IssuePriority = "none"
+	IssuePriorityUrgent IssuePriority = "urgent"
 )
 
 // Valid indicates whether the value is a known member of the IssuePriority enum.
 func (e IssuePriority) Valid() bool {
 	switch e {
-	case High:
+	case IssuePriorityHigh:
 		return true
-	case Low:
+	case IssuePriorityLow:
 		return true
-	case Medium:
+	case IssuePriorityMedium:
 		return true
-	case None:
+	case IssuePriorityNone:
 		return true
-	case Urgent:
+	case IssuePriorityUrgent:
 		return true
 	default:
 		return false
@@ -2049,16 +2241,16 @@ func (e MembershipRole) Valid() bool {
 
 // Defines values for MembershipSource.
 const (
-	Directory MembershipSource = "directory"
-	Manual    MembershipSource = "manual"
+	MembershipSourceDirectory MembershipSource = "directory"
+	MembershipSourceManual    MembershipSource = "manual"
 )
 
 // Valid indicates whether the value is a known member of the MembershipSource enum.
 func (e MembershipSource) Valid() bool {
 	switch e {
-	case Directory:
+	case MembershipSourceDirectory:
 		return true
-	case Manual:
+	case MembershipSourceManual:
 		return true
 	default:
 		return false
@@ -3592,6 +3784,11 @@ type ActivityPage struct {
 // ActivitySubjectKind defines model for ActivitySubjectKind.
 type ActivitySubjectKind string
 
+// AddIssueChecksRequest defines model for AddIssueChecksRequest.
+type AddIssueChecksRequest struct {
+	Checks []NewIssueCheck `json:"checks"`
+}
+
 // AddIssueRelationRequest defines model for AddIssueRelationRequest.
 type AddIssueRelationRequest struct {
 	// CloseDuplicate Also move the duplicate to its team's abandoned state
@@ -3920,6 +4117,64 @@ type ChangePasswordRequest struct {
 	NewPassword     string `json:"newPassword"`
 }
 
+// CheckApproval A check counts only once a person has approved it.
+type CheckApproval string
+
+// CheckConflictProblem defines model for CheckConflictProblem.
+type CheckConflictProblem struct {
+	Code     CheckConflictProblemCode `json:"code"`
+	Detail   *string                  `json:"detail,omitempty"`
+	Errors   *[]FieldError            `json:"errors,omitempty"`
+	Instance *string                  `json:"instance,omitempty"`
+	Status   int32                    `json:"status"`
+	Title    string                   `json:"title"`
+	Type     string                   `json:"type"`
+}
+
+// CheckConflictProblemCode defines model for CheckConflictProblem.Code.
+type CheckConflictProblemCode string
+
+// CheckEvidence defines model for CheckEvidence.
+type CheckEvidence struct {
+	ActorAccountId *openapi_types.UUID   `json:"actorAccountId,omitempty"`
+	ActorKind      NotificationActorKind `json:"actorKind"`
+	ActorName      *string               `json:"actorName,omitempty"`
+
+	// Channel Where the observation came from. Declared by the submitter; Norn cannot verify it.
+	Channel    EvidenceChannel     `json:"channel"`
+	CheckId    openapi_types.UUID  `json:"checkId"`
+	CodeLinkId *openapi_types.UUID `json:"codeLinkId,omitempty"`
+	Command    *string             `json:"command,omitempty"`
+
+	// CommitSha The head commit Norn held for the linked change when this arrived.
+	CommitSha *string            `json:"commitSha,omitempty"`
+	ExitCode  *int32             `json:"exitCode,omitempty"`
+	Id        openapi_types.UUID `json:"id"`
+	IssueId   openapi_types.UUID `json:"issueId"`
+
+	// ObservedAt When the submitter says it looked, clamped so it can never be later than receivedAt.
+	ObservedAt time.Time `json:"observedAt"`
+
+	// Output Verbatim, never a summary. Norn keeps 64 KiB and marks the record truncated rather than refusing it; read truncated rather than parsing the marker.
+	Output string `json:"output"`
+
+	// ReceivedAt When Norn took delivery. This is the stamp everything else is measured against, so misreporting observedAt buys nothing.
+	ReceivedAt time.Time `json:"receivedAt"`
+
+	// Redactions Secrets removed from the output and command before either was stored.
+	Redactions int32 `json:"redactions"`
+	Truncated  bool  `json:"truncated"`
+
+	// Verdict absent_negative is the finding that nothing bad appeared. It is a real category and a different thing from having observed something working.
+	Verdict EvidenceVerdict `json:"verdict"`
+}
+
+// CheckMethod How a criterion will be proven. Norn runs none of these itself.
+type CheckMethod string
+
+// CheckResolution How a person set this criterion aside. A gap is an honest "not done" and files a child issue, which then keeps the parent open until it is closed.
+type CheckResolution string
+
 // CloseCycleRequest defines model for CloseCycleRequest.
 type CloseCycleRequest struct {
 	// Overrides Issues that go somewhere other than the rollover chosen for the rest
@@ -4234,6 +4489,22 @@ type DecideImportMappingsRequest struct {
 	Decisions []ImportMappingDecision `json:"decisions"`
 }
 
+// DecideIssueCheckRequest defines model for DecideIssueCheckRequest.
+type DecideIssueCheckRequest struct {
+	Approval DecideIssueCheckRequestApproval `json:"approval"`
+}
+
+// DecideIssueCheckRequestApproval defines model for DecideIssueCheckRequest.Approval.
+type DecideIssueCheckRequestApproval string
+
+// DeclareIssueCheckGapRequest defines model for DeclareIssueCheckGapRequest.
+type DeclareIssueCheckGapRequest struct {
+	Reason string `json:"reason"`
+
+	// Title The child issue's title. Defaults to the criterion's own statement.
+	Title *string `json:"title,omitempty"`
+}
+
 // DeclineTriageIssueRequest defines model for DeclineTriageIssueRequest.
 type DeclineTriageIssueRequest struct {
 	// Note Sent to whoever reported it, and kept in the issue's history
@@ -4355,6 +4626,12 @@ type EnforcementRefusedProblem struct {
 
 // EnforcementRefusedProblemCode defines model for EnforcementRefusedProblem.Code.
 type EnforcementRefusedProblemCode string
+
+// EvidenceChannel Where the observation came from. Declared by the submitter; Norn cannot verify it.
+type EvidenceChannel string
+
+// EvidenceVerdict absent_negative is the finding that nothing bad appeared. It is a real category and a different thing from having observed something working.
+type EvidenceVerdict string
 
 // ExecuteImportRequest defines model for ExecuteImportRequest.
 type ExecuteImportRequest struct {
@@ -4796,6 +5073,48 @@ type Issue struct {
 // IssueBranchName The branch a person copies before starting work. It is generated rather than typed because the reference in it is what creates the link in the first place.
 type IssueBranchName struct {
 	Branch string `json:"branch"`
+}
+
+// IssueCheck defines model for IssueCheck.
+type IssueCheck struct {
+	// AddedAfterDelegation True when the criterion was written after the issue was handed to an agent.
+	AddedAfterDelegation bool `json:"addedAfterDelegation"`
+
+	// Approval A check counts only once a person has approved it.
+	Approval            CheckApproval         `json:"approval"`
+	ApprovedAt          *time.Time            `json:"approvedAt,omitempty"`
+	ApprovedByAccountId *openapi_types.UUID   `json:"approvedByAccountId,omitempty"`
+	AuthorKind          NotificationActorKind `json:"authorKind"`
+	CreatedAt           time.Time             `json:"createdAt"`
+	CreatedByAccountId  *openapi_types.UUID   `json:"createdByAccountId,omitempty"`
+	GapIssueId          *openapi_types.UUID   `json:"gapIssueId,omitempty"`
+	Id                  openapi_types.UUID    `json:"id"`
+	IssueId             openapi_types.UUID    `json:"issueId"`
+
+	// Method How a criterion will be proven. Norn runs none of these itself.
+	Method   CheckMethod `json:"method"`
+	Position int32       `json:"position"`
+
+	// Proof How this will be proven — the command to run, what to inspect, or the path a person's proof travels, so nobody is asked to verify something nothing can produce.
+	Proof string `json:"proof"`
+
+	// Resolution How a person set this criterion aside. A gap is an honest "not done" and files a child issue, which then keeps the parent open until it is closed.
+	Resolution          CheckResolution     `json:"resolution"`
+	ResolutionReason    *string             `json:"resolutionReason,omitempty"`
+	ResolvedAt          *time.Time          `json:"resolvedAt,omitempty"`
+	ResolvedByAccountId *openapi_types.UUID `json:"resolvedByAccountId,omitempty"`
+	Statement           string              `json:"statement"`
+
+	// TimeLimitSeconds How long an observation counts for. Absent means the team default applies.
+	TimeLimitSeconds *int32             `json:"timeLimitSeconds,omitempty"`
+	UpdatedAt        *time.Time         `json:"updatedAt,omitempty"`
+	WorkspaceId      openapi_types.UUID `json:"workspaceId"`
+}
+
+// IssueCheckGap defines model for IssueCheckGap.
+type IssueCheckGap struct {
+	Check IssueCheck `json:"check"`
+	Issue Issue      `json:"issue"`
 }
 
 // IssueChildren defines model for IssueChildren.
@@ -5281,6 +5600,15 @@ type MoveIssueRequest struct {
 	AcknowledgeLabelLoss *bool              `json:"acknowledgeLabelLoss,omitempty"`
 	ExpectedVersion      int32              `json:"expectedVersion"`
 	TeamId               openapi_types.UUID `json:"teamId"`
+}
+
+// NewIssueCheck defines model for NewIssueCheck.
+type NewIssueCheck struct {
+	// Method How a criterion will be proven. Norn runs none of these itself.
+	Method           CheckMethod `json:"method"`
+	Proof            string      `json:"proof"`
+	Statement        string      `json:"statement"`
+	TimeLimitSeconds *int32      `json:"timeLimitSeconds,omitempty"`
 }
 
 // Notification defines model for Notification.
@@ -6148,6 +6476,21 @@ type StorageRefusedProblem struct {
 // StorageRefusedProblemCode defines model for StorageRefusedProblem.Code.
 type StorageRefusedProblemCode string
 
+// SubmitCheckEvidenceRequest defines model for SubmitCheckEvidenceRequest.
+type SubmitCheckEvidenceRequest struct {
+	// Channel Where the observation came from. Declared by the submitter; Norn cannot verify it.
+	Channel    EvidenceChannel `json:"channel"`
+	Command    *string         `json:"command,omitempty"`
+	ExitCode   *int32          `json:"exitCode,omitempty"`
+	ObservedAt time.Time       `json:"observedAt"`
+
+	// Output The verbatim output, not a summary of it.
+	Output string `json:"output"`
+
+	// Verdict absent_negative is the finding that nothing bad appeared. It is a real category and a different thing from having observed something working.
+	Verdict EvidenceVerdict `json:"verdict"`
+}
+
 // SuppressIssueAutomationRequest defines model for SuppressIssueAutomationRequest.
 type SuppressIssueAutomationRequest struct {
 	Suppressed bool `json:"suppressed"`
@@ -6340,6 +6683,11 @@ type UpdateWorkspaceRequest struct {
 	DefaultTeamId *openapi_types.UUID `json:"defaultTeamId,omitempty"`
 	Name          *string             `json:"name,omitempty"`
 	Timezone      *string             `json:"timezone,omitempty"`
+}
+
+// WaiveIssueCheckRequest defines model for WaiveIssueCheckRequest.
+type WaiveIssueCheckRequest struct {
+	Reason string `json:"reason"`
 }
 
 // Webhook defines model for Webhook.
@@ -6636,6 +6984,9 @@ type AuditResourceKind = string
 // AuditTo defines model for AuditTo.
 type AuditTo = time.Time
 
+// CheckId defines model for CheckId.
+type CheckId = openapi_types.UUID
+
 // CodeLinkId defines model for CodeLinkId.
 type CodeLinkId = openapi_types.UUID
 
@@ -6749,6 +7100,9 @@ type AuditUnlicensed = AuditUnlicensedProblem
 
 // BreachCheckUnavailable defines model for BreachCheckUnavailable.
 type BreachCheckUnavailable = BreachCheckUnavailableProblem
+
+// CheckConflict defines model for CheckConflict.
+type CheckConflict = CheckConflictProblem
 
 // CommentConflict defines model for CommentConflict.
 type CommentConflict = CommentConflictProblem
@@ -7175,6 +7529,21 @@ type UpdateWorkspaceIssueJSONRequestBody = UpdateIssueRequest
 
 // ReserveWorkspaceIssueAttachmentJSONRequestBody defines body for ReserveWorkspaceIssueAttachment for application/json ContentType.
 type ReserveWorkspaceIssueAttachmentJSONRequestBody = ReserveAttachmentRequest
+
+// AddWorkspaceIssueChecksJSONRequestBody defines body for AddWorkspaceIssueChecks for application/json ContentType.
+type AddWorkspaceIssueChecksJSONRequestBody = AddIssueChecksRequest
+
+// DecideWorkspaceIssueCheckJSONRequestBody defines body for DecideWorkspaceIssueCheck for application/json ContentType.
+type DecideWorkspaceIssueCheckJSONRequestBody = DecideIssueCheckRequest
+
+// SubmitWorkspaceIssueCheckEvidenceJSONRequestBody defines body for SubmitWorkspaceIssueCheckEvidence for application/json ContentType.
+type SubmitWorkspaceIssueCheckEvidenceJSONRequestBody = SubmitCheckEvidenceRequest
+
+// DeclareWorkspaceIssueCheckGapJSONRequestBody defines body for DeclareWorkspaceIssueCheckGap for application/json ContentType.
+type DeclareWorkspaceIssueCheckGapJSONRequestBody = DeclareIssueCheckGapRequest
+
+// WaiveWorkspaceIssueCheckJSONRequestBody defines body for WaiveWorkspaceIssueCheck for application/json ContentType.
+type WaiveWorkspaceIssueCheckJSONRequestBody = WaiveIssueCheckRequest
 
 // SuppressWorkspaceIssueAutomationJSONRequestBody defines body for SuppressWorkspaceIssueAutomation for application/json ContentType.
 type SuppressWorkspaceIssueAutomationJSONRequestBody = SuppressIssueAutomationRequest
@@ -7652,6 +8021,30 @@ type ServerInterface interface {
 	// GetWorkspaceIssueBranchName Get the branch name to start work on this issue
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/branch-name)
 	GetWorkspaceIssueBranchName(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// ListWorkspaceIssueChecks Read the criteria that decide whether this issue is finished
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/checks)
+	ListWorkspaceIssueChecks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// AddWorkspaceIssueChecks Write down what done means here, as one set approved or refused together
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/checks)
+	AddWorkspaceIssueChecks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// RemoveWorkspaceIssueCheck Drop a criterion that should never have been part of the definition of done
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId})
+	RemoveWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId)
+	// DecideWorkspaceIssueCheck Approve or decline a criterion an agent proposed, which only a person may do
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/decision)
+	DecideWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId)
+	// ListWorkspaceIssueCheckEvidence Read every observation filed against a criterion, oldest first
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence)
+	ListWorkspaceIssueCheckEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId)
+	// SubmitWorkspaceIssueCheckEvidence File an observation against a criterion, which is never edited afterwards
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence)
+	SubmitWorkspaceIssueCheckEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId)
+	// DeclareWorkspaceIssueCheckGap Record that a criterion cannot be met, filing the child issue that carries it
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/gap)
+	DeclareWorkspaceIssueCheckGap(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId)
+	// WaiveWorkspaceIssueCheck Set a criterion aside with a reason, which only a person may do
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/waiver)
+	WaiveWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId)
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 	ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -8732,6 +9125,54 @@ func (_ Unimplemented) FinalizeWorkspaceIssueAttachment(w http.ResponseWriter, r
 // GetWorkspaceIssueBranchName Get the branch name to start work on this issue
 // (GET /workspaces/{workspaceId}/issues/{issueId}/branch-name)
 func (_ Unimplemented) GetWorkspaceIssueBranchName(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueChecks Read the criteria that decide whether this issue is finished
+// (GET /workspaces/{workspaceId}/issues/{issueId}/checks)
+func (_ Unimplemented) ListWorkspaceIssueChecks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddWorkspaceIssueChecks Write down what done means here, as one set approved or refused together
+// (POST /workspaces/{workspaceId}/issues/{issueId}/checks)
+func (_ Unimplemented) AddWorkspaceIssueChecks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveWorkspaceIssueCheck Drop a criterion that should never have been part of the definition of done
+// (DELETE /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId})
+func (_ Unimplemented) RemoveWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DecideWorkspaceIssueCheck Approve or decline a criterion an agent proposed, which only a person may do
+// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/decision)
+func (_ Unimplemented) DecideWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueCheckEvidence Read every observation filed against a criterion, oldest first
+// (GET /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence)
+func (_ Unimplemented) ListWorkspaceIssueCheckEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SubmitWorkspaceIssueCheckEvidence File an observation against a criterion, which is never edited afterwards
+// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence)
+func (_ Unimplemented) SubmitWorkspaceIssueCheckEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeclareWorkspaceIssueCheckGap Record that a criterion cannot be met, filing the child issue that carries it
+// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/gap)
+func (_ Unimplemented) DeclareWorkspaceIssueCheckGap(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// WaiveWorkspaceIssueCheck Set a criterion aside with a reason, which only a person may do
+// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/waiver)
+func (_ Unimplemented) WaiveWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -12717,6 +13158,340 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceIssueBranchName(w http.ResponseWr
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWorkspaceIssueBranchName(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueChecks operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueChecks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueChecks(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddWorkspaceIssueChecks operation middleware
+func (siw *ServerInterfaceWrapper) AddWorkspaceIssueChecks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddWorkspaceIssueChecks(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveWorkspaceIssueCheck operation middleware
+func (siw *ServerInterfaceWrapper) RemoveWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "checkId" -------------
+	var checkId CheckId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "checkId", chi.URLParam(r, "checkId"), &checkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "checkId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveWorkspaceIssueCheck(w, r, workspaceId, issueId, checkId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DecideWorkspaceIssueCheck operation middleware
+func (siw *ServerInterfaceWrapper) DecideWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "checkId" -------------
+	var checkId CheckId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "checkId", chi.URLParam(r, "checkId"), &checkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "checkId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DecideWorkspaceIssueCheck(w, r, workspaceId, issueId, checkId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueCheckEvidence operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueCheckEvidence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "checkId" -------------
+	var checkId CheckId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "checkId", chi.URLParam(r, "checkId"), &checkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "checkId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueCheckEvidence(w, r, workspaceId, issueId, checkId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SubmitWorkspaceIssueCheckEvidence operation middleware
+func (siw *ServerInterfaceWrapper) SubmitWorkspaceIssueCheckEvidence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "checkId" -------------
+	var checkId CheckId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "checkId", chi.URLParam(r, "checkId"), &checkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "checkId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SubmitWorkspaceIssueCheckEvidence(w, r, workspaceId, issueId, checkId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeclareWorkspaceIssueCheckGap operation middleware
+func (siw *ServerInterfaceWrapper) DeclareWorkspaceIssueCheckGap(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "checkId" -------------
+	var checkId CheckId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "checkId", chi.URLParam(r, "checkId"), &checkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "checkId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeclareWorkspaceIssueCheckGap(w, r, workspaceId, issueId, checkId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// WaiveWorkspaceIssueCheck operation middleware
+func (siw *ServerInterfaceWrapper) WaiveWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "checkId" -------------
+	var checkId CheckId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "checkId", chi.URLParam(r, "checkId"), &checkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "checkId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.WaiveWorkspaceIssueCheck(w, r, workspaceId, issueId, checkId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19162,6 +19937,30 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/children", wrapper.ListWorkspaceIssueChildren)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/checks", wrapper.ListWorkspaceIssueChecks)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/checks", wrapper.AddWorkspaceIssueChecks)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}", wrapper.RemoveWorkspaceIssueCheck)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/decision", wrapper.DecideWorkspaceIssueCheck)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/waiver", wrapper.WaiveWorkspaceIssueCheck)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/gap", wrapper.DeclareWorkspaceIssueCheckGap)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence", wrapper.ListWorkspaceIssueCheckEvidence)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence", wrapper.SubmitWorkspaceIssueCheckEvidence)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/delegation", wrapper.RecallWorkspaceIssue)
 	})
 	r.Group(func(r chi.Router) {
@@ -19401,6 +20200,8 @@ type AgentUnusableApplicationProblemPlusJSONResponse AgentUnusableProblem
 type AuditUnlicensedApplicationProblemPlusJSONResponse AuditUnlicensedProblem
 
 type BreachCheckUnavailableApplicationProblemPlusJSONResponse BreachCheckUnavailableProblem
+
+type CheckConflictApplicationProblemPlusJSONResponse CheckConflictProblem
 
 type CommentConflictApplicationProblemPlusJSONResponse CommentConflictProblem
 
@@ -27887,6 +28688,825 @@ func (response GetWorkspaceIssueBranchName404ApplicationProblemPlusJSONResponse)
 type GetWorkspaceIssueBranchName500ApplicationProblemPlusJSONResponse Problem
 
 func (response GetWorkspaceIssueBranchName500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueBranchNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueChecksRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueChecksResponseObject interface {
+	VisitListWorkspaceIssueChecksResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueChecks200JSONResponse []IssueCheck
+
+func (response ListWorkspaceIssueChecks200JSONResponse) VisitListWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueChecks401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueChecks401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueChecks403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueChecks403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueChecks404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueChecks404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueChecks500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueChecks500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueChecksRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *AddWorkspaceIssueChecksJSONRequestBody
+}
+
+type AddWorkspaceIssueChecksResponseObject interface {
+	VisitAddWorkspaceIssueChecksResponse(w http.ResponseWriter) error
+}
+
+type AddWorkspaceIssueChecks201JSONResponse []IssueCheck
+
+func (response AddWorkspaceIssueChecks201JSONResponse) VisitAddWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueChecks401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceIssueChecks401ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueChecks403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceIssueChecks403ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueChecks404ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceIssueChecks404ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueChecks409ApplicationProblemPlusJSONResponse struct {
+	CheckConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceIssueChecks409ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueChecks422ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceIssueChecks422ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceIssueChecks500ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceIssueChecks500ApplicationProblemPlusJSONResponse) VisitAddWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueCheckRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	CheckId     CheckId     `json:"checkId"`
+}
+
+type RemoveWorkspaceIssueCheckResponseObject interface {
+	VisitRemoveWorkspaceIssueCheckResponse(w http.ResponseWriter) error
+}
+
+type RemoveWorkspaceIssueCheck204Response struct {
+}
+
+func (response RemoveWorkspaceIssueCheck204Response) VisitRemoveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveWorkspaceIssueCheck401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceIssueCheck401ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueCheck403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceIssueCheck403ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueCheck404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceIssueCheck404ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceIssueCheck500ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceIssueCheck500ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceIssueCheckRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	CheckId     CheckId     `json:"checkId"`
+	Body        *DecideWorkspaceIssueCheckJSONRequestBody
+}
+
+type DecideWorkspaceIssueCheckResponseObject interface {
+	VisitDecideWorkspaceIssueCheckResponse(w http.ResponseWriter) error
+}
+
+type DecideWorkspaceIssueCheck200JSONResponse IssueCheck
+
+func (response DecideWorkspaceIssueCheck200JSONResponse) VisitDecideWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceIssueCheck401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DecideWorkspaceIssueCheck401ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceIssueCheck403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DecideWorkspaceIssueCheck403ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceIssueCheck404ApplicationProblemPlusJSONResponse Problem
+
+func (response DecideWorkspaceIssueCheck404ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceIssueCheck409ApplicationProblemPlusJSONResponse struct {
+	CheckConflictApplicationProblemPlusJSONResponse
+}
+
+func (response DecideWorkspaceIssueCheck409ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceIssueCheck422ApplicationProblemPlusJSONResponse Problem
+
+func (response DecideWorkspaceIssueCheck422ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideWorkspaceIssueCheck500ApplicationProblemPlusJSONResponse Problem
+
+func (response DecideWorkspaceIssueCheck500ApplicationProblemPlusJSONResponse) VisitDecideWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCheckEvidenceRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	CheckId     CheckId     `json:"checkId"`
+}
+
+type ListWorkspaceIssueCheckEvidenceResponseObject interface {
+	VisitListWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueCheckEvidence200JSONResponse []CheckEvidence
+
+func (response ListWorkspaceIssueCheckEvidence200JSONResponse) VisitListWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCheckEvidence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueCheckEvidence401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCheckEvidence403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueCheckEvidence403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCheckEvidence404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueCheckEvidence404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCheckEvidence500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueCheckEvidence500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceIssueCheckEvidenceRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	CheckId     CheckId     `json:"checkId"`
+	Body        *SubmitWorkspaceIssueCheckEvidenceJSONRequestBody
+}
+
+type SubmitWorkspaceIssueCheckEvidenceResponseObject interface {
+	VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error
+}
+
+type SubmitWorkspaceIssueCheckEvidence201JSONResponse CheckEvidence
+
+func (response SubmitWorkspaceIssueCheckEvidence201JSONResponse) VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceIssueCheckEvidence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SubmitWorkspaceIssueCheckEvidence401ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceIssueCheckEvidence403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SubmitWorkspaceIssueCheckEvidence403ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceIssueCheckEvidence404ApplicationProblemPlusJSONResponse Problem
+
+func (response SubmitWorkspaceIssueCheckEvidence404ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceIssueCheckEvidence409ApplicationProblemPlusJSONResponse struct {
+	CheckConflictApplicationProblemPlusJSONResponse
+}
+
+func (response SubmitWorkspaceIssueCheckEvidence409ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceIssueCheckEvidence422ApplicationProblemPlusJSONResponse Problem
+
+func (response SubmitWorkspaceIssueCheckEvidence422ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceIssueCheckEvidence500ApplicationProblemPlusJSONResponse Problem
+
+func (response SubmitWorkspaceIssueCheckEvidence500ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclareWorkspaceIssueCheckGapRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	CheckId     CheckId     `json:"checkId"`
+	Body        *DeclareWorkspaceIssueCheckGapJSONRequestBody
+}
+
+type DeclareWorkspaceIssueCheckGapResponseObject interface {
+	VisitDeclareWorkspaceIssueCheckGapResponse(w http.ResponseWriter) error
+}
+
+type DeclareWorkspaceIssueCheckGap201JSONResponse IssueCheckGap
+
+func (response DeclareWorkspaceIssueCheckGap201JSONResponse) VisitDeclareWorkspaceIssueCheckGapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclareWorkspaceIssueCheckGap401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeclareWorkspaceIssueCheckGap401ApplicationProblemPlusJSONResponse) VisitDeclareWorkspaceIssueCheckGapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclareWorkspaceIssueCheckGap403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeclareWorkspaceIssueCheckGap403ApplicationProblemPlusJSONResponse) VisitDeclareWorkspaceIssueCheckGapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclareWorkspaceIssueCheckGap404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeclareWorkspaceIssueCheckGap404ApplicationProblemPlusJSONResponse) VisitDeclareWorkspaceIssueCheckGapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclareWorkspaceIssueCheckGap409ApplicationProblemPlusJSONResponse struct {
+	IssueConflictApplicationProblemPlusJSONResponse
+}
+
+func (response DeclareWorkspaceIssueCheckGap409ApplicationProblemPlusJSONResponse) VisitDeclareWorkspaceIssueCheckGapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclareWorkspaceIssueCheckGap422ApplicationProblemPlusJSONResponse Problem
+
+func (response DeclareWorkspaceIssueCheckGap422ApplicationProblemPlusJSONResponse) VisitDeclareWorkspaceIssueCheckGapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeclareWorkspaceIssueCheckGap500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeclareWorkspaceIssueCheckGap500ApplicationProblemPlusJSONResponse) VisitDeclareWorkspaceIssueCheckGapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WaiveWorkspaceIssueCheckRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	CheckId     CheckId     `json:"checkId"`
+	Body        *WaiveWorkspaceIssueCheckJSONRequestBody
+}
+
+type WaiveWorkspaceIssueCheckResponseObject interface {
+	VisitWaiveWorkspaceIssueCheckResponse(w http.ResponseWriter) error
+}
+
+type WaiveWorkspaceIssueCheck200JSONResponse IssueCheck
+
+func (response WaiveWorkspaceIssueCheck200JSONResponse) VisitWaiveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WaiveWorkspaceIssueCheck401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response WaiveWorkspaceIssueCheck401ApplicationProblemPlusJSONResponse) VisitWaiveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WaiveWorkspaceIssueCheck403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response WaiveWorkspaceIssueCheck403ApplicationProblemPlusJSONResponse) VisitWaiveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WaiveWorkspaceIssueCheck404ApplicationProblemPlusJSONResponse Problem
+
+func (response WaiveWorkspaceIssueCheck404ApplicationProblemPlusJSONResponse) VisitWaiveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WaiveWorkspaceIssueCheck409ApplicationProblemPlusJSONResponse struct {
+	CheckConflictApplicationProblemPlusJSONResponse
+}
+
+func (response WaiveWorkspaceIssueCheck409ApplicationProblemPlusJSONResponse) VisitWaiveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WaiveWorkspaceIssueCheck422ApplicationProblemPlusJSONResponse Problem
+
+func (response WaiveWorkspaceIssueCheck422ApplicationProblemPlusJSONResponse) VisitWaiveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WaiveWorkspaceIssueCheck500ApplicationProblemPlusJSONResponse Problem
+
+func (response WaiveWorkspaceIssueCheck500ApplicationProblemPlusJSONResponse) VisitWaiveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -42975,6 +44595,30 @@ type StrictServerInterface interface {
 	// GetWorkspaceIssueBranchName Get the branch name to start work on this issue
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/branch-name)
 	GetWorkspaceIssueBranchName(ctx context.Context, request GetWorkspaceIssueBranchNameRequestObject) (GetWorkspaceIssueBranchNameResponseObject, error)
+	// ListWorkspaceIssueChecks Read the criteria that decide whether this issue is finished
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/checks)
+	ListWorkspaceIssueChecks(ctx context.Context, request ListWorkspaceIssueChecksRequestObject) (ListWorkspaceIssueChecksResponseObject, error)
+	// AddWorkspaceIssueChecks Write down what done means here, as one set approved or refused together
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/checks)
+	AddWorkspaceIssueChecks(ctx context.Context, request AddWorkspaceIssueChecksRequestObject) (AddWorkspaceIssueChecksResponseObject, error)
+	// RemoveWorkspaceIssueCheck Drop a criterion that should never have been part of the definition of done
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId})
+	RemoveWorkspaceIssueCheck(ctx context.Context, request RemoveWorkspaceIssueCheckRequestObject) (RemoveWorkspaceIssueCheckResponseObject, error)
+	// DecideWorkspaceIssueCheck Approve or decline a criterion an agent proposed, which only a person may do
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/decision)
+	DecideWorkspaceIssueCheck(ctx context.Context, request DecideWorkspaceIssueCheckRequestObject) (DecideWorkspaceIssueCheckResponseObject, error)
+	// ListWorkspaceIssueCheckEvidence Read every observation filed against a criterion, oldest first
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence)
+	ListWorkspaceIssueCheckEvidence(ctx context.Context, request ListWorkspaceIssueCheckEvidenceRequestObject) (ListWorkspaceIssueCheckEvidenceResponseObject, error)
+	// SubmitWorkspaceIssueCheckEvidence File an observation against a criterion, which is never edited afterwards
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence)
+	SubmitWorkspaceIssueCheckEvidence(ctx context.Context, request SubmitWorkspaceIssueCheckEvidenceRequestObject) (SubmitWorkspaceIssueCheckEvidenceResponseObject, error)
+	// DeclareWorkspaceIssueCheckGap Record that a criterion cannot be met, filing the child issue that carries it
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/gap)
+	DeclareWorkspaceIssueCheckGap(ctx context.Context, request DeclareWorkspaceIssueCheckGapRequestObject) (DeclareWorkspaceIssueCheckGapResponseObject, error)
+	// WaiveWorkspaceIssueCheck Set a criterion aside with a reason, which only a person may do
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/waiver)
+	WaiveWorkspaceIssueCheck(ctx context.Context, request WaiveWorkspaceIssueCheckRequestObject) (WaiveWorkspaceIssueCheckResponseObject, error)
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 	ListWorkspaceIssueChildren(ctx context.Context, request ListWorkspaceIssueChildrenRequestObject) (ListWorkspaceIssueChildrenResponseObject, error)
@@ -46302,6 +47946,263 @@ func (sh *strictHandler) GetWorkspaceIssueBranchName(w http.ResponseWriter, r *h
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceIssueBranchNameResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceIssueBranchNameResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueChecks operation middleware
+func (sh *strictHandler) ListWorkspaceIssueChecks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueChecksRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueChecks(ctx, request.(ListWorkspaceIssueChecksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueChecks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueChecksResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueChecksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddWorkspaceIssueChecks operation middleware
+func (sh *strictHandler) AddWorkspaceIssueChecks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request AddWorkspaceIssueChecksRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body AddWorkspaceIssueChecksJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddWorkspaceIssueChecks(ctx, request.(AddWorkspaceIssueChecksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddWorkspaceIssueChecks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddWorkspaceIssueChecksResponseObject); ok {
+		if err := validResponse.VisitAddWorkspaceIssueChecksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveWorkspaceIssueCheck operation middleware
+func (sh *strictHandler) RemoveWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	var request RemoveWorkspaceIssueCheckRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.CheckId = checkId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveWorkspaceIssueCheck(ctx, request.(RemoveWorkspaceIssueCheckRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveWorkspaceIssueCheck")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveWorkspaceIssueCheckResponseObject); ok {
+		if err := validResponse.VisitRemoveWorkspaceIssueCheckResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DecideWorkspaceIssueCheck operation middleware
+func (sh *strictHandler) DecideWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	var request DecideWorkspaceIssueCheckRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.CheckId = checkId
+
+	var body DecideWorkspaceIssueCheckJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DecideWorkspaceIssueCheck(ctx, request.(DecideWorkspaceIssueCheckRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DecideWorkspaceIssueCheck")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DecideWorkspaceIssueCheckResponseObject); ok {
+		if err := validResponse.VisitDecideWorkspaceIssueCheckResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueCheckEvidence operation middleware
+func (sh *strictHandler) ListWorkspaceIssueCheckEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	var request ListWorkspaceIssueCheckEvidenceRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.CheckId = checkId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueCheckEvidence(ctx, request.(ListWorkspaceIssueCheckEvidenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueCheckEvidence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueCheckEvidenceResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueCheckEvidenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SubmitWorkspaceIssueCheckEvidence operation middleware
+func (sh *strictHandler) SubmitWorkspaceIssueCheckEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	var request SubmitWorkspaceIssueCheckEvidenceRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.CheckId = checkId
+
+	var body SubmitWorkspaceIssueCheckEvidenceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SubmitWorkspaceIssueCheckEvidence(ctx, request.(SubmitWorkspaceIssueCheckEvidenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SubmitWorkspaceIssueCheckEvidence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SubmitWorkspaceIssueCheckEvidenceResponseObject); ok {
+		if err := validResponse.VisitSubmitWorkspaceIssueCheckEvidenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeclareWorkspaceIssueCheckGap operation middleware
+func (sh *strictHandler) DeclareWorkspaceIssueCheckGap(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	var request DeclareWorkspaceIssueCheckGapRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.CheckId = checkId
+
+	var body DeclareWorkspaceIssueCheckGapJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeclareWorkspaceIssueCheckGap(ctx, request.(DeclareWorkspaceIssueCheckGapRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeclareWorkspaceIssueCheckGap")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeclareWorkspaceIssueCheckGapResponseObject); ok {
+		if err := validResponse.VisitDeclareWorkspaceIssueCheckGapResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// WaiveWorkspaceIssueCheck operation middleware
+func (sh *strictHandler) WaiveWorkspaceIssueCheck(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, checkId CheckId) {
+	var request WaiveWorkspaceIssueCheckRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.CheckId = checkId
+
+	var body WaiveWorkspaceIssueCheckJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.WaiveWorkspaceIssueCheck(ctx, request.(WaiveWorkspaceIssueCheckRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "WaiveWorkspaceIssueCheck")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(WaiveWorkspaceIssueCheckResponseObject); ok {
+		if err := validResponse.VisitWaiveWorkspaceIssueCheckResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

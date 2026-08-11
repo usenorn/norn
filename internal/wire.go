@@ -46,6 +46,7 @@ import (
 	breachcheckrepo "github.com/usenorn/norn/internal/repository/breachcheck"
 	breakglassrepo "github.com/usenorn/norn/internal/repository/breakglass"
 	bulkactionrepo "github.com/usenorn/norn/internal/repository/bulkaction"
+	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	directoryrepo "github.com/usenorn/norn/internal/repository/directory"
 	emailchangerepo "github.com/usenorn/norn/internal/repository/emailchange"
@@ -100,6 +101,7 @@ import (
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	bulkoperationsvc "github.com/usenorn/norn/internal/service/bulkoperation"
+	checksvc "github.com/usenorn/norn/internal/service/check"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	delegationsvc "github.com/usenorn/norn/internal/service/delegation"
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
@@ -169,6 +171,7 @@ var baseSet = wire.NewSet(
 	issuedelegationrepo.Set,
 	issuerelationrepo.Set,
 	bulkactionrepo.Set,
+	checkrepo.Set,
 	cyclerepo.Set,
 	projectrepo.Set,
 	attachmentrepo.Set,
@@ -221,6 +224,7 @@ var baseSet = wire.NewSet(
 	delegationsvc.Set,
 	issuerelationsvc.Set,
 	bulkoperationsvc.Set,
+	checksvc.Set,
 	cyclesvc.Set,
 	projectsvc.Set,
 	attachmentsvc.Set,

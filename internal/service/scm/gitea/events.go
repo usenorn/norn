@@ -168,6 +168,7 @@ func translateChange(body []byte, event string) ([]service.ForgeEvent, error) {
 			ReviewsMoved:   reviewMoved(event, payload.Action),
 			Author:         change.User.Login,
 			HeadBranch:     change.Head.Ref,
+			HeadSHA:        change.Head.SHA,
 			BaseBranch:     change.Base.Ref,
 			UpdatedAt:      change.Updated,
 			MergedAt:       change.MergedAt,

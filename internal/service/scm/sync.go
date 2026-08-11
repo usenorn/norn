@@ -549,6 +549,7 @@ func (s *sync) applyChange(
 		MergeCommitSHA:  change.MergeCommitSHA,
 		Author:          change.Author,
 		HeadBranch:      change.HeadBranch,
+		HeadSHA:         change.HeadSHA,
 		BaseBranch:      change.BaseBranch,
 		Paths:           paths,
 		DetectedIn:      "the change",

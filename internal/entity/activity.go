@@ -43,6 +43,13 @@ const (
 	ActivityKindCodeUnlinked      ActivityKind = "code_unlinked"
 	ActivityKindDelegated         ActivityKind = "delegated"
 	ActivityKindRecalled          ActivityKind = "recalled"
+	ActivityKindCheckAdded        ActivityKind = "check_added"
+	ActivityKindCheckRemoved      ActivityKind = "check_removed"
+	ActivityKindCheckApproved     ActivityKind = "check_approved"
+	ActivityKindCheckDeclined     ActivityKind = "check_declined"
+	ActivityKindCheckWaived       ActivityKind = "check_waived"
+	ActivityKindCheckGapDeclared  ActivityKind = "check_gap_declared"
+	ActivityKindEvidenceAdded     ActivityKind = "evidence_added"
 )
 
 func ActivityKinds() []ActivityKind {
@@ -70,6 +77,13 @@ func ActivityKinds() []ActivityKind {
 		ActivityKindCodeUnlinked,
 		ActivityKindDelegated,
 		ActivityKindRecalled,
+		ActivityKindCheckAdded,
+		ActivityKindCheckRemoved,
+		ActivityKindCheckApproved,
+		ActivityKindCheckDeclined,
+		ActivityKindCheckWaived,
+		ActivityKindCheckGapDeclared,
+		ActivityKindEvidenceAdded,
 	}
 }
 
@@ -80,6 +94,8 @@ func (k ActivityKind) Valid() bool {
 const (
 	ActivityFieldAttachment = "attachment"
 	ActivityFieldAgent      = "agent"
+	ActivityFieldCheck      = "check"
+	ActivityFieldEvidence   = "evidence"
 	ActivityFieldMember     = "member"
 	ActivityFieldName       = "name"
 	ActivityFieldLead       = "lead"

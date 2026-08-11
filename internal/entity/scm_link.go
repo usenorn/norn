@@ -178,6 +178,7 @@ type CodeLink struct {
 	Checks          CodeChecks
 	Author          string
 	HeadBranch      string
+	HeadSHA         string
 	BaseBranch      string
 	Paths           []string
 	DetectedIn      string

@@ -96,6 +96,7 @@ type changePayload struct {
 		} `json:"user"`
 		Head struct {
 			Ref string `json:"ref"`
+			SHA string `json:"sha"`
 		} `json:"head"`
 		Base struct {
 			Ref string `json:"ref"`
@@ -225,6 +226,7 @@ func translateChange(body []byte) ([]service.ForgeEvent, error) {
 				payload.Action == "ready_for_review",
 			Author:     change.User.Login,
 			HeadBranch: change.Head.Ref,
+			HeadSHA:    change.Head.SHA,
 			BaseBranch: change.Base.Ref,
 			UpdatedAt:  change.UpdatedAt,
 			MergedAt:   change.MergedAt,
@@ -285,6 +287,7 @@ type reviewPayload struct {
 		} `json:"user"`
 		Head struct {
 			Ref string `json:"ref"`
+			SHA string `json:"sha"`
 		} `json:"head"`
 		Base struct {
 			Ref string `json:"ref"`
@@ -316,6 +319,7 @@ func translateReview(body []byte) ([]service.ForgeEvent, error) {
 			ReviewsMoved: true,
 			Author:       change.User.Login,
 			HeadBranch:   change.Head.Ref,
+			HeadSHA:      change.Head.SHA,
 			BaseBranch:   change.Base.Ref,
 			UpdatedAt:    change.UpdatedAt,
 			MergedAt:     change.MergedAt,

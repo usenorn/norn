@@ -27,7 +27,7 @@ const linkColumns = `
     id, workspace_id, issue_id,
     coalesce(repository_id, '00000000-0000-0000-0000-000000000000'::uuid),
     provider, repository_name, kind, external_id, number, title, url, state, checks, author,
-    head_branch, base_branch, paths, detected_in, resolving, merge_commit_sha,
+    head_branch, head_sha, base_branch, paths, detected_in, resolving, merge_commit_sha,
     source_updated_at,
     merged_at, closed_at, created_at, updated_at`
 
@@ -53,6 +53,7 @@ func scanLink(row interface{ Scan(...any) error }) (entity.CodeLink, error) {
 		&link.Checks,
 		&link.Author,
 		&link.HeadBranch,
+		&link.HeadSHA,
 		&link.BaseBranch,
 		&paths,
 		&link.DetectedIn,
@@ -76,10 +77,10 @@ func scanLink(row interface{ Scan(...any) error }) (entity.CodeLink, error) {
 const upsertLinkQuery = `
 INSERT INTO workspace_code_links (
     id, workspace_id, issue_id, repository_id, provider, repository_name, kind, external_id,
-    number, title, url, state, checks, author, head_branch, base_branch, paths, detected_in,
-    resolving, merge_commit_sha, source_updated_at, merged_at, closed_at
+    number, title, url, state, checks, author, head_branch, head_sha, base_branch, paths,
+    detected_in, resolving, merge_commit_sha, source_updated_at, merged_at, closed_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
-          $19, $20, $21, $22, $23)
+          $19, $20, $21, $22, $23, $24)
 ON CONFLICT (issue_id, provider, repository_name, kind, external_id) DO UPDATE
 SET repository_id = excluded.repository_id,
     number = excluded.number,
@@ -89,6 +90,7 @@ SET repository_id = excluded.repository_id,
     checks = excluded.checks,
     author = excluded.author,
     head_branch = excluded.head_branch,
+    head_sha = excluded.head_sha,
     base_branch = excluded.base_branch,
     paths = excluded.paths,
     resolving = excluded.resolving,
@@ -134,6 +136,7 @@ func (r *linkRepository) Upsert(
 		link.Checks,
 		link.Author,
 		link.HeadBranch,
+		link.HeadSHA,
 		link.BaseBranch,
 		types.StringArray(link.Paths),
 		link.DetectedIn,

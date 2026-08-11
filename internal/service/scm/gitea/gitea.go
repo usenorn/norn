@@ -314,6 +314,7 @@ type changeBody struct {
 	} `json:"user"`
 	Head struct {
 		Ref string `json:"ref"`
+		SHA string `json:"sha"`
 	} `json:"head"`
 	Base struct {
 		Ref string `json:"ref"`
@@ -348,6 +349,7 @@ func (f *Forge) forgeChange(change changeBody) service.ForgeChange {
 		ReviewsMoved:   true,
 		Author:         change.User.Login,
 		HeadBranch:     change.Head.Ref,
+		HeadSHA:        change.Head.SHA,
 		BaseBranch:     change.Base.Ref,
 		UpdatedAt:      change.Updated,
 		MergedAt:       change.MergedAt,

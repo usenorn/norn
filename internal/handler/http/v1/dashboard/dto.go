@@ -1550,6 +1550,110 @@ func agentSettingsDTO(settings entity.AgentSettings) api.AgentSettings {
 	}
 }
 
+func issueCheckDTO(check entity.Check) api.IssueCheck {
+	dto := api.IssueCheck{
+		Id:                   check.ID,
+		WorkspaceId:          check.WorkspaceID,
+		IssueId:              check.IssueID,
+		Position:             int32(check.Position),
+		Statement:            check.Statement,
+		Method:               api.CheckMethod(check.Method),
+		Proof:                check.Proof,
+		Approval:             api.CheckApproval(check.Approval),
+		Resolution:           api.CheckResolution(check.Resolution),
+		ResolutionReason:     nilIfEmpty(check.ResolutionReason),
+		AuthorKind:           api.NotificationActorKind(check.AuthorKind),
+		AddedAfterDelegation: check.AddedAfterDelegation,
+		ApprovedAt:           check.ApprovedAt,
+		ResolvedAt:           check.ResolvedAt,
+		CreatedAt:            check.CreatedAt,
+		UpdatedAt:            &check.UpdatedAt,
+	}
+
+	if check.TimeLimit != nil {
+		window := int32(*check.TimeLimit / time.Second)
+		dto.TimeLimitSeconds = &window
+	}
+
+	if check.ApprovedByAccountID != uuid.Nil {
+		approver := check.ApprovedByAccountID
+		dto.ApprovedByAccountId = &approver
+	}
+
+	if check.ResolvedByAccountID != uuid.Nil {
+		resolver := check.ResolvedByAccountID
+		dto.ResolvedByAccountId = &resolver
+	}
+
+	if check.GapIssueID != uuid.Nil {
+		gap := check.GapIssueID
+		dto.GapIssueId = &gap
+	}
+
+	if check.CreatedByAccountID != uuid.Nil {
+		author := check.CreatedByAccountID
+		dto.CreatedByAccountId = &author
+	}
+
+	return dto
+}
+
+func issueCheckDTOs(checks []entity.Check) []api.IssueCheck {
+	dtos := make([]api.IssueCheck, 0, len(checks))
+
+	for _, check := range checks {
+		dtos = append(dtos, issueCheckDTO(check))
+	}
+
+	return dtos
+}
+
+func checkEvidenceDTO(evidence entity.Evidence) api.CheckEvidence {
+	dto := api.CheckEvidence{
+		Id:         evidence.ID,
+		IssueId:    evidence.IssueID,
+		CheckId:    evidence.CheckID,
+		Verdict:    api.EvidenceVerdict(evidence.Verdict),
+		Channel:    api.EvidenceChannel(evidence.Channel),
+		Command:    nilIfEmpty(evidence.Command),
+		Output:     evidence.Output,
+		Truncated:  evidence.Truncated,
+		Redactions: int32(evidence.Redactions),
+		ObservedAt: evidence.ObservedAt,
+		ReceivedAt: evidence.ReceivedAt,
+		ActorKind:  api.NotificationActorKind(evidence.Actor.Kind),
+		ActorName:  nilIfEmpty(evidence.ActorName),
+		CommitSha:  nilIfEmpty(evidence.CommitSHA),
+	}
+
+	if evidence.ExitCode != nil {
+		code := int32(*evidence.ExitCode)
+		dto.ExitCode = &code
+	}
+
+	if evidence.Actor.AccountID != uuid.Nil {
+		actor := evidence.Actor.AccountID
+		dto.ActorAccountId = &actor
+	}
+
+	if evidence.CodeLinkID != uuid.Nil {
+		link := evidence.CodeLinkID
+		dto.CodeLinkId = &link
+	}
+
+	return dto
+}
+
+func checkEvidenceDTOs(records []entity.Evidence) []api.CheckEvidence {
+	dtos := make([]api.CheckEvidence, 0, len(records))
+
+	for _, record := range records {
+		dtos = append(dtos, checkEvidenceDTO(record))
+	}
+
+	return dtos
+}
+
 func issueDelegationDTO(delegation entity.IssueDelegation) api.IssueDelegation {
 	dto := api.IssueDelegation{
 		Id:             delegation.ID,

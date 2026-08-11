@@ -18,6 +18,7 @@ type RecallDelegation struct {
 }
 
 type IssueDelegation interface {
+	Open(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueDelegation, error)
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.IssueDelegation, error)
 	Delegate(ctx context.Context, delegation entity.IssueDelegation) (entity.IssueDelegation, error)
 	Recall(ctx context.Context, workspaceID uuid.UUID, recall RecallDelegation) (entity.IssueDelegation, error)

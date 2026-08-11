@@ -42,6 +42,8 @@ var apiScopeCatalog = []APIScope{
 	NewAPIScope(ResourceTeamMembership, ActionManage),
 	NewAPIScope(ResourceIssue, ActionRead),
 	NewAPIScope(ResourceIssue, ActionManage),
+	NewAPIScope(ResourceCheck, ActionRead),
+	NewAPIScope(ResourceCheck, ActionManage),
 	NewAPIScope(ResourceCycle, ActionRead),
 	NewAPIScope(ResourceLabel, ActionRead),
 	NewAPIScope(ResourceLabel, ActionManage),
@@ -136,6 +138,10 @@ func RoleGrants(role MembershipRole, resource Resource, action Action) bool {
 	}
 
 	if resource == ResourceIssue && action == ActionManage {
+		return role != MembershipRoleViewer
+	}
+
+	if resource == ResourceCheck && action == ActionManage {
 		return role != MembershipRoleViewer
 	}
 

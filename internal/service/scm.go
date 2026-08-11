@@ -32,6 +32,7 @@ type ForgeChange struct {
 	ReviewsMoved   bool
 	Author         string
 	HeadBranch     string
+	HeadSHA        string
 	BaseBranch     string
 	UpdatedAt      time.Time
 	MergedAt       *time.Time
