@@ -28,7 +28,7 @@
 		bind:ref
 		data-slot="dialog-content"
 		class={cn(
-			"notch max-w-[calc(100%-3rem)] text-md text-popover-foreground sm:max-w-md data-open:animate-lift data-closed:animate-dismiss fixed top-[12vh] left-1/2 z-50 w-full -translate-x-1/2 outline-none",
+			"notch grid max-w-[calc(100%-3rem)] gap-6 p-6 text-md text-popover-foreground sm:max-w-md data-open:animate-lift data-closed:animate-dismiss fixed top-[12vh] left-1/2 z-50 w-full -translate-x-1/2 outline-none",
 			className
 		)}
 		{...restProps}

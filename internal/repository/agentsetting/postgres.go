@@ -49,7 +49,10 @@ func (r *agentSettingRepository) Settings(
 	))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return entity.AgentSettings{WorkspaceID: workspaceID, TeamID: teamID}, nil
+			return entity.AgentSettings{
+				WorkspaceID: workspaceID,
+				TeamID:      teamID,
+			}.Normalised(), nil
 		}
 
 		return entity.AgentSettings{}, fmt.Errorf("read agent settings: %w", err)
@@ -109,5 +112,5 @@ func scan(row *sql.Row) (entity.AgentSettings, error) {
 	settings.TeamID = teamID
 	settings.WorkspaceID = workspaceID
 
-	return settings, nil
+	return settings.Normalised(), nil
 }

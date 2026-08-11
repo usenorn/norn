@@ -109,6 +109,14 @@ func (s AgentSettings) Strongest(actions []AgentAction) (AgentAction, AgentHold)
 	return decided, strongest
 }
 
+func (s AgentSettings) Normalised() AgentSettings {
+	s.HoldComments = normalisedHold(s.HoldComments)
+	s.HoldStateChanges = normalisedHold(s.HoldStateChanges)
+	s.HoldIssueEdits = normalisedHold(s.HoldIssueEdits)
+
+	return s
+}
+
 func normalisedHold(hold AgentHold) AgentHold {
 	if !hold.Valid() {
 		return AgentHoldNever

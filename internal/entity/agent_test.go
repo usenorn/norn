@@ -166,6 +166,22 @@ func TestHoldUnlessProvenIsOfferedOnlyWhereThereIsProofToJudge(t *testing.T) {
 	}
 }
 
+func TestATeamThatHasNeverConfiguredAgentsReadsBackAsHoldingNothing(t *testing.T) {
+	settings := entity.AgentSettings{}.Normalised()
+
+	for _, hold := range []entity.AgentHold{
+		settings.HoldComments, settings.HoldStateChanges, settings.HoldIssueEdits,
+	} {
+		if hold != entity.AgentHoldNever {
+			t.Fatalf(
+				"an unconfigured setting reads back as %q. It has to be a real value, or the "+
+					"screen showing it sends that empty value straight back and is refused.",
+				hold,
+			)
+		}
+	}
+}
+
 func TestATeamThatHasNeverConfiguredAgentsHoldsNothingItCanChoose(t *testing.T) {
 	settings := entity.AgentSettings{}
 
