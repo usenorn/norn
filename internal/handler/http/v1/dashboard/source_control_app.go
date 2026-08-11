@@ -38,6 +38,11 @@ func (h *handler) GetWorkspaceSourceControlApplication(
 		dto.CaCertificateSet = pointer(app.Trust.CACertificate != "")
 		dto.Installed = pointer(registered.Installed)
 
+		if len(registered.Accounts) > 0 {
+			accounts := registered.Accounts
+			dto.InstalledOn = &accounts
+		}
+
 		install := app.InstallURL()
 		dto.InstallUrl = &install
 

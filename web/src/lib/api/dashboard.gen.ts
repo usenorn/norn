@@ -5157,6 +5157,8 @@ export interface components {
             installUrl?: string;
             /** @description Whether the application is installed anywhere yet. Connecting lists the installations a person can reach, so with none there is nothing to choose and the screen offers installing first. True when the forge could not be asked, so an unreachable forge never hides a step. */
             installed?: boolean;
+            /** @description The accounts the application is installed on, so the screen can name them. */
+            installedOn?: string[];
             allowPrivateAddress?: boolean;
             caCertificateSet?: boolean;
         };

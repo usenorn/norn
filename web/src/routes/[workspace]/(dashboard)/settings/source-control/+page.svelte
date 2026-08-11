@@ -54,6 +54,9 @@
 	const workspace = $derived(page.data.workspace);
 
 	const connections = $derived(view.kind === "list" ? view.connections : []);
+	const githubConnection = $derived(
+		connections.find((connection) => connection.provider === "github") ?? null
+	);
 	const repositories = $derived(view.kind === "list" ? view.repositories : []);
 
 	const connectForm = superForm(defaults(zod4(connectSourceControlSchema)), {
@@ -315,6 +318,7 @@
 			workspaceSlug={workspace.slug}
 			application={shownApplication}
 			notice={shownNotice}
+			connectedTo={githubConnection ? connectionLabel(githubConnection) : null}
 		/>
 
 		<section class="flex flex-col gap-2 rounded-lg border border-line-subtle p-4">

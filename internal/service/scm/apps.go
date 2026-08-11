@@ -74,17 +74,19 @@ func (s *apps) Application(
 		return service.SCMApplication{}, err
 	}
 
+	accounts, known := s.installedOn(ctx, held)
+
 	return service.SCMApplication{
 		App:       held,
-		Installed: s.installedAnywhere(ctx, held),
-		Reachable: true,
+		Installed: !known || len(accounts) > 0,
+		Accounts:  accounts,
 	}, nil
 }
 
-func (s *apps) installedAnywhere(ctx context.Context, app entity.SCMApp) bool {
+func (s *apps) installedOn(ctx context.Context, app entity.SCMApp) ([]string, bool) {
 	forgeApp, err := s.forges.App(app.Provider)
 	if err != nil {
-		return true
+		return nil, false
 	}
 
 	secrets, err := s.apps.Secrets(ctx, app.ID)
@@ -96,7 +98,7 @@ func (s *apps) installedAnywhere(ctx context.Context, app entity.SCMApp) bool {
 			"error", err.Error(),
 		)
 
-		return true
+		return nil, false
 	}
 
 	installations, err := forgeApp.AppInstallations(ctx, secrets)
@@ -109,10 +111,18 @@ func (s *apps) installedAnywhere(ctx context.Context, app entity.SCMApp) bool {
 			"error", err.Error(),
 		)
 
-		return true
+		return nil, false
 	}
 
-	return len(installations) > 0
+	accounts := make([]string, 0, len(installations))
+
+	for _, installation := range installations {
+		if installation.AccountLogin != "" {
+			accounts = append(accounts, installation.AccountLogin)
+		}
+	}
+
+	return accounts, true
 }
 
 func (s *apps) application(

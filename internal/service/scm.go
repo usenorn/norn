@@ -169,7 +169,7 @@ type Forge interface {
 type SCMApplication struct {
 	App       entity.SCMApp
 	Installed bool
-	Reachable bool
+	Accounts  []string
 }
 
 type ForgeApp interface {

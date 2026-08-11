@@ -6504,6 +6504,9 @@ type SourceControlApplication struct {
 	// Installed Whether the application is installed anywhere yet. Connecting lists the installations a person can reach, so with none there is nothing to choose and the screen offers installing first. True when the forge could not be asked, so an unreachable forge never hides a step.
 	Installed *bool `json:"installed,omitempty"`
 
+	// InstalledOn The accounts the application is installed on, so the screen can name them.
+	InstalledOn *[]string `json:"installedOn,omitempty"`
+
 	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
 	Provider   SourceControlProvider `json:"provider"`
 	Registered bool                  `json:"registered"`

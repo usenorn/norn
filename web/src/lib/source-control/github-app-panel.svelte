@@ -25,10 +25,12 @@
 		workspaceSlug,
 		application,
 		notice,
+		connectedTo = null,
 	}: {
 		workspaceId: string;
 		workspaceSlug: string;
 		application: SourceControlAppState;
+		connectedTo?: string | null;
 		notice?: SourceControlAppNotice;
 	} = $props();
 
@@ -195,9 +197,13 @@
 				</span>
 				<div class="flex min-w-0 flex-1 flex-col gap-1.5">
 					<p class="text-sm leading-normal text-ink-900 text-pretty">
-						{application.installed
-							? "Installed on GitHub. Add or remove repositories there whenever you like."
-							: "Install it on the organisation and repositories you want watched."}
+						{#if application.installed && application.installedOn.length > 0}
+							Installed on {application.installedOn.join(", ")}.
+						{:else if application.installed}
+							Installed on GitHub.
+						{:else}
+							Install it on the organisation and repositories you want watched.
+						{/if}
 					</p>
 					{#if application.installUrl}
 						<Button
@@ -207,7 +213,7 @@
 							href={application.installUrl}
 							rel="external"
 						>
-							{application.installed ? "Change what it can see" : "Install on GitHub"}
+							{application.installed ? "Change permissions" : "Install on GitHub"}
 						</Button>
 					{/if}
 				</div>
@@ -215,24 +221,31 @@
 
 			<li class="flex min-w-0 gap-3">
 				<span
-					class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-2xs {application.installed
-						? 'border-line-strong text-ink-900'
-						: 'border-line-subtle text-muted-foreground'}"
+					class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-2xs {connectedTo
+						? 'border-success/40 text-success'
+						: application.installed
+							? 'border-line-strong text-ink-900'
+							: 'border-line-subtle text-muted-foreground'}"
 					aria-hidden="true"
 				>
-					2
+					{connectedTo ? "✓" : "2"}
 				</span>
 				<div class="flex min-w-0 flex-1 flex-col gap-1.5">
 					<p
-						class="text-sm leading-normal text-pretty {application.installed
+						class="text-sm leading-normal text-pretty {application.installed || connectedTo
 							? 'text-ink-900'
 							: 'text-muted-foreground'}"
 					>
-						{application.installed
-							? "Sign in to GitHub and choose which installation Norn acts through."
-							: "Then sign in to choose which installation Norn acts through. There is nothing to choose until it is installed."}
+						{#if connectedTo}
+							Connected as {connectedTo}.
+						{:else if application.installed}
+							Sign in to GitHub and choose which installation Norn acts through.
+						{:else}
+							Then sign in to choose which installation Norn acts through. There is nothing
+							to choose until it is installed.
+						{/if}
 					</p>
-					{#if application.installed}
+					{#if application.installed && !connectedTo}
 						<Button size="sm" class="w-max" disabled={working} onclick={signIn}>
 							{working ? "Opening GitHub…" : "Connect GitHub"}
 						</Button>

@@ -63,6 +63,7 @@ export const load: PageServerLoad = async ({
 			slug: held.slug ?? "",
 			installUrl: held.installUrl ?? "",
 			installed: held.installed ?? true,
+			installedOn: held.installedOn ?? [],
 		};
 	} else if (held) {
 		app = { kind: "unregistered", canRegister: held.canRegister };

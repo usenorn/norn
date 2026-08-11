@@ -40,6 +40,7 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 					slug: "norn-northwind",
 					installUrl: "https://github.com/apps/norn-northwind/installations/new",
 					installed: true,
+					installedOn: ["northwind"],
 				},
 				notice: { kind: "registered" },
 			},
@@ -50,6 +51,7 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 					slug: "norn-northwind",
 					installUrl: "https://github.com/apps/norn-northwind/installations/new",
 					installed: false,
+					installedOn: [],
 				},
 			},
 			app_choosing: {
@@ -90,6 +92,7 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 					slug: "norn-northwind",
 					installUrl: "https://github.com/apps/norn-northwind/installations/new",
 					installed: true,
+					installedOn: ["northwind"],
 				},
 			},
 			app_expired: {
@@ -99,6 +102,7 @@ export const sourceControlPreviewStates: Record<string, SourceControlPreview> = 
 					slug: "norn-northwind",
 					installUrl: "https://github.com/apps/norn-northwind/installations/new",
 					installed: true,
+					installedOn: ["northwind"],
 				},
 				notice: { kind: "expired" },
 			},
