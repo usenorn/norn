@@ -3820,12 +3820,10 @@ paths:
       summary: Read the criteria that decide whether this issue is finished
       responses:
         '200':
-          description: Every check on the issue, approved or merely proposed
+          description: Every check on the issue with its state, plus a tally across them
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/IssueCheck' }
+              schema: { $ref: '#/components/schemas/IssueCheckList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -3985,10 +3983,10 @@ paths:
             schema: { $ref: '#/components/schemas/SubmitCheckEvidenceRequest' }
       responses:
         '201':
-          description: The stored record, after secrets were removed and long output was cut
+          description: The stored record and the check as it now stands
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/CheckEvidence' }
+              schema: { $ref: '#/components/schemas/SubmittedCheckEvidence' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -6347,7 +6345,9 @@ components:
         timeLimitSeconds:
           type: integer
           format: int32
-          description: How long an observation counts for. Absent means the team default applies.
+          description: >-
+            How long an observation counts for. Absent means Norn's own default applies, so
+            there is no way to say that a proof never stops counting.
         approval: { $ref: '#/components/schemas/CheckApproval' }
         approvedByAccountId: { type: string, format: uuid }
         approvedAt: { type: string, format: date-time }
@@ -6361,6 +6361,17 @@ components:
         addedAfterDelegation:
           type: boolean
           description: True when the criterion was written after the issue was handed to an agent.
+        state: { $ref: '#/components/schemas/CheckState' }
+        blocking:
+          type: boolean
+          description: True when this check stands between an agent and finishing the issue.
+        restsOnAbsence:
+          type: boolean
+          description: True when the only evidence filed is that nothing bad appeared.
+        expired:
+          type: boolean
+          description: True when this was proven once and the proof has since stopped counting.
+        evidenceCount: { type: integer, format: int32 }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
 
@@ -6368,7 +6379,7 @@ components:
       type: object
       required:
         [id, issueId, checkId, verdict, channel, output, truncated, redactions,
-         observedAt, receivedAt, actorKind]
+         observedAt, receivedAt, actorKind, expired]
       properties:
         id: { type: string, format: uuid }
         issueId: { type: string, format: uuid }
@@ -6404,6 +6415,70 @@ components:
         commitSha:
           type: string
           description: The head commit Norn held for the linked change when this arrived.
+        expired:
+          type: boolean
+          description: True when this observation no longer counts towards proving its check.
+        expiryReason: { $ref: '#/components/schemas/EvidenceExpiry' }
+
+    CheckState:
+      type: string
+      description: >-
+        Derived from the evidence on file every time it is read, never stored. A check whose
+        proof has expired reads as unproven again; expired tells that apart from never proven.
+      enum: [unproven, proven, failed, waived, gap]
+
+    EvidenceExpiry:
+      type: string
+      description: Why an observation stopped counting.
+      enum: [time_limit]
+
+    IssueCheckSummary:
+      type: object
+      required:
+        [total, proven, unproven, failed, waived, gaps, expired, unapproved, blocking,
+         restingOnAbsence]
+      properties:
+        total: { type: integer, format: int32 }
+        proven: { type: integer, format: int32 }
+        unproven: { type: integer, format: int32 }
+        failed: { type: integer, format: int32 }
+        waived: { type: integer, format: int32 }
+        gaps: { type: integer, format: int32 }
+        expired:
+          type: integer
+          format: int32
+          description: Checks that were proven once and lost it.
+        unapproved: { type: integer, format: int32 }
+        blocking:
+          type: integer
+          format: int32
+          description: >-
+            Approved checks that are unproven or failed. An agent cannot move the issue into a
+            completion state while this is above zero. A person can.
+        restingOnAbsence:
+          type: integer
+          format: int32
+          description: >-
+            Unproven checks whose only evidence is that nothing bad appeared, which is a real
+            finding and never a proof.
+
+    IssueCheckList:
+      type: object
+      required: [checks, summary]
+      properties:
+        checks:
+          type: array
+          items: { $ref: '#/components/schemas/IssueCheck' }
+        summary: { $ref: '#/components/schemas/IssueCheckSummary' }
+
+    SubmittedCheckEvidence:
+      type: object
+      required: [evidence, check]
+      properties:
+        evidence: { $ref: '#/components/schemas/CheckEvidence' }
+        check:
+          $ref: '#/components/schemas/IssueCheck'
+          description: The check as it now stands, so a submitter sees at once what its evidence proved.
 
     IssueCheckGap:
       type: object

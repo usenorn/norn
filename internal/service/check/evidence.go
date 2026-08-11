@@ -13,27 +13,35 @@ import (
 func (s *checksService) Evidence(
 	ctx context.Context,
 	workspaceID, issueID, checkID uuid.UUID,
-) ([]entity.Evidence, error) {
+) ([]entity.EvidenceRecord, error) {
 	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, _, err := s.checkOnIssue(ctx, workspaceID, issueID, checkID, decision); err != nil {
+	_, held, err := s.checkOnIssue(ctx, workspaceID, issueID, checkID, decision)
+	if err != nil {
 		return nil, err
 	}
 
-	return s.evidence.ListByCheck(ctx, workspaceID, checkID)
+	records, err := s.evidence.ListByCheck(ctx, workspaceID, checkID)
+	if err != nil {
+		return nil, err
+	}
+
+	return entity.NewCheckReport(
+		held, records, entity.EvidenceHorizon{Now: time.Now().UTC()},
+	).Evidence, nil
 }
 
 func (s *checksService) Submit(
 	ctx context.Context,
 	workspaceID, issueID, checkID uuid.UUID,
 	input service.SubmitEvidenceInput,
-) (entity.Evidence, error) {
+) (service.SubmittedEvidence, error) {
 	decision, err := s.decide(ctx, workspaceID, entity.ActionManage)
 	if err != nil {
-		return entity.Evidence{}, err
+		return service.SubmittedEvidence{}, err
 	}
 
 	if err := entity.NewValidationError(
@@ -41,14 +49,14 @@ func (s *checksService) Submit(
 		entity.ValidateEvidenceChannel("channel", input.Channel),
 		entity.ValidateEvidenceCommand("command", input.Command),
 	); err != nil {
-		return entity.Evidence{}, err
+		return service.SubmittedEvidence{}, err
 	}
 
 	if input.Output == "" {
-		return entity.Evidence{}, entity.ErrEvidenceEmpty
+		return service.SubmittedEvidence{}, entity.ErrEvidenceEmpty
 	}
 
-	var stored entity.Evidence
+	var submitted service.SubmittedEvidence
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		issue, held, err := s.checkOnIssue(ctx, workspaceID, issueID, checkID, decision)
@@ -91,9 +99,21 @@ func (s *checksService) Submit(
 			return err
 		}
 
-		stored, err = s.evidence.Append(ctx, record)
+		stored, err := s.evidence.Append(ctx, record)
 		if err != nil {
 			return err
+		}
+
+		horizon := entity.EvidenceHorizon{Now: received}
+
+		filed, err := s.evidence.Digest(ctx, workspaceID, issue.ID)
+		if err != nil {
+			return err
+		}
+
+		submitted = service.SubmittedEvidence{
+			Record: entity.EvidenceRecord{Evidence: stored, Expiry: held.Expiry(stored, horizon)},
+			Report: entity.NewCheckReport(held, filed, horizon),
 		}
 
 		return s.activity.Record(ctx, entity.Activity{
@@ -107,10 +127,10 @@ func (s *checksService) Submit(
 		})
 	})
 	if err != nil {
-		return entity.Evidence{}, err
+		return service.SubmittedEvidence{}, err
 	}
 
-	return stored, nil
+	return submitted, nil
 }
 
 func (s *checksService) stampHead(

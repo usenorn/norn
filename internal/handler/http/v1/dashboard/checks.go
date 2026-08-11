@@ -22,7 +22,7 @@ func (h *handler) ListWorkspaceIssueChecks(
 		return nil, err
 	}
 
-	return api.ListWorkspaceIssueChecks200JSONResponse(issueCheckDTOs(checks)), nil
+	return api.ListWorkspaceIssueChecks200JSONResponse(issueCheckListDTO(checks)), nil
 }
 
 func (h *handler) AddWorkspaceIssueChecks(
@@ -155,7 +155,7 @@ func (h *handler) ListWorkspaceIssueCheckEvidence(
 		return nil, err
 	}
 
-	return api.ListWorkspaceIssueCheckEvidence200JSONResponse(checkEvidenceDTOs(records)), nil
+	return api.ListWorkspaceIssueCheckEvidence200JSONResponse(checkEvidenceRecordDTOs(records)), nil
 }
 
 func (h *handler) SubmitWorkspaceIssueCheckEvidence(
@@ -178,7 +178,7 @@ func (h *handler) SubmitWorkspaceIssueCheckEvidence(
 		input.ExitCode = &code
 	}
 
-	stored, err := h.checks.Submit(
+	submitted, err := h.checks.Submit(
 		ctx, request.WorkspaceId, request.IssueId, request.CheckId, input,
 	)
 	if err != nil {
@@ -189,7 +189,10 @@ func (h *handler) SubmitWorkspaceIssueCheckEvidence(
 		return nil, err
 	}
 
-	return api.SubmitWorkspaceIssueCheckEvidence201JSONResponse(checkEvidenceDTO(stored)), nil
+	return api.SubmitWorkspaceIssueCheckEvidence201JSONResponse{
+		Evidence: checkEvidenceRecordDTO(submitted.Record),
+		Check:    issueCheckReportDTO(submitted.Report),
+	}, nil
 }
 
 func checkTimeLimit(seconds *int32) *time.Duration {

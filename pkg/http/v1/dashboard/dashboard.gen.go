@@ -766,6 +766,33 @@ func (e CheckResolution) Valid() bool {
 	}
 }
 
+// Defines values for CheckState.
+const (
+	CheckStateFailed   CheckState = "failed"
+	CheckStateGap      CheckState = "gap"
+	CheckStateProven   CheckState = "proven"
+	CheckStateUnproven CheckState = "unproven"
+	CheckStateWaived   CheckState = "waived"
+)
+
+// Valid indicates whether the value is a known member of the CheckState enum.
+func (e CheckState) Valid() bool {
+	switch e {
+	case CheckStateFailed:
+		return true
+	case CheckStateGap:
+		return true
+	case CheckStateProven:
+		return true
+	case CheckStateUnproven:
+		return true
+	case CheckStateWaived:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CodeChangeState.
 const (
 	CodeChangeStateApproved         CodeChangeState = "approved"
@@ -1180,6 +1207,21 @@ func (e EvidenceChannel) Valid() bool {
 	case EvidenceChannelLog:
 		return true
 	case EvidenceChannelScreenshot:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EvidenceExpiry.
+const (
+	TimeLimit EvidenceExpiry = "time_limit"
+)
+
+// Valid indicates whether the value is a known member of the EvidenceExpiry enum.
+func (e EvidenceExpiry) Valid() bool {
+	switch e {
+	case TimeLimit:
 		return true
 	default:
 		return false
@@ -4147,10 +4189,16 @@ type CheckEvidence struct {
 	Command    *string             `json:"command,omitempty"`
 
 	// CommitSha The head commit Norn held for the linked change when this arrived.
-	CommitSha *string            `json:"commitSha,omitempty"`
-	ExitCode  *int32             `json:"exitCode,omitempty"`
-	Id        openapi_types.UUID `json:"id"`
-	IssueId   openapi_types.UUID `json:"issueId"`
+	CommitSha *string `json:"commitSha,omitempty"`
+	ExitCode  *int32  `json:"exitCode,omitempty"`
+
+	// Expired True when this observation no longer counts towards proving its check.
+	Expired bool `json:"expired"`
+
+	// ExpiryReason Why an observation stopped counting.
+	ExpiryReason *EvidenceExpiry    `json:"expiryReason,omitempty"`
+	Id           openapi_types.UUID `json:"id"`
+	IssueId      openapi_types.UUID `json:"issueId"`
 
 	// ObservedAt When the submitter says it looked, clamped so it can never be later than receivedAt.
 	ObservedAt time.Time `json:"observedAt"`
@@ -4174,6 +4222,9 @@ type CheckMethod string
 
 // CheckResolution How a person set this criterion aside. A gap is an honest "not done" and files a child issue, which then keeps the parent open until it is closed.
 type CheckResolution string
+
+// CheckState Derived from the evidence on file every time it is read, never stored. A check whose proof has expired reads as unproven again; expired tells that apart from never proven.
+type CheckState string
 
 // CloseCycleRequest defines model for CloseCycleRequest.
 type CloseCycleRequest struct {
@@ -4630,6 +4681,9 @@ type EnforcementRefusedProblemCode string
 // EvidenceChannel Where the observation came from. Declared by the submitter; Norn cannot verify it.
 type EvidenceChannel string
 
+// EvidenceExpiry Why an observation stopped counting.
+type EvidenceExpiry string
+
 // EvidenceVerdict absent_negative is the finding that nothing bad appeared. It is a real category and a different thing from having observed something working.
 type EvidenceVerdict string
 
@@ -5085,11 +5139,18 @@ type IssueCheck struct {
 	ApprovedAt          *time.Time            `json:"approvedAt,omitempty"`
 	ApprovedByAccountId *openapi_types.UUID   `json:"approvedByAccountId,omitempty"`
 	AuthorKind          NotificationActorKind `json:"authorKind"`
-	CreatedAt           time.Time             `json:"createdAt"`
-	CreatedByAccountId  *openapi_types.UUID   `json:"createdByAccountId,omitempty"`
-	GapIssueId          *openapi_types.UUID   `json:"gapIssueId,omitempty"`
-	Id                  openapi_types.UUID    `json:"id"`
-	IssueId             openapi_types.UUID    `json:"issueId"`
+
+	// Blocking True when this check stands between an agent and finishing the issue.
+	Blocking           *bool               `json:"blocking,omitempty"`
+	CreatedAt          time.Time           `json:"createdAt"`
+	CreatedByAccountId *openapi_types.UUID `json:"createdByAccountId,omitempty"`
+	EvidenceCount      *int32              `json:"evidenceCount,omitempty"`
+
+	// Expired True when this was proven once and the proof has since stopped counting.
+	Expired    *bool               `json:"expired,omitempty"`
+	GapIssueId *openapi_types.UUID `json:"gapIssueId,omitempty"`
+	Id         openapi_types.UUID  `json:"id"`
+	IssueId    openapi_types.UUID  `json:"issueId"`
 
 	// Method How a criterion will be proven. Norn runs none of these itself.
 	Method   CheckMethod `json:"method"`
@@ -5103,9 +5164,15 @@ type IssueCheck struct {
 	ResolutionReason    *string             `json:"resolutionReason,omitempty"`
 	ResolvedAt          *time.Time          `json:"resolvedAt,omitempty"`
 	ResolvedByAccountId *openapi_types.UUID `json:"resolvedByAccountId,omitempty"`
-	Statement           string              `json:"statement"`
 
-	// TimeLimitSeconds How long an observation counts for. Absent means the team default applies.
+	// RestsOnAbsence True when the only evidence filed is that nothing bad appeared.
+	RestsOnAbsence *bool `json:"restsOnAbsence,omitempty"`
+
+	// State Derived from the evidence on file every time it is read, never stored. A check whose proof has expired reads as unproven again; expired tells that apart from never proven.
+	State     *CheckState `json:"state,omitempty"`
+	Statement string      `json:"statement"`
+
+	// TimeLimitSeconds How long an observation counts for. Absent means Norn's own default applies, so there is no way to say that a proof never stops counting.
 	TimeLimitSeconds *int32             `json:"timeLimitSeconds,omitempty"`
 	UpdatedAt        *time.Time         `json:"updatedAt,omitempty"`
 	WorkspaceId      openapi_types.UUID `json:"workspaceId"`
@@ -5115,6 +5182,31 @@ type IssueCheck struct {
 type IssueCheckGap struct {
 	Check IssueCheck `json:"check"`
 	Issue Issue      `json:"issue"`
+}
+
+// IssueCheckList defines model for IssueCheckList.
+type IssueCheckList struct {
+	Checks  []IssueCheck      `json:"checks"`
+	Summary IssueCheckSummary `json:"summary"`
+}
+
+// IssueCheckSummary defines model for IssueCheckSummary.
+type IssueCheckSummary struct {
+	// Blocking Approved checks that are unproven or failed. An agent cannot move the issue into a completion state while this is above zero. A person can.
+	Blocking int32 `json:"blocking"`
+
+	// Expired Checks that were proven once and lost it.
+	Expired int32 `json:"expired"`
+	Failed  int32 `json:"failed"`
+	Gaps    int32 `json:"gaps"`
+	Proven  int32 `json:"proven"`
+
+	// RestingOnAbsence Unproven checks whose only evidence is that nothing bad appeared, which is a real finding and never a proof.
+	RestingOnAbsence int32 `json:"restingOnAbsence"`
+	Total            int32 `json:"total"`
+	Unapproved       int32 `json:"unapproved"`
+	Unproven         int32 `json:"unproven"`
+	Waived           int32 `json:"waived"`
 }
 
 // IssueChildren defines model for IssueChildren.
@@ -6489,6 +6581,12 @@ type SubmitCheckEvidenceRequest struct {
 
 	// Verdict absent_negative is the finding that nothing bad appeared. It is a real category and a different thing from having observed something working.
 	Verdict EvidenceVerdict `json:"verdict"`
+}
+
+// SubmittedCheckEvidence defines model for SubmittedCheckEvidence.
+type SubmittedCheckEvidence struct {
+	Check    IssueCheck    `json:"check"`
+	Evidence CheckEvidence `json:"evidence"`
 }
 
 // SuppressIssueAutomationRequest defines model for SuppressIssueAutomationRequest.
@@ -28708,7 +28806,7 @@ type ListWorkspaceIssueChecksResponseObject interface {
 	VisitListWorkspaceIssueChecksResponse(w http.ResponseWriter) error
 }
 
-type ListWorkspaceIssueChecks200JSONResponse []IssueCheck
+type ListWorkspaceIssueChecks200JSONResponse IssueCheckList
 
 func (response ListWorkspaceIssueChecks200JSONResponse) VisitListWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
 
@@ -29184,7 +29282,7 @@ type SubmitWorkspaceIssueCheckEvidenceResponseObject interface {
 	VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error
 }
 
-type SubmitWorkspaceIssueCheckEvidence201JSONResponse CheckEvidence
+type SubmitWorkspaceIssueCheckEvidence201JSONResponse SubmittedCheckEvidence
 
 func (response SubmitWorkspaceIssueCheckEvidence201JSONResponse) VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
 

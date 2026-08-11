@@ -40,4 +40,5 @@ type CheckEvidence interface {
 	Append(ctx context.Context, evidence entity.Evidence) (entity.Evidence, error)
 	ListByCheck(ctx context.Context, workspaceID, checkID uuid.UUID) ([]entity.Evidence, error)
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Evidence, error)
+	Digest(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Evidence, error)
 }

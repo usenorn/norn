@@ -1550,6 +1550,70 @@ func agentSettingsDTO(settings entity.AgentSettings) api.AgentSettings {
 	}
 }
 
+func issueCheckReportDTO(report entity.CheckReport) api.IssueCheck {
+	dto := issueCheckDTO(report.Check)
+
+	state := api.CheckState(report.State)
+	blocking := report.Blocks()
+	quiet := report.RestsOnAbsence()
+	expired := report.Expired()
+	count := int32(len(report.Evidence))
+
+	dto.State = &state
+	dto.Blocking = &blocking
+	dto.RestsOnAbsence = &quiet
+	dto.Expired = &expired
+	dto.EvidenceCount = &count
+
+	return dto
+}
+
+func issueCheckListDTO(checks service.IssueChecks) api.IssueCheckList {
+	reports := make([]api.IssueCheck, 0, len(checks.Reports))
+
+	for _, report := range checks.Reports {
+		reports = append(reports, issueCheckReportDTO(report))
+	}
+
+	return api.IssueCheckList{
+		Checks: reports,
+		Summary: api.IssueCheckSummary{
+			Total:            int32(checks.Summary.Total),
+			Proven:           int32(checks.Summary.Proven),
+			Unproven:         int32(checks.Summary.Unproven),
+			Failed:           int32(checks.Summary.Failed),
+			Waived:           int32(checks.Summary.Waived),
+			Gaps:             int32(checks.Summary.Gaps),
+			Expired:          int32(checks.Summary.Expired),
+			Unapproved:       int32(checks.Summary.Unapproved),
+			Blocking:         int32(checks.Summary.Blocking),
+			RestingOnAbsence: int32(checks.Summary.RestingOnAbsence),
+		},
+	}
+}
+
+func checkEvidenceRecordDTO(record entity.EvidenceRecord) api.CheckEvidence {
+	dto := checkEvidenceDTO(record.Evidence)
+	dto.Expired = record.Expiry.Expired()
+
+	if dto.Expired {
+		reason := api.EvidenceExpiry(record.Expiry)
+		dto.ExpiryReason = &reason
+	}
+
+	return dto
+}
+
+func checkEvidenceRecordDTOs(records []entity.EvidenceRecord) []api.CheckEvidence {
+	dtos := make([]api.CheckEvidence, 0, len(records))
+
+	for _, record := range records {
+		dtos = append(dtos, checkEvidenceRecordDTO(record))
+	}
+
+	return dtos
+}
+
 func issueCheckDTO(check entity.Check) api.IssueCheck {
 	dto := api.IssueCheck{
 		Id:                   check.ID,
@@ -1642,16 +1706,6 @@ func checkEvidenceDTO(evidence entity.Evidence) api.CheckEvidence {
 	}
 
 	return dto
-}
-
-func checkEvidenceDTOs(records []entity.Evidence) []api.CheckEvidence {
-	dtos := make([]api.CheckEvidence, 0, len(records))
-
-	for _, record := range records {
-		dtos = append(dtos, checkEvidenceDTO(record))
-	}
-
-	return dtos
 }
 
 func issueDelegationDTO(delegation entity.IssueDelegation) api.IssueDelegation {

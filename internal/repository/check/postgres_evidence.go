@@ -35,6 +35,19 @@ FROM workspace_check_evidence
 WHERE workspace_id = $1 AND check_id = $2
 ORDER BY received_at, id`
 
+const evidenceDigestColumns = `
+    id, workspace_id, issue_id, check_id, verdict, channel, '' AS command, '' AS output,
+    output_truncated, redactions, exit_code, observed_at, received_at,
+    actor_kind, coalesce(actor_account_id::text, ''), actor_name,
+    coalesce(code_link_id::text, ''), commit_sha,
+    coalesce(scrubbed_by_account_id::text, ''), scrubbed_at`
+
+const evidenceDigestByIssueQuery = `
+SELECT` + evidenceDigestColumns + `
+FROM workspace_check_evidence
+WHERE workspace_id = $1 AND issue_id = $2
+ORDER BY received_at, id`
+
 const evidenceByIssueQuery = `
 SELECT` + evidenceColumns + `
 FROM workspace_check_evidence
@@ -197,6 +210,13 @@ func (r *evidenceRepository) ListByIssue(
 	workspaceID, issueID uuid.UUID,
 ) ([]entity.Evidence, error) {
 	return r.list(ctx, evidenceByIssueQuery, workspaceID, issueID)
+}
+
+func (r *evidenceRepository) Digest(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) ([]entity.Evidence, error) {
+	return r.list(ctx, evidenceDigestByIssueQuery, workspaceID, issueID)
 }
 
 func (r *evidenceRepository) list(

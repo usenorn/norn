@@ -171,6 +171,21 @@ func (mr *MockCheckEvidenceMockRecorder) Append(ctx, evidence any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Append", reflect.TypeOf((*MockCheckEvidence)(nil).Append), ctx, evidence)
 }
 
+// Digest mocks base method.
+func (m *MockCheckEvidence) Digest(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Evidence, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Digest", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].([]entity.Evidence)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Digest indicates an expected call of Digest.
+func (mr *MockCheckEvidenceMockRecorder) Digest(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Digest", reflect.TypeOf((*MockCheckEvidence)(nil).Digest), ctx, workspaceID, issueID)
+}
+
 // ListByCheck mocks base method.
 func (m *MockCheckEvidence) ListByCheck(ctx context.Context, workspaceID, checkID uuid.UUID) ([]entity.Evidence, error) {
 	m.ctrl.T.Helper()

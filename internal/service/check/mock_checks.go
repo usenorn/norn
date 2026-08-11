@@ -89,10 +89,10 @@ func (mr *MockChecksMockRecorder) DeclareGap(ctx, workspaceID, issueID, checkID,
 }
 
 // Evidence mocks base method.
-func (m *MockChecks) Evidence(ctx context.Context, workspaceID, issueID, checkID uuid.UUID) ([]entity.Evidence, error) {
+func (m *MockChecks) Evidence(ctx context.Context, workspaceID, issueID, checkID uuid.UUID) ([]entity.EvidenceRecord, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Evidence", ctx, workspaceID, issueID, checkID)
-	ret0, _ := ret[0].([]entity.Evidence)
+	ret0, _ := ret[0].([]entity.EvidenceRecord)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -104,10 +104,10 @@ func (mr *MockChecksMockRecorder) Evidence(ctx, workspaceID, issueID, checkID an
 }
 
 // List mocks base method.
-func (m *MockChecks) List(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Check, error) {
+func (m *MockChecks) List(ctx context.Context, workspaceID, issueID uuid.UUID) (service.IssueChecks, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, workspaceID, issueID)
-	ret0, _ := ret[0].([]entity.Check)
+	ret0, _ := ret[0].(service.IssueChecks)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -133,10 +133,10 @@ func (mr *MockChecksMockRecorder) Remove(ctx, workspaceID, issueID, checkID any)
 }
 
 // Submit mocks base method.
-func (m *MockChecks) Submit(ctx context.Context, workspaceID, issueID, checkID uuid.UUID, input service.SubmitEvidenceInput) (entity.Evidence, error) {
+func (m *MockChecks) Submit(ctx context.Context, workspaceID, issueID, checkID uuid.UUID, input service.SubmitEvidenceInput) (service.SubmittedEvidence, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Submit", ctx, workspaceID, issueID, checkID, input)
-	ret0, _ := ret[0].(entity.Evidence)
+	ret0, _ := ret[0].(service.SubmittedEvidence)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

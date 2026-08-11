@@ -65,17 +65,36 @@ func (s *checksService) decide(
 func (s *checksService) List(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
-) ([]entity.Check, error) {
+) (service.IssueChecks, error) {
 	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
 	if err != nil {
-		return nil, err
+		return service.IssueChecks{}, err
 	}
 
 	if _, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope); err != nil {
-		return nil, err
+		return service.IssueChecks{}, err
 	}
 
-	return s.checks.ListByIssue(ctx, workspaceID, issueID)
+	return s.report(ctx, workspaceID, issueID)
+}
+
+func (s *checksService) report(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) (service.IssueChecks, error) {
+	checks, err := s.checks.ListByIssue(ctx, workspaceID, issueID)
+	if err != nil {
+		return service.IssueChecks{}, err
+	}
+
+	evidence, err := s.evidence.Digest(ctx, workspaceID, issueID)
+	if err != nil {
+		return service.IssueChecks{}, err
+	}
+
+	reports := entity.ReportChecks(checks, evidence, entity.EvidenceHorizon{Now: time.Now().UTC()})
+
+	return service.IssueChecks{Reports: reports, Summary: entity.Summarise(reports)}, nil
 }
 
 func (s *checksService) Add(

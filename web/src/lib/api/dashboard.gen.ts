@@ -3801,7 +3801,7 @@ export interface components {
             proof: string;
             /**
              * Format: int32
-             * @description How long an observation counts for. Absent means the team default applies.
+             * @description How long an observation counts for. Absent means Norn's own default applies, so there is no way to say that a proof never stops counting.
              */
             timeLimitSeconds?: number;
             approval: components["schemas"]["CheckApproval"];
@@ -3822,6 +3822,15 @@ export interface components {
             createdByAccountId?: string;
             /** @description True when the criterion was written after the issue was handed to an agent. */
             addedAfterDelegation: boolean;
+            state?: components["schemas"]["CheckState"];
+            /** @description True when this check stands between an agent and finishing the issue. */
+            blocking?: boolean;
+            /** @description True when the only evidence filed is that nothing bad appeared. */
+            restsOnAbsence?: boolean;
+            /** @description True when this was proven once and the proof has since stopped counting. */
+            expired?: boolean;
+            /** Format: int32 */
+            evidenceCount?: number;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -3865,6 +3874,59 @@ export interface components {
             codeLinkId?: string;
             /** @description The head commit Norn held for the linked change when this arrived. */
             commitSha?: string;
+            /** @description True when this observation no longer counts towards proving its check. */
+            expired: boolean;
+            expiryReason?: components["schemas"]["EvidenceExpiry"];
+        };
+        /**
+         * @description Derived from the evidence on file every time it is read, never stored. A check whose proof has expired reads as unproven again; expired tells that apart from never proven.
+         * @enum {string}
+         */
+        CheckState: "unproven" | "proven" | "failed" | "waived" | "gap";
+        /**
+         * @description Why an observation stopped counting.
+         * @enum {string}
+         */
+        EvidenceExpiry: "time_limit";
+        IssueCheckSummary: {
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            proven: number;
+            /** Format: int32 */
+            unproven: number;
+            /** Format: int32 */
+            failed: number;
+            /** Format: int32 */
+            waived: number;
+            /** Format: int32 */
+            gaps: number;
+            /**
+             * Format: int32
+             * @description Checks that were proven once and lost it.
+             */
+            expired: number;
+            /** Format: int32 */
+            unapproved: number;
+            /**
+             * Format: int32
+             * @description Approved checks that are unproven or failed. An agent cannot move the issue into a completion state while this is above zero. A person can.
+             */
+            blocking: number;
+            /**
+             * Format: int32
+             * @description Unproven checks whose only evidence is that nothing bad appeared, which is a real finding and never a proof.
+             */
+            restingOnAbsence: number;
+        };
+        IssueCheckList: {
+            checks: components["schemas"]["IssueCheck"][];
+            summary: components["schemas"]["IssueCheckSummary"];
+        };
+        SubmittedCheckEvidence: {
+            evidence: components["schemas"]["CheckEvidence"];
+            /** @description The check as it now stands, so a submitter sees at once what its evidence proved. */
+            check: components["schemas"]["IssueCheck"];
         };
         IssueCheckGap: {
             check: components["schemas"]["IssueCheck"];
@@ -11946,13 +12008,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Every check on the issue, approved or merely proposed */
+            /** @description Every check on the issue with its state, plus a tally across them */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IssueCheck"][];
+                    "application/json": components["schemas"]["IssueCheckList"];
                 };
             };
             401: components["responses"]["Problem"];
@@ -12167,13 +12229,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The stored record, after secrets were removed and long output was cut */
+            /** @description The stored record and the check as it now stands */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CheckEvidence"];
+                    "application/json": components["schemas"]["SubmittedCheckEvidence"];
                 };
             };
             401: components["responses"]["Problem"];
