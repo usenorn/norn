@@ -1479,6 +1479,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/agents/{agentId}/credential": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue a fresh credential for an agent, revoking the one it had
+         * @description The value is shown once and never stored, so a lost credential is replaced rather than recovered. The old one stops working the moment this returns, and the agent keeps its permissions, its name, and everything it has already done.
+         */
+        post: operations["rotateWorkspaceAgentCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents/{agentId}/activity": {
         parameters: {
             query?: never;
@@ -9788,6 +9808,34 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    rotateWorkspaceAgentCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agent and its new credential */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisteredAgent"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentUnusable"];
             500: components["responses"]["Problem"];
         };
     };

@@ -94,6 +94,25 @@ func (h *handler) DisableWorkspaceAgent(
 	return api.DisableWorkspaceAgent204Response{}, nil
 }
 
+func (h *handler) RotateWorkspaceAgentCredential(
+	ctx context.Context,
+	request api.RotateWorkspaceAgentCredentialRequestObject,
+) (api.RotateWorkspaceAgentCredentialResponseObject, error) {
+	rotated, err := h.agents.Rotate(ctx, request.WorkspaceId, request.AgentId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.RotateWorkspaceAgentCredential201JSONResponse{
+		Agent: agentDTO(rotated.Agent),
+		Value: rotated.Value,
+	}, nil
+}
+
 func (h *handler) ListWorkspaceAgentActivity(
 	ctx context.Context,
 	request api.ListWorkspaceAgentActivityRequestObject,

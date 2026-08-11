@@ -4,6 +4,7 @@
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import Bot from "@lucide/svelte/icons/bot";
+	import CredentialDialog from "$lib/agents/credential-dialog.svelte";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import * as Alert from "$lib/components/ui/alert/index.js";
@@ -25,6 +26,7 @@
 		failureMessage,
 		mcpAddCommand,
 		mcpServerUrl,
+		type Agent,
 		type AgentFailure,
 		type AgentListing,
 	} from "$lib/agents/agents";
@@ -119,6 +121,47 @@
 		formData.update((entered) => ({ ...entered, teamIds: [...next] }));
 	}
 
+	let issuedAgent = $state.raw<Agent | null>(null);
+	let issuedValue = $state("");
+	let issuedByRotation = $state(false);
+	let rotating = $state("");
+
+	$effect(() => {
+		if (registered && registered.value !== issuedValue) {
+			issuedAgent = registered.agent;
+			issuedValue = registered.value;
+			issuedByRotation = false;
+		}
+	});
+
+	async function rotate(agentId: string) {
+		rotating = agentId;
+		disableFailure = null;
+
+		try {
+			const { data, error } = await api.POST(
+				"/workspaces/{workspaceId}/agents/{agentId}/credential",
+				{ params: { path: { workspaceId: workspace.id, agentId } } }
+			);
+
+			if (error || !data) {
+				disableFailure = error?.status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
+
+				return;
+			}
+
+			issuedAgent = data.agent;
+			issuedValue = data.value;
+			issuedByRotation = true;
+
+			await invalidate(keys.page(page.route.id));
+		} catch {
+			disableFailure = { kind: "unavailable" };
+		} finally {
+			rotating = "";
+		}
+	}
+
 	async function copy(text: string) {
 		await navigator.clipboard.writeText(text);
 		copiedValue = text;
@@ -193,49 +236,15 @@
 				</Alert.Root>
 			{/if}
 
-			{#if registered}
-				<section class="flex flex-col gap-3 rounded-lg border border-success/40 bg-paper-0 p-4">
-					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">
-							Copy {registered.agent.name}'s credential now
-						</h2>
-						<p class="text-sm leading-normal text-muted-foreground text-pretty">
-							This is the only time it is shown. If you lose it, disable the agent and register
-							another.
-						</p>
-					</div>
-					<p class="rounded-md bg-paper-100 p-3 font-mono text-xs break-all text-ink-900">
-						{registered.value}
-					</p>
-					<div>
-						<Button variant="secondary" size="sm" onclick={() => copy(registered.value)}>
-							{copiedValue === registered.value ? "Copied" : "Copy credential"}
-						</Button>
-					</div>
-
-					<div class="flex flex-col gap-2 border-t border-line-subtle pt-3">
-						<h3 class="text-sm font-medium tracking-snug text-ink-900">
-							Connect an AI client to {workspace.name}
-						</h3>
-						<p class="text-sm leading-normal text-muted-foreground text-pretty">
-							This is the whole setup. Everything the client does arrives as {registered.agent
-								.name}, bounded by the permissions above, and stops the moment you disable it. The
-							credential lasts a year and cannot be extended.
-						</p>
-						<p class="rounded-md bg-paper-100 p-3 font-mono text-xs break-all text-ink-900">
-							{addCommand}
-						</p>
-						<div class="flex flex-wrap gap-2">
-							<Button variant="secondary" size="sm" onclick={() => copy(addCommand)}>
-								{copiedValue === addCommand ? "Copied" : "Copy command"}
-							</Button>
-							<Button variant="ghost" size="sm" onclick={() => copy(serverUrl)}>
-								{copiedValue === serverUrl ? "Copied" : "Copy server URL"}
-							</Button>
-						</div>
-					</div>
-				</section>
-			{/if}
+			<CredentialDialog
+				open={issuedAgent !== null}
+				agent={issuedAgent}
+				value={issuedValue}
+				origin={page.url.origin}
+				workspaceName={workspace.name}
+				rotated={issuedByRotation}
+				onclose={() => (issuedAgent = null)}
+			/>
 
 			{#if showForm}
 				<form method="POST" id={formId} use:enhance class="flex flex-col gap-5">
@@ -447,12 +456,20 @@
 										· {owned.agent.actionLimit} actions a minute
 									</p>
 								</div>
-								<div class="flex-none">
+								<div class="flex flex-none flex-wrap gap-2">
 									{#if owned.agent.status === "active"}
 										<Button
 											variant="secondary"
 											size="sm"
-											disabled={busy}
+											disabled={busy || rotating !== ""}
+											onclick={() => rotate(owned.agent.id)}
+										>
+											{rotating === owned.agent.id ? "Issuing…" : "New credential"}
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											disabled={busy || rotating !== ""}
 											onclick={() => disable(owned.agent.id)}
 										>
 											{disabling === owned.agent.id ? "Disabling…" : "Disable"}

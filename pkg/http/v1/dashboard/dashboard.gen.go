@@ -8121,6 +8121,9 @@ type ServerInterface interface {
 	// ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 	ListWorkspaceAgentActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, params ListWorkspaceAgentActivityParams)
+	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
+	RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 	// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
 	DownloadWorkspaceAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, attachmentId AttachmentId)
@@ -9072,6 +9075,12 @@ func (_ Unimplemented) GetWorkspaceAgent(w http.ResponseWriter, r *http.Request,
 // ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 // (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 func (_ Unimplemented) ListWorkspaceAgentActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, params ListWorkspaceAgentActivityParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
+// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
+func (_ Unimplemented) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -11440,6 +11449,41 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceAgentActivity(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWorkspaceAgentActivity(w, r, workspaceId, agentId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RotateWorkspaceAgentCredential operation middleware
+func (siw *ServerInterfaceWrapper) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RotateWorkspaceAgentCredential(w, r, workspaceId, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19962,6 +20006,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}", wrapper.GetWorkspaceAgent)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/credential", wrapper.RotateWorkspaceAgentCredential)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/activity", wrapper.ListWorkspaceAgentActivity)
 	})
 	r.Group(func(r chi.Router) {
@@ -24210,6 +24257,105 @@ func (response ListWorkspaceAgentActivity404ApplicationProblemPlusJSONResponse) 
 type ListWorkspaceAgentActivity500ApplicationProblemPlusJSONResponse Problem
 
 func (response ListWorkspaceAgentActivity500ApplicationProblemPlusJSONResponse) VisitListWorkspaceAgentActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceAgentCredentialRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+}
+
+type RotateWorkspaceAgentCredentialResponseObject interface {
+	VisitRotateWorkspaceAgentCredentialResponse(w http.ResponseWriter) error
+}
+
+type RotateWorkspaceAgentCredential201JSONResponse RegisteredAgent
+
+func (response RotateWorkspaceAgentCredential201JSONResponse) VisitRotateWorkspaceAgentCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceAgentCredential401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RotateWorkspaceAgentCredential401ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceAgentCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceAgentCredential403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RotateWorkspaceAgentCredential403ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceAgentCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceAgentCredential404ApplicationProblemPlusJSONResponse Problem
+
+func (response RotateWorkspaceAgentCredential404ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceAgentCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceAgentCredential409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response RotateWorkspaceAgentCredential409ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceAgentCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateWorkspaceAgentCredential500ApplicationProblemPlusJSONResponse Problem
+
+func (response RotateWorkspaceAgentCredential500ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceAgentCredentialResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -44695,6 +44841,9 @@ type StrictServerInterface interface {
 	// ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 	ListWorkspaceAgentActivity(ctx context.Context, request ListWorkspaceAgentActivityRequestObject) (ListWorkspaceAgentActivityResponseObject, error)
+	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
+	RotateWorkspaceAgentCredential(ctx context.Context, request RotateWorkspaceAgentCredentialRequestObject) (RotateWorkspaceAgentCredentialResponseObject, error)
 	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 	// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
 	DownloadWorkspaceAttachment(ctx context.Context, request DownloadWorkspaceAttachmentRequestObject) (DownloadWorkspaceAttachmentResponseObject, error)
@@ -46737,6 +46886,33 @@ func (sh *strictHandler) ListWorkspaceAgentActivity(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListWorkspaceAgentActivityResponseObject); ok {
 		if err := validResponse.VisitListWorkspaceAgentActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RotateWorkspaceAgentCredential operation middleware
+func (sh *strictHandler) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request RotateWorkspaceAgentCredentialRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RotateWorkspaceAgentCredential(ctx, request.(RotateWorkspaceAgentCredentialRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RotateWorkspaceAgentCredential")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RotateWorkspaceAgentCredentialResponseObject); ok {
+		if err := validResponse.VisitRotateWorkspaceAgentCredentialResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -1298,6 +1298,10 @@ func (r problemResponse) VisitDisableWorkspaceAgentResponse(w http.ResponseWrite
 	return r.write(w)
 }
 
+func (r problemResponse) VisitRotateWorkspaceAgentCredentialResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitListWorkspaceAgentActivityResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

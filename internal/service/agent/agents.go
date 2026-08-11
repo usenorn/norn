@@ -364,3 +364,112 @@ func (s *agentsService) Authenticate(
 
 	return actor, nil
 }
+
+func (s *agentsService) Rotate(
+	ctx context.Context,
+	workspaceID, agentID uuid.UUID,
+) (service.RegisteredAgent, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceAgent,
+		Action:      entity.ActionManage,
+		WorkspaceID: workspaceID,
+	})
+	if err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	if decision.Actor.Kind != entity.ActorKindUser {
+		return service.RegisteredAgent{}, entity.ErrAPITokenMintForbidden
+	}
+
+	agent, err := s.agents.GetByID(ctx, workspaceID, agentID)
+	if err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	if agent.Disabled() {
+		return service.RegisteredAgent{}, entity.ErrAgentDisabled
+	}
+
+	held, err := s.tokens.ListByOwner(ctx, agent.AccountID)
+	if err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	value, tokenHash, err := entity.NewAPIToken()
+	if err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	var rotated service.RegisteredAgent
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		now := time.Now().UTC()
+
+		if err := s.tokens.RevokeAllByAccount(ctx, agent.AccountID, now); err != nil {
+			return err
+		}
+
+		expiresAt := now.Add(entity.APITokenMaxTTL)
+
+		token, err := s.tokens.Create(ctx, entity.APIToken{
+			AccountID: agent.AccountID,
+			Name:      agent.Name,
+			TokenHash: tokenHash,
+			Scopes:    carriedScopes(held),
+			Grants:    carriedGrants(held),
+			ExpiresAt: &expiresAt,
+		})
+		if err != nil {
+			return err
+		}
+
+		rotated = service.RegisteredAgent{Agent: agent, Token: token, Value: value}
+
+		return nil
+	}); err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditAgentRotated,
+		ResourceKind: string(entity.ResourceAgent),
+		ResourceID:   agentID,
+		ResourceName: agent.Name,
+	})
+
+	return rotated, nil
+}
+
+func carriedScopes(held []entity.APIToken) entity.APIScopeSet {
+	for _, token := range held {
+		if token.Revoked() {
+			continue
+		}
+
+		return token.Scopes
+	}
+
+	if len(held) == 0 {
+		return entity.APIScopeSet{}
+	}
+
+	return held[0].Scopes
+}
+
+func carriedGrants(held []entity.APIToken) entity.APITokenGrants {
+	for _, token := range held {
+		if token.Revoked() {
+			continue
+		}
+
+		return token.Grants
+	}
+
+	if len(held) == 0 {
+		return entity.APITokenGrants{}
+	}
+
+	return held[0].Grants
+}

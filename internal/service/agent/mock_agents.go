@@ -177,6 +177,21 @@ func (mr *MockAgentsMockRecorder) Reject(ctx, workspaceID, proposalID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reject", reflect.TypeOf((*MockAgents)(nil).Reject), ctx, workspaceID, proposalID)
 }
 
+// Rotate mocks base method.
+func (m *MockAgents) Rotate(ctx context.Context, workspaceID, agentID uuid.UUID) (service.RegisteredAgent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Rotate", ctx, workspaceID, agentID)
+	ret0, _ := ret[0].(service.RegisteredAgent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Rotate indicates an expected call of Rotate.
+func (mr *MockAgentsMockRecorder) Rotate(ctx, workspaceID, agentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rotate", reflect.TypeOf((*MockAgents)(nil).Rotate), ctx, workspaceID, agentID)
+}
+
 // Settings mocks base method.
 func (m *MockAgents) Settings(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.AgentSettings, error) {
 	m.ctrl.T.Helper()

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
@@ -355,5 +356,111 @@ func TestATokenMayNotRegisterOrApproveOnAnAgentsBehalf(t *testing.T) {
 		AllTeams:    true,
 	}); !errors.Is(err, entity.ErrAPITokenMintForbidden) {
 		t.Fatalf("Register error = %v, want ErrAPITokenMintForbidden", err)
+	}
+}
+
+func TestRotatingACredentialRevokesTheOldOneAndKeepsWhatTheAgentMayDo(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	agentID, accountID := uuid.New(), uuid.New()
+
+	scopes := entity.APIScopeSet{
+		entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage),
+		entity.NewAPIScope(entity.ResourceCheck, entity.ActionManage),
+	}
+	grants := entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}}
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{
+			ID:          agentID,
+			WorkspaceID: h.workspaceID,
+			AccountID:   accountID,
+			Name:        "opsy",
+			Status:      entity.AgentStatusActive,
+		}, nil)
+
+	h.tokens.EXPECT().
+		ListByOwner(gomock.Any(), accountID).
+		Return([]entity.APIToken{{AccountID: accountID, Scopes: scopes, Grants: grants}}, nil)
+
+	revoked := false
+
+	h.tokens.EXPECT().
+		RevokeAllByAccount(gomock.Any(), accountID, gomock.Any()).
+		DoAndReturn(func(context.Context, uuid.UUID, time.Time) error {
+			revoked = true
+
+			return nil
+		})
+
+	var minted entity.APIToken
+
+	h.tokens.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, token entity.APIToken) (entity.APIToken, error) {
+			if !revoked {
+				t.Error("a new credential was minted before the old one was revoked")
+			}
+
+			minted = token
+			token.ID = uuid.New()
+
+			return token, nil
+		})
+
+	rotated, err := h.service.Rotate(context.Background(), h.workspaceID, agentID)
+	if err != nil {
+		t.Fatalf("Rotate: %v", err)
+	}
+
+	if rotated.Value == "" {
+		t.Fatal("rotation returned no credential, so there is nothing to give anybody")
+	}
+
+	if !revoked {
+		t.Fatal(
+			"the old credential was never revoked, so a leaked one keeps working after somebody " +
+				"rotated precisely to stop it",
+		)
+	}
+
+	if len(minted.Scopes) != len(scopes) {
+		t.Fatalf(
+			"the new credential carries %d scopes, want %d; rotating must not quietly change "+
+				"what the agent may do",
+			len(minted.Scopes), len(scopes),
+		)
+	}
+
+	if len(minted.Grants) != 1 || !minted.Grants[0].AllTeams {
+		t.Fatalf("the new credential lost the teams the old one reached: %+v", minted.Grants)
+	}
+}
+
+func TestADisabledAgentCannotBeHandedAFreshCredential(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	agentID := uuid.New()
+	disabledAt := time.Now().UTC()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{
+			ID:          agentID,
+			WorkspaceID: h.workspaceID,
+			AccountID:   uuid.New(),
+			Status:      entity.AgentStatusDisabled,
+			DisabledAt:  &disabledAt,
+		}, nil)
+
+	if _, err := h.service.Rotate(context.Background(), h.workspaceID, agentID); !errors.Is(
+		err, entity.ErrAgentDisabled,
+	) {
+		t.Fatalf(
+			"Rotate = %v, want the disabled agent refused; rotating one back to life would undo "+
+				"a revocation somebody made deliberately",
+			err,
+		)
 	}
 }

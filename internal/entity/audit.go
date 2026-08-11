@@ -60,6 +60,7 @@ const (
 
 	AuditAgentRegistered AuditAction = "agent.registered"
 	AuditAgentDisabled   AuditAction = "agent.disabled"
+	AuditAgentRotated    AuditAction = "agent.credential_rotated"
 	AuditAgentProposal   AuditAction = "agent.proposal_decided"
 
 	AuditWebhookRegistered AuditAction = "webhook.registered"
@@ -96,7 +97,7 @@ func AuditActions() []AuditAction {
 		AuditRecoveryCodesIssued, AuditRecoveryCodeRedeemed, AuditSSOIdentityUnlinked,
 		AuditSSOIdentityLinked, AuditSSOIdentityRefused, AuditSSOAccountOpened,
 		AuditTokenMinted, AuditTokenRevoked,
-		AuditAgentRegistered, AuditAgentDisabled, AuditAgentProposal,
+		AuditAgentRegistered, AuditAgentDisabled, AuditAgentRotated, AuditAgentProposal,
 		AuditWebhookRegistered, AuditWebhookRemoved, AuditWebhookDisabled,
 		AuditWorkspaceUpdated, AuditWorkspaceDeletion, AuditWorkspaceRestored, AuditWorkspacePurged,
 		AuditDirectoryConnected, AuditDirectoryDisconnected, AuditDirectoryTokenRotated,
