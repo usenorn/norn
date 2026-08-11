@@ -27,6 +27,7 @@ type appHarness struct {
 
 	installations []entity.SCMInstallation
 	installErr    error
+	askedWith     entity.SCMApp
 }
 
 func appsFor(t *testing.T, cfg config.SourceControl) *appHarness {
@@ -46,7 +47,9 @@ func appsFor(t *testing.T, cfg config.SourceControl) *appHarness {
 
 	forgeApp.EXPECT().
 		AppInstallations(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(context.Context, entity.SCMApp) ([]entity.SCMInstallation, error) {
+		DoAndReturn(func(_ context.Context, app entity.SCMApp) ([]entity.SCMInstallation, error) {
+			harness.askedWith = app
+
 			return harness.installations, harness.installErr
 		}).
 		AnyTimes()
@@ -109,6 +112,11 @@ func TestTheCloudApplicationIsAdoptedFromConfigurationOnce(t *testing.T) {
 		Get(gomock.Any(), entity.SCMProviderGitHub, "https://api.github.com").
 		Return(stored, nil).
 		After(first)
+
+	held.registry.EXPECT().
+		Secrets(gomock.Any(), gomock.Any()).
+		Return(entity.SCMApp{}, nil).
+		AnyTimes()
 
 	for attempt := range 2 {
 		found, err := held.service.Application(
@@ -322,6 +330,7 @@ func TestAForgeThatCannotBeAskedNeverHidesTheConnectStep(t *testing.T) {
 		Get(gomock.Any(), entity.SCMProviderGitHub, "https://api.github.com").
 		Return(stored, nil)
 
+	held.registry.EXPECT().Secrets(gomock.Any(), stored.ID).Return(stored, nil)
 	held.installErr = errors.New("github is unreachable")
 
 	found, err := held.service.Application(
@@ -354,6 +363,7 @@ func TestAnApplicationNobodyHasInstalledSaysSo(t *testing.T) {
 		Get(gomock.Any(), entity.SCMProviderGitHub, "https://api.github.com").
 		Return(stored, nil)
 
+	held.registry.EXPECT().Secrets(gomock.Any(), stored.ID).Return(stored, nil)
 	held.installations = []entity.SCMInstallation{}
 
 	found, err := held.service.Application(
@@ -368,5 +378,47 @@ func TestAnApplicationNobodyHasInstalledSaysSo(t *testing.T) {
 			"an application with no installations reported itself installed, so the screen " +
 				"offers a connect that can only come back empty",
 		)
+	}
+}
+
+func TestAskingWhetherTheAppIsInstalledUsesItsOwnCredentials(t *testing.T) {
+	held := appsFor(t, cloudConfig())
+
+	stored := entity.SCMApp{
+		ID:            uuid.New(),
+		Provider:      entity.SCMProviderGitHub,
+		BaseURL:       "https://api.github.com",
+		Slug:          "nornbot",
+		ExternalAppID: "4711",
+	}
+
+	unsealed := stored
+	unsealed.PrivateKey = "-----BEGIN RSA PRIVATE KEY-----\nkey\n-----END RSA PRIVATE KEY-----"
+
+	held.registry.EXPECT().
+		Get(gomock.Any(), entity.SCMProviderGitHub, "https://api.github.com").
+		Return(stored, nil)
+
+	held.registry.EXPECT().Secrets(gomock.Any(), stored.ID).Return(unsealed, nil)
+
+	held.installations = []entity.SCMInstallation{{ExternalID: "1", AccountLogin: "northwind"}}
+
+	found, err := held.service.Application(
+		context.Background(), held.workspace, entity.SCMProviderGitHub,
+	)
+	if err != nil {
+		t.Fatalf("Application: %v", err)
+	}
+
+	if held.askedWith.PrivateKey == "" {
+		t.Fatal(
+			"the forge was handed an application with no private key, so it cannot mint the " +
+				"token that lists installations. The call fails, the screen falls back to " +
+				"assuming it is installed, and somebody is offered a connect that cannot work",
+		)
+	}
+
+	if !found.Installed {
+		t.Error("an application with an installation reported itself uninstalled")
 	}
 }

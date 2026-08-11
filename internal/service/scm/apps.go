@@ -84,10 +84,22 @@ func (s *apps) Application(
 func (s *apps) installedAnywhere(ctx context.Context, app entity.SCMApp) bool {
 	forgeApp, err := s.forges.App(app.Provider)
 	if err != nil {
-		return false
+		return true
 	}
 
-	installations, err := forgeApp.AppInstallations(ctx, app)
+	secrets, err := s.apps.Secrets(ctx, app.ID)
+	if err != nil {
+		logging.From(ctx).WarnContext(
+			ctx,
+			"reading the application's own credentials failed, so whether it is installed is unknown",
+			"provider", string(app.Provider),
+			"error", err.Error(),
+		)
+
+		return true
+	}
+
+	installations, err := forgeApp.AppInstallations(ctx, secrets)
 	if err != nil {
 		logging.From(ctx).WarnContext(
 			ctx,
