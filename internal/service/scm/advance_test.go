@@ -16,6 +16,7 @@ import (
 	agentrepo "github.com/usenorn/norn/internal/repository/agent"
 	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
+	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
@@ -26,6 +27,7 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	"github.com/usenorn/norn/internal/service/checkgate"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
 	"github.com/usenorn/norn/internal/service/scm"
@@ -117,7 +119,10 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		h.conflicts,
 		h.labels,
 		h.agents,
-		agenthold.New(h.settings, h.proposals, h.agents),
+		agenthold.New(
+			h.settings, h.proposals, h.agents, h.states,
+			checkgate.New(checkrepo.NewMockCheck(ctrl), checkrepo.NewMockCheckEvidence(ctrl)),
+		),
 		h.releases,
 		h.deployments,
 		h.deliveries,

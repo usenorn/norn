@@ -4,9 +4,16 @@
 	import { keys } from "$lib/api/keys";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+	import * as Select from "$lib/components/ui/select/index.js";
 	import { api } from "$lib/api";
-	import { approvalsPath, holdLabels, type AgentSettings } from "$lib/agents/agents";
+	import {
+		approvalsPath,
+		holdLabels,
+		holdOptionHints,
+		holdOptionLabels,
+		type AgentHold,
+		type AgentSettings,
+	} from "$lib/agents/agents";
 	import type { Team } from "$lib/team/teams";
 
 	let {
@@ -27,11 +34,13 @@
 
 	const current = $derived<AgentSettings>(
 		saved ??
-			settings ?? { holdComments: false, holdStateChanges: false, holdIssueEdits: false }
+			settings ?? { holdComments: "never", holdStateChanges: "never", holdIssueEdits: "never" }
 	);
 	const disabled = $derived(locked || working);
 	const holding = $derived(
-		current.holdComments || current.holdStateChanges || current.holdIssueEdits
+		current.holdComments !== "never" ||
+			current.holdStateChanges !== "never" ||
+			current.holdIssueEdits !== "never"
 	);
 
 	async function save(next: Partial<AgentSettings>) {
@@ -87,19 +96,33 @@
 	{:else}
 		<div class="flex flex-col gap-3 rounded-lg border border-line-default p-4">
 			{#each holdLabels as rule (rule.key)}
-				<div class="flex items-start gap-2">
-					<Checkbox
-						id={`hold-${rule.key}`}
-						{disabled}
-						checked={current[rule.key]}
-						onCheckedChange={(checked) => save({ [rule.key]: checked === true })}
-					/>
-					<label for={`hold-${rule.key}`} class="flex flex-col gap-0.5">
+				<div class="flex flex-col gap-1.5">
+					<div class="flex flex-wrap items-center justify-between gap-2">
 						<span class="text-sm leading-normal text-ink-900">{rule.title}</span>
-						<span class="text-xs leading-normal text-muted-foreground text-pretty">
-							{rule.detail}
-						</span>
-					</label>
+						<Select.Root
+							type="single"
+							value={current[rule.key]}
+							{disabled}
+							onValueChange={(value) => save({ [rule.key]: value as AgentHold })}
+						>
+							<Select.Trigger class="w-48" aria-label="{rule.title}: when to hold">
+								{holdOptionLabels[current[rule.key]] ?? "Never hold"}
+							</Select.Trigger>
+							<Select.Content>
+								{#each rule.options as option (option)}
+									<Select.Item value={option} label={holdOptionLabels[option]}>
+										{holdOptionLabels[option]}
+									</Select.Item>
+								{/each}
+							</Select.Content>
+						</Select.Root>
+					</div>
+					<span class="text-xs leading-normal text-muted-foreground text-pretty">
+						{rule.detail}
+					</span>
+					<span class="text-xs leading-normal text-muted-foreground text-pretty">
+						{holdOptionHints[current[rule.key]] ?? holdOptionHints.never}
+					</span>
 				</div>
 			{/each}
 		</div>

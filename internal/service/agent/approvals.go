@@ -31,6 +31,16 @@ func (s *agentsService) Configure(
 		return entity.AgentSettings{}, err
 	}
 
+	if err := entity.NewValidationError(
+		entity.ValidateAgentHold("holdComments", input.HoldComments, entity.AgentActionComment),
+		entity.ValidateAgentHold(
+			"holdStateChanges", input.HoldStateChanges, entity.AgentActionStateChange,
+		),
+		entity.ValidateAgentHold("holdIssueEdits", input.HoldIssueEdits, entity.AgentActionIssueEdit),
+	); err != nil {
+		return entity.AgentSettings{}, err
+	}
+
 	return s.settings.Upsert(ctx, entity.AgentSettings{
 		TeamID:           input.TeamID,
 		WorkspaceID:      input.WorkspaceID,
@@ -240,11 +250,9 @@ func (s *agentsService) apply(
 		)
 
 		return err
-	case entity.AgentActionStateChange:
-		if proposal.Change.StateID == nil {
-			return entity.ErrAgentProposalNotFound
-		}
-
+	case entity.AgentActionCheckSet:
+		return s.approveChecks(ctx, proposal)
+	case entity.AgentActionStateChange, entity.AgentActionIssueEdit:
 		_, err := s.issues.Update(
 			acting,
 			proposal.WorkspaceID,
@@ -252,20 +260,15 @@ func (s *agentsService) apply(
 			service.UpdateIssueInput{
 				ExpectedVersion: proposal.Change.ExpectedVersion,
 				StateID:         proposal.Change.StateID,
-			},
-		)
-
-		return err
-	case entity.AgentActionIssueEdit:
-		_, err := s.issues.Update(
-			acting,
-			proposal.WorkspaceID,
-			proposal.IssueID,
-			service.UpdateIssueInput{
-				ExpectedVersion: proposal.Change.ExpectedVersion,
 				Title:           proposal.Change.Title,
+				Description:     proposal.Change.Description,
 				Priority:        proposal.Change.Priority,
 				AssigneeID:      proposal.Change.AssigneeID,
+				Estimate:        proposal.Change.Estimate,
+				DueOn:           proposal.Change.DueOn,
+				CycleID:         proposal.Change.CycleID,
+				ProjectID:       proposal.Change.ProjectID,
+				Clear:           proposal.Change.Clear,
 			},
 		)
 
@@ -273,4 +276,20 @@ func (s *agentsService) apply(
 	default:
 		return entity.ErrAgentProposalNotFound
 	}
+}
+
+func (s *agentsService) approveChecks(ctx context.Context, proposal entity.AgentProposal) error {
+	for _, checkID := range proposal.Change.CheckIDs {
+		if _, err := s.checks.Decide(
+			ctx,
+			proposal.WorkspaceID,
+			proposal.IssueID,
+			checkID,
+			service.DecideCheckInput{Approval: entity.CheckApprovalApproved},
+		); err != nil && !errors.Is(err, entity.ErrCheckDecided) {
+			return err
+		}
+	}
+
+	return nil
 }

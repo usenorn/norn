@@ -22,6 +22,7 @@ type agentsService struct {
 	activity    repository.Activity
 	issues      service.Issues
 	comments    service.IssueComments
+	checks      service.Checks
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
 	audit       service.Audit
@@ -38,6 +39,7 @@ func New(
 	activity repository.Activity,
 	issues service.Issues,
 	comments service.IssueComments,
+	checks service.Checks,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 	audit service.Audit,
@@ -53,6 +55,7 @@ func New(
 		activity:    activity,
 		issues:      issues,
 		comments:    comments,
+		checks:      checks,
 		authorizer:  authorizer,
 		transactor:  transactor,
 		audit:       audit,

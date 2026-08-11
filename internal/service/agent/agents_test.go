@@ -22,6 +22,7 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	issuesvc "github.com/usenorn/norn/internal/service/issue"
 )
 
 type harness struct {
@@ -30,6 +31,7 @@ type harness struct {
 	members    *membershiprepo.MockMembership
 	tokens     *apitokenrepo.MockAPIToken
 	proposals  *agentproposalrepo.MockAgentProposal
+	issues     *issuesvc.MockIssues
 	authorizer *authorizersvc.MockAuthorizer
 	service    service.Agents
 
@@ -48,6 +50,7 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		members:     membershiprepo.NewMockMembership(ctrl),
 		tokens:      apitokenrepo.NewMockAPIToken(ctrl),
 		proposals:   agentproposalrepo.NewMockAgentProposal(ctrl),
+		issues:      issuesvc.NewMockIssues(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID: uuid.New(),
 		adminID:     uuid.New(),
@@ -81,8 +84,9 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		h.tokens,
 		teamrepo.NewMockTeam(ctrl),
 		activityrepo.NewMockActivity(ctrl),
-		(service.Issues)(nil),
+		h.issues,
 		(service.IssueComments)(nil),
+		(service.Checks)(nil),
 		h.authorizer,
 		transactor,
 		silentAudit(ctrl),
@@ -335,6 +339,7 @@ func TestATokenMayNotRegisterOrApproveOnAnAgentsBehalf(t *testing.T) {
 		activityrepo.NewMockActivity(ctrl),
 		(service.Issues)(nil),
 		(service.IssueComments)(nil),
+		(service.Checks)(nil),
 		authorizer,
 		transactorrepo.NewMockTransactor(ctrl),
 		silentAudit(ctrl),

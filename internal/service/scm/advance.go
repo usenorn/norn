@@ -97,7 +97,7 @@ func (s *sync) drive(
 ) (entity.CodeTransitionBlock, error) {
 	author := s.attribute(ctx, from, decision, link)
 
-	held, waiting, err := s.holds.Hold(ctx, author, issue, entity.AgentActionStateChange, entity.AgentChange{
+	held, waiting, err := s.holds.Hold(ctx, author, issue, []entity.AgentAction{entity.AgentActionStateChange}, entity.AgentChange{
 		StateID: &target,
 	})
 	if err != nil {

@@ -8008,17 +8008,28 @@ components:
         agent: { $ref: '#/components/schemas/Agent' }
         value: { type: string }
 
+    AgentHold:
+      type: string
+      description: >-
+        Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced
+        completion through and holds everything else, and is offered on state changes alone —
+        the other categories have no notion of proof to judge.
+      enum: [never, unless_proven, always]
+
     AgentSettings:
       type: object
       required: [holdComments, holdStateChanges, holdIssueEdits]
       properties:
-        holdComments: { type: boolean }
-        holdStateChanges: { type: boolean }
-        holdIssueEdits: { type: boolean }
+        holdComments: { $ref: '#/components/schemas/AgentHold' }
+        holdStateChanges: { $ref: '#/components/schemas/AgentHold' }
+        holdIssueEdits: { $ref: '#/components/schemas/AgentHold' }
 
     AgentAction:
       type: string
-      enum: [comment, state_change, issue_edit]
+      description: >-
+        `check_set` is always held whatever a team's settings say. A new criterion changes the
+        definition of done, and that is not something an agent settles alone.
+      enum: [comment, state_change, issue_edit, check_set]
 
     AgentProposalStatus:
       type: string
@@ -8038,6 +8049,11 @@ components:
         body: { type: string }
         stateId: { type: string, format: uuid }
         title: { type: string }
+        description: { type: string }
+        checkIds:
+          type: array
+          description: The criteria a check set proposal would add to the definition of done
+          items: { type: string, format: uuid }
         decidedByAccountId: { type: string, format: uuid }
         decidedAt: { type: string, format: date-time }
         failure: { type: string }

@@ -39,27 +39,51 @@ export type ProposalQueue =
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
 
+export type AgentHold = components["schemas"]["AgentHold"];
+
 export const actionLabels: Record<AgentAction, string> = {
 	comment: "Leave a comment",
 	state_change: "Change the state",
 	issue_edit: "Edit the issue",
+	check_set: "Add to what done means",
 };
 
-export const holdLabels: { key: keyof AgentSettings; title: string; detail: string }[] = [
+export const holdOptionLabels: Record<AgentHold, string> = {
+	never: "Never hold",
+	unless_proven: "Hold unless proven",
+	always: "Always hold",
+};
+
+export const holdOptionHints: Record<AgentHold, string> = {
+	never: "An agent with the right permissions does this straight away.",
+	always: "Every one of these waits for a person, however well evidenced.",
+	unless_proven:
+		"A finish whose checks all pass goes through. Everything else waits. An issue carrying no approved checks has nothing to prove, so it is not held.",
+};
+
+export const holdLabels: {
+	key: keyof AgentSettings;
+	title: string;
+	detail: string;
+	options: AgentHold[];
+}[] = [
 	{
 		key: "holdComments",
 		title: "Comments",
 		detail: "An agent's comment waits until somebody agrees it should be said.",
+		options: ["never", "always"],
 	},
 	{
 		key: "holdStateChanges",
 		title: "State changes",
 		detail: "An agent cannot move work through this team's board on its own.",
+		options: ["never", "unless_proven", "always"],
 	},
 	{
 		key: "holdIssueEdits",
 		title: "Issue edits",
 		detail: "Titles, priorities and assignees an agent changes wait for a person.",
+		options: ["never", "always"],
 	},
 ];
 
@@ -141,6 +165,10 @@ export function proposalSummary(proposal: AgentProposal): string {
 			return "a new state";
 		case "issue_edit":
 			return proposal.title ? `the title “${proposal.title}”` : "an edit";
+		case "check_set":
+			return proposal.checkIds?.length === 1
+				? "one criterion for what done means here"
+				: `${proposal.checkIds?.length ?? 0} criteria for what done means here`;
 	}
 }
 

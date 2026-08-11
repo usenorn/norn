@@ -4925,13 +4925,21 @@ export interface components {
             agent: components["schemas"]["Agent"];
             value: string;
         };
+        /**
+         * @description Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
+         * @enum {string}
+         */
+        AgentHold: "never" | "unless_proven" | "always";
         AgentSettings: {
-            holdComments: boolean;
-            holdStateChanges: boolean;
-            holdIssueEdits: boolean;
+            holdComments: components["schemas"]["AgentHold"];
+            holdStateChanges: components["schemas"]["AgentHold"];
+            holdIssueEdits: components["schemas"]["AgentHold"];
         };
-        /** @enum {string} */
-        AgentAction: "comment" | "state_change" | "issue_edit";
+        /**
+         * @description `check_set` is always held whatever a team's settings say. A new criterion changes the definition of done, and that is not something an agent settles alone.
+         * @enum {string}
+         */
+        AgentAction: "comment" | "state_change" | "issue_edit" | "check_set";
         /** @enum {string} */
         AgentProposalStatus: "pending" | "rejected" | "applied" | "failed";
         AgentProposal: {
@@ -4950,6 +4958,9 @@ export interface components {
             /** Format: uuid */
             stateId?: string;
             title?: string;
+            description?: string;
+            /** @description The criteria a check set proposal would add to the definition of done */
+            checkIds?: string[];
             /** Format: uuid */
             decidedByAccountId?: string;
             /** Format: date-time */

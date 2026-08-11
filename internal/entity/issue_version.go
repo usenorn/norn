@@ -181,6 +181,76 @@ func (c IssueChange) Touched() []string {
 	return fields
 }
 
+func (c IssueChange) Effective(issue Issue) []string {
+	fields := make([]string, 0, len(IssueFields()))
+
+	if c.Title != nil && *c.Title != issue.Title {
+		fields = append(fields, IssueFieldTitle)
+	}
+
+	if c.StateID != nil && *c.StateID != issue.State.ID {
+		fields = append(fields, IssueFieldState)
+	}
+
+	if c.Description != nil && *c.Description != issue.Description {
+		fields = append(fields, IssueFieldDescription)
+	}
+
+	if c.Priority != nil && *c.Priority != issue.Priority {
+		fields = append(fields, IssueFieldPriority)
+	}
+
+	if altered(c.Assignee, c.ClearAssignee, issue.AssigneeAccountID, uuid.Nil) {
+		fields = append(fields, IssueFieldAssignee)
+	}
+
+	if altered(c.Estimate, c.ClearEstimate, issue.Estimate, 0) {
+		fields = append(fields, IssueFieldEstimate)
+	}
+
+	if altered(c.DueOn, c.ClearDueOn, issue.DueOn, "") {
+		fields = append(fields, IssueFieldDueOn)
+	}
+
+	if altered(c.CycleID, c.ClearCycle, issue.CycleID, uuid.Nil) {
+		fields = append(fields, IssueFieldCycle)
+	}
+
+	if altered(c.ProjectID, c.ClearProject, issue.ProjectID, uuid.Nil) {
+		fields = append(fields, IssueFieldProject)
+	}
+
+	if c.Rank != nil && *c.Rank != issue.Rank {
+		fields = append(fields, IssueFieldRank)
+	}
+
+	return fields
+}
+
+func altered[T comparable](value *T, cleared bool, current, empty T) bool {
+	if cleared {
+		return current != empty
+	}
+
+	return value != nil && *value != current
+}
+
+func (c IssueChange) AgentActions(issue Issue) []AgentAction {
+	changed := c.Effective(issue)
+
+	actions := make([]AgentAction, 0, 2)
+
+	if slices.Contains(changed, IssueFieldState) {
+		actions = append(actions, AgentActionStateChange)
+	}
+
+	if slices.ContainsFunc(changed, func(field string) bool { return field != IssueFieldState }) {
+		actions = append(actions, AgentActionIssueEdit)
+	}
+
+	return actions
+}
+
 func (c IssueChange) FieldVersions(version int) map[string]int {
 	stamped := map[string]int{}
 

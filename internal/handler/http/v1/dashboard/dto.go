@@ -1544,9 +1544,9 @@ func workspaceAgentDTOs(agents []service.OwnedAgent) []api.WorkspaceAgent {
 
 func agentSettingsDTO(settings entity.AgentSettings) api.AgentSettings {
 	return api.AgentSettings{
-		HoldComments:     settings.HoldComments,
-		HoldStateChanges: settings.HoldStateChanges,
-		HoldIssueEdits:   settings.HoldIssueEdits,
+		HoldComments:     api.AgentHold(settings.HoldComments),
+		HoldStateChanges: api.AgentHold(settings.HoldStateChanges),
+		HoldIssueEdits:   api.AgentHold(settings.HoldIssueEdits),
 	}
 }
 
@@ -1758,6 +1758,12 @@ func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
 	dto.Body = nilIfEmpty(proposal.Change.Body)
 	dto.StateId = proposal.Change.StateID
 	dto.Title = proposal.Change.Title
+	dto.Description = proposal.Change.Description
+
+	if len(proposal.Change.CheckIDs) > 0 {
+		ids := proposal.Change.CheckIDs
+		dto.CheckIds = &ids
+	}
 	dto.Failure = nilIfEmpty(proposal.Failure)
 	dto.DecidedAt = proposal.DecidedAt
 

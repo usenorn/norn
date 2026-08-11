@@ -255,6 +255,7 @@ func (e ActivitySubjectKind) Valid() bool {
 
 // Defines values for AgentAction.
 const (
+	AgentActionCheckSet    AgentAction = "check_set"
 	AgentActionComment     AgentAction = "comment"
 	AgentActionIssueEdit   AgentAction = "issue_edit"
 	AgentActionStateChange AgentAction = "state_change"
@@ -263,6 +264,8 @@ const (
 // Valid indicates whether the value is a known member of the AgentAction enum.
 func (e AgentAction) Valid() bool {
 	switch e {
+	case AgentActionCheckSet:
+		return true
 	case AgentActionComment:
 		return true
 	case AgentActionIssueEdit:
@@ -283,6 +286,27 @@ const (
 func (e AgentHeldProblemCode) Valid() bool {
 	switch e {
 	case AgentActionHeld:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentHold.
+const (
+	Always       AgentHold = "always"
+	Never        AgentHold = "never"
+	UnlessProven AgentHold = "unless_proven"
+)
+
+// Valid indicates whether the value is a known member of the AgentHold enum.
+func (e AgentHold) Valid() bool {
+	switch e {
+	case Always:
+		return true
+	case Never:
+		return true
+	case UnlessProven:
 		return true
 	default:
 		return false
@@ -3894,7 +3918,7 @@ type Agent struct {
 	WorkspaceId    openapi_types.UUID `json:"workspaceId"`
 }
 
-// AgentAction defines model for AgentAction.
+// AgentAction `check_set` is always held whatever a team's settings say. A new criterion changes the definition of done, and that is not something an agent settles alone.
 type AgentAction string
 
 // AgentHeldProblem defines model for AgentHeldProblem.
@@ -3912,22 +3936,30 @@ type AgentHeldProblem struct {
 // AgentHeldProblemCode defines model for AgentHeldProblem.Code.
 type AgentHeldProblemCode string
 
+// AgentHold Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
+type AgentHold string
+
 // AgentProposal defines model for AgentProposal.
 type AgentProposal struct {
-	Action             AgentAction         `json:"action"`
-	AgentId            openapi_types.UUID  `json:"agentId"`
-	AgentName          string              `json:"agentName"`
-	Body               *string             `json:"body,omitempty"`
-	CreatedAt          time.Time           `json:"createdAt"`
-	DecidedAt          *time.Time          `json:"decidedAt,omitempty"`
-	DecidedByAccountId *openapi_types.UUID `json:"decidedByAccountId,omitempty"`
-	Failure            *string             `json:"failure,omitempty"`
-	Id                 openapi_types.UUID  `json:"id"`
-	IssueId            openapi_types.UUID  `json:"issueId"`
-	StateId            *openapi_types.UUID `json:"stateId,omitempty"`
-	Status             AgentProposalStatus `json:"status"`
-	TeamId             openapi_types.UUID  `json:"teamId"`
-	Title              *string             `json:"title,omitempty"`
+	// Action `check_set` is always held whatever a team's settings say. A new criterion changes the definition of done, and that is not something an agent settles alone.
+	Action    AgentAction        `json:"action"`
+	AgentId   openapi_types.UUID `json:"agentId"`
+	AgentName string             `json:"agentName"`
+	Body      *string            `json:"body,omitempty"`
+
+	// CheckIds The criteria a check set proposal would add to the definition of done
+	CheckIds           *[]openapi_types.UUID `json:"checkIds,omitempty"`
+	CreatedAt          time.Time             `json:"createdAt"`
+	DecidedAt          *time.Time            `json:"decidedAt,omitempty"`
+	DecidedByAccountId *openapi_types.UUID   `json:"decidedByAccountId,omitempty"`
+	Description        *string               `json:"description,omitempty"`
+	Failure            *string               `json:"failure,omitempty"`
+	Id                 openapi_types.UUID    `json:"id"`
+	IssueId            openapi_types.UUID    `json:"issueId"`
+	StateId            *openapi_types.UUID   `json:"stateId,omitempty"`
+	Status             AgentProposalStatus   `json:"status"`
+	TeamId             openapi_types.UUID    `json:"teamId"`
+	Title              *string               `json:"title,omitempty"`
 }
 
 // AgentProposalStatus defines model for AgentProposalStatus.
@@ -3935,9 +3967,14 @@ type AgentProposalStatus string
 
 // AgentSettings defines model for AgentSettings.
 type AgentSettings struct {
-	HoldComments     bool `json:"holdComments"`
-	HoldIssueEdits   bool `json:"holdIssueEdits"`
-	HoldStateChanges bool `json:"holdStateChanges"`
+	// HoldComments Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
+	HoldComments AgentHold `json:"holdComments"`
+
+	// HoldIssueEdits Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
+	HoldIssueEdits AgentHold `json:"holdIssueEdits"`
+
+	// HoldStateChanges Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
+	HoldStateChanges AgentHold `json:"holdStateChanges"`
 }
 
 // AgentStatus defines model for AgentStatus.

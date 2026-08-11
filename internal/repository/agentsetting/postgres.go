@@ -67,9 +67,9 @@ func (r *agentSettingRepository) Upsert(
 		upsertSettingsQuery,
 		settings.TeamID.String(),
 		settings.WorkspaceID.String(),
-		settings.HoldComments,
-		settings.HoldStateChanges,
-		settings.HoldIssueEdits,
+		string(settings.HoldComments),
+		string(settings.HoldStateChanges),
+		string(settings.HoldIssueEdits),
 	))
 	if err != nil {
 		return entity.AgentSettings{}, fmt.Errorf("save agent settings: %w", err)
@@ -80,16 +80,21 @@ func (r *agentSettingRepository) Upsert(
 
 func scan(row *sql.Row) (entity.AgentSettings, error) {
 	var (
-		rawTeam, rawWorkspace string
-		settings              entity.AgentSettings
+		rawTeam, rawWorkspace         string
+		comments, stateChanges, edits string
+		settings                      entity.AgentSettings
 	)
 
 	if err := row.Scan(
 		&rawTeam, &rawWorkspace,
-		&settings.HoldComments, &settings.HoldStateChanges, &settings.HoldIssueEdits,
+		&comments, &stateChanges, &edits,
 	); err != nil {
 		return entity.AgentSettings{}, err
 	}
+
+	settings.HoldComments = entity.AgentHold(comments)
+	settings.HoldStateChanges = entity.AgentHold(stateChanges)
+	settings.HoldIssueEdits = entity.AgentHold(edits)
 
 	teamID, err := uuid.Parse(rawTeam)
 	if err != nil {

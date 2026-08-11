@@ -21,6 +21,8 @@ type checksService struct {
 	codeLinks   repository.CodeLink
 	activity    repository.Activity
 	jobs        repository.JobProducer
+	proposals   repository.AgentProposal
+	agents      repository.Agent
 	authorizer  service.Authorizer
 	issueWriter service.Issues
 	transactor  repository.Transactor
@@ -34,6 +36,8 @@ func New(
 	codeLinks repository.CodeLink,
 	activity repository.Activity,
 	jobs repository.JobProducer,
+	proposals repository.AgentProposal,
+	agents repository.Agent,
 	authorizer service.Authorizer,
 	issueWriter service.Issues,
 	transactor repository.Transactor,
@@ -46,6 +50,8 @@ func New(
 		codeLinks:   codeLinks,
 		activity:    activity,
 		jobs:        jobs,
+		proposals:   proposals,
+		agents:      agents,
 		authorizer:  authorizer,
 		issueWriter: issueWriter,
 		transactor:  transactor,
@@ -185,7 +191,7 @@ func (s *checksService) Add(
 			position++
 		}
 
-		return nil
+		return s.propose(ctx, decision, issue, added)
 	})
 	if err != nil {
 		return nil, err

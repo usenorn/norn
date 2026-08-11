@@ -16,15 +16,18 @@ import (
 	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
+	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
+	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	"github.com/usenorn/norn/internal/service/checkgate"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
 )
@@ -83,7 +86,13 @@ func newHarness(t *testing.T) *harness {
 	h.service = issuecommentsvc.New(
 		h.comments, h.attachments, h.issues, h.teams, h.activity, h.notify, h.events,
 		silentEmitter(ctrl), h.followers,
-		agenthold.New(agentsettingrepo.NewMockAgentSetting(ctrl), agentproposalrepo.NewMockAgentProposal(ctrl), agentrepo.NewMockAgent(ctrl)),
+		agenthold.New(
+			agentsettingrepo.NewMockAgentSetting(ctrl),
+			agentproposalrepo.NewMockAgentProposal(ctrl),
+			agentrepo.NewMockAgent(ctrl),
+			workflowstaterepo.NewMockWorkflowState(ctrl),
+			checkgate.New(checkrepo.NewMockCheck(ctrl), checkrepo.NewMockCheckEvidence(ctrl)),
+		),
 		h.authorizer, transactor,
 	)
 

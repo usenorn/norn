@@ -9,6 +9,8 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
+	agentrepo "github.com/usenorn/norn/internal/repository/agent"
+	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
 	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
@@ -29,6 +31,8 @@ type harness struct {
 	codeLinks   *scmrepo.MockCodeLink
 	activity    *activityrepo.MockActivity
 	jobs        *jobqueuerepo.MockJobProducer
+	proposals   *agentproposalrepo.MockAgentProposal
+	agents      *agentrepo.MockAgent
 	issueWriter *issuesvc.MockIssues
 	authorizer  *authorizersvc.MockAuthorizer
 	service     service.Checks
@@ -36,6 +40,7 @@ type harness struct {
 	workspaceID uuid.UUID
 	actorID     uuid.UUID
 	actorKind   entity.ActorKind
+	proposed    []entity.AgentProposal
 }
 
 func newHarness(t *testing.T, kind entity.ActorKind) *harness {
@@ -51,6 +56,8 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 		codeLinks:   scmrepo.NewMockCodeLink(ctrl),
 		activity:    activityrepo.NewMockActivity(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
+		proposals:   agentproposalrepo.NewMockAgentProposal(ctrl),
+		agents:      agentrepo.NewMockAgent(ctrl),
 		issueWriter: issuesvc.NewMockIssues(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID: uuid.New(),
@@ -79,6 +86,21 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	h.jobs.EXPECT().EnqueueSCMResume(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
+	h.agents.EXPECT().
+		GetByAccountID(gomock.Any(), gomock.Any()).
+		Return(entity.Agent{ID: uuid.New()}, nil).
+		AnyTimes()
+
+	h.proposals.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, held entity.AgentProposal) (entity.AgentProposal, error) {
+			held.ID = uuid.New()
+			h.proposed = append(h.proposed, held)
+
+			return held, nil
+		}).
+		AnyTimes()
+
 	h.service = checksvc.New(
 		h.checks,
 		h.evidence,
@@ -87,6 +109,8 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 		h.codeLinks,
 		h.activity,
 		h.jobs,
+		h.proposals,
+		h.agents,
 		h.authorizer,
 		h.issueWriter,
 		transactor,

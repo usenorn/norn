@@ -182,7 +182,9 @@ func (s *issueCommentsService) Post(
 	}
 
 	if proposal, held, err := s.gate.Hold(
-		ctx, decision, issue, entity.AgentActionComment, entity.AgentChange{Body: input.Body},
+		ctx, decision, issue,
+		[]entity.AgentAction{entity.AgentActionComment},
+		entity.AgentChange{Body: input.Body},
 	); err != nil {
 		return service.CommentPosted{}, err
 	} else if held {

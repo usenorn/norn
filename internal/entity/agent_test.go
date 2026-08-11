@@ -81,26 +81,98 @@ func TestAnAgentWithoutAnExplicitAllowanceIsStillBounded(t *testing.T) {
 }
 
 func TestOnlyTheActionsATeamNamedAreHeld(t *testing.T) {
-	settings := entity.AgentSettings{HoldStateChanges: true}
+	settings := entity.AgentSettings{HoldStateChanges: entity.AgentHoldAlways}
 
-	if !settings.Holds(entity.AgentActionStateChange) {
+	if settings.Holds(entity.AgentActionStateChange) != entity.AgentHoldAlways {
 		t.Error("a held action was let through")
 	}
 
 	for _, action := range []entity.AgentAction{
 		entity.AgentActionComment, entity.AgentActionIssueEdit,
 	} {
-		if settings.Holds(action) {
+		if settings.Holds(action) != entity.AgentHoldNever {
 			t.Errorf("%q was held although the team only asked to hold state changes", action)
 		}
 	}
 }
 
-func TestATeamThatHasNeverConfiguredAgentsHoldsNothing(t *testing.T) {
+func TestAProposedCheckSetIsHeldWhateverATeamConfigured(t *testing.T) {
+	for _, settings := range []entity.AgentSettings{
+		{},
+		{HoldComments: entity.AgentHoldNever, HoldStateChanges: entity.AgentHoldNever},
+	} {
+		if settings.Holds(entity.AgentActionCheckSet) != entity.AgentHoldAlways {
+			t.Fatal(
+				"a check set went through without a person. A new criterion changes the " +
+					"definition of done, which is not something an agent settles alone.",
+			)
+		}
+	}
+}
+
+func TestAWriteIsHeldByTheStrongestPolicyAnyFieldItChangesAsksFor(t *testing.T) {
+	both := []entity.AgentAction{entity.AgentActionStateChange, entity.AgentActionIssueEdit}
+
+	holdsState := entity.AgentSettings{
+		HoldStateChanges: entity.AgentHoldAlways,
+		HoldIssueEdits:   entity.AgentHoldNever,
+	}
+
+	if action, hold := holdsState.Strongest(both); hold != entity.AgentHoldAlways ||
+		action != entity.AgentActionStateChange {
+		t.Fatalf(
+			"a write that moves state and renames was classified as %q/%q; renaming in the same "+
+				"call must not carry a close past a hold",
+			action, hold,
+		)
+	}
+
+	holdsEdits := entity.AgentSettings{
+		HoldStateChanges: entity.AgentHoldNever,
+		HoldIssueEdits:   entity.AgentHoldAlways,
+	}
+
+	if _, hold := holdsEdits.Strongest(both); hold != entity.AgentHoldAlways {
+		t.Fatal("a team that holds edits let an edit through because it also moved state")
+	}
+}
+
+func TestHoldPoliciesAreOrderedFromWeakestToStrongest(t *testing.T) {
+	if !entity.AgentHoldAlways.Stronger(entity.AgentHoldUnlessProven) ||
+		!entity.AgentHoldUnlessProven.Stronger(entity.AgentHoldNever) {
+		t.Fatal("hold policies are not ordered, so the strongest one cannot be chosen")
+	}
+}
+
+func TestHoldUnlessProvenIsOfferedOnlyWhereThereIsProofToJudge(t *testing.T) {
+	if err := entity.NewValidationError(entity.ValidateAgentHold(
+		"holdStateChanges", entity.AgentHoldUnlessProven, entity.AgentActionStateChange,
+	)); err != nil {
+		t.Fatalf("a state change could not be set to hold unless proven: %v", err)
+	}
+
+	for _, action := range []entity.AgentAction{
+		entity.AgentActionComment, entity.AgentActionIssueEdit,
+	} {
+		if err := entity.NewValidationError(entity.ValidateAgentHold(
+			"hold", entity.AgentHoldUnlessProven, action,
+		)); err == nil {
+			t.Fatalf(
+				"%q accepted hold-unless-proven, which has no meaning there: a comment carries "+
+					"no claim that anything is finished",
+				action,
+			)
+		}
+	}
+}
+
+func TestATeamThatHasNeverConfiguredAgentsHoldsNothingItCanChoose(t *testing.T) {
 	settings := entity.AgentSettings{}
 
-	for _, action := range entity.AgentActions() {
-		if settings.Holds(action) {
+	for _, action := range []entity.AgentAction{
+		entity.AgentActionComment, entity.AgentActionStateChange, entity.AgentActionIssueEdit,
+	} {
+		if settings.Holds(action) != entity.AgentHoldNever {
 			t.Fatalf(
 				"%q was held by a team with no agent settings. Absence must mean nothing is "+
 					"held, or adding the feature would silently block every agent everywhere.",

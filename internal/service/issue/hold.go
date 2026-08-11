@@ -2,7 +2,6 @@ package issue
 
 import (
 	"context"
-	"slices"
 
 	"github.com/google/uuid"
 
@@ -15,7 +14,7 @@ func (s *issuesService) held(
 	decision entity.Decision,
 	workspaceID, issueID uuid.UUID,
 	input service.UpdateIssueInput,
-	touched []string,
+	change entity.IssueChange,
 ) (bool, error) {
 	if decision.Actor.Kind != entity.ActorKindAgent {
 		return false, nil
@@ -26,17 +25,24 @@ func (s *issuesService) held(
 		return false, err
 	}
 
-	action := entity.AgentActionIssueEdit
-	if slices.Contains(touched, entity.IssueFieldState) && len(touched) == 1 {
-		action = entity.AgentActionStateChange
-	}
-
-	proposal, held, err := s.gate.Hold(ctx, decision, issue, action, entity.AgentChange{
-		StateID:    input.StateID,
-		Title:      input.Title,
-		Priority:   input.Priority,
-		AssigneeID: input.AssigneeID,
-	})
+	proposal, held, err := s.gate.Hold(
+		ctx,
+		decision,
+		issue,
+		change.AgentActions(issue),
+		entity.AgentChange{
+			StateID:     input.StateID,
+			Title:       input.Title,
+			Description: input.Description,
+			Priority:    input.Priority,
+			AssigneeID:  input.AssigneeID,
+			Estimate:    input.Estimate,
+			DueOn:       input.DueOn,
+			CycleID:     input.CycleID,
+			ProjectID:   input.ProjectID,
+			Clear:       input.Clear,
+		},
+	)
 	if err != nil {
 		return false, err
 	}

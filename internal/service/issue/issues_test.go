@@ -60,8 +60,11 @@ type harness struct {
 	transactor  *transactorrepo.MockTransactor
 	authorizer  *authorizersvc.MockAuthorizer
 	settings    *agentsettingrepo.MockAgentSetting
+	proposals   *agentproposalrepo.MockAgentProposal
+	agents      *agentrepo.MockAgent
 	actor       entity.Actor
 	blocking    []entity.Check
+	holds       entity.AgentSettings
 	service     service.Issues
 }
 
@@ -91,6 +94,8 @@ func newHarness(t *testing.T) *harness {
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		settings:    agentsettingrepo.NewMockAgentSetting(ctrl),
+		proposals:   agentproposalrepo.NewMockAgentProposal(ctrl),
+		agents:      agentrepo.NewMockAgent(ctrl),
 		actor:       entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()},
 	}
 
@@ -106,7 +111,13 @@ func newHarness(t *testing.T) *harness {
 		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.events,
 		silentEmitter(ctrl), h.followers,
 		h.jobs,
-		agenthold.New(h.settings, agentproposalrepo.NewMockAgentProposal(ctrl), agentrepo.NewMockAgent(ctrl)),
+		agenthold.New(
+			h.settings,
+			h.proposals,
+			h.agents,
+			h.states,
+			checkgate.New(h.checks, h.evidence),
+		),
 		checkgate.New(h.checks, h.evidence),
 		h.authorizer, h.transactor,
 	)
@@ -135,7 +146,9 @@ func newHarness(t *testing.T) *harness {
 
 	h.settings.EXPECT().
 		Settings(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(entity.AgentSettings{}, nil).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) (entity.AgentSettings, error) {
+			return h.holds, nil
+		}).
 		AnyTimes()
 
 	return h

@@ -25,9 +25,9 @@ import (
 type WorkspaceTeamAgentSetting struct {
 	TeamID           string    `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
 	WorkspaceID      string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	HoldComments     bool      `boil:"hold_comments" json:"hold_comments" toml:"hold_comments" yaml:"hold_comments"`
-	HoldStateChanges bool      `boil:"hold_state_changes" json:"hold_state_changes" toml:"hold_state_changes" yaml:"hold_state_changes"`
-	HoldIssueEdits   bool      `boil:"hold_issue_edits" json:"hold_issue_edits" toml:"hold_issue_edits" yaml:"hold_issue_edits"`
+	HoldComments     string    `boil:"hold_comments" json:"hold_comments" toml:"hold_comments" yaml:"hold_comments"`
+	HoldStateChanges string    `boil:"hold_state_changes" json:"hold_state_changes" toml:"hold_state_changes" yaml:"hold_state_changes"`
+	HoldIssueEdits   string    `boil:"hold_issue_edits" json:"hold_issue_edits" toml:"hold_issue_edits" yaml:"hold_issue_edits"`
 	CreatedAt        time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt        time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
@@ -76,17 +76,17 @@ var WorkspaceTeamAgentSettingTableColumns = struct {
 var WorkspaceTeamAgentSettingWhere = struct {
 	TeamID           whereHelperstring
 	WorkspaceID      whereHelperstring
-	HoldComments     whereHelperbool
-	HoldStateChanges whereHelperbool
-	HoldIssueEdits   whereHelperbool
+	HoldComments     whereHelperstring
+	HoldStateChanges whereHelperstring
+	HoldIssueEdits   whereHelperstring
 	CreatedAt        whereHelpertime_Time
 	UpdatedAt        whereHelpertime_Time
 }{
 	TeamID:           whereHelperstring{field: "\"workspace_team_agent_settings\".\"team_id\""},
 	WorkspaceID:      whereHelperstring{field: "\"workspace_team_agent_settings\".\"workspace_id\""},
-	HoldComments:     whereHelperbool{field: "\"workspace_team_agent_settings\".\"hold_comments\""},
-	HoldStateChanges: whereHelperbool{field: "\"workspace_team_agent_settings\".\"hold_state_changes\""},
-	HoldIssueEdits:   whereHelperbool{field: "\"workspace_team_agent_settings\".\"hold_issue_edits\""},
+	HoldComments:     whereHelperstring{field: "\"workspace_team_agent_settings\".\"hold_comments\""},
+	HoldStateChanges: whereHelperstring{field: "\"workspace_team_agent_settings\".\"hold_state_changes\""},
+	HoldIssueEdits:   whereHelperstring{field: "\"workspace_team_agent_settings\".\"hold_issue_edits\""},
 	CreatedAt:        whereHelpertime_Time{field: "\"workspace_team_agent_settings\".\"created_at\""},
 	UpdatedAt:        whereHelpertime_Time{field: "\"workspace_team_agent_settings\".\"updated_at\""},
 }

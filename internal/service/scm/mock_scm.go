@@ -1303,3 +1303,17 @@ func (mr *MockSourceControlSyncMockRecorder) Reconcile(ctx, at any) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockSourceControlSync)(nil).Reconcile), ctx, at)
 }
+
+// Resume mocks base method.
+func (m *MockSourceControlSync) Resume(ctx context.Context, workspaceID, issueID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Resume", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Resume indicates an expected call of Resume.
+func (mr *MockSourceControlSyncMockRecorder) Resume(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resume", reflect.TypeOf((*MockSourceControlSync)(nil).Resume), ctx, workspaceID, issueID)
+}

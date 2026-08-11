@@ -416,7 +416,7 @@ func (s *issuesService) Update(
 		return s.Get(ctx, workspaceID, issueID)
 	}
 
-	if held, err := s.held(ctx, decision, workspaceID, issueID, input, touched); err != nil || held {
+	if held, err := s.held(ctx, decision, workspaceID, issueID, input, change); err != nil || held {
 		return entity.Issue{}, err
 	}
 

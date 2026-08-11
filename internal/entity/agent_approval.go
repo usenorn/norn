@@ -20,35 +20,101 @@ const (
 	AgentActionComment     AgentAction = "comment"
 	AgentActionStateChange AgentAction = "state_change"
 	AgentActionIssueEdit   AgentAction = "issue_edit"
+	AgentActionCheckSet    AgentAction = "check_set"
 )
 
 func AgentActions() []AgentAction {
-	return []AgentAction{AgentActionComment, AgentActionStateChange, AgentActionIssueEdit}
+	return []AgentAction{
+		AgentActionComment,
+		AgentActionStateChange,
+		AgentActionIssueEdit,
+		AgentActionCheckSet,
+	}
 }
 
 func (a AgentAction) Valid() bool {
 	return slices.Contains(AgentActions(), a)
 }
 
+func (a AgentAction) JudgedOnProof() bool {
+	return a == AgentActionStateChange
+}
+
+type AgentHold string
+
+const (
+	AgentHoldNever        AgentHold = "never"
+	AgentHoldUnlessProven AgentHold = "unless_proven"
+	AgentHoldAlways       AgentHold = "always"
+)
+
+var agentHoldOrder = []AgentHold{AgentHoldNever, AgentHoldUnlessProven, AgentHoldAlways}
+
+func AgentHolds() []AgentHold {
+	return slices.Clone(agentHoldOrder)
+}
+
+func (h AgentHold) Valid() bool {
+	return slices.Contains(agentHoldOrder, h)
+}
+
+func (h AgentHold) Stronger(other AgentHold) bool {
+	return slices.Index(agentHoldOrder, h) > slices.Index(agentHoldOrder, other)
+}
+
+func ValidateAgentHold(field string, hold AgentHold, action AgentAction) FieldError {
+	if !hold.Valid() {
+		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
+	}
+
+	if hold == AgentHoldUnlessProven && !action.JudgedOnProof() {
+		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
+	}
+
+	return FieldError{}
+}
+
 type AgentSettings struct {
 	TeamID           uuid.UUID
 	WorkspaceID      uuid.UUID
-	HoldComments     bool
-	HoldStateChanges bool
-	HoldIssueEdits   bool
+	HoldComments     AgentHold
+	HoldStateChanges AgentHold
+	HoldIssueEdits   AgentHold
 }
 
-func (s AgentSettings) Holds(action AgentAction) bool {
+func (s AgentSettings) Holds(action AgentAction) AgentHold {
 	switch action {
 	case AgentActionComment:
-		return s.HoldComments
+		return normalisedHold(s.HoldComments)
 	case AgentActionStateChange:
-		return s.HoldStateChanges
+		return normalisedHold(s.HoldStateChanges)
 	case AgentActionIssueEdit:
-		return s.HoldIssueEdits
+		return normalisedHold(s.HoldIssueEdits)
+	case AgentActionCheckSet:
+		return AgentHoldAlways
 	default:
-		return false
+		return AgentHoldNever
 	}
+}
+
+func (s AgentSettings) Strongest(actions []AgentAction) (AgentAction, AgentHold) {
+	decided, strongest := AgentAction(""), AgentHoldNever
+
+	for _, action := range actions {
+		if hold := s.Holds(action); decided == "" || hold.Stronger(strongest) {
+			decided, strongest = action, hold
+		}
+	}
+
+	return decided, strongest
+}
+
+func normalisedHold(hold AgentHold) AgentHold {
+	if !hold.Valid() {
+		return AgentHoldNever
+	}
+
+	return hold
 }
 
 func (a AgentAction) Scopes() APIScopeSet {
@@ -57,13 +123,11 @@ func (a AgentAction) Scopes() APIScopeSet {
 		return APIScopeSet{NewAPIScope(ResourceComment, ActionManage)}
 	case AgentActionStateChange, AgentActionIssueEdit:
 		return APIScopeSet{NewAPIScope(ResourceIssue, ActionManage)}
+	case AgentActionCheckSet:
+		return APIScopeSet{NewAPIScope(ResourceCheck, ActionManage)}
 	default:
 		return APIScopeSet{}
 	}
-}
-
-func (s AgentSettings) HoldsAnything() bool {
-	return s.HoldComments || s.HoldStateChanges || s.HoldIssueEdits
 }
 
 type AgentActionHeldError struct {
@@ -117,8 +181,15 @@ type AgentChange struct {
 	Body            string
 	StateID         *uuid.UUID
 	Title           *string
+	Description     *string
 	Priority        *IssuePriority
 	AssigneeID      *uuid.UUID
+	Estimate        *int
+	DueOn           *string
+	CycleID         *uuid.UUID
+	ProjectID       *uuid.UUID
+	Clear           []string
+	CheckIDs        []uuid.UUID
 }
 
 type AgentProposal struct {
