@@ -39,6 +39,8 @@ type WorkspaceNotificationSetting struct {
 	EmailAgents       bool      `boil:"email_agents" json:"email_agents" toml:"email_agents" yaml:"email_agents"`
 	CreatedAt         time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt         time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	InboxChecks       bool      `boil:"inbox_checks" json:"inbox_checks" toml:"inbox_checks" yaml:"inbox_checks"`
+	EmailChecks       bool      `boil:"email_checks" json:"email_checks" toml:"email_checks" yaml:"email_checks"`
 
 	R *workspaceNotificationSettingR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceNotificationSettingL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -61,6 +63,8 @@ var WorkspaceNotificationSettingColumns = struct {
 	EmailAgents       string
 	CreatedAt         string
 	UpdatedAt         string
+	InboxChecks       string
+	EmailChecks       string
 }{
 	WorkspaceID:       "workspace_id",
 	AccountID:         "account_id",
@@ -78,6 +82,8 @@ var WorkspaceNotificationSettingColumns = struct {
 	EmailAgents:       "email_agents",
 	CreatedAt:         "created_at",
 	UpdatedAt:         "updated_at",
+	InboxChecks:       "inbox_checks",
+	EmailChecks:       "email_checks",
 }
 
 var WorkspaceNotificationSettingTableColumns = struct {
@@ -97,6 +103,8 @@ var WorkspaceNotificationSettingTableColumns = struct {
 	EmailAgents       string
 	CreatedAt         string
 	UpdatedAt         string
+	InboxChecks       string
+	EmailChecks       string
 }{
 	WorkspaceID:       "workspace_notification_settings.workspace_id",
 	AccountID:         "workspace_notification_settings.account_id",
@@ -114,6 +122,8 @@ var WorkspaceNotificationSettingTableColumns = struct {
 	EmailAgents:       "workspace_notification_settings.email_agents",
 	CreatedAt:         "workspace_notification_settings.created_at",
 	UpdatedAt:         "workspace_notification_settings.updated_at",
+	InboxChecks:       "workspace_notification_settings.inbox_checks",
+	EmailChecks:       "workspace_notification_settings.email_checks",
 }
 
 // Generated where
@@ -135,6 +145,8 @@ var WorkspaceNotificationSettingWhere = struct {
 	EmailAgents       whereHelperbool
 	CreatedAt         whereHelpertime_Time
 	UpdatedAt         whereHelpertime_Time
+	InboxChecks       whereHelperbool
+	EmailChecks       whereHelperbool
 }{
 	WorkspaceID:       whereHelperstring{field: "\"workspace_notification_settings\".\"workspace_id\""},
 	AccountID:         whereHelperstring{field: "\"workspace_notification_settings\".\"account_id\""},
@@ -152,6 +164,8 @@ var WorkspaceNotificationSettingWhere = struct {
 	EmailAgents:       whereHelperbool{field: "\"workspace_notification_settings\".\"email_agents\""},
 	CreatedAt:         whereHelpertime_Time{field: "\"workspace_notification_settings\".\"created_at\""},
 	UpdatedAt:         whereHelpertime_Time{field: "\"workspace_notification_settings\".\"updated_at\""},
+	InboxChecks:       whereHelperbool{field: "\"workspace_notification_settings\".\"inbox_checks\""},
+	EmailChecks:       whereHelperbool{field: "\"workspace_notification_settings\".\"email_checks\""},
 }
 
 // WorkspaceNotificationSettingRels is where relationship names are stored.
@@ -171,9 +185,9 @@ func (*workspaceNotificationSettingR) NewStruct() *workspaceNotificationSettingR
 type workspaceNotificationSettingL struct{}
 
 var (
-	workspaceNotificationSettingAllColumns            = []string{"workspace_id", "account_id", "inbox_assigned", "inbox_mentioned", "inbox_commented", "inbox_state_changed", "inbox_membership", "inbox_agents", "email_assigned", "email_mentioned", "email_commented", "email_state_changed", "email_membership", "email_agents", "created_at", "updated_at"}
+	workspaceNotificationSettingAllColumns            = []string{"workspace_id", "account_id", "inbox_assigned", "inbox_mentioned", "inbox_commented", "inbox_state_changed", "inbox_membership", "inbox_agents", "email_assigned", "email_mentioned", "email_commented", "email_state_changed", "email_membership", "email_agents", "created_at", "updated_at", "inbox_checks", "email_checks"}
 	workspaceNotificationSettingColumnsWithoutDefault = []string{"workspace_id", "account_id"}
-	workspaceNotificationSettingColumnsWithDefault    = []string{"inbox_assigned", "inbox_mentioned", "inbox_commented", "inbox_state_changed", "inbox_membership", "inbox_agents", "email_assigned", "email_mentioned", "email_commented", "email_state_changed", "email_membership", "email_agents", "created_at", "updated_at"}
+	workspaceNotificationSettingColumnsWithDefault    = []string{"inbox_assigned", "inbox_mentioned", "inbox_commented", "inbox_state_changed", "inbox_membership", "inbox_agents", "email_assigned", "email_mentioned", "email_commented", "email_state_changed", "email_membership", "email_agents", "created_at", "updated_at", "inbox_checks", "email_checks"}
 	workspaceNotificationSettingPrimaryKeyColumns     = []string{"workspace_id", "account_id"}
 	workspaceNotificationSettingGeneratedColumns      = []string{}
 )

@@ -163,6 +163,10 @@ func summarise(notification entity.Notification) string {
 		change = "changed the state"
 	case entity.NotificationKindMembership:
 		change = "added you"
+	case entity.NotificationKindCheckFailed:
+		change = "filed a result that disproves one of the criteria"
+	case entity.NotificationKindGapDeclared:
+		change = "recorded a gap against one of the criteria"
 	}
 
 	if notification.Reason == entity.NotificationReasonMentioned {

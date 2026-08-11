@@ -10131,7 +10131,8 @@ components:
 
     NotificationKind:
       type: string
-      enum: [assigned, mentioned, commented, state_changed, membership]
+      enum: [assigned, mentioned, commented, state_changed, membership, check_failed,
+             gap_declared]
 
     NotificationReason:
       type: string
@@ -10182,13 +10183,16 @@ components:
 
     NotificationPreferences:
       type: object
-      required: [assigned, mentioned, commented, stateChanged, membership, agents]
+      required: [assigned, mentioned, commented, stateChanged, membership, checks, agents]
       properties:
         assigned: { $ref: '#/components/schemas/NotificationChannels' }
         mentioned: { $ref: '#/components/schemas/NotificationChannels' }
         commented: { $ref: '#/components/schemas/NotificationChannels' }
         stateChanged: { $ref: '#/components/schemas/NotificationChannels' }
         membership: { $ref: '#/components/schemas/NotificationChannels' }
+        checks:
+          $ref: '#/components/schemas/NotificationChannels'
+          description: A criterion on something you follow failed, or somebody recorded a gap.
         agents: { $ref: '#/components/schemas/NotificationChannels' }
 
     NotificationChannels:

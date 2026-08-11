@@ -6308,7 +6308,7 @@ export interface components {
         /** @enum {string} */
         NotificationSubjectKind: "issue" | "project" | "team";
         /** @enum {string} */
-        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership";
+        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "check_failed" | "gap_declared";
         /** @enum {string} */
         NotificationReason: "mentioned" | "assigned" | "membership" | "following";
         /** @enum {string} */
@@ -6341,6 +6341,8 @@ export interface components {
             commented: components["schemas"]["NotificationChannels"];
             stateChanged: components["schemas"]["NotificationChannels"];
             membership: components["schemas"]["NotificationChannels"];
+            /** @description A criterion on something you follow failed, or somebody recorded a gap. */
+            checks: components["schemas"]["NotificationChannels"];
             agents: components["schemas"]["NotificationChannels"];
         };
         NotificationChannels: {

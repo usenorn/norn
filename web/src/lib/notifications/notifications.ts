@@ -90,6 +90,8 @@ const kindVerbs: Record<NotificationKind, string> = {
 	commented: "commented",
 	state_changed: "changed the state",
 	membership: "added you",
+	check_failed: "filed a result that disproves a criterion",
+	gap_declared: "recorded a gap against a criterion",
 };
 
 export function summary(notification: Notification): string {
@@ -148,6 +150,11 @@ export const preferenceRows: PreferenceRow[] = [
 		label: "Added to a project or team",
 		description: "Someone brought you into a group.",
 	},
+	{
+		key: "checks",
+		label: "Criteria",
+		description: "A criterion on something you follow failed, or somebody recorded a gap.",
+	},
 ];
 
 export function defaultPreferences(): NotificationPreferences {
@@ -157,6 +164,7 @@ export function defaultPreferences(): NotificationPreferences {
 		commented: { inbox: true, email: false },
 		stateChanged: { inbox: true, email: false },
 		membership: { inbox: true, email: false },
+		checks: { inbox: true, email: false },
 		agents: { inbox: true, email: true },
 	};
 }

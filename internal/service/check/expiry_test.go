@@ -2,6 +2,7 @@ package check_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
+	"github.com/usenorn/norn/internal/service"
 )
 
 func (h *harness) stale(issue entity.Issue) {
@@ -169,6 +171,177 @@ func TestTheSweepAnnouncesWhenTheChangeAProofWasTakenAtMovedOn(t *testing.T) {
 			"the entry says %q, want head_moved so the reader knows to run it again rather than "+
 				"wait for a clock",
 			h.announced()[0].FromValue,
+		)
+	}
+}
+
+func (h *harness) notified() []entity.NotificationKind {
+	kinds := make([]entity.NotificationKind, 0, len(h.events))
+
+	for _, event := range h.events {
+		kinds = append(kinds, event.Kind)
+	}
+
+	return kinds
+}
+
+func TestARefutationTellsThePeopleFollowingTheIssue(t *testing.T) {
+	h := newHarness(t, entity.ActorKindAgent)
+
+	issue := h.issue()
+	check := h.check(issue)
+
+	h.expectIssue(issue)
+	h.expectCheck(check)
+
+	h.checks.EXPECT().
+		ListByIssue(gomock.Any(), h.workspaceID, issue.ID).
+		Return([]entity.Check{check}, nil).
+		AnyTimes()
+
+	var filed []entity.Evidence
+
+	h.evidence.EXPECT().
+		Append(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, stored entity.Evidence) (entity.Evidence, error) {
+			stored.ID = uuid.New()
+			filed = append(filed, stored)
+
+			return stored, nil
+		})
+
+	h.evidence.EXPECT().
+		Digest(gomock.Any(), h.workspaceID, issue.ID).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) ([]entity.Evidence, error) {
+			return filed, nil
+		}).
+		AnyTimes()
+
+	if _, err := h.service.Submit(
+		context.Background(), h.workspaceID, issue.ID, check.ID,
+		service.SubmitEvidenceInput{
+			Verdict: entity.EvidenceFailed,
+			Channel: entity.EvidenceChannelCommand,
+			Output:  "FAIL\tgithub.com/usenorn/norn/internal/payments\t0.2s",
+		},
+	); err != nil {
+		t.Fatalf("submit: %v", err)
+	}
+
+	if !slices.Contains(h.notified(), entity.NotificationKindCheckFailed) {
+		t.Fatalf(
+			"nobody was told the criterion started failing; notified = %v. A failing check is the "+
+				"one outcome somebody has to act on, and silence makes it arrive at the close",
+			h.notified(),
+		)
+	}
+}
+
+func TestAGapIsAnnouncedRatherThanLeftForSomebodyToNotice(t *testing.T) {
+	h := newHarness(t, entity.ActorKindUser)
+
+	issue := h.issue()
+	check := h.check(issue)
+	child := h.issue()
+
+	h.expectIssue(issue)
+	h.expectCheck(check)
+
+	h.issueWriter.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		Return(child, nil)
+
+	h.issueWriter.EXPECT().
+		SetParent(gomock.Any(), h.workspaceID, child.ID, gomock.Any()).
+		Return(child, nil)
+
+	h.checks.EXPECT().
+		Resolve(gomock.Any(), h.workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, input repository.CheckResolutionInput) (entity.Check, error) {
+			settled := check
+			settled.Resolution = input.Resolution
+			settled.ResolutionReason = input.Reason
+			settled.GapIssueID = input.GapIssueID
+
+			return settled, nil
+		})
+
+	if _, err := h.service.DeclareGap(
+		context.Background(), h.workspaceID, issue.ID, check.ID,
+		service.DeclareGapInput{Reason: "The billing sandbox has been down all week."},
+	); err != nil {
+		t.Fatalf("declare gap: %v", err)
+	}
+
+	if !slices.Contains(h.notified(), entity.NotificationKindGapDeclared) {
+		t.Fatalf(
+			"declaring a gap told nobody; notified = %v. Saying plainly that something cannot be "+
+				"done is the outcome this feature wants, and it should not be the quiet one",
+			h.notified(),
+		)
+	}
+}
+
+func TestASecondFailingResultDoesNotTellEverybodyAgain(t *testing.T) {
+	h := newHarness(t, entity.ActorKindAgent)
+
+	issue := h.issue()
+	check := h.check(issue)
+
+	h.expectIssue(issue)
+	h.expectCheck(check)
+
+	h.checks.EXPECT().
+		ListByIssue(gomock.Any(), h.workspaceID, issue.ID).
+		Return([]entity.Check{check}, nil).
+		AnyTimes()
+
+	var filed []entity.Evidence
+
+	h.evidence.EXPECT().
+		Append(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, stored entity.Evidence) (entity.Evidence, error) {
+			stored.ID = uuid.New()
+			filed = append(filed, stored)
+
+			return stored, nil
+		}).
+		Times(2)
+
+	h.evidence.EXPECT().
+		Digest(gomock.Any(), h.workspaceID, issue.ID).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) ([]entity.Evidence, error) {
+			return filed, nil
+		}).
+		AnyTimes()
+
+	failing := service.SubmitEvidenceInput{
+		Verdict: entity.EvidenceFailed,
+		Channel: entity.EvidenceChannelCommand,
+		Output:  "FAIL\tgithub.com/usenorn/norn/internal/payments\t0.2s",
+	}
+
+	for range 2 {
+		if _, err := h.service.Submit(
+			context.Background(), h.workspaceID, issue.ID, check.ID, failing,
+		); err != nil {
+			t.Fatalf("submit: %v", err)
+		}
+	}
+
+	told := 0
+
+	for _, kind := range h.notified() {
+		if kind == entity.NotificationKindCheckFailed {
+			told++
+		}
+	}
+
+	if told != 1 {
+		t.Fatalf(
+			"told people %d times, want 1; a check that was already failing has not started "+
+				"failing again, and repeating it teaches people to ignore the notification",
+			told,
 		)
 	}
 }

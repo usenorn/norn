@@ -2434,7 +2434,9 @@ func (e NotificationActorKind) Valid() bool {
 // Defines values for NotificationKind.
 const (
 	NotificationKindAssigned     NotificationKind = "assigned"
+	NotificationKindCheckFailed  NotificationKind = "check_failed"
 	NotificationKindCommented    NotificationKind = "commented"
+	NotificationKindGapDeclared  NotificationKind = "gap_declared"
 	NotificationKindMembership   NotificationKind = "membership"
 	NotificationKindMentioned    NotificationKind = "mentioned"
 	NotificationKindStateChanged NotificationKind = "state_changed"
@@ -2445,7 +2447,11 @@ func (e NotificationKind) Valid() bool {
 	switch e {
 	case NotificationKindAssigned:
 		return true
+	case NotificationKindCheckFailed:
+		return true
 	case NotificationKindCommented:
+		return true
+	case NotificationKindGapDeclared:
 		return true
 	case NotificationKindMembership:
 		return true
@@ -5874,6 +5880,7 @@ type NotificationPage struct {
 type NotificationPreferences struct {
 	Agents       NotificationChannels `json:"agents"`
 	Assigned     NotificationChannels `json:"assigned"`
+	Checks       NotificationChannels `json:"checks"`
 	Commented    NotificationChannels `json:"commented"`
 	Membership   NotificationChannels `json:"membership"`
 	Mentioned    NotificationChannels `json:"mentioned"`

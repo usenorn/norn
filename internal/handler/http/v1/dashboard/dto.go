@@ -1432,6 +1432,7 @@ func notificationPreferencesDTO(preferences entity.NotificationPreferences) api.
 		Commented:    notificationChannelsDTO(preferences.Commented),
 		StateChanged: notificationChannelsDTO(preferences.StateChanged),
 		Membership:   notificationChannelsDTO(preferences.Membership),
+		Checks:       notificationChannelsDTO(preferences.Checks),
 		Agents:       notificationChannelsDTO(preferences.Agents),
 	}
 }
@@ -1447,6 +1448,7 @@ func notificationPreferences(dto api.NotificationPreferences) entity.Notificatio
 		Commented:    notificationChannels(dto.Commented),
 		StateChanged: notificationChannels(dto.StateChanged),
 		Membership:   notificationChannels(dto.Membership),
+		Checks:       notificationChannels(dto.Checks),
 		Agents:       notificationChannels(dto.Agents),
 	}
 }

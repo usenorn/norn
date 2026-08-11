@@ -189,6 +189,10 @@ func (s *checksService) DeclareGap(
 			return err
 		}
 
+		if err := s.announce(ctx, issue, decision, entity.NotificationKindGapDeclared); err != nil {
+			return err
+		}
+
 		declared = service.DeclaredGap{Check: resolved, Child: child}
 
 		return nil

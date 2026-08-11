@@ -16,6 +16,7 @@ import (
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
+	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
@@ -32,7 +33,9 @@ type harness struct {
 	codeLinks   *scmrepo.MockCodeLink
 	links       []entity.CodeLink
 	recorded    []entity.Activity
+	events      []entity.NotificationEvent
 	activity    *activityrepo.MockActivity
+	notify      *notificationeventrepo.MockNotificationEvent
 	jobs        *jobqueuerepo.MockJobProducer
 	proposals   *agentproposalrepo.MockAgentProposal
 	agents      *agentrepo.MockAgent
@@ -58,6 +61,7 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 		delegations: delegationrepo.NewMockIssueDelegation(ctrl),
 		codeLinks:   scmrepo.NewMockCodeLink(ctrl),
 		activity:    activityrepo.NewMockActivity(ctrl),
+		notify:      notificationeventrepo.NewMockNotificationEvent(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
 		proposals:   agentproposalrepo.NewMockAgentProposal(ctrl),
 		agents:      agentrepo.NewMockAgent(ctrl),
@@ -83,6 +87,15 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 				Actor: entity.Actor{Kind: h.actorKind, AccountID: h.actorID},
 				Scope: entity.TeamScope{WorkspaceID: request.WorkspaceID, AllTeams: true},
 			}, nil
+		}).
+		AnyTimes()
+
+	h.notify.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, event entity.NotificationEvent) error {
+			h.events = append(h.events, event)
+
+			return nil
 		}).
 		AnyTimes()
 
@@ -125,6 +138,7 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 		h.delegations,
 		h.codeLinks,
 		h.activity,
+		h.notify,
 		h.jobs,
 		h.proposals,
 		h.agents,

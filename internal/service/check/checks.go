@@ -21,6 +21,7 @@ type checksService struct {
 	delegations repository.IssueDelegation
 	codeLinks   repository.CodeLink
 	activity    repository.Activity
+	notify      repository.NotificationEvent
 	jobs        repository.JobProducer
 	proposals   repository.AgentProposal
 	agents      repository.Agent
@@ -37,6 +38,7 @@ func New(
 	delegations repository.IssueDelegation,
 	codeLinks repository.CodeLink,
 	activity repository.Activity,
+	notify repository.NotificationEvent,
 	jobs repository.JobProducer,
 	proposals repository.AgentProposal,
 	agents repository.Agent,
@@ -52,6 +54,7 @@ func New(
 		delegations: delegations,
 		codeLinks:   codeLinks,
 		activity:    activity,
+		notify:      notify,
 		jobs:        jobs,
 		proposals:   proposals,
 		agents:      agents,
@@ -348,4 +351,21 @@ func validateDraft(drafted service.NewCheckInput) error {
 		entity.ValidateCheckProof("proof", drafted.Proof),
 		entity.ValidateCheckTimeLimit("timeLimitSeconds", drafted.TimeLimit),
 	)
+}
+
+func (s *checksService) announce(
+	ctx context.Context,
+	issue entity.Issue,
+	decision entity.Decision,
+	kind entity.NotificationKind,
+) error {
+	attribution := decision.ActivityActor()
+
+	return s.notify.Record(ctx, entity.NotificationEvent{
+		WorkspaceID: issue.WorkspaceID,
+		Subject:     entity.NotifyIssue(issue.ID),
+		Kind:        kind,
+		Actor:       attribution.AccountID,
+		ActorKind:   attribution.Kind,
+	})
 }

@@ -122,6 +122,16 @@ func (s *checksService) Submit(
 			Report: entity.NewCheckReport(held, filed, horizon),
 		}
 
+		if submitted.Report.State == entity.CheckStateFailed &&
+			entity.NewCheckReport(held, without(filed, stored.ID), horizon).State !=
+				entity.CheckStateFailed {
+			if err := s.announce(
+				ctx, issue, decision, entity.NotificationKindCheckFailed,
+			); err != nil {
+				return err
+			}
+		}
+
 		return s.activity.Record(ctx, entity.Activity{
 			WorkspaceID: workspaceID,
 			Subject:     entity.IssueSubject(issue.ID),
@@ -160,4 +170,16 @@ func (s *checksService) stampHead(
 	record.CommitSHA = link.HeadSHA
 
 	return nil
+}
+
+func without(evidence []entity.Evidence, id uuid.UUID) []entity.Evidence {
+	kept := make([]entity.Evidence, 0, len(evidence))
+
+	for _, piece := range evidence {
+		if piece.ID != id {
+			kept = append(kept, piece)
+		}
+	}
+
+	return kept
 }

@@ -52,79 +52,55 @@ const triageDecisions: Record<string, string> = {
 	reassigned: "Sent to",
 };
 
+export type ActivityKind = components["schemas"]["ActivityKind"];
+
+const changeLines: Record<ActivityKind, (change: ActivityChange) => string> = {
+	created: (change) => (change.toState ? `Raised in ${change.toState}` : "Raised"),
+	state_changed: (change) =>
+		`${change.fromState ?? "somewhere"} → ${change.toState ?? "somewhere"}`,
+	team_moved: (change) => `Moved from ${change.fromValue} to ${change.toValue}`,
+	child_added: (change) => `${change.toValue} was filed under this`,
+	child_removed: (change) => `${change.fromValue} is no longer filed under this`,
+	relation_added: (change) =>
+		`Now ${relationHeadings[change.field ?? "relates_to"] ?? "related to"} ${change.toValue}`,
+	relation_removed: (change) => `No longer linked to ${change.fromValue}`,
+	archived: () => "Archived",
+	unarchived: () => "Taken out of the archive",
+	deleted: () => "Deleted",
+	restored: () => "Restored",
+	commented: () => "Commented",
+	comment_deleted: () => "Deleted a comment",
+	member_added: (change) => `${change.toValue} joined`,
+	member_removed: (change) => `${change.fromValue} left`,
+	attachment_added: (change) => `Attached ${change.toValue}`,
+	attachment_removed: (change) => `Removed ${change.toValue || change.fromValue}`,
+	code_linked: (change) =>
+		`Linked ${codeKindNames[change.field ?? ""] ?? "a change"} ${change.toValue}`,
+	code_unlinked: (change) =>
+		`Unlinked ${codeKindNames[change.field ?? ""] ?? "a change"} ${change.toValue}`,
+	delegated: (change) => `Handed this to ${change.toValue}`,
+	recalled: (change) => `Took this back from ${change.fromValue}`,
+	check_added: (change) => `Added a check: ${change.toValue}`,
+	check_removed: (change) => `Removed the check: ${change.toValue}`,
+	check_approved: (change) => `Approved the check: ${change.toValue}`,
+	check_declined: (change) => `Declined the check: ${change.toValue}`,
+	check_waived: (change) => `Waived the check: ${change.toValue}`,
+	check_gap_declared: (change) => `Declared a gap against: ${change.toValue}`,
+	evidence_added: (change) => `Filed evidence for: ${change.toValue}`,
+	check_expired: (change) =>
+		change.fromValue === "head_moved"
+			? `The proof of "${change.toValue}" stopped counting: the change it was taken at moved on`
+			: `The proof of "${change.toValue}" stopped counting: it is past its time limit`,
+	checks_overridden: (change) =>
+		change.fromValue === "acknowledged"
+			? `Finished this with unproven checks, having been shown them: ${change.toValue}`
+			: `Finished this with unproven checks: ${change.toValue}`,
+	triaged: triageLine,
+	property_changed: propertyLine,
+};
+
 export function changeLine(change: ActivityChange): string {
-	switch (change.kind) {
-		case "created":
-			return change.toState ? `Raised in ${change.toState}` : "Raised";
-		case "state_changed":
-			return `${change.fromState ?? "somewhere"} → ${change.toState ?? "somewhere"}`;
-		case "team_moved":
-			return `Moved from ${change.fromValue} to ${change.toValue}`;
-		case "child_added":
-			return `${change.toValue} was filed under this`;
-		case "child_removed":
-			return `${change.fromValue} is no longer filed under this`;
-		case "relation_added":
-			return `Now ${relationHeadings[change.field ?? "relates_to"] ?? "related to"} ${change.toValue}`;
-		case "relation_removed":
-			return `No longer linked to ${change.fromValue}`;
-		case "archived":
-			return "Archived";
-		case "unarchived":
-			return "Taken out of the archive";
-		case "deleted":
-			return "Deleted";
-		case "restored":
-			return "Restored";
-		case "commented":
-			return "Commented";
-		case "comment_deleted":
-			return "Deleted a comment";
-		case "member_added":
-			return `${change.toValue} joined`;
-		case "member_removed":
-			return `${change.fromValue} left`;
-		case "attachment_added":
-			return `Attached ${change.toValue}`;
-		case "attachment_removed":
-			return `Removed ${change.toValue || change.fromValue}`;
-		case "code_linked":
-			return `Linked ${codeKindNames[change.field ?? ""] ?? "a change"} ${change.toValue}`;
-		case "code_unlinked":
-			return `Unlinked ${codeKindNames[change.field ?? ""] ?? "a change"} ${change.toValue}`;
-		case "delegated":
-			return `Handed this to ${change.toValue}`;
-		case "recalled":
-			return `Took this back from ${change.fromValue}`;
-		case "check_added":
-			return `Added a check: ${change.toValue}`;
-		case "check_removed":
-			return `Removed the check: ${change.toValue}`;
-		case "check_approved":
-			return `Approved the check: ${change.toValue}`;
-		case "check_declined":
-			return `Declined the check: ${change.toValue}`;
-		case "check_waived":
-			return `Waived the check: ${change.toValue}`;
-		case "check_gap_declared":
-			return `Declared a gap against: ${change.toValue}`;
-		case "evidence_added":
-			return `Filed evidence for: ${change.toValue}`;
-		case "check_expired":
-			return change.fromValue === "head_moved"
-				? `The proof of "${change.toValue}" stopped counting: the change it was taken at moved on`
-				: `The proof of "${change.toValue}" stopped counting: it is past its time limit`;
-		case "checks_overridden":
-			return change.fromValue === "acknowledged"
-				? `Finished this with unproven checks, having been shown them: ${change.toValue}`
-				: `Finished this with unproven checks: ${change.toValue}`;
-		case "triaged":
-			return triageLine(change);
-		case "property_changed":
-			return propertyLine(change);
-		default:
-			return "Changed something";
-	}
+	return changeLines[change.kind](change);
 }
 
 function triageLine(change: ActivityChange): string {

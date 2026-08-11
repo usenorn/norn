@@ -31,6 +31,8 @@ const (
 	NotificationKindCommented    NotificationKind = "commented"
 	NotificationKindStateChanged NotificationKind = "state_changed"
 	NotificationKindMembership   NotificationKind = "membership"
+	NotificationKindCheckFailed  NotificationKind = "check_failed"
+	NotificationKindGapDeclared  NotificationKind = "gap_declared"
 )
 
 func NotificationKinds() []NotificationKind {
@@ -40,6 +42,8 @@ func NotificationKinds() []NotificationKind {
 		NotificationKindCommented,
 		NotificationKindStateChanged,
 		NotificationKindMembership,
+		NotificationKindCheckFailed,
+		NotificationKindGapDeclared,
 	}
 }
 
@@ -177,6 +181,7 @@ type NotificationPreferences struct {
 	Commented    NotificationChannels
 	StateChanged NotificationChannels
 	Membership   NotificationChannels
+	Checks       NotificationChannels
 	Agents       NotificationChannels
 }
 
@@ -187,6 +192,7 @@ func DefaultNotificationPreferences() NotificationPreferences {
 		Commented:    NotificationChannels{Inbox: true, Email: false},
 		StateChanged: NotificationChannels{Inbox: true, Email: false},
 		Membership:   NotificationChannels{Inbox: true, Email: false},
+		Checks:       NotificationChannels{Inbox: true, Email: false},
 		Agents:       NotificationChannels{Inbox: true, Email: true},
 	}
 }
@@ -203,6 +209,8 @@ func (p NotificationPreferences) For(kind NotificationKind) NotificationChannels
 		return p.StateChanged
 	case NotificationKindMembership:
 		return p.Membership
+	case NotificationKindCheckFailed, NotificationKindGapDeclared:
+		return p.Checks
 	default:
 		return NotificationChannels{}
 	}
