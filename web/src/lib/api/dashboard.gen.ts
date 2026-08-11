@@ -3829,6 +3829,7 @@ export interface components {
             restsOnAbsence?: boolean;
             /** @description True when this was proven once and the proof has since stopped counting. */
             expired?: boolean;
+            awaiting?: components["schemas"]["CheckAwaiting"];
             /** Format: int32 */
             evidenceCount?: number;
             /** Format: date-time */
@@ -3883,6 +3884,11 @@ export interface components {
          * @enum {string}
          */
         CheckState: "unproven" | "proven" | "failed" | "waived" | "gap";
+        /**
+         * @description What an unproven check is still short of, so the reason can be said in each surface's own words rather than inferred from the evidence again. Absent once a check is settled.
+         * @enum {string}
+         */
+        CheckAwaiting: "correction" | "fresh_proof" | "attestation" | "prior_failure" | "positive_result" | "evidence";
         /**
          * @description Why an observation stopped counting.
          * @enum {string}
@@ -3963,8 +3969,11 @@ export interface components {
             output: string;
             /** Format: int32 */
             exitCode?: number;
-            /** Format: date-time */
-            observedAt: string;
+            /**
+             * Format: date-time
+             * @description When you looked, if that differs from now. Absent means Norn takes the moment it received this, and a stated time later than arrival is clamped to arrival.
+             */
+            observedAt?: string;
         };
         CheckConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */

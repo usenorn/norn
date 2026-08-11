@@ -167,7 +167,10 @@ func (h *handler) SubmitWorkspaceIssueCheckEvidence(
 		Verdict:    entity.EvidenceVerdict(request.Body.Verdict),
 		Channel:    entity.EvidenceChannel(request.Body.Channel),
 		Output:     request.Body.Output,
-		ObservedAt: request.Body.ObservedAt,
+	}
+
+	if request.Body.ObservedAt != nil {
+		input.ObservedAt = *request.Body.ObservedAt
 	}
 
 	if request.Body.Command != nil {

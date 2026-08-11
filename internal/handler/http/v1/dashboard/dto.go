@@ -1566,6 +1566,11 @@ func issueCheckReportDTO(report entity.CheckReport) api.IssueCheck {
 	dto.Expired = &expired
 	dto.EvidenceCount = &count
 
+	if awaiting := report.Awaiting(); awaiting != entity.CheckAwaitingNothing {
+		reason := api.CheckAwaiting(awaiting)
+		dto.Awaiting = &reason
+	}
+
 	return dto
 }
 

@@ -6371,6 +6371,7 @@ components:
         expired:
           type: boolean
           description: True when this was proven once and the proof has since stopped counting.
+        awaiting: { $ref: '#/components/schemas/CheckAwaiting' }
         evidenceCount: { type: integer, format: int32 }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -6426,6 +6427,14 @@ components:
         Derived from the evidence on file every time it is read, never stored. A check whose
         proof has expired reads as unproven again; expired tells that apart from never proven.
       enum: [unproven, proven, failed, waived, gap]
+
+    CheckAwaiting:
+      type: string
+      description: >-
+        What an unproven check is still short of, so the reason can be said in each surface's
+        own words rather than inferred from the evidence again. Absent once a check is settled.
+      enum:
+        [correction, fresh_proof, attestation, prior_failure, positive_result, evidence]
 
     EvidenceExpiry:
       type: string
@@ -6533,7 +6542,7 @@ components:
 
     SubmitCheckEvidenceRequest:
       type: object
-      required: [verdict, channel, output, observedAt]
+      required: [verdict, channel, output]
       properties:
         verdict: { $ref: '#/components/schemas/EvidenceVerdict' }
         channel: { $ref: '#/components/schemas/EvidenceChannel' }
@@ -6543,7 +6552,12 @@ components:
           minLength: 1
           description: The verbatim output, not a summary of it.
         exitCode: { type: integer, format: int32 }
-        observedAt: { type: string, format: date-time }
+        observedAt:
+          type: string
+          format: date-time
+          description: >-
+            When you looked, if that differs from now. Absent means Norn takes the moment it
+            received this, and a stated time later than arrival is clamped to arrival.
 
     CheckConflictProblem:
       allOf:

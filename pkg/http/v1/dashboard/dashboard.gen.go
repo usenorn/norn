@@ -718,6 +718,36 @@ func (e CheckApproval) Valid() bool {
 	}
 }
 
+// Defines values for CheckAwaiting.
+const (
+	Attestation    CheckAwaiting = "attestation"
+	Correction     CheckAwaiting = "correction"
+	Evidence       CheckAwaiting = "evidence"
+	FreshProof     CheckAwaiting = "fresh_proof"
+	PositiveResult CheckAwaiting = "positive_result"
+	PriorFailure   CheckAwaiting = "prior_failure"
+)
+
+// Valid indicates whether the value is a known member of the CheckAwaiting enum.
+func (e CheckAwaiting) Valid() bool {
+	switch e {
+	case Attestation:
+		return true
+	case Correction:
+		return true
+	case Evidence:
+		return true
+	case FreshProof:
+		return true
+	case PositiveResult:
+		return true
+	case PriorFailure:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CheckConflictProblemCode.
 const (
 	CheckConflictProblemCodeCheckDecided             CheckConflictProblemCode = "check_decided"
@@ -4246,6 +4276,9 @@ type ChangePasswordRequest struct {
 // CheckApproval A check counts only once a person has approved it.
 type CheckApproval string
 
+// CheckAwaiting What an unproven check is still short of, so the reason can be said in each surface's own words rather than inferred from the evidence again. Absent once a check is settled.
+type CheckAwaiting string
+
 // CheckConflictProblem defines model for CheckConflictProblem.
 type CheckConflictProblem struct {
 	Code     CheckConflictProblemCode `json:"code"`
@@ -5226,6 +5259,9 @@ type IssueCheck struct {
 	ApprovedAt          *time.Time            `json:"approvedAt,omitempty"`
 	ApprovedByAccountId *openapi_types.UUID   `json:"approvedByAccountId,omitempty"`
 	AuthorKind          NotificationActorKind `json:"authorKind"`
+
+	// Awaiting What an unproven check is still short of, so the reason can be said in each surface's own words rather than inferred from the evidence again. Absent once a check is settled.
+	Awaiting *CheckAwaiting `json:"awaiting,omitempty"`
 
 	// Blocking True when this check stands between an agent and finishing the issue.
 	Blocking           *bool               `json:"blocking,omitempty"`
@@ -6663,10 +6699,12 @@ type StorageRefusedProblemCode string
 // SubmitCheckEvidenceRequest defines model for SubmitCheckEvidenceRequest.
 type SubmitCheckEvidenceRequest struct {
 	// Channel Where the observation came from. Declared by the submitter; Norn cannot verify it.
-	Channel    EvidenceChannel `json:"channel"`
-	Command    *string         `json:"command,omitempty"`
-	ExitCode   *int32          `json:"exitCode,omitempty"`
-	ObservedAt time.Time       `json:"observedAt"`
+	Channel  EvidenceChannel `json:"channel"`
+	Command  *string         `json:"command,omitempty"`
+	ExitCode *int32          `json:"exitCode,omitempty"`
+
+	// ObservedAt When you looked, if that differs from now. Absent means Norn takes the moment it received this, and a stated time later than arrival is clamped to arrival.
+	ObservedAt *time.Time `json:"observedAt,omitempty"`
 
 	// Output The verbatim output, not a summary of it.
 	Output string `json:"output"`

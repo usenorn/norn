@@ -83,6 +83,20 @@
 		type ActivityFeed,
 	} from "$lib/activity/activity";
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
+	import CheckList from "$lib/checks/check-list.svelte";
+	import CheckSummary from "$lib/checks/check-summary.svelte";
+	import NewCheckDialog from "$lib/checks/new-check-dialog.svelte";
+	import FileEvidenceDialog from "$lib/checks/file-evidence-dialog.svelte";
+	import ResolveCheckDialog from "$lib/checks/resolve-check-dialog.svelte";
+	import CloseUnprovenDialog from "$lib/checks/close-unproven-dialog.svelte";
+	import {
+		checkFailureMessage,
+		readCheckFailure,
+		type CheckFailure,
+		type ChecksPanel,
+		type EvidencePanel,
+		type IssueCheck,
+	} from "$lib/checks/checks";
 	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
 
 	import {
@@ -127,6 +141,7 @@
 		activityPreviewStates,
 		attachmentPreviewStates,
 		commentPreviewStates,
+		checksPreviewStates,
 		delegationPreviewStates,
 		issueDetailPreviewStates,
 	} from "./preview";
@@ -146,6 +161,12 @@
 			? attachmentPreviewStates[page.url.searchParams.get("attachments") ?? ""]
 			: undefined
 	);
+	const checksPreview = $derived(
+		import.meta.env.DEV
+			? checksPreviewStates[page.url.searchParams.get("checks") ?? ""]
+			: undefined
+	);
+
 	const delegationPreview = $derived(
 		import.meta.env.DEV
 			? delegationPreviewStates[page.url.searchParams.get("delegation") ?? ""]
@@ -187,6 +208,13 @@
 	const aborts = new Map<string, () => void>();
 	const sources = new Map<string, File>();
 	let pendingStateId = $state("");
+	let unprovenStateId = $state("");
+	let checkFailure = $state<CheckFailure | null>(null);
+	let addingCheck = $state(false);
+	let filingFor = $state.raw<IssueCheck | null>(null);
+	let resolving = $state.raw<{ check: IssueCheck; intent: "waive" | "gap" } | null>(null);
+	let openEvidence = $state.raw<string[]>([]);
+	let evidencePanels = $state.raw<Record<string, EvidencePanel>>({});
 	let followWorking = $state(false);
 	let pushed = $state.raw<{ source: unknown; issue: Issue } | null>(null);
 	let pushedComments = $state.raw<{ source: unknown; comments: IssueComment[] }>({
@@ -276,6 +304,21 @@
 	);
 	const codeLinks = $derived<CodeLink[]>(
 		(ready?.codeLinks ?? []).filter((link) => !removedCodeLinks.includes(link.id))
+	);
+	const checks = $derived<ChecksPanel>(
+		checksPreview?.panel ?? (ready ? ready.checks : ({ kind: "loading" } as ChecksPanel))
+	);
+	const shownCheckFailure = $derived(checkFailure ?? checksPreview?.failure ?? null);
+	const blockingChecks = $derived(
+		checks.kind === "ready" ? checks.checks.filter((check) => check.blocking) : []
+	);
+	const gapReferences = $derived(
+		Object.fromEntries(
+			(ready?.children ?? []).map((child) => [child.id, child.reference])
+		) as Record<string, string>
+	);
+	const unprovenTarget = $derived(
+		(ready?.states ?? []).find((state) => state.id === unprovenStateId)
 	);
 	const automationSuppressed = $derived(automationOverride ?? false);
 	const mirrorConflicts = $derived(ready?.mirrorConflicts ?? []);
@@ -567,8 +610,98 @@
 	async function move(stateId: string) {
 		if (!issue || issue.state.id === stateId) return;
 
+		const target = (ready?.states ?? []).find((state) => state.id === stateId);
+
+		if (target?.isCompletion && blockingChecks.length > 0) {
+			unprovenStateId = stateId;
+
+			return;
+		}
+
 		if (!(await patch({ stateId })) && failure?.kind === "children_open") {
 			pendingStateId = stateId;
+		}
+	}
+
+	async function finishUnproven() {
+		if (!issue || !unprovenStateId) return;
+
+		const stateId = unprovenStateId;
+
+		if (await patch({ stateId, acknowledgeUnprovenChecks: true })) {
+			unprovenStateId = "";
+		} else if (failure?.kind === "children_open") {
+			unprovenStateId = "";
+			pendingStateId = stateId;
+		}
+	}
+
+	async function reloadChecks(): Promise<void> {
+		checkFailure = null;
+		openEvidence = [];
+		evidencePanels = {};
+		await invalidate(keys.page(page.route.id));
+	}
+
+	async function toggleEvidence(check: IssueCheck): Promise<void> {
+		if (openEvidence.includes(check.id)) {
+			openEvidence = openEvidence.filter((id) => id !== check.id);
+
+			return;
+		}
+
+		openEvidence = [...openEvidence, check.id];
+
+		if (evidencePanels[check.id]?.kind === "ready" || !issue) return;
+
+		evidencePanels = { ...evidencePanels, [check.id]: { kind: "loading" } };
+
+		try {
+			const { data: records, error } = await api.GET(
+				"/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence",
+				{
+					params: {
+						path: { workspaceId: data.workspace.id, issueId: issue.id, checkId: check.id },
+					},
+				}
+			);
+
+			evidencePanels = {
+				...evidencePanels,
+				[check.id]: error
+					? { kind: "unavailable" }
+					: (records ?? []).length === 0
+						? { kind: "empty" }
+						: { kind: "ready", evidence: records ?? [] },
+			};
+		} catch {
+			evidencePanels = { ...evidencePanels, [check.id]: { kind: "unavailable" } };
+		}
+	}
+
+	async function removeCheck(check: IssueCheck): Promise<void> {
+		if (!issue) return;
+
+		working = true;
+		checkFailure = null;
+
+		try {
+			const { error } = await api.DELETE(
+				"/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}",
+				{
+					params: {
+						path: { workspaceId: data.workspace.id, issueId: issue.id, checkId: check.id },
+					},
+				}
+			);
+
+			if (error) checkFailure = readCheckFailure(error);
+
+			await reloadChecks();
+		} catch {
+			checkFailure = { kind: "unavailable" };
+		} finally {
+			working = false;
 		}
 	}
 
@@ -1758,6 +1891,76 @@
 						</div>
 					</form>
 
+					<section class="flex min-w-0 flex-col gap-1.5">
+						<div class="flex items-center gap-2.5">
+							<h2 class="min-w-0 flex-1">
+								<Eyebrow rule class="text-ink-600">What done means</Eyebrow>
+							</h2>
+							{#if checks.kind === "ready"}
+								<CheckSummary summary={checks.summary} />
+							{/if}
+							{#if canEdit && checks.kind !== "forbidden"}
+								<Button
+									variant="ghost"
+									size="icon-xs"
+									aria-label="Write down a criterion"
+									onclick={() => (addingCheck = true)}
+								>
+									<Plus aria-hidden="true" />
+								</Button>
+							{/if}
+						</div>
+
+						{#if shownCheckFailure}
+							<Alert.Root variant="destructive">
+								<CircleX aria-hidden="true" />
+								<Alert.Title>That did not stick</Alert.Title>
+								<Alert.Description>{checkFailureMessage(shownCheckFailure)}</Alert.Description>
+							</Alert.Root>
+						{/if}
+
+						{#if checks.kind === "loading"}
+							<p class="text-md text-muted-foreground">Reading what done means here…</p>
+						{:else if checks.kind === "forbidden"}
+							<p class="text-md leading-normal text-muted-foreground text-pretty">
+								You may not read the criteria on this issue.
+							</p>
+						{:else if checks.kind === "unavailable"}
+							<p class="text-md leading-normal text-muted-foreground text-pretty">
+								We could not read what done means here. Reload the issue.
+							</p>
+						{:else if checks.kind === "empty"}
+							<p class="text-md leading-normal text-muted-foreground text-pretty">
+								{canEdit
+									? "Nothing here says when this is finished, so anyone — or anything — can call it done. Write down what would have to be true."
+									: "Nothing here says when this is finished."}
+							</p>
+						{:else}
+							{#if checks.summary.blocking > 0}
+								<p class="text-sm leading-normal text-muted-foreground text-pretty">
+									An agent cannot finish this issue while {checks.summary.blocking === 1
+										? "that criterion is"
+										: "those criteria are"} unproven. A person still can, and Norn records who did.
+								</p>
+							{/if}
+							<CheckList
+								checks={checks.checks}
+								{slug}
+								timezone={data.workspace.timezone}
+								canManage={canEdit}
+								{working}
+								expanded={openEvidence}
+								evidence={{ ...(checksPreview?.evidence ?? {}), ...evidencePanels }}
+								{gapReferences}
+								ontoggle={toggleEvidence}
+								onfile={(check) => (filingFor = check)}
+								onwaive={(check) => (resolving = { check, intent: "waive" })}
+								ongap={(check) => (resolving = { check, intent: "gap" })}
+								onremove={removeCheck}
+							/>
+						{/if}
+					</section>
+
 					<section class="flex flex-col gap-1.5">
 						<div class="flex items-center gap-2.5">
 							<h2 class="min-w-0 flex-1">
@@ -2469,6 +2672,46 @@
 			invalidate(keys.page(page.route.id));
 		}}
 	/>
+
+	<NewCheckDialog
+		bind:open={addingCheck}
+		workspaceId={data.workspace.id}
+		issueId={issue.id}
+		reference={issue.reference}
+		onadded={reloadChecks}
+	/>
+
+	<FileEvidenceDialog
+		open={filingFor !== null}
+		workspaceId={data.workspace.id}
+		issueId={issue.id}
+		check={filingFor}
+		onfiled={reloadChecks}
+		onclose={() => (filingFor = null)}
+	/>
+
+	<ResolveCheckDialog
+		open={resolving !== null}
+		intent={resolving?.intent ?? "waive"}
+		workspaceId={data.workspace.id}
+		issueId={issue.id}
+		check={resolving?.check ?? null}
+		onresolved={reloadChecks}
+		onclose={() => (resolving = null)}
+	/>
+
+	{#if checks.kind === "ready"}
+		<CloseUnprovenDialog
+			open={unprovenStateId !== ""}
+			reference={issue.reference}
+			stateName={unprovenTarget?.name ?? "a completion state"}
+			blocking={blockingChecks}
+			summary={checks.summary}
+			{working}
+			onconfirm={finishUnproven}
+			onclose={() => (unprovenStateId = "")}
+		/>
+	{/if}
 {/if}
 
 {#if notice}

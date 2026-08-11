@@ -8,6 +8,7 @@ import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
 import type { FollowState } from "$lib/notifications/notifications";
 import { currentDelegation, type DelegationPanel } from "$lib/agents/delegation";
+import type { ChecksPanel } from "$lib/checks/checks";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type {
 	CodeLink,
@@ -48,6 +49,7 @@ export type IssueDetail =
 			attachments: AttachmentPanel;
 			codeLinks: CodeLink[];
 			delegation: DelegationPanel;
+			checks: ChecksPanel;
 			mirrorConflicts: MirrorConflict[];
 			shipping: IssueShipping;
 	  }
@@ -107,6 +109,7 @@ export const load: PageServerLoad = async ({
 		mirrorConflicts,
 		shipping,
 		delegations,
+		checks,
 	] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -146,6 +149,7 @@ export const load: PageServerLoad = async ({
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/shipping", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/delegation", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/checks", { params: { path } }),
 	]);
 
 	if (
@@ -183,6 +187,7 @@ export const load: PageServerLoad = async ({
 			delegation: delegations.data
 				? currentDelegation(delegations.data)
 				: { kind: "unavailable" },
+			checks: readChecks(checks.data, checks.error?.status),
 			mirrorConflicts: mirrorConflicts.data ?? [],
 			shipping: shipping.data ?? { releases: [], deployments: [] },
 		},
@@ -209,6 +214,16 @@ function readAttachments(
 	if (page.attachments.length === 0) return { kind: "empty" };
 
 	return { kind: "ready", attachments: page.attachments };
+}
+
+function readChecks(
+	list: components["schemas"]["IssueCheckList"] | undefined,
+	status: number | undefined
+): ChecksPanel {
+	if (!list) return status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
+	if (list.checks.length === 0) return { kind: "empty" };
+
+	return { kind: "ready", checks: list.checks, summary: list.summary };
 }
 
 function readActivity(page: components["schemas"]["ActivityPage"] | undefined): ActivityFeed {
