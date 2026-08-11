@@ -164,9 +164,9 @@ func (h *handler) SubmitWorkspaceIssueCheckEvidence(
 	request api.SubmitWorkspaceIssueCheckEvidenceRequestObject,
 ) (api.SubmitWorkspaceIssueCheckEvidenceResponseObject, error) {
 	input := service.SubmitEvidenceInput{
-		Verdict:    entity.EvidenceVerdict(request.Body.Verdict),
-		Channel:    entity.EvidenceChannel(request.Body.Channel),
-		Output:     request.Body.Output,
+		Verdict: entity.EvidenceVerdict(request.Body.Verdict),
+		Channel: entity.EvidenceChannel(request.Body.Channel),
+		Output:  request.Body.Output,
 	}
 
 	if request.Body.ObservedAt != nil {

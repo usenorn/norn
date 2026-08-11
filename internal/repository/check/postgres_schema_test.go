@@ -159,6 +159,8 @@ func statements() map[string]string {
 		"insertEvidenceQuery":        insertEvidenceQuery,
 		"evidenceByCheckQuery":       evidenceByCheckQuery,
 		"evidenceByIDQuery":          evidenceByIDQuery,
+		"staleIssuesQuery":           staleIssuesQuery,
+		"announceExpiryQuery":        announceExpiryQuery,
 		"evidenceByIssueQuery":       evidenceByIssueQuery,
 		"evidenceDigestByIssueQuery": evidenceDigestByIssueQuery,
 	}

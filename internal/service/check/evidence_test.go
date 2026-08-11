@@ -59,7 +59,6 @@ func TestASecretInSubmittedOutputNeverReachesStorage(t *testing.T) {
 
 	h.expectIssue(issue)
 	h.expectCheck(check)
-	h.expectNoCodeLinks()
 
 	stored := h.captureEvidence(t)
 
@@ -93,7 +92,6 @@ func TestEvidenceIsStampedWithNornsClockNotTheOneItWasHandedTest(t *testing.T) {
 
 	h.expectIssue(issue)
 	h.expectCheck(check)
-	h.expectNoCodeLinks()
 
 	stored := h.captureEvidence(t)
 
@@ -127,7 +125,6 @@ func TestAnObservationClaimedInThePastKeepsItsClaimedTime(t *testing.T) {
 
 	h.expectIssue(issue)
 	h.expectCheck(check)
-	h.expectNoCodeLinks()
 
 	stored := h.captureEvidence(t)
 
@@ -162,9 +159,7 @@ func TestEvidenceIsStampedWithTheHeadCommitNornHoldsRatherThanOneItWasTold(t *te
 		CreatedAt: time.Now().UTC(),
 	}
 
-	h.codeLinks.EXPECT().
-		ListByIssue(gomock.Any(), h.workspaceID, issue.ID).
-		Return([]entity.CodeLink{link}, nil)
+	h.linking(link)
 
 	stored := h.captureEvidence(t)
 
@@ -189,7 +184,6 @@ func TestEvidenceOnAnIssueWithNoLinkedChangeCarriesNoCommit(t *testing.T) {
 
 	h.expectIssue(issue)
 	h.expectCheck(check)
-	h.expectNoCodeLinks()
 
 	stored := h.captureEvidence(t)
 
@@ -211,7 +205,6 @@ func TestOversizedOutputIsCutRatherThanRefused(t *testing.T) {
 
 	h.expectIssue(issue)
 	h.expectCheck(check)
-	h.expectNoCodeLinks()
 
 	stored := h.captureEvidence(t)
 
@@ -274,7 +267,6 @@ func TestSubmittingEvidenceNeverRewritesTheCheckItself(t *testing.T) {
 
 	h.expectIssue(issue)
 	h.expectCheck(check)
-	h.expectNoCodeLinks()
 	h.captureEvidence(t)
 
 	if _, err := h.service.Submit(

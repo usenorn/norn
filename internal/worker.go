@@ -25,6 +25,7 @@ type Worker struct {
 	notifications config.Notifications
 	tokens        config.APITokens
 	audit         config.Audit
+	checks        config.Checks
 	webhooks      config.Webhooks
 	imports       config.Imports
 	sourceControl config.SourceControl
@@ -50,6 +51,7 @@ func NewServeMux(
 	notificationFanOut *job.NotificationFanOutHandler,
 	notificationDigest *job.NotificationDigestHandler,
 	tokenExpirySweep *job.APITokenExpirySweepHandler,
+	checkExpirySweep *job.CheckExpirySweepHandler,
 	auditSweep *job.AuditSweepHandler,
 	webhookFanOut *job.WebhookFanOutHandler,
 	webhookDeliver *job.WebhookDeliverHandler,
@@ -78,6 +80,7 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeNotificationFanOut, notificationFanOut)
 	mux.Handle(entity.TaskTypeNotificationDigest, notificationDigest)
 	mux.Handle(entity.TaskTypeAPITokenExpirySweep, tokenExpirySweep)
+	mux.Handle(entity.TaskTypeCheckExpirySweep, checkExpirySweep)
 	mux.Handle(entity.TaskTypeAuditSweep, auditSweep)
 	mux.Handle(entity.TaskTypeWebhookFanOut, webhookFanOut)
 	mux.Handle(entity.TaskTypeWebhookDeliver, webhookDeliver)
@@ -102,6 +105,7 @@ func NewWorker(
 	notifications config.Notifications,
 	tokens config.APITokens,
 	audit config.Audit,
+	checks config.Checks,
 	webhooks config.Webhooks,
 	imports config.Imports,
 	sourceControl config.SourceControl,
@@ -119,6 +123,7 @@ func NewWorker(
 		notifications: notifications,
 		tokens:        tokens,
 		audit:         audit,
+		checks:        checks,
 		webhooks:      webhooks,
 		imports:       imports,
 		sourceControl: sourceControl,
@@ -187,6 +192,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueMail),
 	); err != nil {
 		return fmt.Errorf("register audit retention sweep: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.checks.ExpirySweepSchedule,
+		asynq.NewTask(entity.TaskTypeCheckExpirySweep, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register check expiry sweep: %w", err)
 	}
 
 	if _, err := w.scheduler.Register(

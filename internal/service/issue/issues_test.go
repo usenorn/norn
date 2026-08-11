@@ -27,6 +27,7 @@ import (
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
+	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
@@ -57,6 +58,7 @@ type harness struct {
 	jobs        *jobqueuerepo.MockJobProducer
 	checks      *checkrepo.MockCheck
 	evidence    *checkrepo.MockCheckEvidence
+	codeLinks   *scmrepo.MockCodeLink
 	transactor  *transactorrepo.MockTransactor
 	authorizer  *authorizersvc.MockAuthorizer
 	settings    *agentsettingrepo.MockAgentSetting
@@ -91,6 +93,7 @@ func newHarness(t *testing.T) *harness {
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
 		checks:      checkrepo.NewMockCheck(ctrl),
 		evidence:    checkrepo.NewMockCheckEvidence(ctrl),
+		codeLinks:   scmrepo.NewMockCodeLink(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		settings:    agentsettingrepo.NewMockAgentSetting(ctrl),
@@ -116,9 +119,9 @@ func newHarness(t *testing.T) *harness {
 			h.proposals,
 			h.agents,
 			h.states,
-			checkgate.New(h.checks, h.evidence),
+			checkgate.New(h.checks, h.evidence, h.codeLinks),
 		),
-		checkgate.New(h.checks, h.evidence),
+		checkgate.New(h.checks, h.evidence, h.codeLinks),
 		h.authorizer, h.transactor,
 	)
 
@@ -141,6 +144,11 @@ func newHarness(t *testing.T) *harness {
 
 	h.evidence.EXPECT().
 		Digest(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, nil).
+		AnyTimes()
+
+	h.codeLinks.EXPECT().
+		ListByIssue(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil, nil).
 		AnyTimes()
 

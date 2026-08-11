@@ -51,6 +51,7 @@ const (
 	ActivityKindCheckGapDeclared  ActivityKind = "check_gap_declared"
 	ActivityKindEvidenceAdded     ActivityKind = "evidence_added"
 	ActivityKindChecksOverridden  ActivityKind = "checks_overridden"
+	ActivityKindCheckExpired      ActivityKind = "check_expired"
 )
 
 func ActivityKinds() []ActivityKind {
@@ -86,6 +87,7 @@ func ActivityKinds() []ActivityKind {
 		ActivityKindCheckGapDeclared,
 		ActivityKindEvidenceAdded,
 		ActivityKindChecksOverridden,
+		ActivityKindCheckExpired,
 	}
 }
 

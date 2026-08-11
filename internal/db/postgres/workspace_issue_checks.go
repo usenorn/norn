@@ -45,6 +45,7 @@ type WorkspaceIssueCheck struct {
 	AddedAfterDelegation bool        `boil:"added_after_delegation" json:"added_after_delegation" toml:"added_after_delegation" yaml:"added_after_delegation"`
 	CreatedAt            time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt            time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ExpiryAnnouncedFor   null.String `boil:"expiry_announced_for" json:"expiry_announced_for,omitempty" toml:"expiry_announced_for" yaml:"expiry_announced_for,omitempty"`
 
 	R *workspaceIssueCheckR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueCheckL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -72,6 +73,7 @@ var WorkspaceIssueCheckColumns = struct {
 	AddedAfterDelegation string
 	CreatedAt            string
 	UpdatedAt            string
+	ExpiryAnnouncedFor   string
 }{
 	ID:                   "id",
 	WorkspaceID:          "workspace_id",
@@ -94,6 +96,7 @@ var WorkspaceIssueCheckColumns = struct {
 	AddedAfterDelegation: "added_after_delegation",
 	CreatedAt:            "created_at",
 	UpdatedAt:            "updated_at",
+	ExpiryAnnouncedFor:   "expiry_announced_for",
 }
 
 var WorkspaceIssueCheckTableColumns = struct {
@@ -118,6 +121,7 @@ var WorkspaceIssueCheckTableColumns = struct {
 	AddedAfterDelegation string
 	CreatedAt            string
 	UpdatedAt            string
+	ExpiryAnnouncedFor   string
 }{
 	ID:                   "workspace_issue_checks.id",
 	WorkspaceID:          "workspace_issue_checks.workspace_id",
@@ -140,6 +144,7 @@ var WorkspaceIssueCheckTableColumns = struct {
 	AddedAfterDelegation: "workspace_issue_checks.added_after_delegation",
 	CreatedAt:            "workspace_issue_checks.created_at",
 	UpdatedAt:            "workspace_issue_checks.updated_at",
+	ExpiryAnnouncedFor:   "workspace_issue_checks.expiry_announced_for",
 }
 
 // Generated where
@@ -166,6 +171,7 @@ var WorkspaceIssueCheckWhere = struct {
 	AddedAfterDelegation whereHelperbool
 	CreatedAt            whereHelpertime_Time
 	UpdatedAt            whereHelpertime_Time
+	ExpiryAnnouncedFor   whereHelpernull_String
 }{
 	ID:                   whereHelperstring{field: "\"workspace_issue_checks\".\"id\""},
 	WorkspaceID:          whereHelperstring{field: "\"workspace_issue_checks\".\"workspace_id\""},
@@ -188,33 +194,37 @@ var WorkspaceIssueCheckWhere = struct {
 	AddedAfterDelegation: whereHelperbool{field: "\"workspace_issue_checks\".\"added_after_delegation\""},
 	CreatedAt:            whereHelpertime_Time{field: "\"workspace_issue_checks\".\"created_at\""},
 	UpdatedAt:            whereHelpertime_Time{field: "\"workspace_issue_checks\".\"updated_at\""},
+	ExpiryAnnouncedFor:   whereHelpernull_String{field: "\"workspace_issue_checks\".\"expiry_announced_for\""},
 }
 
 // WorkspaceIssueCheckRels is where relationship names are stored.
 var WorkspaceIssueCheckRels = struct {
-	ApprovedByAccount            string
-	CreatedByAccount             string
-	GapIssue                     string
-	ResolvedByAccount            string
-	Workspace                    string
-	CheckWorkspaceCheckEvidences string
+	ApprovedByAccount                        string
+	CreatedByAccount                         string
+	ExpiryAnnouncedForWorkspaceCheckEvidence string
+	GapIssue                                 string
+	ResolvedByAccount                        string
+	Workspace                                string
+	CheckWorkspaceCheckEvidences             string
 }{
-	ApprovedByAccount:            "ApprovedByAccount",
-	CreatedByAccount:             "CreatedByAccount",
-	GapIssue:                     "GapIssue",
-	ResolvedByAccount:            "ResolvedByAccount",
-	Workspace:                    "Workspace",
-	CheckWorkspaceCheckEvidences: "CheckWorkspaceCheckEvidences",
+	ApprovedByAccount:                        "ApprovedByAccount",
+	CreatedByAccount:                         "CreatedByAccount",
+	ExpiryAnnouncedForWorkspaceCheckEvidence: "ExpiryAnnouncedForWorkspaceCheckEvidence",
+	GapIssue:                                 "GapIssue",
+	ResolvedByAccount:                        "ResolvedByAccount",
+	Workspace:                                "Workspace",
+	CheckWorkspaceCheckEvidences:             "CheckWorkspaceCheckEvidences",
 }
 
 // workspaceIssueCheckR is where relationships are stored.
 type workspaceIssueCheckR struct {
-	ApprovedByAccount            *Account                    `boil:"ApprovedByAccount" json:"ApprovedByAccount" toml:"ApprovedByAccount" yaml:"ApprovedByAccount"`
-	CreatedByAccount             *Account                    `boil:"CreatedByAccount" json:"CreatedByAccount" toml:"CreatedByAccount" yaml:"CreatedByAccount"`
-	GapIssue                     *WorkspaceIssue             `boil:"GapIssue" json:"GapIssue" toml:"GapIssue" yaml:"GapIssue"`
-	ResolvedByAccount            *Account                    `boil:"ResolvedByAccount" json:"ResolvedByAccount" toml:"ResolvedByAccount" yaml:"ResolvedByAccount"`
-	Workspace                    *Workspace                  `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	CheckWorkspaceCheckEvidences WorkspaceCheckEvidenceSlice `boil:"CheckWorkspaceCheckEvidences" json:"CheckWorkspaceCheckEvidences" toml:"CheckWorkspaceCheckEvidences" yaml:"CheckWorkspaceCheckEvidences"`
+	ApprovedByAccount                        *Account                    `boil:"ApprovedByAccount" json:"ApprovedByAccount" toml:"ApprovedByAccount" yaml:"ApprovedByAccount"`
+	CreatedByAccount                         *Account                    `boil:"CreatedByAccount" json:"CreatedByAccount" toml:"CreatedByAccount" yaml:"CreatedByAccount"`
+	ExpiryAnnouncedForWorkspaceCheckEvidence *WorkspaceCheckEvidence     `boil:"ExpiryAnnouncedForWorkspaceCheckEvidence" json:"ExpiryAnnouncedForWorkspaceCheckEvidence" toml:"ExpiryAnnouncedForWorkspaceCheckEvidence" yaml:"ExpiryAnnouncedForWorkspaceCheckEvidence"`
+	GapIssue                                 *WorkspaceIssue             `boil:"GapIssue" json:"GapIssue" toml:"GapIssue" yaml:"GapIssue"`
+	ResolvedByAccount                        *Account                    `boil:"ResolvedByAccount" json:"ResolvedByAccount" toml:"ResolvedByAccount" yaml:"ResolvedByAccount"`
+	Workspace                                *Workspace                  `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	CheckWorkspaceCheckEvidences             WorkspaceCheckEvidenceSlice `boil:"CheckWorkspaceCheckEvidences" json:"CheckWorkspaceCheckEvidences" toml:"CheckWorkspaceCheckEvidences" yaml:"CheckWorkspaceCheckEvidences"`
 }
 
 // NewStruct creates a new relationship struct
@@ -252,6 +262,22 @@ func (r *workspaceIssueCheckR) GetCreatedByAccount() *Account {
 	}
 
 	return r.CreatedByAccount
+}
+
+func (o *WorkspaceIssueCheck) GetExpiryAnnouncedForWorkspaceCheckEvidence() *WorkspaceCheckEvidence {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetExpiryAnnouncedForWorkspaceCheckEvidence()
+}
+
+func (r *workspaceIssueCheckR) GetExpiryAnnouncedForWorkspaceCheckEvidence() *WorkspaceCheckEvidence {
+	if r == nil {
+		return nil
+	}
+
+	return r.ExpiryAnnouncedForWorkspaceCheckEvidence
 }
 
 func (o *WorkspaceIssueCheck) GetGapIssue() *WorkspaceIssue {
@@ -322,9 +348,9 @@ func (r *workspaceIssueCheckR) GetCheckWorkspaceCheckEvidences() WorkspaceCheckE
 type workspaceIssueCheckL struct{}
 
 var (
-	workspaceIssueCheckAllColumns            = []string{"id", "workspace_id", "issue_id", "position", "statement", "method", "proof", "time_limit_seconds", "approval", "approved_by_account_id", "approved_at", "resolution", "resolution_reason", "resolved_by_account_id", "resolved_at", "gap_issue_id", "author_kind", "created_by_account_id", "added_after_delegation", "created_at", "updated_at"}
+	workspaceIssueCheckAllColumns            = []string{"id", "workspace_id", "issue_id", "position", "statement", "method", "proof", "time_limit_seconds", "approval", "approved_by_account_id", "approved_at", "resolution", "resolution_reason", "resolved_by_account_id", "resolved_at", "gap_issue_id", "author_kind", "created_by_account_id", "added_after_delegation", "created_at", "updated_at", "expiry_announced_for"}
 	workspaceIssueCheckColumnsWithoutDefault = []string{"workspace_id", "issue_id", "statement", "method", "proof"}
-	workspaceIssueCheckColumnsWithDefault    = []string{"id", "position", "time_limit_seconds", "approval", "approved_by_account_id", "approved_at", "resolution", "resolution_reason", "resolved_by_account_id", "resolved_at", "gap_issue_id", "author_kind", "created_by_account_id", "added_after_delegation", "created_at", "updated_at"}
+	workspaceIssueCheckColumnsWithDefault    = []string{"id", "position", "time_limit_seconds", "approval", "approved_by_account_id", "approved_at", "resolution", "resolution_reason", "resolved_by_account_id", "resolved_at", "gap_issue_id", "author_kind", "created_by_account_id", "added_after_delegation", "created_at", "updated_at", "expiry_announced_for"}
 	workspaceIssueCheckPrimaryKeyColumns     = []string{"id"}
 	workspaceIssueCheckGeneratedColumns      = []string{}
 )
@@ -656,6 +682,17 @@ func (o *WorkspaceIssueCheck) CreatedByAccount(mods ...qm.QueryMod) accountQuery
 	return Accounts(queryMods...)
 }
 
+// ExpiryAnnouncedForWorkspaceCheckEvidence pointed to by the foreign key.
+func (o *WorkspaceIssueCheck) ExpiryAnnouncedForWorkspaceCheckEvidence(mods ...qm.QueryMod) workspaceCheckEvidenceQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.ExpiryAnnouncedFor),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceCheckEvidences(queryMods...)
+}
+
 // GapIssue pointed to by the foreign key.
 func (o *WorkspaceIssueCheck) GapIssue(mods ...qm.QueryMod) workspaceIssueQuery {
 	queryMods := []qm.QueryMod{
@@ -943,6 +980,130 @@ func (workspaceIssueCheckL) LoadCreatedByAccount(ctx context.Context, e boil.Con
 					foreign.R = &accountR{}
 				}
 				foreign.R.CreatedByAccountWorkspaceIssueChecks = append(foreign.R.CreatedByAccountWorkspaceIssueChecks, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadExpiryAnnouncedForWorkspaceCheckEvidence allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceIssueCheckL) LoadExpiryAnnouncedForWorkspaceCheckEvidence(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueCheck any, mods queries.Applicator) error {
+	var slice []*WorkspaceIssueCheck
+	var object *WorkspaceIssueCheck
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceIssueCheck.(*WorkspaceIssueCheck)
+		if !ok {
+			object = new(WorkspaceIssueCheck)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssueCheck)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssueCheck))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceIssueCheck.(*[]*WorkspaceIssueCheck)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssueCheck)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssueCheck))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceIssueCheckR{}
+		}
+		if !queries.IsNil(object.ExpiryAnnouncedFor) {
+			args[object.ExpiryAnnouncedFor] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceIssueCheckR{}
+			}
+
+			if !queries.IsNil(obj.ExpiryAnnouncedFor) {
+				args[obj.ExpiryAnnouncedFor] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_check_evidence`),
+		qm.WhereIn(`workspace_check_evidence.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceCheckEvidence")
+	}
+
+	var resultSlice []*WorkspaceCheckEvidence
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceCheckEvidence")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_check_evidence")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_check_evidence")
+	}
+
+	if len(workspaceCheckEvidenceAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.ExpiryAnnouncedForWorkspaceCheckEvidence = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceCheckEvidenceR{}
+		}
+		foreign.R.ExpiryAnnouncedForWorkspaceIssueChecks = append(foreign.R.ExpiryAnnouncedForWorkspaceIssueChecks, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.ExpiryAnnouncedFor, foreign.ID) {
+				local.R.ExpiryAnnouncedForWorkspaceCheckEvidence = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceCheckEvidenceR{}
+				}
+				foreign.R.ExpiryAnnouncedForWorkspaceIssueChecks = append(foreign.R.ExpiryAnnouncedForWorkspaceIssueChecks, local)
 				break
 			}
 		}
@@ -1587,6 +1748,86 @@ func (o *WorkspaceIssueCheck) RemoveCreatedByAccount(ctx context.Context, exec b
 			related.R.CreatedByAccountWorkspaceIssueChecks[i] = related.R.CreatedByAccountWorkspaceIssueChecks[ln-1]
 		}
 		related.R.CreatedByAccountWorkspaceIssueChecks = related.R.CreatedByAccountWorkspaceIssueChecks[:ln-1]
+		break
+	}
+	return nil
+}
+
+// SetExpiryAnnouncedForWorkspaceCheckEvidence of the workspaceIssueCheck to the related item.
+// Sets o.R.ExpiryAnnouncedForWorkspaceCheckEvidence to related.
+// Adds o to related.R.ExpiryAnnouncedForWorkspaceIssueChecks.
+func (o *WorkspaceIssueCheck) SetExpiryAnnouncedForWorkspaceCheckEvidence(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceCheckEvidence) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_issue_checks\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"expiry_announced_for"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceIssueCheckPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.ExpiryAnnouncedFor, related.ID)
+	if o.R == nil {
+		o.R = &workspaceIssueCheckR{
+			ExpiryAnnouncedForWorkspaceCheckEvidence: related,
+		}
+	} else {
+		o.R.ExpiryAnnouncedForWorkspaceCheckEvidence = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceCheckEvidenceR{
+			ExpiryAnnouncedForWorkspaceIssueChecks: WorkspaceIssueCheckSlice{o},
+		}
+	} else {
+		related.R.ExpiryAnnouncedForWorkspaceIssueChecks = append(related.R.ExpiryAnnouncedForWorkspaceIssueChecks, o)
+	}
+
+	return nil
+}
+
+// RemoveExpiryAnnouncedForWorkspaceCheckEvidence relationship.
+// Sets o.R.ExpiryAnnouncedForWorkspaceCheckEvidence to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceIssueCheck) RemoveExpiryAnnouncedForWorkspaceCheckEvidence(ctx context.Context, exec boil.ContextExecutor, related *WorkspaceCheckEvidence) error {
+	var err error
+
+	queries.SetScanner(&o.ExpiryAnnouncedFor, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("expiry_announced_for")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.ExpiryAnnouncedForWorkspaceCheckEvidence = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.ExpiryAnnouncedForWorkspaceIssueChecks {
+		if queries.Equal(o.ExpiryAnnouncedFor, ri.ExpiryAnnouncedFor) {
+			continue
+		}
+
+		ln := len(related.R.ExpiryAnnouncedForWorkspaceIssueChecks)
+		if ln > 1 && i < ln-1 {
+			related.R.ExpiryAnnouncedForWorkspaceIssueChecks[i] = related.R.ExpiryAnnouncedForWorkspaceIssueChecks[ln-1]
+		}
+		related.R.ExpiryAnnouncedForWorkspaceIssueChecks = related.R.ExpiryAnnouncedForWorkspaceIssueChecks[:ln-1]
 		break
 	}
 	return nil

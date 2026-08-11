@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"slices"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const CheckTimeLimitDefault = 30 * 24 * time.Hour
@@ -39,8 +41,9 @@ func (s CheckState) Settled() bool {
 type EvidenceExpiry string
 
 const (
-	EvidenceLive     EvidenceExpiry = ""
-	EvidenceTimedOut EvidenceExpiry = "time_limit"
+	EvidenceLive      EvidenceExpiry = ""
+	EvidenceTimedOut  EvidenceExpiry = "time_limit"
+	EvidenceHeadMoved EvidenceExpiry = "head_moved"
 )
 
 func (e EvidenceExpiry) Expired() bool {
@@ -48,7 +51,30 @@ func (e EvidenceExpiry) Expired() bool {
 }
 
 type EvidenceHorizon struct {
-	Now time.Time
+	Now   time.Time
+	Heads map[uuid.UUID]string
+}
+
+func HeadsOf(links []CodeLink) map[uuid.UUID]string {
+	heads := make(map[uuid.UUID]string, len(links))
+
+	for _, link := range links {
+		if link.HeadSHA != "" {
+			heads[link.ID] = link.HeadSHA
+		}
+	}
+
+	return heads
+}
+
+func (h EvidenceHorizon) Moved(evidence Evidence) bool {
+	if evidence.CodeLinkID == uuid.Nil || evidence.CommitSHA == "" {
+		return false
+	}
+
+	head, known := h.Heads[evidence.CodeLinkID]
+
+	return known && head != evidence.CommitSHA
 }
 
 type EvidenceRecord struct {
@@ -73,6 +99,10 @@ func (c Check) Window() time.Duration {
 func (c Check) Expiry(evidence Evidence, horizon EvidenceHorizon) EvidenceExpiry {
 	if !evidence.Verdict.Proves() {
 		return EvidenceLive
+	}
+
+	if horizon.Moved(evidence) {
+		return EvidenceHeadMoved
 	}
 
 	if !horizon.Now.Before(evidence.ReceivedAt.Add(c.Window())) {

@@ -121,7 +121,11 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		h.agents,
 		agenthold.New(
 			h.settings, h.proposals, h.agents, h.states,
-			checkgate.New(checkrepo.NewMockCheck(ctrl), checkrepo.NewMockCheckEvidence(ctrl)),
+			checkgate.New(
+				checkrepo.NewMockCheck(ctrl),
+				checkrepo.NewMockCheckEvidence(ctrl),
+				scmrepo.NewMockCodeLink(ctrl),
+			),
 		),
 		h.releases,
 		h.deployments,

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
@@ -26,6 +27,7 @@ type checksService struct {
 	authorizer  service.Authorizer
 	issueWriter service.Issues
 	transactor  repository.Transactor
+	sweepBatch  int
 }
 
 func New(
@@ -41,6 +43,7 @@ func New(
 	authorizer service.Authorizer,
 	issueWriter service.Issues,
 	transactor repository.Transactor,
+	cfg config.Checks,
 ) service.Checks {
 	return &checksService{
 		checks:      checks,
@@ -55,6 +58,7 @@ func New(
 		authorizer:  authorizer,
 		issueWriter: issueWriter,
 		transactor:  transactor,
+		sweepBatch:  cfg.SweepBatch,
 	}
 }
 
@@ -125,9 +129,27 @@ func (s *checksService) assemble(
 		return service.IssueChecks{}, err
 	}
 
-	reports := entity.ReportChecks(checks, evidence, entity.EvidenceHorizon{Now: time.Now().UTC()})
+	horizon, err := s.horizon(ctx, workspaceID, issueID, time.Now().UTC())
+	if err != nil {
+		return service.IssueChecks{}, err
+	}
+
+	reports := entity.ReportChecks(checks, evidence, horizon)
 
 	return service.IssueChecks{Reports: reports, Summary: entity.Summarise(reports)}, nil
+}
+
+func (s *checksService) horizon(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	now time.Time,
+) (entity.EvidenceHorizon, error) {
+	links, err := s.codeLinks.ListByIssue(ctx, workspaceID, issueID)
+	if err != nil {
+		return entity.EvidenceHorizon{}, err
+	}
+
+	return entity.EvidenceHorizon{Now: now, Heads: entity.HeadsOf(links)}, nil
 }
 
 func (s *checksService) Add(

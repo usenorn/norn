@@ -3,6 +3,7 @@
 	import { onDateAndTime } from "$lib/time";
 	import {
 		channelLabels,
+		expiryReasons,
 		onlyTimeLimitHolds,
 		verdictLabels,
 		verdictTones,
@@ -79,8 +80,8 @@
 
 	{#if record.expired}
 		<p class="text-2xs leading-normal text-muted-foreground text-pretty">
-			This no longer counts towards proving the criterion{record.expiryReason === "time_limit"
-				? ", because it is older than the time limit"
+			This no longer counts towards proving the criterion{record.expiryReason
+				? ` ${expiryReasons[record.expiryReason]}`
 				: ""}.
 		</p>
 	{:else if onlyTimeLimitHolds(record)}

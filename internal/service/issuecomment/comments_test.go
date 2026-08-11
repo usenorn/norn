@@ -21,6 +21,7 @@ import (
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
+	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
@@ -91,7 +92,11 @@ func newHarness(t *testing.T) *harness {
 			agentproposalrepo.NewMockAgentProposal(ctrl),
 			agentrepo.NewMockAgent(ctrl),
 			workflowstaterepo.NewMockWorkflowState(ctrl),
-			checkgate.New(checkrepo.NewMockCheck(ctrl), checkrepo.NewMockCheckEvidence(ctrl)),
+			checkgate.New(
+				checkrepo.NewMockCheck(ctrl),
+				checkrepo.NewMockCheckEvidence(ctrl),
+				scmrepo.NewMockCodeLink(ctrl),
+			),
 		),
 		h.authorizer, transactor,
 	)

@@ -29,9 +29,12 @@ func (s *checksService) Evidence(
 		return nil, err
 	}
 
-	return entity.NewCheckReport(
-		held, records, entity.EvidenceHorizon{Now: time.Now().UTC()},
-	).Evidence, nil
+	horizon, err := s.horizon(ctx, workspaceID, issueID, time.Now().UTC())
+	if err != nil {
+		return nil, err
+	}
+
+	return entity.NewCheckReport(held, records, horizon).Evidence, nil
 }
 
 func (s *checksService) Submit(
@@ -104,7 +107,10 @@ func (s *checksService) Submit(
 			return err
 		}
 
-		horizon := entity.EvidenceHorizon{Now: received}
+		horizon, err := s.horizon(ctx, workspaceID, issue.ID, received)
+		if err != nil {
+			return err
+		}
 
 		filed, err := s.evidence.Digest(ctx, workspaceID, issue.ID)
 		if err != nil {

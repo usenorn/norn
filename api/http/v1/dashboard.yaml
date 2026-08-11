@@ -6438,8 +6438,11 @@ components:
 
     EvidenceExpiry:
       type: string
-      description: Why an observation stopped counting.
-      enum: [time_limit]
+      description: >-
+        Why an observation stopped counting. `head_moved` means the change it was taken at has
+        new commits on it, so it says nothing about the code that replaced them; evidence Norn
+        could not bind to a change is judged on its time limit alone.
+      enum: [time_limit, head_moved]
 
     IssueCheckSummary:
       type: object
@@ -7336,6 +7339,7 @@ components:
         - check_gap_declared
         - evidence_added
         - checks_overridden
+        - check_expired
 
     LicenceStatus:
       type: string

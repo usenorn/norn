@@ -138,6 +138,7 @@ const (
 	ActivityKindCheckAdded        ActivityKind = "check_added"
 	ActivityKindCheckApproved     ActivityKind = "check_approved"
 	ActivityKindCheckDeclined     ActivityKind = "check_declined"
+	ActivityKindCheckExpired      ActivityKind = "check_expired"
 	ActivityKindCheckGapDeclared  ActivityKind = "check_gap_declared"
 	ActivityKindCheckRemoved      ActivityKind = "check_removed"
 	ActivityKindCheckWaived       ActivityKind = "check_waived"
@@ -179,6 +180,8 @@ func (e ActivityKind) Valid() bool {
 	case ActivityKindCheckApproved:
 		return true
 	case ActivityKindCheckDeclined:
+		return true
+	case ActivityKindCheckExpired:
 		return true
 	case ActivityKindCheckGapDeclared:
 		return true
@@ -1275,12 +1278,15 @@ func (e EvidenceChannel) Valid() bool {
 
 // Defines values for EvidenceExpiry.
 const (
+	HeadMoved EvidenceExpiry = "head_moved"
 	TimeLimit EvidenceExpiry = "time_limit"
 )
 
 // Valid indicates whether the value is a known member of the EvidenceExpiry enum.
 func (e EvidenceExpiry) Valid() bool {
 	switch e {
+	case HeadMoved:
+		return true
 	case TimeLimit:
 		return true
 	default:
@@ -4312,7 +4318,7 @@ type CheckEvidence struct {
 	// Expired True when this observation no longer counts towards proving its check.
 	Expired bool `json:"expired"`
 
-	// ExpiryReason Why an observation stopped counting.
+	// ExpiryReason Why an observation stopped counting. `head_moved` means the change it was taken at has new commits on it, so it says nothing about the code that replaced them; evidence Norn could not bind to a change is judged on its time limit alone.
 	ExpiryReason *EvidenceExpiry    `json:"expiryReason,omitempty"`
 	Id           openapi_types.UUID `json:"id"`
 	IssueId      openapi_types.UUID `json:"issueId"`
@@ -4801,7 +4807,7 @@ type EnforcementRefusedProblemCode string
 // EvidenceChannel Where the observation came from. Declared by the submitter; Norn cannot verify it.
 type EvidenceChannel string
 
-// EvidenceExpiry Why an observation stopped counting.
+// EvidenceExpiry Why an observation stopped counting. `head_moved` means the change it was taken at has new commits on it, so it says nothing about the code that replaced them; evidence Norn could not bind to a change is judged on its time limit alone.
 type EvidenceExpiry string
 
 // EvidenceVerdict absent_negative is the finding that nothing bad appeared. It is a real category and a different thing from having observed something working.

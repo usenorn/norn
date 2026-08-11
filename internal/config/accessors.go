@@ -16,6 +16,8 @@ func NewLicence(cfg Config) Licence { return cfg.Licence }
 
 func NewAudit(cfg Config) Audit { return cfg.Audit }
 
+func NewChecks(cfg Config) Checks { return cfg.Checks }
+
 func NewHTTP(cfg Config) HTTP { return cfg.HTTP }
 
 func NewPostgres(cfg Config) Postgres { return cfg.Postgres }

@@ -570,3 +570,115 @@ func withReceipt(evidence entity.Evidence, received time.Time) entity.Evidence {
 
 	return evidence
 }
+
+func atHead(evidence entity.Evidence, linkID uuid.UUID, sha string) entity.Evidence {
+	evidence.CodeLinkID = linkID
+	evidence.CommitSHA = sha
+
+	return evidence
+}
+
+func TestAProofStopsCountingWhenTheChangeItWasTakenAtMovesOn(t *testing.T) {
+	linkID := uuid.New()
+	check := checkOf(entity.CheckMethodCommand)
+
+	proof := atHead(byAgent(entity.EvidencePassed, 5), linkID, "aaaaaaa")
+
+	report := entity.NewCheckReport(check, []entity.Evidence{proof}, entity.EvidenceHorizon{
+		Now:   at(60),
+		Heads: map[uuid.UUID]string{linkID: "bbbbbbb"},
+	})
+
+	if report.State != entity.CheckStateUnproven {
+		t.Fatalf(
+			"state = %q, want unproven; a proof taken at one commit says nothing about the code "+
+				"that replaced it",
+			report.State,
+		)
+	}
+
+	if report.Evidence[0].Expiry != entity.EvidenceHeadMoved {
+		t.Errorf("expiry = %q, want head_moved", report.Evidence[0].Expiry)
+	}
+
+	if report.Awaiting() != entity.CheckAwaitingFreshProof {
+		t.Errorf("awaiting = %q, want fresh_proof", report.Awaiting())
+	}
+}
+
+func TestAProofSurvivesWhileTheChangeItWasTakenAtStandsStill(t *testing.T) {
+	linkID := uuid.New()
+	check := checkOf(entity.CheckMethodCommand)
+
+	proof := atHead(byAgent(entity.EvidencePassed, 5), linkID, "aaaaaaa")
+
+	report := entity.NewCheckReport(check, []entity.Evidence{proof}, entity.EvidenceHorizon{
+		Now:   at(60),
+		Heads: map[uuid.UUID]string{linkID: "aaaaaaa"},
+	})
+
+	if report.State != entity.CheckStateProven {
+		t.Fatalf("state = %q, want proven", report.State)
+	}
+}
+
+func TestAProofNornCouldNotBindToAChangeIsJudgedOnTimeAlone(t *testing.T) {
+	check := checkOf(entity.CheckMethodCommand)
+
+	report := entity.NewCheckReport(
+		check,
+		[]entity.Evidence{byAgent(entity.EvidencePassed, 5)},
+		entity.EvidenceHorizon{Now: at(60), Heads: map[uuid.UUID]string{uuid.New(): "bbbbbbb"}},
+	)
+
+	if report.State != entity.CheckStateProven {
+		t.Fatalf(
+			"state = %q, want proven; evidence with no linked change has no head to compare "+
+				"against, and inventing one would expire proofs nobody can refresh",
+			report.State,
+		)
+	}
+}
+
+func TestARefutationNeverExpiresWhenTheHeadMoves(t *testing.T) {
+	linkID := uuid.New()
+	check := checkOf(entity.CheckMethodRegression)
+
+	failure := atHead(byAgent(entity.EvidenceFailed, 1), linkID, "aaaaaaa")
+	proof := atHead(byAgent(entity.EvidencePassed, 5), linkID, "bbbbbbb")
+
+	report := entity.NewCheckReport(check, []entity.Evidence{failure, proof}, entity.EvidenceHorizon{
+		Now:   at(60),
+		Heads: map[uuid.UUID]string{linkID: "bbbbbbb"},
+	})
+
+	if report.Evidence[0].Expiry.Expired() {
+		t.Fatal(
+			"the failing observation expired when the head moved, which is exactly what it is " +
+				"supposed to outlive: a regression can never be proven again once its before is gone",
+		)
+	}
+
+	if report.State != entity.CheckStateProven {
+		t.Fatalf("state = %q, want proven; the passing result is at the current head", report.State)
+	}
+}
+
+func TestAProofAtAChangeNornNoLongerTracksIsLeftAlone(t *testing.T) {
+	check := checkOf(entity.CheckMethodCommand)
+
+	proof := atHead(byAgent(entity.EvidencePassed, 5), uuid.New(), "aaaaaaa")
+
+	report := entity.NewCheckReport(check, []entity.Evidence{proof}, entity.EvidenceHorizon{
+		Now:   at(60),
+		Heads: map[uuid.UUID]string{},
+	})
+
+	if report.State != entity.CheckStateProven {
+		t.Fatalf(
+			"state = %q, want proven; the link was removed, so there is no head to compare and "+
+				"nothing honest to say about whether the proof still holds",
+			report.State,
+		)
+	}
+}

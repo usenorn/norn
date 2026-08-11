@@ -162,6 +162,20 @@ func (mr *MockChecksMockRecorder) Submit(ctx, workspaceID, issueID, checkID, inp
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Submit", reflect.TypeOf((*MockChecks)(nil).Submit), ctx, workspaceID, issueID, checkID, input)
 }
 
+// SweepExpiry mocks base method.
+func (m *MockChecks) SweepExpiry(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SweepExpiry", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SweepExpiry indicates an expected call of SweepExpiry.
+func (mr *MockChecksMockRecorder) SweepExpiry(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SweepExpiry", reflect.TypeOf((*MockChecks)(nil).SweepExpiry), ctx)
+}
+
 // Waive mocks base method.
 func (m *MockChecks) Waive(ctx context.Context, workspaceID, issueID, checkID uuid.UUID, input service.WaiveCheckInput) (entity.Check, error) {
 	m.ctrl.T.Helper()

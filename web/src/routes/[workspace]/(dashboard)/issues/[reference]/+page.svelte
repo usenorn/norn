@@ -652,7 +652,7 @@
 
 		openEvidence = [...openEvidence, check.id];
 
-		if (evidencePanels[check.id]?.kind === "ready" || !issue) return;
+		if (checksPreview || evidencePanels[check.id]?.kind === "ready" || !issue) return;
 
 		evidencePanels = { ...evidencePanels, [check.id]: { kind: "loading" } };
 

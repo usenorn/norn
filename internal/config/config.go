@@ -14,6 +14,7 @@ type Config struct {
 	Instance      Instance      `mapstructure:"instance"`
 	Licence       Licence       `mapstructure:"licence"`
 	Audit         Audit         `mapstructure:"audit"`
+	Checks        Checks        `mapstructure:"checks"`
 	HTTP          HTTP          `mapstructure:"http"`
 	Postgres      Postgres      `mapstructure:"postgres"`
 	Valkey        Valkey        `mapstructure:"valkey"`
@@ -54,6 +55,11 @@ type Audit struct {
 
 func (c Audit) RetentionDays() int {
 	return int(c.Retention.Hours() / 24)
+}
+
+type Checks struct {
+	ExpirySweepSchedule string `mapstructure:"expiry_sweep_schedule"`
+	SweepBatch          int    `mapstructure:"sweep_batch"`
 }
 
 type Security struct {

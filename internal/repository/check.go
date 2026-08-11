@@ -27,6 +27,11 @@ type CheckResolutionInput struct {
 	ResolvedAt time.Time
 }
 
+type StaleIssue struct {
+	WorkspaceID uuid.UUID
+	IssueID     uuid.UUID
+}
+
 type Check interface {
 	Create(ctx context.Context, check entity.Check) (entity.Check, error)
 	GetByID(ctx context.Context, workspaceID, checkID uuid.UUID) (entity.Check, error)
@@ -34,6 +39,8 @@ type Check interface {
 	Decide(ctx context.Context, workspaceID uuid.UUID, decision CheckDecision) (entity.Check, error)
 	Resolve(ctx context.Context, workspaceID uuid.UUID, resolution CheckResolutionInput) (entity.Check, error)
 	Delete(ctx context.Context, workspaceID, issueID, checkID uuid.UUID) error
+	ListStaleIssues(ctx context.Context, window time.Duration, limit int) ([]StaleIssue, error)
+	AnnounceExpiry(ctx context.Context, workspaceID, checkID, evidenceID uuid.UUID) error
 }
 
 type CheckEvidence interface {

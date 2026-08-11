@@ -41,6 +41,28 @@ FROM workspace_issue_checks
 WHERE workspace_id = $1 AND issue_id = $2
 ORDER BY position, id`
 
+const staleIssuesQuery = `
+SELECT DISTINCT e.workspace_id, e.issue_id
+FROM workspace_check_evidence e
+JOIN workspace_issue_checks c ON c.id = e.check_id
+LEFT JOIN workspace_code_links l ON l.id = e.code_link_id
+WHERE e.verdict = 'passed'
+  AND c.approval = 'approved'
+  AND c.resolution = 'none'
+  AND c.expiry_announced_for IS DISTINCT FROM e.id
+  AND (
+        now() >= e.received_at
+                 + make_interval(secs => coalesce(c.time_limit_seconds, $1))
+     OR (l.id IS NOT NULL AND l.head_sha <> '' AND l.head_sha <> e.commit_sha)
+  )
+ORDER BY e.workspace_id, e.issue_id
+LIMIT $2`
+
+const announceExpiryQuery = `
+UPDATE workspace_issue_checks
+SET expiry_announced_for = $3, updated_at = now()
+WHERE workspace_id = $1 AND id = $2`
+
 const decideCheckQuery = `
 UPDATE workspace_issue_checks
 SET approval = $3,
@@ -370,6 +392,62 @@ func (r *checkRepository) Delete(ctx context.Context, workspaceID, issueID, chec
 
 	if removed == 0 {
 		return entity.ErrCheckNotFound
+	}
+
+	return nil
+}
+
+func (r *checkRepository) ListStaleIssues(
+	ctx context.Context,
+	window time.Duration,
+	limit int,
+) ([]repository.StaleIssue, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx, staleIssuesQuery, int(window.Seconds()), limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list issues with stale proof: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	stale := make([]repository.StaleIssue, 0)
+
+	for rows.Next() {
+		var rawWorkspace, rawIssue string
+
+		if err := rows.Scan(&rawWorkspace, &rawIssue); err != nil {
+			return nil, fmt.Errorf("scan issue with stale proof: %w", err)
+		}
+
+		workspaceID, err := uuid.Parse(rawWorkspace)
+		if err != nil {
+			return nil, fmt.Errorf("parse stale workspace id: %w", err)
+		}
+
+		issueID, err := uuid.Parse(rawIssue)
+		if err != nil {
+			return nil, fmt.Errorf("parse stale issue id: %w", err)
+		}
+
+		stale = append(stale, repository.StaleIssue{WorkspaceID: workspaceID, IssueID: issueID})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read issues with stale proof: %w", err)
+	}
+
+	return stale, nil
+}
+
+func (r *checkRepository) AnnounceExpiry(
+	ctx context.Context,
+	workspaceID, checkID, evidenceID uuid.UUID,
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, announceExpiryQuery, workspaceID.String(), checkID.String(), evidenceID.String(),
+	); err != nil {
+		return fmt.Errorf("announce check expiry: %w", err)
 	}
 
 	return nil

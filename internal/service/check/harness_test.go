@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	agentrepo "github.com/usenorn/norn/internal/repository/agent"
@@ -29,6 +30,8 @@ type harness struct {
 	issues      *issuerepo.MockIssue
 	delegations *delegationrepo.MockIssueDelegation
 	codeLinks   *scmrepo.MockCodeLink
+	links       []entity.CodeLink
+	recorded    []entity.Activity
 	activity    *activityrepo.MockActivity
 	jobs        *jobqueuerepo.MockJobProducer
 	proposals   *agentproposalrepo.MockAgentProposal
@@ -83,7 +86,14 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 		}).
 		AnyTimes()
 
-	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.activity.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, entry entity.Activity) error {
+			h.recorded = append(h.recorded, entry)
+
+			return nil
+		}).
+		AnyTimes()
 	h.jobs.EXPECT().EnqueueSCMResume(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	h.agents.EXPECT().
@@ -101,6 +111,13 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 		}).
 		AnyTimes()
 
+	h.codeLinks.EXPECT().
+		ListByIssue(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) ([]entity.CodeLink, error) {
+			return h.links, nil
+		}).
+		AnyTimes()
+
 	h.service = checksvc.New(
 		h.checks,
 		h.evidence,
@@ -114,6 +131,7 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 		h.authorizer,
 		h.issueWriter,
 		transactor,
+		config.Checks{SweepBatch: 100},
 	)
 
 	return h
@@ -150,11 +168,20 @@ func (h *harness) expectNoDelegation() {
 		AnyTimes()
 }
 
-func (h *harness) expectNoCodeLinks() {
-	h.codeLinks.EXPECT().
-		ListByIssue(gomock.Any(), h.workspaceID, gomock.Any()).
-		Return(nil, nil).
-		AnyTimes()
+func (h *harness) announced() []entity.Activity {
+	entries := make([]entity.Activity, 0, len(h.recorded))
+
+	for _, entry := range h.recorded {
+		if entry.Kind == entity.ActivityKindCheckExpired {
+			entries = append(entries, entry)
+		}
+	}
+
+	return entries
+}
+
+func (h *harness) linking(links ...entity.CodeLink) {
+	h.links = links
 }
 
 func (h *harness) check(issue entity.Issue) entity.Check {

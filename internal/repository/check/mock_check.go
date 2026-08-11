@@ -12,6 +12,7 @@ package check
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
@@ -41,6 +42,20 @@ func NewMockCheck(ctrl *gomock.Controller) *MockCheck {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCheck) EXPECT() *MockCheckMockRecorder {
 	return m.recorder
+}
+
+// AnnounceExpiry mocks base method.
+func (m *MockCheck) AnnounceExpiry(ctx context.Context, workspaceID, checkID, evidenceID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AnnounceExpiry", ctx, workspaceID, checkID, evidenceID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AnnounceExpiry indicates an expected call of AnnounceExpiry.
+func (mr *MockCheckMockRecorder) AnnounceExpiry(ctx, workspaceID, checkID, evidenceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AnnounceExpiry", reflect.TypeOf((*MockCheck)(nil).AnnounceExpiry), ctx, workspaceID, checkID, evidenceID)
 }
 
 // Create mocks base method.
@@ -115,6 +130,21 @@ func (m *MockCheck) ListByIssue(ctx context.Context, workspaceID, issueID uuid.U
 func (mr *MockCheckMockRecorder) ListByIssue(ctx, workspaceID, issueID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByIssue", reflect.TypeOf((*MockCheck)(nil).ListByIssue), ctx, workspaceID, issueID)
+}
+
+// ListStaleIssues mocks base method.
+func (m *MockCheck) ListStaleIssues(ctx context.Context, window time.Duration, limit int) ([]repository.StaleIssue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListStaleIssues", ctx, window, limit)
+	ret0, _ := ret[0].([]repository.StaleIssue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListStaleIssues indicates an expected call of ListStaleIssues.
+func (mr *MockCheckMockRecorder) ListStaleIssues(ctx, window, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStaleIssues", reflect.TypeOf((*MockCheck)(nil).ListStaleIssues), ctx, window, limit)
 }
 
 // Resolve mocks base method.

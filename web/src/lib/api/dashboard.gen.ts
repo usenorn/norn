@@ -3890,10 +3890,10 @@ export interface components {
          */
         CheckAwaiting: "correction" | "fresh_proof" | "attestation" | "prior_failure" | "positive_result" | "evidence";
         /**
-         * @description Why an observation stopped counting.
+         * @description Why an observation stopped counting. `head_moved` means the change it was taken at has new commits on it, so it says nothing about the code that replaced them; evidence Norn could not bind to a change is judged on its time limit alone.
          * @enum {string}
          */
-        EvidenceExpiry: "time_limit";
+        EvidenceExpiry: "time_limit" | "head_moved";
         IssueCheckSummary: {
             /** Format: int32 */
             total: number;
@@ -4487,7 +4487,7 @@ export interface components {
             version?: number;
         };
         /** @enum {string} */
-        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled" | "check_added" | "check_removed" | "check_approved" | "check_declined" | "check_waived" | "check_gap_declared" | "evidence_added" | "checks_overridden";
+        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled" | "check_added" | "check_removed" | "check_approved" | "check_declined" | "check_waived" | "check_gap_declared" | "evidence_added" | "checks_overridden" | "check_expired";
         /** @enum {string} */
         LicenceStatus: "absent" | "active" | "grace" | "expired";
         LicenceFeature: {

@@ -20,6 +20,7 @@ type Checks interface {
 	DeclareGap(ctx context.Context, workspaceID, issueID, checkID uuid.UUID, input DeclareGapInput) (DeclaredGap, error)
 	Submit(ctx context.Context, workspaceID, issueID, checkID uuid.UUID, input SubmitEvidenceInput) (SubmittedEvidence, error)
 	Evidence(ctx context.Context, workspaceID, issueID, checkID uuid.UUID) ([]entity.EvidenceRecord, error)
+	SweepExpiry(ctx context.Context) error
 }
 
 type IssueChecks struct {

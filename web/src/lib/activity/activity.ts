@@ -110,6 +110,10 @@ export function changeLine(change: ActivityChange): string {
 			return `Declared a gap against: ${change.toValue}`;
 		case "evidence_added":
 			return `Filed evidence for: ${change.toValue}`;
+		case "check_expired":
+			return change.fromValue === "head_moved"
+				? `The proof of "${change.toValue}" stopped counting: the change it was taken at moved on`
+				: `The proof of "${change.toValue}" stopped counting: it is past its time limit`;
 		case "checks_overridden":
 			return change.fromValue === "acknowledged"
 				? `Finished this with unproven checks, having been shown them: ${change.toValue}`

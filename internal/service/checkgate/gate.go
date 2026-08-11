@@ -11,12 +11,17 @@ import (
 )
 
 type Gate struct {
-	checks   repository.Check
-	evidence repository.CheckEvidence
+	checks    repository.Check
+	evidence  repository.CheckEvidence
+	codeLinks repository.CodeLink
 }
 
-func New(checks repository.Check, evidence repository.CheckEvidence) *Gate {
-	return &Gate{checks: checks, evidence: evidence}
+func New(
+	checks repository.Check,
+	evidence repository.CheckEvidence,
+	codeLinks repository.CodeLink,
+) *Gate {
+	return &Gate{checks: checks, evidence: evidence, codeLinks: codeLinks}
 }
 
 func (g *Gate) Blocking(
@@ -37,7 +42,13 @@ func (g *Gate) Blocking(
 		return nil, err
 	}
 
-	return entity.BlockingChecks(entity.ReportChecks(
-		checks, evidence, entity.EvidenceHorizon{Now: time.Now().UTC()},
-	)), nil
+	links, err := g.codeLinks.ListByIssue(ctx, workspaceID, issueID)
+	if err != nil {
+		return nil, err
+	}
+
+	return entity.BlockingChecks(entity.ReportChecks(checks, evidence, entity.EvidenceHorizon{
+		Now:   time.Now().UTC(),
+		Heads: entity.HeadsOf(links),
+	})), nil
 }

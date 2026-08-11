@@ -113,6 +113,10 @@ func validate(cfg Config) error {
 		return fmt.Errorf("audit.sweep_batch (%d) must be at least 1", cfg.Audit.SweepBatch)
 	}
 
+	if cfg.Checks.SweepBatch < 1 {
+		return fmt.Errorf("checks.sweep_batch (%d) must be at least 1", cfg.Checks.SweepBatch)
+	}
+
 	if err := validateWebhooks(cfg.Webhooks); err != nil {
 		return err
 	}
@@ -452,6 +456,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("instance.self_hosted", false)
 	v.SetDefault("licence.key", "")
 	v.SetDefault("licence.grace", 30*24*time.Hour)
+	v.SetDefault("checks.expiry_sweep_schedule", "17 * * * *")
+	v.SetDefault("checks.sweep_batch", 500)
 	v.SetDefault("audit.retention", 365*24*time.Hour)
 	v.SetDefault("audit.sweep_schedule", "0 4 * * *")
 	v.SetDefault("audit.sweep_batch", 5000)

@@ -128,7 +128,7 @@ export const methodHints: Record<CheckMethod, string> = {
 export const awaitingLabels: Record<CheckAwaiting, string> = {
 	correction:
 		"The newest result on this disproves it. Fix the work, then file a passing result.",
-	fresh_proof: "The proof of this timed out, so it no longer counts. Run it again.",
+	fresh_proof: "The proof of this no longer counts. Run it again.",
 	attestation:
 		"A person has to attest this. A passing result an agent files does not prove it, however carefully it looked.",
 	prior_failure:
@@ -188,6 +188,14 @@ export function proposed(checks: IssueCheck[]): IssueCheck[] {
 export function onlyTimeLimitHolds(evidence: CheckEvidence): boolean {
 	return evidence.verdict === "passed" && !evidence.codeLinkId;
 }
+
+export const expiryReasons: Record<
+	NonNullable<CheckEvidence["expiryReason"]>,
+	string
+> = {
+	time_limit: "because it is older than the criterion's time limit",
+	head_moved: "because the change it was taken at has moved on since",
+};
 
 export function evidenceAge(check: IssueCheck): string {
 	const seconds = check.timeLimitSeconds ?? 0;

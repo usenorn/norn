@@ -17,6 +17,7 @@ import (
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
@@ -37,6 +38,7 @@ type harness struct {
 	jobs         *jobqueuerepo.MockJobProducer
 	checks       *checkrepo.MockCheck
 	evidence     *checkrepo.MockCheckEvidence
+	codeLinks    *scmrepo.MockCodeLink
 	authorizer   *authorizersvc.MockAuthorizer
 	actor        entity.Actor
 	blocking     map[uuid.UUID][]entity.Check
@@ -66,6 +68,7 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 		jobs:         jobqueuerepo.NewMockJobProducer(ctrl),
 		checks:       checkrepo.NewMockCheck(ctrl),
 		evidence:     checkrepo.NewMockCheckEvidence(ctrl),
+		codeLinks:    scmrepo.NewMockCodeLink(ctrl),
 		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
 		actor:        entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()},
 	}
@@ -79,7 +82,7 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 
 	h.service = bulksvc.New(
 		h.actions, h.issues, h.states, h.labels, h.activity, h.members,
-		h.cycles, h.scopeChanges, h.jobs, checkgate.New(h.checks, h.evidence), h.authorizer, tx,
+		h.cycles, h.scopeChanges, h.jobs, checkgate.New(h.checks, h.evidence, h.codeLinks), h.authorizer, tx,
 	)
 
 	h.checks.EXPECT().
@@ -91,6 +94,11 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 
 	h.evidence.EXPECT().
 		Digest(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, nil).
+		AnyTimes()
+
+	h.codeLinks.EXPECT().
+		ListByIssue(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil, nil).
 		AnyTimes()
 
