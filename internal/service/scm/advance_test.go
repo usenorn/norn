@@ -142,8 +142,17 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 	return h
 }
 
-func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
-	h := newAdvanceHarness(t)
+type mergedChange struct {
+	workspaceID uuid.UUID
+	issueID     uuid.UUID
+	linkID      uuid.UUID
+	doneID      uuid.UUID
+	deliveryID  uuid.UUID
+	issue       entity.Issue
+}
+
+func (h *advanceHarness) mergedChange(t *testing.T) mergedChange {
+	t.Helper()
 
 	var (
 		workspaceID  = uuid.New()
@@ -270,33 +279,48 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 		{ID: doneID, Name: "Done", IsCompletion: true},
 	}, nil)
 
+	h.links.EXPECT().
+		ClaimTransition(gomock.Any(), linkID, entity.CodeChangeMerged, issueID, doneID, gomock.Any()).
+		Return(true, nil)
+
+	return mergedChange{
+		workspaceID: workspaceID,
+		issueID:     issueID,
+		linkID:      linkID,
+		doneID:      doneID,
+		deliveryID:  delivery.ID,
+		issue:       issue,
+	}
+}
+
+func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
+	h := newAdvanceHarness(t)
+	merged := h.mergedChange(t)
+
 	h.issueWriter.EXPECT().
-		Update(gomock.Any(), workspaceID, issueID, gomock.Any()).
+		Update(gomock.Any(), merged.workspaceID, merged.issueID, gomock.Any()).
 		DoAndReturn(func(
 			_ context.Context,
 			_, _ uuid.UUID,
 			input service.UpdateIssueInput,
 		) (entity.Issue, error) {
-			if input.StateID == nil || *input.StateID != doneID {
+			if input.StateID == nil || *input.StateID != merged.doneID {
 				t.Errorf("Update moved the issue to %v, want the state the team routed merges to", input.StateID)
 			}
 
-			if input.ExpectedVersion != issue.Version {
+			if input.ExpectedVersion != merged.issue.Version {
 				t.Errorf(
 					"Update offered version %d, want %d — without the version a person editing "+
 						"at that moment is overwritten rather than left alone",
-					input.ExpectedVersion, issue.Version,
+					input.ExpectedVersion, merged.issue.Version,
 				)
 			}
 
-			return issue, nil
+			return merged.issue, nil
 		})
 
-	h.links.EXPECT().
-		ClaimTransition(gomock.Any(), linkID, entity.CodeChangeMerged, issueID, gomock.Any()).
-		Return(true, nil)
 	h.deliveries.EXPECT().
-		Settle(gomock.Any(), delivery.ID, entity.SCMDeliveryApplied, gomock.Any(), gomock.Any()).
+		Settle(gomock.Any(), merged.deliveryID, entity.SCMDeliveryApplied, gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
 			_ context.Context,
 			_ uuid.UUID,
@@ -315,7 +339,7 @@ func TestAMergedChangeMovesItsIssueToWhereTheTeamAsked(t *testing.T) {
 			return nil
 		})
 
-	if err := h.sync.Apply(context.Background(), delivery.ID); err != nil {
+	if err := h.sync.Apply(context.Background(), merged.deliveryID); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 }

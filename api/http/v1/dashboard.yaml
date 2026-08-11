@@ -6716,6 +6716,12 @@ components:
         acknowledgeOpenChildren:
           type: boolean
           description: Complete this issue even though children of it are still open
+        acknowledgeUnprovenChecks:
+          type: boolean
+          description: >-
+            Record that whoever finished this issue was shown its unproven criteria first. It
+            never changes whether the write succeeds — a person is never refused — only what
+            the timeline can say about the override.
         expectedVersion: { type: integer, format: int32 }
         title: { type: string }
         stateId: { type: string, format: uuid }
@@ -6969,6 +6975,7 @@ components:
                 - issue_parent_too_deep
                 - issue_parent_not_active
                 - issue_children_open
+                - issue_checks_unproven
                 - issue_delegation_held
                 - issue_delegation_agent_unusable
                 - issue_relation_exists
@@ -6987,6 +6994,10 @@ components:
             children:
               type: array
               items: { $ref: '#/components/schemas/Issue' }
+            checks:
+              type: array
+              description: The criteria in the way, named so an agent is told what to do next
+              items: { $ref: '#/components/schemas/IssueCheck' }
             relation: { $ref: '#/components/schemas/IssueRelation' }
 
     CycleConflictProblem:
@@ -7307,6 +7318,7 @@ components:
         - check_waived
         - check_gap_declared
         - evidence_added
+        - checks_overridden
 
     LicenceStatus:
       type: string

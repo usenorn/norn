@@ -130,6 +130,8 @@ func (s *checksService) Submit(
 		return service.SubmittedEvidence{}, err
 	}
 
+	s.resumeWhenClear(ctx, workspaceID, issueID)
+
 	return submitted, nil
 }
 

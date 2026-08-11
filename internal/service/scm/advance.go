@@ -58,9 +58,13 @@ func (s *sync) advance(
 		return nil
 	}
 
-	claimed, err := s.links.ClaimTransition(
-		ctx, link.ID, link.State, issue.ID, time.Now().UTC(),
-	)
+	if issue.State.ID == target.ID {
+		return nil
+	}
+
+	now := time.Now().UTC()
+
+	claimed, err := s.links.ClaimTransition(ctx, link.ID, link.State, issue.ID, target.ID, now)
 	if err != nil {
 		return err
 	}
@@ -69,17 +73,35 @@ func (s *sync) advance(
 		return nil
 	}
 
-	if issue.State.ID == target.ID {
-		return nil
+	blocked, err := s.drive(ctx, from, decision, link, issue, target.ID)
+	if err != nil {
+		return err
 	}
 
+	if blocked != "" {
+		return s.links.DeferTransition(ctx, link.ID, link.State, blocked, now)
+	}
+
+	tally.advanced++
+
+	return nil
+}
+
+func (s *sync) drive(
+	ctx context.Context,
+	from source,
+	decision entity.Decision,
+	link entity.CodeLink,
+	issue entity.Issue,
+	target uuid.UUID,
+) (entity.CodeTransitionBlock, error) {
 	author := s.attribute(ctx, from, decision, link)
 
 	held, waiting, err := s.holds.Hold(ctx, author, issue, entity.AgentActionStateChange, entity.AgentChange{
-		StateID: &target.ID,
+		StateID: &target,
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if waiting {
@@ -90,26 +112,37 @@ func (s *sync) advance(
 			"proposal_id", held.ID.String(),
 		)
 
-		return nil
+		return "", nil
 	}
 
-	tally.advanced++
-
-	scoped := identity.WithActor(ctx, actorOf(author, from))
-
-	return s.moveIssue(scoped, issue, target.ID)
+	return s.moveIssue(identity.WithActor(ctx, actorOf(author, from)), issue, target)
 }
 
-func (s *sync) moveIssue(ctx context.Context, issue entity.Issue, stateID uuid.UUID) error {
+func (s *sync) moveIssue(
+	ctx context.Context,
+	issue entity.Issue,
+	stateID uuid.UUID,
+) (entity.CodeTransitionBlock, error) {
 	for attempt := range 2 {
 		_, err := s.issueWriter.Update(ctx, issue.WorkspaceID, issue.ID, service.UpdateIssueInput{
 			ExpectedVersion: issue.Version,
 			StateID:         &stateID,
 		})
 
+		if blocked, deferrable := entity.CodeTransitionBlockedBy(err); deferrable {
+			logging.From(ctx).InfoContext(
+				ctx,
+				"a merged change is waiting to advance its issue, and will when the way clears",
+				"issue_id", issue.ID.String(),
+				"blocked_by", string(blocked),
+			)
+
+			return blocked, nil
+		}
+
 		switch {
 		case err == nil:
-			return nil
+			return "", nil
 
 		case errors.Is(err, entity.ErrIssueStale) && attempt == 0:
 			refreshed, readErr := s.issues.GetVisible(
@@ -119,7 +152,7 @@ func (s *sync) moveIssue(ctx context.Context, issue entity.Issue, stateID uuid.U
 				entity.TeamScope{WorkspaceID: issue.WorkspaceID, AllTeams: true, IncludePrivate: true},
 			)
 			if readErr != nil {
-				return nil
+				return "", nil
 			}
 
 			issue = refreshed
@@ -131,26 +164,17 @@ func (s *sync) moveIssue(ctx context.Context, issue entity.Issue, stateID uuid.U
 				"issue_id", issue.ID.String(),
 			)
 
-			return nil
-
-		case errors.Is(err, entity.ErrIssueChildrenOpen):
-			logging.From(ctx).InfoContext(
-				ctx,
-				"a merged change did not advance its issue because it still has open children",
-				"issue_id", issue.ID.String(),
-			)
-
-			return nil
+			return "", nil
 
 		case errors.Is(err, entity.ErrIssueNotFound):
-			return nil
+			return "", nil
 
 		default:
-			return err
+			return "", err
 		}
 	}
 
-	return nil
+	return "", nil
 }
 
 func actorOf(decision entity.Decision, from source) entity.Actor {

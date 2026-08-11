@@ -141,6 +141,7 @@ const (
 	ActivityKindCheckGapDeclared  ActivityKind = "check_gap_declared"
 	ActivityKindCheckRemoved      ActivityKind = "check_removed"
 	ActivityKindCheckWaived       ActivityKind = "check_waived"
+	ActivityKindChecksOverridden  ActivityKind = "checks_overridden"
 	ActivityKindChildAdded        ActivityKind = "child_added"
 	ActivityKindChildRemoved      ActivityKind = "child_removed"
 	ActivityKindCodeLinked        ActivityKind = "code_linked"
@@ -184,6 +185,8 @@ func (e ActivityKind) Valid() bool {
 	case ActivityKindCheckRemoved:
 		return true
 	case ActivityKindCheckWaived:
+		return true
+	case ActivityKindChecksOverridden:
 		return true
 	case ActivityKindChildAdded:
 		return true
@@ -1737,6 +1740,7 @@ const (
 	IssueConflictProblemCodeCycleClosed                  IssueConflictProblemCode = "cycle_closed"
 	IssueConflictProblemCodeCycleTeamMismatch            IssueConflictProblemCode = "cycle_team_mismatch"
 	IssueConflictProblemCodeIssueAlreadyOnTeam           IssueConflictProblemCode = "issue_already_on_team"
+	IssueConflictProblemCodeIssueChecksUnproven          IssueConflictProblemCode = "issue_checks_unproven"
 	IssueConflictProblemCodeIssueChildrenOpen            IssueConflictProblemCode = "issue_children_open"
 	IssueConflictProblemCodeIssueDelegationAgentUnusable IssueConflictProblemCode = "issue_delegation_agent_unusable"
 	IssueConflictProblemCodeIssueDelegationHeld          IssueConflictProblemCode = "issue_delegation_held"
@@ -1763,6 +1767,8 @@ func (e IssueConflictProblemCode) Valid() bool {
 	case IssueConflictProblemCodeCycleTeamMismatch:
 		return true
 	case IssueConflictProblemCodeIssueAlreadyOnTeam:
+		return true
+	case IssueConflictProblemCodeIssueChecksUnproven:
 		return true
 	case IssueConflictProblemCodeIssueChildrenOpen:
 		return true
@@ -5242,6 +5248,8 @@ type IssueCommentPage struct {
 
 // IssueConflictProblem defines model for IssueConflictProblem.
 type IssueConflictProblem struct {
+	// Checks The criteria in the way, named so an agent is told what to do next
+	Checks    *[]IssueCheck            `json:"checks,omitempty"`
 	Children  *[]Issue                 `json:"children,omitempty"`
 	Code      IssueConflictProblemCode `json:"code"`
 	Conflicts *[]string                `json:"conflicts,omitempty"`
@@ -6680,6 +6688,9 @@ type TriageState string
 type UpdateIssueRequest struct {
 	// AcknowledgeOpenChildren Complete this issue even though children of it are still open
 	AcknowledgeOpenChildren *bool `json:"acknowledgeOpenChildren,omitempty"`
+
+	// AcknowledgeUnprovenChecks Record that whoever finished this issue was shown its unproven criteria first. It never changes whether the write succeeds — a person is never refused — only what the timeline can say about the override.
+	AcknowledgeUnprovenChecks *bool `json:"acknowledgeUnprovenChecks,omitempty"`
 
 	// AfterIssueId Place this issue immediately after the named one in rank order. Send it with `beforeIssueId` to drop between two issues, alone to drop at the end, or send only `beforeIssueId` to drop at the start. The server works out the rank, so two people dropping in the same gap cannot land on the same one.
 	AfterIssueId *openapi_types.UUID `json:"afterIssueId,omitempty"`

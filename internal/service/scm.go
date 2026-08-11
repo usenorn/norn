@@ -358,4 +358,5 @@ type SourceControlSync interface {
 	Apply(ctx context.Context, deliveryID uuid.UUID) error
 	Reconcile(ctx context.Context, at time.Time) error
 	Backfill(ctx context.Context, repositoryID uuid.UUID) error
+	Resume(ctx context.Context, workspaceID, issueID uuid.UUID) error
 }

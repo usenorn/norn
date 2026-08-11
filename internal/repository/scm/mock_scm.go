@@ -684,18 +684,32 @@ func (m *MockCodeLink) EXPECT() *MockCodeLinkMockRecorder {
 }
 
 // ClaimTransition mocks base method.
-func (m *MockCodeLink) ClaimTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, issueID uuid.UUID, at time.Time) (bool, error) {
+func (m *MockCodeLink) ClaimTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, issueID, stateID uuid.UUID, at time.Time) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClaimTransition", ctx, linkID, transition, issueID, at)
+	ret := m.ctrl.Call(m, "ClaimTransition", ctx, linkID, transition, issueID, stateID, at)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ClaimTransition indicates an expected call of ClaimTransition.
-func (mr *MockCodeLinkMockRecorder) ClaimTransition(ctx, linkID, transition, issueID, at any) *gomock.Call {
+func (mr *MockCodeLinkMockRecorder) ClaimTransition(ctx, linkID, transition, issueID, stateID, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClaimTransition", reflect.TypeOf((*MockCodeLink)(nil).ClaimTransition), ctx, linkID, transition, issueID, at)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClaimTransition", reflect.TypeOf((*MockCodeLink)(nil).ClaimTransition), ctx, linkID, transition, issueID, stateID, at)
+}
+
+// DeferTransition mocks base method.
+func (m *MockCodeLink) DeferTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, blockedBy entity.CodeTransitionBlock, at time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeferTransition", ctx, linkID, transition, blockedBy, at)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeferTransition indicates an expected call of DeferTransition.
+func (mr *MockCodeLinkMockRecorder) DeferTransition(ctx, linkID, transition, blockedBy, at any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeferTransition", reflect.TypeOf((*MockCodeLink)(nil).DeferTransition), ctx, linkID, transition, blockedBy, at)
 }
 
 // Delete mocks base method.
@@ -772,6 +786,21 @@ func (mr *MockCodeLinkMockRecorder) ListByRepository(ctx, repositoryID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByRepository", reflect.TypeOf((*MockCodeLink)(nil).ListByRepository), ctx, repositoryID)
 }
 
+// ListDeferredTransitions mocks base method.
+func (m *MockCodeLink) ListDeferredTransitions(ctx context.Context, issueID uuid.UUID) ([]entity.CodeTransition, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListDeferredTransitions", ctx, issueID)
+	ret0, _ := ret[0].([]entity.CodeTransition)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListDeferredTransitions indicates an expected call of ListDeferredTransitions.
+func (mr *MockCodeLinkMockRecorder) ListDeferredTransitions(ctx, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeferredTransitions", reflect.TypeOf((*MockCodeLink)(nil).ListDeferredTransitions), ctx, issueID)
+}
+
 // ListReviewers mocks base method.
 func (m *MockCodeLink) ListReviewers(ctx context.Context, linkIDs []uuid.UUID) (map[uuid.UUID]entity.CodeReviewers, error) {
 	m.ctrl.T.Helper()
@@ -814,6 +843,20 @@ func (m *MockCodeLink) SetChecks(ctx context.Context, workspaceID uuid.UUID, pro
 func (mr *MockCodeLinkMockRecorder) SetChecks(ctx, workspaceID, provider, repositoryName, externalID, checks any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetChecks", reflect.TypeOf((*MockCodeLink)(nil).SetChecks), ctx, workspaceID, provider, repositoryName, externalID, checks)
+}
+
+// SettleTransition mocks base method.
+func (m *MockCodeLink) SettleTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SettleTransition", ctx, linkID, transition)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SettleTransition indicates an expected call of SettleTransition.
+func (mr *MockCodeLinkMockRecorder) SettleTransition(ctx, linkID, transition any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SettleTransition", reflect.TypeOf((*MockCodeLink)(nil).SettleTransition), ctx, linkID, transition)
 }
 
 // Upsert mocks base method.

@@ -50,6 +50,7 @@ const (
 	ActivityKindCheckWaived       ActivityKind = "check_waived"
 	ActivityKindCheckGapDeclared  ActivityKind = "check_gap_declared"
 	ActivityKindEvidenceAdded     ActivityKind = "evidence_added"
+	ActivityKindChecksOverridden  ActivityKind = "checks_overridden"
 )
 
 func ActivityKinds() []ActivityKind {
@@ -84,6 +85,7 @@ func ActivityKinds() []ActivityKind {
 		ActivityKindCheckWaived,
 		ActivityKindCheckGapDeclared,
 		ActivityKindEvidenceAdded,
+		ActivityKindChecksOverridden,
 	}
 }
 
@@ -95,6 +97,7 @@ const (
 	ActivityFieldAttachment = "attachment"
 	ActivityFieldAgent      = "agent"
 	ActivityFieldCheck      = "check"
+	ActivityFieldChecks     = "checks"
 	ActivityFieldEvidence   = "evidence"
 	ActivityFieldMember     = "member"
 	ActivityFieldName       = "name"

@@ -33,6 +33,7 @@ const (
 	TaskTypeSCMDelivery             = "scm:delivery"
 	TaskTypeSCMReconcile            = "scm:reconcile"
 	TaskTypeSCMBackfill             = "scm:backfill"
+	TaskTypeSCMResume               = "scm:resume"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 	WebhookFanOutTaskID     = "webhook-fan-out"
@@ -93,6 +94,11 @@ type BulkApplyPayload struct {
 type WebhookDeliverPayload struct {
 	DeliveryID uuid.UUID
 	Attempt    int
+}
+
+type SCMResumePayload struct {
+	WorkspaceID uuid.UUID
+	IssueID     uuid.UUID
 }
 
 type SCMDeliveryPayload struct {

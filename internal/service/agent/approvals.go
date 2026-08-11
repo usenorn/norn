@@ -123,7 +123,7 @@ func (s *agentsService) Approve(
 		return entity.AgentProposal{}, err
 	}
 
-	if err := s.apply(ctx, agent, proposal); err != nil {
+	if err := s.apply(ctx, agent, proposal, decision.Actor.AccountID); err != nil {
 		if settled := s.proposals.Settle(
 			ctx, proposal.ID, entity.AgentProposalFailed, decision.Actor.AccountID, now, err.Error(),
 		); settled != nil && !errors.Is(settled, entity.ErrAgentProposalSettled) {
@@ -215,6 +215,7 @@ func (s *agentsService) apply(
 	ctx context.Context,
 	agent entity.Agent,
 	proposal entity.AgentProposal,
+	approver uuid.UUID,
 ) error {
 	acting := identity.WithApproval(identity.WithActor(ctx, entity.Actor{
 		Kind:           entity.ActorKindAgent,
@@ -227,7 +228,7 @@ func (s *agentsService) apply(
 			AllTeams:    true,
 		}},
 		Scopes: proposal.Action.Scopes(),
-	}))
+	}), approver)
 
 	switch proposal.Action {
 	case entity.AgentActionComment:

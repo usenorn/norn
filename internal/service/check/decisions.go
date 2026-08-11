@@ -116,6 +116,8 @@ func (s *checksService) Waive(
 		return entity.Check{}, err
 	}
 
+	s.resumeWhenClear(ctx, workspaceID, issueID)
+
 	return waived, nil
 }
 

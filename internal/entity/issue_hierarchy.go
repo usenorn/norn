@@ -57,12 +57,15 @@ func OpenChildren(progress IssueProgress) int {
 	return progress.NotStarted + progress.Active
 }
 
+func OpenCategory(category StateCategory) bool {
+	return category == StateCategoryNotStarted || category == StateCategoryActive
+}
+
 func OpenIssues(issues []Issue) []Issue {
 	open := make([]Issue, 0, len(issues))
 
 	for _, issue := range issues {
-		switch issue.State.Category {
-		case StateCategoryNotStarted, StateCategoryActive:
+		if OpenCategory(issue.State.Category) {
 			open = append(open, issue)
 		}
 	}

@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const OverrideAcknowledged = "acknowledged"
+
 const (
 	CheckStatementMinLen = 3
 	CheckStatementMaxLen = 300
@@ -30,7 +32,21 @@ var (
 	ErrCheckNotApproved         = errors.New("check has not been approved yet")
 	ErrCheckDecisionNotPersonal = errors.New("only a person can decide a check")
 	ErrCheckWaiverNotPersonal   = errors.New("only a person can waive a check")
+
+	ErrIssueChecksUnproven = errors.New("issue has approved checks that are not proven")
 )
+
+type IssueChecksUnprovenError struct {
+	Checks []Check
+}
+
+func (e IssueChecksUnprovenError) Error() string {
+	return ErrIssueChecksUnproven.Error() + ": " + CheckStatements(e.Checks)
+}
+
+func (e IssueChecksUnprovenError) Unwrap() error {
+	return ErrIssueChecksUnproven
+}
 
 type CheckMethod string
 

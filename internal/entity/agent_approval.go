@@ -56,7 +56,7 @@ func (a AgentAction) Scopes() APIScopeSet {
 	case AgentActionComment:
 		return APIScopeSet{NewAPIScope(ResourceComment, ActionManage)}
 	case AgentActionStateChange, AgentActionIssueEdit:
-		return APIScopeSet{NewAPIScope(ResourceIssue, ActionUpdate)}
+		return APIScopeSet{NewAPIScope(ResourceIssue, ActionManage)}
 	default:
 		return APIScopeSet{}
 	}

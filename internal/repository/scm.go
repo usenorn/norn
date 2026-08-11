@@ -82,7 +82,10 @@ type CodeLink interface {
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.CodeLink, error)
 	ListByExternalID(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repositoryName, externalID string) ([]entity.CodeLink, error)
 	ListByRepository(ctx context.Context, repositoryID uuid.UUID) ([]entity.CodeLink, error)
-	ClaimTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, issueID uuid.UUID, at time.Time) (bool, error)
+	ClaimTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, issueID, stateID uuid.UUID, at time.Time) (bool, error)
+	DeferTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, blockedBy entity.CodeTransitionBlock, at time.Time) error
+	SettleTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState) error
+	ListDeferredTransitions(ctx context.Context, issueID uuid.UUID) ([]entity.CodeTransition, error)
 	Delete(ctx context.Context, workspaceID, issueID, linkID uuid.UUID) (entity.CodeLink, error)
 	DetachRepository(ctx context.Context, repositoryID uuid.UUID) error
 

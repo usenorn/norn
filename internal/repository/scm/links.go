@@ -246,19 +246,35 @@ func (r *linkRepository) collect(
 }
 
 const claimTransitionQuery = `
-INSERT INTO workspace_code_link_transitions (link_id, transition, issue_id, applied_at)
-VALUES ($1, $2, $3, $4)
+INSERT INTO workspace_code_link_transitions (link_id, transition, issue_id, state_id, applied_at)
+VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (link_id, transition) DO NOTHING`
+
+const deferTransitionQuery = `
+UPDATE workspace_code_link_transitions
+SET status = 'deferred', blocked_by = $3, deferred_at = $4
+WHERE link_id = $1 AND transition = $2`
+
+const settleTransitionQuery = `
+UPDATE workspace_code_link_transitions
+SET status = 'applied', blocked_by = '', deferred_at = NULL
+WHERE link_id = $1 AND transition = $2`
+
+const deferredTransitionsQuery = `
+SELECT link_id, transition, issue_id, coalesce(state_id::text, ''), status, blocked_by, deferred_at
+FROM workspace_code_link_transitions
+WHERE issue_id = $1 AND status = 'deferred'
+ORDER BY deferred_at, link_id`
 
 func (r *linkRepository) ClaimTransition(
 	ctx context.Context,
 	linkID uuid.UUID,
 	transition entity.CodeChangeState,
-	issueID uuid.UUID,
+	issueID, stateID uuid.UUID,
 	at time.Time,
 ) (bool, error) {
 	result, err := r.db.Querier(ctx).ExecContext(
-		ctx, claimTransitionQuery, linkID, transition, issueID, at,
+		ctx, claimTransitionQuery, linkID, transition, issueID, stateID, at,
 	)
 	if err != nil {
 		return false, fmt.Errorf("claim a linked change transition: %w", err)
@@ -270,6 +286,95 @@ func (r *linkRepository) ClaimTransition(
 	}
 
 	return affected > 0, nil
+}
+
+func (r *linkRepository) DeferTransition(
+	ctx context.Context,
+	linkID uuid.UUID,
+	transition entity.CodeChangeState,
+	blockedBy entity.CodeTransitionBlock,
+	at time.Time,
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, deferTransitionQuery, linkID, transition, string(blockedBy), at,
+	); err != nil {
+		return fmt.Errorf("defer a linked change transition: %w", err)
+	}
+
+	return nil
+}
+
+func (r *linkRepository) SettleTransition(
+	ctx context.Context,
+	linkID uuid.UUID,
+	transition entity.CodeChangeState,
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, settleTransitionQuery, linkID, transition,
+	); err != nil {
+		return fmt.Errorf("settle a linked change transition: %w", err)
+	}
+
+	return nil
+}
+
+func (r *linkRepository) ListDeferredTransitions(
+	ctx context.Context,
+	issueID uuid.UUID,
+) ([]entity.CodeTransition, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, deferredTransitionsQuery, issueID)
+	if err != nil {
+		return nil, fmt.Errorf("list deferred transitions: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	deferred := make([]entity.CodeTransition, 0)
+
+	for rows.Next() {
+		var (
+			pending    entity.CodeTransition
+			transition string
+			stateID    string
+			status     string
+			blockedBy  string
+			deferredAt sql.NullTime
+		)
+
+		if err := rows.Scan(
+			&pending.LinkID,
+			&transition,
+			&pending.IssueID,
+			&stateID,
+			&status,
+			&blockedBy,
+			&deferredAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan deferred transition: %w", err)
+		}
+
+		pending.Transition = entity.CodeChangeState(transition)
+		pending.Status = entity.CodeTransitionStatus(status)
+		pending.BlockedBy = entity.CodeTransitionBlock(blockedBy)
+
+		if deferredAt.Valid {
+			pending.DeferredAt = &deferredAt.Time
+		}
+
+		if stateID != "" {
+			if pending.StateID, err = uuid.Parse(stateID); err != nil {
+				return nil, fmt.Errorf("parse deferred transition state id: %w", err)
+			}
+		}
+
+		deferred = append(deferred, pending)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate deferred transitions: %w", err)
+	}
+
+	return deferred, nil
 }
 
 const deleteLinkQuery = `

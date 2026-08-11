@@ -110,6 +110,10 @@ export function changeLine(change: ActivityChange): string {
 			return `Declared a gap against: ${change.toValue}`;
 		case "evidence_added":
 			return `Filed evidence for: ${change.toValue}`;
+		case "checks_overridden":
+			return change.fromValue === "acknowledged"
+				? `Finished this with unproven checks, having been shown them: ${change.toValue}`
+				: `Finished this with unproven checks: ${change.toValue}`;
 		case "triaged":
 			return triageLine(change);
 		case "property_changed":

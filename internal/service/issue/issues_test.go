@@ -18,6 +18,7 @@ import (
 	agentrepo "github.com/usenorn/norn/internal/repository/agent"
 	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
+	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
@@ -33,6 +34,7 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	"github.com/usenorn/norn/internal/service/checkgate"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 )
@@ -53,8 +55,13 @@ type harness struct {
 	events      *eventsvc.MockEvents
 	followers   *issuefollowerrepo.MockIssueFollower
 	jobs        *jobqueuerepo.MockJobProducer
+	checks      *checkrepo.MockCheck
+	evidence    *checkrepo.MockCheckEvidence
 	transactor  *transactorrepo.MockTransactor
 	authorizer  *authorizersvc.MockAuthorizer
+	settings    *agentsettingrepo.MockAgentSetting
+	actor       entity.Actor
+	blocking    []entity.Check
 	service     service.Issues
 }
 
@@ -79,8 +86,12 @@ func newHarness(t *testing.T) *harness {
 		events:      eventsvc.NewMockEvents(ctrl),
 		followers:   issuefollowerrepo.NewMockIssueFollower(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
+		checks:      checkrepo.NewMockCheck(ctrl),
+		evidence:    checkrepo.NewMockCheckEvidence(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
+		settings:    agentsettingrepo.NewMockAgentSetting(ctrl),
+		actor:       entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()},
 	}
 
 	h.transactor.EXPECT().
@@ -95,7 +106,8 @@ func newHarness(t *testing.T) *harness {
 		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.events,
 		silentEmitter(ctrl), h.followers,
 		h.jobs,
-		agenthold.New(agentsettingrepo.NewMockAgentSetting(ctrl), agentproposalrepo.NewMockAgentProposal(ctrl), agentrepo.NewMockAgent(ctrl)),
+		agenthold.New(h.settings, agentproposalrepo.NewMockAgentProposal(ctrl), agentrepo.NewMockAgent(ctrl)),
+		checkgate.New(h.checks, h.evidence),
 		h.authorizer, h.transactor,
 	)
 
@@ -108,6 +120,23 @@ func newHarness(t *testing.T) *harness {
 	h.notify.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	h.events.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()
 	h.followers.EXPECT().Follow(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	h.checks.EXPECT().
+		ListByIssue(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) ([]entity.Check, error) {
+			return h.blocking, nil
+		}).
+		AnyTimes()
+
+	h.evidence.EXPECT().
+		Digest(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, nil).
+		AnyTimes()
+
+	h.settings.EXPECT().
+		Settings(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(entity.AgentSettings{}, nil).
+		AnyTimes()
 
 	return h
 }

@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
@@ -23,10 +24,14 @@ import (
 
 // WorkspaceCodeLinkTransition is an object representing the database table.
 type WorkspaceCodeLinkTransition struct {
-	LinkID     string    `boil:"link_id" json:"link_id" toml:"link_id" yaml:"link_id"`
-	Transition string    `boil:"transition" json:"transition" toml:"transition" yaml:"transition"`
-	IssueID    string    `boil:"issue_id" json:"issue_id" toml:"issue_id" yaml:"issue_id"`
-	AppliedAt  time.Time `boil:"applied_at" json:"applied_at" toml:"applied_at" yaml:"applied_at"`
+	LinkID     string      `boil:"link_id" json:"link_id" toml:"link_id" yaml:"link_id"`
+	Transition string      `boil:"transition" json:"transition" toml:"transition" yaml:"transition"`
+	IssueID    string      `boil:"issue_id" json:"issue_id" toml:"issue_id" yaml:"issue_id"`
+	AppliedAt  time.Time   `boil:"applied_at" json:"applied_at" toml:"applied_at" yaml:"applied_at"`
+	StateID    null.String `boil:"state_id" json:"state_id,omitempty" toml:"state_id" yaml:"state_id,omitempty"`
+	Status     string      `boil:"status" json:"status" toml:"status" yaml:"status"`
+	BlockedBy  string      `boil:"blocked_by" json:"blocked_by" toml:"blocked_by" yaml:"blocked_by"`
+	DeferredAt null.Time   `boil:"deferred_at" json:"deferred_at,omitempty" toml:"deferred_at" yaml:"deferred_at,omitempty"`
 
 	R *workspaceCodeLinkTransitionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceCodeLinkTransitionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -37,11 +42,19 @@ var WorkspaceCodeLinkTransitionColumns = struct {
 	Transition string
 	IssueID    string
 	AppliedAt  string
+	StateID    string
+	Status     string
+	BlockedBy  string
+	DeferredAt string
 }{
 	LinkID:     "link_id",
 	Transition: "transition",
 	IssueID:    "issue_id",
 	AppliedAt:  "applied_at",
+	StateID:    "state_id",
+	Status:     "status",
+	BlockedBy:  "blocked_by",
+	DeferredAt: "deferred_at",
 }
 
 var WorkspaceCodeLinkTransitionTableColumns = struct {
@@ -49,11 +62,19 @@ var WorkspaceCodeLinkTransitionTableColumns = struct {
 	Transition string
 	IssueID    string
 	AppliedAt  string
+	StateID    string
+	Status     string
+	BlockedBy  string
+	DeferredAt string
 }{
 	LinkID:     "workspace_code_link_transitions.link_id",
 	Transition: "workspace_code_link_transitions.transition",
 	IssueID:    "workspace_code_link_transitions.issue_id",
 	AppliedAt:  "workspace_code_link_transitions.applied_at",
+	StateID:    "workspace_code_link_transitions.state_id",
+	Status:     "workspace_code_link_transitions.status",
+	BlockedBy:  "workspace_code_link_transitions.blocked_by",
+	DeferredAt: "workspace_code_link_transitions.deferred_at",
 }
 
 // Generated where
@@ -63,26 +84,37 @@ var WorkspaceCodeLinkTransitionWhere = struct {
 	Transition whereHelperstring
 	IssueID    whereHelperstring
 	AppliedAt  whereHelpertime_Time
+	StateID    whereHelpernull_String
+	Status     whereHelperstring
+	BlockedBy  whereHelperstring
+	DeferredAt whereHelpernull_Time
 }{
 	LinkID:     whereHelperstring{field: "\"workspace_code_link_transitions\".\"link_id\""},
 	Transition: whereHelperstring{field: "\"workspace_code_link_transitions\".\"transition\""},
 	IssueID:    whereHelperstring{field: "\"workspace_code_link_transitions\".\"issue_id\""},
 	AppliedAt:  whereHelpertime_Time{field: "\"workspace_code_link_transitions\".\"applied_at\""},
+	StateID:    whereHelpernull_String{field: "\"workspace_code_link_transitions\".\"state_id\""},
+	Status:     whereHelperstring{field: "\"workspace_code_link_transitions\".\"status\""},
+	BlockedBy:  whereHelperstring{field: "\"workspace_code_link_transitions\".\"blocked_by\""},
+	DeferredAt: whereHelpernull_Time{field: "\"workspace_code_link_transitions\".\"deferred_at\""},
 }
 
 // WorkspaceCodeLinkTransitionRels is where relationship names are stored.
 var WorkspaceCodeLinkTransitionRels = struct {
 	Issue string
 	Link  string
+	State string
 }{
 	Issue: "Issue",
 	Link:  "Link",
+	State: "State",
 }
 
 // workspaceCodeLinkTransitionR is where relationships are stored.
 type workspaceCodeLinkTransitionR struct {
-	Issue *WorkspaceIssue    `boil:"Issue" json:"Issue" toml:"Issue" yaml:"Issue"`
-	Link  *WorkspaceCodeLink `boil:"Link" json:"Link" toml:"Link" yaml:"Link"`
+	Issue *WorkspaceIssue         `boil:"Issue" json:"Issue" toml:"Issue" yaml:"Issue"`
+	Link  *WorkspaceCodeLink      `boil:"Link" json:"Link" toml:"Link" yaml:"Link"`
+	State *WorkspaceWorkflowState `boil:"State" json:"State" toml:"State" yaml:"State"`
 }
 
 // NewStruct creates a new relationship struct
@@ -122,13 +154,29 @@ func (r *workspaceCodeLinkTransitionR) GetLink() *WorkspaceCodeLink {
 	return r.Link
 }
 
+func (o *WorkspaceCodeLinkTransition) GetState() *WorkspaceWorkflowState {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetState()
+}
+
+func (r *workspaceCodeLinkTransitionR) GetState() *WorkspaceWorkflowState {
+	if r == nil {
+		return nil
+	}
+
+	return r.State
+}
+
 // workspaceCodeLinkTransitionL is where Load methods for each relationship are stored.
 type workspaceCodeLinkTransitionL struct{}
 
 var (
-	workspaceCodeLinkTransitionAllColumns            = []string{"link_id", "transition", "issue_id", "applied_at"}
+	workspaceCodeLinkTransitionAllColumns            = []string{"link_id", "transition", "issue_id", "applied_at", "state_id", "status", "blocked_by", "deferred_at"}
 	workspaceCodeLinkTransitionColumnsWithoutDefault = []string{"link_id", "transition", "issue_id"}
-	workspaceCodeLinkTransitionColumnsWithDefault    = []string{"applied_at"}
+	workspaceCodeLinkTransitionColumnsWithDefault    = []string{"applied_at", "state_id", "status", "blocked_by", "deferred_at"}
 	workspaceCodeLinkTransitionPrimaryKeyColumns     = []string{"link_id", "transition"}
 	workspaceCodeLinkTransitionGeneratedColumns      = []string{}
 )
@@ -460,6 +508,17 @@ func (o *WorkspaceCodeLinkTransition) Link(mods ...qm.QueryMod) workspaceCodeLin
 	return WorkspaceCodeLinks(queryMods...)
 }
 
+// State pointed to by the foreign key.
+func (o *WorkspaceCodeLinkTransition) State(mods ...qm.QueryMod) workspaceWorkflowStateQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.StateID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceWorkflowStates(queryMods...)
+}
+
 // LoadIssue allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (workspaceCodeLinkTransitionL) LoadIssue(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceCodeLinkTransition any, mods queries.Applicator) error {
@@ -700,6 +759,130 @@ func (workspaceCodeLinkTransitionL) LoadLink(ctx context.Context, e boil.Context
 	return nil
 }
 
+// LoadState allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceCodeLinkTransitionL) LoadState(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceCodeLinkTransition any, mods queries.Applicator) error {
+	var slice []*WorkspaceCodeLinkTransition
+	var object *WorkspaceCodeLinkTransition
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceCodeLinkTransition.(*WorkspaceCodeLinkTransition)
+		if !ok {
+			object = new(WorkspaceCodeLinkTransition)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceCodeLinkTransition)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceCodeLinkTransition))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceCodeLinkTransition.(*[]*WorkspaceCodeLinkTransition)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceCodeLinkTransition)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceCodeLinkTransition))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceCodeLinkTransitionR{}
+		}
+		if !queries.IsNil(object.StateID) {
+			args[object.StateID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceCodeLinkTransitionR{}
+			}
+
+			if !queries.IsNil(obj.StateID) {
+				args[obj.StateID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_workflow_states`),
+		qm.WhereIn(`workspace_workflow_states.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceWorkflowState")
+	}
+
+	var resultSlice []*WorkspaceWorkflowState
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceWorkflowState")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_workflow_states")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_workflow_states")
+	}
+
+	if len(workspaceWorkflowStateAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.State = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceWorkflowStateR{}
+		}
+		foreign.R.StateWorkspaceCodeLinkTransitions = append(foreign.R.StateWorkspaceCodeLinkTransitions, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.StateID, foreign.ID) {
+				local.R.State = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceWorkflowStateR{}
+				}
+				foreign.R.StateWorkspaceCodeLinkTransitions = append(foreign.R.StateWorkspaceCodeLinkTransitions, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetIssue of the workspaceCodeLinkTransition to the related item.
 // Sets o.R.Issue to related.
 // Adds o to related.R.IssueWorkspaceCodeLinkTransitions.
@@ -791,6 +974,86 @@ func (o *WorkspaceCodeLinkTransition) SetLink(ctx context.Context, exec boil.Con
 		related.R.LinkWorkspaceCodeLinkTransitions = append(related.R.LinkWorkspaceCodeLinkTransitions, o)
 	}
 
+	return nil
+}
+
+// SetState of the workspaceCodeLinkTransition to the related item.
+// Sets o.R.State to related.
+// Adds o to related.R.StateWorkspaceCodeLinkTransitions.
+func (o *WorkspaceCodeLinkTransition) SetState(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceWorkflowState) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_code_link_transitions\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"state_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceCodeLinkTransitionPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.LinkID, o.Transition}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.StateID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceCodeLinkTransitionR{
+			State: related,
+		}
+	} else {
+		o.R.State = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceWorkflowStateR{
+			StateWorkspaceCodeLinkTransitions: WorkspaceCodeLinkTransitionSlice{o},
+		}
+	} else {
+		related.R.StateWorkspaceCodeLinkTransitions = append(related.R.StateWorkspaceCodeLinkTransitions, o)
+	}
+
+	return nil
+}
+
+// RemoveState relationship.
+// Sets o.R.State to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceCodeLinkTransition) RemoveState(ctx context.Context, exec boil.ContextExecutor, related *WorkspaceWorkflowState) error {
+	var err error
+
+	queries.SetScanner(&o.StateID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("state_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.State = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.StateWorkspaceCodeLinkTransitions {
+		if queries.Equal(o.StateID, ri.StateID) {
+			continue
+		}
+
+		ln := len(related.R.StateWorkspaceCodeLinkTransitions)
+		if ln > 1 && i < ln-1 {
+			related.R.StateWorkspaceCodeLinkTransitions[i] = related.R.StateWorkspaceCodeLinkTransitions[ln-1]
+		}
+		related.R.StateWorkspaceCodeLinkTransitions = related.R.StateWorkspaceCodeLinkTransitions[:ln-1]
+		break
+	}
 	return nil
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
+	"github.com/usenorn/norn/internal/service/checkgate"
 )
 
 type issuesService struct {
@@ -34,6 +35,7 @@ type issuesService struct {
 	followers    repository.IssueFollower
 	jobs         repository.JobProducer
 	gate         *agenthold.Gate
+	checks       *checkgate.Gate
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
 }
@@ -56,6 +58,7 @@ func New(
 	followers repository.IssueFollower,
 	jobs repository.JobProducer,
 	gate *agenthold.Gate,
+	checks *checkgate.Gate,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.Issues {
@@ -77,6 +80,7 @@ func New(
 		followers:    followers,
 		jobs:         jobs,
 		gate:         gate,
+		checks:       checks,
 		authorizer:   authorizer,
 		transactor:   transactor,
 	}
@@ -416,7 +420,11 @@ func (s *issuesService) Update(
 		return entity.Issue{}, err
 	}
 
-	var updated entity.Issue
+	var (
+		updated    entity.Issue
+		overridden []entity.Check
+		completed  entity.WorkflowState
+	)
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		issue, err := s.issues.LockByID(ctx, workspaceID, issueID, decision.Scope)
@@ -475,15 +483,29 @@ func (s *issuesService) Update(
 		}
 
 		if target.Category == entity.StateCategoryComplete &&
-			issue.State.Category != entity.StateCategoryComplete &&
-			!input.AcknowledgeOpenChildren {
-			children, err := s.issues.ListChildren(ctx, workspaceID, issueID, decision.Scope)
+			issue.State.Category != entity.StateCategoryComplete {
+			if !input.AcknowledgeOpenChildren {
+				children, err := s.issues.ListChildren(ctx, workspaceID, issueID, decision.Scope)
+				if err != nil {
+					return err
+				}
+
+				if open := entity.OpenIssues(children); len(open) > 0 {
+					return entity.IssueChildrenOpenError{Children: open}
+				}
+			}
+
+			blocking, err := s.checks.Blocking(ctx, workspaceID, issueID)
 			if err != nil {
 				return err
 			}
 
-			if open := entity.OpenIssues(children); len(open) > 0 {
-				return entity.IssueChildrenOpenError{Children: open}
+			if len(blocking) > 0 {
+				if refused(ctx, decision) {
+					return entity.IssueChecksUnprovenError{Checks: blocking}
+				}
+
+				overridden = blocking
 			}
 		}
 
@@ -526,6 +548,14 @@ func (s *issuesService) Update(
 			if err := s.notifyStateChanged(ctx, issue, decision, uuid.Nil); err != nil {
 				return err
 			}
+
+			if err := s.recordOverride(
+				ctx, issue, decision, overridden, input.AcknowledgeUnprovenChecks,
+			); err != nil {
+				return err
+			}
+
+			completed = target
 		}
 
 		if change.Assignee != nil && *change.Assignee != issue.AssigneeAccountID {
@@ -552,6 +582,8 @@ func (s *issuesService) Update(
 	if err != nil {
 		return entity.Issue{}, err
 	}
+
+	s.resumeParent(ctx, updated, completed)
 
 	return updated, nil
 }

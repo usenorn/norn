@@ -11,6 +11,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	bulkrepo "github.com/usenorn/norn/internal/repository/bulkaction"
+	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
@@ -21,6 +22,7 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	bulksvc "github.com/usenorn/norn/internal/service/bulkoperation"
+	"github.com/usenorn/norn/internal/service/checkgate"
 )
 
 type harness struct {
@@ -33,7 +35,11 @@ type harness struct {
 	cycles       *cyclerepo.MockCycle
 	scopeChanges *cyclerepo.MockCycleScopeChange
 	jobs         *jobqueuerepo.MockJobProducer
+	checks       *checkrepo.MockCheck
+	evidence     *checkrepo.MockCheckEvidence
 	authorizer   *authorizersvc.MockAuthorizer
+	actor        entity.Actor
+	blocking     map[uuid.UUID][]entity.Check
 	service      service.BulkOperations
 }
 
@@ -58,21 +64,35 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 		cycles:       cyclerepo.NewMockCycle(ctrl),
 		scopeChanges: cyclerepo.NewMockCycleScopeChange(ctrl),
 		jobs:         jobqueuerepo.NewMockJobProducer(ctrl),
+		checks:       checkrepo.NewMockCheck(ctrl),
+		evidence:     checkrepo.NewMockCheckEvidence(ctrl),
 		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
+		actor:        entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()},
 	}
 
 	h.authorizer.EXPECT().
 		Decide(gomock.Any(), gomock.Any()).
-		Return(entity.Decision{
-			Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()},
-			Scope: scope,
-		}, nil).
+		DoAndReturn(func(_ context.Context, _ entity.AccessRequest) (entity.Decision, error) {
+			return entity.Decision{Actor: h.actor, Scope: scope}, nil
+		}).
 		AnyTimes()
 
 	h.service = bulksvc.New(
 		h.actions, h.issues, h.states, h.labels, h.activity, h.members,
-		h.cycles, h.scopeChanges, h.jobs, h.authorizer, tx,
+		h.cycles, h.scopeChanges, h.jobs, checkgate.New(h.checks, h.evidence), h.authorizer, tx,
 	)
+
+	h.checks.EXPECT().
+		ListByIssue(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, issueID uuid.UUID) ([]entity.Check, error) {
+			return h.blocking[issueID], nil
+		}).
+		AnyTimes()
+
+	h.evidence.EXPECT().
+		Digest(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, nil).
+		AnyTimes()
 
 	return h
 }

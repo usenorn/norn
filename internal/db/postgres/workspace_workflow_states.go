@@ -114,19 +114,38 @@ var WorkspaceWorkflowStateWhere = struct {
 
 // WorkspaceWorkflowStateRels is where relationship names are stored.
 var WorkspaceWorkflowStateRels = struct {
-	StateWorkspaceSCMTransitionRules string
+	StateWorkspaceCodeLinkTransitions string
+	StateWorkspaceSCMTransitionRules  string
 }{
-	StateWorkspaceSCMTransitionRules: "StateWorkspaceSCMTransitionRules",
+	StateWorkspaceCodeLinkTransitions: "StateWorkspaceCodeLinkTransitions",
+	StateWorkspaceSCMTransitionRules:  "StateWorkspaceSCMTransitionRules",
 }
 
 // workspaceWorkflowStateR is where relationships are stored.
 type workspaceWorkflowStateR struct {
-	StateWorkspaceSCMTransitionRules WorkspaceSCMTransitionRuleSlice `boil:"StateWorkspaceSCMTransitionRules" json:"StateWorkspaceSCMTransitionRules" toml:"StateWorkspaceSCMTransitionRules" yaml:"StateWorkspaceSCMTransitionRules"`
+	StateWorkspaceCodeLinkTransitions WorkspaceCodeLinkTransitionSlice `boil:"StateWorkspaceCodeLinkTransitions" json:"StateWorkspaceCodeLinkTransitions" toml:"StateWorkspaceCodeLinkTransitions" yaml:"StateWorkspaceCodeLinkTransitions"`
+	StateWorkspaceSCMTransitionRules  WorkspaceSCMTransitionRuleSlice  `boil:"StateWorkspaceSCMTransitionRules" json:"StateWorkspaceSCMTransitionRules" toml:"StateWorkspaceSCMTransitionRules" yaml:"StateWorkspaceSCMTransitionRules"`
 }
 
 // NewStruct creates a new relationship struct
 func (*workspaceWorkflowStateR) NewStruct() *workspaceWorkflowStateR {
 	return &workspaceWorkflowStateR{}
+}
+
+func (o *WorkspaceWorkflowState) GetStateWorkspaceCodeLinkTransitions() WorkspaceCodeLinkTransitionSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetStateWorkspaceCodeLinkTransitions()
+}
+
+func (r *workspaceWorkflowStateR) GetStateWorkspaceCodeLinkTransitions() WorkspaceCodeLinkTransitionSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.StateWorkspaceCodeLinkTransitions
 }
 
 func (o *WorkspaceWorkflowState) GetStateWorkspaceSCMTransitionRules() WorkspaceSCMTransitionRuleSlice {
@@ -461,6 +480,20 @@ func (q workspaceWorkflowStateQuery) Exists(ctx context.Context, exec boil.Conte
 	return count > 0, nil
 }
 
+// StateWorkspaceCodeLinkTransitions retrieves all the workspace_code_link_transition's WorkspaceCodeLinkTransitions with an executor via state_id column.
+func (o *WorkspaceWorkflowState) StateWorkspaceCodeLinkTransitions(mods ...qm.QueryMod) workspaceCodeLinkTransitionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_code_link_transitions\".\"state_id\"=?", o.ID),
+	)
+
+	return WorkspaceCodeLinkTransitions(queryMods...)
+}
+
 // StateWorkspaceSCMTransitionRules retrieves all the workspace_scm_transition_rule's WorkspaceSCMTransitionRules with an executor via state_id column.
 func (o *WorkspaceWorkflowState) StateWorkspaceSCMTransitionRules(mods ...qm.QueryMod) workspaceSCMTransitionRuleQuery {
 	var queryMods []qm.QueryMod
@@ -473,6 +506,119 @@ func (o *WorkspaceWorkflowState) StateWorkspaceSCMTransitionRules(mods ...qm.Que
 	)
 
 	return WorkspaceSCMTransitionRules(queryMods...)
+}
+
+// LoadStateWorkspaceCodeLinkTransitions allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceWorkflowStateL) LoadStateWorkspaceCodeLinkTransitions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceWorkflowState any, mods queries.Applicator) error {
+	var slice []*WorkspaceWorkflowState
+	var object *WorkspaceWorkflowState
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceWorkflowState.(*WorkspaceWorkflowState)
+		if !ok {
+			object = new(WorkspaceWorkflowState)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceWorkflowState)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceWorkflowState))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceWorkflowState.(*[]*WorkspaceWorkflowState)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceWorkflowState)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceWorkflowState))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceWorkflowStateR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceWorkflowStateR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_code_link_transitions`),
+		qm.WhereIn(`workspace_code_link_transitions.state_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_code_link_transitions")
+	}
+
+	var resultSlice []*WorkspaceCodeLinkTransition
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_code_link_transitions")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_code_link_transitions")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_code_link_transitions")
+	}
+
+	if len(workspaceCodeLinkTransitionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.StateWorkspaceCodeLinkTransitions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceCodeLinkTransitionR{}
+			}
+			foreign.R.State = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.StateID) {
+				local.R.StateWorkspaceCodeLinkTransitions = append(local.R.StateWorkspaceCodeLinkTransitions, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceCodeLinkTransitionR{}
+				}
+				foreign.R.State = local
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadStateWorkspaceSCMTransitionRules allows an eager lookup of values, cached into the
@@ -582,6 +728,133 @@ func (workspaceWorkflowStateL) LoadStateWorkspaceSCMTransitionRules(ctx context.
 				foreign.R.State = local
 				break
 			}
+		}
+	}
+
+	return nil
+}
+
+// AddStateWorkspaceCodeLinkTransitions adds the given related objects to the existing relationships
+// of the workspace_workflow_state, optionally inserting them as new records.
+// Appends related to o.R.StateWorkspaceCodeLinkTransitions.
+// Sets related.R.State appropriately.
+func (o *WorkspaceWorkflowState) AddStateWorkspaceCodeLinkTransitions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCodeLinkTransition) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.StateID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_code_link_transitions\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"state_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceCodeLinkTransitionPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.LinkID, rel.Transition}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.StateID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceWorkflowStateR{
+			StateWorkspaceCodeLinkTransitions: related,
+		}
+	} else {
+		o.R.StateWorkspaceCodeLinkTransitions = append(o.R.StateWorkspaceCodeLinkTransitions, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceCodeLinkTransitionR{
+				State: o,
+			}
+		} else {
+			rel.R.State = o
+		}
+	}
+	return nil
+}
+
+// SetStateWorkspaceCodeLinkTransitions removes all previously related items of the
+// workspace_workflow_state replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.State's StateWorkspaceCodeLinkTransitions accordingly.
+// Replaces o.R.StateWorkspaceCodeLinkTransitions with related.
+// Sets related.R.State's StateWorkspaceCodeLinkTransitions accordingly.
+func (o *WorkspaceWorkflowState) SetStateWorkspaceCodeLinkTransitions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCodeLinkTransition) error {
+	query := "update \"workspace_code_link_transitions\" set \"state_id\" = null where \"state_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.StateWorkspaceCodeLinkTransitions {
+			queries.SetScanner(&rel.StateID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.State = nil
+		}
+		o.R.StateWorkspaceCodeLinkTransitions = nil
+	}
+
+	return o.AddStateWorkspaceCodeLinkTransitions(ctx, exec, insert, related...)
+}
+
+// RemoveStateWorkspaceCodeLinkTransitions relationships from objects passed in.
+// Removes related items from R.StateWorkspaceCodeLinkTransitions (uses pointer comparison, removal does not keep order)
+// Sets related.R.State.
+func (o *WorkspaceWorkflowState) RemoveStateWorkspaceCodeLinkTransitions(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceCodeLinkTransition) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.StateID, nil)
+		if rel.R != nil {
+			rel.R.State = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("state_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.StateWorkspaceCodeLinkTransitions {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.StateWorkspaceCodeLinkTransitions)
+			if ln > 1 && i < ln-1 {
+				o.R.StateWorkspaceCodeLinkTransitions[i] = o.R.StateWorkspaceCodeLinkTransitions[ln-1]
+			}
+			o.R.StateWorkspaceCodeLinkTransitions = o.R.StateWorkspaceCodeLinkTransitions[:ln-1]
+			break
 		}
 	}
 

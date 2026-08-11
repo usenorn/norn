@@ -26,12 +26,18 @@ func Client(ctx context.Context) entity.SessionClient {
 	return client
 }
 
-func WithApproval(ctx context.Context) context.Context {
-	return context.WithValue(ctx, approvalKey{}, true)
+func WithApproval(ctx context.Context, approver uuid.UUID) context.Context {
+	return context.WithValue(ctx, approvalKey{}, approver)
+}
+
+func Approver(ctx context.Context) (uuid.UUID, bool) {
+	approver, _ := ctx.Value(approvalKey{}).(uuid.UUID)
+
+	return approver, approver != uuid.Nil
 }
 
 func Approved(ctx context.Context) bool {
-	approved, _ := ctx.Value(approvalKey{}).(bool)
+	_, approved := Approver(ctx)
 
 	return approved
 }

@@ -152,7 +152,7 @@ func TestSomebodyJoiningAnonymouslyIsStillAdmittedWhereAnyMethodIsAccepted(t *te
 	}
 }
 
-func TestAnApprovedAgentActionCarriesOnlyWhatThatActionNeeds(t *testing.T) {
+func TestAnApprovedAgentActionCarriesThePermissionTheWriteActuallyChecks(t *testing.T) {
 	for name, tc := range map[string]struct {
 		action  entity.AgentAction
 		granted entity.Permission
@@ -161,16 +161,16 @@ func TestAnApprovedAgentActionCarriesOnlyWhatThatActionNeeds(t *testing.T) {
 		"a comment": {
 			action:  entity.AgentActionComment,
 			granted: entity.NewPermission(entity.ResourceComment, entity.ActionManage),
-			denied:  entity.NewPermission(entity.ResourceIssue, entity.ActionUpdate),
+			denied:  entity.NewPermission(entity.ResourceIssue, entity.ActionManage),
 		},
 		"a state change": {
 			action:  entity.AgentActionStateChange,
-			granted: entity.NewPermission(entity.ResourceIssue, entity.ActionUpdate),
+			granted: entity.NewPermission(entity.ResourceIssue, entity.ActionManage),
 			denied:  entity.NewPermission(entity.ResourceIssue, entity.ActionDelete),
 		},
 		"an issue edit": {
 			action:  entity.AgentActionIssueEdit,
-			granted: entity.NewPermission(entity.ResourceIssue, entity.ActionUpdate),
+			granted: entity.NewPermission(entity.ResourceIssue, entity.ActionManage),
 			denied:  entity.NewPermission(entity.ResourceAPIToken, entity.ActionManage),
 		},
 	} {

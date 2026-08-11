@@ -102,6 +102,7 @@ import (
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	bulkoperationsvc "github.com/usenorn/norn/internal/service/bulkoperation"
 	checksvc "github.com/usenorn/norn/internal/service/check"
+	checkgatesvc "github.com/usenorn/norn/internal/service/checkgate"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	delegationsvc "github.com/usenorn/norn/internal/service/delegation"
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
@@ -225,6 +226,7 @@ var baseSet = wire.NewSet(
 	issuerelationsvc.Set,
 	bulkoperationsvc.Set,
 	checksvc.Set,
+	checkgatesvc.Set,
 	cyclesvc.Set,
 	projectsvc.Set,
 	attachmentsvc.Set,

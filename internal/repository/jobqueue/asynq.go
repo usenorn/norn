@@ -491,6 +491,29 @@ func translateTaskError(err error, action string) error {
 	}
 }
 
+func (c *Client) EnqueueSCMResume(ctx context.Context, payload entity.SCMResumePayload) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode source control resume: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeSCMResume, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueSCM),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.TaskID(entity.TaskTypeSCMResume+":"+payload.IssueID.String()),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue source control resume: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) EnqueueSCMBackfill(
 	ctx context.Context,
 	payload entity.SCMBackfillPayload,

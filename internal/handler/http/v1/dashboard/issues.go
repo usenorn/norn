@@ -165,6 +165,8 @@ func (h *handler) UpdateWorkspaceIssue(
 		ExpectedVersion: int(request.Body.ExpectedVersion),
 		AcknowledgeOpenChildren: request.Body.AcknowledgeOpenChildren != nil &&
 			*request.Body.AcknowledgeOpenChildren,
+		AcknowledgeUnprovenChecks: request.Body.AcknowledgeUnprovenChecks != nil &&
+			*request.Body.AcknowledgeUnprovenChecks,
 		Title:       request.Body.Title,
 		StateID:     request.Body.StateId,
 		Description: request.Body.Description,

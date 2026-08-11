@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"errors"
 	"slices"
 	"time"
 
@@ -160,6 +161,41 @@ func ResolveChangeState(base CodeChangeState, reviewers CodeReviewers) CodeChang
 	}
 
 	return base
+}
+
+type CodeTransitionStatus string
+
+const (
+	CodeTransitionApplied  CodeTransitionStatus = "applied"
+	CodeTransitionDeferred CodeTransitionStatus = "deferred"
+)
+
+type CodeTransitionBlock string
+
+const (
+	CodeTransitionChildrenOpen   CodeTransitionBlock = "children_open"
+	CodeTransitionChecksUnproven CodeTransitionBlock = "checks_unproven"
+)
+
+func CodeTransitionBlockedBy(err error) (CodeTransitionBlock, bool) {
+	switch {
+	case errors.Is(err, ErrIssueChildrenOpen):
+		return CodeTransitionChildrenOpen, true
+	case errors.Is(err, ErrIssueChecksUnproven):
+		return CodeTransitionChecksUnproven, true
+	default:
+		return "", false
+	}
+}
+
+type CodeTransition struct {
+	LinkID     uuid.UUID
+	IssueID    uuid.UUID
+	Transition CodeChangeState
+	StateID    uuid.UUID
+	Status     CodeTransitionStatus
+	BlockedBy  CodeTransitionBlock
+	DeferredAt *time.Time
 }
 
 type CodeLink struct {

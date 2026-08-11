@@ -135,6 +135,25 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	var unproven entity.IssueChecksUnprovenError
+	if errors.As(err, &unproven) {
+		base := baseProblem(http.StatusConflict, unproven.Error())
+		checks := issueCheckDTOs(unproven.Checks)
+
+		return problemResponse{
+			status: http.StatusConflict,
+			body: api.IssueConflictProblem{
+				Code:     api.IssueConflictProblemCodeIssueChecksUnproven,
+				Checks:   &checks,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+	}
+
 	var tooDeep entity.IssueTooDeepError
 	if errors.As(err, &tooDeep) {
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueParentTooDeep, tooDeep), true

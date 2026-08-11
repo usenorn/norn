@@ -75,20 +75,21 @@ type SetIssueParentInput struct {
 }
 
 type UpdateIssueInput struct {
-	ExpectedVersion         int
-	AcknowledgeOpenChildren bool
-	Title                   *string
-	StateID                 *uuid.UUID
-	Description             *string
-	Priority                *entity.IssuePriority
-	AssigneeID              *uuid.UUID
-	Estimate                *int
-	DueOn                   *string
-	CycleID                 *uuid.UUID
-	ProjectID               *uuid.UUID
-	AfterIssueID            *uuid.UUID
-	BeforeIssueID           *uuid.UUID
-	Clear                   []string
+	ExpectedVersion           int
+	AcknowledgeOpenChildren   bool
+	AcknowledgeUnprovenChecks bool
+	Title                     *string
+	StateID                   *uuid.UUID
+	Description               *string
+	Priority                  *entity.IssuePriority
+	AssigneeID                *uuid.UUID
+	Estimate                  *int
+	DueOn                     *string
+	CycleID                   *uuid.UUID
+	ProjectID                 *uuid.UUID
+	AfterIssueID              *uuid.UUID
+	BeforeIssueID             *uuid.UUID
+	Clear                     []string
 }
 
 type MoveIssueInput struct {

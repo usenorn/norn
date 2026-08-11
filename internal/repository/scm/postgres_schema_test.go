@@ -13,6 +13,9 @@ func statements() map[string]string {
 	return map[string]string{
 		"claimDueQuery":                     claimDueQuery,
 		"claimTransitionQuery":              claimTransitionQuery,
+		"deferTransitionQuery":              deferTransitionQuery,
+		"deferredTransitionsQuery":          deferredTransitionsQuery,
+		"settleTransitionQuery":             settleTransitionQuery,
 		"deleteConnectionQuery":             deleteConnectionQuery,
 		"deleteIdentityQuery":               deleteIdentityQuery,
 		"deleteLinkQuery":                   deleteLinkQuery,

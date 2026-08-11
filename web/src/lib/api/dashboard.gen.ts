@@ -4069,6 +4069,8 @@ export interface components {
         UpdateIssueRequest: {
             /** @description Complete this issue even though children of it are still open */
             acknowledgeOpenChildren?: boolean;
+            /** @description Record that whoever finished this issue was shown its unproven criteria first. It never changes whether the write succeeds — a person is never refused — only what the timeline can say about the override. */
+            acknowledgeUnprovenChecks?: boolean;
             /** Format: int32 */
             expectedVersion: number;
             title?: string;
@@ -4244,12 +4246,14 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_checks_unproven" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
             labels?: components["schemas"]["Label"][];
             children?: components["schemas"]["Issue"][];
+            /** @description The criteria in the way, named so an agent is told what to do next */
+            checks?: components["schemas"]["IssueCheck"][];
             relation?: components["schemas"]["IssueRelation"];
         };
         CycleConflictProblem: components["schemas"]["Problem"] & {
@@ -4471,7 +4475,7 @@ export interface components {
             version?: number;
         };
         /** @enum {string} */
-        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled" | "check_added" | "check_removed" | "check_approved" | "check_declined" | "check_waived" | "check_gap_declared" | "evidence_added";
+        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled" | "check_added" | "check_removed" | "check_approved" | "check_declined" | "check_waived" | "check_gap_declared" | "evidence_added" | "checks_overridden";
         /** @enum {string} */
         LicenceStatus: "absent" | "active" | "grace" | "expired";
         LicenceFeature: {

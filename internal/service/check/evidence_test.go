@@ -37,6 +37,11 @@ func (h *harness) captureEvidence(t *testing.T) *entity.Evidence {
 			return record, nil
 		})
 
+	h.checks.EXPECT().
+		ListByIssue(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return(nil, nil).
+		AnyTimes()
+
 	h.evidence.EXPECT().
 		Digest(gomock.Any(), h.workspaceID, gomock.Any()).
 		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) ([]entity.Evidence, error) {

@@ -20,6 +20,7 @@ type checksService struct {
 	delegations repository.IssueDelegation
 	codeLinks   repository.CodeLink
 	activity    repository.Activity
+	jobs        repository.JobProducer
 	authorizer  service.Authorizer
 	issueWriter service.Issues
 	transactor  repository.Transactor
@@ -32,6 +33,7 @@ func New(
 	delegations repository.IssueDelegation,
 	codeLinks repository.CodeLink,
 	activity repository.Activity,
+	jobs repository.JobProducer,
 	authorizer service.Authorizer,
 	issueWriter service.Issues,
 	transactor repository.Transactor,
@@ -43,6 +45,7 @@ func New(
 		delegations: delegations,
 		codeLinks:   codeLinks,
 		activity:    activity,
+		jobs:        jobs,
 		authorizer:  authorizer,
 		issueWriter: issueWriter,
 		transactor:  transactor,

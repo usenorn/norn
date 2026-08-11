@@ -12,6 +12,7 @@ import (
 	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
+	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
@@ -27,6 +28,7 @@ type harness struct {
 	delegations *delegationrepo.MockIssueDelegation
 	codeLinks   *scmrepo.MockCodeLink
 	activity    *activityrepo.MockActivity
+	jobs        *jobqueuerepo.MockJobProducer
 	issueWriter *issuesvc.MockIssues
 	authorizer  *authorizersvc.MockAuthorizer
 	service     service.Checks
@@ -48,6 +50,7 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 		delegations: delegationrepo.NewMockIssueDelegation(ctrl),
 		codeLinks:   scmrepo.NewMockCodeLink(ctrl),
 		activity:    activityrepo.NewMockActivity(ctrl),
+		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
 		issueWriter: issuesvc.NewMockIssues(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID: uuid.New(),
@@ -74,6 +77,7 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 		AnyTimes()
 
 	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.jobs.EXPECT().EnqueueSCMResume(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	h.service = checksvc.New(
 		h.checks,
@@ -82,6 +86,7 @@ func newHarness(t *testing.T, kind entity.ActorKind) *harness {
 		h.delegations,
 		h.codeLinks,
 		h.activity,
+		h.jobs,
 		h.authorizer,
 		h.issueWriter,
 		transactor,

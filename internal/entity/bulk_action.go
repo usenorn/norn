@@ -69,7 +69,8 @@ func OutcomeFor(err error) BulkOutcome {
 
 	case errors.Is(err, ErrIssueStale),
 		errors.Is(err, ErrIssueStatusTransition),
-		errors.Is(err, ErrIssueChildrenOpen):
+		errors.Is(err, ErrIssueChildrenOpen),
+		errors.Is(err, ErrIssueChecksUnproven):
 		return BulkOutcomeConflict
 
 	case errors.As(err, &validation),

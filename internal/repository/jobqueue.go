@@ -28,6 +28,7 @@ type JobProducer interface {
 	EnqueueSCMDelivery(ctx context.Context, payload entity.SCMDeliveryPayload) error
 	EnqueueSCMReconcile(ctx context.Context) error
 	EnqueueSCMBackfill(ctx context.Context, payload entity.SCMBackfillPayload) error
+	EnqueueSCMResume(ctx context.Context, payload entity.SCMResumePayload) error
 }
 
 type JobInspector interface {
