@@ -1544,9 +1544,10 @@ func workspaceAgentDTOs(agents []service.OwnedAgent) []api.WorkspaceAgent {
 
 func agentSettingsDTO(settings entity.AgentSettings) api.AgentSettings {
 	return api.AgentSettings{
-		HoldComments:     api.AgentHold(settings.HoldComments),
-		HoldStateChanges: api.AgentHold(settings.HoldStateChanges),
-		HoldIssueEdits:   api.AgentHold(settings.HoldIssueEdits),
+		HoldComments:      api.AgentHold(settings.HoldComments),
+		HoldStateChanges:  api.AgentHold(settings.HoldStateChanges),
+		HoldIssueEdits:    api.AgentHold(settings.HoldIssueEdits),
+		HoldIssueCreation: api.AgentHold(settings.HoldIssueCreation),
 	}
 }
 
@@ -1748,11 +1749,15 @@ func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
 		Id:        proposal.ID,
 		AgentId:   proposal.AgentID,
 		AgentName: proposal.AgentName,
-		IssueId:   proposal.IssueID,
 		TeamId:    proposal.TeamID,
 		Action:    api.AgentAction(proposal.Action),
 		Status:    api.AgentProposalStatus(proposal.Status),
 		CreatedAt: proposal.CreatedAt,
+	}
+
+	if proposal.IssueID != uuid.Nil {
+		issueID := proposal.IssueID
+		dto.IssueId = &issueID
 	}
 
 	dto.Body = nilIfEmpty(proposal.Change.Body)
@@ -1805,6 +1810,10 @@ func agentReasoningDTO(reasoning entity.AgentReasoning) *api.AgentReasoning {
 func waitingProposalDTO(waiting service.WaitingProposal) api.AgentProposal {
 	dto := agentProposalDTO(waiting.Proposal)
 	dto.Reasoning = agentReasoningDTO(waiting.Proposal.Reasoning)
+
+	if waiting.Team.Key != "" {
+		dto.TeamKey = &waiting.Team.Key
+	}
 
 	if waiting.Issue.ID != uuid.Nil {
 		reference := waiting.Issue.Reference()

@@ -13,7 +13,8 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 )
 
-const settingsColumns = `team_id, workspace_id, hold_comments, hold_state_changes, hold_issue_edits`
+const settingsColumns = `team_id, workspace_id, hold_comments, hold_state_changes,
+	hold_issue_edits, hold_issue_creation`
 
 const selectSettingsQuery = `
 	SELECT ` + settingsColumns + `
@@ -22,13 +23,15 @@ const selectSettingsQuery = `
 
 const upsertSettingsQuery = `
 	INSERT INTO workspace_team_agent_settings (
-	    team_id, workspace_id, hold_comments, hold_state_changes, hold_issue_edits
+	    team_id, workspace_id, hold_comments, hold_state_changes,
+	    hold_issue_edits, hold_issue_creation
 	)
-	VALUES ($1, $2, $3, $4, $5)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	ON CONFLICT (team_id) DO UPDATE SET
 	    hold_comments = excluded.hold_comments,
 	    hold_state_changes = excluded.hold_state_changes,
 	    hold_issue_edits = excluded.hold_issue_edits,
+	    hold_issue_creation = excluded.hold_issue_creation,
 	    updated_at = now()
 	RETURNING ` + settingsColumns
 
@@ -73,6 +76,7 @@ func (r *agentSettingRepository) Upsert(
 		string(settings.HoldComments),
 		string(settings.HoldStateChanges),
 		string(settings.HoldIssueEdits),
+		string(settings.HoldIssueCreation),
 	))
 	if err != nil {
 		return entity.AgentSettings{}, fmt.Errorf("save agent settings: %w", err)
@@ -83,14 +87,14 @@ func (r *agentSettingRepository) Upsert(
 
 func scan(row *sql.Row) (entity.AgentSettings, error) {
 	var (
-		rawTeam, rawWorkspace         string
-		comments, stateChanges, edits string
-		settings                      entity.AgentSettings
+		rawTeam, rawWorkspace                   string
+		comments, stateChanges, edits, creation string
+		settings                                entity.AgentSettings
 	)
 
 	if err := row.Scan(
 		&rawTeam, &rawWorkspace,
-		&comments, &stateChanges, &edits,
+		&comments, &stateChanges, &edits, &creation,
 	); err != nil {
 		return entity.AgentSettings{}, err
 	}
@@ -98,6 +102,7 @@ func scan(row *sql.Row) (entity.AgentSettings, error) {
 	settings.HoldComments = entity.AgentHold(comments)
 	settings.HoldStateChanges = entity.AgentHold(stateChanges)
 	settings.HoldIssueEdits = entity.AgentHold(edits)
+	settings.HoldIssueCreation = entity.AgentHold(creation)
 
 	teamID, err := uuid.Parse(rawTeam)
 	if err != nil {

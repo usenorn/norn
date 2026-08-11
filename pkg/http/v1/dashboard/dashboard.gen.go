@@ -257,6 +257,7 @@ func (e ActivitySubjectKind) Valid() bool {
 const (
 	AgentActionCheckSet    AgentAction = "check_set"
 	AgentActionComment     AgentAction = "comment"
+	AgentActionIssueCreate AgentAction = "issue_create"
 	AgentActionIssueEdit   AgentAction = "issue_edit"
 	AgentActionStateChange AgentAction = "state_change"
 )
@@ -267,6 +268,8 @@ func (e AgentAction) Valid() bool {
 	case AgentActionCheckSet:
 		return true
 	case AgentActionComment:
+		return true
+	case AgentActionIssueCreate:
 		return true
 	case AgentActionIssueEdit:
 		return true
@@ -3959,7 +3962,9 @@ type AgentProposal struct {
 	Description        *string               `json:"description,omitempty"`
 	Failure            *string               `json:"failure,omitempty"`
 	Id                 openapi_types.UUID    `json:"id"`
-	IssueId            openapi_types.UUID    `json:"issueId"`
+
+	// IssueId Absent on a held issue creation, where the issue does not exist yet
+	IssueId *openapi_types.UUID `json:"issueId,omitempty"`
 
 	// IssueReference So an approver can open the issue the proposal is about
 	IssueReference *string `json:"issueReference,omitempty"`
@@ -3976,7 +3981,10 @@ type AgentProposal struct {
 	StateName *string             `json:"stateName,omitempty"`
 	Status    AgentProposalStatus `json:"status"`
 	TeamId    openapi_types.UUID  `json:"teamId"`
-	Title     *string             `json:"title,omitempty"`
+
+	// TeamKey The team a held issue creation would file its issue on
+	TeamKey *string `json:"teamKey,omitempty"`
+	Title   *string `json:"title,omitempty"`
 }
 
 // AgentProposalStatus defines model for AgentProposalStatus.
@@ -3993,6 +4001,9 @@ type AgentReasoning struct {
 type AgentSettings struct {
 	// HoldComments Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
 	HoldComments AgentHold `json:"holdComments"`
+
+	// HoldIssueCreation Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
+	HoldIssueCreation AgentHold `json:"holdIssueCreation"`
 
 	// HoldIssueEdits Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
 	HoldIssueEdits AgentHold `json:"holdIssueEdits"`
@@ -4464,6 +4475,9 @@ type CreateIssueRequest struct {
 	LabelIds    *[]openapi_types.UUID `json:"labelIds,omitempty"`
 	Priority    *IssuePriority        `json:"priority,omitempty"`
 	ProjectId   *openapi_types.UUID   `json:"projectId,omitempty"`
+
+	// Reasoning What the agent saw, what it read, and what it is unsure about, so deciding a proposal is a read rather than an investigation.
+	Reasoning *AgentReasoning `json:"reasoning,omitempty"`
 
 	// StateId A state on the team; absent files the issue into the team's default state
 	StateId *openapi_types.UUID `json:"stateId,omitempty"`

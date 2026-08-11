@@ -95,6 +95,7 @@ func (h *handler) CreateWorkspaceIssue(
 		WorkspaceID: request.WorkspaceId,
 		TeamID:      request.Body.TeamId,
 		Title:       request.Body.Title,
+		Reasoning:   agentReasoningFrom(request.Body.Reasoning),
 	}
 
 	if request.Body.Description != nil {

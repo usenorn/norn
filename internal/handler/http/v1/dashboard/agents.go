@@ -150,11 +150,12 @@ func (h *handler) SetTeamAgentSettings(
 	request api.SetTeamAgentSettingsRequestObject,
 ) (api.SetTeamAgentSettingsResponseObject, error) {
 	settings, err := h.agents.Configure(ctx, service.ConfigureAgentInput{
-		WorkspaceID:      request.WorkspaceId,
-		TeamID:           request.TeamId,
-		HoldComments:     entity.AgentHold(request.Body.HoldComments),
-		HoldStateChanges: entity.AgentHold(request.Body.HoldStateChanges),
-		HoldIssueEdits:   entity.AgentHold(request.Body.HoldIssueEdits),
+		WorkspaceID:       request.WorkspaceId,
+		TeamID:            request.TeamId,
+		HoldComments:      entity.AgentHold(request.Body.HoldComments),
+		HoldStateChanges:  entity.AgentHold(request.Body.HoldStateChanges),
+		HoldIssueEdits:    entity.AgentHold(request.Body.HoldIssueEdits),
+		HoldIssueCreation: entity.AgentHold(request.Body.HoldIssueCreation),
 	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

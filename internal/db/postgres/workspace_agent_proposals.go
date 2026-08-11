@@ -28,7 +28,7 @@ type WorkspaceAgentProposal struct {
 	ID                 string      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	WorkspaceID        string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
 	AgentID            string      `boil:"agent_id" json:"agent_id" toml:"agent_id" yaml:"agent_id"`
-	IssueID            string      `boil:"issue_id" json:"issue_id" toml:"issue_id" yaml:"issue_id"`
+	IssueID            null.String `boil:"issue_id" json:"issue_id,omitempty" toml:"issue_id" yaml:"issue_id,omitempty"`
 	TeamID             string      `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
 	Action             string      `boil:"action" json:"action" toml:"action" yaml:"action"`
 	Change             types.JSON  `boil:"change" json:"change" toml:"change" yaml:"change"`
@@ -135,7 +135,7 @@ var WorkspaceAgentProposalWhere = struct {
 	ID                 whereHelperstring
 	WorkspaceID        whereHelperstring
 	AgentID            whereHelperstring
-	IssueID            whereHelperstring
+	IssueID            whereHelpernull_String
 	TeamID             whereHelperstring
 	Action             whereHelperstring
 	Change             whereHelpertypes_JSON
@@ -150,7 +150,7 @@ var WorkspaceAgentProposalWhere = struct {
 	ID:                 whereHelperstring{field: "\"workspace_agent_proposals\".\"id\""},
 	WorkspaceID:        whereHelperstring{field: "\"workspace_agent_proposals\".\"workspace_id\""},
 	AgentID:            whereHelperstring{field: "\"workspace_agent_proposals\".\"agent_id\""},
-	IssueID:            whereHelperstring{field: "\"workspace_agent_proposals\".\"issue_id\""},
+	IssueID:            whereHelpernull_String{field: "\"workspace_agent_proposals\".\"issue_id\""},
 	TeamID:             whereHelperstring{field: "\"workspace_agent_proposals\".\"team_id\""},
 	Action:             whereHelperstring{field: "\"workspace_agent_proposals\".\"action\""},
 	Change:             whereHelpertypes_JSON{field: "\"workspace_agent_proposals\".\"change\""},
@@ -258,8 +258,8 @@ type workspaceAgentProposalL struct{}
 
 var (
 	workspaceAgentProposalAllColumns            = []string{"id", "workspace_id", "agent_id", "issue_id", "team_id", "action", "change", "status", "decided_by_account_id", "decided_at", "failure", "created_at", "updated_at", "reasoning"}
-	workspaceAgentProposalColumnsWithoutDefault = []string{"workspace_id", "agent_id", "issue_id", "team_id", "action", "change"}
-	workspaceAgentProposalColumnsWithDefault    = []string{"id", "status", "decided_by_account_id", "decided_at", "failure", "created_at", "updated_at", "reasoning"}
+	workspaceAgentProposalColumnsWithoutDefault = []string{"workspace_id", "agent_id", "team_id", "action", "change"}
+	workspaceAgentProposalColumnsWithDefault    = []string{"id", "issue_id", "status", "decided_by_account_id", "decided_at", "failure", "created_at", "updated_at", "reasoning"}
 	workspaceAgentProposalPrimaryKeyColumns     = []string{"id"}
 	workspaceAgentProposalGeneratedColumns      = []string{}
 )
@@ -890,7 +890,9 @@ func (workspaceAgentProposalL) LoadIssue(ctx context.Context, e boil.ContextExec
 		if object.R == nil {
 			object.R = &workspaceAgentProposalR{}
 		}
-		args[object.IssueID] = struct{}{}
+		if !queries.IsNil(object.IssueID) {
+			args[object.IssueID] = struct{}{}
+		}
 
 	} else {
 		for _, obj := range slice {
@@ -898,7 +900,9 @@ func (workspaceAgentProposalL) LoadIssue(ctx context.Context, e boil.ContextExec
 				obj.R = &workspaceAgentProposalR{}
 			}
 
-			args[obj.IssueID] = struct{}{}
+			if !queries.IsNil(obj.IssueID) {
+				args[obj.IssueID] = struct{}{}
+			}
 
 		}
 	}
@@ -963,7 +967,7 @@ func (workspaceAgentProposalL) LoadIssue(ctx context.Context, e boil.ContextExec
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.IssueID == foreign.ID {
+			if queries.Equal(local.IssueID, foreign.ID) {
 				local.R.Issue = foreign
 				if foreign.R == nil {
 					foreign.R = &workspaceIssueR{}
@@ -1251,7 +1255,7 @@ func (o *WorkspaceAgentProposal) SetIssue(ctx context.Context, exec boil.Context
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.IssueID = related.ID
+	queries.Assign(&o.IssueID, related.ID)
 	if o.R == nil {
 		o.R = &workspaceAgentProposalR{
 			Issue: related,
@@ -1268,6 +1272,39 @@ func (o *WorkspaceAgentProposal) SetIssue(ctx context.Context, exec boil.Context
 		related.R.IssueWorkspaceAgentProposals = append(related.R.IssueWorkspaceAgentProposals, o)
 	}
 
+	return nil
+}
+
+// RemoveIssue relationship.
+// Sets o.R.Issue to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceAgentProposal) RemoveIssue(ctx context.Context, exec boil.ContextExecutor, related *WorkspaceIssue) error {
+	var err error
+
+	queries.SetScanner(&o.IssueID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("issue_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Issue = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.IssueWorkspaceAgentProposals {
+		if queries.Equal(o.IssueID, ri.IssueID) {
+			continue
+		}
+
+		ln := len(related.R.IssueWorkspaceAgentProposals)
+		if ln > 1 && i < ln-1 {
+			related.R.IssueWorkspaceAgentProposals[i] = related.R.IssueWorkspaceAgentProposals[ln-1]
+		}
+		related.R.IssueWorkspaceAgentProposals = related.R.IssueWorkspaceAgentProposals[:ln-1]
+		break
+	}
 	return nil
 }
 

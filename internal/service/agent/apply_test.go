@@ -119,3 +119,75 @@ func TestAnApprovedStateChangeCarriesThePermissionTheWriteChecks(t *testing.T) {
 		)
 	}
 }
+
+func TestApprovingAHeldCreationFilesTheIssueTheAgentAsked(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	title := "Retries drop the idempotency key"
+	description := "The second attempt sends a fresh key."
+	priority := entity.IssuePriorityHigh
+	labelID, teamID, agentID := uuid.New(), uuid.New(), uuid.New()
+
+	held := entity.AgentProposal{
+		ID:          uuid.New(),
+		WorkspaceID: h.workspaceID,
+		AgentID:     agentID,
+		TeamID:      teamID,
+		Action:      entity.AgentActionIssueCreate,
+		Status:      entity.AgentProposalPending,
+		Change: entity.AgentChange{
+			Title:       &title,
+			Description: &description,
+			Priority:    &priority,
+			LabelIDs:    []uuid.UUID{labelID},
+		},
+	}
+
+	h.proposals.EXPECT().GetByID(gomock.Any(), h.workspaceID, held.ID).Return(held, nil).AnyTimes()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{
+			ID:          agentID,
+			WorkspaceID: h.workspaceID,
+			AccountID:   uuid.New(),
+			Status:      entity.AgentStatusActive,
+		}, nil)
+
+	h.proposals.EXPECT().
+		Settle(gomock.Any(), held.ID, entity.AgentProposalApplied, h.adminID, gomock.Any(), "").
+		Return(nil)
+
+	var filed service.CreateIssueInput
+
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, input service.CreateIssueInput) (entity.Issue, error) {
+			filed = input
+
+			return entity.Issue{ID: uuid.New()}, nil
+		})
+
+	if _, err := h.service.Approve(context.Background(), h.workspaceID, held.ID); err != nil {
+		t.Fatalf("approve: %v", err)
+	}
+
+	if filed.TeamID != teamID {
+		t.Errorf("filed on team %v, want %v", filed.TeamID, teamID)
+	}
+
+	if filed.Title != title || filed.Description != description {
+		t.Errorf(
+			"approving filed %q / %q, want what the approver was shown",
+			filed.Title, filed.Description,
+		)
+	}
+
+	if filed.Priority != priority {
+		t.Errorf("priority = %q, want %q", filed.Priority, priority)
+	}
+
+	if len(filed.LabelIDs) != 1 || filed.LabelIDs[0] != labelID {
+		t.Errorf("labels = %v, want the one the agent chose", filed.LabelIDs)
+	}
+}

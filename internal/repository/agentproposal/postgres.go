@@ -15,7 +15,8 @@ import (
 )
 
 const proposalColumns = `
-	p.id, p.workspace_id, p.agent_id, coalesce(a.name, ''), p.issue_id, p.team_id,
+	p.id, p.workspace_id, p.agent_id, coalesce(a.name, ''),
+	coalesce(p.issue_id::text, ''), p.team_id,
 	p.action, p.change, p.reasoning, p.status, coalesce(p.decided_by_account_id::text, ''),
 	p.decided_at, coalesce(p.failure, ''), p.created_at, p.updated_at
 	FROM workspace_agent_proposals p
@@ -25,7 +26,7 @@ const insertProposalQuery = `
 	INSERT INTO workspace_agent_proposals (
 	    id, workspace_id, agent_id, issue_id, team_id, action, change, reasoning
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	VALUES ($1, $2, $3, nullif($4, '')::uuid, $5, $6, $7, $8)`
 
 const settleProposalQuery = `
 	UPDATE workspace_agent_proposals
@@ -65,7 +66,7 @@ func (r *agentProposalRepository) Create(
 		proposal.ID.String(),
 		proposal.WorkspaceID.String(),
 		proposal.AgentID.String(),
-		proposal.IssueID.String(),
+		issueReference(proposal.IssueID),
 		proposal.TeamID.String(),
 		string(proposal.Action),
 		change,
@@ -75,6 +76,14 @@ func (r *agentProposalRepository) Create(
 	}
 
 	return r.GetByID(ctx, proposal.WorkspaceID, proposal.ID)
+}
+
+func issueReference(issueID uuid.UUID) string {
+	if issueID == uuid.Nil {
+		return ""
+	}
+
+	return issueID.String()
 }
 
 func (r *agentProposalRepository) GetByID(
@@ -215,7 +224,6 @@ func (r *agentProposalRepository) many(
 			&proposal.ID:          rawID,
 			&proposal.WorkspaceID: rawWorkspace,
 			&proposal.AgentID:     rawAgent,
-			&proposal.IssueID:     rawIssue,
 			&proposal.TeamID:      rawTeam,
 		} {
 			parsed, err := uuid.Parse(raw)
@@ -224,6 +232,15 @@ func (r *agentProposalRepository) many(
 			}
 
 			*target = parsed
+		}
+
+		if rawIssue != "" {
+			issueID, err := uuid.Parse(rawIssue)
+			if err != nil {
+				return nil, fmt.Errorf("parse agent proposal issue id: %w", err)
+			}
+
+			proposal.IssueID = issueID
 		}
 
 		if err := json.Unmarshal(change, &proposal.Change); err != nil {

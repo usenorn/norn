@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -26,7 +27,20 @@ var disclosedFailures = []error{
 	entity.ErrSearchKindUnknown,
 	entity.ErrIssueCommentNotReplyable,
 	entity.ErrIssueReferenceInvalid,
+	entity.ErrCheckNotFound,
+	entity.ErrCheckSettled,
+	entity.ErrCheckDeclined,
+	entity.ErrCheckLimitReached,
+	entity.ErrEvidenceEmpty,
 	errWorkspaceUnknown,
+}
+
+func blockingCount(blocking int) string {
+	if blocking == 1 {
+		return "one of its criteria is not proven"
+	}
+
+	return strconv.Itoa(blocking) + " of its criteria are not proven"
 }
 
 func toolFailure(ctx context.Context, err error) error {
@@ -41,6 +55,25 @@ func toolFailure(ctx context.Context, err error) error {
 			"this workspace holds changes like this one until a person approves them; it is "+
 				"waiting as proposal %s and will apply if they accept it. Do not retry it",
 			held.ProposalID,
+		)
+	}
+
+	var unproven entity.IssueChecksUnprovenError
+	if errors.As(err, &unproven) {
+		return fmt.Errorf(
+			"this issue is not finished: %s. Do not retry the move. Either prove what is left "+
+				"with norn_submit_evidence, or say plainly in a comment that you cannot, so a "+
+				"person can waive the criterion or record it as a gap. Unproven criteria: %s",
+			blockingCount(len(unproven.Checks)),
+			entity.CheckStatements(unproven.Checks),
+		)
+	}
+
+	if errors.Is(err, entity.ErrCheckDecisionNotPersonal) ||
+		errors.Is(err, entity.ErrCheckWaiverNotPersonal) {
+		return errors.New(
+			"only a person can approve or waive a criterion; an agent cannot settle what it is " +
+				"graded against. Ask in a comment instead",
 		)
 	}
 

@@ -39,16 +39,20 @@ func (s *agentsService) Configure(
 			"holdStateChanges", input.HoldStateChanges, entity.AgentActionStateChange,
 		),
 		entity.ValidateAgentHold("holdIssueEdits", input.HoldIssueEdits, entity.AgentActionIssueEdit),
+		entity.ValidateAgentHold(
+			"holdIssueCreation", input.HoldIssueCreation, entity.AgentActionIssueCreate,
+		),
 	); err != nil {
 		return entity.AgentSettings{}, err
 	}
 
 	return s.settings.Upsert(ctx, entity.AgentSettings{
-		TeamID:           input.TeamID,
-		WorkspaceID:      input.WorkspaceID,
-		HoldComments:     input.HoldComments,
-		HoldStateChanges: input.HoldStateChanges,
-		HoldIssueEdits:   input.HoldIssueEdits,
+		TeamID:            input.TeamID,
+		WorkspaceID:       input.WorkspaceID,
+		HoldComments:      input.HoldComments,
+		HoldStateChanges:  input.HoldStateChanges,
+		HoldIssueEdits:    input.HoldIssueEdits,
+		HoldIssueCreation: input.HoldIssueCreation,
 	})
 }
 
@@ -116,6 +120,10 @@ func (s *agentsService) context(
 	proposal entity.AgentProposal,
 ) service.WaitingProposal {
 	waiting := service.WaitingProposal{Proposal: proposal}
+
+	if team, err := s.teams.GetByID(ctx, proposal.TeamID); err == nil {
+		waiting.Team = team
+	}
 
 	if proposal.IssueID == uuid.Nil {
 		return waiting
@@ -338,6 +346,10 @@ func (s *agentsService) apply(
 		return err
 	case entity.AgentActionCheckSet:
 		return s.approveChecks(ctx, proposal)
+	case entity.AgentActionIssueCreate:
+		_, err := s.issues.Create(acting, creationFrom(proposal))
+
+		return err
 	case entity.AgentActionStateChange, entity.AgentActionIssueEdit:
 		_, err := s.issues.Update(
 			acting,
@@ -362,6 +374,49 @@ func (s *agentsService) apply(
 	default:
 		return entity.ErrAgentProposalNotFound
 	}
+}
+
+func creationFrom(proposal entity.AgentProposal) service.CreateIssueInput {
+	change := proposal.Change
+
+	input := service.CreateIssueInput{
+		WorkspaceID: proposal.WorkspaceID,
+		TeamID:      proposal.TeamID,
+		LabelIDs:    change.LabelIDs,
+	}
+
+	if change.Title != nil {
+		input.Title = *change.Title
+	}
+
+	if change.Description != nil {
+		input.Description = *change.Description
+	}
+
+	if change.Priority != nil {
+		input.Priority = *change.Priority
+	}
+
+	if change.Estimate != nil {
+		input.Estimate = *change.Estimate
+	}
+
+	if change.DueOn != nil {
+		input.DueOn = *change.DueOn
+	}
+
+	for target, source := range map[*uuid.UUID]*uuid.UUID{
+		&input.StateID:           change.StateID,
+		&input.AssigneeAccountID: change.AssigneeID,
+		&input.CycleID:           change.CycleID,
+		&input.ProjectID:         change.ProjectID,
+	} {
+		if source != nil {
+			*target = *source
+		}
+	}
+
+	return input
 }
 
 func (s *agentsService) approveChecks(ctx context.Context, proposal entity.AgentProposal) error {

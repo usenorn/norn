@@ -184,6 +184,57 @@ func refutedBefore(records []EvidenceRecord, proof Evidence) bool {
 	return false
 }
 
+type CheckAwaiting string
+
+const (
+	CheckAwaitingNothing        CheckAwaiting = ""
+	CheckAwaitingCorrection     CheckAwaiting = "correction"
+	CheckAwaitingFreshProof     CheckAwaiting = "fresh_proof"
+	CheckAwaitingAttestation    CheckAwaiting = "attestation"
+	CheckAwaitingPriorFailure   CheckAwaiting = "prior_failure"
+	CheckAwaitingPositiveResult CheckAwaiting = "positive_result"
+	CheckAwaitingEvidence       CheckAwaiting = "evidence"
+)
+
+func (r CheckReport) Awaiting() CheckAwaiting {
+	switch r.State {
+	case CheckStateProven, CheckStateWaived, CheckStateGap:
+		return CheckAwaitingNothing
+	case CheckStateFailed:
+		return CheckAwaitingCorrection
+	}
+
+	if _, proven := r.Check.newestProof(r.Evidence); proven {
+		return CheckAwaitingPriorFailure
+	}
+
+	if r.Check.Method.NeedsAttestation() && r.unattested() {
+		return CheckAwaitingAttestation
+	}
+
+	if r.Expired() {
+		return CheckAwaitingFreshProof
+	}
+
+	if r.RestsOnAbsence() {
+		return CheckAwaitingPositiveResult
+	}
+
+	return CheckAwaitingEvidence
+}
+
+func (r CheckReport) unattested() bool {
+	for _, record := range r.Evidence {
+		if !record.Expiry.Expired() &&
+			record.Evidence.Verdict.Proves() &&
+			!record.Evidence.Attested() {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (r CheckReport) Blocks() bool {
 	return r.Check.Approval == CheckApprovalApproved && !r.State.Settled()
 }

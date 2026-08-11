@@ -4877,6 +4877,7 @@ export interface components {
             /** Format: uuid */
             projectId?: string;
             labelIds?: string[];
+            reasoning?: components["schemas"]["AgentReasoning"];
         };
         /**
          * @description An integration account is one Norn created to stand behind a source control connection. It authors the content that connection mirrors, so it reaches every surface that names an author even though nobody signs in as it.
@@ -4947,12 +4948,13 @@ export interface components {
             holdComments: components["schemas"]["AgentHold"];
             holdStateChanges: components["schemas"]["AgentHold"];
             holdIssueEdits: components["schemas"]["AgentHold"];
+            holdIssueCreation: components["schemas"]["AgentHold"];
         };
         /**
          * @description `check_set` is always held whatever a team's settings say. A new criterion changes the definition of done, and that is not something an agent settles alone.
          * @enum {string}
          */
-        AgentAction: "comment" | "state_change" | "issue_edit" | "check_set";
+        AgentAction: "comment" | "state_change" | "issue_edit" | "issue_create" | "check_set";
         /** @enum {string} */
         AgentProposalStatus: "pending" | "rejected" | "applied" | "failed";
         AgentProposal: {
@@ -4961,8 +4963,11 @@ export interface components {
             /** Format: uuid */
             agentId: string;
             agentName: string;
-            /** Format: uuid */
-            issueId: string;
+            /**
+             * Format: uuid
+             * @description Absent on a held issue creation, where the issue does not exist yet
+             */
+            issueId?: string;
             /** Format: uuid */
             teamId: string;
             action: components["schemas"]["AgentAction"];
@@ -4978,6 +4983,8 @@ export interface components {
             /** @description So an approver can open the issue the proposal is about */
             issueReference?: string;
             issueTitle?: string;
+            /** @description The team a held issue creation would file its issue on */
+            teamKey?: string;
             /** @description The state a state change would move the issue to */
             stateName?: string;
             /** @description The criteria a check set proposal would add, in full */

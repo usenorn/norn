@@ -136,6 +136,10 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		}
 	}
 
+	if err := s.heldCreation(ctx, decision, input); err != nil {
+		return entity.Issue{}, err
+	}
+
 	arriving := entity.Issue{
 		WorkspaceID:        input.WorkspaceID,
 		TeamID:             input.TeamID,

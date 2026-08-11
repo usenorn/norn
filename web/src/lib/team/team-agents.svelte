@@ -34,14 +34,15 @@
 
 	const current = $derived<AgentSettings>(
 		saved ??
-			settings ?? { holdComments: "never", holdStateChanges: "never", holdIssueEdits: "never" }
+			settings ?? {
+				holdComments: "never",
+				holdStateChanges: "never",
+				holdIssueEdits: "never",
+				holdIssueCreation: "never",
+			}
 	);
 	const disabled = $derived(locked || working);
-	const holding = $derived(
-		current.holdComments !== "never" ||
-			current.holdStateChanges !== "never" ||
-			current.holdIssueEdits !== "never"
-	);
+	const holding = $derived(holdLabels.some((rule) => current[rule.key] !== "never"));
 
 	async function save(next: Partial<AgentSettings>) {
 		working = true;

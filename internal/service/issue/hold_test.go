@@ -264,3 +264,88 @@ func TestAWriteThatChangesNothingIsNeverHeld(t *testing.T) {
 		t.Fatalf("a write that changes nothing was held: %v", err)
 	}
 }
+
+func TestAnAgentsNewIssueIsHeldBeforeItReachesAnybodysBoard(t *testing.T) {
+	h := newHarness(t)
+	h.actor = entity.Actor{Kind: entity.ActorKindAgent, AccountID: uuid.New()}
+	h.holding(entity.AgentSettings{HoldIssueCreation: entity.AgentHoldAlways})
+	h.expectGateDecision()
+
+	workspaceID, teamID := uuid.New(), uuid.New()
+	stateID := uuid.New()
+
+	h.states.EXPECT().
+		DefaultForTeam(gomock.Any(), teamID).
+		Return(entity.WorkflowState{ID: stateID, TeamID: teamID, Name: "Backlog", IsDefault: true}, nil).
+		AnyTimes()
+
+	captured := h.expectHeld(t)
+
+	_, err := h.service.Create(context.Background(), service.CreateIssueInput{
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		Title:       "Retries drop the idempotency key",
+		Description: "The second attempt sends a fresh key.",
+		Priority:    entity.IssuePriorityHigh,
+	})
+
+	var held entity.AgentActionHeldError
+	if !errors.As(err, &held) {
+		t.Fatalf("Create = %v, want the write held; an unheld create puts the issue on the board", err)
+	}
+
+	if captured.Action != entity.AgentActionIssueCreate {
+		t.Errorf("held as %q, want issue_create", captured.Action)
+	}
+
+	if captured.IssueID != uuid.Nil {
+		t.Errorf("the proposal names issue %v, but the issue does not exist yet", captured.IssueID)
+	}
+
+	if captured.TeamID != teamID {
+		t.Errorf("team = %v, want %v; approving it has to know where the issue lands", captured.TeamID, teamID)
+	}
+
+	if captured.Change.Title == nil || *captured.Change.Title != "Retries drop the idempotency key" {
+		t.Errorf("the title never reached the proposal: %+v", captured.Change)
+	}
+
+	if captured.Change.Description == nil {
+		t.Error("the description never reached the proposal, so approving it would file an empty issue")
+	}
+
+	if captured.Change.Priority == nil || *captured.Change.Priority != entity.IssuePriorityHigh {
+		t.Errorf("the priority never reached the proposal: %+v", captured.Change)
+	}
+}
+
+func TestATeamThatHoldsEditsDoesNotAlsoHoldNewIssues(t *testing.T) {
+	h := newHarness(t)
+	h.actor = entity.Actor{Kind: entity.ActorKindAgent, AccountID: uuid.New()}
+	h.holding(entity.AgentSettings{HoldIssueEdits: entity.AgentHoldAlways})
+	h.expectGateDecision()
+
+	workspaceID, teamID := uuid.New(), uuid.New()
+
+	h.states.EXPECT().
+		DefaultForTeam(gomock.Any(), teamID).
+		Return(entity.WorkflowState{ID: uuid.New(), TeamID: teamID, Name: "Backlog", IsDefault: true}, nil).
+		AnyTimes()
+
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil)
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, issue entity.Issue) (entity.Issue, error) {
+			issue.ID = uuid.New()
+
+			return issue, nil
+		})
+
+	if _, err := h.service.Create(context.Background(), service.CreateIssueInput{
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		Title:       "Retries drop the idempotency key",
+	}); err != nil {
+		t.Fatalf("Create = %v; holding edits must not quietly hold new issues too", err)
+	}
+}

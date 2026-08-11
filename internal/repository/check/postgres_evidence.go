@@ -14,45 +14,49 @@ import (
 )
 
 const evidenceColumns = `
-    id, workspace_id, issue_id, check_id, verdict, channel, command, output,
-    output_truncated, redactions, exit_code, observed_at, received_at,
-    actor_kind, coalesce(actor_account_id::text, ''), actor_name,
-    coalesce(code_link_id::text, ''), commit_sha,
-    coalesce(scrubbed_by_account_id::text, ''), scrubbed_at`
+    e.id, e.workspace_id, e.issue_id, e.check_id, e.verdict, e.channel, e.command, e.output,
+    e.output_truncated, e.redactions, e.exit_code, e.observed_at, e.received_at,
+    e.actor_kind, coalesce(e.actor_account_id::text, ''), coalesce(acct.display_name, ''),
+    coalesce(e.code_link_id::text, ''), e.commit_sha,
+    coalesce(e.scrubbed_by_account_id::text, ''), e.scrubbed_at
+FROM workspace_check_evidence e
+LEFT JOIN accounts acct ON acct.id = e.actor_account_id`
 
 const insertEvidenceQuery = `
 INSERT INTO workspace_check_evidence (
     id, workspace_id, issue_id, check_id, verdict, channel, command, output,
     output_truncated, redactions, exit_code, observed_at, received_at,
-    actor_kind, actor_account_id, actor_name, code_link_id, commit_sha
+    actor_kind, actor_account_id, code_link_id, commit_sha
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-RETURNING` + evidenceColumns
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`
+
+const evidenceByIDQuery = `
+SELECT` + evidenceColumns + `
+WHERE e.id = $1`
 
 const evidenceByCheckQuery = `
 SELECT` + evidenceColumns + `
-FROM workspace_check_evidence
-WHERE workspace_id = $1 AND check_id = $2
-ORDER BY received_at, id`
+WHERE e.workspace_id = $1 AND e.check_id = $2
+ORDER BY e.received_at, e.id`
 
 const evidenceDigestColumns = `
-    id, workspace_id, issue_id, check_id, verdict, channel, '' AS command, '' AS output,
-    output_truncated, redactions, exit_code, observed_at, received_at,
-    actor_kind, coalesce(actor_account_id::text, ''), actor_name,
-    coalesce(code_link_id::text, ''), commit_sha,
-    coalesce(scrubbed_by_account_id::text, ''), scrubbed_at`
+    e.id, e.workspace_id, e.issue_id, e.check_id, e.verdict, e.channel, '' AS command, '' AS output,
+    e.output_truncated, e.redactions, e.exit_code, e.observed_at, e.received_at,
+    e.actor_kind, coalesce(e.actor_account_id::text, ''), coalesce(acct.display_name, ''),
+    coalesce(e.code_link_id::text, ''), e.commit_sha,
+    coalesce(e.scrubbed_by_account_id::text, ''), e.scrubbed_at
+FROM workspace_check_evidence e
+LEFT JOIN accounts acct ON acct.id = e.actor_account_id`
 
 const evidenceDigestByIssueQuery = `
 SELECT` + evidenceDigestColumns + `
-FROM workspace_check_evidence
-WHERE workspace_id = $1 AND issue_id = $2
-ORDER BY received_at, id`
+WHERE e.workspace_id = $1 AND e.issue_id = $2
+ORDER BY e.received_at, e.id`
 
 const evidenceByIssueQuery = `
 SELECT` + evidenceColumns + `
-FROM workspace_check_evidence
-WHERE workspace_id = $1 AND issue_id = $2
-ORDER BY received_at, id`
+WHERE e.workspace_id = $1 AND e.issue_id = $2
+ORDER BY e.received_at, e.id`
 
 type evidenceRepository struct {
 	db *postgres.Client
@@ -169,7 +173,7 @@ func (r *evidenceRepository) Append(
 		exitCode = *evidence.ExitCode
 	}
 
-	stored, err := scanEvidence(r.db.Querier(ctx).QueryRowContext(
+	if _, err := r.db.Querier(ctx).ExecContext(
 		ctx,
 		insertEvidenceQuery,
 		evidence.ID.String(),
@@ -187,12 +191,17 @@ func (r *evidenceRepository) Append(
 		evidence.ReceivedAt,
 		string(evidence.Actor.Kind),
 		idOrNil(evidence.Actor.AccountID),
-		evidence.ActorName,
 		idOrNil(evidence.CodeLinkID),
 		evidence.CommitSHA,
-	))
-	if err != nil {
+	); err != nil {
 		return entity.Evidence{}, fmt.Errorf("insert evidence: %w", err)
+	}
+
+	stored, err := scanEvidence(
+		r.db.Querier(ctx).QueryRowContext(ctx, evidenceByIDQuery, evidence.ID.String()),
+	)
+	if err != nil {
+		return entity.Evidence{}, fmt.Errorf("read stored evidence: %w", err)
 	}
 
 	return stored, nil

@@ -22,6 +22,7 @@ const (
 	AgentActionComment     AgentAction = "comment"
 	AgentActionStateChange AgentAction = "state_change"
 	AgentActionIssueEdit   AgentAction = "issue_edit"
+	AgentActionIssueCreate AgentAction = "issue_create"
 	AgentActionCheckSet    AgentAction = "check_set"
 )
 
@@ -30,6 +31,7 @@ func AgentActions() []AgentAction {
 		AgentActionComment,
 		AgentActionStateChange,
 		AgentActionIssueEdit,
+		AgentActionIssueCreate,
 		AgentActionCheckSet,
 	}
 }
@@ -77,11 +79,12 @@ func ValidateAgentHold(field string, hold AgentHold, action AgentAction) FieldEr
 }
 
 type AgentSettings struct {
-	TeamID           uuid.UUID
-	WorkspaceID      uuid.UUID
-	HoldComments     AgentHold
-	HoldStateChanges AgentHold
-	HoldIssueEdits   AgentHold
+	TeamID            uuid.UUID
+	WorkspaceID       uuid.UUID
+	HoldComments      AgentHold
+	HoldStateChanges  AgentHold
+	HoldIssueEdits    AgentHold
+	HoldIssueCreation AgentHold
 }
 
 func (s AgentSettings) Holds(action AgentAction) AgentHold {
@@ -92,6 +95,8 @@ func (s AgentSettings) Holds(action AgentAction) AgentHold {
 		return normalisedHold(s.HoldStateChanges)
 	case AgentActionIssueEdit:
 		return normalisedHold(s.HoldIssueEdits)
+	case AgentActionIssueCreate:
+		return normalisedHold(s.HoldIssueCreation)
 	case AgentActionCheckSet:
 		return AgentHoldAlways
 	default:
@@ -115,6 +120,7 @@ func (s AgentSettings) Normalised() AgentSettings {
 	s.HoldComments = normalisedHold(s.HoldComments)
 	s.HoldStateChanges = normalisedHold(s.HoldStateChanges)
 	s.HoldIssueEdits = normalisedHold(s.HoldIssueEdits)
+	s.HoldIssueCreation = normalisedHold(s.HoldIssueCreation)
 
 	return s
 }
@@ -131,7 +137,7 @@ func (a AgentAction) Scopes() APIScopeSet {
 	switch a {
 	case AgentActionComment:
 		return APIScopeSet{NewAPIScope(ResourceComment, ActionManage)}
-	case AgentActionStateChange, AgentActionIssueEdit:
+	case AgentActionStateChange, AgentActionIssueEdit, AgentActionIssueCreate:
 		return APIScopeSet{NewAPIScope(ResourceIssue, ActionManage)}
 	case AgentActionCheckSet:
 		return APIScopeSet{NewAPIScope(ResourceCheck, ActionManage)}
@@ -187,19 +193,20 @@ func (s AgentProposalStatus) CanTransitionTo(target AgentProposalStatus) bool {
 }
 
 type AgentChange struct {
-	ExpectedVersion int
-	Body            string
-	StateID         *uuid.UUID
-	Title           *string
-	Description     *string
-	Priority        *IssuePriority
-	AssigneeID      *uuid.UUID
-	Estimate        *int
-	DueOn           *string
-	CycleID         *uuid.UUID
-	ProjectID       *uuid.UUID
-	Clear           []string
-	CheckIDs        []uuid.UUID
+	ExpectedVersion int            `json:"expectedVersion,omitempty"`
+	Body            string         `json:"body,omitempty"`
+	StateID         *uuid.UUID     `json:"stateId,omitempty"`
+	Title           *string        `json:"title,omitempty"`
+	Description     *string        `json:"description,omitempty"`
+	Priority        *IssuePriority `json:"priority,omitempty"`
+	AssigneeID      *uuid.UUID     `json:"assigneeId,omitempty"`
+	Estimate        *int           `json:"estimate,omitempty"`
+	DueOn           *string        `json:"dueOn,omitempty"`
+	CycleID         *uuid.UUID     `json:"cycleId,omitempty"`
+	ProjectID       *uuid.UUID     `json:"projectId,omitempty"`
+	Clear           []string       `json:"clear,omitempty"`
+	CheckIDs        []uuid.UUID    `json:"checkIds,omitempty"`
+	LabelIDs        []uuid.UUID    `json:"labelIds,omitempty"`
 }
 
 const (
@@ -210,14 +217,14 @@ const (
 )
 
 type AgentSource struct {
-	Label string
-	URL   string
+	Label string `json:"label"`
+	URL   string `json:"url,omitempty"`
 }
 
 type AgentReasoning struct {
-	Observed  string
-	Consulted []AgentSource
-	Uncertain string
+	Observed  string        `json:"observed,omitempty"`
+	Consulted []AgentSource `json:"consulted,omitempty"`
+	Uncertain string        `json:"uncertain,omitempty"`
 }
 
 func (r AgentReasoning) Empty() bool {

@@ -28,6 +28,7 @@ type Agents interface {
 
 type WaitingProposal struct {
 	Proposal entity.AgentProposal
+	Team     entity.Team
 	Issue    entity.Issue
 	Checks   IssueChecks
 	Proposed []entity.Check

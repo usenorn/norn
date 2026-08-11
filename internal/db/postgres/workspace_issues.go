@@ -1470,7 +1470,7 @@ func (workspaceIssueL) LoadIssueWorkspaceAgentProposals(ctx context.Context, e b
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.IssueID {
+			if queries.Equal(local.ID, foreign.IssueID) {
 				local.R.IssueWorkspaceAgentProposals = append(local.R.IssueWorkspaceAgentProposals, foreign)
 				if foreign.R == nil {
 					foreign.R = &workspaceAgentProposalR{}
@@ -2636,7 +2636,7 @@ func (o *WorkspaceIssue) AddIssueWorkspaceAgentProposals(ctx context.Context, ex
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.IssueID = o.ID
+			queries.Assign(&rel.IssueID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -2657,7 +2657,7 @@ func (o *WorkspaceIssue) AddIssueWorkspaceAgentProposals(ctx context.Context, ex
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.IssueID = o.ID
+			queries.Assign(&rel.IssueID, o.ID)
 		}
 	}
 
@@ -2678,6 +2678,80 @@ func (o *WorkspaceIssue) AddIssueWorkspaceAgentProposals(ctx context.Context, ex
 			rel.R.Issue = o
 		}
 	}
+	return nil
+}
+
+// SetIssueWorkspaceAgentProposals removes all previously related items of the
+// workspace_issue replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Issue's IssueWorkspaceAgentProposals accordingly.
+// Replaces o.R.IssueWorkspaceAgentProposals with related.
+// Sets related.R.Issue's IssueWorkspaceAgentProposals accordingly.
+func (o *WorkspaceIssue) SetIssueWorkspaceAgentProposals(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentProposal) error {
+	query := "update \"workspace_agent_proposals\" set \"issue_id\" = null where \"issue_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.IssueWorkspaceAgentProposals {
+			queries.SetScanner(&rel.IssueID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Issue = nil
+		}
+		o.R.IssueWorkspaceAgentProposals = nil
+	}
+
+	return o.AddIssueWorkspaceAgentProposals(ctx, exec, insert, related...)
+}
+
+// RemoveIssueWorkspaceAgentProposals relationships from objects passed in.
+// Removes related items from R.IssueWorkspaceAgentProposals (uses pointer comparison, removal does not keep order)
+// Sets related.R.Issue.
+func (o *WorkspaceIssue) RemoveIssueWorkspaceAgentProposals(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceAgentProposal) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.IssueID, nil)
+		if rel.R != nil {
+			rel.R.Issue = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("issue_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.IssueWorkspaceAgentProposals {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.IssueWorkspaceAgentProposals)
+			if ln > 1 && i < ln-1 {
+				o.R.IssueWorkspaceAgentProposals[i] = o.R.IssueWorkspaceAgentProposals[ln-1]
+			}
+			o.R.IssueWorkspaceAgentProposals = o.R.IssueWorkspaceAgentProposals[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

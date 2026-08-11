@@ -7948,6 +7948,7 @@ components:
         labelIds:
           type: array
           items: { type: string, format: uuid }
+        reasoning: { $ref: '#/components/schemas/AgentReasoning' }
 
     AccountKind:
       type: string
@@ -8041,18 +8042,19 @@ components:
 
     AgentSettings:
       type: object
-      required: [holdComments, holdStateChanges, holdIssueEdits]
+      required: [holdComments, holdStateChanges, holdIssueEdits, holdIssueCreation]
       properties:
         holdComments: { $ref: '#/components/schemas/AgentHold' }
         holdStateChanges: { $ref: '#/components/schemas/AgentHold' }
         holdIssueEdits: { $ref: '#/components/schemas/AgentHold' }
+        holdIssueCreation: { $ref: '#/components/schemas/AgentHold' }
 
     AgentAction:
       type: string
       description: >-
         `check_set` is always held whatever a team's settings say. A new criterion changes the
         definition of done, and that is not something an agent settles alone.
-      enum: [comment, state_change, issue_edit, check_set]
+      enum: [comment, state_change, issue_edit, issue_create, check_set]
 
     AgentProposalStatus:
       type: string
@@ -8060,12 +8062,15 @@ components:
 
     AgentProposal:
       type: object
-      required: [id, agentId, agentName, issueId, teamId, action, status, createdAt]
+      required: [id, agentId, agentName, teamId, action, status, createdAt]
       properties:
         id: { type: string, format: uuid }
         agentId: { type: string, format: uuid }
         agentName: { type: string }
-        issueId: { type: string, format: uuid }
+        issueId:
+          type: string
+          format: uuid
+          description: Absent on a held issue creation, where the issue does not exist yet
         teamId: { type: string, format: uuid }
         action: { $ref: '#/components/schemas/AgentAction' }
         status: { $ref: '#/components/schemas/AgentProposalStatus' }
@@ -8082,6 +8087,9 @@ components:
           type: string
           description: So an approver can open the issue the proposal is about
         issueTitle: { type: string }
+        teamKey:
+          type: string
+          description: The team a held issue creation would file its issue on
         stateName:
           type: string
           description: The state a state change would move the issue to

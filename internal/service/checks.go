@@ -12,6 +12,7 @@ import (
 
 type Checks interface {
 	List(ctx context.Context, workspaceID, issueID uuid.UUID) (IssueChecks, error)
+	Ledger(ctx context.Context, workspaceID, issueID uuid.UUID) (IssueChecks, error)
 	Add(ctx context.Context, workspaceID, issueID uuid.UUID, input AddChecksInput) ([]entity.Check, error)
 	Remove(ctx context.Context, workspaceID, issueID, checkID uuid.UUID) error
 	Decide(ctx context.Context, workspaceID, issueID, checkID uuid.UUID, input DecideCheckInput) (entity.Check, error)

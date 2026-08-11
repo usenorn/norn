@@ -96,6 +96,46 @@ func (g *Gate) Hold(
 	return held, true, nil
 }
 
+func (g *Gate) HoldCreation(
+	ctx context.Context,
+	decision entity.Decision,
+	workspaceID, teamID uuid.UUID,
+	change entity.AgentChange,
+	reasoning entity.AgentReasoning,
+) (entity.AgentProposal, bool, error) {
+	if decision.Actor.Kind != entity.ActorKindAgent || identity.Approved(ctx) {
+		return entity.AgentProposal{}, false, nil
+	}
+
+	configured, err := g.settings.Settings(ctx, workspaceID, teamID)
+	if err != nil {
+		return entity.AgentProposal{}, false, err
+	}
+
+	if configured.Holds(entity.AgentActionIssueCreate) == entity.AgentHoldNever {
+		return entity.AgentProposal{}, false, nil
+	}
+
+	agent, err := g.agents.GetByAccountID(ctx, decision.Actor.AccountID)
+	if err != nil {
+		return entity.AgentProposal{}, false, err
+	}
+
+	held, err := g.proposals.Create(ctx, entity.AgentProposal{
+		WorkspaceID: workspaceID,
+		AgentID:     agent.ID,
+		TeamID:      teamID,
+		Action:      entity.AgentActionIssueCreate,
+		Change:      change,
+		Reasoning:   reasoning,
+	})
+	if err != nil {
+		return entity.AgentProposal{}, false, err
+	}
+
+	return held, true, nil
+}
+
 func (g *Gate) unproven(
 	ctx context.Context,
 	issue entity.Issue,

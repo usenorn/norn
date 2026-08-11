@@ -23,72 +23,79 @@ import (
 
 // WorkspaceTeamAgentSetting is an object representing the database table.
 type WorkspaceTeamAgentSetting struct {
-	TeamID           string    `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
-	WorkspaceID      string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	HoldComments     string    `boil:"hold_comments" json:"hold_comments" toml:"hold_comments" yaml:"hold_comments"`
-	HoldStateChanges string    `boil:"hold_state_changes" json:"hold_state_changes" toml:"hold_state_changes" yaml:"hold_state_changes"`
-	HoldIssueEdits   string    `boil:"hold_issue_edits" json:"hold_issue_edits" toml:"hold_issue_edits" yaml:"hold_issue_edits"`
-	CreatedAt        time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt        time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	TeamID            string    `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
+	WorkspaceID       string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	HoldComments      string    `boil:"hold_comments" json:"hold_comments" toml:"hold_comments" yaml:"hold_comments"`
+	HoldStateChanges  string    `boil:"hold_state_changes" json:"hold_state_changes" toml:"hold_state_changes" yaml:"hold_state_changes"`
+	HoldIssueEdits    string    `boil:"hold_issue_edits" json:"hold_issue_edits" toml:"hold_issue_edits" yaml:"hold_issue_edits"`
+	CreatedAt         time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt         time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	HoldIssueCreation string    `boil:"hold_issue_creation" json:"hold_issue_creation" toml:"hold_issue_creation" yaml:"hold_issue_creation"`
 
 	R *workspaceTeamAgentSettingR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceTeamAgentSettingL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceTeamAgentSettingColumns = struct {
-	TeamID           string
-	WorkspaceID      string
-	HoldComments     string
-	HoldStateChanges string
-	HoldIssueEdits   string
-	CreatedAt        string
-	UpdatedAt        string
+	TeamID            string
+	WorkspaceID       string
+	HoldComments      string
+	HoldStateChanges  string
+	HoldIssueEdits    string
+	CreatedAt         string
+	UpdatedAt         string
+	HoldIssueCreation string
 }{
-	TeamID:           "team_id",
-	WorkspaceID:      "workspace_id",
-	HoldComments:     "hold_comments",
-	HoldStateChanges: "hold_state_changes",
-	HoldIssueEdits:   "hold_issue_edits",
-	CreatedAt:        "created_at",
-	UpdatedAt:        "updated_at",
+	TeamID:            "team_id",
+	WorkspaceID:       "workspace_id",
+	HoldComments:      "hold_comments",
+	HoldStateChanges:  "hold_state_changes",
+	HoldIssueEdits:    "hold_issue_edits",
+	CreatedAt:         "created_at",
+	UpdatedAt:         "updated_at",
+	HoldIssueCreation: "hold_issue_creation",
 }
 
 var WorkspaceTeamAgentSettingTableColumns = struct {
-	TeamID           string
-	WorkspaceID      string
-	HoldComments     string
-	HoldStateChanges string
-	HoldIssueEdits   string
-	CreatedAt        string
-	UpdatedAt        string
+	TeamID            string
+	WorkspaceID       string
+	HoldComments      string
+	HoldStateChanges  string
+	HoldIssueEdits    string
+	CreatedAt         string
+	UpdatedAt         string
+	HoldIssueCreation string
 }{
-	TeamID:           "workspace_team_agent_settings.team_id",
-	WorkspaceID:      "workspace_team_agent_settings.workspace_id",
-	HoldComments:     "workspace_team_agent_settings.hold_comments",
-	HoldStateChanges: "workspace_team_agent_settings.hold_state_changes",
-	HoldIssueEdits:   "workspace_team_agent_settings.hold_issue_edits",
-	CreatedAt:        "workspace_team_agent_settings.created_at",
-	UpdatedAt:        "workspace_team_agent_settings.updated_at",
+	TeamID:            "workspace_team_agent_settings.team_id",
+	WorkspaceID:       "workspace_team_agent_settings.workspace_id",
+	HoldComments:      "workspace_team_agent_settings.hold_comments",
+	HoldStateChanges:  "workspace_team_agent_settings.hold_state_changes",
+	HoldIssueEdits:    "workspace_team_agent_settings.hold_issue_edits",
+	CreatedAt:         "workspace_team_agent_settings.created_at",
+	UpdatedAt:         "workspace_team_agent_settings.updated_at",
+	HoldIssueCreation: "workspace_team_agent_settings.hold_issue_creation",
 }
 
 // Generated where
 
 var WorkspaceTeamAgentSettingWhere = struct {
-	TeamID           whereHelperstring
-	WorkspaceID      whereHelperstring
-	HoldComments     whereHelperstring
-	HoldStateChanges whereHelperstring
-	HoldIssueEdits   whereHelperstring
-	CreatedAt        whereHelpertime_Time
-	UpdatedAt        whereHelpertime_Time
+	TeamID            whereHelperstring
+	WorkspaceID       whereHelperstring
+	HoldComments      whereHelperstring
+	HoldStateChanges  whereHelperstring
+	HoldIssueEdits    whereHelperstring
+	CreatedAt         whereHelpertime_Time
+	UpdatedAt         whereHelpertime_Time
+	HoldIssueCreation whereHelperstring
 }{
-	TeamID:           whereHelperstring{field: "\"workspace_team_agent_settings\".\"team_id\""},
-	WorkspaceID:      whereHelperstring{field: "\"workspace_team_agent_settings\".\"workspace_id\""},
-	HoldComments:     whereHelperstring{field: "\"workspace_team_agent_settings\".\"hold_comments\""},
-	HoldStateChanges: whereHelperstring{field: "\"workspace_team_agent_settings\".\"hold_state_changes\""},
-	HoldIssueEdits:   whereHelperstring{field: "\"workspace_team_agent_settings\".\"hold_issue_edits\""},
-	CreatedAt:        whereHelpertime_Time{field: "\"workspace_team_agent_settings\".\"created_at\""},
-	UpdatedAt:        whereHelpertime_Time{field: "\"workspace_team_agent_settings\".\"updated_at\""},
+	TeamID:            whereHelperstring{field: "\"workspace_team_agent_settings\".\"team_id\""},
+	WorkspaceID:       whereHelperstring{field: "\"workspace_team_agent_settings\".\"workspace_id\""},
+	HoldComments:      whereHelperstring{field: "\"workspace_team_agent_settings\".\"hold_comments\""},
+	HoldStateChanges:  whereHelperstring{field: "\"workspace_team_agent_settings\".\"hold_state_changes\""},
+	HoldIssueEdits:    whereHelperstring{field: "\"workspace_team_agent_settings\".\"hold_issue_edits\""},
+	CreatedAt:         whereHelpertime_Time{field: "\"workspace_team_agent_settings\".\"created_at\""},
+	UpdatedAt:         whereHelpertime_Time{field: "\"workspace_team_agent_settings\".\"updated_at\""},
+	HoldIssueCreation: whereHelperstring{field: "\"workspace_team_agent_settings\".\"hold_issue_creation\""},
 }
 
 // WorkspaceTeamAgentSettingRels is where relationship names are stored.
@@ -108,9 +115,9 @@ func (*workspaceTeamAgentSettingR) NewStruct() *workspaceTeamAgentSettingR {
 type workspaceTeamAgentSettingL struct{}
 
 var (
-	workspaceTeamAgentSettingAllColumns            = []string{"team_id", "workspace_id", "hold_comments", "hold_state_changes", "hold_issue_edits", "created_at", "updated_at"}
+	workspaceTeamAgentSettingAllColumns            = []string{"team_id", "workspace_id", "hold_comments", "hold_state_changes", "hold_issue_edits", "created_at", "updated_at", "hold_issue_creation"}
 	workspaceTeamAgentSettingColumnsWithoutDefault = []string{"team_id", "workspace_id"}
-	workspaceTeamAgentSettingColumnsWithDefault    = []string{"hold_comments", "hold_state_changes", "hold_issue_edits", "created_at", "updated_at"}
+	workspaceTeamAgentSettingColumnsWithDefault    = []string{"hold_comments", "hold_state_changes", "hold_issue_edits", "created_at", "updated_at", "hold_issue_creation"}
 	workspaceTeamAgentSettingPrimaryKeyColumns     = []string{"team_id"}
 	workspaceTeamAgentSettingGeneratedColumns      = []string{}
 )

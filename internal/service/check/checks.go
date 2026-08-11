@@ -87,16 +87,40 @@ func (s *checksService) List(
 	return s.report(ctx, workspaceID, issueID)
 }
 
+func (s *checksService) Ledger(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) (service.IssueChecks, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
+	if err != nil {
+		return service.IssueChecks{}, err
+	}
+
+	if _, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope); err != nil {
+		return service.IssueChecks{}, err
+	}
+
+	return s.assemble(ctx, workspaceID, issueID, s.evidence.ListByIssue)
+}
+
 func (s *checksService) report(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
+) (service.IssueChecks, error) {
+	return s.assemble(ctx, workspaceID, issueID, s.evidence.Digest)
+}
+
+func (s *checksService) assemble(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	read func(context.Context, uuid.UUID, uuid.UUID) ([]entity.Evidence, error),
 ) (service.IssueChecks, error) {
 	checks, err := s.checks.ListByIssue(ctx, workspaceID, issueID)
 	if err != nil {
 		return service.IssueChecks{}, err
 	}
 
-	evidence, err := s.evidence.Digest(ctx, workspaceID, issueID)
+	evidence, err := read(ctx, workspaceID, issueID)
 	if err != nil {
 		return service.IssueChecks{}, err
 	}

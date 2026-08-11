@@ -39,7 +39,6 @@ type WorkspaceCheckEvidence struct {
 	ReceivedAt          time.Time   `boil:"received_at" json:"received_at" toml:"received_at" yaml:"received_at"`
 	ActorKind           string      `boil:"actor_kind" json:"actor_kind" toml:"actor_kind" yaml:"actor_kind"`
 	ActorAccountID      null.String `boil:"actor_account_id" json:"actor_account_id,omitempty" toml:"actor_account_id" yaml:"actor_account_id,omitempty"`
-	ActorName           string      `boil:"actor_name" json:"actor_name" toml:"actor_name" yaml:"actor_name"`
 	CodeLinkID          null.String `boil:"code_link_id" json:"code_link_id,omitempty" toml:"code_link_id" yaml:"code_link_id,omitempty"`
 	CommitSha           string      `boil:"commit_sha" json:"commit_sha" toml:"commit_sha" yaml:"commit_sha"`
 	ScrubbedByAccountID null.String `boil:"scrubbed_by_account_id" json:"scrubbed_by_account_id,omitempty" toml:"scrubbed_by_account_id" yaml:"scrubbed_by_account_id,omitempty"`
@@ -65,7 +64,6 @@ var WorkspaceCheckEvidenceColumns = struct {
 	ReceivedAt          string
 	ActorKind           string
 	ActorAccountID      string
-	ActorName           string
 	CodeLinkID          string
 	CommitSha           string
 	ScrubbedByAccountID string
@@ -86,7 +84,6 @@ var WorkspaceCheckEvidenceColumns = struct {
 	ReceivedAt:          "received_at",
 	ActorKind:           "actor_kind",
 	ActorAccountID:      "actor_account_id",
-	ActorName:           "actor_name",
 	CodeLinkID:          "code_link_id",
 	CommitSha:           "commit_sha",
 	ScrubbedByAccountID: "scrubbed_by_account_id",
@@ -109,7 +106,6 @@ var WorkspaceCheckEvidenceTableColumns = struct {
 	ReceivedAt          string
 	ActorKind           string
 	ActorAccountID      string
-	ActorName           string
 	CodeLinkID          string
 	CommitSha           string
 	ScrubbedByAccountID string
@@ -130,7 +126,6 @@ var WorkspaceCheckEvidenceTableColumns = struct {
 	ReceivedAt:          "workspace_check_evidence.received_at",
 	ActorKind:           "workspace_check_evidence.actor_kind",
 	ActorAccountID:      "workspace_check_evidence.actor_account_id",
-	ActorName:           "workspace_check_evidence.actor_name",
 	CodeLinkID:          "workspace_check_evidence.code_link_id",
 	CommitSha:           "workspace_check_evidence.commit_sha",
 	ScrubbedByAccountID: "workspace_check_evidence.scrubbed_by_account_id",
@@ -155,7 +150,6 @@ var WorkspaceCheckEvidenceWhere = struct {
 	ReceivedAt          whereHelpertime_Time
 	ActorKind           whereHelperstring
 	ActorAccountID      whereHelpernull_String
-	ActorName           whereHelperstring
 	CodeLinkID          whereHelpernull_String
 	CommitSha           whereHelperstring
 	ScrubbedByAccountID whereHelpernull_String
@@ -176,7 +170,6 @@ var WorkspaceCheckEvidenceWhere = struct {
 	ReceivedAt:          whereHelpertime_Time{field: "\"workspace_check_evidence\".\"received_at\""},
 	ActorKind:           whereHelperstring{field: "\"workspace_check_evidence\".\"actor_kind\""},
 	ActorAccountID:      whereHelpernull_String{field: "\"workspace_check_evidence\".\"actor_account_id\""},
-	ActorName:           whereHelperstring{field: "\"workspace_check_evidence\".\"actor_name\""},
 	CodeLinkID:          whereHelpernull_String{field: "\"workspace_check_evidence\".\"code_link_id\""},
 	CommitSha:           whereHelperstring{field: "\"workspace_check_evidence\".\"commit_sha\""},
 	ScrubbedByAccountID: whereHelpernull_String{field: "\"workspace_check_evidence\".\"scrubbed_by_account_id\""},
@@ -296,9 +289,9 @@ func (r *workspaceCheckEvidenceR) GetWorkspace() *Workspace {
 type workspaceCheckEvidenceL struct{}
 
 var (
-	workspaceCheckEvidenceAllColumns            = []string{"id", "workspace_id", "check_id", "issue_id", "verdict", "channel", "command", "output", "output_truncated", "redactions", "exit_code", "observed_at", "received_at", "actor_kind", "actor_account_id", "actor_name", "code_link_id", "commit_sha", "scrubbed_by_account_id", "scrubbed_at"}
+	workspaceCheckEvidenceAllColumns            = []string{"id", "workspace_id", "check_id", "issue_id", "verdict", "channel", "command", "output", "output_truncated", "redactions", "exit_code", "observed_at", "received_at", "actor_kind", "actor_account_id", "code_link_id", "commit_sha", "scrubbed_by_account_id", "scrubbed_at"}
 	workspaceCheckEvidenceColumnsWithoutDefault = []string{"workspace_id", "check_id", "issue_id", "verdict", "channel", "observed_at"}
-	workspaceCheckEvidenceColumnsWithDefault    = []string{"id", "command", "output", "output_truncated", "redactions", "exit_code", "received_at", "actor_kind", "actor_account_id", "actor_name", "code_link_id", "commit_sha", "scrubbed_by_account_id", "scrubbed_at"}
+	workspaceCheckEvidenceColumnsWithDefault    = []string{"id", "command", "output", "output_truncated", "redactions", "exit_code", "received_at", "actor_kind", "actor_account_id", "code_link_id", "commit_sha", "scrubbed_by_account_id", "scrubbed_at"}
 	workspaceCheckEvidencePrimaryKeyColumns     = []string{"id"}
 	workspaceCheckEvidenceGeneratedColumns      = []string{}
 )

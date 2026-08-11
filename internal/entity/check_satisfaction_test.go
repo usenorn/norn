@@ -484,3 +484,89 @@ func TestBlockingChecksNamesTheOnesInTheWay(t *testing.T) {
 		t.Fatalf("blocking checks are %v, want only the unproven one", blocking)
 	}
 }
+
+func awaitingOf(t *testing.T, check entity.Check, evidence ...entity.Evidence) entity.CheckAwaiting {
+	t.Helper()
+
+	return entity.NewCheckReport(check, evidence, now()).Awaiting()
+}
+
+func TestAnUnprovenCheckSaysWhichOfTheRulesItIsStuckOn(t *testing.T) {
+	timedOut := entity.CheckTimeLimitDefault + time.Hour
+
+	for _, tc := range []struct {
+		name     string
+		check    entity.Check
+		evidence []entity.Evidence
+		want     entity.CheckAwaiting
+	}{
+		{
+			name:  "nothing filed at all",
+			check: checkOf(entity.CheckMethodCommand),
+			want:  entity.CheckAwaitingEvidence,
+		},
+		{
+			name:     "only the absence of a failure",
+			check:    checkOf(entity.CheckMethodObservation),
+			evidence: []entity.Evidence{byAgent(entity.EvidenceAbsentNegative, 5)},
+			want:     entity.CheckAwaitingPositiveResult,
+		},
+		{
+			name:     "an agent attesting a manual check",
+			check:    checkOf(entity.CheckMethodManual),
+			evidence: []entity.Evidence{byAgent(entity.EvidencePassed, 5)},
+			want:     entity.CheckAwaitingAttestation,
+		},
+		{
+			name:     "a regression passing without ever having failed",
+			check:    checkOf(entity.CheckMethodRegression),
+			evidence: []entity.Evidence{byAgent(entity.EvidencePassed, 5)},
+			want:     entity.CheckAwaitingPriorFailure,
+		},
+		{
+			name:  "a proof that timed out",
+			check: checkOf(entity.CheckMethodCommand),
+			evidence: []entity.Evidence{
+				withReceipt(byAgent(entity.EvidencePassed, 5), at(5).Add(-timedOut)),
+			},
+			want: entity.CheckAwaitingFreshProof,
+		},
+		{
+			name:     "the newest result disproves it",
+			check:    checkOf(entity.CheckMethodCommand),
+			evidence: []entity.Evidence{byAgent(entity.EvidencePassed, 5), byAgent(entity.EvidenceFailed, 9)},
+			want:     entity.CheckAwaitingCorrection,
+		},
+		{
+			name:     "proven, so nothing",
+			check:    checkOf(entity.CheckMethodCommand),
+			evidence: []entity.Evidence{byAgent(entity.EvidencePassed, 5)},
+			want:     entity.CheckAwaitingNothing,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if awaiting := awaitingOf(t, tc.check, tc.evidence...); awaiting != tc.want {
+				t.Fatalf(
+					"a check %s reports it is awaiting %q, want %q; this is the sentence an "+
+						"agent is given to act on, so a wrong one sends it to do the wrong work",
+					tc.name, awaiting, tc.want,
+				)
+			}
+		})
+	}
+}
+
+func TestAWaivedCheckIsAwaitingNothingHoweverLittleProvesIt(t *testing.T) {
+	check := checkOf(entity.CheckMethodManual)
+	check.Resolution = entity.CheckResolutionWaived
+
+	if awaiting := awaitingOf(t, check); awaiting != entity.CheckAwaitingNothing {
+		t.Fatalf("a waived check still asks for %q", awaiting)
+	}
+}
+
+func withReceipt(evidence entity.Evidence, received time.Time) entity.Evidence {
+	evidence.ReceivedAt = received
+
+	return evidence
+}

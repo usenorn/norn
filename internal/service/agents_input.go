@@ -29,9 +29,10 @@ type OwnedAgent struct {
 }
 
 type ConfigureAgentInput struct {
-	WorkspaceID      uuid.UUID
-	TeamID           uuid.UUID
-	HoldComments     entity.AgentHold
-	HoldStateChanges entity.AgentHold
-	HoldIssueEdits   entity.AgentHold
+	WorkspaceID       uuid.UUID
+	TeamID            uuid.UUID
+	HoldComments      entity.AgentHold
+	HoldStateChanges  entity.AgentHold
+	HoldIssueEdits    entity.AgentHold
+	HoldIssueCreation entity.AgentHold
 }

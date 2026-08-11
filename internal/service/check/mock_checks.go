@@ -103,6 +103,21 @@ func (mr *MockChecksMockRecorder) Evidence(ctx, workspaceID, issueID, checkID an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Evidence", reflect.TypeOf((*MockChecks)(nil).Evidence), ctx, workspaceID, issueID, checkID)
 }
 
+// Ledger mocks base method.
+func (m *MockChecks) Ledger(ctx context.Context, workspaceID, issueID uuid.UUID) (service.IssueChecks, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ledger", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].(service.IssueChecks)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Ledger indicates an expected call of Ledger.
+func (mr *MockChecksMockRecorder) Ledger(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ledger", reflect.TypeOf((*MockChecks)(nil).Ledger), ctx, workspaceID, issueID)
+}
+
 // List mocks base method.
 func (m *MockChecks) List(ctx context.Context, workspaceID, issueID uuid.UUID) (service.IssueChecks, error) {
 	m.ctrl.T.Helper()

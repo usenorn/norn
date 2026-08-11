@@ -48,6 +48,7 @@ export const actionLabels: Record<AgentAction, string> = {
 	comment: "Leave a comment",
 	state_change: "Change the state",
 	issue_edit: "Edit the issue",
+	issue_create: "Raise an issue",
 	check_set: "Add to what done means",
 };
 
@@ -88,10 +89,17 @@ export const holdLabels: {
 		detail: "Titles, priorities and assignees an agent changes wait for a person.",
 		options: ["never", "always"],
 	},
+	{
+		key: "holdIssueCreation",
+		title: "New issues",
+		detail: "An issue an agent raises on this team waits before it reaches anyone's board.",
+		options: ["never", "always"],
+	},
 ];
 
 export const agentScopeGroups: { title: string; scopes: APIScope[] }[] = [
 	{ title: "Issues", scopes: ["issue:read", "issue:manage"] },
+	{ title: "What done means", scopes: ["check:read", "check:manage"] },
 	{ title: "Cycles", scopes: ["cycle:read"] },
 	{ title: "Projects", scopes: ["project:read", "project:manage"] },
 	{ title: "Labels", scopes: ["label:read", "label:manage"] },
@@ -104,6 +112,8 @@ export const agentScopeGroups: { title: string; scopes: APIScope[] }[] = [
 export const agentScopeLabels: Record<string, string> = {
 	"issue:read": "Read issues",
 	"issue:manage": "Raise and change issues",
+	"check:read": "Read an issue's criteria and the evidence behind them",
+	"check:manage": "Propose criteria and file evidence against them",
 	"cycle:read": "Read cycles",
 	"project:read": "Read projects",
 	"project:manage": "Create and change projects",
@@ -168,6 +178,10 @@ export function proposalSummary(proposal: AgentProposal): string {
 			return proposal.stateName ? `moving it to ${proposal.stateName}` : "a new state";
 		case "issue_edit":
 			return proposal.title ? `the title “${proposal.title}”` : "an edit";
+		case "issue_create":
+			return proposal.title
+				? `“${proposal.title}”${proposal.teamKey ? ` on ${proposal.teamKey}` : ""}`
+				: "a new issue";
 		case "check_set":
 			return proposal.checkIds?.length === 1
 				? "one criterion for what done means here"

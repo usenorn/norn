@@ -9,6 +9,58 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
+func set(id uuid.UUID) *uuid.UUID {
+	if id == uuid.Nil {
+		return nil
+	}
+
+	return &id
+}
+
+func (s *issuesService) heldCreation(
+	ctx context.Context,
+	decision entity.Decision,
+	input service.CreateIssueInput,
+) error {
+	change := entity.AgentChange{
+		Title:      &input.Title,
+		LabelIDs:   input.LabelIDs,
+		StateID:    set(input.StateID),
+		AssigneeID: set(input.AssigneeAccountID),
+		CycleID:    set(input.CycleID),
+		ProjectID:  set(input.ProjectID),
+	}
+
+	if input.Description != "" {
+		change.Description = &input.Description
+	}
+
+	if input.Priority != "" {
+		change.Priority = &input.Priority
+	}
+
+	if input.Estimate != 0 {
+		change.Estimate = &input.Estimate
+	}
+
+	if input.DueOn != "" {
+		change.DueOn = &input.DueOn
+	}
+
+	proposal, held, err := s.gate.HoldCreation(
+		ctx, decision, input.WorkspaceID, input.TeamID, change, input.Reasoning,
+	)
+	if err != nil {
+		return err
+	}
+
+	if held {
+		return entity.AgentActionHeldError{ProposalID: proposal.ID}
+	}
+
+	return nil
+}
+
 func (s *issuesService) held(
 	ctx context.Context,
 	decision entity.Decision,

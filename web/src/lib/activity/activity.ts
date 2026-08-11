@@ -147,7 +147,9 @@ export function actorLabel(event: ActivityEvent): string {
 
 	const person = event.actorName || "Someone who has left";
 
-	return event.actorTokenName ? `${person} via ${event.actorTokenName}` : person;
+	if (!event.actorTokenName || event.actorTokenName === person) return person;
+
+	return `${person} via ${event.actorTokenName}`;
 }
 
 export const actorKindLabels: Record<ActivityActorKind, string> = {
