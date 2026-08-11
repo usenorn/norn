@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -68,23 +69,27 @@ func SlugifyBranchPart(value string) string {
 		}
 	}
 
-	slug := strings.Trim(builder.String(), "-")
+	slug := builder.String()
 
-	if len(slug) > SCMBranchSlugMax {
-		slug = strings.Trim(slug[:SCMBranchSlugMax], "-")
-	}
-
-	return slug
+	return strings.Trim(cutAtRuneBoundary(slug, SCMBranchSlugMax), "-")
 }
 
 func TrimBranchName(name string) string {
 	trimmed := strings.Trim(strings.TrimSpace(name), "-/")
 
-	if len(trimmed) > SCMBranchNameMax {
-		trimmed = strings.Trim(trimmed[:SCMBranchNameMax], "-/")
+	return strings.Trim(cutAtRuneBoundary(trimmed, SCMBranchNameMax), "-/")
+}
+
+func cutAtRuneBoundary(value string, limit int) string {
+	if len(value) <= limit {
+		return value
 	}
 
-	return trimmed
+	for limit > 0 && !utf8.RuneStart(value[limit]) {
+		limit--
+	}
+
+	return value[:limit]
 }
 
 func ValidateSCMBranchTemplate(field, template string) FieldError {

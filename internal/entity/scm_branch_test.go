@@ -3,6 +3,7 @@ package entity_test
 import (
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/usenorn/norn/internal/entity"
 )
@@ -61,6 +62,41 @@ func TestALongTitleIsCutRatherThanHandedToGitWhole(t *testing.T) {
 
 	if strings.HasSuffix(got, "-") {
 		t.Fatalf("BranchName = %q; cutting mid-word must not leave a trailing dash", got)
+	}
+}
+
+func TestCuttingALongTitleNeverSplitsAMultibyteCharacter(t *testing.T) {
+	settings := entity.SCMTeamSettings{}
+
+	cases := map[string]string{
+		"the slug limit lands inside a cyrillic letter":        "tes: базовое покрытие — бакетинг, эвалюация, авторизация, API",
+		"the slug limit lands inside the next cyrillic letter": "testt: базовое покрытие — бакетинг, эвалюация, авторизация, API",
+		"a cyrillic title long enough to reach the name limit": strings.Repeat("длинный заголовок ", 40),
+		"three-byte characters":                                strings.Repeat("日本語", 200),
+	}
+
+	for name, title := range cases {
+		t.Run(name, func(t *testing.T) {
+			slug := entity.SlugifyBranchPart(title)
+
+			if !utf8.ValidString(slug) {
+				t.Errorf(
+					"SlugifyBranchPart(%q) = %q, which is not valid UTF-8; the cut landed "+
+						"inside a character and left a stray byte in the branch name",
+					title, slug,
+				)
+			}
+
+			branch := settings.BranchName("Рае", "ENG-12", title)
+
+			if !utf8.ValidString(branch) {
+				t.Errorf("BranchName(%q) = %q, which is not valid UTF-8", title, branch)
+			}
+
+			if len(branch) > entity.SCMBranchNameMax {
+				t.Errorf("BranchName is %d bytes, over the %d limit", len(branch), entity.SCMBranchNameMax)
+			}
+		})
 	}
 }
 
