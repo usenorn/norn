@@ -20,6 +20,7 @@ import (
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
+	scmsvc "github.com/usenorn/norn/internal/service/scm"
 	searchsvc "github.com/usenorn/norn/internal/service/search"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
 	workflowstatesvc "github.com/usenorn/norn/internal/service/workflowstate"
@@ -43,10 +44,11 @@ var toolScopes = entity.APIScopeSet{
 }
 
 type harness struct {
-	issues     *issuesvc.MockIssues
-	workspaces *workspacesvc.MockWorkspaces
-	edge       *mcpserver.Edge
-	actor      entity.Actor
+	issues        *issuesvc.MockIssues
+	workspaces    *workspacesvc.MockWorkspaces
+	sourceControl *scmsvc.MockSourceControl
+	edge          *mcpserver.Edge
+	actor         entity.Actor
 }
 
 func newHarness(t *testing.T) *harness {
@@ -55,8 +57,9 @@ func newHarness(t *testing.T) *harness {
 	ctrl := gomock.NewController(t)
 
 	h := &harness{
-		issues:     issuesvc.NewMockIssues(ctrl),
-		workspaces: workspacesvc.NewMockWorkspaces(ctrl),
+		issues:        issuesvc.NewMockIssues(ctrl),
+		workspaces:    workspacesvc.NewMockWorkspaces(ctrl),
+		sourceControl: scmsvc.NewMockSourceControl(ctrl),
 		actor: entity.Actor{
 			Kind:      entity.ActorKindToken,
 			AccountID: uuid.New(),
@@ -74,6 +77,7 @@ func newHarness(t *testing.T) *harness {
 		workflowstatesvc.NewMockWorkflowStates(ctrl),
 		labelsvc.NewMockLabels(ctrl),
 		searchsvc.NewMockSearches(ctrl),
+		h.sourceControl,
 		config.App{Version: "test"},
 		config.MCP{Enabled: true},
 	)
@@ -174,6 +178,7 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		"norn_get_project",
 		"norn_list_cycles",
 		"norn_get_cycle",
+		"norn_issue_branch_name",
 		"norn_create_issue",
 		"norn_update_issue",
 		"norn_change_issue_state",
@@ -184,8 +189,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		}
 	}
 
-	if len(tools.Tools) != 14 {
-		t.Errorf("registered %d tools, want 14", len(tools.Tools))
+	if len(tools.Tools) != 15 {
+		t.Errorf("registered %d tools, want 15", len(tools.Tools))
 	}
 }
 
@@ -235,6 +240,109 @@ func TestAHiddenWorkspaceAndAMissingWorkspaceLookIdentical(t *testing.T) {
 	}
 }
 
+func TestTheBranchNameToolReturnsWhatTheTeamTemplateProduces(t *testing.T) {
+	h := newHarness(t)
+
+	workspace := entity.Workspace{ID: uuid.New(), Slug: "acme", Name: "Acme"}
+	issue := entity.Issue{
+		ID:           uuid.New(),
+		WorkspaceID:  workspace.ID,
+		TeamID:       uuid.New(),
+		ReferenceKey: "GAM",
+		Number:       6,
+		Title:        "Ship the branch name tool",
+	}
+
+	h.workspaces.EXPECT().
+		ListForAccount(gomock.Any(), h.actor.AccountID).
+		Return([]entity.Workspace{workspace}, nil)
+
+	h.issues.EXPECT().
+		GetByReference(gomock.Any(), workspace.ID, "GAM-6").
+		Return(issue, nil)
+
+	h.sourceControl.EXPECT().
+		BranchName(gomock.Any(), workspace.ID, issue.ID).
+		Return("rae/gam-6-ship-the-branch-name-tool", nil)
+
+	session := h.session(t)
+
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name:      "norn_issue_branch_name",
+		Arguments: map[string]any{"workspace": "acme", "issue": "gam-6"},
+	})
+	if err != nil {
+		t.Fatalf("call tool: %v", err)
+	}
+
+	if result.IsError {
+		t.Fatalf("tool errored: %v", result.Content)
+	}
+
+	payload, err := json.Marshal(result.StructuredContent)
+	if err != nil {
+		t.Fatalf("marshal structured content: %v", err)
+	}
+
+	var output struct {
+		Branch string `json:"branch"`
+	}
+
+	if err := json.Unmarshal(payload, &output); err != nil {
+		t.Fatalf("unmarshal structured content: %v", err)
+	}
+
+	if output.Branch != "rae/gam-6-ship-the-branch-name-tool" {
+		t.Fatalf("branch is %q, want the name the service built", output.Branch)
+	}
+}
+
+func TestABranchNameForAHiddenWorkspaceLooksLikeOneForAMissingWorkspace(t *testing.T) {
+	h := newHarness(t)
+
+	hidden := entity.Workspace{ID: uuid.New(), Slug: "hidden", Name: "Hidden"}
+	h.actor.Grants = entity.APITokenGrants{{WorkspaceID: uuid.New(), AllTeams: true}}
+
+	h.workspaces.EXPECT().
+		ListForAccount(gomock.Any(), h.actor.AccountID).
+		Return([]entity.Workspace{hidden}, nil).
+		Times(2)
+
+	session := h.session(t)
+
+	call := func(workspace string) string {
+		result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+			Name:      "norn_issue_branch_name",
+			Arguments: map[string]any{"workspace": workspace, "issue": "GAM-6"},
+		})
+		if err != nil {
+			t.Fatalf("call tool: %v", err)
+		}
+
+		if !result.IsError {
+			t.Fatal("reaching past the connection's grants did not fail")
+		}
+
+		payload, err := json.Marshal(result.Content)
+		if err != nil {
+			t.Fatalf("marshal content: %v", err)
+		}
+
+		return string(payload)
+	}
+
+	narrowedAway := call("hidden")
+	missing := call("no-such-workspace")
+
+	if narrowedAway != missing {
+		t.Fatalf(
+			"a narrowed-away workspace answers differently from a missing one:\n%s\nvs\n%s\n"+
+				"existence must never leak through error wording",
+			narrowedAway, missing,
+		)
+	}
+}
+
 func TestDisabledMCPAnswers404(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
@@ -248,6 +356,7 @@ func TestDisabledMCPAnswers404(t *testing.T) {
 		workflowstatesvc.NewMockWorkflowStates(ctrl),
 		labelsvc.NewMockLabels(ctrl),
 		searchsvc.NewMockSearches(ctrl),
+		scmsvc.NewMockSourceControl(ctrl),
 		config.App{Version: "test"},
 		config.MCP{Enabled: false},
 	)

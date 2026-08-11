@@ -28,6 +28,7 @@ type toolset struct {
 	workflowStates service.WorkflowStates
 	labels         service.Labels
 	searches       service.Searches
+	sourceControl  service.SourceControl
 }
 
 type Edge struct {
@@ -45,6 +46,7 @@ func New(
 	workflowStates service.WorkflowStates,
 	labels service.Labels,
 	searches service.Searches,
+	sourceControl service.SourceControl,
 	app config.App,
 	cfg config.MCP,
 ) *Edge {
@@ -58,6 +60,7 @@ func New(
 		workflowStates: workflowStates,
 		labels:         labels,
 		searches:       searches,
+		sourceControl:  sourceControl,
 	}
 
 	server := mcp.NewServer(
@@ -162,6 +165,13 @@ func (t *toolset) register(server *mcp.Server) {
 			"issues added later, and every scope change.",
 		Annotations: read,
 	}, t.getCycle)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "norn_issue_branch_name",
+		Description: "Build the branch name for an issue from its team's branch template, " +
+			"ready for git checkout -b.",
+		Annotations: read,
+	}, t.issueBranchName)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "norn_create_issue",

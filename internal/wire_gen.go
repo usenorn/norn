@@ -420,7 +420,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	sourceControlSync := scm2.NewSync(scmConnection, scmRepository, scmRoute, scmTransitionRule, scmTeamSetting, scmIdentity, mirrorConflict, repositoryLabel, repositoryAgent, gate, scmRelease, scmDeployment, scmDelivery, codeLink, issueMirror, workflowState, repositoryIssue, repositoryActivity, repositoryMembership, scmApp, forges, credentials, serviceAuthorizer, issues, issueComments, jobProducer, postgresClient, sourceControl, app)
 	sourcecontrolEdge := sourcecontrol.New(sourceControlSync, sourceControl)
 	appEdge := sourcecontrol.NewAppEdge(sourceControlApps, app)
-	mcpserverEdge := mcpserver.New(issues, issueComments, projects, cycles, teams, workspaces, workflowStates, labels, searches, app, mcp)
+	mcpserverEdge := mcpserver.New(issues, issueComments, projects, cycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl, app, mcp)
 	handler := router.New(http, configSession, attachments, app, mcp, sessions, apiTokens, mcpThrottle, strictServerInterface, callback, ssoSAML, edge, eventsEdge, auditexportEdge, scimEdge, sourcecontrolEdge, appEdge, mcpserverEdge)
 	logger, err := logging.New(app)
 	if err != nil {
