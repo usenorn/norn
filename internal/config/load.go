@@ -586,6 +586,12 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("linear.max_response_size", int64(32<<20))
 	v.SetDefault("linear.page_size", 100)
 
+	v.SetDefault("source_control.github_app_id", "")
+	v.SetDefault("source_control.github_app_slug", "")
+	v.SetDefault("source_control.github_app_client_id", "")
+	v.SetDefault("source_control.github_app_client_secret", "")
+	v.SetDefault("source_control.github_app_private_key", "")
+	v.SetDefault("source_control.github_app_webhook_secret", "")
 	v.SetDefault("source_control.github_endpoint", "https://api.github.com")
 	v.SetDefault("source_control.app_state_ttl", 10*time.Minute)
 	v.SetDefault("source_control.gitlab_endpoint", "https://gitlab.com")
