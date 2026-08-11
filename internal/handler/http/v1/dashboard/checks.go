@@ -41,7 +41,8 @@ func (h *handler) AddWorkspaceIssueChecks(
 	}
 
 	added, err := h.checks.Add(ctx, request.WorkspaceId, request.IssueId, service.AddChecksInput{
-		Checks: drafted,
+		Checks:    drafted,
+		Reasoning: agentReasoningFrom(request.Body.Reasoning),
 	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

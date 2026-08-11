@@ -345,7 +345,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	serviceWebhooks := webhook2.NewRegistry(repositoryWebhook, webhookSender, serviceAuthorizer, serviceAudit, postgresClient, webhooks)
 	webhookDelivery := webhook.NewDeliveries(postgresClient)
 	webhookDeliveries := webhook2.NewLog(repositoryWebhook, webhookDelivery, jobProducer, serviceAuthorizer, postgresClient)
-	agents := agent2.New(repositoryAgent, agentSetting, agentProposal, repositoryAccount, repositoryMembership, apiToken, repositoryTeam, repositoryActivity, issues, issueComments, checks, serviceAuthorizer, postgresClient, serviceAudit)
+	agents := agent2.New(repositoryAgent, agentSetting, agentProposal, repositoryAccount, repositoryMembership, apiToken, repositoryTeam, repositoryActivity, workflowState, issues, issueComments, checks, serviceAuthorizer, postgresClient, serviceAudit)
 	oidc := config.NewOIDC(configConfig)
 	oidcState := oidcstate.New(client, oidc)
 	saml := config.NewSAML(configConfig)

@@ -19,6 +19,7 @@ import (
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
+	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -84,6 +85,7 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		h.tokens,
 		teamrepo.NewMockTeam(ctrl),
 		activityrepo.NewMockActivity(ctrl),
+		workflowstaterepo.NewMockWorkflowState(ctrl),
 		h.issues,
 		(service.IssueComments)(nil),
 		(service.Checks)(nil),
@@ -337,6 +339,7 @@ func TestATokenMayNotRegisterOrApproveOnAnAgentsBehalf(t *testing.T) {
 		apitokenrepo.NewMockAPIToken(ctrl),
 		teamrepo.NewMockTeam(ctrl),
 		activityrepo.NewMockActivity(ctrl),
+		workflowstaterepo.NewMockWorkflowState(ctrl),
 		(service.Issues)(nil),
 		(service.IssueComments)(nil),
 		(service.Checks)(nil),

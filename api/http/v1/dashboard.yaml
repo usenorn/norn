@@ -6505,6 +6505,7 @@ components:
           minItems: 1
           maxItems: 40
           items: { $ref: '#/components/schemas/NewIssueCheck' }
+        reasoning: { $ref: '#/components/schemas/AgentReasoning' }
 
     DecideIssueCheckRequest:
       type: object
@@ -6716,6 +6717,7 @@ components:
         acknowledgeOpenChildren:
           type: boolean
           description: Complete this issue even though children of it are still open
+        reasoning: { $ref: '#/components/schemas/AgentReasoning' }
         acknowledgeUnprovenChecks:
           type: boolean
           description: >-
@@ -6918,6 +6920,7 @@ components:
       required: [body]
       properties:
         body: { type: string, minLength: 1, maxLength: 20000 }
+        reasoning: { $ref: '#/components/schemas/AgentReasoning' }
         parentCommentId: { type: string, format: uuid }
         attachmentIds:
           type: array
@@ -8008,6 +8011,26 @@ components:
         agent: { $ref: '#/components/schemas/Agent' }
         value: { type: string }
 
+    AgentSource:
+      type: object
+      required: [label]
+      properties:
+        label: { type: string, maxLength: 200 }
+        url: { type: string, maxLength: 2048 }
+
+    AgentReasoning:
+      type: object
+      description: >-
+        What the agent saw, what it read, and what it is unsure about, so deciding a proposal is
+        a read rather than an investigation.
+      properties:
+        observed: { type: string, maxLength: 4000 }
+        consulted:
+          type: array
+          maxItems: 20
+          items: { $ref: '#/components/schemas/AgentSource' }
+        uncertain: { type: string, maxLength: 4000 }
+
     AgentHold:
       type: string
       description: >-
@@ -8054,6 +8077,23 @@ components:
           type: array
           description: The criteria a check set proposal would add to the definition of done
           items: { type: string, format: uuid }
+        reasoning: { $ref: '#/components/schemas/AgentReasoning' }
+        issueReference:
+          type: string
+          description: So an approver can open the issue the proposal is about
+        issueTitle: { type: string }
+        stateName:
+          type: string
+          description: The state a state change would move the issue to
+        proposedChecks:
+          type: array
+          description: The criteria a check set proposal would add, in full
+          items: { $ref: '#/components/schemas/IssueCheck' }
+        checkState:
+          $ref: '#/components/schemas/IssueCheckList'
+          description: >-
+            What the issue's criteria say right now, so the person deciding sees whether they
+            are being asked to let unproven work through.
         decidedByAccountId: { type: string, format: uuid }
         decidedAt: { type: string, format: date-time }
         failure: { type: string }

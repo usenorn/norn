@@ -185,6 +185,7 @@ func (s *issueCommentsService) Post(
 		ctx, decision, issue,
 		[]entity.AgentAction{entity.AgentActionComment},
 		entity.AgentChange{Body: input.Body},
+		input.Reasoning,
 	); err != nil {
 		return service.CommentPosted{}, err
 	} else if held {

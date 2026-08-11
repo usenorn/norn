@@ -1765,6 +1765,7 @@ func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
 		dto.CheckIds = &ids
 	}
 	dto.Failure = nilIfEmpty(proposal.Failure)
+	dto.Reasoning = agentReasoningDTO(proposal.Reasoning)
 	dto.DecidedAt = proposal.DecidedAt
 
 	if proposal.DecidedBy != uuid.Nil {
@@ -1775,12 +1776,93 @@ func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
 	return dto
 }
 
-func agentProposalDTOs(proposals []entity.AgentProposal) []api.AgentProposal {
-	dtos := make([]api.AgentProposal, 0, len(proposals))
+func agentReasoningDTO(reasoning entity.AgentReasoning) *api.AgentReasoning {
+	if reasoning.Empty() {
+		return nil
+	}
 
-	for _, proposal := range proposals {
-		dtos = append(dtos, agentProposalDTO(proposal))
+	dto := api.AgentReasoning{
+		Observed:  nilIfEmpty(reasoning.Observed),
+		Uncertain: nilIfEmpty(reasoning.Uncertain),
+	}
+
+	if len(reasoning.Consulted) > 0 {
+		sources := make([]api.AgentSource, 0, len(reasoning.Consulted))
+
+		for _, source := range reasoning.Consulted {
+			sources = append(sources, api.AgentSource{
+				Label: source.Label,
+				Url:   nilIfEmpty(source.URL),
+			})
+		}
+
+		dto.Consulted = &sources
+	}
+
+	return &dto
+}
+
+func waitingProposalDTO(waiting service.WaitingProposal) api.AgentProposal {
+	dto := agentProposalDTO(waiting.Proposal)
+	dto.Reasoning = agentReasoningDTO(waiting.Proposal.Reasoning)
+
+	if waiting.Issue.ID != uuid.Nil {
+		reference := waiting.Issue.Reference()
+		dto.IssueReference = &reference
+		dto.IssueTitle = &waiting.Issue.Title
+
+		state := issueCheckListDTO(waiting.Checks)
+		dto.CheckState = &state
+	}
+
+	if len(waiting.Proposed) > 0 {
+		proposed := issueCheckDTOs(waiting.Proposed)
+		dto.ProposedChecks = &proposed
+	}
+
+	if waiting.State.Name != "" {
+		dto.StateName = &waiting.State.Name
+	}
+
+	return dto
+}
+
+func waitingProposalDTOs(waiting []service.WaitingProposal) []api.AgentProposal {
+	dtos := make([]api.AgentProposal, 0, len(waiting))
+
+	for _, held := range waiting {
+		dtos = append(dtos, waitingProposalDTO(held))
 	}
 
 	return dtos
+}
+
+func agentReasoningFrom(body *api.AgentReasoning) entity.AgentReasoning {
+	if body == nil {
+		return entity.AgentReasoning{}
+	}
+
+	reasoning := entity.AgentReasoning{}
+
+	if body.Observed != nil {
+		reasoning.Observed = *body.Observed
+	}
+
+	if body.Uncertain != nil {
+		reasoning.Uncertain = *body.Uncertain
+	}
+
+	if body.Consulted != nil {
+		for _, source := range *body.Consulted {
+			consulted := entity.AgentSource{Label: source.Label}
+
+			if source.Url != nil {
+				consulted.URL = *source.Url
+			}
+
+			reasoning.Consulted = append(reasoning.Consulted, consulted)
+		}
+	}
+
+	return reasoning
 }

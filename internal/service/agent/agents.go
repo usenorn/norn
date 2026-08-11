@@ -20,6 +20,7 @@ type agentsService struct {
 	tokens      repository.APIToken
 	teams       repository.Team
 	activity    repository.Activity
+	states      repository.WorkflowState
 	issues      service.Issues
 	comments    service.IssueComments
 	checks      service.Checks
@@ -37,6 +38,7 @@ func New(
 	tokens repository.APIToken,
 	teams repository.Team,
 	activity repository.Activity,
+	states repository.WorkflowState,
 	issues service.Issues,
 	comments service.IssueComments,
 	checks service.Checks,
@@ -53,6 +55,7 @@ func New(
 		tokens:      tokens,
 		teams:       teams,
 		activity:    activity,
+		states:      states,
 		issues:      issues,
 		comments:    comments,
 		checks:      checks,

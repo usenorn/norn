@@ -3,11 +3,13 @@ package agent
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/service"
 )
@@ -80,7 +82,7 @@ func (s *agentsService) scopedTeam(
 func (s *agentsService) Waiting(
 	ctx context.Context,
 	workspaceID uuid.UUID,
-) ([]entity.AgentProposal, error) {
+) ([]service.WaitingProposal, error) {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceAgent,
 		Action:      entity.ActionRead,
@@ -96,15 +98,99 @@ func (s *agentsService) Waiting(
 		return nil, err
 	}
 
-	reachable := make([]entity.AgentProposal, 0, len(waiting))
+	reachable := make([]service.WaitingProposal, 0, len(waiting))
 
 	for _, proposal := range waiting {
-		if decision.Scope.Covers(proposal.TeamID) {
-			reachable = append(reachable, proposal)
+		if !decision.Scope.Covers(proposal.TeamID) {
+			continue
 		}
+
+		reachable = append(reachable, s.context(ctx, proposal))
 	}
 
 	return reachable, nil
+}
+
+func (s *agentsService) context(
+	ctx context.Context,
+	proposal entity.AgentProposal,
+) service.WaitingProposal {
+	waiting := service.WaitingProposal{Proposal: proposal}
+
+	if proposal.IssueID == uuid.Nil {
+		return waiting
+	}
+
+	issue, err := s.issues.Get(ctx, proposal.WorkspaceID, proposal.IssueID)
+	if err != nil {
+		logging.From(ctx).WarnContext(
+			ctx,
+			"reading the issue a held proposal belongs to failed, so the approver sees less of it",
+			"proposal_id", proposal.ID.String(),
+			"error", err.Error(),
+		)
+
+		return waiting
+	}
+
+	waiting.Issue = issue
+
+	checks, err := s.checks.List(ctx, proposal.WorkspaceID, proposal.IssueID)
+	if err != nil {
+		logging.From(ctx).WarnContext(
+			ctx,
+			"reading the checks on a held proposal's issue failed, so the approver sees less of it",
+			"proposal_id", proposal.ID.String(),
+			"error", err.Error(),
+		)
+
+		return waiting
+	}
+
+	waiting.Checks = checks
+	waiting.Proposed = proposedChecks(checks, proposal.Change.CheckIDs)
+	waiting.State = s.targetState(ctx, issue, proposal)
+
+	return waiting
+}
+
+func (s *agentsService) targetState(
+	ctx context.Context,
+	issue entity.Issue,
+	proposal entity.AgentProposal,
+) entity.WorkflowState {
+	if proposal.Change.StateID == nil || *proposal.Change.StateID == uuid.Nil {
+		return entity.WorkflowState{}
+	}
+
+	states, err := s.states.ListByTeamID(ctx, issue.TeamID)
+	if err != nil {
+		return entity.WorkflowState{}
+	}
+
+	for _, state := range states {
+		if state.ID == *proposal.Change.StateID {
+			return state
+		}
+	}
+
+	return entity.WorkflowState{}
+}
+
+func proposedChecks(checks service.IssueChecks, ids []uuid.UUID) []entity.Check {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	proposed := make([]entity.Check, 0, len(ids))
+
+	for _, report := range checks.Reports {
+		if slices.Contains(ids, report.Check.ID) {
+			proposed = append(proposed, report.Check)
+		}
+	}
+
+	return proposed
 }
 
 func (s *agentsService) Approve(

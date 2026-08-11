@@ -41,6 +41,7 @@ func (g *Gate) Hold(
 	issue entity.Issue,
 	actions []entity.AgentAction,
 	change entity.AgentChange,
+	reasoning entity.AgentReasoning,
 ) (entity.AgentProposal, bool, error) {
 	if decision.Actor.Kind != entity.ActorKindAgent || identity.Approved(ctx) {
 		return entity.AgentProposal{}, false, nil
@@ -86,6 +87,7 @@ func (g *Gate) Hold(
 		TeamID:      issue.TeamID,
 		Action:      action,
 		Change:      change,
+		Reasoning:   reasoning,
 	})
 	if err != nil {
 		return entity.AgentProposal{}, false, err

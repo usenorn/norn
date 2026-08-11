@@ -167,6 +167,7 @@ func (h *handler) UpdateWorkspaceIssue(
 			*request.Body.AcknowledgeOpenChildren,
 		AcknowledgeUnprovenChecks: request.Body.AcknowledgeUnprovenChecks != nil &&
 			*request.Body.AcknowledgeUnprovenChecks,
+		Reasoning:   agentReasoningFrom(request.Body.Reasoning),
 		Title:       request.Body.Title,
 		StateID:     request.Body.StateId,
 		Description: request.Body.Description,

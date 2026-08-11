@@ -42,6 +42,7 @@ func (s *issuesService) held(
 			ProjectID:   input.ProjectID,
 			Clear:       input.Clear,
 		},
+		input.Reasoning,
 	)
 	if err != nil {
 		return false, err

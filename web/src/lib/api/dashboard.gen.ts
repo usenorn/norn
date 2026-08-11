@@ -3941,6 +3941,7 @@ export interface components {
         };
         AddIssueChecksRequest: {
             checks: components["schemas"]["NewIssueCheck"][];
+            reasoning?: components["schemas"]["AgentReasoning"];
         };
         DecideIssueCheckRequest: {
             /** @enum {string} */
@@ -4069,6 +4070,7 @@ export interface components {
         UpdateIssueRequest: {
             /** @description Complete this issue even though children of it are still open */
             acknowledgeOpenChildren?: boolean;
+            reasoning?: components["schemas"]["AgentReasoning"];
             /** @description Record that whoever finished this issue was shown its unproven criteria first. It never changes whether the write succeeds — a person is never refused — only what the timeline can say about the override. */
             acknowledgeUnprovenChecks?: boolean;
             /** Format: int32 */
@@ -4228,6 +4230,7 @@ export interface components {
         };
         PostCommentRequest: {
             body: string;
+            reasoning?: components["schemas"]["AgentReasoning"];
             /** Format: uuid */
             parentCommentId?: string;
             attachmentIds?: string[];
@@ -4925,6 +4928,16 @@ export interface components {
             agent: components["schemas"]["Agent"];
             value: string;
         };
+        AgentSource: {
+            label: string;
+            url?: string;
+        };
+        /** @description What the agent saw, what it read, and what it is unsure about, so deciding a proposal is a read rather than an investigation. */
+        AgentReasoning: {
+            observed?: string;
+            consulted?: components["schemas"]["AgentSource"][];
+            uncertain?: string;
+        };
         /**
          * @description Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
          * @enum {string}
@@ -4961,6 +4974,16 @@ export interface components {
             description?: string;
             /** @description The criteria a check set proposal would add to the definition of done */
             checkIds?: string[];
+            reasoning?: components["schemas"]["AgentReasoning"];
+            /** @description So an approver can open the issue the proposal is about */
+            issueReference?: string;
+            issueTitle?: string;
+            /** @description The state a state change would move the issue to */
+            stateName?: string;
+            /** @description The criteria a check set proposal would add, in full */
+            proposedChecks?: components["schemas"]["IssueCheck"][];
+            /** @description What the issue's criteria say right now, so the person deciding sees whether they are being asked to let unproven work through. */
+            checkState?: components["schemas"]["IssueCheckList"];
             /** Format: uuid */
             decidedByAccountId?: string;
             /** Format: date-time */

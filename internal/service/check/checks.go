@@ -123,6 +123,12 @@ func (s *checksService) Add(
 		})
 	}
 
+	if err := entity.NewValidationError(
+		entity.ValidateAgentReasoning("reasoning", input.Reasoning),
+	); err != nil {
+		return nil, err
+	}
+
 	for _, drafted := range input.Checks {
 		if err := validateDraft(drafted); err != nil {
 			return nil, err
@@ -191,7 +197,7 @@ func (s *checksService) Add(
 			position++
 		}
 
-		return s.propose(ctx, decision, issue, added)
+		return s.propose(ctx, decision, issue, added, input.Reasoning)
 	})
 	if err != nil {
 		return nil, err

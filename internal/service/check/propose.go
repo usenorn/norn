@@ -13,6 +13,7 @@ func (s *checksService) propose(
 	decision entity.Decision,
 	issue entity.Issue,
 	added []entity.Check,
+	reasoning entity.AgentReasoning,
 ) error {
 	if decision.Actor.Kind != entity.ActorKindAgent || len(added) == 0 {
 		return nil
@@ -36,6 +37,7 @@ func (s *checksService) propose(
 		TeamID:      issue.TeamID,
 		Action:      entity.AgentActionCheckSet,
 		Change:      entity.AgentChange{ExpectedVersion: issue.Version, CheckIDs: ids},
+		Reasoning:   reasoning,
 	})
 
 	return err

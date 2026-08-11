@@ -16,16 +16,16 @@ import (
 
 const proposalColumns = `
 	p.id, p.workspace_id, p.agent_id, coalesce(a.name, ''), p.issue_id, p.team_id,
-	p.action, p.change, p.status, coalesce(p.decided_by_account_id::text, ''),
+	p.action, p.change, p.reasoning, p.status, coalesce(p.decided_by_account_id::text, ''),
 	p.decided_at, coalesce(p.failure, ''), p.created_at, p.updated_at
 	FROM workspace_agent_proposals p
 	LEFT JOIN workspace_agents a ON a.id = p.agent_id`
 
 const insertProposalQuery = `
 	INSERT INTO workspace_agent_proposals (
-	    id, workspace_id, agent_id, issue_id, team_id, action, change
+	    id, workspace_id, agent_id, issue_id, team_id, action, change, reasoning
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
 const settleProposalQuery = `
 	UPDATE workspace_agent_proposals
@@ -54,6 +54,11 @@ func (r *agentProposalRepository) Create(
 		return entity.AgentProposal{}, fmt.Errorf("encode agent proposal change: %w", err)
 	}
 
+	reasoning, err := json.Marshal(proposal.Reasoning)
+	if err != nil {
+		return entity.AgentProposal{}, fmt.Errorf("encode agent proposal reasoning: %w", err)
+	}
+
 	if _, err := r.db.Querier(ctx).ExecContext(
 		ctx,
 		insertProposalQuery,
@@ -64,6 +69,7 @@ func (r *agentProposalRepository) Create(
 		proposal.TeamID.String(),
 		string(proposal.Action),
 		change,
+		reasoning,
 	); err != nil {
 		return entity.AgentProposal{}, fmt.Errorf("insert agent proposal: %w", err)
 	}
@@ -182,7 +188,7 @@ func (r *agentProposalRepository) many(
 			agentName                     string
 			rawIssue, rawTeam             string
 			action, status, decidedBy     string
-			change                        []byte
+			change, reasoning             []byte
 			decidedAt                     sql.NullTime
 			failure                       string
 			createdAt, updatedAt          time.Time
@@ -190,7 +196,7 @@ func (r *agentProposalRepository) many(
 
 		if err := rows.Scan(
 			&rawID, &rawWorkspace, &rawAgent, &agentName, &rawIssue, &rawTeam,
-			&action, &change, &status, &decidedBy,
+			&action, &change, &reasoning, &status, &decidedBy,
 			&decidedAt, &failure, &createdAt, &updatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan agent proposal: %w", err)
@@ -222,6 +228,10 @@ func (r *agentProposalRepository) many(
 
 		if err := json.Unmarshal(change, &proposal.Change); err != nil {
 			return nil, fmt.Errorf("decode agent proposal change: %w", err)
+		}
+
+		if err := json.Unmarshal(reasoning, &proposal.Reasoning); err != nil {
+			return nil, fmt.Errorf("decode agent proposal reasoning: %w", err)
 		}
 
 		if decidedBy != "" {

@@ -43,7 +43,10 @@ func (h *handler) PostWorkspaceIssueComment(
 	ctx context.Context,
 	request api.PostWorkspaceIssueCommentRequestObject,
 ) (api.PostWorkspaceIssueCommentResponseObject, error) {
-	input := service.PostCommentInput{Body: request.Body.Body}
+	input := service.PostCommentInput{
+		Body:      request.Body.Body,
+		Reasoning: agentReasoningFrom(request.Body.Reasoning),
+	}
 
 	if request.Body.ParentCommentId != nil {
 		input.ParentCommentID = *request.Body.ParentCommentId

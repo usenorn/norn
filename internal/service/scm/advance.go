@@ -99,7 +99,7 @@ func (s *sync) drive(
 
 	held, waiting, err := s.holds.Hold(ctx, author, issue, []entity.AgentAction{entity.AgentActionStateChange}, entity.AgentChange{
 		StateID: &target,
-	})
+	}, entity.AgentReasoning{})
 	if err != nil {
 		return "", err
 	}

@@ -389,6 +389,12 @@ func (s *issuesService) Update(
 		return entity.Issue{}, err
 	}
 
+	if err := entity.NewValidationError(
+		entity.ValidateAgentReasoning("reasoning", input.Reasoning),
+	); err != nil {
+		return entity.Issue{}, err
+	}
+
 	change := entity.IssueChange{
 		Title:         input.Title,
 		StateID:       input.StateID,

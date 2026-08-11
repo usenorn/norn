@@ -90,6 +90,7 @@ type UpdateIssueInput struct {
 	AfterIssueID              *uuid.UUID
 	BeforeIssueID             *uuid.UUID
 	Clear                     []string
+	Reasoning                 entity.AgentReasoning
 }
 
 type MoveIssueInput struct {

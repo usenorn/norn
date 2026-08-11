@@ -193,10 +193,10 @@ func (mr *MockAgentsMockRecorder) Settings(ctx, workspaceID, teamID any) *gomock
 }
 
 // Waiting mocks base method.
-func (m *MockAgents) Waiting(ctx context.Context, workspaceID uuid.UUID) ([]entity.AgentProposal, error) {
+func (m *MockAgents) Waiting(ctx context.Context, workspaceID uuid.UUID) ([]service.WaitingProposal, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Waiting", ctx, workspaceID)
-	ret0, _ := ret[0].([]entity.AgentProposal)
+	ret0, _ := ret[0].([]service.WaitingProposal)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

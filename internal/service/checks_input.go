@@ -14,7 +14,8 @@ type NewCheckInput struct {
 }
 
 type AddChecksInput struct {
-	Checks []NewCheckInput
+	Checks    []NewCheckInput
+	Reasoning entity.AgentReasoning
 }
 
 type DecideCheckInput struct {

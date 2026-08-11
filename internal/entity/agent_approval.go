@@ -3,7 +3,9 @@ package entity
 import (
 	"errors"
 	"slices"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -200,6 +202,52 @@ type AgentChange struct {
 	CheckIDs        []uuid.UUID
 }
 
+const (
+	AgentReasoningMaxLen     = 4000
+	AgentSourcesMax          = 20
+	AgentSourceLabelMaxLen   = 200
+	AgentSourceAddressMaxLen = 2048
+)
+
+type AgentSource struct {
+	Label string
+	URL   string
+}
+
+type AgentReasoning struct {
+	Observed  string
+	Consulted []AgentSource
+	Uncertain string
+}
+
+func (r AgentReasoning) Empty() bool {
+	return r.Observed == "" && r.Uncertain == "" && len(r.Consulted) == 0
+}
+
+func ValidateAgentReasoning(field string, reasoning AgentReasoning) FieldError {
+	if utf8.RuneCountInString(reasoning.Observed) > AgentReasoningMaxLen ||
+		utf8.RuneCountInString(reasoning.Uncertain) > AgentReasoningMaxLen {
+		return FieldError{Field: field, Code: ValidationCodeTooLong}
+	}
+
+	if len(reasoning.Consulted) > AgentSourcesMax {
+		return FieldError{Field: field, Code: ValidationCodeOutOfRange}
+	}
+
+	for _, source := range reasoning.Consulted {
+		if strings.TrimSpace(source.Label) == "" {
+			return FieldError{Field: field, Code: ValidationCodeRequired}
+		}
+
+		if utf8.RuneCountInString(source.Label) > AgentSourceLabelMaxLen ||
+			utf8.RuneCountInString(source.URL) > AgentSourceAddressMaxLen {
+			return FieldError{Field: field, Code: ValidationCodeTooLong}
+		}
+	}
+
+	return FieldError{}
+}
+
 type AgentProposal struct {
 	ID          uuid.UUID
 	WorkspaceID uuid.UUID
@@ -209,6 +257,7 @@ type AgentProposal struct {
 	TeamID      uuid.UUID
 	Action      AgentAction
 	Change      AgentChange
+	Reasoning   AgentReasoning
 	Status      AgentProposalStatus
 	DecidedBy   uuid.UUID
 	DecidedAt   *time.Time

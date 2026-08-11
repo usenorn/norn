@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import Bot from "@lucide/svelte/icons/bot";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
-	import { onDateAndTime } from "$lib/time";
-	import { agentsPath, actionLabels, proposalSummary, type ProposalQueue } from "$lib/agents/agents";
+	import { agentsPath, type ProposalQueue } from "$lib/agents/agents";
+	import ProposalCard from "$lib/agents/proposal-card.svelte";
 	import { approvalsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -113,45 +111,14 @@
 			{:else}
 				<ul class="flex flex-col gap-2">
 					{#each waiting as proposal (proposal.id)}
-						<li class="flex flex-col gap-3 rounded-lg border border-line-subtle bg-paper-0 p-4">
-							<div class="flex flex-col gap-1.5">
-								<div class="flex flex-wrap items-center gap-2">
-									<Bot class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-									<span class="text-sm font-medium text-ink-900">{proposal.agentName}</span>
-									<Tag name="Agent" />
-									<span class="text-xs text-muted-foreground">
-										{onDateAndTime(proposal.createdAt, workspace.timezone)}
-									</span>
-								</div>
-								<p class="text-sm leading-normal text-ink-600 text-pretty">
-									{actionLabels[proposal.action]} — {proposalSummary(proposal)}
-								</p>
-								<a
-									href={`/${workspace.slug}/issues`}
-									class="text-xs text-muted-foreground underline-offset-2 hover:underline"
-								>
-									On an issue in this workspace
-								</a>
-							</div>
-
-							<div class="flex flex-wrap gap-2">
-								<Button
-									size="sm"
-									disabled={busy}
-									onclick={() => decide(proposal.id, "approve")}
-								>
-									{deciding === proposal.id ? "Applying…" : "Approve"}
-								</Button>
-								<Button
-									variant="secondary"
-									size="sm"
-									disabled={busy}
-									onclick={() => decide(proposal.id, "reject")}
-								>
-									Reject
-								</Button>
-							</div>
-						</li>
+						<ProposalCard
+							{proposal}
+							slug={workspace.slug}
+							timezone={workspace.timezone}
+							{busy}
+							{deciding}
+							ondecide={decide}
+						/>
 					{/each}
 				</ul>
 			{/if}

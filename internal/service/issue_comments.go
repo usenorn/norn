@@ -33,6 +33,7 @@ type PostCommentInput struct {
 	Mentions        []CommentMentionInput
 	AttachmentIDs   []uuid.UUID
 	Origin          *entity.ImportOrigin
+	Reasoning       entity.AgentReasoning
 }
 
 type CommentPosted struct {

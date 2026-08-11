@@ -180,7 +180,7 @@ func (h *handler) ListWorkspaceAgentProposals(
 		return nil, err
 	}
 
-	return api.ListWorkspaceAgentProposals200JSONResponse(agentProposalDTOs(waiting)), nil
+	return api.ListWorkspaceAgentProposals200JSONResponse(waitingProposalDTOs(waiting)), nil
 }
 
 func (h *handler) ApproveWorkspaceAgentProposal(

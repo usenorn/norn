@@ -3859,6 +3859,9 @@ type ActivitySubjectKind string
 // AddIssueChecksRequest defines model for AddIssueChecksRequest.
 type AddIssueChecksRequest struct {
 	Checks []NewIssueCheck `json:"checks"`
+
+	// Reasoning What the agent saw, what it read, and what it is unsure about, so deciding a proposal is a read rather than an investigation.
+	Reasoning *AgentReasoning `json:"reasoning,omitempty"`
 }
 
 // AddIssueRelationRequest defines model for AddIssueRelationRequest.
@@ -3949,6 +3952,7 @@ type AgentProposal struct {
 
 	// CheckIds The criteria a check set proposal would add to the definition of done
 	CheckIds           *[]openapi_types.UUID `json:"checkIds,omitempty"`
+	CheckState         *IssueCheckList       `json:"checkState,omitempty"`
 	CreatedAt          time.Time             `json:"createdAt"`
 	DecidedAt          *time.Time            `json:"decidedAt,omitempty"`
 	DecidedByAccountId *openapi_types.UUID   `json:"decidedByAccountId,omitempty"`
@@ -3956,14 +3960,34 @@ type AgentProposal struct {
 	Failure            *string               `json:"failure,omitempty"`
 	Id                 openapi_types.UUID    `json:"id"`
 	IssueId            openapi_types.UUID    `json:"issueId"`
-	StateId            *openapi_types.UUID   `json:"stateId,omitempty"`
-	Status             AgentProposalStatus   `json:"status"`
-	TeamId             openapi_types.UUID    `json:"teamId"`
-	Title              *string               `json:"title,omitempty"`
+
+	// IssueReference So an approver can open the issue the proposal is about
+	IssueReference *string `json:"issueReference,omitempty"`
+	IssueTitle     *string `json:"issueTitle,omitempty"`
+
+	// ProposedChecks The criteria a check set proposal would add, in full
+	ProposedChecks *[]IssueCheck `json:"proposedChecks,omitempty"`
+
+	// Reasoning What the agent saw, what it read, and what it is unsure about, so deciding a proposal is a read rather than an investigation.
+	Reasoning *AgentReasoning     `json:"reasoning,omitempty"`
+	StateId   *openapi_types.UUID `json:"stateId,omitempty"`
+
+	// StateName The state a state change would move the issue to
+	StateName *string             `json:"stateName,omitempty"`
+	Status    AgentProposalStatus `json:"status"`
+	TeamId    openapi_types.UUID  `json:"teamId"`
+	Title     *string             `json:"title,omitempty"`
 }
 
 // AgentProposalStatus defines model for AgentProposalStatus.
 type AgentProposalStatus string
+
+// AgentReasoning What the agent saw, what it read, and what it is unsure about, so deciding a proposal is a read rather than an investigation.
+type AgentReasoning struct {
+	Consulted *[]AgentSource `json:"consulted,omitempty"`
+	Observed  *string        `json:"observed,omitempty"`
+	Uncertain *string        `json:"uncertain,omitempty"`
+}
 
 // AgentSettings defines model for AgentSettings.
 type AgentSettings struct {
@@ -3975,6 +3999,12 @@ type AgentSettings struct {
 
 	// HoldStateChanges Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
 	HoldStateChanges AgentHold `json:"holdStateChanges"`
+}
+
+// AgentSource defines model for AgentSource.
+type AgentSource struct {
+	Label string  `json:"label"`
+	Url   *string `json:"url,omitempty"`
 }
 
 // AgentStatus defines model for AgentStatus.
@@ -5833,6 +5863,9 @@ type PostCommentRequest struct {
 	Body            string                `json:"body"`
 	Mentions        *[]MentionTarget      `json:"mentions,omitempty"`
 	ParentCommentId *openapi_types.UUID   `json:"parentCommentId,omitempty"`
+
+	// Reasoning What the agent saw, what it read, and what it is unsure about, so deciding a proposal is a read rather than an investigation.
+	Reasoning *AgentReasoning `json:"reasoning,omitempty"`
 }
 
 // PostProjectStatusRequest defines model for PostProjectStatusRequest.
@@ -6745,8 +6778,11 @@ type UpdateIssueRequest struct {
 	ExpectedVersion int32                      `json:"expectedVersion"`
 	Priority        *IssuePriority             `json:"priority,omitempty"`
 	ProjectId       *openapi_types.UUID        `json:"projectId,omitempty"`
-	StateId         *openapi_types.UUID        `json:"stateId,omitempty"`
-	Title           *string                    `json:"title,omitempty"`
+
+	// Reasoning What the agent saw, what it read, and what it is unsure about, so deciding a proposal is a read rather than an investigation.
+	Reasoning *AgentReasoning     `json:"reasoning,omitempty"`
+	StateId   *openapi_types.UUID `json:"stateId,omitempty"`
+	Title     *string             `json:"title,omitempty"`
 }
 
 // UpdateIssueRequestClear defines model for UpdateIssueRequest.Clear.

@@ -40,6 +40,9 @@ export type ProposalQueue =
 	| { kind: "unavailable" };
 
 export type AgentHold = components["schemas"]["AgentHold"];
+export type AgentReasoning = components["schemas"]["AgentReasoning"];
+export type IssueCheck = components["schemas"]["IssueCheck"];
+export type IssueCheckSummary = components["schemas"]["IssueCheckSummary"];
 
 export const actionLabels: Record<AgentAction, string> = {
 	comment: "Leave a comment",
@@ -162,7 +165,7 @@ export function proposalSummary(proposal: AgentProposal): string {
 		case "comment":
 			return proposal.body ? `“${proposal.body}”` : "a comment";
 		case "state_change":
-			return "a new state";
+			return proposal.stateName ? `moving it to ${proposal.stateName}` : "a new state";
 		case "issue_edit":
 			return proposal.title ? `the title “${proposal.title}”` : "an edit";
 		case "check_set":
@@ -203,3 +206,38 @@ export function agentPath(workspace: string, agentId: string): string {
 export function approvalsPath(workspace: string): string {
 	return `/${workspace}/agents/approvals`;
 }
+
+export function overriding(proposal: AgentProposal): boolean {
+	if (proposal.action !== "state_change") return false;
+
+	return (proposal.checkState?.summary.blocking ?? 0) > 0;
+}
+
+export function blockingLine(summary: IssueCheckSummary): string {
+	if (summary.blocking === 0) return "";
+
+	return `${summary.blocking} ${summary.blocking === 1 ? "check is" : "checks are"} not proven.`;
+}
+
+export const checkStateLabels: Record<components["schemas"]["CheckState"], string> = {
+	unproven: "Unproven",
+	proven: "Proven",
+	failed: "Failed",
+	waived: "Waived",
+	gap: "Gap",
+};
+
+export const checkStateTones: Record<components["schemas"]["CheckState"], string> = {
+	unproven: "text-muted-foreground",
+	proven: "text-success",
+	failed: "text-destructive",
+	waived: "text-muted-foreground",
+	gap: "text-warning",
+};
+
+export const methodLabels: Record<components["schemas"]["CheckMethod"], string> = {
+	command: "Command",
+	observation: "Observation",
+	manual: "Manual",
+	regression: "Regression",
+};
