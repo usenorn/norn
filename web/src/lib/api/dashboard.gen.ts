@@ -2489,6 +2489,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/delegation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Every time this issue has been handed to an agent, newest first */
+        get: operations["listWorkspaceIssueDelegations"];
+        put?: never;
+        /** Hand this issue to an agent, and tell anything listening that work has begun */
+        post: operations["delegateWorkspaceIssue"];
+        /** Take this issue back from the agent holding it */
+        delete: operations["recallWorkspaceIssue"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/labels": {
         parameters: {
             query?: never;
@@ -3612,6 +3634,41 @@ export interface components {
             issues: components["schemas"]["Issue"][];
             progress: components["schemas"]["IssueProgress"];
         };
+        IssueDelegation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            issueId: string;
+            /** Format: uuid */
+            agentId: string;
+            agentName: string;
+            /**
+             * Format: uuid
+             * @description The account the agent writes as, so its work can be attributed to it
+             */
+            agentAccountId: string;
+            /** @description What the agent was asked to do, carried to whatever runtime picks the work up */
+            brief?: string;
+            /** Format: uuid */
+            delegatedByAccountId?: string;
+            /** Format: date-time */
+            delegatedAt: string;
+            /** Format: uuid */
+            recalledByAccountId?: string;
+            /**
+             * Format: date-time
+             * @description Absent while the delegation is open
+             */
+            recalledAt?: string;
+        };
+        DelegateIssueRequest: {
+            /**
+             * Format: uuid
+             * @description The account the agent writes as, which is how it appears in the member list. Listing the agents themselves is an administrator's view, so this is what an ordinary member has to hand.
+             */
+            agentAccountId: string;
+            brief?: string;
+        };
         MoveIssueRequest: {
             /** Format: uuid */
             teamId: string;
@@ -3852,7 +3909,7 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
@@ -4079,7 +4136,7 @@ export interface components {
             version?: number;
         };
         /** @enum {string} */
-        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked";
+        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled";
         /** @enum {string} */
         LicenceStatus: "absent" | "active" | "grace" | "expired";
         LicenceFeature: {
@@ -4629,12 +4686,12 @@ export interface components {
             expiresAt?: string;
         };
         /** @enum {string} */
-        WebhookEventType: "issue.created" | "issue.updated" | "issue.status_changed" | "issue.deleted" | "issue.triaged" | "issue.merged" | "comment.posted" | "comment.edited" | "comment.deleted" | "project.created" | "project.updated" | "project.deleted" | "project.members_changed" | "project.status_posted" | "cycle.started" | "cycle.closed" | "cycle.cadence_changed" | "membership.added" | "membership.changed" | "membership.removed" | "team_membership.added" | "team_membership.removed";
+        WebhookEventType: "issue.created" | "issue.updated" | "issue.status_changed" | "issue.deleted" | "issue.triaged" | "issue.merged" | "issue.delegated" | "comment.posted" | "comment.edited" | "comment.deleted" | "project.created" | "project.updated" | "project.deleted" | "project.members_changed" | "project.status_posted" | "cycle.started" | "cycle.closed" | "cycle.cadence_changed" | "membership.added" | "membership.changed" | "membership.removed" | "team_membership.added" | "team_membership.removed";
         /**
          * @description Every subscribable event, plus the test event a delivery may carry.
          * @enum {string}
          */
-        WebhookDeliveryEventType: "issue.created" | "issue.updated" | "issue.status_changed" | "issue.deleted" | "issue.triaged" | "issue.merged" | "comment.posted" | "comment.edited" | "comment.deleted" | "project.created" | "project.updated" | "project.deleted" | "project.members_changed" | "project.status_posted" | "cycle.started" | "cycle.closed" | "cycle.cadence_changed" | "membership.added" | "membership.changed" | "membership.removed" | "team_membership.added" | "team_membership.removed" | "webhook.test";
+        WebhookDeliveryEventType: "issue.created" | "issue.updated" | "issue.status_changed" | "issue.deleted" | "issue.triaged" | "issue.merged" | "issue.delegated" | "comment.posted" | "comment.edited" | "comment.deleted" | "project.created" | "project.updated" | "project.deleted" | "project.members_changed" | "project.status_posted" | "cycle.started" | "cycle.closed" | "cycle.cadence_changed" | "membership.added" | "membership.changed" | "membership.removed" | "team_membership.added" | "team_membership.removed" | "webhook.test";
         /** @enum {string} */
         WebhookDeliveryState: "pending" | "succeeded" | "failed";
         /** @enum {string} */
@@ -11586,6 +11643,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IssueChildren"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueDelegations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The delegations on record, open and ended */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueDelegation"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    delegateWorkspaceIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DelegateIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description The open delegation */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueDelegation"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    recallWorkspaceIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The delegation as it now stands, carrying when it ended */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueDelegation"];
                 };
             };
             401: components["responses"]["Problem"];

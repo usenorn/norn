@@ -52,6 +52,7 @@ const (
 	WebhookIssueDeleted       WebhookEvent = "issue.deleted"
 	WebhookIssueTriaged       WebhookEvent = "issue.triaged"
 	WebhookIssueMerged        WebhookEvent = "issue.merged"
+	WebhookIssueDelegated     WebhookEvent = "issue.delegated"
 
 	WebhookCommentPosted  WebhookEvent = "comment.posted"
 	WebhookCommentEdited  WebhookEvent = "comment.edited"
@@ -81,6 +82,7 @@ func WebhookEvents() []WebhookEvent {
 	return []WebhookEvent{
 		WebhookIssueCreated, WebhookIssueUpdated, WebhookIssueStatusChanged,
 		WebhookIssueDeleted, WebhookIssueTriaged, WebhookIssueMerged,
+		WebhookIssueDelegated,
 		WebhookCommentPosted, WebhookCommentEdited, WebhookCommentDeleted,
 		WebhookProjectCreated, WebhookProjectUpdated, WebhookProjectDeleted,
 		WebhookProjectMembersEdited, WebhookProjectStatusPosted,

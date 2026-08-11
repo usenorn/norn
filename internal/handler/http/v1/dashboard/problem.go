@@ -417,6 +417,15 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrBulkSetAmbiguous):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
+	case errors.Is(err, entity.ErrIssueDelegationHeld):
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationHeld, err), true
+
+	case errors.Is(err, entity.ErrIssueDelegationAgentUnusable):
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationAgentUnusable, err), true
+
+	case errors.Is(err, entity.ErrIssueDelegationNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
 	case errors.Is(err, entity.ErrIssueRelationSelf):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueRelationSelf, err), true
 
@@ -1355,6 +1364,18 @@ func (r problemResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWri
 }
 
 func (r problemResponse) VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueDelegationsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRecallWorkspaceIssueResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

@@ -122,6 +122,38 @@ func WebhookComment(comment entity.IssueComment, issue entity.Issue) WebhookComm
 	return payload
 }
 
+type WebhookDelegationPayload struct {
+	ID             string              `json:"id"`
+	Issue          WebhookIssuePayload `json:"issue"`
+	AgentID        string              `json:"agentId"`
+	AgentName      string              `json:"agentName"`
+	AgentAccountID string              `json:"agentAccountId"`
+	Brief          string              `json:"brief,omitempty"`
+	DelegatedByID  string              `json:"delegatedById,omitempty"`
+	DelegatedAt    string              `json:"delegatedAt"`
+}
+
+func WebhookDelegation(
+	issue entity.Issue,
+	delegation entity.IssueDelegation,
+) WebhookDelegationPayload {
+	payload := WebhookDelegationPayload{
+		ID:             delegation.ID.String(),
+		Issue:          WebhookIssue(issue),
+		AgentID:        delegation.AgentID.String(),
+		AgentName:      delegation.AgentName,
+		AgentAccountID: delegation.AgentAccountID.String(),
+		Brief:          delegation.Brief,
+		DelegatedAt:    stamp(delegation.DelegatedAt),
+	}
+
+	if delegation.DelegatedByAccountID != uuid.Nil {
+		payload.DelegatedByID = delegation.DelegatedByAccountID.String()
+	}
+
+	return payload
+}
+
 type WebhookProjectPayload struct {
 	ID          string `json:"id"`
 	Slug        string `json:"slug"`

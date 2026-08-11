@@ -115,23 +115,26 @@ var WorkspaceAgentWhere = struct {
 
 // WorkspaceAgentRels is where relationship names are stored.
 var WorkspaceAgentRels = struct {
-	Account                      string
-	OwnerAccount                 string
-	Workspace                    string
-	AgentWorkspaceAgentProposals string
+	Account                        string
+	OwnerAccount                   string
+	Workspace                      string
+	AgentWorkspaceAgentProposals   string
+	AgentWorkspaceIssueDelegations string
 }{
-	Account:                      "Account",
-	OwnerAccount:                 "OwnerAccount",
-	Workspace:                    "Workspace",
-	AgentWorkspaceAgentProposals: "AgentWorkspaceAgentProposals",
+	Account:                        "Account",
+	OwnerAccount:                   "OwnerAccount",
+	Workspace:                      "Workspace",
+	AgentWorkspaceAgentProposals:   "AgentWorkspaceAgentProposals",
+	AgentWorkspaceIssueDelegations: "AgentWorkspaceIssueDelegations",
 }
 
 // workspaceAgentR is where relationships are stored.
 type workspaceAgentR struct {
-	Account                      *Account                    `boil:"Account" json:"Account" toml:"Account" yaml:"Account"`
-	OwnerAccount                 *Account                    `boil:"OwnerAccount" json:"OwnerAccount" toml:"OwnerAccount" yaml:"OwnerAccount"`
-	Workspace                    *Workspace                  `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	AgentWorkspaceAgentProposals WorkspaceAgentProposalSlice `boil:"AgentWorkspaceAgentProposals" json:"AgentWorkspaceAgentProposals" toml:"AgentWorkspaceAgentProposals" yaml:"AgentWorkspaceAgentProposals"`
+	Account                        *Account                      `boil:"Account" json:"Account" toml:"Account" yaml:"Account"`
+	OwnerAccount                   *Account                      `boil:"OwnerAccount" json:"OwnerAccount" toml:"OwnerAccount" yaml:"OwnerAccount"`
+	Workspace                      *Workspace                    `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	AgentWorkspaceAgentProposals   WorkspaceAgentProposalSlice   `boil:"AgentWorkspaceAgentProposals" json:"AgentWorkspaceAgentProposals" toml:"AgentWorkspaceAgentProposals" yaml:"AgentWorkspaceAgentProposals"`
+	AgentWorkspaceIssueDelegations WorkspaceIssueDelegationSlice `boil:"AgentWorkspaceIssueDelegations" json:"AgentWorkspaceIssueDelegations" toml:"AgentWorkspaceIssueDelegations" yaml:"AgentWorkspaceIssueDelegations"`
 }
 
 // NewStruct creates a new relationship struct
@@ -201,6 +204,22 @@ func (r *workspaceAgentR) GetAgentWorkspaceAgentProposals() WorkspaceAgentPropos
 	}
 
 	return r.AgentWorkspaceAgentProposals
+}
+
+func (o *WorkspaceAgent) GetAgentWorkspaceIssueDelegations() WorkspaceIssueDelegationSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetAgentWorkspaceIssueDelegations()
+}
+
+func (r *workspaceAgentR) GetAgentWorkspaceIssueDelegations() WorkspaceIssueDelegationSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.AgentWorkspaceIssueDelegations
 }
 
 // workspaceAgentL is where Load methods for each relationship are stored.
@@ -564,6 +583,20 @@ func (o *WorkspaceAgent) AgentWorkspaceAgentProposals(mods ...qm.QueryMod) works
 	)
 
 	return WorkspaceAgentProposals(queryMods...)
+}
+
+// AgentWorkspaceIssueDelegations retrieves all the workspace_issue_delegation's WorkspaceIssueDelegations with an executor via agent_id column.
+func (o *WorkspaceAgent) AgentWorkspaceIssueDelegations(mods ...qm.QueryMod) workspaceIssueDelegationQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_delegations\".\"agent_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueDelegations(queryMods...)
 }
 
 // LoadAccount allows an eager lookup of values, cached into the
@@ -1039,6 +1072,119 @@ func (workspaceAgentL) LoadAgentWorkspaceAgentProposals(ctx context.Context, e b
 	return nil
 }
 
+// LoadAgentWorkspaceIssueDelegations allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceAgentL) LoadAgentWorkspaceIssueDelegations(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceAgent any, mods queries.Applicator) error {
+	var slice []*WorkspaceAgent
+	var object *WorkspaceAgent
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceAgent.(*WorkspaceAgent)
+		if !ok {
+			object = new(WorkspaceAgent)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceAgent)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceAgent))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceAgent.(*[]*WorkspaceAgent)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceAgent)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceAgent))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceAgentR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceAgentR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_delegations`),
+		qm.WhereIn(`workspace_issue_delegations.agent_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_delegations")
+	}
+
+	var resultSlice []*WorkspaceIssueDelegation
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_delegations")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_delegations")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_delegations")
+	}
+
+	if len(workspaceIssueDelegationAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.AgentWorkspaceIssueDelegations = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueDelegationR{}
+			}
+			foreign.R.Agent = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.AgentID {
+				local.R.AgentWorkspaceIssueDelegations = append(local.R.AgentWorkspaceIssueDelegations, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueDelegationR{}
+				}
+				foreign.R.Agent = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetAccount of the workspaceAgent to the related item.
 // Sets o.R.Account to related.
 // Adds o to related.R.WorkspaceAgent.
@@ -1224,6 +1370,59 @@ func (o *WorkspaceAgent) AddAgentWorkspaceAgentProposals(ctx context.Context, ex
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceAgentProposalR{
+				Agent: o,
+			}
+		} else {
+			rel.R.Agent = o
+		}
+	}
+	return nil
+}
+
+// AddAgentWorkspaceIssueDelegations adds the given related objects to the existing relationships
+// of the workspace_agent, optionally inserting them as new records.
+// Appends related to o.R.AgentWorkspaceIssueDelegations.
+// Sets related.R.Agent appropriately.
+func (o *WorkspaceAgent) AddAgentWorkspaceIssueDelegations(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueDelegation) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.AgentID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_delegations\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"agent_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueDelegationPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.AgentID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceAgentR{
+			AgentWorkspaceIssueDelegations: related,
+		}
+	} else {
+		o.R.AgentWorkspaceIssueDelegations = append(o.R.AgentWorkspaceIssueDelegations, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueDelegationR{
 				Agent: o,
 			}
 		} else {

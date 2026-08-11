@@ -38,6 +38,7 @@ var TableNames = struct {
 	WorkspaceIssueCommentMentions     string
 	WorkspaceIssueCommentReactions    string
 	WorkspaceIssueComments            string
+	WorkspaceIssueDelegations         string
 	WorkspaceIssueFollowers           string
 	WorkspaceIssueLabels              string
 	WorkspaceIssueMirrorConflicts     string
@@ -116,6 +117,7 @@ var TableNames = struct {
 	WorkspaceIssueCommentMentions:     "workspace_issue_comment_mentions",
 	WorkspaceIssueCommentReactions:    "workspace_issue_comment_reactions",
 	WorkspaceIssueComments:            "workspace_issue_comments",
+	WorkspaceIssueDelegations:         "workspace_issue_delegations",
 	WorkspaceIssueFollowers:           "workspace_issue_followers",
 	WorkspaceIssueLabels:              "workspace_issue_labels",
 	WorkspaceIssueMirrorConflicts:     "workspace_issue_mirror_conflicts",

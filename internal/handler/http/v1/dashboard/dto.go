@@ -1550,6 +1550,41 @@ func agentSettingsDTO(settings entity.AgentSettings) api.AgentSettings {
 	}
 }
 
+func issueDelegationDTO(delegation entity.IssueDelegation) api.IssueDelegation {
+	dto := api.IssueDelegation{
+		Id:             delegation.ID,
+		IssueId:        delegation.IssueID,
+		AgentId:        delegation.AgentID,
+		AgentName:      delegation.AgentName,
+		AgentAccountId: delegation.AgentAccountID,
+		Brief:          nilIfEmpty(delegation.Brief),
+		DelegatedAt:    delegation.DelegatedAt,
+		RecalledAt:     delegation.RecalledAt,
+	}
+
+	if delegation.DelegatedByAccountID != uuid.Nil {
+		author := delegation.DelegatedByAccountID
+		dto.DelegatedByAccountId = &author
+	}
+
+	if delegation.RecalledByAccountID != uuid.Nil {
+		recaller := delegation.RecalledByAccountID
+		dto.RecalledByAccountId = &recaller
+	}
+
+	return dto
+}
+
+func issueDelegationDTOs(delegations []entity.IssueDelegation) []api.IssueDelegation {
+	dtos := make([]api.IssueDelegation, 0, len(delegations))
+
+	for _, delegation := range delegations {
+		dtos = append(dtos, issueDelegationDTO(delegation))
+	}
+
+	return dtos
+}
+
 func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
 	dto := api.AgentProposal{
 		Id:        proposal.ID,

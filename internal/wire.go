@@ -55,6 +55,7 @@ import (
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
+	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuefilterreferencerepo "github.com/usenorn/norn/internal/repository/issuefilterreference"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
@@ -100,6 +101,7 @@ import (
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	bulkoperationsvc "github.com/usenorn/norn/internal/service/bulkoperation"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
+	delegationsvc "github.com/usenorn/norn/internal/service/delegation"
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	importssvc "github.com/usenorn/norn/internal/service/imports"
@@ -164,6 +166,7 @@ var baseSet = wire.NewSet(
 	signuprepo.Set,
 	issuerepo.Set,
 	activityrepo.Set,
+	issuedelegationrepo.Set,
 	issuerelationrepo.Set,
 	bulkactionrepo.Set,
 	cyclerepo.Set,
@@ -215,6 +218,7 @@ var baseSet = wire.NewSet(
 	invitationsvc.Set,
 	teamsvc.Set,
 	issuesvc.Set,
+	delegationsvc.Set,
 	issuerelationsvc.Set,
 	bulkoperationsvc.Set,
 	cyclesvc.Set,

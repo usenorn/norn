@@ -38,6 +38,15 @@
 	import Toast from "$lib/components/norn/toast.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueField from "$lib/issues/issue-field.svelte";
+	import DelegateDialog from "$lib/agents/delegate-dialog.svelte";
+	import DelegationField from "$lib/agents/delegation-field.svelte";
+	import {
+		agentMembers,
+		delegationFailureMessage,
+		readDelegationFailure,
+		type DelegationFailure,
+		type DelegationPanel,
+	} from "$lib/agents/delegation";
 	import { totalIssues } from "$lib/issues/board";
 	import { initialsOf } from "$lib/team/members";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -118,6 +127,7 @@
 		activityPreviewStates,
 		attachmentPreviewStates,
 		commentPreviewStates,
+		delegationPreviewStates,
 		issueDetailPreviewStates,
 	} from "./preview";
 	import type { IssueDetail } from "./+page.server";
@@ -134,6 +144,11 @@
 	const attachmentPreview = $derived(
 		import.meta.env.DEV
 			? attachmentPreviewStates[page.url.searchParams.get("attachments") ?? ""]
+			: undefined
+	);
+	const delegationPreview = $derived(
+		import.meta.env.DEV
+			? delegationPreviewStates[page.url.searchParams.get("delegation") ?? ""]
 			: undefined
 	);
 	const activityPreview = $derived(
@@ -229,8 +244,17 @@
 		}
 	}
 
+	let delegating = $state(false);
+	let delegated = $state<DelegationPanel | null>(null);
+	let delegationFailed = $state<DelegationFailure | null>(null);
+
 	const detail = $derived<IssueDetail>(preview?.detail ?? data.detail);
 	const ready = $derived(detail.kind === "ready" ? detail : null);
+	const delegation = $derived<DelegationPanel>(
+		delegationPreview?.panel ?? delegated ?? (ready ? ready.delegation : { kind: "loading" })
+	);
+	const agents = $derived(agentMembers(ready?.members ?? []));
+	const delegationFailure = $derived(delegationFailed ?? delegationPreview?.failure ?? null);
 	const issue = $derived((pushed?.source === ready ? pushed.issue : null) ?? ready?.issue ?? null);
 	const following = $derived(ready?.follow === "following");
 	const labels = $derived(applied ?? issue?.labels ?? []);
@@ -431,6 +455,32 @@
 		formData.update((current) => ({ ...current, ...seed }), { taint: false });
 	});
 	let working = $state(false);
+	async function recall() {
+		if (working) return;
+
+		working = true;
+		delegationFailed = null;
+
+		try {
+			const { error } = await api.DELETE("/workspaces/{workspaceId}/issues/{issueId}/delegation", {
+				params: { path: { workspaceId: data.workspace.id, issueId: issue?.id ?? "" } },
+			});
+
+			if (error) {
+				delegationFailed = readDelegationFailure(error);
+
+				return;
+			}
+
+			delegated = { kind: "none" };
+
+			await invalidate(keys.page(page.route.id));
+		} catch {
+			delegationFailed = { kind: "unavailable" };
+		} finally {
+			working = false;
+		}
+	}
 	let announcement = $state("");
 
 	function readFailure(error: unknown): LabelFailure {
@@ -1502,6 +1552,16 @@
 						</Alert.Root>
 					{/if}
 
+					{#if delegationFailure}
+						<Alert.Root variant="destructive">
+							<CircleX aria-hidden="true" />
+							<Alert.Title>That did not work</Alert.Title>
+							<Alert.Description>
+								{delegationFailureMessage(delegationFailure)}
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
+
 					{#if failure}
 						<Alert.Root variant={failure.kind === "labels_out_of_scope" ? "default" : "destructive"}>
 							<CircleX aria-hidden="true" />
@@ -2015,6 +2075,15 @@
 						{/snippet}
 					</IssueField>
 
+					<DelegationField
+						panel={delegation}
+						editable={canEdit}
+						working={working || Boolean(delegationPreview?.working)}
+						timezone={data.workspace.timezone}
+						ondelegate={() => (delegating = true)}
+						onrecall={recall}
+					/>
+
 					<IssueField
 						label="Labels"
 						placeholder="Search labels"
@@ -2387,6 +2456,18 @@
 		today={calendarDate(data.now, data.workspace.timezone)}
 		prefill={{ teamId: issue.teamId, projectId: issue.projectId ?? "" }}
 		oncreated={fileUnderThis}
+	/>
+
+	<DelegateDialog
+		bind:open={delegating}
+		workspaceId={data.workspace.id}
+		issueId={issue.id}
+		reference={issue.reference}
+		{agents}
+		ondelegated={(held) => {
+			delegated = { kind: "held", delegation: held };
+			invalidate(keys.page(page.route.id));
+		}}
 	/>
 {/if}
 

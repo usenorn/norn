@@ -6,6 +6,7 @@ import type {
 import type { ActivityFeed } from "$lib/activity/activity";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type { UploadTask } from "$lib/attachments/upload";
+import type { DelegationFailure, DelegationPanel } from "$lib/agents/delegation";
 import type { IssueDetail } from "./+page.server";
 
 export type IssueDetailPreview = { detail: IssueDetail };
@@ -18,6 +19,12 @@ export type AttachmentPreview = {
 	panel: AttachmentPanel;
 	uploads?: UploadTask[];
 	bodyUploads?: UploadTask[];
+};
+
+export type DelegationPreview = {
+	panel: DelegationPanel;
+	failure?: DelegationFailure;
+	working?: boolean;
 };
 
 export type CommentPreview = {
@@ -144,6 +151,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					delegation: { kind: "none" },
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -248,6 +256,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					delegation: { kind: "none" },
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -295,6 +304,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					delegation: { kind: "none" },
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -341,6 +351,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					delegation: { kind: "none" },
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -387,6 +398,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					delegation: { kind: "none" },
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -484,6 +496,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					candidates: [],
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
+					delegation: { kind: "none" },
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -1329,5 +1342,43 @@ export const activityPreviewStates: Record<string, ActivityPreview> = import.met
 					],
 				},
 			},
+		}
+	: {};
+
+export const delegationPreviewStates: Record<string, DelegationPreview> = import.meta.env.DEV
+	? {
+			loading: { panel: { kind: "loading" } },
+			none: { panel: { kind: "none" } },
+			held: {
+				panel: {
+					kind: "held",
+					delegation: {
+						id: "00000000-0000-4000-8000-000000000d01",
+						issueId: "00000000-0000-4000-8000-000000000501",
+						agentId: "00000000-0000-4000-8000-000000000d11",
+						agentName: "opsy",
+						agentAccountId: "00000000-0000-4000-8000-000000000d21",
+						brief: "Chase down the duplicate charge on card retries in the Northwind sandbox.",
+						delegatedByAccountId: "00000000-0000-4000-8000-0000000000a1",
+						delegatedAt: "2026-08-11T09:20:00Z",
+					},
+				},
+			},
+			working: {
+				panel: {
+					kind: "held",
+					delegation: {
+						id: "00000000-0000-4000-8000-000000000d02",
+						issueId: "00000000-0000-4000-8000-000000000501",
+						agentId: "00000000-0000-4000-8000-000000000d11",
+						agentName: "opsy",
+						agentAccountId: "00000000-0000-4000-8000-000000000d21",
+						delegatedAt: "2026-08-11T09:20:00Z",
+					},
+				},
+				working: true,
+			},
+			failed: { panel: { kind: "none" }, failure: { kind: "agent_unusable" } },
+			unavailable: { panel: { kind: "unavailable" } },
 		}
 	: {};

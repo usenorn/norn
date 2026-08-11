@@ -41,6 +41,8 @@ const (
 	ActivityKindAttachmentRemoved ActivityKind = "attachment_removed"
 	ActivityKindCodeLinked        ActivityKind = "code_linked"
 	ActivityKindCodeUnlinked      ActivityKind = "code_unlinked"
+	ActivityKindDelegated         ActivityKind = "delegated"
+	ActivityKindRecalled          ActivityKind = "recalled"
 )
 
 func ActivityKinds() []ActivityKind {
@@ -66,6 +68,8 @@ func ActivityKinds() []ActivityKind {
 		ActivityKindAttachmentRemoved,
 		ActivityKindCodeLinked,
 		ActivityKindCodeUnlinked,
+		ActivityKindDelegated,
+		ActivityKindRecalled,
 	}
 }
 
@@ -75,6 +79,7 @@ func (k ActivityKind) Valid() bool {
 
 const (
 	ActivityFieldAttachment = "attachment"
+	ActivityFieldAgent      = "agent"
 	ActivityFieldMember     = "member"
 	ActivityFieldName       = "name"
 	ActivityFieldLead       = "lead"

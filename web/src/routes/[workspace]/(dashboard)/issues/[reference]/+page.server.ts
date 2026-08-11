@@ -7,6 +7,7 @@ import { candidateOf, type Issue, type IssueCandidate } from "$lib/issues/issues
 import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
 import type { FollowState } from "$lib/notifications/notifications";
+import { currentDelegation, type DelegationPanel } from "$lib/agents/delegation";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type {
 	CodeLink,
@@ -46,6 +47,7 @@ export type IssueDetail =
 			watchers: string[];
 			attachments: AttachmentPanel;
 			codeLinks: CodeLink[];
+			delegation: DelegationPanel;
 			mirrorConflicts: MirrorConflict[];
 			shipping: IssueShipping;
 	  }
@@ -104,6 +106,7 @@ export const load: PageServerLoad = async ({
 		codeLinks,
 		mirrorConflicts,
 		shipping,
+		delegations,
 	] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -142,6 +145,7 @@ export const load: PageServerLoad = async ({
 			params: { path },
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/shipping", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/delegation", { params: { path } }),
 	]);
 
 	if (
@@ -176,6 +180,9 @@ export const load: PageServerLoad = async ({
 			follow: follow.data?.state ?? "muted",
 			watchers: (watchers.data?.followers ?? []).map((watcher) => watcher.accountId),
 			codeLinks: codeLinks.data ?? [],
+			delegation: delegations.data
+				? currentDelegation(delegations.data)
+				: { kind: "unavailable" },
 			mirrorConflicts: mirrorConflicts.data ?? [],
 			shipping: shipping.data ?? { releases: [], deployments: [] },
 		},

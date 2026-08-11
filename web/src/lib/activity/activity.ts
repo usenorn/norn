@@ -92,6 +92,10 @@ export function changeLine(change: ActivityChange): string {
 			return `Linked ${codeKindNames[change.field ?? ""] ?? "a change"} ${change.toValue}`;
 		case "code_unlinked":
 			return `Unlinked ${codeKindNames[change.field ?? ""] ?? "a change"} ${change.toValue}`;
+		case "delegated":
+			return `Handed this to ${change.toValue}`;
+		case "recalled":
+			return `Took this back from ${change.fromValue}`;
 		case "triaged":
 			return triageLine(change);
 		case "property_changed":

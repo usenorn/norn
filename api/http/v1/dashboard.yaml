@@ -3809,6 +3809,62 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/delegation:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueDelegations
+      summary: Every time this issue has been handed to an agent, newest first
+      responses:
+        '200':
+          description: The delegations on record, open and ended
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/IssueDelegation' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [issues]
+      operationId: delegateWorkspaceIssue
+      summary: Hand this issue to an agent, and tell anything listening that work has begun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DelegateIssueRequest' }
+      responses:
+        '201':
+          description: The open delegation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueDelegation' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [issues]
+      operationId: recallWorkspaceIssue
+      summary: Take this issue back from the agent holding it
+      responses:
+        '200':
+          description: The delegation as it now stands, carrying when it ended
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueDelegation' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/labels:
     put:
       tags: [issues]
@@ -6043,6 +6099,42 @@ components:
           items: { $ref: '#/components/schemas/Issue' }
         progress: { $ref: '#/components/schemas/IssueProgress' }
 
+    IssueDelegation:
+      type: object
+      required: [id, issueId, agentId, agentName, agentAccountId, delegatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        agentId: { type: string, format: uuid }
+        agentName: { type: string }
+        agentAccountId:
+          type: string
+          format: uuid
+          description: The account the agent writes as, so its work can be attributed to it
+        brief:
+          type: string
+          description: What the agent was asked to do, carried to whatever runtime picks the work up
+        delegatedByAccountId: { type: string, format: uuid }
+        delegatedAt: { type: string, format: date-time }
+        recalledByAccountId: { type: string, format: uuid }
+        recalledAt:
+          type: string
+          format: date-time
+          description: Absent while the delegation is open
+
+    DelegateIssueRequest:
+      type: object
+      required: [agentAccountId]
+      properties:
+        agentAccountId:
+          type: string
+          format: uuid
+          description: >-
+            The account the agent writes as, which is how it appears in the member list. Listing
+            the agents themselves is an administrator's view, so this is what an ordinary member
+            has to hand.
+        brief: { type: string, maxLength: 4000 }
+
     MoveIssueRequest:
       type: object
       required: [teamId, expectedVersion]
@@ -6415,6 +6507,8 @@ components:
                 - issue_parent_too_deep
                 - issue_parent_not_active
                 - issue_children_open
+                - issue_delegation_held
+                - issue_delegation_agent_unusable
                 - issue_relation_exists
                 - issue_relation_self
                 - label_out_of_scope
@@ -6742,6 +6836,8 @@ components:
         - attachment_removed
         - code_linked
         - code_unlinked
+        - delegated
+        - recalled
 
     LicenceStatus:
       type: string
@@ -7598,6 +7694,7 @@ components:
         - issue.deleted
         - issue.triaged
         - issue.merged
+        - issue.delegated
         - comment.posted
         - comment.edited
         - comment.deleted
@@ -7625,6 +7722,7 @@ components:
         - issue.deleted
         - issue.triaged
         - issue.merged
+        - issue.delegated
         - comment.posted
         - comment.edited
         - comment.deleted

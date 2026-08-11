@@ -142,10 +142,12 @@ const (
 	ActivityKindCommentDeleted    ActivityKind = "comment_deleted"
 	ActivityKindCommented         ActivityKind = "commented"
 	ActivityKindCreated           ActivityKind = "created"
+	ActivityKindDelegated         ActivityKind = "delegated"
 	ActivityKindDeleted           ActivityKind = "deleted"
 	ActivityKindMemberAdded       ActivityKind = "member_added"
 	ActivityKindMemberRemoved     ActivityKind = "member_removed"
 	ActivityKindPropertyChanged   ActivityKind = "property_changed"
+	ActivityKindRecalled          ActivityKind = "recalled"
 	ActivityKindRelationAdded     ActivityKind = "relation_added"
 	ActivityKindRelationRemoved   ActivityKind = "relation_removed"
 	ActivityKindRestored          ActivityKind = "restored"
@@ -178,6 +180,8 @@ func (e ActivityKind) Valid() bool {
 		return true
 	case ActivityKindCreated:
 		return true
+	case ActivityKindDelegated:
+		return true
 	case ActivityKindDeleted:
 		return true
 	case ActivityKindMemberAdded:
@@ -185,6 +189,8 @@ func (e ActivityKind) Valid() bool {
 	case ActivityKindMemberRemoved:
 		return true
 	case ActivityKindPropertyChanged:
+		return true
+	case ActivityKindRecalled:
 		return true
 	case ActivityKindRelationAdded:
 		return true
@@ -1494,23 +1500,25 @@ func (e InvitationUnusableProblemCode) Valid() bool {
 
 // Defines values for IssueConflictProblemCode.
 const (
-	IssueConflictProblemCodeCycleClosed               IssueConflictProblemCode = "cycle_closed"
-	IssueConflictProblemCodeCycleTeamMismatch         IssueConflictProblemCode = "cycle_team_mismatch"
-	IssueConflictProblemCodeIssueAlreadyOnTeam        IssueConflictProblemCode = "issue_already_on_team"
-	IssueConflictProblemCodeIssueChildrenOpen         IssueConflictProblemCode = "issue_children_open"
-	IssueConflictProblemCodeIssueDestinationIncapable IssueConflictProblemCode = "issue_destination_incapable"
-	IssueConflictProblemCodeIssueLabelsOutOfScope     IssueConflictProblemCode = "issue_labels_out_of_scope"
-	IssueConflictProblemCodeIssueNotWaiting           IssueConflictProblemCode = "issue_not_waiting"
-	IssueConflictProblemCodeIssueParentCycle          IssueConflictProblemCode = "issue_parent_cycle"
-	IssueConflictProblemCodeIssueParentNotActive      IssueConflictProblemCode = "issue_parent_not_active"
-	IssueConflictProblemCodeIssueParentTooDeep        IssueConflictProblemCode = "issue_parent_too_deep"
-	IssueConflictProblemCodeIssueReferenceTaken       IssueConflictProblemCode = "issue_reference_taken"
-	IssueConflictProblemCodeIssueRelationExists       IssueConflictProblemCode = "issue_relation_exists"
-	IssueConflictProblemCodeIssueRelationSelf         IssueConflictProblemCode = "issue_relation_self"
-	IssueConflictProblemCodeIssueStale                IssueConflictProblemCode = "issue_stale"
-	IssueConflictProblemCodeIssueStatusTransition     IssueConflictProblemCode = "issue_status_transition"
-	IssueConflictProblemCodeLabelOutOfScope           IssueConflictProblemCode = "label_out_of_scope"
-	IssueConflictProblemCodeProjectArchived           IssueConflictProblemCode = "project_archived"
+	IssueConflictProblemCodeCycleClosed                  IssueConflictProblemCode = "cycle_closed"
+	IssueConflictProblemCodeCycleTeamMismatch            IssueConflictProblemCode = "cycle_team_mismatch"
+	IssueConflictProblemCodeIssueAlreadyOnTeam           IssueConflictProblemCode = "issue_already_on_team"
+	IssueConflictProblemCodeIssueChildrenOpen            IssueConflictProblemCode = "issue_children_open"
+	IssueConflictProblemCodeIssueDelegationAgentUnusable IssueConflictProblemCode = "issue_delegation_agent_unusable"
+	IssueConflictProblemCodeIssueDelegationHeld          IssueConflictProblemCode = "issue_delegation_held"
+	IssueConflictProblemCodeIssueDestinationIncapable    IssueConflictProblemCode = "issue_destination_incapable"
+	IssueConflictProblemCodeIssueLabelsOutOfScope        IssueConflictProblemCode = "issue_labels_out_of_scope"
+	IssueConflictProblemCodeIssueNotWaiting              IssueConflictProblemCode = "issue_not_waiting"
+	IssueConflictProblemCodeIssueParentCycle             IssueConflictProblemCode = "issue_parent_cycle"
+	IssueConflictProblemCodeIssueParentNotActive         IssueConflictProblemCode = "issue_parent_not_active"
+	IssueConflictProblemCodeIssueParentTooDeep           IssueConflictProblemCode = "issue_parent_too_deep"
+	IssueConflictProblemCodeIssueReferenceTaken          IssueConflictProblemCode = "issue_reference_taken"
+	IssueConflictProblemCodeIssueRelationExists          IssueConflictProblemCode = "issue_relation_exists"
+	IssueConflictProblemCodeIssueRelationSelf            IssueConflictProblemCode = "issue_relation_self"
+	IssueConflictProblemCodeIssueStale                   IssueConflictProblemCode = "issue_stale"
+	IssueConflictProblemCodeIssueStatusTransition        IssueConflictProblemCode = "issue_status_transition"
+	IssueConflictProblemCodeLabelOutOfScope              IssueConflictProblemCode = "label_out_of_scope"
+	IssueConflictProblemCodeProjectArchived              IssueConflictProblemCode = "project_archived"
 )
 
 // Valid indicates whether the value is a known member of the IssueConflictProblemCode enum.
@@ -1523,6 +1531,10 @@ func (e IssueConflictProblemCode) Valid() bool {
 	case IssueConflictProblemCodeIssueAlreadyOnTeam:
 		return true
 	case IssueConflictProblemCodeIssueChildrenOpen:
+		return true
+	case IssueConflictProblemCodeIssueDelegationAgentUnusable:
+		return true
+	case IssueConflictProblemCodeIssueDelegationHeld:
 		return true
 	case IssueConflictProblemCodeIssueDestinationIncapable:
 		return true
@@ -3091,6 +3103,7 @@ const (
 	WebhookDeliveryEventTypeCycleClosed           WebhookDeliveryEventType = "cycle.closed"
 	WebhookDeliveryEventTypeCycleStarted          WebhookDeliveryEventType = "cycle.started"
 	WebhookDeliveryEventTypeIssueCreated          WebhookDeliveryEventType = "issue.created"
+	WebhookDeliveryEventTypeIssueDelegated        WebhookDeliveryEventType = "issue.delegated"
 	WebhookDeliveryEventTypeIssueDeleted          WebhookDeliveryEventType = "issue.deleted"
 	WebhookDeliveryEventTypeIssueMerged           WebhookDeliveryEventType = "issue.merged"
 	WebhookDeliveryEventTypeIssueStatusChanged    WebhookDeliveryEventType = "issue.status_changed"
@@ -3125,6 +3138,8 @@ func (e WebhookDeliveryEventType) Valid() bool {
 	case WebhookDeliveryEventTypeCycleStarted:
 		return true
 	case WebhookDeliveryEventTypeIssueCreated:
+		return true
+	case WebhookDeliveryEventTypeIssueDelegated:
 		return true
 	case WebhookDeliveryEventTypeIssueDeleted:
 		return true
@@ -3226,6 +3241,7 @@ const (
 	WebhookEventTypeCycleClosed           WebhookEventType = "cycle.closed"
 	WebhookEventTypeCycleStarted          WebhookEventType = "cycle.started"
 	WebhookEventTypeIssueCreated          WebhookEventType = "issue.created"
+	WebhookEventTypeIssueDelegated        WebhookEventType = "issue.delegated"
 	WebhookEventTypeIssueDeleted          WebhookEventType = "issue.deleted"
 	WebhookEventTypeIssueMerged           WebhookEventType = "issue.merged"
 	WebhookEventTypeIssueStatusChanged    WebhookEventType = "issue.status_changed"
@@ -3259,6 +3275,8 @@ func (e WebhookEventType) Valid() bool {
 	case WebhookEventTypeCycleStarted:
 		return true
 	case WebhookEventTypeIssueCreated:
+		return true
+	case WebhookEventTypeIssueDelegated:
 		return true
 	case WebhookEventTypeIssueDeleted:
 		return true
@@ -4223,6 +4241,13 @@ type DeclineTriageIssueRequest struct {
 	Reason TriageDeclineReason `json:"reason"`
 }
 
+// DelegateIssueRequest defines model for DelegateIssueRequest.
+type DelegateIssueRequest struct {
+	// AgentAccountId The account the agent writes as, which is how it appears in the member list. Listing the agents themselves is an administrator's view, so this is what an ordinary member has to hand.
+	AgentAccountId openapi_types.UUID `json:"agentAccountId"`
+	Brief          *string            `json:"brief,omitempty"`
+}
+
 // DirectoryAbsentPolicy defines model for DirectoryAbsentPolicy.
 type DirectoryAbsentPolicy string
 
@@ -4822,6 +4847,25 @@ type IssueConflictProblem struct {
 
 // IssueConflictProblemCode defines model for IssueConflictProblem.Code.
 type IssueConflictProblemCode string
+
+// IssueDelegation defines model for IssueDelegation.
+type IssueDelegation struct {
+	// AgentAccountId The account the agent writes as, so its work can be attributed to it
+	AgentAccountId openapi_types.UUID `json:"agentAccountId"`
+	AgentId        openapi_types.UUID `json:"agentId"`
+	AgentName      string             `json:"agentName"`
+
+	// Brief What the agent was asked to do, carried to whatever runtime picks the work up
+	Brief                *string             `json:"brief,omitempty"`
+	DelegatedAt          time.Time           `json:"delegatedAt"`
+	DelegatedByAccountId *openapi_types.UUID `json:"delegatedByAccountId,omitempty"`
+	Id                   openapi_types.UUID  `json:"id"`
+	IssueId              openapi_types.UUID  `json:"issueId"`
+
+	// RecalledAt Absent while the delegation is open
+	RecalledAt          *time.Time          `json:"recalledAt,omitempty"`
+	RecalledByAccountId *openapi_types.UUID `json:"recalledByAccountId,omitempty"`
+}
 
 // IssueFilter A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
 type IssueFilter struct {
@@ -7144,6 +7188,9 @@ type PostWorkspaceIssueCommentJSONRequestBody = PostCommentRequest
 // EditWorkspaceIssueCommentJSONRequestBody defines body for EditWorkspaceIssueComment for application/json ContentType.
 type EditWorkspaceIssueCommentJSONRequestBody = EditCommentRequest
 
+// DelegateWorkspaceIssueJSONRequestBody defines body for DelegateWorkspaceIssue for application/json ContentType.
+type DelegateWorkspaceIssueJSONRequestBody = DelegateIssueRequest
+
 // SetWorkspaceIssueFollowJSONRequestBody defines body for SetWorkspaceIssueFollow for application/json ContentType.
 type SetWorkspaceIssueFollowJSONRequestBody = IssueFollow
 
@@ -7638,6 +7685,15 @@ type ServerInterface interface {
 	// ReactToWorkspaceIssueComment React to a comment, once, whatever you already did
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction})
 	ReactToWorkspaceIssueComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, commentId CommentId, reaction Reaction)
+	// RecallWorkspaceIssue Take this issue back from the agent holding it
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation)
+	RecallWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// ListWorkspaceIssueDelegations Every time this issue has been handed to an agent, newest first
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation)
+	ListWorkspaceIssueDelegations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// DelegateWorkspaceIssue Hand this issue to an agent, and tell anything listening that work has begun
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/delegation)
+	DelegateWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// GetWorkspaceIssueFollow Read whether this issue reaches your inbox
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/follow)
 	GetWorkspaceIssueFollow(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -8742,6 +8798,24 @@ func (_ Unimplemented) UnreactToWorkspaceIssueComment(w http.ResponseWriter, r *
 // ReactToWorkspaceIssueComment React to a comment, once, whatever you already did
 // (PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction})
 func (_ Unimplemented) ReactToWorkspaceIssueComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, commentId CommentId, reaction Reaction) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RecallWorkspaceIssue Take this issue back from the agent holding it
+// (DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation)
+func (_ Unimplemented) RecallWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueDelegations Every time this issue has been handed to an agent, newest first
+// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation)
+func (_ Unimplemented) ListWorkspaceIssueDelegations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DelegateWorkspaceIssue Hand this issue to an agent, and tell anything listening that work has begun
+// (POST /workspaces/{workspaceId}/issues/{issueId}/delegation)
+func (_ Unimplemented) DelegateWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -13133,6 +13207,111 @@ func (siw *ServerInterfaceWrapper) ReactToWorkspaceIssueComment(w http.ResponseW
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ReactToWorkspaceIssueComment(w, r, workspaceId, issueId, commentId, reaction)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RecallWorkspaceIssue operation middleware
+func (siw *ServerInterfaceWrapper) RecallWorkspaceIssue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RecallWorkspaceIssue(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueDelegations operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueDelegations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueDelegations(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DelegateWorkspaceIssue operation middleware
+func (siw *ServerInterfaceWrapper) DelegateWorkspaceIssue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DelegateWorkspaceIssue(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -18981,6 +19160,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/children", wrapper.ListWorkspaceIssueChildren)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/delegation", wrapper.RecallWorkspaceIssue)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/delegation", wrapper.ListWorkspaceIssueDelegations)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/delegation", wrapper.DelegateWorkspaceIssue)
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/labels", wrapper.SetWorkspaceIssueLabels)
@@ -28786,6 +28974,286 @@ func (response ReactToWorkspaceIssueComment422ApplicationProblemPlusJSONResponse
 type ReactToWorkspaceIssueComment500ApplicationProblemPlusJSONResponse Problem
 
 func (response ReactToWorkspaceIssueComment500ApplicationProblemPlusJSONResponse) VisitReactToWorkspaceIssueCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecallWorkspaceIssueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type RecallWorkspaceIssueResponseObject interface {
+	VisitRecallWorkspaceIssueResponse(w http.ResponseWriter) error
+}
+
+type RecallWorkspaceIssue200JSONResponse IssueDelegation
+
+func (response RecallWorkspaceIssue200JSONResponse) VisitRecallWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecallWorkspaceIssue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RecallWorkspaceIssue401ApplicationProblemPlusJSONResponse) VisitRecallWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecallWorkspaceIssue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RecallWorkspaceIssue403ApplicationProblemPlusJSONResponse) VisitRecallWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecallWorkspaceIssue404ApplicationProblemPlusJSONResponse Problem
+
+func (response RecallWorkspaceIssue404ApplicationProblemPlusJSONResponse) VisitRecallWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecallWorkspaceIssue500ApplicationProblemPlusJSONResponse Problem
+
+func (response RecallWorkspaceIssue500ApplicationProblemPlusJSONResponse) VisitRecallWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDelegationsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueDelegationsResponseObject interface {
+	VisitListWorkspaceIssueDelegationsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueDelegations200JSONResponse []IssueDelegation
+
+func (response ListWorkspaceIssueDelegations200JSONResponse) VisitListWorkspaceIssueDelegationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDelegations401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueDelegations401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDelegationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDelegations403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueDelegations403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDelegationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDelegations404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueDelegations404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDelegationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDelegations500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueDelegations500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDelegationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DelegateWorkspaceIssueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *DelegateWorkspaceIssueJSONRequestBody
+}
+
+type DelegateWorkspaceIssueResponseObject interface {
+	VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error
+}
+
+type DelegateWorkspaceIssue201JSONResponse IssueDelegation
+
+func (response DelegateWorkspaceIssue201JSONResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DelegateWorkspaceIssue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DelegateWorkspaceIssue401ApplicationProblemPlusJSONResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DelegateWorkspaceIssue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DelegateWorkspaceIssue403ApplicationProblemPlusJSONResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DelegateWorkspaceIssue404ApplicationProblemPlusJSONResponse Problem
+
+func (response DelegateWorkspaceIssue404ApplicationProblemPlusJSONResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DelegateWorkspaceIssue409ApplicationProblemPlusJSONResponse struct {
+	IssueConflictApplicationProblemPlusJSONResponse
+}
+
+func (response DelegateWorkspaceIssue409ApplicationProblemPlusJSONResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DelegateWorkspaceIssue422ApplicationProblemPlusJSONResponse Problem
+
+func (response DelegateWorkspaceIssue422ApplicationProblemPlusJSONResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DelegateWorkspaceIssue500ApplicationProblemPlusJSONResponse Problem
+
+func (response DelegateWorkspaceIssue500ApplicationProblemPlusJSONResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -42540,6 +43008,15 @@ type StrictServerInterface interface {
 	// ReactToWorkspaceIssueComment React to a comment, once, whatever you already did
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction})
 	ReactToWorkspaceIssueComment(ctx context.Context, request ReactToWorkspaceIssueCommentRequestObject) (ReactToWorkspaceIssueCommentResponseObject, error)
+	// RecallWorkspaceIssue Take this issue back from the agent holding it
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation)
+	RecallWorkspaceIssue(ctx context.Context, request RecallWorkspaceIssueRequestObject) (RecallWorkspaceIssueResponseObject, error)
+	// ListWorkspaceIssueDelegations Every time this issue has been handed to an agent, newest first
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation)
+	ListWorkspaceIssueDelegations(ctx context.Context, request ListWorkspaceIssueDelegationsRequestObject) (ListWorkspaceIssueDelegationsResponseObject, error)
+	// DelegateWorkspaceIssue Hand this issue to an agent, and tell anything listening that work has begun
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/delegation)
+	DelegateWorkspaceIssue(ctx context.Context, request DelegateWorkspaceIssueRequestObject) (DelegateWorkspaceIssueResponseObject, error)
 	// GetWorkspaceIssueFollow Read whether this issue reaches your inbox
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/follow)
 	GetWorkspaceIssueFollow(ctx context.Context, request GetWorkspaceIssueFollowRequestObject) (GetWorkspaceIssueFollowResponseObject, error)
@@ -46158,6 +46635,94 @@ func (sh *strictHandler) ReactToWorkspaceIssueComment(w http.ResponseWriter, r *
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ReactToWorkspaceIssueCommentResponseObject); ok {
 		if err := validResponse.VisitReactToWorkspaceIssueCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RecallWorkspaceIssue operation middleware
+func (sh *strictHandler) RecallWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request RecallWorkspaceIssueRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RecallWorkspaceIssue(ctx, request.(RecallWorkspaceIssueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RecallWorkspaceIssue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RecallWorkspaceIssueResponseObject); ok {
+		if err := validResponse.VisitRecallWorkspaceIssueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueDelegations operation middleware
+func (sh *strictHandler) ListWorkspaceIssueDelegations(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueDelegationsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueDelegations(ctx, request.(ListWorkspaceIssueDelegationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueDelegations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueDelegationsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueDelegationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DelegateWorkspaceIssue operation middleware
+func (sh *strictHandler) DelegateWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request DelegateWorkspaceIssueRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body DelegateWorkspaceIssueJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DelegateWorkspaceIssue(ctx, request.(DelegateWorkspaceIssueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DelegateWorkspaceIssue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DelegateWorkspaceIssueResponseObject); ok {
+		if err := validResponse.VisitDelegateWorkspaceIssueResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
