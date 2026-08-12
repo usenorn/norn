@@ -3,6 +3,7 @@ import type { components, operations } from "$lib/api/dashboard.gen";
 export { joinedOn, lastActive } from "$lib/time";
 
 export type Membership = components["schemas"]["Membership"];
+export type AccountKind = components["schemas"]["AccountKind"];
 export type MembershipRole = components["schemas"]["MembershipRole"];
 export type MembershipSource = components["schemas"]["MembershipSource"];
 export type MemberAuthMethod = components["schemas"]["SessionAuthMethod"];
@@ -14,6 +15,14 @@ export const memberPageSize = 25;
 export const searchDebounceMs = 250;
 
 export const membershipRoles: MembershipRole[] = ["admin", "member", "viewer"];
+
+export function machine(kind: AccountKind | undefined): boolean {
+	return kind === "agent" || kind === "integration";
+}
+
+export function assignable(kind: AccountKind | undefined): boolean {
+	return !machine(kind);
+}
 
 export const roleLabels: Record<MembershipRole, string> = {
 	admin: "Admin",

@@ -1818,8 +1818,9 @@
 		today={data.today}
 		{prefill}
 		oncreated={(issue) => {
-			void invalidate(keys.page(page.route.id));
 			announce(`Created ${issue.reference}`);
+
+			return invalidate(keys.page(page.route.id));
 		}}
 	/>
 {/if}
