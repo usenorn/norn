@@ -8,6 +8,13 @@ Sentry.init({
 	replaysOnErrorSampleRate: 1,
 	integrations: [Sentry.replayIntegration()],
 	enableLogs: true,
+	dataCollection: {
+		userInfo: false,
+		cookies: false,
+		httpBodies: [],
+		urlQueryParams: { deny: ["token", "code", "state"] },
+		stackFrameVariables: false,
+	},
 });
 
 export const handleError: HandleClientError = Sentry.handleErrorWithSentry(

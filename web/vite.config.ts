@@ -31,7 +31,7 @@ export default defineConfig({
 		sentrySvelteKit({
 			org: 'norn',
 			project: 'web-app',
-			sentryUrl: 'https://events.hexmere.com/'
+			sentryUrl: 'https://events.hexmere.com'
 		}),
 		tailwindcss(),
 		sveltekit({
