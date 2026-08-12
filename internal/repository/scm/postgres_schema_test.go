@@ -11,6 +11,7 @@ import (
 
 func statements() map[string]string {
 	return map[string]string{
+		"claimAnnouncementQuery":            claimAnnouncementQuery,
 		"claimDueQuery":                     claimDueQuery,
 		"claimTransitionQuery":              claimTransitionQuery,
 		"deferTransitionQuery":              deferTransitionQuery,
@@ -43,6 +44,7 @@ func statements() map[string]string {
 		"insertRepositoryQuery":             insertRepositoryQuery,
 		"insertReviewerQuery":               insertReviewerQuery,
 		"insertRouteQuery":                  insertRouteQuery,
+		"insertRuleQuery":                   insertRuleQuery,
 		"linkReleaseChangeQuery":            linkReleaseChangeQuery,
 		"listCommentMirrorsQuery":           listCommentMirrorsQuery,
 		"listConflictsQuery":                listConflictsQuery,
@@ -76,6 +78,7 @@ func statements() map[string]string {
 		"recordPushQuery":                   recordPushQuery,
 		"recordReconciledQuery":             recordReconciledQuery,
 		"recordSeenQuery":                   recordSeenQuery,
+		"releaseAnnouncementQuery":          releaseAnnouncementQuery,
 		"replaceTokenQuery":                 replaceTokenQuery,
 		"rescheduleDeliveryQuery":           rescheduleDeliveryQuery,
 		"setChecksQuery":                    setChecksQuery,

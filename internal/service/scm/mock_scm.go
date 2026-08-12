@@ -208,6 +208,20 @@ func (mr *MockForgeMockRecorder) Issues(ctx, target, label, since, cursor any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Issues", reflect.TypeOf((*MockForge)(nil).Issues), ctx, target, label, since, cursor)
 }
 
+// PostChangeComment mocks base method.
+func (m *MockForge) PostChangeComment(ctx context.Context, target entity.SCMTarget, number int, body string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PostChangeComment", ctx, target, number, body)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PostChangeComment indicates an expected call of PostChangeComment.
+func (mr *MockForgeMockRecorder) PostChangeComment(ctx, target, number, body any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostChangeComment", reflect.TypeOf((*MockForge)(nil).PostChangeComment), ctx, target, number, body)
+}
+
 // PostComment mocks base method.
 func (m *MockForge) PostComment(ctx context.Context, target entity.SCMTarget, number int, body string) (service.ForgeComment, error) {
 	m.ctrl.T.Helper()

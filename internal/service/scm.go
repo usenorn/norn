@@ -164,6 +164,7 @@ type Forge interface {
 	AmendIssue(ctx context.Context, target entity.SCMTarget, number int, patch ForgeIssuePatch) (ForgeIssue, error)
 	Comments(ctx context.Context, target entity.SCMTarget, number int, since time.Time) ([]ForgeComment, error)
 	PostComment(ctx context.Context, target entity.SCMTarget, number int, body string) (ForgeComment, error)
+	PostChangeComment(ctx context.Context, target entity.SCMTarget, number int, body string) error
 }
 
 type SCMApplication struct {

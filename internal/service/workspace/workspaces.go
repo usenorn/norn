@@ -22,6 +22,7 @@ type workspacesService struct {
 	teams        repository.Team
 	teamMembers  repository.TeamMember
 	states       repository.WorkflowState
+	rules        repository.SCMTransitionRule
 	authPolicies repository.WorkspaceAuthPolicy
 	connections  repository.SSOConnection
 	identities   repository.SSOIdentity
@@ -45,6 +46,7 @@ func New(
 	teams repository.Team,
 	teamMembers repository.TeamMember,
 	states repository.WorkflowState,
+	rules repository.SCMTransitionRule,
 	authPolicies repository.WorkspaceAuthPolicy,
 	connections repository.SSOConnection,
 	identities repository.SSOIdentity,
@@ -67,6 +69,7 @@ func New(
 		teams:        teams,
 		teamMembers:  teamMembers,
 		states:       states,
+		rules:        rules,
 		authPolicies: authPolicies,
 		connections:  connections,
 		identities:   identities,
@@ -154,7 +157,15 @@ func (s *workspacesService) seedFirstTeam(
 		return entity.Workspace{}, err
 	}
 
-	if _, err := s.states.CreateMany(ctx, entity.DefaultWorkflowStates(workspace.ID, team.ID)); err != nil {
+	states, err := s.states.CreateMany(ctx, entity.DefaultWorkflowStates(workspace.ID, team.ID))
+	if err != nil {
+		return entity.Workspace{}, err
+	}
+
+	if err := s.rules.CreateMany(
+		ctx,
+		entity.DefaultSCMTransitionRules(workspace.ID, team.ID, states),
+	); err != nil {
 		return entity.Workspace{}, err
 	}
 

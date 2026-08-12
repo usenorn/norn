@@ -253,6 +253,10 @@ type CodeLinkTransition struct {
 	AppliedAt  time.Time
 }
 
+func AnnounceIssueOnChange(reference, title, address string) string {
+	return "[" + reference + "](" + address + ") **" + title + "**"
+}
+
 type SCMTransitionRule struct {
 	ID          uuid.UUID
 	WorkspaceID uuid.UUID
@@ -277,6 +281,61 @@ func (rules SCMTransitionRules) For(link CodeLink) (SCMTransitionRule, bool) {
 	}
 
 	return SCMTransitionRule{}, false
+}
+
+func DefaultSCMTransitionRules(workspaceID, teamID uuid.UUID, states []WorkflowState) SCMTransitionRules {
+	rules := make(SCMTransitionRules, 0, 2)
+
+	for _, seed := range []struct {
+		trigger CodeChangeState
+		state   func([]WorkflowState) (WorkflowState, bool)
+	}{
+		{CodeChangeOpen, lastActiveState},
+		{CodeChangeMerged, completionState},
+	} {
+		state, found := seed.state(states)
+		if !found {
+			continue
+		}
+
+		rules = append(rules, SCMTransitionRule{
+			WorkspaceID: workspaceID,
+			TeamID:      teamID,
+			Trigger:     seed.trigger,
+			StateID:     state.ID,
+		})
+	}
+
+	return rules
+}
+
+func lastActiveState(states []WorkflowState) (WorkflowState, bool) {
+	var (
+		latest WorkflowState
+		found  bool
+	)
+
+	for _, state := range states {
+		if state.Category != StateCategoryActive {
+			continue
+		}
+
+		if !found || state.Position > latest.Position {
+			latest, found = state, true
+		}
+	}
+
+	return latest, found
+}
+
+func completionState(states []WorkflowState) (WorkflowState, bool) {
+	for _, state := range states {
+		if state.IsCompletion {
+			return state, true
+		}
+	}
+
+	return WorkflowState{}, false
 }
 
 func (r SCMTransitionRule) TargetState(states []WorkflowState) (WorkflowState, bool) {

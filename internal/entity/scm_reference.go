@@ -20,6 +20,34 @@ type ScannedReference struct {
 	Resolving bool
 }
 
+func ScanChangeReferences(branch, title, body string) []ScannedReference {
+	found := ScanIssueReferences(branch)
+
+	at := make(map[IssueReference]int, len(found))
+
+	for index, scanned := range found {
+		found[index].Resolving = true
+		at[scanned.Reference] = index
+	}
+
+	for _, scanned := range ScanIssueReferences(strings.Join([]string{title, body}, "\n")) {
+		if index, seen := at[scanned.Reference]; seen {
+			found[index].Resolving = found[index].Resolving || scanned.Resolving
+
+			continue
+		}
+
+		if len(found) == CodeLinkMaxReferences {
+			break
+		}
+
+		at[scanned.Reference] = len(found)
+		found = append(found, scanned)
+	}
+
+	return found
+}
+
 func ScanIssueReferences(text string) []ScannedReference {
 	if len(text) > CodeLinkScanMaxLen {
 		text = text[:CodeLinkScanMaxLen]

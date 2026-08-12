@@ -27,6 +27,7 @@ import (
 	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
+	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -58,6 +59,7 @@ type advanceHarness struct {
 	mirrors      *scmrepo.MockIssueMirror
 	states       *workflowstaterepo.MockWorkflowState
 	issues       *issuerepo.MockIssue
+	workspaces   *workspacerepo.MockWorkspace
 	activity     *activityrepo.MockActivity
 	memberships  *membershiprepo.MockMembership
 	apps         *scmrepo.MockSCMApp
@@ -100,6 +102,7 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		mirrors:      scmrepo.NewMockIssueMirror(ctrl),
 		states:       workflowstaterepo.NewMockWorkflowState(ctrl),
 		issues:       issuerepo.NewMockIssue(ctrl),
+		workspaces:   workspacerepo.NewMockWorkspace(ctrl),
 		activity:     activityrepo.NewMockActivity(ctrl),
 		memberships:  membershiprepo.NewMockMembership(ctrl),
 		forges:       scm.NewMockForges(ctrl),
@@ -143,6 +146,7 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		h.mirrors,
 		h.states,
 		h.issues,
+		h.workspaces,
 		h.activity,
 		h.memberships,
 		h.apps,

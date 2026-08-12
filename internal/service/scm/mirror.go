@@ -62,25 +62,24 @@ func (s *sync) openMirroredIssue(
 	decision entity.Decision,
 	found service.ForgeIssue,
 ) error {
-	teams, err := s.teamsFor(ctx, from, nil)
+	routing, err := s.teamsFor(ctx, from, nil)
 	if err != nil {
 		return err
 	}
 
-	if len(teams) != 1 {
+	teamID, single := routing.Single()
+	if !single {
 		logging.From(ctx).InfoContext(
 			ctx,
 			"a labelled platform issue was not mirrored because its repository has no single "+
 				"team to put it in",
 			"repository_id", from.repository.ID.String(),
 			"external_id", found.ExternalID,
-			"teams", len(teams),
+			"teams", len(routing.Teams),
 		)
 
 		return nil
 	}
-
-	teamID := teams[0]
 
 	if !decision.Scope.Covers(teamID) {
 		return nil

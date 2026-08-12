@@ -19,12 +19,8 @@ func (s *sync) advance(
 	decision entity.Decision,
 	tally *deliveryTally,
 	link entity.CodeLink,
+	issue entity.Issue,
 ) error {
-	issue, err := s.issues.GetVisible(ctx, from.workspaceID(), link.IssueID, decision.Scope)
-	if err != nil {
-		return nil
-	}
-
 	if issue.SCMAutomationSuppressed {
 		return nil
 	}

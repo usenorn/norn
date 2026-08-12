@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 
@@ -39,6 +38,7 @@ type sync struct {
 	mirrors      repository.IssueMirror
 	states       repository.WorkflowState
 	issues       repository.Issue
+	workspaces   repository.Workspace
 	activity     repository.Activity
 	memberships  repository.Membership
 	forges       service.Forges
@@ -71,6 +71,7 @@ func NewSync(
 	mirrors repository.IssueMirror,
 	states repository.WorkflowState,
 	issues repository.Issue,
+	workspaces repository.Workspace,
 	activity repository.Activity,
 	memberships repository.Membership,
 	apps repository.SCMApp,
@@ -104,6 +105,7 @@ func NewSync(
 		mirrors:      mirrors,
 		states:       states,
 		issues:       issues,
+		workspaces:   workspaces,
 		activity:     activity,
 		memberships:  memberships,
 		forges:       forges,
@@ -423,7 +425,7 @@ func (s *sync) applyOne(
 
 	switch event.Kind {
 	case service.ForgeEventBranchPushed:
-		return s.linkReferences(ctx, from, decision, tally, event.Branch.Name, routed, entity.CodeLink{
+		return s.linkReferences(ctx, from, decision, tally, entity.ScanIssueReferences(event.Branch.Name), routed, entity.CodeLink{
 			Kind:       entity.CodeLinkBranch,
 			ExternalID: event.Branch.Name,
 			Title:      event.Branch.Name,
@@ -434,7 +436,7 @@ func (s *sync) applyOne(
 		})
 
 	case service.ForgeEventCommitPushed:
-		return s.linkReferences(ctx, from, decision, tally, event.Commit.Message, routed, entity.CodeLink{
+		return s.linkReferences(ctx, from, decision, tally, entity.ScanIssueReferences(event.Commit.Message), routed, entity.CodeLink{
 			Kind:       entity.CodeLinkCommit,
 			ExternalID: event.Commit.SHA,
 			Title:      firstLine(event.Commit.Message),
@@ -464,11 +466,10 @@ func (s *sync) linkReferences(
 	from source,
 	decision entity.Decision,
 	tally *deliveryTally,
-	text string,
-	routed []uuid.UUID,
+	references []entity.ScannedReference,
+	routed entity.SCMRouting,
 	template entity.CodeLink,
 ) error {
-	references := entity.ScanIssueReferences(text)
 	tally.references += len(references)
 
 	for _, scanned := range references {
@@ -482,7 +483,7 @@ func (s *sync) linkReferences(
 			continue
 		}
 
-		if !slices.Contains(routed, issue.TeamID) {
+		if !routed.Covers(issue.TeamID) {
 			continue
 		}
 
@@ -522,7 +523,7 @@ func (s *sync) applyChange(
 		return s.recordChecks(ctx, from, tally, change)
 	}
 
-	text := strings.Join([]string{change.HeadBranch, change.Title, change.Body}, "\n")
+	references := entity.ScanChangeReferences(change.HeadBranch, change.Title, change.Body)
 
 	paths := s.changedPaths(ctx, from, change)
 
@@ -538,7 +539,7 @@ func (s *sync) applyChange(
 		return err
 	}
 
-	if err := s.linkReferences(ctx, from, decision, tally, text, routed, entity.CodeLink{
+	if err := s.linkReferences(ctx, from, decision, tally, references, routed, entity.CodeLink{
 		Kind:            entity.CodeLinkChange,
 		ExternalID:      change.ExternalID,
 		Number:          change.Number,
@@ -578,7 +579,14 @@ func (s *sync) applyChange(
 			}
 		}
 
-		if err := s.advance(ctx, from, decision, tally, link); err != nil {
+		issue, err := s.issues.GetVisible(ctx, from.workspaceID(), link.IssueID, decision.Scope)
+		if err != nil {
+			continue
+		}
+
+		s.announce(ctx, from, link, issue)
+
+		if err := s.advance(ctx, from, decision, tally, link, issue); err != nil {
 			return err
 		}
 	}

@@ -45,13 +45,13 @@ func (s *sync) teamsFor(
 	ctx context.Context,
 	from source,
 	paths []string,
-) ([]uuid.UUID, error) {
+) (entity.SCMRouting, error) {
 	routes, err := s.routes.ListByRepository(ctx, from.repository.ID)
 	if err != nil {
-		return nil, err
+		return entity.SCMRouting{}, err
 	}
 
-	return routes.Teams(paths), nil
+	return routes.Route(paths), nil
 }
 
 func (s *sync) reaches(ctx context.Context, from source, teamID uuid.UUID) (bool, error) {

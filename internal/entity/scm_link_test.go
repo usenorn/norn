@@ -263,3 +263,58 @@ func TestWhatTheChangeIsOutranksWhatItsReviewersThink(t *testing.T) {
 		})
 	}
 }
+
+func TestANewTeamAlreadyMovesItsIssuesWithItsChanges(t *testing.T) {
+	workspaceID, teamID := uuid.New(), uuid.New()
+
+	states := entity.DefaultWorkflowStates(workspaceID, teamID)
+	for i := range states {
+		states[i].ID = uuid.New()
+	}
+
+	rules := entity.DefaultSCMTransitionRules(workspaceID, teamID, states)
+
+	if len(rules) != 2 {
+		t.Fatalf("seeded %d rule(s), want an open rule and a merged rule", len(rules))
+	}
+
+	opened, found := rules.For(entity.CodeLink{
+		Kind:      entity.CodeLinkChange,
+		Resolving: true,
+		State:     entity.CodeChangeOpen,
+	})
+	if !found {
+		t.Fatal("opening a change has to move its issue without anybody configuring the team")
+	}
+
+	review, found := opened.TargetState(states)
+	if !found || review.Name != "In review" {
+		t.Errorf("an opened change sends the issue to %q, want In review", review.Name)
+	}
+
+	merged, found := rules.For(entity.CodeLink{
+		Kind:      entity.CodeLinkChange,
+		Resolving: true,
+		State:     entity.CodeChangeMerged,
+	})
+	if !found {
+		t.Fatal("merging a change has to complete its issue")
+	}
+
+	done, found := merged.TargetState(states)
+	if !found || !done.IsCompletion {
+		t.Errorf("a merged change sends the issue to %q, want the completion state", done.Name)
+	}
+}
+
+func TestATeamWithNoActiveOrCompletionStateSeedsNoRuleItCannotHonour(t *testing.T) {
+	workspaceID, teamID := uuid.New(), uuid.New()
+
+	rules := entity.DefaultSCMTransitionRules(workspaceID, teamID, []entity.WorkflowState{
+		{ID: uuid.New(), Name: "Todo", Category: entity.StateCategoryNotStarted, Position: 1},
+	})
+
+	if len(rules) != 0 {
+		t.Fatalf("seeded %v, want nothing: there is no state for a change to send an issue to", rules)
+	}
+}

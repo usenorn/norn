@@ -535,6 +535,8 @@ func TestCreateSeedsTheFirstTeamAndMakesItTheDefault(t *testing.T) {
 			return states, nil
 		})
 
+	h.rules.EXPECT().CreateMany(gomock.Any(), gomock.Any()).Return(nil)
+
 	var capturedMembership entity.TeamMembership
 
 	h.teamMembers.EXPECT().

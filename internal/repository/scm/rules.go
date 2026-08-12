@@ -76,6 +76,30 @@ func (r *ruleRepository) ListByTeam(
 	return rules, nil
 }
 
+const insertRuleQuery = `
+INSERT INTO workspace_scm_transition_rules (id, workspace_id, team_id, trigger, state_id)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (team_id, trigger) DO NOTHING`
+
+func (r *ruleRepository) CreateMany(
+	ctx context.Context,
+	rules entity.SCMTransitionRules,
+) error {
+	for _, rule := range rules {
+		if rule.ID == uuid.Nil {
+			rule.ID = uuid.New()
+		}
+
+		if _, err := r.db.Querier(ctx).ExecContext(
+			ctx, insertRuleQuery, rule.ID, rule.WorkspaceID, rule.TeamID, rule.Trigger, rule.StateID,
+		); err != nil {
+			return fmt.Errorf("seed transition rule: %w", err)
+		}
+	}
+
+	return nil
+}
+
 const upsertRuleQuery = `
 INSERT INTO workspace_scm_transition_rules (id, workspace_id, team_id, trigger, state_id)
 VALUES ($1, $2, $3, $4, $5)

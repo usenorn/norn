@@ -277,6 +277,8 @@ func TestANewTeamIsImmediatelyUsable(t *testing.T) {
 			return states, nil
 		})
 
+	h.rules.EXPECT().CreateMany(gomock.Any(), gomock.Any()).Return(nil)
+
 	var created entity.Team
 
 	h.teams.EXPECT().

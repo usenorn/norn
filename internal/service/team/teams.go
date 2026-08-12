@@ -20,6 +20,7 @@ type teamsService struct {
 	accounts     repository.Account
 	authPolicies repository.WorkspaceAuthPolicy
 	states       repository.WorkflowState
+	rules        repository.SCMTransitionRule
 	notify       repository.NotificationEvent
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
@@ -36,6 +37,7 @@ func New(
 	accounts repository.Account,
 	authPolicies repository.WorkspaceAuthPolicy,
 	states repository.WorkflowState,
+	rules repository.SCMTransitionRule,
 	notify repository.NotificationEvent,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
@@ -51,6 +53,7 @@ func New(
 		accounts:     accounts,
 		authPolicies: authPolicies,
 		states:       states,
+		rules:        rules,
 		notify:       notify,
 		authorizer:   authorizer,
 		transactor:   transactor,
@@ -104,7 +107,18 @@ func (s *teamsService) Create(ctx context.Context, input service.CreateTeamInput
 			return err
 		}
 
-		if _, err := s.states.CreateMany(ctx, entity.DefaultWorkflowStates(input.WorkspaceID, team.ID)); err != nil {
+		states, err := s.states.CreateMany(
+			ctx,
+			entity.DefaultWorkflowStates(input.WorkspaceID, team.ID),
+		)
+		if err != nil {
+			return err
+		}
+
+		if err := s.rules.CreateMany(
+			ctx,
+			entity.DefaultSCMTransitionRules(input.WorkspaceID, team.ID, states),
+		); err != nil {
 			return err
 		}
 

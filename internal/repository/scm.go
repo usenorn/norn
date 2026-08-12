@@ -82,6 +82,8 @@ type CodeLink interface {
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.CodeLink, error)
 	ListByExternalID(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider, repositoryName, externalID string) ([]entity.CodeLink, error)
 	ListByRepository(ctx context.Context, repositoryID uuid.UUID) ([]entity.CodeLink, error)
+	ClaimAnnouncement(ctx context.Context, linkID uuid.UUID, at time.Time) (bool, error)
+	ReleaseAnnouncement(ctx context.Context, linkID uuid.UUID) error
 	ClaimTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, issueID, stateID uuid.UUID, at time.Time) (bool, error)
 	DeferTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, blockedBy entity.CodeTransitionBlock, at time.Time) error
 	SettleTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState) error
@@ -155,6 +157,7 @@ type IssueMirror interface {
 
 type SCMTransitionRule interface {
 	ListByTeam(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.SCMTransitionRules, error)
+	CreateMany(ctx context.Context, rules entity.SCMTransitionRules) error
 	Upsert(ctx context.Context, rule entity.SCMTransitionRule) (entity.SCMTransitionRule, error)
 	Delete(ctx context.Context, workspaceID, teamID uuid.UUID, trigger entity.CodeChangeState) error
 }

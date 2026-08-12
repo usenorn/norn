@@ -118,6 +118,47 @@ func TestAChangeWithNoRouteAtAllReachesNobody(t *testing.T) {
 	}
 }
 
+func TestARepositoryNobodyHasScopedServesTheWholeWorkspace(t *testing.T) {
+	routing := SCMRoutes{}.Route(nil)
+
+	if !routing.EveryTeam {
+		t.Fatal(
+			"a repository with no route reaches every team; scoping it to none would mean " +
+				"connecting a repository quietly does nothing at all",
+		)
+	}
+
+	if !routing.Covers(uuid.New()) {
+		t.Error("an unscoped repository covers any team an issue belongs to")
+	}
+
+	if _, single := routing.Single(); single {
+		t.Error("an unscoped repository has no single team to mirror an inbound issue into")
+	}
+
+	if !(SCMRoutes{}).Reaches(uuid.New()) {
+		t.Error("an unscoped repository can be linked to an issue on any team")
+	}
+}
+
+func TestScopingARepositoryToOneTeamKeepsTheRestOut(t *testing.T) {
+	routed, other := uuid.New(), uuid.New()
+
+	routing := SCMRoutes{{TeamID: routed}}.Route(nil)
+
+	if routing.EveryTeam {
+		t.Fatal("a repository with a route is scoped by it")
+	}
+
+	if !routing.Covers(routed) || routing.Covers(other) {
+		t.Errorf("routing covers %v, want the routed team alone", routing.Teams)
+	}
+
+	if only, single := routing.Single(); !single || only != routed {
+		t.Error("a repository routed to one team mirrors inbound issues into it")
+	}
+}
+
 func TestAnUnroutedTeamIsOutOfReach(t *testing.T) {
 	routed, other := uuid.New(), uuid.New()
 	routes := SCMRoutes{{TeamID: routed, PathPrefix: "api"}}
