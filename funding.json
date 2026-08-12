@@ -1,0 +1,91 @@
+{
+    "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+    "version": "v1.1.0",
+    "entity": {
+        "type": "individual",
+        "role": "maintainer",
+        "name": "Vlad Gorokhov",
+        "email": "vlad@hexmere.com",
+        "phone": "",
+        "description": "I'm Vlad Gorokhov, creator and lead maintainer of Norn, an open source issue tracker you run yourself. I maintain it together with my co-maintainer Eric (ero@hexmere.com): we develop the tracker, its documentation, and its deployment tooling, and we operate the hosted instance at app.norn.so.",
+        "webpageUrl": {
+            "url": "https://norn.so",
+            "wellKnown": "https://norn.so/.well-known/funding-manifest-urls"
+        }
+    },
+    "projects": [
+        {
+            "guid": "norn",
+            "name": "Norn",
+            "description": "An issue tracker you run yourself, built for teams and the AI agents they work with.",
+            "webpageUrl": {
+                "url": "https://norn.so",
+                "wellKnown": "https://norn.so/.well-known/funding-manifest-urls"
+            },
+            "repositoryUrl": {
+                "url": "https://github.com/usenorn/norn",
+                "wellKnown": ""
+            },
+            "licenses": ["spdx:AGPL-3.0-only"],
+            "tags": [
+                "issue-tracker",
+                "project-management",
+                "developer-tools",
+                "self-hosted",
+                "collaboration",
+                "ai-agents",
+                "mcp",
+                "golang",
+                "sveltekit"
+            ]
+        }
+    ],
+    "funding": {
+        "channels": [
+            {
+                "guid": "bank",
+                "type": "bank",
+                "address": "",
+                "description": "Direct bank transfer (SEPA or SWIFT). Email vlad@hexmere.com for account details."
+            },
+            {
+                "guid": "github-sponsors",
+                "type": "payment-provider",
+                "address": "https://github.com/sponsors/usenorn",
+                "description": "One-time or recurring sponsorship through GitHub Sponsors."
+            }
+        ],
+        "plans": [
+            {
+                "guid": "maintainer-time",
+                "status": "active",
+                "name": "Maintainer time",
+                "description": "Funds one maintainer working part-time on Norn: features, bug fixes, security work, releases, and documentation.",
+                "amount": 3500,
+                "currency": "USD",
+                "frequency": "monthly",
+                "channels": ["bank", "github-sponsors"]
+            },
+            {
+                "guid": "infrastructure",
+                "status": "active",
+                "name": "Infrastructure",
+                "description": "Covers hosting for norn.so and the hosted instance at app.norn.so, plus CI and build infrastructure.",
+                "amount": 500,
+                "currency": "USD",
+                "frequency": "monthly",
+                "channels": ["bank", "github-sponsors"]
+            },
+            {
+                "guid": "goodwill",
+                "status": "active",
+                "name": "Goodwill",
+                "description": "Any amount, one time. Every contribution helps sustain development.",
+                "amount": 0,
+                "currency": "USD",
+                "frequency": "one-time",
+                "channels": ["bank", "github-sponsors"]
+            }
+        ]
+    }
+}
