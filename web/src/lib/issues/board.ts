@@ -36,7 +36,8 @@ function teamBacklog(states: WorkflowState[]): WorkflowState[] {
 export function tabCounts(
 	tallies: IssueGroupTally[] | undefined,
 	states: WorkflowState[],
-	backlog: WorkflowState[]
+	backlog: WorkflowState[],
+	creations: Issue[] = []
 ): Record<IssueTab, number> | undefined {
 	if (!tallies || states.length === 0) return undefined;
 
@@ -53,11 +54,22 @@ export function tabCounts(
 		})
 		.reduce((sum, tally) => sum + tally.issues, 0);
 
-	return {
+	const counts = {
 		active: open,
 		backlog: waiting,
 		all: tallies.reduce((sum, tally) => sum + tally.issues, 0),
 	};
+
+	for (const issue of creations) {
+		counts.all += 1;
+
+		if (held.has(issue.state.id)) counts.backlog += 1;
+		else if (issue.state.category === "not_started" || issue.state.category === "active") {
+			counts.active += 1;
+		}
+	}
+
+	return counts;
 }
 
 export type IssueBoard =
@@ -123,6 +135,13 @@ export type GroupingContext = {
 };
 
 type ColumnSlot = { key: string; name: string; mark: GroupMark };
+
+export type BoardOptions = {
+	showEmpty?: boolean;
+	moves?: PendingMove[];
+	edits?: PendingEdit[];
+	creations?: Issue[];
+};
 
 export const unknownNames: Record<Grouping, string> = {
 	state: "Unknown status",
@@ -229,9 +248,10 @@ export function columnsFor(
 	grouping: Grouping,
 	context: GroupingContext,
 	pages: Record<string, ColumnPage>,
-	options: { showEmpty?: boolean; moves?: PendingMove[]; edits?: PendingEdit[] } = {}
+	options: BoardOptions = {}
 ): IssueColumn[] {
 	const edits = options.edits ?? [];
+	const creations = options.creations ?? [];
 	const loaded = new Map<string, Issue[]>();
 	const known = new Map<string, Issue>();
 	const pristine = new Map<string, Issue>();
@@ -245,6 +265,8 @@ export function columnsFor(
 		pristine.set(issue.id, issue);
 	};
 
+	for (const issue of creations) bucket(issue);
+
 	for (const issue of source.issues) bucket(issue);
 
 	for (const page of Object.values(pages)) {
@@ -255,9 +277,14 @@ export function columnsFor(
 
 	const moves = options.moves ?? [];
 	const held = applyMoves(loaded, moves, known);
-	const shifted = tallyShift(moves, edits, pristine, grouping);
+	const shifted = tallyShift(moves, edits, creations, pristine, grouping);
 
-	const columns = slotted(grouping, context, source.issues, source.tallies).map((slot) => {
+	const columns = slotted(
+		grouping,
+		context,
+		[...creations, ...source.issues],
+		source.tallies
+	).map((slot) => {
 		const issues = held.get(slot.key) ?? [];
 		const page = pageOf(pages, slot.key);
 		const counted =
@@ -288,6 +315,7 @@ export function columnsFor(
 function tallyShift(
 	moves: PendingMove[],
 	edits: PendingEdit[],
+	creations: Issue[],
 	pristine: Map<string, Issue>,
 	grouping: Grouping
 ): Map<string, number> {
@@ -299,6 +327,12 @@ function tallyShift(
 		shifted.set(from, (shifted.get(from) ?? 0) - 1);
 		shifted.set(to, (shifted.get(to) ?? 0) + 1);
 	};
+
+	for (const issue of creations) {
+		const key = keyOf(grouping, issue);
+
+		shifted.set(key, (shifted.get(key) ?? 0) + 1);
+	}
 
 	for (const edit of edits) {
 		const issue = pristine.get(edit.issueId);
@@ -335,13 +369,17 @@ export function boardFor(
 	context: GroupingContext,
 	pages: Record<string, ColumnPage>,
 	scope: { name: string; teams: number },
-	options: { showEmpty?: boolean; moves?: PendingMove[]; edits?: PendingEdit[] } = {}
+	options: BoardOptions = {}
 ): IssueBoard {
 	if (scope.teams === 0) return { kind: "no_teams" };
 
 	if (!source) return { kind: "unavailable" };
 
-	if (source.issues.length === 0 && (tallyTotal(source.tallies) ?? 0) === 0) {
+	if (
+		source.issues.length === 0 &&
+		(tallyTotal(source.tallies) ?? 0) === 0 &&
+		(options.creations ?? []).length === 0
+	) {
 		return { kind: "empty", team: scope.name };
 	}
 

@@ -39,7 +39,8 @@
 	import type { Team } from "$lib/team/teams";
 	import PropertyPicker, { type PickerOption } from "./property-picker.svelte";
 	import { duePresets } from "./facets";
-	import { newIssueSchema } from "./new-issue-schema";
+	import { newIssueSchema, type NewIssueInput } from "./new-issue-schema";
+	import { draftIssue, type CreationOutcome } from "./creating";
 	import { issueFailureMessage, priorities, priorityLabel, readIssueFailure } from "./issues";
 	import type { Issue } from "./issues";
 
@@ -52,8 +53,10 @@
 		labels,
 		projects,
 		today,
+		now,
 		prefill,
-		oncreated,
+		onraising,
+		onsettled,
 	}: {
 		open?: boolean;
 		workspaceId: string;
@@ -63,14 +66,10 @@
 		labels: Label[];
 		projects: Project[];
 		today: string;
-		prefill?: Partial<{
-			teamId: string;
-			stateId: string;
-			priority: string;
-			assigneeId: string;
-			projectId: string;
-		}>;
-		oncreated?: (issue: Issue) => void | Promise<void>;
+		now: string;
+		prefill?: Partial<NewIssueInput>;
+		onraising?: (key: string, draft: Issue) => void;
+		onsettled?: (outcome: CreationOutcome) => void | Promise<void>;
 	} = $props();
 
 	let failure = $state<string | null>(null);
@@ -147,6 +146,25 @@
 
 			failure = null;
 
+			const key = crypto.randomUUID();
+			const opening = openState ?? available.find((state) => state.isDefault);
+			const draft =
+				team && opening
+					? draftIssue(key, pending.data, {
+							workspaceId,
+							team,
+							state: opening,
+							labels: known,
+							projects,
+							now,
+						})
+					: undefined;
+			const detached = Boolean(draft) && attaching.length === 0 && !pending.data.createMore;
+
+			if (draft) onraising?.(key, draft);
+
+			if (detached) open = false;
+
 			const { data: raised, error } = await api.POST("/workspaces/{workspaceId}/issues", {
 				params: { path: { workspaceId } },
 				body: {
@@ -164,6 +182,15 @@
 
 			if (error || !raised) {
 				const read = readIssueFailure(error);
+				const refusal = issueFailureMessage(read);
+
+				if (detached) {
+					onsettled?.({ key, kind: "refused", failure: refusal, input: pending.data });
+
+					return;
+				}
+
+				onsettled?.({ key, kind: "refused", failure: refusal });
 
 				if (read.kind === "invalid") {
 					for (const field of read.fields) {
@@ -172,11 +199,12 @@
 					}
 				}
 
-				failure = issueFailureMessage(read);
+				failure = refusal;
 
 				return;
 			}
 
+			const settled: CreationOutcome = { key, kind: "created", issue: raised };
 			const held = attaching;
 			attaching = [];
 
@@ -195,14 +223,14 @@
 
 				if (outcome.failed.length > 0) {
 					failure = attachFailureMessage(outcome.failed);
-					oncreated?.(raised);
+					onsettled?.(settled);
 
 					return;
 				}
 			}
 
 			if (!pending.data.createMore) {
-				oncreated?.(raised);
+				onsettled?.(settled);
 				open = false;
 
 				return;
@@ -213,7 +241,7 @@
 
 			resuming = true;
 
-			await oncreated?.(raised);
+			await onsettled?.(settled);
 		},
 	});
 
@@ -259,14 +287,14 @@
 		formData.update(
 			(current) => ({
 				...current,
-				title: "",
-				description: "",
-				labelIds: [],
-				dueOn: "",
+				title: prefill?.title ?? "",
+				description: prefill?.description ?? "",
+				labelIds: prefill?.labelIds ?? [],
+				dueOn: prefill?.dueOn ?? "",
 				createMore: false,
 				teamId: prefill?.teamId || teams[0]?.id || "",
 				stateId: prefill?.stateId ?? "",
-				priority: (prefill?.priority as typeof current.priority) ?? "none",
+				priority: prefill?.priority ?? "none",
 				assigneeId: prefill?.assigneeId ?? "",
 				projectId: prefill?.projectId ?? "",
 			}),
