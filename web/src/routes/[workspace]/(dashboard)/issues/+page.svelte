@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick } from "svelte";
+	import { tick, untrack } from "svelte";
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
@@ -87,6 +87,14 @@
 	} from "$lib/issues/paging";
 	import { columnQuery, tallyTotal } from "$lib/issues/filter";
 	import { withEdit, without, type PendingEdit } from "$lib/issues/pending";
+	import type { NewIssueInput } from "$lib/issues/new-issue-schema";
+	import {
+		settledWith,
+		unsettled,
+		withDraft,
+		type CreationOutcome,
+		type IssueCreation,
+	} from "$lib/issues/creating";
 	import {
 		insertionIndex,
 		landing,
@@ -130,6 +138,7 @@
 	let pages = $state.raw<BoardPages>(noPages);
 	let moves = $state.raw<PendingMove[]>([]);
 	let edits = $state.raw<PendingEdit[]>([]);
+	let creations = $state.raw<IssueCreation[]>([]);
 
 	let dragging = $state<string | null>(null);
 	let dropTarget = $state<DropTarget | null>(null);
@@ -163,7 +172,11 @@
 		base;
 		moves = [];
 		edits = [];
+		creations = unsettled(untrack(() => creations));
 	});
+
+	const arriving = $derived(creations.map((creation) => creation.issue));
+	const draftIDs = $derived(new Set(unsettled(creations).map((creation) => creation.issue.id)));
 
 	const applied = $derived(data.applied);
 	const broken = $derived(brokenIn(applied));
@@ -189,7 +202,7 @@
 			},
 			held,
 			{ name: scopeName, teams: data.teams.length },
-			{ showEmpty: display.showEmpty, moves, edits }
+			{ showEmpty: display.showEmpty, moves, edits, creations: arriving }
 		)
 	);
 	const columns = $derived(board.kind === "ready" ? board.columns : []);
@@ -217,7 +230,8 @@
 	});
 	const statesOfTeam = $derived((teamId: string) => statesByTeam[teamId] ?? []);
 	const counts = $derived(tabCounts(preview?.totals ?? data.totals, states, backlog));
-	const total = $derived(tallyTotal(tallies) ?? flat.length);
+	const counted = $derived(tallyTotal(tallies));
+	const total = $derived(counted === undefined ? flat.length : counted + arriving.length);
 
 	const params = $derived.by(() => {
 		const q = new URLSearchParams();
@@ -606,7 +620,7 @@
 	let polling = $state<ReturnType<typeof setTimeout> | null>(null);
 	let collapsed = $state(new SvelteSet<string>());
 	let creating = $state(false);
-	let prefill = $state<Record<string, string> | undefined>(undefined);
+	let prefill = $state<Partial<NewIssueInput> | undefined>(undefined);
 	let filterOpen = $state(false);
 	let filterCategory = $state<FacetKind | null>(null);
 	let filterSearch = $state("");
@@ -618,7 +632,9 @@
 	});
 
 	const bulk = $derived(preview?.bulk ?? liveBulk);
-	const orderedIDs = $derived(flat.map((issue) => issue.id));
+	const orderedIDs = $derived(
+		flat.filter((issue) => !draftIDs.has(issue.id)).map((issue) => issue.id)
+	);
 
 	const selectedTeams = $derived(
 		new Set(flat.filter((issue) => selected.has(issue.id)).map((issue) => issue.teamId))
@@ -712,17 +728,36 @@
 		}
 	}
 
-	function raise(seed?: Record<string, string>) {
+	async function settle(outcome: CreationOutcome) {
+		creations = settledWith(creations, outcome);
+
+		if (outcome.kind === "refused") {
+			announce(outcome.failure);
+
+			if (outcome.input) {
+				prefill = outcome.input;
+				creating = true;
+			}
+
+			return;
+		}
+
+		announce(`Created ${outcome.issue.reference}`);
+
+		await invalidate(keys.page(page.route.id));
+	}
+
+	function raise(seed?: Partial<NewIssueInput>) {
 		prefill = { teamId: team?.id ?? "", ...seed };
 		creating = true;
 	}
 
-	function seedFor(key: string): Record<string, string> {
+	function seedFor(key: string): Partial<NewIssueInput> {
 		switch (display.grouping) {
 			case "state":
 				return { stateId: key };
 			case "priority":
-				return { priority: key };
+				return { priority: key as IssuePriority };
 			case "assignee":
 				return key ? { assigneeId: key } : {};
 			case "project":
@@ -742,7 +777,7 @@
 		"select-toggle": () => {
 			const issue = flat[cursor];
 
-			if (issue) toggle(issue.id);
+			if (issue && !draftIDs.has(issue.id)) toggle(issue.id);
 		},
 		"issue-new": raise,
 		"issue-filter": () => {
@@ -763,7 +798,7 @@
 		enter: () => {
 			const issue = flat[cursor];
 
-			if (issue) void goto(at(`/issues/${issue.reference}`));
+			if (issue && !draftIDs.has(issue.id)) void goto(at(`/issues/${issue.reference}`));
 		},
 	}));
 
@@ -1646,6 +1681,7 @@
 										shown={display.shown}
 										cursor={offset + index === cursor}
 										selected={selected.has(issue.id)}
+										pending={draftIDs.has(issue.id)}
 										onselect={(extend) => toggle(issue.id, extend)}
 										{priorityControl}
 										{stateControl}
@@ -1716,6 +1752,7 @@
 										timezone={data.workspace.timezone}
 										shown={display.shown}
 										selected={selected.has(issue.id)}
+										pending={draftIDs.has(issue.id)}
 										onselect={(extend) => toggle(issue.id, extend)}
 										{priorityControl}
 										{stateControl}
@@ -1816,11 +1853,9 @@
 		{labels}
 		projects={data.projects ?? []}
 		today={data.today}
+		now={data.now}
 		{prefill}
-		oncreated={(issue) => {
-			announce(`Created ${issue.reference}`);
-
-			return invalidate(keys.page(page.route.id));
-		}}
+		onraising={(key, draft) => (creations = withDraft(creations, key, draft))}
+		onsettled={settle}
 	/>
 {/if}

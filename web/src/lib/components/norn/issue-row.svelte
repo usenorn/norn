@@ -21,6 +21,7 @@
 		timezone = "UTC",
 		cursor = false,
 		selected = false,
+		pending = false,
 		onselect,
 		shown = ["labels", "due"],
 		priorityControl,
@@ -40,6 +41,7 @@
 		timezone?: string;
 		cursor?: boolean;
 		selected?: boolean;
+		pending?: boolean;
 		onselect?: (extend: boolean) => void;
 		shown?: RowProperty[];
 		priorityControl?: Snippet<[Issue]>;
@@ -86,16 +88,18 @@
 	data-cursor={cursor}
 	data-selected={selected}
 	data-dragging={dragging}
-	{draggable}
+	data-pending={pending}
+	aria-busy={pending}
+	draggable={draggable && !pending}
 	{ondragstart}
 	{ondragend}
 	class={cn(
-		"group/row relative flex min-h-12 items-center gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 hover:bg-accent data-[cursor=true]:rule-lead data-[cursor=true]:bg-surface-cursor data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40",
-		draggable && "cursor-grab active:cursor-grabbing",
+		"group/row relative flex min-h-12 items-center gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 hover:bg-accent data-[cursor=true]:rule-lead data-[cursor=true]:bg-surface-cursor data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
+		draggable && !pending && "cursor-grab active:cursor-grabbing",
 		className
 	)}
 >
-	{#if onselect}
+	{#if onselect && !pending}
 		<button
 			type="button"
 			role="checkbox"
@@ -116,7 +120,7 @@
 		</button>
 	{/if}
 
-	{#if priorityControl}
+	{#if priorityControl && !pending}
 		<span class="relative z-1 order-last flex flex-none sm:order-none">
 			{@render priorityControl(issue)}
 		</span>
@@ -131,7 +135,7 @@
 		{issue.reference}
 	</span>
 
-	{#if stateControl}
+	{#if stateControl && !pending}
 		<span class="relative z-1 order-first flex flex-none sm:order-none">
 			{@render stateControl(issue)}
 		</span>
@@ -142,21 +146,27 @@
 	{/if}
 
 	<span class="flex min-w-0 flex-1 flex-col gap-0.5 sm:block">
-		<a
-			{href}
-			draggable="false"
-			onclick={(event) => {
-				if (!onselect || !(event.metaKey || event.ctrlKey || event.shiftKey)) return;
+		{#if pending}
+			<span class="block truncate text-base font-medium tracking-snug text-ink-900 sm:text-md sm:font-normal">
+				{issue.title}
+			</span>
+		{:else}
+			<a
+				{href}
+				draggable="false"
+				onclick={(event) => {
+					if (!onselect || !(event.metaKey || event.ctrlKey || event.shiftKey)) return;
 
-				event.preventDefault();
-				onselect(event.shiftKey);
-			}}
-			class="block truncate text-base font-medium tracking-snug after:absolute after:inset-0 sm:text-md sm:font-normal {settled
-				? 'text-muted-foreground'
-				: 'text-ink-900'}"
-		>
-			{issue.title}
-		</a>
+					event.preventDefault();
+					onselect(event.shiftKey);
+				}}
+				class="block truncate text-base font-medium tracking-snug after:absolute after:inset-0 sm:text-md sm:font-normal {settled
+					? 'text-muted-foreground'
+					: 'text-ink-900'}"
+			>
+				{issue.title}
+			</a>
+		{/if}
 		<span class="truncate font-mono text-2xs text-muted-foreground sm:hidden">{line}</span>
 	</span>
 
@@ -169,7 +179,7 @@
 		{#if hasChildren && children}
 			<ProgressBar progress={children} label={false} class="hidden md:inline-flex" />
 		{/if}
-		{#if labelsControl}
+		{#if labelsControl && !pending}
 			{@render labelsControl(issue, false)}
 		{:else}
 			{#each visible as label (label.id)}
@@ -193,7 +203,7 @@
 				{dueLabel(due, now, timezone)}
 			</span>
 		{/if}
-		{#if assigneeControl}
+		{#if assigneeControl && !pending}
 			{@render assigneeControl(issue)}
 		{:else if assignee}
 			<Avatar.Root size="xs" title={assignee}>

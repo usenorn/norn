@@ -74,6 +74,8 @@
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
+	import type { CreationOutcome } from "$lib/issues/creating";
+	import type { NewIssueInput } from "$lib/issues/new-issue-schema";
 	import IssueRelations from "$lib/issues/issue-relations.svelte";
 	import CommentThreadView from "$lib/comments/comment-thread.svelte";
 	import {
@@ -1198,6 +1200,7 @@
 	let parentPicking = $state(false);
 	let pickingDue = $state(false);
 	let addingChild = $state(false);
+	let childPrefill = $state<Partial<NewIssueInput> | undefined>(undefined);
 	const due = $derived(issue?.dueOn ? parseDate(issue.dueOn) : undefined);
 	let shown = $state<"all" | "comments">("all");
 	let notice = $state("");
@@ -1221,6 +1224,21 @@
 		const member = ready?.members.find((candidate) => candidate.accountId === accountId);
 
 		return member?.displayName || member?.email || "";
+	}
+
+	async function settle(outcome: CreationOutcome) {
+		if (outcome.kind === "refused") {
+			announce(outcome.failure);
+
+			if (outcome.input) {
+				childPrefill = outcome.input;
+				addingChild = true;
+			}
+
+			return;
+		}
+
+		await fileUnderThis(outcome.issue);
 	}
 
 	async function fileUnderThis(created: { id: string; reference: string; version: number }) {
@@ -2035,7 +2053,10 @@
 									variant="ghost"
 									size="icon-xs"
 									aria-label="Add a sub-issue"
-									onclick={() => (addingChild = true)}
+									onclick={() => {
+										childPrefill = undefined;
+										addingChild = true;
+									}}
 								>
 									<Plus aria-hidden="true" />
 								</Button>
@@ -2712,8 +2733,9 @@
 		labels={ready.labels}
 		projects={ready.projects}
 		today={calendarDate(data.now, data.workspace.timezone)}
-		prefill={{ teamId: issue.teamId, projectId: issue.projectId ?? "" }}
-		oncreated={fileUnderThis}
+		now={data.now}
+		prefill={childPrefill ?? { teamId: issue.teamId, projectId: issue.projectId ?? "" }}
+		onsettled={settle}
 	/>
 
 	<DelegateDialog

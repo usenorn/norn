@@ -17,6 +17,7 @@
 		timezone = "UTC",
 		selected = false,
 		cursor = false,
+		pending = false,
 		onselect,
 		shown = ["labels", "due"],
 		priorityControl,
@@ -36,6 +37,7 @@
 		timezone?: string;
 		selected?: boolean;
 		cursor?: boolean;
+		pending?: boolean;
 		onselect?: (extend: boolean) => void;
 		shown?: RowProperty[];
 		priorityControl?: Snippet<[Issue]>;
@@ -74,47 +76,53 @@
 	data-selected={selected}
 	data-cursor={cursor}
 	data-dragging={dragging}
-	{draggable}
+	data-pending={pending}
+	aria-busy={pending}
+	draggable={draggable && !pending}
 	{ondragstart}
 	{ondragend}
 	class={cn(
-		"relative flex flex-col gap-2 rounded-lg border border-line-default bg-card px-3 py-2.5 motion-control hover:border-ink-400 active:bg-paper-2 data-[cursor=true]:rule-lead data-[cursor=true]:bg-surface-cursor data-[selected=true]:rule-lead data-[selected=true]:border-ink-400 data-[dragging=true]:opacity-40",
-		draggable && "cursor-grab active:cursor-grabbing",
+		"relative flex flex-col gap-2 rounded-lg border border-line-default bg-card px-3 py-2.5 motion-control hover:border-ink-400 active:bg-paper-2 data-[cursor=true]:rule-lead data-[cursor=true]:bg-surface-cursor data-[selected=true]:rule-lead data-[selected=true]:border-ink-400 data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
+		draggable && !pending && "cursor-grab active:cursor-grabbing",
 		className
 	)}
 >
 	<div class="flex items-center gap-1.5">
-		{#if stateControl}
+		{#if stateControl && !pending}
 			<span class="relative z-1 flex">{@render stateControl(issue)}</span>
 		{:else}
 			<StatusIcon category={issue.state.category} name={issue.state.name} />
 		{/if}
 		<span class="font-mono text-xs text-muted-foreground">{issue.reference}</span>
 		<span class="flex-1"></span>
-		{#if priorityControl}
+		{#if priorityControl && !pending}
 			<span class="relative z-1 flex">{@render priorityControl(issue)}</span>
 		{:else}
 			<PriorityIcon priority={issue.priority} class="size-icon-row" />
 		{/if}
 	</div>
 
-	<a
-		{href}
-		draggable="false"
-		onclick={(event) => {
-			if (!onselect || !(event.metaKey || event.ctrlKey || event.shiftKey)) return;
+	{#if pending}
+		<span class="text-md leading-snug font-medium tracking-snug text-ink-900">{issue.title}</span>
+	{:else}
+		<a
+			{href}
+			draggable="false"
+			onclick={(event) => {
+				if (!onselect || !(event.metaKey || event.ctrlKey || event.shiftKey)) return;
 
-			event.preventDefault();
-			onselect(event.shiftKey);
-		}}
-		class="text-md leading-snug font-medium tracking-snug text-ink-900 after:absolute after:inset-0"
-	>
-		{issue.title}
-	</a>
+				event.preventDefault();
+				onselect(event.shiftKey);
+			}}
+			class="text-md leading-snug font-medium tracking-snug text-ink-900 after:absolute after:inset-0"
+		>
+			{issue.title}
+		</a>
+	{/if}
 
 	<div class="flex min-h-5 items-center gap-1.5">
 		<span class="relative z-1 flex min-w-0 items-center gap-1.5">
-			{#if labelsControl}
+			{#if labelsControl && !pending}
 				{@render labelsControl(issue, true)}
 			{:else}
 				{#each visible as label (label.id)}
@@ -136,7 +144,7 @@
 			</span>
 		{/if}
 		<span class="relative z-1 flex flex-none">
-			{#if assigneeControl}
+			{#if assigneeControl && !pending}
 				{@render assigneeControl(issue)}
 			{:else if assignee}
 				<Avatar.Root size="xs" title={assignee}>
