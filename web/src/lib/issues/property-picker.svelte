@@ -29,6 +29,8 @@
 		trigger,
 		mark,
 		shortcut,
+		action,
+		footer,
 		class: className,
 	}: {
 		options: PickerOption[];
@@ -42,6 +44,8 @@
 		trigger: Snippet<[Record<string, unknown>]>;
 		mark?: Snippet<[PickerOption]>;
 		shortcut?: Snippet;
+		action?: Snippet<[string]>;
+		footer?: Snippet;
 		class?: string;
 	} = $props();
 
@@ -64,7 +68,14 @@
 				{/if}
 			</Command.Input>
 			<Command.List>
-				<Command.Empty>{empty}</Command.Empty>
+				{#if !action}
+					<Command.Empty>{empty}</Command.Empty>
+				{/if}
+				{#if action}
+					<Command.Group>
+						{@render action(search)}
+					</Command.Group>
+				{/if}
 				<Command.Group>
 					{#each options as option (option.value)}
 						{#snippet body()}
@@ -107,6 +118,9 @@
 					{/each}
 				</Command.Group>
 			</Command.List>
+			{#if footer}
+				{@render footer()}
+			{/if}
 		</Command.Root>
 	</Popover.Content>
 </Popover.Root>

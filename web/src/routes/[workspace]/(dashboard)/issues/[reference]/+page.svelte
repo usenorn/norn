@@ -2707,6 +2707,7 @@
 		members={ready.members.map((member) => ({
 			accountId: member.accountId,
 			displayName: member.displayName,
+			kind: member.kind,
 		}))}
 		labels={ready.labels}
 		projects={ready.projects}
