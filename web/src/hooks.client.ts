@@ -1,9 +1,21 @@
+import * as Sentry from "@sentry/sveltekit";
 import type { HandleClientError } from "@sveltejs/kit";
 
-export const handleError: HandleClientError = ({ error, status, message }) => {
-	if (status === 404) return { message, code: "not_found" };
+Sentry.init({
+	dsn: "https://bcd796095f6fab40204c63f2931ef8c9@events.hexmere.com/5",
+	tracesSampleRate: 1,
+	replaysSessionSampleRate: 0.1,
+	replaysOnErrorSampleRate: 1,
+	integrations: [Sentry.replayIntegration()],
+	enableLogs: true,
+});
 
-	console.error(error);
+export const handleError: HandleClientError = Sentry.handleErrorWithSentry(
+	({ error, status, message }) => {
+		if (status === 404) return { message, code: "not_found" };
 
-	return { message: "Something went wrong.", code: "unexpected" };
-};
+		console.error(error);
+
+		return { message: "Something went wrong.", code: "unexpected" };
+	},
+);
