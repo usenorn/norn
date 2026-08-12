@@ -14,6 +14,7 @@
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { withSlot } from "$lib/account/accounts";
 	import { api } from "$lib/api";
 	import { initialsOf } from "$lib/team/members";
 	import {
@@ -76,6 +77,9 @@
 	let debounce: ReturnType<typeof setTimeout> | undefined;
 
 	const slug = $derived(page.params.workspace ?? "");
+	const invitePath = $derived(
+		withSlot(`/invite-teammates?workspace=${slug}`, page.data.acting?.slot ?? null)
+	);
 	const workspace = $derived(data.workspace);
 	const viewerId = $derived(preview?.viewerId ?? data.member.id);
 	const committed = $derived(page.url.searchParams.get("q") ?? "");
@@ -404,7 +408,7 @@
 			<UserRound class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Members</h1>
 			<div class="flex-1"></div>
-			<Button size="sm" href="/invite-teammates?workspace={slug}">Invite people</Button>
+			<Button size="sm" href={invitePath}>Invite people</Button>
 		</div>
 	</div>
 

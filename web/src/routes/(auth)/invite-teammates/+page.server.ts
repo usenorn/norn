@@ -52,11 +52,20 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent, url
 
 	const signedIn = accounts.find((candidate) => candidate.account.id === acting.accountId);
 	const slug = url.searchParams.get("workspace");
-	const target =
-		(slug && reachOfSlug(accounts, slug, acting.slot)?.workspace.workspace) ||
-		signedIn?.workspaces[0]?.workspace;
+	const reach =
+		(slug ? reachOfSlug(accounts, slug, acting.slot) : undefined)?.workspace ??
+		signedIn?.workspaces[0];
 
-	if (!target) redirect(307, withSlot("/create-workspace", acting.slot));
+	if (!reach) redirect(307, withSlot("/create-workspace", acting.slot));
+
+	const target = reach.workspace;
+
+	if (reach.slot !== acting.slot) {
+		const named = new URLSearchParams(url.searchParams);
+		named.set("workspace", target.slug);
+
+		redirect(307, withSlot(`${url.pathname}?${named}`, reach.slot));
+	}
 
 	const [teams, members] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams", {
