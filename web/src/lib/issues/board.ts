@@ -36,7 +36,8 @@ function teamBacklog(states: WorkflowState[]): WorkflowState[] {
 export function tabCounts(
 	tallies: IssueGroupTally[] | undefined,
 	states: WorkflowState[],
-	backlog: WorkflowState[]
+	backlog: WorkflowState[],
+	creations: Issue[] = []
 ): Record<IssueTab, number> | undefined {
 	if (!tallies || states.length === 0) return undefined;
 
@@ -53,11 +54,22 @@ export function tabCounts(
 		})
 		.reduce((sum, tally) => sum + tally.issues, 0);
 
-	return {
+	const counts = {
 		active: open,
 		backlog: waiting,
 		all: tallies.reduce((sum, tally) => sum + tally.issues, 0),
 	};
+
+	for (const issue of creations) {
+		counts.all += 1;
+
+		if (held.has(issue.state.id)) counts.backlog += 1;
+		else if (issue.state.category === "not_started" || issue.state.category === "active") {
+			counts.active += 1;
+		}
+	}
+
+	return counts;
 }
 
 export type IssueBoard =

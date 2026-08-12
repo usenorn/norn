@@ -88,14 +88,14 @@
 	)}
 >
 	<div class="flex items-center gap-1.5">
-		{#if stateControl && !pending}
+		{#if stateControl}
 			<span class="relative z-1 flex">{@render stateControl(issue)}</span>
 		{:else}
 			<StatusIcon category={issue.state.category} name={issue.state.name} />
 		{/if}
 		<span class="font-mono text-xs text-muted-foreground">{issue.reference}</span>
 		<span class="flex-1"></span>
-		{#if priorityControl && !pending}
+		{#if priorityControl}
 			<span class="relative z-1 flex">{@render priorityControl(issue)}</span>
 		{:else}
 			<PriorityIcon priority={issue.priority} class="size-icon-row" />
@@ -122,7 +122,7 @@
 
 	<div class="flex min-h-5 items-center gap-1.5">
 		<span class="relative z-1 flex min-w-0 items-center gap-1.5">
-			{#if labelsControl && !pending}
+			{#if labelsControl}
 				{@render labelsControl(issue, true)}
 			{:else}
 				{#each visible as label (label.id)}
@@ -144,7 +144,7 @@
 			</span>
 		{/if}
 		<span class="relative z-1 flex flex-none">
-			{#if assigneeControl && !pending}
+			{#if assigneeControl}
 				{@render assigneeControl(issue)}
 			{:else if assignee}
 				<Avatar.Root size="xs" title={assignee}>

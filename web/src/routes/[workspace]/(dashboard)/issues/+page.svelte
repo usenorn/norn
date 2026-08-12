@@ -229,7 +229,7 @@
 		return byTeam;
 	});
 	const statesOfTeam = $derived((teamId: string) => statesByTeam[teamId] ?? []);
-	const counts = $derived(tabCounts(preview?.totals ?? data.totals, states, backlog));
+	const counts = $derived(tabCounts(preview?.totals ?? data.totals, states, backlog, arriving));
 	const counted = $derived(tallyTotal(tallies));
 	const total = $derived(counted === undefined ? flat.length : counted + arriving.length);
 
@@ -1001,6 +1001,7 @@
 				{...props}
 				type="button"
 				aria-label="Change priority on {issue.reference}"
+				disabled={draftIDs.has(issue.id)}
 				class="inline-flex h-6 w-5 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2"
 			>
 				<PriorityIcon priority={issue.priority} class="size-icon-row" />
@@ -1027,6 +1028,7 @@
 				{...props}
 				type="button"
 				aria-label="Change status on {issue.reference}"
+				disabled={draftIDs.has(issue.id)}
 				class="inline-flex h-6 w-5.5 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2"
 			>
 				<StatusIcon category={issue.state.category} name={issue.state.name} />
@@ -1064,6 +1066,7 @@
 				{...props}
 				type="button"
 				aria-label="Change labels on {issue.reference}"
+				disabled={draftIDs.has(issue.id)}
 				class="inline-flex h-6 min-w-5 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-paper-2"
 			>
 				{#each carried.slice(0, 2) as label (label.id)}
@@ -1111,6 +1114,7 @@
 				{...props}
 				type="button"
 				aria-label="Change assignee on {issue.reference}"
+				disabled={draftIDs.has(issue.id)}
 				class="inline-flex size-6 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2"
 			>
 				{#if held}

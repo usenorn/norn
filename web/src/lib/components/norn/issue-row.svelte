@@ -99,12 +99,13 @@
 		className
 	)}
 >
-	{#if onselect && !pending}
+	{#if onselect}
 		<button
 			type="button"
 			role="checkbox"
 			aria-checked={selected}
 			aria-label="Select {issue.reference}"
+			disabled={pending}
 			onclick={(event) => onselect(event.shiftKey)}
 			data-on={selected || cursor}
 			class="relative z-1 -mr-0.5 hidden h-row w-4 flex-none cursor-pointer items-center justify-center opacity-0 sm:flex motion-control group-hover/row:opacity-100 focus-visible:opacity-100 data-[on=true]:opacity-100"
@@ -120,7 +121,7 @@
 		</button>
 	{/if}
 
-	{#if priorityControl && !pending}
+	{#if priorityControl}
 		<span class="relative z-1 order-last flex flex-none sm:order-none">
 			{@render priorityControl(issue)}
 		</span>
@@ -135,7 +136,7 @@
 		{issue.reference}
 	</span>
 
-	{#if stateControl && !pending}
+	{#if stateControl}
 		<span class="relative z-1 order-first flex flex-none sm:order-none">
 			{@render stateControl(issue)}
 		</span>
@@ -179,7 +180,7 @@
 		{#if hasChildren && children}
 			<ProgressBar progress={children} label={false} class="hidden md:inline-flex" />
 		{/if}
-		{#if labelsControl && !pending}
+		{#if labelsControl}
 			{@render labelsControl(issue, false)}
 		{:else}
 			{#each visible as label (label.id)}
@@ -203,7 +204,7 @@
 				{dueLabel(due, now, timezone)}
 			</span>
 		{/if}
-		{#if assigneeControl && !pending}
+		{#if assigneeControl}
 			{@render assigneeControl(issue)}
 		{:else if assignee}
 			<Avatar.Root size="xs" title={assignee}>
