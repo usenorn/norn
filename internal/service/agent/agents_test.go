@@ -17,6 +17,7 @@ import (
 	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	apitokenrepo "github.com/usenorn/norn/internal/repository/apitoken"
+	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
@@ -33,6 +34,7 @@ type harness struct {
 	members    *membershiprepo.MockMembership
 	tokens     *apitokenrepo.MockAPIToken
 	proposals  *agentproposalrepo.MockAgentProposal
+	questions  *questionrepo.MockIssueQuestion
 	issues     *issuesvc.MockIssues
 	authorizer *authorizersvc.MockAuthorizer
 	service    service.Agents
@@ -52,6 +54,7 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		members:     membershiprepo.NewMockMembership(ctrl),
 		tokens:      apitokenrepo.NewMockAPIToken(ctrl),
 		proposals:   agentproposalrepo.NewMockAgentProposal(ctrl),
+		questions:   questionrepo.NewMockIssueQuestion(ctrl),
 		issues:      issuesvc.NewMockIssues(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID: uuid.New(),
@@ -90,6 +93,7 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		h.issues,
 		(service.IssueComments)(nil),
 		(service.Checks)(nil),
+		h.questions,
 		h.authorizer,
 		transactor,
 		silentAudit(ctrl),
@@ -308,7 +312,9 @@ func TestAnApprovedProposalCannotBeApprovedTwice(t *testing.T) {
 			Status:      entity.AgentProposalApplied,
 		}, nil)
 
-	_, err := h.service.Approve(context.Background(), h.workspaceID, proposalID)
+	_, err := h.service.Approve(
+		context.Background(), h.workspaceID, proposalID, service.ApproveProposalInput{},
+	)
 
 	if !errors.Is(err, entity.ErrAgentProposalSettled) {
 		t.Fatalf(
@@ -344,6 +350,7 @@ func TestATokenMayNotRegisterOrApproveOnAnAgentsBehalf(t *testing.T) {
 		(service.Issues)(nil),
 		(service.IssueComments)(nil),
 		(service.Checks)(nil),
+		questionrepo.NewMockIssueQuestion(ctrl),
 		authorizer,
 		transactorrepo.NewMockTransactor(ctrl),
 		silentAudit(ctrl),

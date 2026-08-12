@@ -255,13 +255,63 @@ func (s *checksService) Add(
 	return added, nil
 }
 
+func (s *checksService) Update(
+	ctx context.Context,
+	workspaceID, issueID, checkID uuid.UUID,
+	input service.UpdateCheckInput,
+) (entity.Check, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionManage)
+	if err != nil {
+		return entity.Check{}, err
+	}
+
+	if err := validateDraft(service.NewCheckInput(input)); err != nil {
+		return entity.Check{}, err
+	}
+
+	var updated entity.Check
+
+	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		issue, held, err := s.checkOnIssue(ctx, workspaceID, issueID, checkID, decision)
+		if err != nil {
+			return err
+		}
+
+		if held.Resolved() {
+			return entity.ErrCheckSettled
+		}
+
+		updated, err = s.checks.Update(ctx, workspaceID, repository.CheckUpdate{
+			CheckID:   checkID,
+			Statement: strings.TrimSpace(input.Statement),
+			Method:    input.Method,
+			Proof:     strings.TrimSpace(input.Proof),
+			TimeLimit: input.TimeLimit,
+		})
+		if err != nil {
+			return err
+		}
+
+		return s.record(ctx, workspaceID, issue, decision, entity.ActivityKindCheckEdited, updated)
+	})
+	if err != nil {
+		return entity.Check{}, err
+	}
+
+	return updated, nil
+}
+
 func (s *checksService) Remove(ctx context.Context, workspaceID, issueID, checkID uuid.UUID) error {
 	decision, err := s.decide(ctx, workspaceID, entity.ActionManage)
 	if err != nil {
 		return err
 	}
 
-	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+	if decision.Actor.Kind != entity.ActorKindUser {
+		return entity.ErrCheckRemovalNotPersonal
+	}
+
+	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		issue, held, err := s.checkOnIssue(ctx, workspaceID, issueID, checkID, decision)
 		if err != nil {
 			return err
@@ -273,6 +323,13 @@ func (s *checksService) Remove(ctx context.Context, workspaceID, issueID, checkI
 
 		return s.record(ctx, workspaceID, issue, decision, entity.ActivityKindCheckRemoved, held)
 	})
+	if err != nil {
+		return err
+	}
+
+	s.resumeWhenClear(ctx, workspaceID, issueID)
+
+	return nil
 }
 
 func (s *checksService) checkOnIssue(

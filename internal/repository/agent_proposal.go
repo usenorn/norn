@@ -16,6 +16,7 @@ type AgentProposal interface {
 	GetByID(ctx context.Context, workspaceID, proposalID uuid.UUID) (entity.AgentProposal, error)
 	ListWaiting(ctx context.Context, workspaceID uuid.UUID, limit int) ([]entity.AgentProposal, error)
 	ListByAgent(ctx context.Context, agentID uuid.UUID, limit int) ([]entity.AgentProposal, error)
+	Rewrite(ctx context.Context, proposalID uuid.UUID, change entity.AgentChange) error
 	Settle(
 		ctx context.Context,
 		proposalID uuid.UUID,

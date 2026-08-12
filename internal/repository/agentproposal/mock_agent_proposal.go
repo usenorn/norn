@@ -103,6 +103,20 @@ func (mr *MockAgentProposalMockRecorder) ListWaiting(ctx, workspaceID, limit any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWaiting", reflect.TypeOf((*MockAgentProposal)(nil).ListWaiting), ctx, workspaceID, limit)
 }
 
+// Rewrite mocks base method.
+func (m *MockAgentProposal) Rewrite(ctx context.Context, proposalID uuid.UUID, change entity.AgentChange) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Rewrite", ctx, proposalID, change)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Rewrite indicates an expected call of Rewrite.
+func (mr *MockAgentProposalMockRecorder) Rewrite(ctx, proposalID, change any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rewrite", reflect.TypeOf((*MockAgentProposal)(nil).Rewrite), ctx, proposalID, change)
+}
+
 // Settle mocks base method.
 func (m *MockAgentProposal) Settle(ctx context.Context, proposalID uuid.UUID, status entity.AgentProposalStatus, decidedBy uuid.UUID, decidedAt time.Time, failure string) error {
 	m.ctrl.T.Helper()

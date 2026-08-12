@@ -97,7 +97,8 @@ func TestACheckWrittenAfterTheWorkWasHandedOverIsMarkedAsSuch(t *testing.T) {
 
 	h.delegations.EXPECT().
 		Open(gomock.Any(), h.workspaceID, issue.ID).
-		Return(entity.IssueDelegation{IssueID: issue.ID, AgentName: "opsy"}, nil)
+		Return(entity.IssueDelegation{IssueID: issue.ID, AgentName: "opsy"}, nil).
+		AnyTimes()
 
 	var written entity.Check
 
@@ -381,5 +382,20 @@ func TestATimeLimitOutsideWhatNornWillHoldIsRefused(t *testing.T) {
 	var invalid entity.ValidationError
 	if !errors.As(err, &invalid) {
 		t.Fatalf("a one-minute time limit returned %v, want a validation error", err)
+	}
+}
+
+func TestAnAgentCannotRemoveTheCriterionItIsGradedAgainst(t *testing.T) {
+	h := newHarness(t, entity.ActorKindAgent)
+	issue := h.issue()
+	check := h.check(issue)
+
+	h.expectIssue(issue)
+	h.expectCheck(check)
+
+	err := h.service.Remove(context.Background(), h.workspaceID, issue.ID, check.ID)
+
+	if !errors.Is(err, entity.ErrCheckRemovalNotPersonal) {
+		t.Fatalf("an agent removing returned %v, want %v", err, entity.ErrCheckRemovalNotPersonal)
 	}
 }

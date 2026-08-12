@@ -28,27 +28,38 @@ func (g *Gate) Blocking(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
 ) ([]entity.Check, error) {
+	unproven, _, err := g.Obstructing(ctx, workspaceID, issueID)
+
+	return unproven, err
+}
+
+func (g *Gate) Obstructing(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) ([]entity.Check, []entity.Check, error) {
 	checks, err := g.checks.ListByIssue(ctx, workspaceID, issueID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(checks) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	evidence, err := g.evidence.Digest(ctx, workspaceID, issueID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	links, err := g.codeLinks.ListByIssue(ctx, workspaceID, issueID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return entity.BlockingChecks(entity.ReportChecks(checks, evidence, entity.EvidenceHorizon{
+	reports := entity.ReportChecks(checks, evidence, entity.EvidenceHorizon{
 		Now:   time.Now().UTC(),
 		Heads: entity.HeadsOf(links),
-	})), nil
+	})
+
+	return entity.BlockingChecks(reports), entity.UnratifiedChecks(reports), nil
 }

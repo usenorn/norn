@@ -176,6 +176,21 @@ func (mr *MockChecksMockRecorder) SweepExpiry(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SweepExpiry", reflect.TypeOf((*MockChecks)(nil).SweepExpiry), ctx)
 }
 
+// Update mocks base method.
+func (m *MockChecks) Update(ctx context.Context, workspaceID, issueID, checkID uuid.UUID, input service.UpdateCheckInput) (entity.Check, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", ctx, workspaceID, issueID, checkID, input)
+	ret0, _ := ret[0].(entity.Check)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockChecksMockRecorder) Update(ctx, workspaceID, issueID, checkID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockChecks)(nil).Update), ctx, workspaceID, issueID, checkID, input)
+}
+
 // Waive mocks base method.
 func (m *MockChecks) Waive(ctx context.Context, workspaceID, issueID, checkID uuid.UUID, input service.WaiveCheckInput) (entity.Check, error) {
 	m.ctrl.T.Helper()

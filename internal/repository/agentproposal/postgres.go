@@ -28,6 +28,11 @@ const insertProposalQuery = `
 	)
 	VALUES ($1, $2, $3, nullif($4, '')::uuid, $5, $6, $7, $8)`
 
+const rewriteProposalQuery = `
+	UPDATE workspace_agent_proposals
+	SET change = $2, updated_at = now()
+	WHERE id = $1 AND status = 'pending'`
+
 const settleProposalQuery = `
 	UPDATE workspace_agent_proposals
 	SET status = $2, decided_by_account_id = $3, decided_at = $4,
@@ -40,6 +45,35 @@ type agentProposalRepository struct {
 
 func New(db *postgres.Client) repository.AgentProposal {
 	return &agentProposalRepository{db: db}
+}
+
+func (r *agentProposalRepository) Rewrite(
+	ctx context.Context,
+	proposalID uuid.UUID,
+	change entity.AgentChange,
+) error {
+	encoded, err := json.Marshal(change)
+	if err != nil {
+		return fmt.Errorf("encode agent proposal change: %w", err)
+	}
+
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx, rewriteProposalQuery, proposalID.String(), encoded,
+	)
+	if err != nil {
+		return fmt.Errorf("rewrite agent proposal: %w", err)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("rewrite agent proposal: %w", err)
+	}
+
+	if affected == 0 {
+		return entity.ErrAgentProposalSettled
+	}
+
+	return nil
 }
 
 func (r *agentProposalRepository) Create(

@@ -8,7 +8,7 @@ import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
 import type { FollowState } from "$lib/notifications/notifications";
 import { currentDelegation, type DelegationPanel } from "$lib/agents/delegation";
-import type { ChecksPanel } from "$lib/checks/checks";
+import type { ChecksPanel, IssueQuestion } from "$lib/checks/checks";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type {
 	CodeLink,
@@ -50,6 +50,7 @@ export type IssueDetail =
 			codeLinks: CodeLink[];
 			delegation: DelegationPanel;
 			checks: ChecksPanel;
+			questions: IssueQuestion[];
 			mirrorConflicts: MirrorConflict[];
 			shipping: IssueShipping;
 	  }
@@ -110,6 +111,7 @@ export const load: PageServerLoad = async ({
 		shipping,
 		delegations,
 		checks,
+		questions,
 	] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -150,6 +152,7 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/shipping", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/delegation", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/checks", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/questions", { params: { path } }),
 	]);
 
 	if (
@@ -188,6 +191,7 @@ export const load: PageServerLoad = async ({
 				? currentDelegation(delegations.data)
 				: { kind: "unavailable" },
 			checks: readChecks(checks.data, checks.error?.status),
+			questions: questions.data?.questions ?? [],
 			mirrorConflicts: mirrorConflicts.data ?? [],
 			shipping: shipping.data ?? { releases: [], deployments: [] },
 		},

@@ -349,3 +349,44 @@ func TestATeamThatHoldsEditsDoesNotAlsoHoldNewIssues(t *testing.T) {
 		t.Fatalf("Create = %v; holding edits must not quietly hold new issues too", err)
 	}
 }
+
+func TestAHeldWritePingsThePersonWhoDelegatedTheIssue(t *testing.T) {
+	h := newHarness(t)
+	workspaceID, issueID, issue := h.editable(t)
+
+	h.states.EXPECT().ListByTeamID(gomock.Any(), issue.TeamID).Return(nil, nil).AnyTimes()
+	h.holding(entity.AgentSettings{HoldIssueEdits: entity.AgentHoldAlways})
+	h.expectHeld(t)
+
+	delegator := uuid.New()
+	h.delegatedBy = delegator
+
+	title := "Retries keep the idempotency key"
+
+	if _, err := h.service.Update(
+		context.Background(), workspaceID, issueID,
+		service.UpdateIssueInput{ExpectedVersion: 1, Title: &title},
+	); err == nil {
+		t.Fatal("the edit was not held")
+	}
+
+	var waiting []entity.NotificationEvent
+
+	for _, event := range h.notified {
+		if event.Kind == entity.NotificationKindApprovalWaiting {
+			waiting = append(waiting, event)
+		}
+	}
+
+	if len(waiting) != 1 {
+		t.Fatalf("a held write raised %d approval notices, want exactly one", len(waiting))
+	}
+
+	if waiting[0].Target != delegator {
+		t.Fatal("the notice does not reach the person who delegated the work")
+	}
+
+	if waiting[0].Subject.ID != issueID {
+		t.Fatal("the notice does not point at the issue that is waiting")
+	}
+}

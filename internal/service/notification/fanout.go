@@ -196,11 +196,14 @@ func (s *notificationsService) candidates(
 }
 
 func targetReason(kind entity.NotificationKind) entity.NotificationReason {
-	if kind == entity.NotificationKindMembership {
+	switch kind {
+	case entity.NotificationKindMembership:
 		return entity.NotificationReasonMembership
+	case entity.NotificationKindApprovalWaiting:
+		return entity.NotificationReasonApproval
+	default:
+		return entity.NotificationReasonAssigned
 	}
-
-	return entity.NotificationReasonAssigned
 }
 
 func (s *notificationsService) mentioned(

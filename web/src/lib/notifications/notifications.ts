@@ -72,6 +72,7 @@ export function listingFor(page: NotificationPage | undefined, filter: InboxFilt
 
 export const reasonLabels: Record<NotificationReason, string> = {
 	mentioned: "Mentioned you",
+	approval: "Waiting on you",
 	assigned: "Assigned to you",
 	membership: "Added you",
 	following: "Following",
@@ -92,6 +93,7 @@ const kindVerbs: Record<NotificationKind, string> = {
 	membership: "added you",
 	check_failed: "filed a result that disproves a criterion",
 	gap_declared: "recorded a gap against a criterion",
+	approval_waiting: "is waiting for you to approve what it proposed",
 };
 
 export function summary(notification: Notification): string {
@@ -107,6 +109,10 @@ export function summary(notification: Notification): string {
 }
 
 export function subjectPath(workspace: string, notification: Notification): string {
+	if (notification.kind === "approval_waiting") {
+		return `/${workspace}/agents/approvals`;
+	}
+
 	if (notification.subjectKind === "project") {
 		return `/${workspace}/projects/${notification.subjectId}`;
 	}
@@ -155,6 +161,11 @@ export const preferenceRows: PreferenceRow[] = [
 		label: "Criteria",
 		description: "A criterion on something you follow failed, or somebody recorded a gap.",
 	},
+	{
+		key: "approvals",
+		label: "Waiting on you",
+		description: "An agent has stopped and cannot carry on until you approve what it proposed.",
+	},
 ];
 
 export function defaultPreferences(): NotificationPreferences {
@@ -165,6 +176,7 @@ export function defaultPreferences(): NotificationPreferences {
 		stateChanged: { inbox: true, email: false },
 		membership: { inbox: true, email: false },
 		checks: { inbox: true, email: false },
+		approvals: { inbox: true, email: true },
 		agents: { inbox: true, email: true },
 	};
 }

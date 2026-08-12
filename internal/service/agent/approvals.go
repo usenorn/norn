@@ -157,9 +157,29 @@ func (s *agentsService) context(
 
 	waiting.Checks = checks
 	waiting.Proposed = proposedChecks(checks, proposal.Change.CheckIDs)
+	waiting.Questions = s.unanswered(ctx, proposal)
 	waiting.State = s.targetState(ctx, issue, proposal)
 
 	return waiting
+}
+
+func (s *agentsService) unanswered(
+	ctx context.Context,
+	proposal entity.AgentProposal,
+) []entity.IssueQuestion {
+	asked, err := s.questions.ListByIssue(ctx, proposal.WorkspaceID, proposal.IssueID)
+	if err != nil {
+		logging.From(ctx).WarnContext(
+			ctx,
+			"reading the questions on a held proposal's issue failed, so the approver sees less of it",
+			"proposal_id", proposal.ID.String(),
+			"error", err.Error(),
+		)
+
+		return nil
+	}
+
+	return entity.UnansweredQuestions(asked)
 }
 
 func (s *agentsService) targetState(
@@ -204,10 +224,22 @@ func proposedChecks(checks service.IssueChecks, ids []uuid.UUID) []entity.Check 
 func (s *agentsService) Approve(
 	ctx context.Context,
 	workspaceID, proposalID uuid.UUID,
+	input service.ApproveProposalInput,
 ) (entity.AgentProposal, error) {
 	decision, proposal, err := s.decidable(ctx, workspaceID, proposalID)
 	if err != nil {
 		return entity.AgentProposal{}, err
+	}
+
+	if input.Edited {
+		if proposal.Action != entity.AgentActionCheckSet {
+			return entity.AgentProposal{}, entity.ErrAgentProposalNotEditable
+		}
+
+		proposal, err = s.reconcile(ctx, proposal, input.Checks)
+		if err != nil {
+			return entity.AgentProposal{}, err
+		}
 	}
 
 	agent, err := s.agents.GetByID(ctx, workspaceID, proposal.AgentID)
@@ -417,6 +449,87 @@ func creationFrom(proposal entity.AgentProposal) service.CreateIssueInput {
 	}
 
 	return input
+}
+
+func (s *agentsService) reconcile(
+	ctx context.Context,
+	proposal entity.AgentProposal,
+	edits []service.ProposedCheckEdit,
+) (entity.AgentProposal, error) {
+	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		kept := make(map[uuid.UUID]bool, len(edits))
+		drafted := make([]service.NewCheckInput, 0, len(edits))
+
+		for _, edit := range edits {
+			if edit.CheckID == uuid.Nil {
+				drafted = append(drafted, service.NewCheckInput{
+					Statement: edit.Statement,
+					Method:    edit.Method,
+					Proof:     edit.Proof,
+					TimeLimit: edit.TimeLimit,
+				})
+
+				continue
+			}
+
+			if !slices.Contains(proposal.Change.CheckIDs, edit.CheckID) {
+				return entity.ErrCheckNotFound
+			}
+
+			kept[edit.CheckID] = true
+
+			if _, err := s.checks.Update(
+				ctx, proposal.WorkspaceID, proposal.IssueID, edit.CheckID,
+				service.UpdateCheckInput{
+					Statement: edit.Statement,
+					Method:    edit.Method,
+					Proof:     edit.Proof,
+					TimeLimit: edit.TimeLimit,
+				},
+			); err != nil {
+				return err
+			}
+		}
+
+		remaining := make([]uuid.UUID, 0, len(proposal.Change.CheckIDs))
+
+		for _, checkID := range proposal.Change.CheckIDs {
+			if !kept[checkID] {
+				if err := s.checks.Remove(
+					ctx, proposal.WorkspaceID, proposal.IssueID, checkID,
+				); err != nil && !errors.Is(err, entity.ErrCheckNotFound) {
+					return err
+				}
+
+				continue
+			}
+
+			remaining = append(remaining, checkID)
+		}
+
+		if len(drafted) > 0 {
+			added, err := s.checks.Add(
+				ctx, proposal.WorkspaceID, proposal.IssueID,
+				service.AddChecksInput{Checks: drafted},
+			)
+			if err != nil {
+				return err
+			}
+
+			for _, check := range added {
+				remaining = append(remaining, check.ID)
+			}
+		}
+
+		proposal.Change.CheckIDs = remaining
+
+		return s.proposals.Rewrite(ctx, proposal.ID, proposal.Change)
+	})
+	if err != nil {
+		return entity.AgentProposal{}, err
+	}
+
+	return proposal, nil
 }
 
 func (s *agentsService) approveChecks(ctx context.Context, proposal entity.AgentProposal) error {

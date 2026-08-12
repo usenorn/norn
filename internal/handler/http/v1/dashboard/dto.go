@@ -1433,6 +1433,7 @@ func notificationPreferencesDTO(preferences entity.NotificationPreferences) api.
 		StateChanged: notificationChannelsDTO(preferences.StateChanged),
 		Membership:   notificationChannelsDTO(preferences.Membership),
 		Checks:       notificationChannelsDTO(preferences.Checks),
+		Approvals:    notificationChannelsDTO(preferences.Approvals),
 		Agents:       notificationChannelsDTO(preferences.Agents),
 	}
 }
@@ -1449,6 +1450,7 @@ func notificationPreferences(dto api.NotificationPreferences) entity.Notificatio
 		StateChanged: notificationChannels(dto.StateChanged),
 		Membership:   notificationChannels(dto.Membership),
 		Checks:       notificationChannels(dto.Checks),
+		Approvals:    notificationChannels(dto.Approvals),
 		Agents:       notificationChannels(dto.Agents),
 	}
 }
@@ -1836,11 +1838,48 @@ func waitingProposalDTO(waiting service.WaitingProposal) api.AgentProposal {
 		dto.ProposedChecks = &proposed
 	}
 
+	if len(waiting.Questions) > 0 {
+		questions := issueQuestionDTOs(waiting.Questions)
+		dto.Questions = &questions
+	}
+
 	if waiting.State.Name != "" {
 		dto.StateName = &waiting.State.Name
 	}
 
 	return dto
+}
+
+func issueQuestionDTO(question entity.IssueQuestion) api.IssueQuestion {
+	dto := api.IssueQuestion{
+		Id:        question.ID,
+		IssueId:   question.IssueID,
+		Question:  question.Question,
+		Default:   question.DefaultAnswer,
+		Deadline:  question.Deadline,
+		Answered:  question.Answered(),
+		Expired:   question.Expired(time.Now().UTC()),
+		Standing:  question.Standing(),
+		ActorKind: api.NotificationActorKind(question.ActorKind),
+		CreatedAt: question.CreatedAt,
+	}
+
+	dto.Answer = nilIfEmpty(question.Answer)
+	dto.AskedByName = nilIfEmpty(question.AskedByName)
+	dto.AnsweredByName = nilIfEmpty(question.AnsweredByName)
+	dto.AnsweredAt = question.AnsweredAt
+
+	return dto
+}
+
+func issueQuestionDTOs(questions []entity.IssueQuestion) []api.IssueQuestion {
+	dtos := make([]api.IssueQuestion, 0, len(questions))
+
+	for _, question := range questions {
+		dtos = append(dtos, issueQuestionDTO(question))
+	}
+
+	return dtos
 }
 
 func waitingProposalDTOs(waiting []service.WaitingProposal) []api.AgentProposal {

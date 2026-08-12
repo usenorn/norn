@@ -682,3 +682,34 @@ func TestAProofAtAChangeNornNoLongerTracksIsLeftAlone(t *testing.T) {
 		)
 	}
 }
+
+func TestOnlyACriterionNobodyHasDecidedIsUnratified(t *testing.T) {
+	cases := []struct {
+		name       string
+		approval   entity.CheckApproval
+		resolution entity.CheckResolution
+		unratified bool
+	}{
+		{"waiting on a person", entity.CheckApprovalPending, entity.CheckResolutionNone, true},
+		{"already approved", entity.CheckApprovalApproved, entity.CheckResolutionNone, false},
+		{"declined outright", entity.CheckApprovalDeclined, entity.CheckResolutionNone, false},
+		{"waived while pending", entity.CheckApprovalPending, entity.CheckResolutionWaived, false},
+		{"recorded as a gap", entity.CheckApprovalPending, entity.CheckResolutionGap, false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			report := entity.CheckReport{Check: entity.Check{Approval: tc.approval, Resolution: tc.resolution}}
+
+			if report.Unratified() != tc.unratified {
+				t.Fatalf("Unratified() = %v, want %v", report.Unratified(), tc.unratified)
+			}
+
+			unratified := entity.UnratifiedChecks([]entity.CheckReport{report})
+
+			if (len(unratified) == 1) != tc.unratified {
+				t.Fatalf("UnratifiedChecks returned %d, want unratified=%v", len(unratified), tc.unratified)
+			}
+		})
+	}
+}

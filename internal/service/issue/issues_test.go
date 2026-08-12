@@ -21,7 +21,9 @@ import (
 	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
+	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
+	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
@@ -53,6 +55,11 @@ type harness struct {
 	teams       *teamrepo.MockTeam
 	triage      *triagerepo.MockTriage
 	notify      *notificationeventrepo.MockNotificationEvent
+	delegations *delegationrepo.MockIssueDelegation
+	questions   *questionrepo.MockIssueQuestion
+	notified    []entity.NotificationEvent
+	delegatedBy uuid.UUID
+	asked       []entity.IssueQuestion
 	events      *eventsvc.MockEvents
 	followers   *issuefollowerrepo.MockIssueFollower
 	jobs        *jobqueuerepo.MockJobProducer
@@ -88,6 +95,8 @@ func newHarness(t *testing.T) *harness {
 		teams:       teamrepo.NewMockTeam(ctrl),
 		triage:      triagerepo.NewMockTriage(ctrl),
 		notify:      notificationeventrepo.NewMockNotificationEvent(ctrl),
+		delegations: delegationrepo.NewMockIssueDelegation(ctrl),
+		questions:   questionrepo.NewMockIssueQuestion(ctrl),
 		events:      eventsvc.NewMockEvents(ctrl),
 		followers:   issuefollowerrepo.NewMockIssueFollower(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
@@ -119,6 +128,9 @@ func newHarness(t *testing.T) *harness {
 			h.proposals,
 			h.agents,
 			h.states,
+			h.delegations,
+			h.questions,
+			h.notify,
 			checkgate.New(h.checks, h.evidence, h.codeLinks),
 		),
 		checkgate.New(h.checks, h.evidence, h.codeLinks),
@@ -131,7 +143,34 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.issues.EXPECT().LowestRank(gomock.Any(), gomock.Any()).Return("", nil).AnyTimes()
-	h.notify.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.notify.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, event entity.NotificationEvent) error {
+			h.notified = append(h.notified, event)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.delegations.EXPECT().
+		Open(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, issueID uuid.UUID) (entity.IssueDelegation, error) {
+			if h.delegatedBy == uuid.Nil {
+				return entity.IssueDelegation{}, entity.ErrIssueDelegationNotFound
+			}
+
+			return entity.IssueDelegation{
+				IssueID:              issueID,
+				DelegatedByAccountID: h.delegatedBy,
+			}, nil
+		}).
+		AnyTimes()
+	h.questions.EXPECT().
+		ListByIssue(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) ([]entity.IssueQuestion, error) {
+			return h.asked, nil
+		}).
+		AnyTimes()
 	h.events.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()
 	h.followers.EXPECT().Follow(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 

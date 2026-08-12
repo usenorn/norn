@@ -2216,6 +2216,11 @@ paths:
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
         - $ref: '#/components/parameters/ProposalId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApproveAgentProposalRequest' }
       responses:
         '200':
           description: The settled proposal, applied or carrying why it could not be
@@ -3878,11 +3883,98 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/questions:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [checks]
+      operationId: listWorkspaceIssueQuestions
+      summary: Read what an agent asked while working this issue, and what it worked on meanwhile
+      responses:
+        '200':
+          description: Every question asked on the issue, answered or still standing on its default
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueQuestionList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [checks]
+      operationId: askWorkspaceIssueQuestion
+      summary: Ask a person something without stopping, declaring what you will do if nobody answers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AskIssueQuestionRequest' }
+      responses:
+        '201':
+          description: The question as recorded, with the deadline after which its default stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueQuestion' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/answer:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+      - $ref: '#/components/parameters/QuestionId'
+    post:
+      tags: [checks]
+      operationId: answerWorkspaceIssueQuestion
+      summary: Answer a question an agent asked, replacing the default it was working on
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AnswerIssueQuestionRequest' }
+      responses:
+        '200':
+          description: The question as it now stands, carrying the answer and who gave it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueQuestion' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
       - $ref: '#/components/parameters/IssueId'
       - $ref: '#/components/parameters/CheckId'
+    patch:
+      tags: [checks]
+      operationId: updateWorkspaceIssueCheck
+      summary: Correct what a criterion says, or how its proof travels
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateIssueCheckRequest' }
+      responses:
+        '200':
+          description: The criterion as it now reads
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueCheck' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/CheckConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [checks]
       operationId: removeWorkspaceIssueCheck
@@ -5629,6 +5721,12 @@ components:
       required: true
       schema: { type: string, format: uuid }
 
+    QuestionId:
+      name: questionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
     CycleId:
       name: cycleId
       in: path
@@ -6507,6 +6605,57 @@ components:
           items: { $ref: '#/components/schemas/IssueCheck' }
         summary: { $ref: '#/components/schemas/IssueCheckSummary' }
 
+    IssueQuestionList:
+      type: object
+      required: [questions]
+      properties:
+        questions:
+          type: array
+          items: { $ref: '#/components/schemas/IssueQuestion' }
+
+    IssueQuestion:
+      type: object
+      required: [id, issueId, question, default, deadline, answered, expired, standing, actorKind,
+                 createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        question: { type: string }
+        default:
+          type: string
+          description: What the agent said it would do if nobody answered before the deadline.
+        deadline: { type: string, format: date-time }
+        answered: { type: boolean }
+        expired:
+          type: boolean
+          description: True once the deadline passed with no answer, so the default is what stands.
+        standing:
+          type: string
+          description: The answer if there is one, otherwise the declared default.
+        answer: { type: string }
+        askedByName: { type: string }
+        actorKind: { $ref: '#/components/schemas/NotificationActorKind' }
+        answeredByName: { type: string }
+        answeredAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    AskIssueQuestionRequest:
+      type: object
+      required: [question, default]
+      properties:
+        question: { type: string, maxLength: 1000 }
+        default: { type: string, maxLength: 2000 }
+        waitSeconds:
+          type: integer
+          format: int32
+          description: How long to wait for an answer before the default stands. Defaults to a day.
+
+    AnswerIssueQuestionRequest:
+      type: object
+      required: [answer]
+      properties:
+        answer: { type: string, maxLength: 2000 }
+
     SubmittedCheckEvidence:
       type: object
       required: [evidence, check]
@@ -6601,6 +6750,7 @@ components:
                 - check_limit_reached
                 - check_decision_not_personal
                 - check_waiver_not_personal
+                - check_removal_not_personal
                 - evidence_empty
 
     IssueDelegation:
@@ -7020,6 +7170,7 @@ components:
                 - issue_parent_not_active
                 - issue_children_open
                 - issue_checks_unproven
+                - issue_checks_unratified
                 - issue_delegation_held
                 - issue_delegation_agent_unusable
                 - issue_relation_exists
@@ -7359,6 +7510,7 @@ components:
         - check_removed
         - check_approved
         - check_declined
+        - check_edited
         - check_waived
         - check_gap_declared
         - evidence_added
@@ -8144,10 +8296,47 @@ components:
           description: >-
             What the issue's criteria say right now, so the person deciding sees whether they
             are being asked to let unproven work through.
+        questions:
+          type: array
+          description: >-
+            Questions the agent asked on this issue that nobody answered, so approving the
+            proposal also ratifies the default it worked on.
+          items: { $ref: '#/components/schemas/IssueQuestion' }
         decidedByAccountId: { type: string, format: uuid }
         decidedAt: { type: string, format: date-time }
         failure: { type: string }
         createdAt: { type: string, format: date-time }
+
+    UpdateIssueCheckRequest:
+      type: object
+      required: [statement, method, proof]
+      properties:
+        statement: { type: string, maxLength: 300 }
+        method: { $ref: '#/components/schemas/CheckMethod' }
+        proof: { type: string, maxLength: 2000 }
+        timeLimitSeconds: { type: integer, format: int32 }
+
+    ApproveAgentProposalRequest:
+      type: object
+      required: [checks]
+      description: >-
+        Present only when correcting a proposed check set while approving it. The array is the
+        set as it should stand: an entry with an id edits that criterion, an entry without one
+        adds it, and a proposed criterion left out is dropped.
+      properties:
+        checks:
+          type: array
+          items: { $ref: '#/components/schemas/ApprovedCheckEdit' }
+
+    ApprovedCheckEdit:
+      type: object
+      required: [statement, method, proof]
+      properties:
+        id: { type: string, format: uuid }
+        statement: { type: string, maxLength: 300 }
+        method: { $ref: '#/components/schemas/CheckMethod' }
+        proof: { type: string, maxLength: 2000 }
+        timeLimitSeconds: { type: integer, format: int32 }
 
     AgentUnusableProblem:
       allOf:
@@ -10167,11 +10356,11 @@ components:
     NotificationKind:
       type: string
       enum: [assigned, mentioned, commented, state_changed, membership, check_failed,
-             gap_declared]
+             gap_declared, approval_waiting]
 
     NotificationReason:
       type: string
-      enum: [mentioned, assigned, membership, following]
+      enum: [mentioned, approval, assigned, membership, following]
 
     NotificationActorKind:
       type: string
@@ -10218,7 +10407,8 @@ components:
 
     NotificationPreferences:
       type: object
-      required: [assigned, mentioned, commented, stateChanged, membership, checks, agents]
+      required: [assigned, mentioned, commented, stateChanged, membership, checks, approvals,
+                 agents]
       properties:
         assigned: { $ref: '#/components/schemas/NotificationChannels' }
         mentioned: { $ref: '#/components/schemas/NotificationChannels' }
@@ -10228,6 +10418,9 @@ components:
         checks:
           $ref: '#/components/schemas/NotificationChannels'
           description: A criterion on something you follow failed, or somebody recorded a gap.
+        approvals:
+          $ref: '#/components/schemas/NotificationChannels'
+          description: An agent is waiting for you to approve something before it can carry on.
         agents: { $ref: '#/components/schemas/NotificationChannels' }
 
     NotificationChannels:

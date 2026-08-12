@@ -5,7 +5,9 @@
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
-	import { agentsPath, type ProposalQueue } from "$lib/agents/agents";
+	import { invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
+	import { agentsPath, type ProposalQueue, type ProposedCheckEdit } from "$lib/agents/agents";
 	import ProposalCard from "$lib/agents/proposal-card.svelte";
 	import { approvalsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -16,28 +18,32 @@
 		import.meta.env.DEV ? approvalsPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	let settled = $state<ProposalQueue | null>(null);
 	let deciding = $state<string | null>(null);
 	let failed = $state<string | null>(null);
 
 	const workspace = $derived(data.workspace);
-	const queue = $derived<ProposalQueue>(settled ?? preview?.queue ?? data.queue);
+	const queue = $derived<ProposalQueue>(preview?.queue ?? data.queue);
 	const waiting = $derived(queue.kind === "ready" ? queue.proposals : []);
 	const busy = $derived(preview?.busy || deciding !== null);
 
-	async function decide(proposalId: string, verdict: "approve" | "reject") {
+	async function decide(
+		proposalId: string,
+		verdict: "approve" | "reject",
+		checks?: ProposedCheckEdit[]
+	) {
 		deciding = proposalId;
 		failed = null;
 
 		try {
-			const path =
+			const { data: decided, error } =
 				verdict === "approve"
-					? ("/workspaces/{workspaceId}/agent-proposals/{proposalId}/approve" as const)
-					: ("/workspaces/{workspaceId}/agent-proposals/{proposalId}/reject" as const);
-
-			const { data: decided, error } = await api.POST(path, {
-				params: { path: { workspaceId: workspace.id, proposalId } },
-			});
+					? await api.POST("/workspaces/{workspaceId}/agent-proposals/{proposalId}/approve", {
+							params: { path: { workspaceId: workspace.id, proposalId } },
+							...(checks ? { body: { checks } } : {}),
+						})
+					: await api.POST("/workspaces/{workspaceId}/agent-proposals/{proposalId}/reject", {
+							params: { path: { workspaceId: workspace.id, proposalId } },
+						});
 
 			if (error) {
 				failed = "That could not be decided. Reload and try again.";
@@ -51,9 +57,7 @@
 					"The issue has moved on since the agent asked, so the change no longer applies.";
 			}
 
-			const remaining = waiting.filter((proposal) => proposal.id !== proposalId);
-
-			settled = remaining.length === 0 ? { kind: "empty" } : { kind: "ready", proposals: remaining };
+			await invalidate(keys.page(page.route.id));
 		} catch {
 			failed = "We could not reach the server. Try again in a moment.";
 		} finally {

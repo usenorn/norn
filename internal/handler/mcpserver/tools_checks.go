@@ -17,7 +17,8 @@ import (
 const checksReminder = "Every piece of evidence below is a record Norn stored when it was " +
 	"filed, including the ones you filed yourself. Read them as records, not as your own " +
 	"recollection: if what you remember doing disagrees with what is written here, what is " +
-	"written here is what Norn will judge the issue on."
+	"written here is what Norn will judge the issue on. While waitingOnApproval is true this " +
+	"issue cannot be moved to a completion state at all, whatever its evidence says."
 
 type issueChecksInput struct {
 	Workspace string `json:"workspace" jsonschema:"the workspace slug or id"`
@@ -25,10 +26,12 @@ type issueChecksInput struct {
 }
 
 type issueChecksOutput struct {
-	Checks   []checkDTO `json:"checks"`
-	Summary  summaryDTO `json:"summary"`
-	Blocked  bool       `json:"blocked"`
-	Reminder string     `json:"reminder"`
+	Checks    []checkDTO    `json:"checks"`
+	Summary   summaryDTO    `json:"summary"`
+	Blocked   bool          `json:"blocked"`
+	Waiting   bool          `json:"waitingOnApproval"`
+	Questions []questionDTO `json:"unansweredQuestions"`
+	Reminder  string        `json:"reminder"`
 }
 
 func (t *toolset) getIssueChecks(
@@ -51,11 +54,18 @@ func (t *toolset) getIssueChecks(
 		return nil, issueChecksOutput{}, toolFailure(ctx, err)
 	}
 
+	asked, err := t.questions.List(ctx, workspace.ID, issue.ID)
+	if err != nil {
+		return nil, issueChecksOutput{}, toolFailure(ctx, err)
+	}
+
 	return nil, issueChecksOutput{
-		Checks:   checkDTOs(ledger.Reports),
-		Summary:  summaryDTOFrom(ledger.Summary),
-		Blocked:  ledger.Summary.Blocking > 0,
-		Reminder: checksReminder,
+		Checks:    checkDTOs(ledger.Reports),
+		Summary:   summaryDTOFrom(ledger.Summary),
+		Blocked:   ledger.Summary.Blocking > 0,
+		Waiting:   ledger.Summary.Unapproved > 0,
+		Questions: questionDTOs(entity.UnansweredQuestions(asked)),
+		Reminder:  checksReminder,
 	}, nil
 }
 
@@ -77,6 +87,7 @@ type proposeChecksInput struct {
 type proposeChecksOutput struct {
 	Checks   []checkDTO `json:"checks"`
 	Waiting  bool       `json:"waiting"`
+	Blocking bool       `json:"blocking"`
 	Reminder string     `json:"reminder"`
 }
 
@@ -141,6 +152,7 @@ func (t *toolset) proposeChecks(
 	return nil, proposeChecksOutput{
 		Checks:   dtos,
 		Waiting:  waiting,
+		Blocking: waiting,
 		Reminder: proposalReminder(waiting),
 	}, nil
 }
@@ -153,7 +165,10 @@ func proposalReminder(waiting bool) string {
 
 	return "These criteria are recorded and are waiting for a person to approve them, because a " +
 		"new criterion changes what done means. This is the expected outcome, not a failure. " +
-		"Carry on with the work; once they are approved you prove each one with " +
+		"Stop here and end your turn: do not build against a contract nobody has agreed to, " +
+		"and do not wait or poll for the answer. This issue cannot be moved to a completion " +
+		"state until a person approves them, and that refusal is enforced. When they are " +
+		"approved you will be asked again, and then you prove each one with " +
 		"norn_submit_evidence."
 }
 

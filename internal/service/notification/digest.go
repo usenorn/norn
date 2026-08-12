@@ -167,6 +167,8 @@ func summarise(notification entity.Notification) string {
 		change = "filed a result that disproves one of the criteria"
 	case entity.NotificationKindGapDeclared:
 		change = "recorded a gap against one of the criteria"
+	case entity.NotificationKindApprovalWaiting:
+		change = "is waiting for you to approve what it proposed"
 	}
 
 	if notification.Reason == entity.NotificationReasonMentioned {

@@ -85,6 +85,7 @@ const changeLines: Record<ActivityKind, (change: ActivityChange) => string> = {
 	check_approved: (change) => `Approved the check: ${change.toValue}`,
 	check_declined: (change) => `Declined the check: ${change.toValue}`,
 	check_waived: (change) => `Waived the check: ${change.toValue}`,
+	check_edited: (change) => `Rewrote a criterion: ${change.toValue}`,
 	check_gap_declared: (change) => `Declared a gap against: ${change.toValue}`,
 	evidence_added: (change) => `Filed evidence for: ${change.toValue}`,
 	check_expired: (change) =>

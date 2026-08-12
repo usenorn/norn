@@ -154,6 +154,25 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	var unratified entity.IssueChecksUnratifiedError
+	if errors.As(err, &unratified) {
+		base := baseProblem(http.StatusConflict, unratified.Error())
+		checks := issueCheckDTOs(unratified.Checks)
+
+		return problemResponse{
+			status: http.StatusConflict,
+			body: api.IssueConflictProblem{
+				Code:     api.IssueConflictProblemCodeIssueChecksUnratified,
+				Checks:   &checks,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+	}
+
 	var tooDeep entity.IssueTooDeepError
 	if errors.As(err, &tooDeep) {
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueParentTooDeep, tooDeep), true
@@ -453,6 +472,9 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrCheckWaiverNotPersonal):
 		return checkConflictProblem(api.CheckConflictProblemCodeCheckWaiverNotPersonal, err), true
+
+	case errors.Is(err, entity.ErrCheckRemovalNotPersonal):
+		return checkConflictProblem(api.CheckConflictProblemCodeCheckRemovalNotPersonal, err), true
 
 	case errors.Is(err, entity.ErrEvidenceEmpty):
 		return checkConflictProblem(api.CheckConflictProblemCodeEvidenceEmpty, err), true
@@ -1411,6 +1433,22 @@ func (r problemResponse) VisitSetWorkspaceIssueParentResponse(w http.ResponseWri
 }
 
 func (r problemResponse) VisitListWorkspaceIssueChildrenResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueQuestionsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAskWorkspaceIssueQuestionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAnswerWorkspaceIssueQuestionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

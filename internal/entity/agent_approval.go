@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	ErrAgentActionHeld       = errors.New("agent action is waiting for a person to approve it")
-	ErrAgentProposalNotFound = errors.New("agent proposal not found")
-	ErrAgentProposalSettled  = errors.New("agent proposal has already been decided")
+	ErrAgentActionHeld          = errors.New("agent action is waiting for a person to approve it")
+	ErrAgentProposalNotFound    = errors.New("agent proposal not found")
+	ErrAgentProposalSettled     = errors.New("agent proposal has already been decided")
+	ErrAgentProposalNotEditable = errors.New("only a proposed check set can be edited while approving")
 )
 
 type AgentAction string

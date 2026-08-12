@@ -32,8 +32,10 @@ var (
 	ErrCheckNotApproved         = errors.New("check has not been approved yet")
 	ErrCheckDecisionNotPersonal = errors.New("only a person can decide a check")
 	ErrCheckWaiverNotPersonal   = errors.New("only a person can waive a check")
+	ErrCheckRemovalNotPersonal  = errors.New("only a person can remove a check")
 
-	ErrIssueChecksUnproven = errors.New("issue has approved checks that are not proven")
+	ErrIssueChecksUnproven   = errors.New("issue has approved checks that are not proven")
+	ErrIssueChecksUnratified = errors.New("issue has checks nobody has approved yet")
 )
 
 type IssueChecksUnprovenError struct {
@@ -46,6 +48,18 @@ func (e IssueChecksUnprovenError) Error() string {
 
 func (e IssueChecksUnprovenError) Unwrap() error {
 	return ErrIssueChecksUnproven
+}
+
+type IssueChecksUnratifiedError struct {
+	Checks []Check
+}
+
+func (e IssueChecksUnratifiedError) Error() string {
+	return ErrIssueChecksUnratified.Error() + ": " + CheckStatements(e.Checks)
+}
+
+func (e IssueChecksUnratifiedError) Unwrap() error {
+	return ErrIssueChecksUnratified
 }
 
 type CheckMethod string

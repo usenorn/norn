@@ -13,6 +13,13 @@ type NewCheckInput struct {
 	TimeLimit *time.Duration
 }
 
+type UpdateCheckInput struct {
+	Statement string
+	Method    entity.CheckMethod
+	Proof     string
+	TimeLimit *time.Duration
+}
+
 type AddChecksInput struct {
 	Checks    []NewCheckInput
 	Reasoning entity.AgentReasoning

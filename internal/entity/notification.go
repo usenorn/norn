@@ -33,6 +33,8 @@ const (
 	NotificationKindMembership   NotificationKind = "membership"
 	NotificationKindCheckFailed  NotificationKind = "check_failed"
 	NotificationKindGapDeclared  NotificationKind = "gap_declared"
+
+	NotificationKindApprovalWaiting NotificationKind = "approval_waiting"
 )
 
 func NotificationKinds() []NotificationKind {
@@ -44,6 +46,7 @@ func NotificationKinds() []NotificationKind {
 		NotificationKindMembership,
 		NotificationKindCheckFailed,
 		NotificationKindGapDeclared,
+		NotificationKindApprovalWaiting,
 	}
 }
 
@@ -93,6 +96,7 @@ type NotificationReason string
 
 const (
 	NotificationReasonMentioned  NotificationReason = "mentioned"
+	NotificationReasonApproval   NotificationReason = "approval"
 	NotificationReasonAssigned   NotificationReason = "assigned"
 	NotificationReasonMembership NotificationReason = "membership"
 	NotificationReasonFollowing  NotificationReason = "following"
@@ -101,6 +105,7 @@ const (
 func NotificationReasons() []NotificationReason {
 	return []NotificationReason{
 		NotificationReasonMentioned,
+		NotificationReasonApproval,
 		NotificationReasonAssigned,
 		NotificationReasonMembership,
 		NotificationReasonFollowing,
@@ -182,6 +187,7 @@ type NotificationPreferences struct {
 	StateChanged NotificationChannels
 	Membership   NotificationChannels
 	Checks       NotificationChannels
+	Approvals    NotificationChannels
 	Agents       NotificationChannels
 }
 
@@ -193,6 +199,7 @@ func DefaultNotificationPreferences() NotificationPreferences {
 		StateChanged: NotificationChannels{Inbox: true, Email: false},
 		Membership:   NotificationChannels{Inbox: true, Email: false},
 		Checks:       NotificationChannels{Inbox: true, Email: false},
+		Approvals:    NotificationChannels{Inbox: true, Email: true},
 		Agents:       NotificationChannels{Inbox: true, Email: true},
 	}
 }
@@ -211,6 +218,8 @@ func (p NotificationPreferences) For(kind NotificationKind) NotificationChannels
 		return p.Membership
 	case NotificationKindCheckFailed, NotificationKindGapDeclared:
 		return p.Checks
+	case NotificationKindApprovalWaiting:
+		return p.Approvals
 	default:
 		return NotificationChannels{}
 	}

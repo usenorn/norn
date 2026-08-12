@@ -48,6 +48,7 @@ const (
 	ActivityKindCheckApproved     ActivityKind = "check_approved"
 	ActivityKindCheckDeclined     ActivityKind = "check_declined"
 	ActivityKindCheckWaived       ActivityKind = "check_waived"
+	ActivityKindCheckEdited       ActivityKind = "check_edited"
 	ActivityKindCheckGapDeclared  ActivityKind = "check_gap_declared"
 	ActivityKindEvidenceAdded     ActivityKind = "evidence_added"
 	ActivityKindChecksOverridden  ActivityKind = "checks_overridden"
@@ -84,6 +85,7 @@ func ActivityKinds() []ActivityKind {
 		ActivityKindCheckApproved,
 		ActivityKindCheckDeclined,
 		ActivityKindCheckWaived,
+		ActivityKindCheckEdited,
 		ActivityKindCheckGapDeclared,
 		ActivityKindEvidenceAdded,
 		ActivityKindChecksOverridden,

@@ -18,9 +18,12 @@ import (
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
+	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
+	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
@@ -45,6 +48,9 @@ type advanceHarness struct {
 	agents       *agentrepo.MockAgent
 	settings     *agentsettingrepo.MockAgentSetting
 	proposals    *agentproposalrepo.MockAgentProposal
+	delegations  *delegationrepo.MockIssueDelegation
+	questions    *questionrepo.MockIssueQuestion
+	notify       *notificationeventrepo.MockNotificationEvent
 	releases     *scmrepo.MockSCMRelease
 	deployments  *scmrepo.MockSCMDeployment
 	deliveries   *scmrepo.MockSCMDelivery
@@ -84,6 +90,9 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		agents:       agentrepo.NewMockAgent(ctrl),
 		settings:     agentsettingrepo.NewMockAgentSetting(ctrl),
 		proposals:    agentproposalrepo.NewMockAgentProposal(ctrl),
+		delegations:  delegationrepo.NewMockIssueDelegation(ctrl),
+		questions:    questionrepo.NewMockIssueQuestion(ctrl),
+		notify:       notificationeventrepo.NewMockNotificationEvent(ctrl),
 		releases:     scmrepo.NewMockSCMRelease(ctrl),
 		deployments:  scmrepo.NewMockSCMDeployment(ctrl),
 		deliveries:   scmrepo.NewMockSCMDelivery(ctrl),
@@ -120,7 +129,7 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		h.labels,
 		h.agents,
 		agenthold.New(
-			h.settings, h.proposals, h.agents, h.states,
+			h.settings, h.proposals, h.agents, h.states, h.delegations, h.questions, h.notify,
 			checkgate.New(
 				checkrepo.NewMockCheck(ctrl),
 				checkrepo.NewMockCheckEvidence(ctrl),

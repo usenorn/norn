@@ -2530,6 +2530,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Read what an agent asked while working this issue, and what it worked on meanwhile */
+        get: operations["listWorkspaceIssueQuestions"];
+        put?: never;
+        /** Ask a person something without stopping, declaring what you will do if nobody answers */
+        post: operations["askWorkspaceIssueQuestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                questionId: components["parameters"]["QuestionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer a question an agent asked, replacing the default it was working on */
+        post: operations["answerWorkspaceIssueQuestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}": {
         parameters: {
             query?: never;
@@ -2548,7 +2590,8 @@ export interface paths {
         delete: operations["removeWorkspaceIssueCheck"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Correct what a criterion says, or how its proof travels */
+        patch: operations["updateWorkspaceIssueCheck"];
         trace?: never;
     };
     "/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/decision": {
@@ -3949,6 +3992,45 @@ export interface components {
             checks: components["schemas"]["IssueCheck"][];
             summary: components["schemas"]["IssueCheckSummary"];
         };
+        IssueQuestionList: {
+            questions: components["schemas"]["IssueQuestion"][];
+        };
+        IssueQuestion: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            issueId: string;
+            question: string;
+            /** @description What the agent said it would do if nobody answered before the deadline. */
+            default: string;
+            /** Format: date-time */
+            deadline: string;
+            answered: boolean;
+            /** @description True once the deadline passed with no answer, so the default is what stands. */
+            expired: boolean;
+            /** @description The answer if there is one, otherwise the declared default. */
+            standing: string;
+            answer?: string;
+            askedByName?: string;
+            actorKind: components["schemas"]["NotificationActorKind"];
+            answeredByName?: string;
+            /** Format: date-time */
+            answeredAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AskIssueQuestionRequest: {
+            question: string;
+            default: string;
+            /**
+             * Format: int32
+             * @description How long to wait for an answer before the default stands. Defaults to a day.
+             */
+            waitSeconds?: number;
+        };
+        AnswerIssueQuestionRequest: {
+            answer: string;
+        };
         SubmittedCheckEvidence: {
             evidence: components["schemas"]["CheckEvidence"];
             /** @description The check as it now stands, so a submitter sees at once what its evidence proved. */
@@ -3997,7 +4079,7 @@ export interface components {
         };
         CheckConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "check_settled" | "check_decided" | "check_declined" | "check_limit_reached" | "check_decision_not_personal" | "check_waiver_not_personal" | "evidence_empty";
+            code: "check_settled" | "check_decided" | "check_declined" | "check_limit_reached" | "check_decision_not_personal" | "check_waiver_not_personal" | "check_removal_not_personal" | "evidence_empty";
         };
         IssueDelegation: {
             /** Format: uuid */
@@ -4278,7 +4360,7 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_checks_unproven" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_checks_unproven" | "issue_checks_unratified" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
@@ -4507,7 +4589,7 @@ export interface components {
             version?: number;
         };
         /** @enum {string} */
-        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled" | "check_added" | "check_removed" | "check_approved" | "check_declined" | "check_waived" | "check_gap_declared" | "evidence_added" | "checks_overridden" | "check_expired";
+        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled" | "check_added" | "check_removed" | "check_approved" | "check_declined" | "check_edited" | "check_waived" | "check_gap_declared" | "evidence_added" | "checks_overridden" | "check_expired";
         /** @enum {string} */
         LicenceStatus: "absent" | "active" | "grace" | "expired";
         LicenceFeature: {
@@ -5020,6 +5102,8 @@ export interface components {
             proposedChecks?: components["schemas"]["IssueCheck"][];
             /** @description What the issue's criteria say right now, so the person deciding sees whether they are being asked to let unproven work through. */
             checkState?: components["schemas"]["IssueCheckList"];
+            /** @description Questions the agent asked on this issue that nobody answered, so approving the proposal also ratifies the default it worked on. */
+            questions?: components["schemas"]["IssueQuestion"][];
             /** Format: uuid */
             decidedByAccountId?: string;
             /** Format: date-time */
@@ -5027,6 +5111,26 @@ export interface components {
             failure?: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        UpdateIssueCheckRequest: {
+            statement: string;
+            method: components["schemas"]["CheckMethod"];
+            proof: string;
+            /** Format: int32 */
+            timeLimitSeconds?: number;
+        };
+        /** @description Present only when correcting a proposed check set while approving it. The array is the set as it should stand: an entry with an id edits that criterion, an entry without one adds it, and a proposed criterion left out is dropped. */
+        ApproveAgentProposalRequest: {
+            checks: components["schemas"]["ApprovedCheckEdit"][];
+        };
+        ApprovedCheckEdit: {
+            /** Format: uuid */
+            id?: string;
+            statement: string;
+            method: components["schemas"]["CheckMethod"];
+            proof: string;
+            /** Format: int32 */
+            timeLimitSeconds?: number;
         };
         AgentUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -6332,9 +6436,9 @@ export interface components {
         /** @enum {string} */
         NotificationSubjectKind: "issue" | "project" | "team";
         /** @enum {string} */
-        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "check_failed" | "gap_declared";
+        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "check_failed" | "gap_declared" | "approval_waiting";
         /** @enum {string} */
-        NotificationReason: "mentioned" | "assigned" | "membership" | "following";
+        NotificationReason: "mentioned" | "approval" | "assigned" | "membership" | "following";
         /** @enum {string} */
         NotificationActorKind: "user" | "token" | "agent" | "system";
         SnoozeNotificationRequest: {
@@ -6367,6 +6471,8 @@ export interface components {
             membership: components["schemas"]["NotificationChannels"];
             /** @description A criterion on something you follow failed, or somebody recorded a gap. */
             checks: components["schemas"]["NotificationChannels"];
+            /** @description An agent is waiting for you to approve something before it can carry on. */
+            approvals: components["schemas"]["NotificationChannels"];
             agents: components["schemas"]["NotificationChannels"];
         };
         NotificationChannels: {
@@ -6812,6 +6918,7 @@ export interface components {
         StateId: string;
         IssueId: string;
         CheckId: string;
+        QuestionId: string;
         CycleId: string;
         ProjectId: string;
         SavedViewId: string;
@@ -9962,7 +10069,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ApproveAgentProposalRequest"];
+            };
+        };
         responses: {
             /** @description The settled proposal, applied or carrying why it could not be */
             200: {
@@ -12164,6 +12275,99 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
+    listWorkspaceIssueQuestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every question asked on the issue, answered or still standing on its default */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueQuestionList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    askWorkspaceIssueQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskIssueQuestionRequest"];
+            };
+        };
+        responses: {
+            /** @description The question as recorded, with the deadline after which its default stands */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueQuestion"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    answerWorkspaceIssueQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                questionId: components["parameters"]["QuestionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerIssueQuestionRequest"];
+            };
+        };
+        responses: {
+            /** @description The question as it now stands, carrying the answer and who gave it */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueQuestion"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
     removeWorkspaceIssueCheck: {
         parameters: {
             query?: never;
@@ -12187,6 +12391,40 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceIssueCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                checkId: components["parameters"]["CheckId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateIssueCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description The criterion as it now reads */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueCheck"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["CheckConflict"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

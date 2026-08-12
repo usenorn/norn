@@ -12,11 +12,14 @@ import (
 )
 
 type Gate struct {
-	settings  repository.AgentSetting
-	proposals repository.AgentProposal
-	agents    repository.Agent
-	states    repository.WorkflowState
-	checks    *checkgate.Gate
+	settings    repository.AgentSetting
+	proposals   repository.AgentProposal
+	agents      repository.Agent
+	states      repository.WorkflowState
+	delegations repository.IssueDelegation
+	questions   repository.IssueQuestion
+	notify      repository.NotificationEvent
+	checks      *checkgate.Gate
 }
 
 func New(
@@ -24,14 +27,20 @@ func New(
 	proposals repository.AgentProposal,
 	agents repository.Agent,
 	states repository.WorkflowState,
+	delegations repository.IssueDelegation,
+	questions repository.IssueQuestion,
+	notify repository.NotificationEvent,
 	checks *checkgate.Gate,
 ) *Gate {
 	return &Gate{
-		settings:  settings,
-		proposals: proposals,
-		agents:    agents,
-		states:    states,
-		checks:    checks,
+		settings:    settings,
+		proposals:   proposals,
+		agents:      agents,
+		states:      states,
+		delegations: delegations,
+		questions:   questions,
+		notify:      notify,
+		checks:      checks,
 	}
 }
 
@@ -58,12 +67,26 @@ func (g *Gate) Hold(
 
 	action, policy := configured.Strongest(actions)
 
+	completing, err := g.completing(ctx, issue, change)
+	if err != nil {
+		return entity.AgentProposal{}, false, err
+	}
+
+	unanswered, err := g.unanswered(ctx, issue, completing)
+	if err != nil {
+		return entity.AgentProposal{}, false, err
+	}
+
+	if len(unanswered) > 0 {
+		action, policy = entity.AgentActionStateChange, entity.AgentHoldAlways
+	}
+
 	switch policy {
 	case entity.AgentHoldNever:
 		return entity.AgentProposal{}, false, nil
 
 	case entity.AgentHoldUnlessProven:
-		waits, err := g.unproven(ctx, issue, change)
+		waits, err := g.unproven(ctx, issue, completing)
 		if err != nil {
 			return entity.AgentProposal{}, false, err
 		}
@@ -93,7 +116,31 @@ func (g *Gate) Hold(
 		return entity.AgentProposal{}, false, err
 	}
 
+	if err := g.announce(ctx, decision, issue); err != nil {
+		return entity.AgentProposal{}, false, err
+	}
+
 	return held, true, nil
+}
+
+func (g *Gate) announce(ctx context.Context, decision entity.Decision, issue entity.Issue) error {
+	return g.notify.Record(ctx, entity.NotificationEvent{
+		WorkspaceID: issue.WorkspaceID,
+		Subject:     entity.NotifyIssue(issue.ID),
+		Kind:        entity.NotificationKindApprovalWaiting,
+		Actor:       decision.Actor.AccountID,
+		ActorKind:   decision.Actor.Kind,
+		Target:      g.awaitedBy(ctx, issue),
+	})
+}
+
+func (g *Gate) awaitedBy(ctx context.Context, issue entity.Issue) uuid.UUID {
+	delegation, err := g.delegations.Open(ctx, issue.WorkspaceID, issue.ID)
+	if err != nil {
+		return uuid.Nil
+	}
+
+	return delegation.DelegatedByAccountID
 }
 
 func (g *Gate) HoldCreation(
@@ -136,14 +183,9 @@ func (g *Gate) HoldCreation(
 	return held, true, nil
 }
 
-func (g *Gate) unproven(
-	ctx context.Context,
-	issue entity.Issue,
-	change entity.AgentChange,
-) (bool, error) {
-	completing, err := g.completing(ctx, issue, change)
-	if err != nil || !completing {
-		return false, err
+func (g *Gate) unproven(ctx context.Context, issue entity.Issue, completing bool) (bool, error) {
+	if !completing {
+		return false, nil
 	}
 
 	blocking, err := g.checks.Blocking(ctx, issue.WorkspaceID, issue.ID)
@@ -152,6 +194,28 @@ func (g *Gate) unproven(
 	}
 
 	return len(blocking) > 0, nil
+}
+
+func (g *Gate) unanswered(
+	ctx context.Context,
+	issue entity.Issue,
+	completing bool,
+) ([]entity.IssueQuestion, error) {
+	if !completing {
+		return nil, nil
+	}
+
+	_, unratified, err := g.checks.Obstructing(ctx, issue.WorkspaceID, issue.ID)
+	if err != nil || len(unratified) > 0 {
+		return nil, err
+	}
+
+	asked, err := g.questions.ListByIssue(ctx, issue.WorkspaceID, issue.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return entity.UnansweredQuestions(asked), nil
 }
 
 func (g *Gate) completing(

@@ -59,18 +59,18 @@ func (mr *MockAgentsMockRecorder) Activity(ctx, workspaceID, agentID, page any) 
 }
 
 // Approve mocks base method.
-func (m *MockAgents) Approve(ctx context.Context, workspaceID, proposalID uuid.UUID) (entity.AgentProposal, error) {
+func (m *MockAgents) Approve(ctx context.Context, workspaceID, proposalID uuid.UUID, input service.ApproveProposalInput) (entity.AgentProposal, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Approve", ctx, workspaceID, proposalID)
+	ret := m.ctrl.Call(m, "Approve", ctx, workspaceID, proposalID, input)
 	ret0, _ := ret[0].(entity.AgentProposal)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Approve indicates an expected call of Approve.
-func (mr *MockAgentsMockRecorder) Approve(ctx, workspaceID, proposalID any) *gomock.Call {
+func (mr *MockAgentsMockRecorder) Approve(ctx, workspaceID, proposalID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Approve", reflect.TypeOf((*MockAgents)(nil).Approve), ctx, workspaceID, proposalID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Approve", reflect.TypeOf((*MockAgents)(nil).Approve), ctx, workspaceID, proposalID, input)
 }
 
 // Authenticate mocks base method.

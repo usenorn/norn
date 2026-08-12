@@ -30,7 +30,7 @@ func (s *checksService) propose(
 		ids = append(ids, check.ID)
 	}
 
-	_, err = s.proposals.Create(ctx, entity.AgentProposal{
+	if _, err = s.proposals.Create(ctx, entity.AgentProposal{
 		WorkspaceID: issue.WorkspaceID,
 		AgentID:     agent.ID,
 		IssueID:     issue.ID,
@@ -38,7 +38,25 @@ func (s *checksService) propose(
 		Action:      entity.AgentActionCheckSet,
 		Change:      entity.AgentChange{ExpectedVersion: issue.Version, CheckIDs: ids},
 		Reasoning:   reasoning,
-	})
+	}); err != nil {
+		return err
+	}
 
-	return err
+	return s.notify.Record(ctx, entity.NotificationEvent{
+		WorkspaceID: issue.WorkspaceID,
+		Subject:     entity.NotifyIssue(issue.ID),
+		Kind:        entity.NotificationKindApprovalWaiting,
+		Actor:       decision.Actor.AccountID,
+		ActorKind:   decision.Actor.Kind,
+		Target:      s.awaitedBy(ctx, issue),
+	})
+}
+
+func (s *checksService) awaitedBy(ctx context.Context, issue entity.Issue) uuid.UUID {
+	delegation, err := s.delegations.Open(ctx, issue.WorkspaceID, issue.ID)
+	if err != nil {
+		return uuid.Nil
+	}
+
+	return delegation.DelegatedByAccountID
 }

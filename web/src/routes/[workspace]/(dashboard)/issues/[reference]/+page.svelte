@@ -84,6 +84,7 @@
 	} from "$lib/activity/activity";
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
 	import CheckList from "$lib/checks/check-list.svelte";
+	import QuestionList from "$lib/checks/question-list.svelte";
 	import CheckSummary from "$lib/checks/check-summary.svelte";
 	import NewCheckDialog from "$lib/checks/new-check-dialog.svelte";
 	import FileEvidenceDialog from "$lib/checks/file-evidence-dialog.svelte";
@@ -96,6 +97,7 @@
 		type ChecksPanel,
 		type EvidencePanel,
 		type IssueCheck,
+		type IssueQuestion,
 	} from "$lib/checks/checks";
 	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
 
@@ -305,6 +307,10 @@
 	const codeLinks = $derived<CodeLink[]>(
 		(ready?.codeLinks ?? []).filter((link) => !removedCodeLinks.includes(link.id))
 	);
+	const questions = $derived<IssueQuestion[]>(
+		checksPreview?.questions ?? (ready ? ready.questions : [])
+	);
+
 	const checks = $derived<ChecksPanel>(
 		checksPreview?.panel ?? (ready ? ready.checks : ({ kind: "loading" } as ChecksPanel))
 	);
@@ -676,6 +682,37 @@
 			};
 		} catch {
 			evidencePanels = { ...evidencePanels, [check.id]: { kind: "unavailable" } };
+		}
+	}
+
+	async function answerQuestion(question: IssueQuestion, answer: string): Promise<void> {
+		if (!issue) return;
+
+		working = true;
+		checkFailure = null;
+
+		try {
+			const { error } = await api.POST(
+				"/workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/answer",
+				{
+					params: {
+						path: {
+							workspaceId: data.workspace.id,
+							issueId: issue.id,
+							questionId: question.id,
+						},
+					},
+					body: { answer },
+				}
+			);
+
+			if (error) checkFailure = readCheckFailure(error);
+
+			await reloadChecks();
+		} catch {
+			checkFailure = { kind: "unavailable" };
+		} finally {
+			working = false;
 		}
 	}
 
@@ -1960,6 +1997,23 @@
 							/>
 						{/if}
 					</section>
+
+					{#if questions.length > 0}
+						<section class="flex min-w-0 flex-col gap-1.5">
+							<div class="flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">Questions</Eyebrow>
+								</h2>
+							</div>
+							<QuestionList
+								{questions}
+								timezone={data.workspace.timezone}
+								canAnswer={canEdit}
+								{working}
+								onanswer={answerQuestion}
+							/>
+						</section>
+					{/if}
 
 					<section class="flex flex-col gap-1.5">
 						<div class="flex items-center gap-2.5">

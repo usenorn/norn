@@ -20,6 +20,7 @@ import (
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
+	issuequestionsvc "github.com/usenorn/norn/internal/service/issuequestion"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	scmsvc "github.com/usenorn/norn/internal/service/scm"
@@ -48,6 +49,8 @@ var toolScopes = entity.APIScopeSet{
 type harness struct {
 	issues        *issuesvc.MockIssues
 	checks        *checksvc.MockChecks
+	questions     *issuequestionsvc.MockIssueQuestions
+	asked         []entity.IssueQuestion
 	agents        *agentsvc.MockAgents
 	teams         *teamsvc.MockTeams
 	states        *workflowstatesvc.MockWorkflowStates
@@ -67,6 +70,7 @@ func newHarness(t *testing.T) *harness {
 		checks:        checksvc.NewMockChecks(ctrl),
 		agents:        agentsvc.NewMockAgents(ctrl),
 		teams:         teamsvc.NewMockTeams(ctrl),
+		questions:     issuequestionsvc.NewMockIssueQuestions(ctrl),
 		states:        workflowstatesvc.NewMockWorkflowStates(ctrl),
 		workspaces:    workspacesvc.NewMockWorkspaces(ctrl),
 		sourceControl: scmsvc.NewMockSourceControl(ctrl),
@@ -80,6 +84,7 @@ func newHarness(t *testing.T) *harness {
 	h.edge = mcpserver.New(
 		h.issues,
 		h.checks,
+		h.questions,
 		h.agents,
 		issuecommentsvc.NewMockIssueComments(ctrl),
 		projectsvc.NewMockProjects(ctrl),
@@ -93,6 +98,13 @@ func newHarness(t *testing.T) *harness {
 		config.App{Version: "test"},
 		config.MCP{Enabled: true},
 	)
+
+	h.questions.EXPECT().
+		List(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) ([]entity.IssueQuestion, error) {
+			return h.asked, nil
+		}).
+		AnyTimes()
 
 	return h
 }
@@ -199,14 +211,16 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		"norn_get_issue_checks",
 		"norn_propose_checks",
 		"norn_submit_evidence",
+		"norn_ask",
+		"norn_start_issue",
 	} {
 		if !registered[name] {
 			t.Errorf("tool %s is not registered", name)
 		}
 	}
 
-	if len(tools.Tools) != 19 {
-		t.Errorf("registered %d tools, want 19", len(tools.Tools))
+	if len(tools.Tools) != 21 {
+		t.Errorf("registered %d tools, want 21", len(tools.Tools))
 	}
 }
 
@@ -365,6 +379,7 @@ func TestDisabledMCPAnswers404(t *testing.T) {
 	edge := mcpserver.New(
 		issuesvc.NewMockIssues(ctrl),
 		checksvc.NewMockChecks(ctrl),
+		issuequestionsvc.NewMockIssueQuestions(ctrl),
 		agentsvc.NewMockAgents(ctrl),
 		issuecommentsvc.NewMockIssueComments(ctrl),
 		projectsvc.NewMockProjects(ctrl),

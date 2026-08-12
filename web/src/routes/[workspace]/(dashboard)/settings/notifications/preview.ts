@@ -20,6 +20,7 @@ export const notificationSettingsPreviewStates: Record<string, NotificationSetti
 							stateChanged: { inbox: true, email: false },
 							membership: { inbox: true, email: false },
 							checks: { inbox: true, email: false },
+							approvals: { inbox: true, email: true },
 							agents: { inbox: true, email: true },
 						},
 						workspace: {
@@ -29,6 +30,7 @@ export const notificationSettingsPreviewStates: Record<string, NotificationSetti
 							stateChanged: { inbox: true, email: false },
 							membership: { inbox: true, email: false },
 							checks: { inbox: true, email: false },
+							approvals: { inbox: true, email: true },
 							agents: { inbox: true, email: true },
 						},
 					},
@@ -47,6 +49,7 @@ export const notificationSettingsPreviewStates: Record<string, NotificationSetti
 							stateChanged: { inbox: true, email: false },
 							membership: { inbox: true, email: false },
 							checks: { inbox: true, email: false },
+							approvals: { inbox: true, email: true },
 							agents: { inbox: true, email: true },
 						},
 						workspace: {
@@ -56,6 +59,7 @@ export const notificationSettingsPreviewStates: Record<string, NotificationSetti
 							stateChanged: { inbox: true, email: false },
 							membership: { inbox: true, email: false },
 							checks: { inbox: true, email: false },
+							approvals: { inbox: true, email: true },
 							agents: { inbox: true, email: true },
 						},
 					},
@@ -75,6 +79,7 @@ export const notificationSettingsPreviewStates: Record<string, NotificationSetti
 							stateChanged: { inbox: false, email: false },
 							membership: { inbox: true, email: false },
 							checks: { inbox: true, email: false },
+							approvals: { inbox: true, email: true },
 							agents: { inbox: false, email: false },
 						},
 						workspace: {
@@ -84,6 +89,7 @@ export const notificationSettingsPreviewStates: Record<string, NotificationSetti
 							stateChanged: { inbox: false, email: false },
 							membership: { inbox: true, email: false },
 							checks: { inbox: true, email: false },
+							approvals: { inbox: true, email: true },
 							agents: { inbox: false, email: false },
 						},
 					},

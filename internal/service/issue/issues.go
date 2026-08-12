@@ -505,9 +505,13 @@ func (s *issuesService) Update(
 				}
 			}
 
-			blocking, err := s.checks.Blocking(ctx, workspaceID, issueID)
+			blocking, unratified, err := s.checks.Obstructing(ctx, workspaceID, issueID)
 			if err != nil {
 				return err
+			}
+
+			if len(unratified) > 0 && refused(ctx, decision) {
+				return entity.IssueChecksUnratifiedError{Checks: unratified}
 			}
 
 			if len(blocking) > 0 {

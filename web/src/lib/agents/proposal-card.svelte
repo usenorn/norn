@@ -5,6 +5,8 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
+	import { Input } from "$lib/components/ui/input/index.js";
+	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import { onDateAndTime } from "$lib/time";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import AgentReasoning from "./agent-reasoning.svelte";
@@ -17,6 +19,7 @@
 		overriding,
 		proposalSummary,
 		type AgentProposal,
+		type ProposedCheckEdit,
 	} from "./agents";
 
 	let {
@@ -32,7 +35,11 @@
 		timezone: string;
 		busy: boolean;
 		deciding: string | null;
-		ondecide: (proposalId: string, verdict: "approve" | "reject") => void;
+		ondecide: (
+			proposalId: string,
+			verdict: "approve" | "reject",
+			checks?: ProposedCheckEdit[]
+		) => void;
 	} = $props();
 
 	const checkSet = $derived(proposal.action === "check_set");
@@ -40,6 +47,34 @@
 	const proposed = $derived(proposal.proposedChecks ?? []);
 	const held = $derived(proposal.checkState);
 	const settled = $derived(deciding === proposal.id);
+	const questions = $derived(proposal.questions ?? []);
+
+	let edits = $state<ProposedCheckEdit[] | null>(null);
+
+	function correct() {
+		edits = proposed.map((check) => ({
+			id: check.id,
+			statement: check.statement,
+			method: check.method,
+			proof: check.proof,
+			timeLimitSeconds: check.timeLimitSeconds,
+		}));
+	}
+
+	function drop(index: number) {
+		edits = (edits ?? []).filter((_, at) => at !== index);
+	}
+
+	function add() {
+		edits = [
+			...(edits ?? []),
+			{ statement: "", method: "command", proof: "" },
+		];
+	}
+
+	const incomplete = $derived(
+		(edits ?? []).some((edit) => edit.statement.trim() === "" || edit.proof.trim() === "")
+	);
 </script>
 
 <li class="flex flex-col gap-3 rounded-lg border border-line-subtle bg-paper-0 p-4">
@@ -74,24 +109,72 @@
 
 	{#if checkSet && proposed.length > 0}
 		<div class="flex flex-col gap-1.5 rounded-md border border-warning/40 p-2.5">
-			<Eyebrow class="text-warning">Criteria it wants to add</Eyebrow>
-			<ol class="flex flex-col gap-1.5">
-				{#each proposed as check (check.id)}
-					<li class="flex flex-col gap-0.5">
-						<span class="text-sm leading-normal text-ink-900 text-pretty">{check.statement}</span>
-						<span class="text-xs text-muted-foreground text-pretty">
-							<span class="font-mono tracking-eyebrow uppercase">
-								{methodLabels[check.method]}
+			<div class="flex flex-wrap items-baseline justify-between gap-2">
+				<Eyebrow class="text-warning">Criteria it wants to add</Eyebrow>
+				{#if edits === null}
+					<Button variant="ghost" size="sm" disabled={busy} onclick={correct}>Correct these</Button>
+				{/if}
+			</div>
+
+			{#if edits === null}
+				<ol class="flex flex-col gap-1.5">
+					{#each proposed as check (check.id)}
+						<li class="flex flex-col gap-0.5">
+							<span class="text-sm leading-normal text-ink-900 text-pretty">{check.statement}</span>
+							<span class="text-xs text-muted-foreground text-pretty">
+								<span class="font-mono tracking-eyebrow uppercase">
+									{methodLabels[check.method]}
+								</span>
+								· {check.proof}
 							</span>
-							· {check.proof}
-						</span>
-					</li>
-				{/each}
-			</ol>
-			<p class="text-xs leading-normal text-muted-foreground text-pretty">
-				A check set always waits for a person, whatever this team's other settings say. A new
-				criterion changes what done means here.
-			</p>
+						</li>
+					{/each}
+				</ol>
+				<p class="text-xs leading-normal text-muted-foreground text-pretty">
+					A check set always waits for a person, whatever this team's other settings say. A new
+					criterion changes what done means here.
+				</p>
+			{:else}
+				<ol class="flex flex-col gap-2.5">
+					{#each edits as edit, index (index)}
+						<li class="flex flex-col gap-1.5 border-t border-line-subtle pt-2.5 first:border-t-0 first:pt-0">
+							<Input
+								bind:value={edit.statement}
+								aria-label="What must be true"
+								placeholder="What must be true"
+								disabled={busy}
+							/>
+							<Textarea
+								bind:value={edit.proof}
+								rows={2}
+								aria-label="How it is proven"
+								placeholder="How it is proven"
+								disabled={busy}
+							/>
+							<Button
+								variant="ghost"
+								size="sm"
+								class="w-max"
+								disabled={busy}
+								onclick={() => drop(index)}
+							>
+								Drop this one
+							</Button>
+						</li>
+					{/each}
+				</ol>
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" size="sm" disabled={busy} onclick={add}>
+						Add a criterion
+					</Button>
+					<Button variant="ghost" size="sm" disabled={busy} onclick={() => (edits = null)}>
+						Leave them as proposed
+					</Button>
+				</div>
+				<p class="text-xs leading-normal text-muted-foreground text-pretty">
+					What you approve is what the issue is judged on, and the edits are recorded as yours.
+				</p>
+			{/if}
 		</div>
 	{/if}
 
@@ -127,6 +210,26 @@
 		</div>
 	{/if}
 
+	{#if questions.length > 0}
+		<div class="flex flex-col gap-1.5 rounded-md border border-warning/40 p-2.5">
+			<Eyebrow class="text-warning">Asked, never answered</Eyebrow>
+			<ol class="flex flex-col gap-1.5">
+				{#each questions as question (question.id)}
+					<li class="flex flex-col gap-0.5">
+						<span class="text-sm leading-normal text-ink-900 text-pretty">{question.question}</span>
+						<span class="text-xs text-muted-foreground text-pretty">
+							Worked on: {question.default}
+						</span>
+					</li>
+				{/each}
+			</ol>
+			<p class="text-xs leading-normal text-muted-foreground text-pretty">
+				Approving this also ratifies {questions.length === 1 ? "that default" : "those defaults"}, and
+				Norn records that you did.
+			</p>
+		</div>
+	{/if}
+
 	{#if override && held}
 		<Alert.Root variant="warning">
 			<TriangleAlert aria-hidden="true" />
@@ -139,11 +242,17 @@
 	{/if}
 
 	<div class="flex flex-wrap gap-2">
-		<Button size="sm" disabled={busy} onclick={() => ondecide(proposal.id, "approve")}>
+		<Button
+			size="sm"
+			disabled={busy || incomplete}
+			onclick={() => ondecide(proposal.id, "approve", edits ?? undefined)}
+		>
 			{#if settled}
 				Applying…
 			{:else if override}
 				Approve anyway
+			{:else if edits !== null}
+				Approve as corrected
 			{:else if checkSet}
 				Approve these criteria
 			{:else}

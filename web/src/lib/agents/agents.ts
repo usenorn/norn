@@ -4,6 +4,7 @@ export type Agent = components["schemas"]["Agent"];
 export type WorkspaceAgent = components["schemas"]["WorkspaceAgent"];
 export type AgentSettings = components["schemas"]["AgentSettings"];
 export type AgentProposal = components["schemas"]["AgentProposal"];
+export type ProposedCheckEdit = components["schemas"]["ApprovedCheckEdit"];
 export type AgentAction = components["schemas"]["AgentAction"];
 export type APIScope = components["schemas"]["APIScope"];
 

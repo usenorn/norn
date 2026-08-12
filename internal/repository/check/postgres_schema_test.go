@@ -153,6 +153,7 @@ func statements() map[string]string {
 		"insertCheckQuery":           insertCheckQuery,
 		"checkByIDQuery":             checkByIDQuery,
 		"checksByIssueQuery":         checksByIssueQuery,
+		"updateCheckQuery":           updateCheckQuery,
 		"decideCheckQuery":           decideCheckQuery,
 		"resolveCheckQuery":          resolveCheckQuery,
 		"deleteCheckQuery":           deleteCheckQuery,

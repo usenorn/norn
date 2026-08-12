@@ -66,6 +66,8 @@ func (s *checksService) Decide(
 		return entity.Check{}, err
 	}
 
+	s.resumeWhenClear(ctx, workspaceID, issueID)
+
 	return decided, nil
 }
 

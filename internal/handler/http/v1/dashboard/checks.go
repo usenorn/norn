@@ -55,6 +55,30 @@ func (h *handler) AddWorkspaceIssueChecks(
 	return api.AddWorkspaceIssueChecks201JSONResponse(issueCheckDTOs(added)), nil
 }
 
+func (h *handler) UpdateWorkspaceIssueCheck(
+	ctx context.Context,
+	request api.UpdateWorkspaceIssueCheckRequestObject,
+) (api.UpdateWorkspaceIssueCheckResponseObject, error) {
+	updated, err := h.checks.Update(
+		ctx, request.WorkspaceId, request.IssueId, request.CheckId,
+		service.UpdateCheckInput{
+			Statement: request.Body.Statement,
+			Method:    entity.CheckMethod(request.Body.Method),
+			Proof:     request.Body.Proof,
+			TimeLimit: checkTimeLimit(request.Body.TimeLimitSeconds),
+		},
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.UpdateWorkspaceIssueCheck200JSONResponse(issueCheckDTO(updated)), nil
+}
+
 func (h *handler) RemoveWorkspaceIssueCheck(
 	ctx context.Context,
 	request api.RemoveWorkspaceIssueCheckRequestObject,

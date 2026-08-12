@@ -83,6 +83,16 @@ SET resolution = $3,
 WHERE workspace_id = $1 AND id = $2
 RETURNING` + checkColumns
 
+const updateCheckQuery = `
+UPDATE workspace_issue_checks
+SET statement = $3,
+    method = $4,
+    proof = $5,
+    time_limit_seconds = $6,
+    updated_at = now()
+WHERE workspace_id = $1 AND id = $2
+RETURNING` + checkColumns
+
 const deleteCheckQuery = `
 DELETE FROM workspace_issue_checks WHERE workspace_id = $1 AND issue_id = $2 AND id = $3`
 
@@ -307,6 +317,38 @@ func (r *checkRepository) ListByIssue(
 	}
 
 	return checks, nil
+}
+
+func (r *checkRepository) Update(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	update repository.CheckUpdate,
+) (entity.Check, error) {
+	var limit any
+
+	if update.TimeLimit != nil {
+		limit = int(*update.TimeLimit / time.Second)
+	}
+
+	updated, err := scanCheck(r.db.Querier(ctx).QueryRowContext(
+		ctx,
+		updateCheckQuery,
+		workspaceID.String(),
+		update.CheckID.String(),
+		update.Statement,
+		string(update.Method),
+		update.Proof,
+		limit,
+	))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Check{}, entity.ErrCheckNotFound
+		}
+
+		return entity.Check{}, fmt.Errorf("update check: %w", err)
+	}
+
+	return updated, nil
 }
 
 func (r *checkRepository) Decide(

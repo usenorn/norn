@@ -9,6 +9,7 @@ export type CheckMethod = components["schemas"]["CheckMethod"];
 export type CheckAwaiting = components["schemas"]["CheckAwaiting"];
 export type EvidenceVerdict = components["schemas"]["EvidenceVerdict"];
 export type EvidenceChannel = components["schemas"]["EvidenceChannel"];
+export type IssueQuestion = components["schemas"]["IssueQuestion"];
 
 export type ChecksPanel =
 	| { kind: "loading" }
@@ -64,6 +65,7 @@ export function readCheckFailure(problem: CheckProblem): CheckFailure {
 			return { kind: "limit_reached" };
 		case "check_decision_not_personal":
 		case "check_waiver_not_personal":
+		case "check_removal_not_personal":
 			return { kind: "not_personal" };
 		case "evidence_empty":
 			return { kind: "evidence_empty" };
@@ -83,7 +85,7 @@ export function checkFailureMessage(failure: CheckFailure): string {
 		case "limit_reached":
 			return "This issue already carries as many criteria as it may.";
 		case "not_personal":
-			return "Only a person can approve or waive a criterion. An agent cannot settle what it is graded against.";
+			return "Only a person can approve, waive, or remove a criterion. An agent cannot settle what it is graded against.";
 		case "evidence_empty":
 			return "Evidence needs the output it was drawn from, not a description of it.";
 		case "gone":

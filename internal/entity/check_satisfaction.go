@@ -269,6 +269,10 @@ func (r CheckReport) Blocks() bool {
 	return r.Check.Approval == CheckApprovalApproved && !r.State.Settled()
 }
 
+func (r CheckReport) Unratified() bool {
+	return r.Check.Approval == CheckApprovalPending && r.Check.Resolution == CheckResolutionNone
+}
+
 func (r CheckReport) RestsOnAbsence() bool {
 	if r.State != CheckStateUnproven {
 		return false
@@ -305,6 +309,18 @@ func ReportChecks(checks []Check, evidence []Evidence, horizon EvidenceHorizon) 
 	}
 
 	return reports
+}
+
+func UnratifiedChecks(reports []CheckReport) []Check {
+	unratified := make([]Check, 0, len(reports))
+
+	for _, report := range reports {
+		if report.Unratified() {
+			unratified = append(unratified, report.Check)
+		}
+	}
+
+	return unratified
 }
 
 func BlockingChecks(reports []CheckReport) []Check {

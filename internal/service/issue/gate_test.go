@@ -267,3 +267,98 @@ func (h *harness) captureOverride() *[]entity.Activity {
 
 	return recorded
 }
+
+func (h *harness) awaitingApprovalOf(statement string) uuid.UUID {
+	checkID := uuid.New()
+
+	h.blocking = []entity.Check{{
+		ID:         checkID,
+		Statement:  statement,
+		Method:     entity.CheckMethodCommand,
+		Approval:   entity.CheckApprovalPending,
+		Resolution: entity.CheckResolutionNone,
+	}}
+
+	return checkID
+}
+
+func TestAnAgentCannotFinishAnIssueWhoseCriteriaNobodyHasApproved(t *testing.T) {
+	h := newHarness(t)
+	h.actor = entity.Actor{Kind: entity.ActorKindAgent, AccountID: uuid.New()}
+
+	workspaceID, issueID, done := h.completing(t)
+	h.awaitingApprovalOf("the importer refuses a duplicate row")
+
+	_, err := h.service.Update(context.Background(), workspaceID, issueID, service.UpdateIssueInput{
+		ExpectedVersion: 1,
+		StateID:         &done.ID,
+	})
+
+	var unratified entity.IssueChecksUnratifiedError
+	if !errors.As(err, &unratified) {
+		t.Fatalf("an agent closing against an unapproved contract returned %v, want it refused", err)
+	}
+
+	if len(unratified.Checks) != 1 ||
+		unratified.Checks[0].Statement != "the importer refuses a duplicate row" {
+		t.Fatalf("the refusal did not name what is waiting: %+v", unratified.Checks)
+	}
+}
+
+func TestADeclinedCriterionNeverWedgesTheIssue(t *testing.T) {
+	h := newHarness(t)
+	h.actor = entity.Actor{Kind: entity.ActorKindAgent, AccountID: uuid.New()}
+
+	workspaceID, issueID, done := h.completing(t)
+	h.blocking = []entity.Check{{
+		ID:         uuid.New(),
+		Statement:  "the importer refuses a duplicate row",
+		Method:     entity.CheckMethodCommand,
+		Approval:   entity.CheckApprovalDeclined,
+		Resolution: entity.CheckResolutionNone,
+	}}
+	h.expectStateWrite(issueID)
+	h.captureOverride()
+
+	if _, err := h.service.Update(
+		context.Background(), workspaceID, issueID,
+		service.UpdateIssueInput{ExpectedVersion: 1, StateID: &done.ID},
+	); err != nil {
+		t.Fatalf("a declined criterion refused the close: %v", err)
+	}
+}
+
+func TestAPersonIsNeverRefusedByAnUnapprovedContract(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, issueID, done := h.completing(t)
+	h.awaitingApprovalOf("the importer refuses a duplicate row")
+	h.expectStateWrite(issueID)
+	h.captureOverride()
+
+	if _, err := h.service.Update(
+		context.Background(), workspaceID, issueID,
+		service.UpdateIssueInput{ExpectedVersion: 1, StateID: &done.ID},
+	); err != nil {
+		t.Fatalf("a person was refused: %v", err)
+	}
+}
+
+func TestApprovingAQueuedCompletionRatifiesTheCriteriaItWaitedOn(t *testing.T) {
+	h := newHarness(t)
+	h.actor = entity.Actor{Kind: entity.ActorKindAgent, AccountID: uuid.New()}
+
+	workspaceID, issueID, done := h.completing(t)
+	h.awaitingApprovalOf("the importer refuses a duplicate row")
+	h.expectStateWrite(issueID)
+	h.captureOverride()
+
+	acting := identity.WithApproval(context.Background(), uuid.New())
+
+	if _, err := h.service.Update(acting, workspaceID, issueID, service.UpdateIssueInput{
+		ExpectedVersion: 1,
+		StateID:         &done.ID,
+	}); err != nil {
+		t.Fatalf("an approved completion was refused: %v", err)
+	}
+}

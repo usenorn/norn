@@ -27,9 +27,13 @@ func (s *operationsService) completable(
 		return entity.IssueChildrenOpenError{Children: open}
 	}
 
-	blocking, err := s.checks.Blocking(ctx, action.WorkspaceID, issue.ID)
+	blocking, unratified, err := s.checks.Obstructing(ctx, action.WorkspaceID, issue.ID)
 	if err != nil {
 		return err
+	}
+
+	if len(unratified) > 0 && decision.Actor.Kind == entity.ActorKindAgent {
+		return entity.IssueChecksUnratifiedError{Checks: unratified}
 	}
 
 	if len(blocking) == 0 {

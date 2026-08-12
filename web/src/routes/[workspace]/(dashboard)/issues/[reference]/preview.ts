@@ -7,7 +7,12 @@ import type { ActivityFeed } from "$lib/activity/activity";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type { UploadTask } from "$lib/attachments/upload";
 import type { DelegationFailure, DelegationPanel } from "$lib/agents/delegation";
-import type { CheckFailure, ChecksPanel, EvidencePanel } from "$lib/checks/checks";
+import type {
+	CheckFailure,
+	ChecksPanel,
+	EvidencePanel,
+	IssueQuestion,
+} from "$lib/checks/checks";
 import type { IssueDetail } from "./+page.server";
 
 export type IssueDetailPreview = { detail: IssueDetail };
@@ -32,6 +37,7 @@ export type ChecksPreview = {
 	panel: ChecksPanel;
 	failure?: CheckFailure;
 	evidence?: Record<string, EvidencePanel>;
+	questions?: IssueQuestion[];
 };
 
 export type CommentPreview = {
@@ -160,6 +166,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
 					checks: { kind: "empty" },
+			questions: [],
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -266,6 +273,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
 					checks: { kind: "empty" },
+			questions: [],
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -315,6 +323,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
 					checks: { kind: "empty" },
+			questions: [],
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -363,6 +372,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
 					checks: { kind: "empty" },
+			questions: [],
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -411,6 +421,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
 					checks: { kind: "empty" },
+			questions: [],
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -510,6 +521,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
 					checks: { kind: "empty" },
+			questions: [],
 					follow: "following" as const,
 					watchers: [],
 					mirrorConflicts: [],
@@ -1400,6 +1412,63 @@ export const checksPreviewStates: Record<string, ChecksPreview> = import.meta.en
 	? {
 			loading: { panel: { kind: "loading" } },
 			forbidden: { panel: { kind: "forbidden" } },
+			unanswered_question: {
+				panel: { kind: "empty" },
+				questions: [
+					{
+						id: "00000000-0000-4000-8000-000000000951",
+						issueId: "00000000-0000-4000-8000-000000000501",
+						question: "Should the sweep endpoint stay admin-only, or open to any workspace owner?",
+						default: "keep it admin-only",
+						deadline: "2026-08-13T09:00:00Z",
+						answered: false,
+						expired: false,
+						standing: "keep it admin-only",
+						askedByName: "opsy",
+						actorKind: "agent" as const,
+						createdAt: "2026-08-12T09:00:00Z",
+					},
+				],
+			},
+			answered_question: {
+				panel: { kind: "empty" },
+				questions: [
+					{
+						id: "00000000-0000-4000-8000-000000000952",
+						issueId: "00000000-0000-4000-8000-000000000501",
+						question: "Should the sweep endpoint stay admin-only, or open to any workspace owner?",
+						default: "keep it admin-only",
+						deadline: "2026-08-13T09:00:00Z",
+						answered: true,
+						expired: false,
+						standing: "open it to workspace owners too",
+						answer: "open it to workspace owners too",
+						askedByName: "opsy",
+						answeredByName: "Rae Whitfield",
+						answeredAt: "2026-08-12T10:12:00Z",
+						actorKind: "agent" as const,
+						createdAt: "2026-08-12T09:00:00Z",
+					},
+				],
+			},
+			expired_question: {
+				panel: { kind: "empty" },
+				questions: [
+					{
+						id: "00000000-0000-4000-8000-000000000953",
+						issueId: "00000000-0000-4000-8000-000000000501",
+						question: "Should the sweep endpoint stay admin-only, or open to any workspace owner?",
+						default: "keep it admin-only",
+						deadline: "2026-08-11T09:00:00Z",
+						answered: false,
+						expired: true,
+						standing: "keep it admin-only",
+						askedByName: "opsy",
+						actorKind: "agent" as const,
+						createdAt: "2026-08-10T09:00:00Z",
+					},
+				],
+			},
 			unavailable: { panel: { kind: "unavailable" } },
 			empty: { panel: { kind: "empty" } },
 			unproven: {

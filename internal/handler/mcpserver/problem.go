@@ -69,11 +69,22 @@ func toolFailure(ctx context.Context, err error) error {
 		)
 	}
 
+	var unratified entity.IssueChecksUnratifiedError
+	if errors.As(err, &unratified) {
+		return fmt.Errorf(
+			"nobody has approved what this issue is graded against, so it cannot be finished "+
+				"yet. Stop and wait for a person to approve the criteria; do not retry the "+
+				"move. Waiting on approval: %s",
+			entity.CheckStatements(unratified.Checks),
+		)
+	}
+
 	if errors.Is(err, entity.ErrCheckDecisionNotPersonal) ||
-		errors.Is(err, entity.ErrCheckWaiverNotPersonal) {
+		errors.Is(err, entity.ErrCheckWaiverNotPersonal) ||
+		errors.Is(err, entity.ErrCheckRemovalNotPersonal) {
 		return errors.New(
-			"only a person can approve or waive a criterion; an agent cannot settle what it is " +
-				"graded against. Ask in a comment instead",
+			"only a person can approve, waive, or remove a criterion; an agent cannot settle " +
+				"what it is graded against. Ask in a comment instead",
 		)
 	}
 

@@ -467,6 +467,40 @@ func bearing(verdict entity.EvidenceVerdict) string {
 	}
 }
 
+type questionDTO struct {
+	ID         string `json:"id"`
+	Question   string `json:"question"`
+	Default    string `json:"default"`
+	Deadline   string `json:"deadline"`
+	Answered   bool   `json:"answered"`
+	Expired    bool   `json:"expired"`
+	Standing   string `json:"standing"`
+	AnsweredBy string `json:"answeredBy,omitempty"`
+}
+
+func questionDTOFrom(question entity.IssueQuestion) questionDTO {
+	return questionDTO{
+		ID:         question.ID.String(),
+		Question:   question.Question,
+		Default:    question.DefaultAnswer,
+		Deadline:   question.Deadline.Format(time.RFC3339),
+		Answered:   question.Answered(),
+		Expired:    question.Expired(time.Now().UTC()),
+		Standing:   question.Standing(),
+		AnsweredBy: question.AnsweredByName,
+	}
+}
+
+func questionDTOs(questions []entity.IssueQuestion) []questionDTO {
+	dtos := make([]questionDTO, 0, len(questions))
+
+	for _, question := range questions {
+		dtos = append(dtos, questionDTOFrom(question))
+	}
+
+	return dtos
+}
+
 type summaryDTO struct {
 	Total      int `json:"total"`
 	Proven     int `json:"proven"`
