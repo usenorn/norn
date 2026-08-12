@@ -9,6 +9,7 @@ import {
 	type Workspace,
 	type WorkspaceSettings,
 } from "$lib/workspace/settings";
+import { storageReading } from "$lib/workspace/storage";
 import type { Actions, PageServerLoad } from "./$types";
 
 type WorkspaceSettingsForm = Infer<typeof workspaceSettingsSchema>;
@@ -19,17 +20,21 @@ const defaultTeamMessage = "That team cannot be the default.";
 export const load: PageServerLoad = async ({ locals, parent }) => {
 	const { workspace, teams, member } = await parent();
 
-	const [protocol, identities] = await Promise.all([
+	const [protocol, identities, storage] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/sso", {
 			params: { path: { workspaceId: workspace.id } },
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/sso/identities", {
 			params: { path: { workspaceId: workspace.id } },
 		}),
+		locals.api.GET("/workspaces/{workspaceId}/storage", {
+			params: { path: { workspaceId: workspace.id } },
+		}),
 	]);
 
 	return {
 		settings: settingsFor(workspace),
+		storage: storageReading(storage.data),
 		workspace,
 		teams: (teams ?? []).filter((team) => team.status === "active"),
 		provider: {

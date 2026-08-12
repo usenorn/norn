@@ -1,3 +1,23 @@
+<script lang="ts" module>
+	import { type VariantProps, tv } from "tailwind-variants";
+
+	export const progressIndicatorVariants = tv({
+		base: "size-full flex-1 rounded-xs motion-fill",
+		variants: {
+			tone: {
+				default: "bg-primary",
+				warning: "bg-warning",
+				destructive: "bg-destructive",
+			},
+		},
+		defaultVariants: {
+			tone: "default",
+		},
+	});
+
+	export type ProgressTone = VariantProps<typeof progressIndicatorVariants>["tone"];
+</script>
+
 <script lang="ts">
 	import { Progress as ProgressPrimitive } from "bits-ui";
 	import { cn, type WithoutChildrenOrChild } from "$lib/utils.js";
@@ -7,9 +27,13 @@
 		class: className,
 		max = 100,
 		value,
+		tone = "default",
 		indeterminate = false,
 		...restProps
-	}: WithoutChildrenOrChild<ProgressPrimitive.RootProps> & { indeterminate?: boolean } = $props();
+	}: WithoutChildrenOrChild<ProgressPrimitive.RootProps> & {
+		tone?: ProgressTone;
+		indeterminate?: boolean;
+	} = $props();
 </script>
 
 <ProgressPrimitive.Root
@@ -31,7 +55,7 @@
 	{:else}
 		<div
 			data-slot="progress-indicator"
-			class="size-full flex-1 rounded-xs bg-primary motion-fill"
+			class={progressIndicatorVariants({ tone })}
 			style="transform: translateX(-{100 - (100 * (value ?? 0)) / (max ?? 1)}%)"
 		></div>
 	{/if}
