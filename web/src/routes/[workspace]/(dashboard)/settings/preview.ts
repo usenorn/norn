@@ -1,7 +1,12 @@
 import type { Team } from "$lib/team/teams";
 import type { WorkspaceSettings } from "$lib/workspace/settings";
+import type { StorageReading } from "$lib/workspace/storage";
 
-export type WorkspaceSettingsPreview = { settings: WorkspaceSettings; teams: Team[] };
+export type WorkspaceSettingsPreview = {
+	settings: WorkspaceSettings;
+	teams: Team[];
+	storage?: StorageReading;
+};
 
 export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPreview> = import.meta
 	.env.DEV
@@ -142,6 +147,191 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				],
+			},
+			metered: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+				storage: {
+					kind: "metered",
+					storedBytes: 3_650_722_201,
+					maxBytes: 10_737_418_240,
+					remainingBytes: 7_086_696_039,
+					percent: 34,
+					pressure: "comfortable",
+					measuredAt: "2026-08-12T08:41:00Z",
+				},
+			},
+			nearly_full: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+				storage: {
+					kind: "metered",
+					storedBytes: 10_190_182_154,
+					maxBytes: 10_737_418_240,
+					remainingBytes: 547_236_086,
+					percent: 95,
+					pressure: "nearly_full",
+					measuredAt: "2026-08-12T08:41:00Z",
+				},
+			},
+			full: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+				storage: {
+					kind: "metered",
+					storedBytes: 10_737_418_240,
+					maxBytes: 10_737_418_240,
+					remainingBytes: 0,
+					percent: 100,
+					pressure: "full",
+					measuredAt: "2026-08-12T08:41:00Z",
+				},
+			},
+			unlimited: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+				storage: {
+					kind: "unlimited",
+					storedBytes: 3_650_722_201,
+					measuredAt: "2026-08-12T08:41:00Z",
+				},
+			},
+			never_measured: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+				storage: {
+					kind: "metered",
+					storedBytes: 0,
+					maxBytes: 10_737_418_240,
+					remainingBytes: 10_737_418_240,
+					percent: 0,
+					pressure: "comfortable",
+				},
+			},
+			storage_unavailable: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+				storage: { kind: "unavailable" },
 			},
 		}
 	: {};

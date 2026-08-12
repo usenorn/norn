@@ -13,10 +13,18 @@
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { Progress } from "$lib/components/ui/progress/index.js";
 	import { api } from "$lib/api";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { workspaceSettingsSchema } from "$lib/workspace/settings-schema";
 	import { purgeDate, timezones, type WorkspaceSettings } from "$lib/workspace/settings";
+	import {
+		headroomLabel,
+		headroomToneClass,
+		measuredLabel,
+		storageToneOf,
+		storedLabel,
+	} from "$lib/workspace/storage";
 	import { workspaceSettingsPreviewStates } from "./preview";
 	import type { PageProps, SubmitFunction } from "./$types";
 
@@ -69,6 +77,11 @@
 	const workspace = $derived("workspace" in settings ? settings.workspace : data.workspace);
 	const pending = $derived(settings.kind === "pending_deletion" ? settings : null);
 	const teams = $derived(preview?.teams ?? data.teams);
+	const storage = $derived(preview?.storage ?? data.storage);
+	const storageTone = $derived(storageToneOf(storage));
+	const headroomClass = $derived(
+		`text-sm leading-normal text-pretty ${headroomToneClass[storageTone]}`
+	);
 	const zones = timezones();
 
 	$effect(() => {
@@ -449,6 +462,47 @@
 						Tokens reaching {workspace.name}
 					</Button>
 				</div>
+			</section>
+
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Storage</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Every file attached to an issue in {workspace.name} counts towards this. Norn refuses an
+						upload once there is no room left, so it is worth knowing before you reach it.
+					</p>
+				</div>
+
+				{#if storage.kind === "unavailable"}
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						Norn could not read how much this workspace is storing. Wait a moment and try again.
+					</p>
+				{:else}
+					<div class="flex flex-col gap-2">
+						<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+							<span class="text-md text-ink-900">{storedLabel(storage)}</span>
+							{#if storage.kind === "metered"}
+								<span class="text-sm tabular-nums text-muted-foreground">
+									{storage.percent}% used
+								</span>
+							{/if}
+						</div>
+
+						{#if storage.kind === "metered"}
+							<Progress
+								value={storage.percent}
+								tone={storageTone}
+								aria-label="Storage used in this workspace"
+							/>
+						{/if}
+
+						<p class={headroomClass}>{headroomLabel(storage)}</p>
+
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							{measuredLabel(storage, workspace.timezone)}
+						</p>
+					</div>
+				{/if}
 			</section>
 
 			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
