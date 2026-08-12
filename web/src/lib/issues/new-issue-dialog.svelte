@@ -81,6 +81,7 @@
 	let labelSearch = $state("");
 	let coining = $state(false);
 	let labelFailure = $state<string | null>(null);
+	let resuming = $state(false);
 	let pasteSeq = 0;
 
 	function pasteFiles(event: ClipboardEvent) {
@@ -210,6 +211,8 @@
 			pending.data.title = "";
 			pending.data.description = "";
 
+			resuming = true;
+
 			await oncreated?.(raised);
 		},
 	});
@@ -269,6 +272,13 @@
 			}),
 			{ taint: false }
 		);
+	});
+
+	$effect(() => {
+		if (!resuming || $submitting || !titleField) return;
+
+		titleField.focus();
+		resuming = false;
 	});
 
 	async function loadStates(teamId: string) {
