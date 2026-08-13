@@ -34,6 +34,7 @@ func (h *handler) AskWorkspaceIssueQuestion(
 	asked, err := h.questions.Ask(ctx, request.WorkspaceId, request.IssueId, service.AskQuestionInput{
 		Question: request.Body.Question,
 		Default:  request.Body.Default,
+		Options:  questionOptions(request.Body.Options),
 		Wait:     questionWait(request.Body.WaitSeconds),
 	})
 	if err != nil {
@@ -64,6 +65,14 @@ func (h *handler) AnswerWorkspaceIssueQuestion(
 	}
 
 	return api.AnswerWorkspaceIssueQuestion200JSONResponse(issueQuestionDTO(answered)), nil
+}
+
+func questionOptions(options *[]string) []string {
+	if options == nil {
+		return nil
+	}
+
+	return *options
 }
 
 func questionWait(seconds *int32) time.Duration {

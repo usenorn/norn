@@ -14,6 +14,7 @@ import (
 type AskQuestionInput struct {
 	Question string
 	Default  string
+	Options  []string
 	Wait     time.Duration
 }
 

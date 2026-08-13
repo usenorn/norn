@@ -4069,6 +4069,8 @@ export interface components {
             question: string;
             /** @description What the agent said it would do if nobody answered before the deadline. */
             default: string;
+            /** @description Answers a person can pick rather than compose, two to four of them, one of which is the default. Empty when the question takes any answer at all; answering is a free string either way, so an option is a shortcut and never a constraint. */
+            options?: string[];
             /** Format: date-time */
             deadline: string;
             answered: boolean;
@@ -4088,6 +4090,8 @@ export interface components {
         AskIssueQuestionRequest: {
             question: string;
             default: string;
+            /** @description Two to four short answers a person can pick, one of which must be the default. Omit them when the question genuinely takes any answer. */
+            options?: string[];
             /**
              * Format: int32
              * @description How long to wait for an answer before the default stands. Defaults to a day.

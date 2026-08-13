@@ -15,11 +15,12 @@ const askReminder = "You are not waiting for this. Carry on with the default you
 	"with the question still unanswered puts the close in front of a person to ratify."
 
 type askInput struct {
-	Workspace   string `json:"workspace" jsonschema:"the workspace slug or id"`
-	Issue       string `json:"issue" jsonschema:"the issue reference like ENG-42, or its id"`
-	Question    string `json:"question" jsonschema:"what you need a person to decide, in one question"`
-	Default     string `json:"default" jsonschema:"what you will do if nobody answers before the deadline"`
-	WaitSeconds int    `json:"wait_seconds,omitempty" jsonschema:"how long to leave the question open before the default stands; defaults to a day"`
+	Workspace   string   `json:"workspace" jsonschema:"the workspace slug or id"`
+	Issue       string   `json:"issue" jsonschema:"the issue reference like ENG-42, or its id"`
+	Question    string   `json:"question" jsonschema:"what you need a person to decide, in one question"`
+	Default     string   `json:"default" jsonschema:"what you will do if nobody answers before the deadline"`
+	Options     []string `json:"options,omitempty" jsonschema:"two to four short answers a person can pick, one of them the default; omit when the question genuinely takes any answer"`
+	WaitSeconds int      `json:"wait_seconds,omitempty" jsonschema:"how long to leave the question open before the default stands; defaults to a day"`
 }
 
 type askOutput struct {
@@ -45,6 +46,7 @@ func (t *toolset) ask(
 	asked, err := t.questions.Ask(ctx, workspace.ID, issue.ID, service.AskQuestionInput{
 		Question: input.Question,
 		Default:  input.Default,
+		Options:  input.Options,
 		Wait:     askWait(input.WaitSeconds),
 	})
 	if err != nil {

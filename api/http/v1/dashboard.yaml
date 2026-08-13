@@ -6716,6 +6716,14 @@ components:
         default:
           type: string
           description: What the agent said it would do if nobody answered before the deadline.
+        options:
+          type: array
+          items: { type: string }
+          description: >-
+            Answers a person can pick rather than compose, two to four of them, one of which is
+            the default. Empty when the question takes any answer at all; answering is a free
+            string either way, so an option is a shortcut and never a constraint.
+          maxItems: 4
         deadline: { type: string, format: date-time }
         answered: { type: boolean }
         expired:
@@ -6737,6 +6745,14 @@ components:
       properties:
         question: { type: string, maxLength: 1000 }
         default: { type: string, maxLength: 2000 }
+        options:
+          type: array
+          items: { type: string, maxLength: 80 }
+          description: >-
+            Two to four short answers a person can pick, one of which must be the default.
+            Omit them when the question genuinely takes any answer.
+          minItems: 2
+          maxItems: 4
         waitSeconds:
           type: integer
           format: int32

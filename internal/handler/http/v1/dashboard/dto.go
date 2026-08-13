@@ -1901,6 +1901,11 @@ func issueQuestionDTO(question entity.IssueQuestion) api.IssueQuestion {
 		CreatedAt: question.CreatedAt,
 	}
 
+	if len(question.Options) > 0 {
+		options := question.Options
+		dto.Options = &options
+	}
+
 	dto.Answer = nilIfEmpty(question.Answer)
 	dto.AskedByName = nilIfEmpty(question.AskedByName)
 	dto.AnsweredByName = nilIfEmpty(question.AnsweredByName)

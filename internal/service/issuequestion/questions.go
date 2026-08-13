@@ -49,6 +49,16 @@ func (s *questionsService) decide(
 	})
 }
 
+func trimmedOptions(options []string) []string {
+	trimmed := make([]string, 0, len(options))
+
+	for _, option := range options {
+		trimmed = append(trimmed, strings.TrimSpace(option))
+	}
+
+	return trimmed
+}
+
 func (s *questionsService) Ask(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
@@ -62,6 +72,7 @@ func (s *questionsService) Ask(
 	if err := entity.NewValidationError(
 		entity.ValidateQuestionText("question", input.Question),
 		entity.ValidateQuestionAnswer("default", input.Default),
+		entity.ValidateQuestionOptions("options", input.Options, input.Default),
 		entity.ValidateQuestionWait("wait", input.Wait),
 	); err != nil {
 		return entity.IssueQuestion{}, err
@@ -77,6 +88,7 @@ func (s *questionsService) Ask(
 		IssueID:          issue.ID,
 		Question:         strings.TrimSpace(input.Question),
 		DefaultAnswer:    strings.TrimSpace(input.Default),
+		Options:          trimmedOptions(input.Options),
 		Deadline:         time.Now().UTC().Add(input.Wait),
 		AskedByAccountID: decision.Actor.AccountID,
 		ActorKind:        decision.Actor.Kind,

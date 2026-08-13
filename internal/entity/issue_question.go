@@ -12,6 +12,9 @@ import (
 const (
 	QuestionTextMaxLen   = 1000
 	QuestionAnswerMaxLen = 2000
+	QuestionOptionMaxLen = 80
+	QuestionOptionsMin   = 2
+	QuestionOptionsMax   = 4
 	QuestionWaitMin      = time.Minute
 	QuestionWaitMax      = 7 * 24 * time.Hour
 	QuestionWaitDefault  = 24 * time.Hour
@@ -29,6 +32,7 @@ type IssueQuestion struct {
 	IssueID          uuid.UUID
 	Question         string
 	DefaultAnswer    string
+	Options          []string
 	Deadline         time.Time
 	Answer           string
 	AskedByAccountID uuid.UUID
@@ -102,6 +106,47 @@ func ValidateQuestionAnswer(field, answer string) FieldError {
 	default:
 		return FieldError{}
 	}
+}
+
+func ValidateQuestionOptions(field string, options []string, defaultAnswer string) FieldError {
+	if len(options) == 0 {
+		return FieldError{}
+	}
+
+	if len(options) < QuestionOptionsMin || len(options) > QuestionOptionsMax {
+		return FieldError{Field: field, Code: ValidationCodeOutOfRange}
+	}
+
+	seen := make(map[string]struct{}, len(options))
+	matchesDefault := false
+
+	for _, option := range options {
+		trimmed := strings.TrimSpace(option)
+
+		if trimmed == "" {
+			return FieldError{Field: field, Code: ValidationCodeRequired}
+		}
+
+		if utf8.RuneCountInString(trimmed) > QuestionOptionMaxLen {
+			return FieldError{Field: field, Code: ValidationCodeTooLong}
+		}
+
+		if _, repeated := seen[trimmed]; repeated {
+			return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
+		}
+
+		seen[trimmed] = struct{}{}
+
+		if trimmed == strings.TrimSpace(defaultAnswer) {
+			matchesDefault = true
+		}
+	}
+
+	if !matchesDefault {
+		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
+	}
+
+	return FieldError{}
 }
 
 func ValidateQuestionWait(field string, wait time.Duration) FieldError {

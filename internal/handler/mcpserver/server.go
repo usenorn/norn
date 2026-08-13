@@ -219,7 +219,9 @@ func (t *toolset) register(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "norn_create_comment",
-		Description: "Comment on an issue, optionally as a reply to another comment.",
+		Description: "Comment on an issue, optionally as a reply to another comment. Keep it to " +
+			"what somebody has to read: what changed, what it means for them, or what you need. " +
+			"Working notes belong in evidence, which is stored for reading on demand.",
 		Annotations: create,
 	}, t.createComment)
 
@@ -257,10 +259,12 @@ func (t *toolset) register(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_ask",
-		Description: "Ask a person a question about this issue without stopping. Say what you " +
-			"will do if nobody answers before the deadline; that default is recorded, you carry " +
-			"on with it now, and if the issue is finished with the question still unanswered " +
-			"the close waits for a person to ratify the default.",
+		Description: "Ask a person a question about this issue without stopping. Keep it to one " +
+			"line and offer two to four short options they can pick, one of them your default, " +
+			"so answering is a click rather than an essay. Say what you will do if nobody " +
+			"answers before the deadline; that default is recorded, you carry on with it now, " +
+			"and if the issue is finished with the question still unanswered the close waits " +
+			"for a person to ratify the default.",
 		Annotations: create,
 	}, t.ask)
 

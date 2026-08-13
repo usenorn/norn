@@ -4127,8 +4127,11 @@ type ApprovedCheckEdit struct {
 
 // AskIssueQuestionRequest defines model for AskIssueQuestionRequest.
 type AskIssueQuestionRequest struct {
-	Default  string `json:"default"`
-	Question string `json:"question"`
+	Default string `json:"default"`
+
+	// Options Two to four short answers a person can pick, one of which must be the default. Omit them when the question genuinely takes any answer.
+	Options  *[]string `json:"options,omitempty"`
+	Question string    `json:"question"`
 
 	// WaitSeconds How long to wait for an answer before the default stands. Defaults to a day.
 	WaitSeconds *int32 `json:"waitSeconds,omitempty"`
@@ -5665,10 +5668,13 @@ type IssueQuestion struct {
 	Default string `json:"default"`
 
 	// Expired True once the deadline passed with no answer, so the default is what stands.
-	Expired  bool               `json:"expired"`
-	Id       openapi_types.UUID `json:"id"`
-	IssueId  openapi_types.UUID `json:"issueId"`
-	Question string             `json:"question"`
+	Expired bool               `json:"expired"`
+	Id      openapi_types.UUID `json:"id"`
+	IssueId openapi_types.UUID `json:"issueId"`
+
+	// Options Answers a person can pick rather than compose, two to four of them, one of which is the default. Empty when the question takes any answer at all; answering is a free string either way, so an option is a shortcut and never a constraint.
+	Options  *[]string `json:"options,omitempty"`
+	Question string    `json:"question"`
 
 	// Standing The answer if there is one, otherwise the declared default.
 	Standing string `json:"standing"`

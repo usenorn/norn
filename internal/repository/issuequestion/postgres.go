@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -15,7 +16,7 @@ import (
 )
 
 const questionColumns = `
-    q.id, q.workspace_id, q.issue_id, q.question, q.default_answer, q.deadline, q.answer,
+    q.id, q.workspace_id, q.issue_id, q.question, q.default_answer, q.options, q.deadline, q.answer,
     coalesce(q.asked_by_account_id::text, ''), coalesce(asked.display_name, ''), q.actor_kind,
     coalesce(q.answered_by_account_id::text, ''), coalesce(answered.display_name, ''),
     q.answered_at, q.created_at
@@ -25,10 +26,10 @@ LEFT JOIN accounts answered ON answered.id = q.answered_by_account_id`
 
 const insertQuestionQuery = `
 INSERT INTO workspace_issue_questions (
-    id, workspace_id, issue_id, question, default_answer, deadline,
+    id, workspace_id, issue_id, question, default_answer, options, deadline,
     asked_by_account_id, actor_kind, created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 const questionByIDQuery = `
 SELECT` + questionColumns + `
@@ -63,6 +64,7 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		id          string
 		workspaceID string
 		issueID     string
+		options     types.StringArray
 		askedBy     string
 		actorKind   string
 		answeredBy  string
@@ -75,6 +77,7 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		&issueID,
 		&question.Question,
 		&question.DefaultAnswer,
+		&options,
 		&question.Deadline,
 		&question.Answer,
 		&askedBy,
@@ -89,6 +92,7 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 	}
 
 	question.ActorKind = entity.ActorKind(actorKind)
+	question.Options = options
 
 	if answeredAt.Valid {
 		question.AnsweredAt = &answeredAt.Time
@@ -156,6 +160,7 @@ func (r *questionRepository) Ask(
 		question.IssueID.String(),
 		question.Question,
 		question.DefaultAnswer,
+		types.StringArray(question.Options),
 		question.Deadline,
 		idOrNil(question.AskedByAccountID),
 		string(question.ActorKind),

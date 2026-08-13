@@ -18,24 +18,26 @@ import (
 	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/aarondl/sqlboiler/v4/queries/qmhelper"
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/aarondl/strmangle"
 	"github.com/friendsofgo/errors"
 )
 
 // WorkspaceIssueQuestion is an object representing the database table.
 type WorkspaceIssueQuestion struct {
-	ID                  string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID         string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	IssueID             string      `boil:"issue_id" json:"issue_id" toml:"issue_id" yaml:"issue_id"`
-	Question            string      `boil:"question" json:"question" toml:"question" yaml:"question"`
-	DefaultAnswer       string      `boil:"default_answer" json:"default_answer" toml:"default_answer" yaml:"default_answer"`
-	Deadline            time.Time   `boil:"deadline" json:"deadline" toml:"deadline" yaml:"deadline"`
-	Answer              string      `boil:"answer" json:"answer" toml:"answer" yaml:"answer"`
-	AskedByAccountID    null.String `boil:"asked_by_account_id" json:"asked_by_account_id,omitempty" toml:"asked_by_account_id" yaml:"asked_by_account_id,omitempty"`
-	ActorKind           string      `boil:"actor_kind" json:"actor_kind" toml:"actor_kind" yaml:"actor_kind"`
-	AnsweredByAccountID null.String `boil:"answered_by_account_id" json:"answered_by_account_id,omitempty" toml:"answered_by_account_id" yaml:"answered_by_account_id,omitempty"`
-	AnsweredAt          null.Time   `boil:"answered_at" json:"answered_at,omitempty" toml:"answered_at" yaml:"answered_at,omitempty"`
-	CreatedAt           time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ID                  string            `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID         string            `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	IssueID             string            `boil:"issue_id" json:"issue_id" toml:"issue_id" yaml:"issue_id"`
+	Question            string            `boil:"question" json:"question" toml:"question" yaml:"question"`
+	DefaultAnswer       string            `boil:"default_answer" json:"default_answer" toml:"default_answer" yaml:"default_answer"`
+	Deadline            time.Time         `boil:"deadline" json:"deadline" toml:"deadline" yaml:"deadline"`
+	Answer              string            `boil:"answer" json:"answer" toml:"answer" yaml:"answer"`
+	AskedByAccountID    null.String       `boil:"asked_by_account_id" json:"asked_by_account_id,omitempty" toml:"asked_by_account_id" yaml:"asked_by_account_id,omitempty"`
+	ActorKind           string            `boil:"actor_kind" json:"actor_kind" toml:"actor_kind" yaml:"actor_kind"`
+	AnsweredByAccountID null.String       `boil:"answered_by_account_id" json:"answered_by_account_id,omitempty" toml:"answered_by_account_id" yaml:"answered_by_account_id,omitempty"`
+	AnsweredAt          null.Time         `boil:"answered_at" json:"answered_at,omitempty" toml:"answered_at" yaml:"answered_at,omitempty"`
+	CreatedAt           time.Time         `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	Options             types.StringArray `boil:"options" json:"options" toml:"options" yaml:"options"`
 
 	R *workspaceIssueQuestionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueQuestionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -54,6 +56,7 @@ var WorkspaceIssueQuestionColumns = struct {
 	AnsweredByAccountID string
 	AnsweredAt          string
 	CreatedAt           string
+	Options             string
 }{
 	ID:                  "id",
 	WorkspaceID:         "workspace_id",
@@ -67,6 +70,7 @@ var WorkspaceIssueQuestionColumns = struct {
 	AnsweredByAccountID: "answered_by_account_id",
 	AnsweredAt:          "answered_at",
 	CreatedAt:           "created_at",
+	Options:             "options",
 }
 
 var WorkspaceIssueQuestionTableColumns = struct {
@@ -82,6 +86,7 @@ var WorkspaceIssueQuestionTableColumns = struct {
 	AnsweredByAccountID string
 	AnsweredAt          string
 	CreatedAt           string
+	Options             string
 }{
 	ID:                  "workspace_issue_questions.id",
 	WorkspaceID:         "workspace_issue_questions.workspace_id",
@@ -95,6 +100,7 @@ var WorkspaceIssueQuestionTableColumns = struct {
 	AnsweredByAccountID: "workspace_issue_questions.answered_by_account_id",
 	AnsweredAt:          "workspace_issue_questions.answered_at",
 	CreatedAt:           "workspace_issue_questions.created_at",
+	Options:             "workspace_issue_questions.options",
 }
 
 // Generated where
@@ -112,6 +118,7 @@ var WorkspaceIssueQuestionWhere = struct {
 	AnsweredByAccountID whereHelpernull_String
 	AnsweredAt          whereHelpernull_Time
 	CreatedAt           whereHelpertime_Time
+	Options             whereHelpertypes_StringArray
 }{
 	ID:                  whereHelperstring{field: "\"workspace_issue_questions\".\"id\""},
 	WorkspaceID:         whereHelperstring{field: "\"workspace_issue_questions\".\"workspace_id\""},
@@ -125,6 +132,7 @@ var WorkspaceIssueQuestionWhere = struct {
 	AnsweredByAccountID: whereHelpernull_String{field: "\"workspace_issue_questions\".\"answered_by_account_id\""},
 	AnsweredAt:          whereHelpernull_Time{field: "\"workspace_issue_questions\".\"answered_at\""},
 	CreatedAt:           whereHelpertime_Time{field: "\"workspace_issue_questions\".\"created_at\""},
+	Options:             whereHelpertypes_StringArray{field: "\"workspace_issue_questions\".\"options\""},
 }
 
 // WorkspaceIssueQuestionRels is where relationship names are stored.
@@ -202,9 +210,9 @@ func (r *workspaceIssueQuestionR) GetWorkspace() *Workspace {
 type workspaceIssueQuestionL struct{}
 
 var (
-	workspaceIssueQuestionAllColumns            = []string{"id", "workspace_id", "issue_id", "question", "default_answer", "deadline", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at"}
+	workspaceIssueQuestionAllColumns            = []string{"id", "workspace_id", "issue_id", "question", "default_answer", "deadline", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at", "options"}
 	workspaceIssueQuestionColumnsWithoutDefault = []string{"workspace_id", "issue_id", "question", "default_answer", "deadline"}
-	workspaceIssueQuestionColumnsWithDefault    = []string{"id", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at"}
+	workspaceIssueQuestionColumnsWithDefault    = []string{"id", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at", "options"}
 	workspaceIssueQuestionPrimaryKeyColumns     = []string{"id"}
 	workspaceIssueQuestionGeneratedColumns      = []string{}
 )

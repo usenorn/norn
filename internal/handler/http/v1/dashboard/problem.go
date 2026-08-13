@@ -491,6 +491,12 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrIssueDelegationNotFound):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
+	case errors.Is(err, entity.ErrIssueQuestionNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrIssueQuestionAnswered):
+		return newProblem(http.StatusConflict, err.Error()), true
+
 	case errors.Is(err, entity.ErrIssueDelegationNotYours):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationNotYours, err), true
 
