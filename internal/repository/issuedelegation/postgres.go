@@ -23,7 +23,9 @@ const (
 const delegationColumns = `
 	d.id, d.workspace_id, d.issue_id, d.agent_id, a.name, a.account_id, d.brief,
 	coalesce(d.delegated_by_account_id::text, ''), d.delegated_at,
-	coalesce(d.recalled_by_account_id::text, ''), d.recalled_at`
+	coalesce(d.recalled_by_account_id::text, ''), d.recalled_at,
+	coalesce(d.claim_runner, ''), coalesce(d.claim_token::text, ''),
+	d.claim_claimed_at, d.claim_expires_at`
 
 const delegationJoins = `
 FROM workspace_issue_delegations d
@@ -48,10 +50,37 @@ const delegationByIDQuery = `
 SELECT` + delegationColumns + delegationJoins + `
 WHERE d.workspace_id = $1 AND d.id = $2`
 
+const openDelegationsByAgentQuery = `
+SELECT` + delegationColumns + delegationJoins + `
+WHERE d.workspace_id = $1 AND d.agent_id = $2 AND d.recalled_at IS NULL
+ORDER BY d.delegated_at ASC, d.id ASC`
+
 const recallDelegationQuery = `
 UPDATE workspace_issue_delegations
-SET recalled_at = $3, recalled_by_account_id = $4
+SET recalled_at = $3, recalled_by_account_id = $4,
+    claim_runner = NULL, claim_token = NULL,
+    claim_claimed_at = NULL, claim_expires_at = NULL
 WHERE workspace_id = $1 AND issue_id = $2 AND recalled_at IS NULL
+RETURNING id`
+
+const claimDelegationQuery = `
+UPDATE workspace_issue_delegations
+SET claim_runner = $4, claim_token = $5, claim_claimed_at = $6, claim_expires_at = $7
+WHERE workspace_id = $1 AND issue_id = $2 AND agent_id = $3 AND recalled_at IS NULL
+  AND (claim_token IS NULL OR claim_expires_at <= $6 OR claim_runner = $4)
+RETURNING id`
+
+const heartbeatDelegationQuery = `
+UPDATE workspace_issue_delegations
+SET claim_expires_at = $4
+WHERE workspace_id = $1 AND issue_id = $2 AND claim_token = $3 AND recalled_at IS NULL
+RETURNING id`
+
+const releaseDelegationClaimQuery = `
+UPDATE workspace_issue_delegations
+SET claim_runner = NULL, claim_token = NULL,
+    claim_claimed_at = NULL, claim_expires_at = NULL
+WHERE workspace_id = $1 AND issue_id = $2 AND claim_token = $3
 RETURNING id`
 
 type delegationRepository struct {
@@ -77,6 +106,9 @@ func scanDelegation(row scanner) (entity.IssueDelegation, error) {
 		delegatedBy  string
 		recalledBy   string
 		recalledAt   sql.NullTime
+		claimToken   string
+		claimedAt    sql.NullTime
+		claimExpires sql.NullTime
 	)
 
 	if err := row.Scan(
@@ -91,6 +123,10 @@ func scanDelegation(row scanner) (entity.IssueDelegation, error) {
 		&delegation.DelegatedAt,
 		&recalledBy,
 		&recalledAt,
+		&delegation.Claim.Runner,
+		&claimToken,
+		&claimedAt,
+		&claimExpires,
 	); err != nil {
 		return entity.IssueDelegation{}, err
 	}
@@ -98,6 +134,9 @@ func scanDelegation(row scanner) (entity.IssueDelegation, error) {
 	if recalledAt.Valid {
 		delegation.RecalledAt = &recalledAt.Time
 	}
+
+	delegation.Claim.ClaimedAt = claimedAt.Time
+	delegation.Claim.ExpiresAt = claimExpires.Time
 
 	parsed, err := uuid.Parse(id)
 	if err != nil {
@@ -131,6 +170,12 @@ func scanDelegation(row scanner) (entity.IssueDelegation, error) {
 	if recalledBy != "" {
 		if delegation.RecalledByAccountID, err = uuid.Parse(recalledBy); err != nil {
 			return entity.IssueDelegation{}, fmt.Errorf("parse delegation recaller id: %w", err)
+		}
+	}
+
+	if claimToken != "" {
+		if delegation.Claim.Token, err = uuid.Parse(claimToken); err != nil {
+			return entity.IssueDelegation{}, fmt.Errorf("parse delegation claim token: %w", err)
 		}
 	}
 
@@ -187,6 +232,40 @@ func (r *delegationRepository) ListByIssue(
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate issue delegations: %w", err)
+	}
+
+	return delegations, nil
+}
+
+func (r *delegationRepository) ListOpenByAgent(
+	ctx context.Context,
+	workspaceID, agentID uuid.UUID,
+) ([]entity.IssueDelegation, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx,
+		openDelegationsByAgentQuery,
+		workspaceID.String(),
+		agentID.String(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list open agent delegations: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	delegations := make([]entity.IssueDelegation, 0)
+
+	for rows.Next() {
+		delegation, err := scanDelegation(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan open agent delegation: %w", err)
+		}
+
+		delegations = append(delegations, delegation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate open agent delegations: %w", err)
 	}
 
 	return delegations, nil
@@ -268,6 +347,89 @@ func (r *delegationRepository) Recall(
 	}
 
 	return r.byID(ctx, workspaceID, recalled)
+}
+
+func (r *delegationRepository) Claim(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	claim repository.ClaimDelegation,
+) (entity.IssueDelegation, error) {
+	return r.settleClaim(
+		ctx,
+		workspaceID,
+		entity.ErrDelegationClaimHeld,
+		"claim issue delegation",
+		claimDelegationQuery,
+		workspaceID.String(),
+		claim.IssueID.String(),
+		claim.AgentID.String(),
+		claim.Runner,
+		claim.Token.String(),
+		claim.ClaimedAt,
+		claim.ExpiresAt,
+	)
+}
+
+func (r *delegationRepository) Heartbeat(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	beat repository.HeartbeatDelegation,
+) (entity.IssueDelegation, error) {
+	return r.settleClaim(
+		ctx,
+		workspaceID,
+		entity.ErrDelegationClaimLost,
+		"heartbeat issue delegation claim",
+		heartbeatDelegationQuery,
+		workspaceID.String(),
+		beat.IssueID.String(),
+		beat.Token.String(),
+		beat.ExpiresAt,
+	)
+}
+
+func (r *delegationRepository) ReleaseClaim(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	release repository.ReleaseDelegation,
+) (entity.IssueDelegation, error) {
+	return r.settleClaim(
+		ctx,
+		workspaceID,
+		entity.ErrDelegationClaimLost,
+		"release issue delegation claim",
+		releaseDelegationClaimQuery,
+		workspaceID.String(),
+		release.IssueID.String(),
+		release.Token.String(),
+	)
+}
+
+// A claim is settled by the UPDATE predicate rather than by reading and then writing, so two
+// runners racing for the same delegation cannot both come away holding it.
+func (r *delegationRepository) settleClaim(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	refusal error,
+	action, query string,
+	args ...any,
+) (entity.IssueDelegation, error) {
+	var id string
+
+	if err := r.db.Querier(ctx).QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.IssueDelegation{}, refusal
+		}
+
+		return entity.IssueDelegation{}, fmt.Errorf("%s: %w", action, err)
+	}
+
+	settled, err := uuid.Parse(id)
+	if err != nil {
+		return entity.IssueDelegation{}, fmt.Errorf("parse claimed delegation id: %w", err)
+	}
+
+	return r.byID(ctx, workspaceID, settled)
 }
 
 func (r *delegationRepository) byID(

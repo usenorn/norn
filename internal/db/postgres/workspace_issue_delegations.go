@@ -33,6 +33,10 @@ type WorkspaceIssueDelegation struct {
 	DelegatedAt          time.Time   `boil:"delegated_at" json:"delegated_at" toml:"delegated_at" yaml:"delegated_at"`
 	RecalledByAccountID  null.String `boil:"recalled_by_account_id" json:"recalled_by_account_id,omitempty" toml:"recalled_by_account_id" yaml:"recalled_by_account_id,omitempty"`
 	RecalledAt           null.Time   `boil:"recalled_at" json:"recalled_at,omitempty" toml:"recalled_at" yaml:"recalled_at,omitempty"`
+	ClaimRunner          null.String `boil:"claim_runner" json:"claim_runner,omitempty" toml:"claim_runner" yaml:"claim_runner,omitempty"`
+	ClaimToken           null.String `boil:"claim_token" json:"claim_token,omitempty" toml:"claim_token" yaml:"claim_token,omitempty"`
+	ClaimClaimedAt       null.Time   `boil:"claim_claimed_at" json:"claim_claimed_at,omitempty" toml:"claim_claimed_at" yaml:"claim_claimed_at,omitempty"`
+	ClaimExpiresAt       null.Time   `boil:"claim_expires_at" json:"claim_expires_at,omitempty" toml:"claim_expires_at" yaml:"claim_expires_at,omitempty"`
 
 	R *workspaceIssueDelegationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueDelegationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -48,6 +52,10 @@ var WorkspaceIssueDelegationColumns = struct {
 	DelegatedAt          string
 	RecalledByAccountID  string
 	RecalledAt           string
+	ClaimRunner          string
+	ClaimToken           string
+	ClaimClaimedAt       string
+	ClaimExpiresAt       string
 }{
 	ID:                   "id",
 	WorkspaceID:          "workspace_id",
@@ -58,6 +66,10 @@ var WorkspaceIssueDelegationColumns = struct {
 	DelegatedAt:          "delegated_at",
 	RecalledByAccountID:  "recalled_by_account_id",
 	RecalledAt:           "recalled_at",
+	ClaimRunner:          "claim_runner",
+	ClaimToken:           "claim_token",
+	ClaimClaimedAt:       "claim_claimed_at",
+	ClaimExpiresAt:       "claim_expires_at",
 }
 
 var WorkspaceIssueDelegationTableColumns = struct {
@@ -70,6 +82,10 @@ var WorkspaceIssueDelegationTableColumns = struct {
 	DelegatedAt          string
 	RecalledByAccountID  string
 	RecalledAt           string
+	ClaimRunner          string
+	ClaimToken           string
+	ClaimClaimedAt       string
+	ClaimExpiresAt       string
 }{
 	ID:                   "workspace_issue_delegations.id",
 	WorkspaceID:          "workspace_issue_delegations.workspace_id",
@@ -80,6 +96,10 @@ var WorkspaceIssueDelegationTableColumns = struct {
 	DelegatedAt:          "workspace_issue_delegations.delegated_at",
 	RecalledByAccountID:  "workspace_issue_delegations.recalled_by_account_id",
 	RecalledAt:           "workspace_issue_delegations.recalled_at",
+	ClaimRunner:          "workspace_issue_delegations.claim_runner",
+	ClaimToken:           "workspace_issue_delegations.claim_token",
+	ClaimClaimedAt:       "workspace_issue_delegations.claim_claimed_at",
+	ClaimExpiresAt:       "workspace_issue_delegations.claim_expires_at",
 }
 
 // Generated where
@@ -94,6 +114,10 @@ var WorkspaceIssueDelegationWhere = struct {
 	DelegatedAt          whereHelpertime_Time
 	RecalledByAccountID  whereHelpernull_String
 	RecalledAt           whereHelpernull_Time
+	ClaimRunner          whereHelpernull_String
+	ClaimToken           whereHelpernull_String
+	ClaimClaimedAt       whereHelpernull_Time
+	ClaimExpiresAt       whereHelpernull_Time
 }{
 	ID:                   whereHelperstring{field: "\"workspace_issue_delegations\".\"id\""},
 	WorkspaceID:          whereHelperstring{field: "\"workspace_issue_delegations\".\"workspace_id\""},
@@ -104,6 +128,10 @@ var WorkspaceIssueDelegationWhere = struct {
 	DelegatedAt:          whereHelpertime_Time{field: "\"workspace_issue_delegations\".\"delegated_at\""},
 	RecalledByAccountID:  whereHelpernull_String{field: "\"workspace_issue_delegations\".\"recalled_by_account_id\""},
 	RecalledAt:           whereHelpernull_Time{field: "\"workspace_issue_delegations\".\"recalled_at\""},
+	ClaimRunner:          whereHelpernull_String{field: "\"workspace_issue_delegations\".\"claim_runner\""},
+	ClaimToken:           whereHelpernull_String{field: "\"workspace_issue_delegations\".\"claim_token\""},
+	ClaimClaimedAt:       whereHelpernull_Time{field: "\"workspace_issue_delegations\".\"claim_claimed_at\""},
+	ClaimExpiresAt:       whereHelpernull_Time{field: "\"workspace_issue_delegations\".\"claim_expires_at\""},
 }
 
 // WorkspaceIssueDelegationRels is where relationship names are stored.
@@ -200,9 +228,9 @@ func (r *workspaceIssueDelegationR) GetWorkspace() *Workspace {
 type workspaceIssueDelegationL struct{}
 
 var (
-	workspaceIssueDelegationAllColumns            = []string{"id", "workspace_id", "issue_id", "agent_id", "brief", "delegated_by_account_id", "delegated_at", "recalled_by_account_id", "recalled_at"}
+	workspaceIssueDelegationAllColumns            = []string{"id", "workspace_id", "issue_id", "agent_id", "brief", "delegated_by_account_id", "delegated_at", "recalled_by_account_id", "recalled_at", "claim_runner", "claim_token", "claim_claimed_at", "claim_expires_at"}
 	workspaceIssueDelegationColumnsWithoutDefault = []string{"workspace_id", "issue_id", "agent_id"}
-	workspaceIssueDelegationColumnsWithDefault    = []string{"id", "brief", "delegated_by_account_id", "delegated_at", "recalled_by_account_id", "recalled_at"}
+	workspaceIssueDelegationColumnsWithDefault    = []string{"id", "brief", "delegated_by_account_id", "delegated_at", "recalled_by_account_id", "recalled_at", "claim_runner", "claim_token", "claim_claimed_at", "claim_expires_at"}
 	workspaceIssueDelegationPrimaryKeyColumns     = []string{"id"}
 	workspaceIssueDelegationGeneratedColumns      = []string{}
 )

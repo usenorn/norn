@@ -4166,6 +4166,98 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/delegations:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceDelegationQueue
+      summary: Read the work handed to the calling agent, in the order the tracker ranks it
+      description: >-
+        A runner works this list from the top and never chooses for itself, so the order is the
+        whole of its judgment. Only an agent has a queue; a person reads delegations on the issue.
+      responses:
+        '200':
+          description: The open delegations this agent holds, highest priority first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DelegationQueue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/delegation/claim:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    post:
+      tags: [issues]
+      operationId: claimWorkspaceIssueDelegation
+      summary: Take exclusive hold of this delegation, so no second runner can work it
+      description: >-
+        The hold lapses on its own, because a runner that dies holding one must not strand the
+        issue. Keep it with the heartbeat for as long as the work runs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClaimDelegationRequest' }
+      responses:
+        '201':
+          description: The hold, with the token every later call must present
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DelegationClaim' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [issues]
+      operationId: releaseWorkspaceIssueDelegationClaim
+      summary: Let go of this delegation, leaving it for whoever takes it next
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: The hold is released }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/delegation/claim/heartbeat:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    post:
+      tags: [issues]
+      operationId: heartbeatWorkspaceIssueDelegationClaim
+      summary: Say the runner is still working, pushing the hold's expiry out
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/HeartbeatDelegationClaimRequest' }
+      responses:
+        '200':
+          description: The hold as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DelegationClaim' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/labels:
     put:
       tags: [issues]
@@ -6775,6 +6867,80 @@ components:
           type: string
           format: date-time
           description: Absent while the delegation is open
+        claim: { $ref: '#/components/schemas/DelegationClaimHold' }
+
+    DelegationClaimHold:
+      type: object
+      description: >-
+        Whether a runner is working this delegation right now. The token is never returned here,
+        only to whoever took the hold, because presenting it is what proves a heartbeat comes from
+        the runner that still holds the work rather than one that lapsed and was replaced.
+      required: [held]
+      properties:
+        held: { type: boolean }
+        runner:
+          type: string
+          description: What the holding runner calls itself, so a person can tell which machine it is
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the hold lapses unless the runner says it is still working
+
+    DelegationQueue:
+      type: object
+      required: [delegations]
+      properties:
+        delegations:
+          type: array
+          items: { $ref: '#/components/schemas/DelegatedWork' }
+
+    DelegatedWork:
+      type: object
+      description: One delegation with the issue it was made on, so a runner needs no second call
+      required: [delegation, issue]
+      properties:
+        delegation: { $ref: '#/components/schemas/IssueDelegation' }
+        issue: { $ref: '#/components/schemas/Issue' }
+
+    DelegationClaim:
+      type: object
+      required: [issueId, runner, token, claimedAt, expiresAt]
+      properties:
+        issueId: { type: string, format: uuid }
+        runner: { type: string }
+        token:
+          type: string
+          format: uuid
+          description: Present this on every heartbeat and on the release; it is returned once
+        claimedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+
+    ClaimDelegationRequest:
+      type: object
+      required: [runner]
+      properties:
+        runner:
+          type: string
+          maxLength: 200
+          description: >-
+            A name stable across this runner's restarts, so the same runner re-taking its own hold
+            is not mistaken for a second one arriving
+        ttlSeconds:
+          type: integer
+          format: int32
+          minimum: 30
+          maximum: 3600
+
+    HeartbeatDelegationClaimRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, format: uuid }
+        ttlSeconds:
+          type: integer
+          format: int32
+          minimum: 30
+          maximum: 3600
 
     DelegateIssueRequest:
       type: object
@@ -7173,6 +7339,9 @@ components:
                 - issue_checks_unratified
                 - issue_delegation_held
                 - issue_delegation_agent_unusable
+                - issue_delegation_not_yours
+                - delegation_claim_held
+                - delegation_claim_lost
                 - issue_relation_exists
                 - issue_relation_self
                 - label_out_of_scope

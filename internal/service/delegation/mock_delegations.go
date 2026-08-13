@@ -43,6 +43,21 @@ func (m *MockDelegations) EXPECT() *MockDelegationsMockRecorder {
 	return m.recorder
 }
 
+// Claim mocks base method.
+func (m *MockDelegations) Claim(ctx context.Context, workspaceID, issueID uuid.UUID, input service.ClaimDelegationInput) (entity.IssueDelegation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Claim", ctx, workspaceID, issueID, input)
+	ret0, _ := ret[0].(entity.IssueDelegation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Claim indicates an expected call of Claim.
+func (mr *MockDelegationsMockRecorder) Claim(ctx, workspaceID, issueID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Claim", reflect.TypeOf((*MockDelegations)(nil).Claim), ctx, workspaceID, issueID, input)
+}
+
 // Delegate mocks base method.
 func (m *MockDelegations) Delegate(ctx context.Context, workspaceID, issueID uuid.UUID, input service.DelegateIssueInput) (entity.IssueDelegation, error) {
 	m.ctrl.T.Helper()
@@ -56,6 +71,21 @@ func (m *MockDelegations) Delegate(ctx context.Context, workspaceID, issueID uui
 func (mr *MockDelegationsMockRecorder) Delegate(ctx, workspaceID, issueID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delegate", reflect.TypeOf((*MockDelegations)(nil).Delegate), ctx, workspaceID, issueID, input)
+}
+
+// Heartbeat mocks base method.
+func (m *MockDelegations) Heartbeat(ctx context.Context, workspaceID, issueID uuid.UUID, input service.HeartbeatDelegationInput) (entity.IssueDelegation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Heartbeat", ctx, workspaceID, issueID, input)
+	ret0, _ := ret[0].(entity.IssueDelegation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Heartbeat indicates an expected call of Heartbeat.
+func (mr *MockDelegationsMockRecorder) Heartbeat(ctx, workspaceID, issueID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Heartbeat", reflect.TypeOf((*MockDelegations)(nil).Heartbeat), ctx, workspaceID, issueID, input)
 }
 
 // History mocks base method.
@@ -73,6 +103,21 @@ func (mr *MockDelegationsMockRecorder) History(ctx, workspaceID, issueID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "History", reflect.TypeOf((*MockDelegations)(nil).History), ctx, workspaceID, issueID)
 }
 
+// Queue mocks base method.
+func (m *MockDelegations) Queue(ctx context.Context, workspaceID uuid.UUID) ([]service.DelegatedWork, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Queue", ctx, workspaceID)
+	ret0, _ := ret[0].([]service.DelegatedWork)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Queue indicates an expected call of Queue.
+func (mr *MockDelegationsMockRecorder) Queue(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Queue", reflect.TypeOf((*MockDelegations)(nil).Queue), ctx, workspaceID)
+}
+
 // Recall mocks base method.
 func (m *MockDelegations) Recall(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueDelegation, error) {
 	m.ctrl.T.Helper()
@@ -86,4 +131,19 @@ func (m *MockDelegations) Recall(ctx context.Context, workspaceID, issueID uuid.
 func (mr *MockDelegationsMockRecorder) Recall(ctx, workspaceID, issueID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recall", reflect.TypeOf((*MockDelegations)(nil).Recall), ctx, workspaceID, issueID)
+}
+
+// ReleaseClaim mocks base method.
+func (m *MockDelegations) ReleaseClaim(ctx context.Context, workspaceID, issueID, token uuid.UUID) (entity.IssueDelegation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReleaseClaim", ctx, workspaceID, issueID, token)
+	ret0, _ := ret[0].(entity.IssueDelegation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReleaseClaim indicates an expected call of ReleaseClaim.
+func (mr *MockDelegationsMockRecorder) ReleaseClaim(ctx, workspaceID, issueID, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseClaim", reflect.TypeOf((*MockDelegations)(nil).ReleaseClaim), ctx, workspaceID, issueID, token)
 }
