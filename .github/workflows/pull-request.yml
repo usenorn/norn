@@ -69,17 +69,25 @@ jobs:
         with:
           node-version: 24
 
+      # Every step runs inside web/, because corepack reads packageManager from the nearest
+      # package.json: from the repository root it finds none and fetches whatever is newest,
+      # which pnpm then refuses as the wrong version.
       - name: Use the pinned pnpm
         run: corepack enable
+        working-directory: web
 
       - name: Install
-        run: pnpm --dir web install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
+        working-directory: web
 
       - name: Contract has not drifted
-        run: pnpm --dir web gen:api:check
+        run: pnpm gen:api:check
+        working-directory: web
 
       - name: Types
-        run: pnpm --dir web check
+        run: pnpm check
+        working-directory: web
 
       - name: Build
-        run: pnpm --dir web build
+        run: pnpm build
+        working-directory: web
