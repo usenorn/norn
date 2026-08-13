@@ -1,0 +1,82 @@
+name: pull-request
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: pull-request-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: norn-runner-set
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_USER: norn
+          POSTGRES_PASSWORD: norn
+          POSTGRES_DB: norn
+        options: >-
+          --health-cmd "pg_isready -U norn"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+
+    env:
+      NORN_POSTGRES_DSN: postgres://norn:norn@127.0.0.1:5432/norn?sslmode=disable
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Apply migrations
+        run: go run . migrate
+
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: make test
+
+      - name: Lint
+        run: make lint
+
+      - name: Vulnerabilities
+        run: make vuln
+
+  frontend:
+    runs-on: norn-runner-set
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install
+        run: corepack pnpm --dir web install --frozen-lockfile
+
+      - name: Contract has not drifted
+        run: corepack pnpm --dir web gen:api:check
+
+      - name: Types
+        run: corepack pnpm --dir web check
+
+      - name: Build
+        run: corepack pnpm --dir web build
