@@ -149,16 +149,19 @@ func (s *sync) Accept(
 ) (uuid.UUID, error) {
 	stored, err := s.repositories.GetForDelivery(ctx, repositoryID)
 	if err != nil {
-		return uuid.Nil, entity.ErrSCMSignatureInvalid
+		return uuid.Nil, fmt.Errorf("%w: %s", entity.ErrSCMRepositoryNotFound, repositoryID)
 	}
 
 	if stored.Provider != provider {
-		return uuid.Nil, entity.ErrSCMSignatureInvalid
+		return uuid.Nil, fmt.Errorf(
+			"%w: %s is connected to %s, not %s",
+			entity.ErrSCMRepositoryNotFound, repositoryID, stored.Provider, provider,
+		)
 	}
 
 	forge, err := s.forges.Lookup(stored.Provider)
 	if err != nil {
-		return uuid.Nil, entity.ErrSCMSignatureInvalid
+		return uuid.Nil, entity.ErrSCMAppNotFound
 	}
 
 	secret, err := s.repositories.WebhookSecret(ctx, repositoryID)
@@ -182,22 +185,22 @@ func (s *sync) AcceptFromApp(
 ) (uuid.UUID, error) {
 	forgeApp, err := s.forges.App(provider)
 	if err != nil {
-		return uuid.Nil, entity.ErrSCMSignatureInvalid
+		return uuid.Nil, entity.ErrSCMAppNotFound
 	}
 
 	route, err := forgeApp.Route(body)
 	if err != nil {
-		return uuid.Nil, entity.ErrSCMSignatureInvalid
+		return uuid.Nil, fmt.Errorf("%w: %w", entity.ErrSCMDeliveryUnroutable, err)
 	}
 
 	forge, err := s.forges.Lookup(provider)
 	if err != nil {
-		return uuid.Nil, entity.ErrSCMSignatureInvalid
+		return uuid.Nil, entity.ErrSCMAppNotFound
 	}
 
 	registered, err := s.apps.Get(ctx, provider, forge.Endpoint())
 	if err != nil {
-		return uuid.Nil, entity.ErrSCMSignatureInvalid
+		return uuid.Nil, entity.ErrSCMAppNotFound
 	}
 
 	secrets, err := s.apps.Secrets(ctx, registered.ID)
@@ -205,6 +208,8 @@ func (s *sync) AcceptFromApp(
 		return uuid.Nil, err
 	}
 
+	// Only a failure here is a signature failure. Everything below is Norn not knowing what the
+	// delivery is about, which is a different thing and must not be reported as forgery.
 	delivery, err := forge.Verify(secrets.WebhookSecret, header, body)
 	if err != nil {
 		return uuid.Nil, entity.ErrSCMSignatureInvalid
@@ -212,12 +217,14 @@ func (s *sync) AcceptFromApp(
 
 	connection, err := s.connections.GetByInstallation(ctx, registered.ID, route.InstallationID)
 	if err != nil {
-		return uuid.Nil, entity.ErrSCMSignatureInvalid
+		return uuid.Nil, fmt.Errorf(
+			"%w: installation %s", entity.ErrSCMConnectionNotFound, route.InstallationID,
+		)
 	}
 
 	stored, err := s.repositories.GetByFullName(ctx, connection.ID, route.FullName)
 	if err != nil {
-		return uuid.Nil, entity.ErrSCMSignatureInvalid
+		return uuid.Nil, fmt.Errorf("%w: %s", entity.ErrSCMRepositoryNotFound, route.FullName)
 	}
 
 	return s.hold(ctx, stored, delivery)
