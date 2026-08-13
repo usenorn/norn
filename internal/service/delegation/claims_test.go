@@ -93,6 +93,38 @@ func TestTheQueueLeadsWithTheWorkTheTrackerRanksFirst(t *testing.T) {
 	}
 }
 
+func TestAFinishedIssueLeavesTheQueueEvenWhileItsDelegationStands(t *testing.T) {
+	for _, category := range []entity.StateCategory{
+		entity.StateCategoryComplete,
+		entity.StateCategoryAbandoned,
+	} {
+		h := newHarness(t)
+		agent := h.agent()
+		h.asAgent(agent.ID)
+
+		finished := h.issue()
+		finished.State.Category = category
+		h.expectIssue(finished)
+
+		h.delegations.EXPECT().
+			ListOpenByAgent(gomock.Any(), h.workspaceID, agent.ID).
+			Return([]entity.IssueDelegation{{IssueID: finished.ID, AgentID: agent.ID}}, nil)
+
+		queue, err := h.service.Queue(context.Background(), h.workspaceID)
+		if err != nil {
+			t.Fatalf("read the queue: %v", err)
+		}
+
+		if len(queue) != 0 {
+			t.Errorf(
+				"an issue in the %s category stayed in the queue; a runner claims it, finds it "+
+					"closed, ends the run and claims it again on the very next poll, forever",
+				category,
+			)
+		}
+	}
+}
+
 func TestAnArchivedIssueLeavesTheQueueEvenWhileItsDelegationStands(t *testing.T) {
 	h := newHarness(t)
 	agent := h.agent()
