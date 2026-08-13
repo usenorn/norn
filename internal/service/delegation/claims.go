@@ -49,6 +49,10 @@ func (s *delegationsService) Queue(
 			continue
 		}
 
+		if !entity.OpenCategory(issue.State.Category) {
+			continue
+		}
+
 		queue = append(queue, service.DelegatedWork{Delegation: delegation, Issue: issue})
 	}
 
