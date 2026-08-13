@@ -168,6 +168,11 @@
 						This installation was granted no repositories. Grant some on
 						{providerLabel(chosen.provider)} and they appear here — or name one below.
 					</p>
+				{:else if chosen?.authKind !== "app"}
+					<p class="text-sm text-muted-foreground text-pretty">
+						This credential is a token, and a token cannot be asked what it reaches. Name the
+						repository yourself and Norn checks it when you connect.
+					</p>
 				{/if}
 
 				{#if selectable.length > 0}

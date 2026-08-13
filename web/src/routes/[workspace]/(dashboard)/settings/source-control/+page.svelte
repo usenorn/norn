@@ -284,12 +284,14 @@
 									{providerLabel(repository.provider)} · {repository.fullName}
 								</p>
 								<p class="text-sm text-muted-foreground">
-									{#if !repository.hookInstalled && !deliversCentrally(repository.connectionId)}
-										The webhook is not installed — the sweep is carrying it.
-									{:else}
-										Watching for “{repository.mirrorLabel}”. {routingLabel(repository)}.
-									{/if}
+									Watching for “{repository.mirrorLabel}”. {routingLabel(repository)}.
 								</p>
+								{#if !repository.hookInstalled && !deliversCentrally(repository.connectionId)}
+									<p class="flex items-center gap-1.5 text-sm text-warning">
+										<TriangleAlert class="size-icon-row shrink-0" aria-hidden="true" />
+										The webhook is not installed yet — the sweep is carrying it.
+									</p>
+								{/if}
 							</div>
 							<Button
 								variant="secondary"
