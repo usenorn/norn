@@ -31,6 +31,16 @@ type SCMRepository struct {
 	BackfilledAt     *time.Time
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+
+	// How many routes narrow this repository. Zero is the permissive state, not the broken one:
+	// a repository with no routes reaches every team.
+	RouteCount int
+}
+
+// Routes only ever narrow what a repository reaches, so a repository carrying none reaches every
+// team in the workspace.
+func (r SCMRepository) NarrowedByRoutes() bool {
+	return r.RouteCount > 0
 }
 
 func (r SCMRepository) Parked(now time.Time) bool {

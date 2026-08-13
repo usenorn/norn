@@ -137,6 +137,10 @@ type SCMConnection struct {
 	Capabilities         SCMCapabilitySet
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
+
+	// What the connection actually reaches. A connection can be healthy and reach nothing, and
+	// reporting only that it works is how that goes unnoticed.
+	RepositoryCount int
 }
 
 func (c SCMConnection) UsesApp() bool {

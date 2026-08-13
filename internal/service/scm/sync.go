@@ -402,9 +402,12 @@ func (s *sync) markBroken(
 	reason entity.SCMBrokenReason,
 	detail string,
 ) {
+	// The connection is what breaks, and it is what has to be marked. Handing this the
+	// repository's id matches no row, so the failure is recorded nowhere and the connection goes
+	// on claiming it works.
 	if err := s.connections.MarkBroken(
 		ctx,
-		from.repository.ID,
+		from.connection.ID,
 		reason,
 		detail,
 		time.Now().UTC(),
@@ -412,7 +415,8 @@ func (s *sync) markBroken(
 		logging.From(ctx).ErrorContext(
 			ctx,
 			"recording a broken source control connection failed",
-			"connection_id", from.repository.ID.String(),
+			"connection_id", from.connection.ID.String(),
+			"repository_id", from.repository.ID.String(),
 			"error", err.Error(),
 		)
 	}

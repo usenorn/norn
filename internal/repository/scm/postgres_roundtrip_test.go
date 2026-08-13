@@ -26,8 +26,10 @@ type ground struct {
 	workspaceID uuid.UUID
 	accountID   uuid.UUID
 	appID       uuid.UUID
+	teamID      uuid.UUID
 	connections repository.SCMConnection
 	repository  repository.SCMRepository
+	routes      repository.SCMRoute
 	apps        repository.SCMApp
 }
 
@@ -36,8 +38,10 @@ func lay(ctx context.Context, db *postgres.Client, sealer *crypter.Crypter) (gro
 		workspaceID: uuid.New(),
 		accountID:   uuid.New(),
 		appID:       uuid.New(),
+		teamID:      uuid.New(),
 		connections: NewSCMConnection(db, sealer),
 		repository:  NewSCMRepository(db, sealer),
+		routes:      NewSCMRoute(db),
 		apps:        NewSCMApp(db, sealer),
 	}
 
@@ -56,6 +60,12 @@ func lay(ctx context.Context, db *postgres.Client, sealer *crypter.Crypter) (gro
 			what: "a workspace",
 			sql:  `INSERT INTO workspaces (id, slug, name) VALUES ($1, $2, $2)`,
 			args: []any{on.workspaceID, "roundtrip-" + on.workspaceID.String()[:8]},
+		},
+		{
+			what: "a team",
+			sql: `INSERT INTO workspace_teams (id, workspace_id, key, name)
+                  VALUES ($1, $2, 'RT', 'Roundtrip')`,
+			args: []any{on.teamID, on.workspaceID},
 		},
 		{
 			what: "an application",
@@ -351,6 +361,147 @@ func TestAnApplicationKeepsItsKeysAndTheTrustItWasGranted(t *testing.T) {
 				"the sealed read lost the trust (%+v). Minting an installation token goes through "+
 					"it, so the connection would work until the first token expired",
 				secrets.Trust,
+			)
+		}
+
+		return nil
+	})
+}
+
+func TestAConnectionAndItsRepositoriesComeBackSayingHowMuchTheyReach(t *testing.T) {
+	rolledBack(t, func(ctx context.Context, on ground) error {
+		connection, err := on.connections.Create(ctx, repository.SCMConnectionInput{
+			Connection: installationConnection(on),
+		})
+		if err != nil {
+			return fmt.Errorf("create the connection: %w", err)
+		}
+
+		read, err := on.connections.GetByID(ctx, on.workspaceID, connection.ID)
+		if err != nil {
+			return fmt.Errorf("read the connection back: %w", err)
+		}
+
+		if read.RepositoryCount != 0 {
+			return fmt.Errorf(
+				"a connection reaching nothing reported %d repositories. Saying only that it "+
+					"works, while it reaches nothing, is what lets every delivery be discarded "+
+					"under a green tick",
+				read.RepositoryCount,
+			)
+		}
+
+		created, err := on.repository.Create(ctx, repository.SCMRepositoryInput{
+			Repository: entity.SCMRepository{
+				WorkspaceID:  on.workspaceID,
+				ConnectionID: connection.ID,
+				Provider:     entity.SCMProviderGitHub,
+				FullName:     "flagroll/platform",
+				ExternalID:   "9001",
+				MirrorLabel:  "norn",
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("connect a repository: %w", err)
+		}
+
+		if created.RouteCount != 0 || created.NarrowedByRoutes() {
+			return fmt.Errorf(
+				"a freshly connected repository reported %d routes. No routes is the permissive "+
+					"state — it reaches every team — so counting one here would have the screen "+
+					"telling somebody to narrow a repository that already works",
+				created.RouteCount,
+			)
+		}
+
+		if _, err := on.routes.Create(ctx, entity.SCMRoute{
+			RepositoryID: created.ID,
+			WorkspaceID:  on.workspaceID,
+			TeamID:       on.teamID,
+			PathPrefix:   "",
+		}); err != nil {
+			return fmt.Errorf("route it to a team: %w", err)
+		}
+
+		narrowed, err := on.repository.GetByID(ctx, on.workspaceID, created.ID)
+		if err != nil {
+			return fmt.Errorf("read the repository back: %w", err)
+		}
+
+		if narrowed.RouteCount != 1 || !narrowed.NarrowedByRoutes() {
+			return fmt.Errorf(
+				"a routed repository reported %d routes, want 1. Without this count no screen can "+
+					"say what a repository is narrowed to",
+				narrowed.RouteCount,
+			)
+		}
+
+		reaching, err := on.connections.GetByID(ctx, on.workspaceID, connection.ID)
+		if err != nil {
+			return fmt.Errorf("read the connection back again: %w", err)
+		}
+
+		if reaching.RepositoryCount != 1 {
+			return fmt.Errorf(
+				"a connection reaching one repository reported %d",
+				reaching.RepositoryCount,
+			)
+		}
+
+		return nil
+	})
+}
+
+func TestMarkingSomethingBrokenTakesTheConnectionAndNotTheRepository(t *testing.T) {
+	rolledBack(t, func(ctx context.Context, on ground) error {
+		connection, err := on.connections.Create(ctx, repository.SCMConnectionInput{
+			Connection: installationConnection(on),
+		})
+		if err != nil {
+			return fmt.Errorf("create the connection: %w", err)
+		}
+
+		created, err := on.repository.Create(ctx, repository.SCMRepositoryInput{
+			Repository: entity.SCMRepository{
+				WorkspaceID:  on.workspaceID,
+				ConnectionID: connection.ID,
+				Provider:     entity.SCMProviderGitHub,
+				FullName:     "flagroll/platform",
+				ExternalID:   "9001",
+				MirrorLabel:  "norn",
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("connect a repository: %w", err)
+		}
+
+		if err := on.connections.MarkBroken(
+			ctx, created.ID, entity.SCMBrokenCredentialsRejected, "handed the wrong id", time.Now().UTC(),
+		); !errors.Is(err, entity.ErrSCMConnectionNotFound) {
+			return fmt.Errorf(
+				"marking a repository id broken returned %v, want it refused. This matched no row "+
+					"and the caller only logged the failure, so a connection that broke while "+
+					"processing a delivery went on reporting that it works",
+				err,
+			)
+		}
+
+		if err := on.connections.MarkBroken(
+			ctx, connection.ID, entity.SCMBrokenCredentialsRejected, "the token was rejected", time.Now().UTC(),
+		); err != nil {
+			return fmt.Errorf("mark the connection broken: %w", err)
+		}
+
+		read, err := on.connections.GetByID(ctx, on.workspaceID, connection.ID)
+		if err != nil {
+			return fmt.Errorf("read the connection back: %w", err)
+		}
+
+		if read.Status != entity.SCMConnectionBroken ||
+			read.BrokenReason != entity.SCMBrokenCredentialsRejected {
+			return fmt.Errorf(
+				"the connection reads as %q/%q after being marked broken",
+				read.Status, read.BrokenReason,
 			)
 		}
 

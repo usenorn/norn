@@ -82,7 +82,8 @@ const connectionColumns = `
     status, broken_reason, broken_detail, broken_at, verified_at,
     auth_kind, coalesce(app_id, '00000000-0000-0000-0000-000000000000'::uuid),
     installation_id, account_login,
-    allow_private_address, ca_certificate, capabilities, created_at, updated_at`
+    allow_private_address, ca_certificate, capabilities, created_at, updated_at,
+    (SELECT count(*) FROM workspace_scm_repositories WHERE connection_id = c.id)`
 
 func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, error) {
 	var (
@@ -117,6 +118,7 @@ func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, 
 		&capabilities,
 		&connection.CreatedAt,
 		&connection.UpdatedAt,
+		&connection.RepositoryCount,
 	)
 	if err != nil {
 		return entity.SCMConnection{}, err
@@ -132,7 +134,7 @@ func scanConnection(row interface{ Scan(...any) error }) (entity.SCMConnection, 
 }
 
 const insertConnectionQuery = `
-INSERT INTO workspace_scm_connections (
+INSERT INTO workspace_scm_connections AS c (
     id, workspace_id, provider, base_url, label, token_sealed, token_hint, identity_login,
     integration_account_id, owner_account_id, owner_actor_kind, owner_auth_method,
     auth_kind, app_id, installation_id, account_login,
@@ -195,7 +197,7 @@ func (r *connectionRepository) Create(
 
 const getConnectionQuery = `
 SELECT` + connectionColumns + `
-FROM workspace_scm_connections
+FROM workspace_scm_connections AS c
 WHERE workspace_id = $1 AND id = $2`
 
 func (r *connectionRepository) GetByID(
@@ -218,7 +220,7 @@ func (r *connectionRepository) GetByID(
 
 const getConnectionForDeliveryQuery = `
 SELECT` + connectionColumns + `
-FROM workspace_scm_connections
+FROM workspace_scm_connections AS c
 WHERE id = $1`
 
 func (r *connectionRepository) GetForDelivery(
@@ -241,7 +243,7 @@ func (r *connectionRepository) GetForDelivery(
 
 const listConnectionsQuery = `
 SELECT` + connectionColumns + `
-FROM workspace_scm_connections
+FROM workspace_scm_connections AS c
 WHERE workspace_id = $1
 ORDER BY created_at DESC, id`
 
@@ -276,7 +278,7 @@ func (r *connectionRepository) ListByWorkspace(
 
 const getConnectionByInstallationQuery = `
 SELECT` + connectionColumns + `
-FROM workspace_scm_connections
+FROM workspace_scm_connections AS c
 WHERE auth_kind = 'app' AND app_id = $1 AND installation_id = $2`
 
 func (r *connectionRepository) GetByInstallation(
@@ -357,9 +359,9 @@ func (r *connectionRepository) ReplaceToken(
 }
 
 const updateLabelQuery = `
-UPDATE workspace_scm_connections
+UPDATE workspace_scm_connections AS c
 SET label = $2, updated_at = now()
-WHERE id = $1
+WHERE c.id = $1
 RETURNING` + connectionColumns
 
 func (r *connectionRepository) UpdateLabel(

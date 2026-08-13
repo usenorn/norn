@@ -54,6 +54,8 @@ func sourceControlDTO(connection entity.SCMConnection) api.SourceControlConnecti
 	dto.AllowPrivateAddress = pointer(connection.Trust.AllowPrivateAddress)
 	dto.CaCertificateSet = pointer(connection.Trust.CACertificate != "")
 
+	dto.RepositoryCount = pointer(int32(connection.RepositoryCount))
+
 	held := capabilityDTOs(connection.Capabilities)
 	dto.Capabilities = &held
 
@@ -105,6 +107,7 @@ func sourceControlRepositoryDTO(stored entity.SCMRepository) api.SourceControlRe
 	dto.SyncDirection = &direction
 	dto.WebhooksDisabled = pointer(stored.WebhooksDisabled)
 	dto.PollIntervalSeconds = pointer(int32(stored.PollInterval / time.Second))
+	dto.RouteCount = pointer(int32(stored.RouteCount))
 	dto.LastSeenAt = stored.LastSeenAt
 	dto.ReconciledAt = stored.ReconciledAt
 	dto.ReconcileAfter = stored.ReconcileAfter
