@@ -67,6 +67,7 @@
 			application: shownApplication,
 			connections,
 			repositories,
+			repositoriesUnavailable,
 		}),
 	);
 
@@ -158,7 +159,7 @@
 	{:else if view.kind === "unavailable"}
 		<Alert.Root variant="destructive">
 			<Alert.Title>Source control could not be reached</Alert.Title>
-			<Alert.Description>{failureMessage({ kind: "unavailable" })}</Alert.Description>
+			<Alert.Description>Check your connection and reload.</Alert.Description>
 		</Alert.Root>
 	{:else}
 		<VerdictBanner {verdict} />

@@ -419,6 +419,7 @@ export type SourceControlStage =
 	| "install"
 	| "authorise"
 	| "connect_repository"
+	| "repositories_unknown"
 	| "broken"
 	| "watching";
 
@@ -441,8 +442,9 @@ export function sourceControlVerdict(input: {
 	application: SourceControlAppState;
 	connections: SourceControlConnection[];
 	repositories: SourceControlRepository[];
+	repositoriesUnavailable?: boolean;
 }): SourceControlVerdict {
-	const { slug, application, connections, repositories } = input;
+	const { slug, application, connections, repositories, repositoriesUnavailable } = input;
 
 	const broken = connections.find((connection) => connection.status === "broken");
 
@@ -453,6 +455,19 @@ export function sourceControlVerdict(input: {
 			title: `${connectionLabel(broken)} has stopped working`,
 			detail: `${brokenLabel(broken)}. Nothing from it reaches Norn until it is working again.`,
 			action: { label: "Open the connection", href: sourceControlConnectionPath(slug, broken.id) },
+		};
+	}
+
+	// A listing that failed arrives here as an empty array, so without this the banner would
+	// report a broken request as "nothing is connected" — the precise lie this verdict exists
+	// to prevent, and one the section below it already contradicts.
+	if (repositoriesUnavailable) {
+		return {
+			stage: "repositories_unknown",
+			tone: "destructive",
+			title: "What Norn watches is unknown",
+			detail:
+				"The connected repositories could not be read, which is not the same as having none. Check your connection and reload.",
 		};
 	}
 
