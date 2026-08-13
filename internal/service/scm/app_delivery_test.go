@@ -164,13 +164,18 @@ func TestADeliveryNamingARepositoryThisInstallationDoesNotHoldIsRefused(t *testi
 		context.Background(), entity.SCMProviderGitHub, http.Header{}, held.body,
 	)
 
-	if !errors.Is(err, entity.ErrSCMSignatureInvalid) {
+	if !errors.Is(err, entity.ErrSCMRepositoryNotFound) {
 		t.Fatalf(
-			"a delivery for a repository nobody connected returned %v. The application is "+
-				"installed on repositories a workspace never chose, and each of those still "+
-				"posts here",
+			"a delivery for a repository nobody connected returned %v, want it named as an "+
+				"unconnected repository. The application is installed on repositories a workspace "+
+				"never chose and each of those still posts here, so this is the ordinary case and "+
+				"calling it a signature failure hides the deliveries that really did not verify",
 			err,
 		)
+	}
+
+	if errors.Is(err, entity.ErrSCMSignatureInvalid) {
+		t.Fatal("an unconnected repository was reported as forgery")
 	}
 }
 
@@ -190,7 +195,15 @@ func TestADeliveryFromAnInstallationNobodyConnectedIsRefused(t *testing.T) {
 		context.Background(), entity.SCMProviderGitHub, http.Header{}, held.body,
 	)
 
-	if !errors.Is(err, entity.ErrSCMSignatureInvalid) {
-		t.Fatalf("a delivery from an unconnected installation returned %v, want a refusal", err)
+	if !errors.Is(err, entity.ErrSCMConnectionNotFound) {
+		t.Fatalf(
+			"a delivery from an unconnected installation returned %v, want it named as an "+
+				"unknown installation rather than as a bad signature",
+			err,
+		)
+	}
+
+	if errors.Is(err, entity.ErrSCMSignatureInvalid) {
+		t.Fatal("an unconnected installation was reported as forgery")
 	}
 }

@@ -93,11 +93,31 @@ func (e *Edge) settle(
 	err error,
 ) {
 	switch {
-	case errors.Is(err, entity.ErrSCMSignatureInvalid),
-		errors.Is(err, entity.ErrSCMConnectionNotFound),
-		errors.Is(err, entity.ErrSCMRepositoryNotFound),
-		errors.Is(err, entity.ErrSCMAppNotFound):
+	// Forgery is the only thing worth refusing. An app installed across an account is sent every
+	// repository's events, so a delivery Norn cannot attribute to a connected repository is the
+	// ordinary case, not an attack — refusing it paints the whole webhook history red and hides
+	// the deliveries that really did fail to verify.
+	case errors.Is(err, entity.ErrSCMSignatureInvalid):
+		logging.From(r.Context()).WarnContext(
+			r.Context(),
+			"a source control delivery did not verify",
+			"repository_id", repository,
+		)
+
 		e.refuse(w)
+
+	case errors.Is(err, entity.ErrSCMAppNotFound),
+		errors.Is(err, entity.ErrSCMDeliveryUnroutable),
+		errors.Is(err, entity.ErrSCMConnectionNotFound),
+		errors.Is(err, entity.ErrSCMRepositoryNotFound):
+		logging.From(r.Context()).InfoContext(
+			r.Context(),
+			"a source control delivery was accepted and ignored",
+			"repository_id", repository,
+			"reason", err.Error(),
+		)
+
+		w.WriteHeader(http.StatusOK)
 
 	case errors.Is(err, entity.ErrSCMDeliveryDuplicate):
 		w.WriteHeader(http.StatusOK)

@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -38,6 +39,28 @@ func (p IssuePriority) Valid() bool {
 	default:
 		return false
 	}
+}
+
+func (p IssuePriority) Order() int {
+	priorities := IssuePriorities()
+
+	if index := slices.Index(priorities, p); index >= 0 {
+		return index
+	}
+
+	return len(priorities)
+}
+
+func CompareIssueQueueOrder(a, b Issue) int {
+	if order := a.Priority.Order() - b.Priority.Order(); order != 0 {
+		return order
+	}
+
+	if rank := strings.Compare(a.Rank, b.Rank); rank != 0 {
+		return rank
+	}
+
+	return a.CreatedAt.Compare(b.CreatedAt)
 }
 
 type StateTimestamps struct {

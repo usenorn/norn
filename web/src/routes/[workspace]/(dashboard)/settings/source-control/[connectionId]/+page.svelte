@@ -21,6 +21,8 @@
 		failureMessage,
 		providerLabel,
 		sourceControlFailure,
+		routingLabel,
+		sourceControlConnectPath,
 		sourceControlPath,
 		sourceControlRepositoryPath,
 		type SourceControlConnection,
@@ -292,20 +294,28 @@
 			<h2 class="text-md font-medium tracking-snug text-ink-900">Repositories</h2>
 
 			{#if view.repositories.length === 0}
-				<p class="text-sm text-muted-foreground">
-					This credential reaches no repository yet.
-					<a href={sourceControlPath(workspace.slug)} class="underline">Connect one</a>.
+				<p class="text-sm leading-normal text-muted-foreground text-pretty">
+					This credential reaches nothing yet, so every event it is sent is discarded.
 				</p>
+				<Button
+					href={sourceControlConnectPath(workspace.slug) + `?connection=${view.connection.id}`}
+					class="self-start"
+				>
+					Connect a repository
+				</Button>
 			{:else}
 				<ul class="flex flex-col gap-2">
 					{#each view.repositories as repository (repository.id)}
-						<li class="flex items-center justify-between gap-2">
-							<a
-								href={sourceControlRepositoryPath(workspace.slug, repository.id)}
-								class="truncate text-sm text-ink-900 underline-offset-2 hover:underline"
-							>
-								{repository.fullName}
-							</a>
+						<li class="flex items-start justify-between gap-2">
+							<span class="flex min-w-0 flex-col">
+								<a
+									href={sourceControlRepositoryPath(workspace.slug, repository.id)}
+									class="truncate text-sm text-ink-900 underline-offset-2 hover:underline"
+								>
+									{repository.fullName}
+								</a>
+								<span class="text-xs text-muted-foreground">{routingLabel(repository)}</span>
+							</span>
 							{#if !repository.hookInstalled}
 								<span class="shrink-0 text-xs text-muted-foreground">no webhook</span>
 							{/if}
@@ -322,6 +332,11 @@
 					There is no token to replace. Widen or narrow what Norn sees by changing the
 					repositories the installation is granted, on the platform.
 				</p>
+				{#if data.installUrl}
+					<Button variant="secondary" href={data.installUrl} rel="external" class="self-start">
+						Change it on {providerLabel(view.connection.provider)}
+					</Button>
+				{/if}
 			</section>
 		{:else}
 		<form

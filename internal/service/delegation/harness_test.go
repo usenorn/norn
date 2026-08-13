@@ -30,6 +30,8 @@ type harness struct {
 
 	workspaceID uuid.UUID
 	actorID     uuid.UUID
+	actorKind   entity.ActorKind
+	actorAgent  *uuid.UUID
 }
 
 func newHarness(t *testing.T) *harness {
@@ -46,6 +48,7 @@ func newHarness(t *testing.T) *harness {
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID: uuid.New(),
 		actorID:     uuid.New(),
+		actorKind:   entity.ActorKindUser,
 	}
 
 	transactor := transactorrepo.NewMockTransactor(ctrl)
@@ -60,7 +63,11 @@ func newHarness(t *testing.T) *harness {
 		Decide(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, request entity.AccessRequest) (entity.Decision, error) {
 			return entity.Decision{
-				Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: h.actorID},
+				Actor: entity.Actor{
+					Kind:      h.actorKind,
+					AccountID: h.actorID,
+					AgentID:   h.actorAgent,
+				},
 				Scope: entity.TeamScope{WorkspaceID: request.WorkspaceID, AllTeams: true},
 			}, nil
 		}).
@@ -71,6 +78,11 @@ func newHarness(t *testing.T) *harness {
 	)
 
 	return h
+}
+
+func (h *harness) asAgent(agentID uuid.UUID) {
+	h.actorKind = entity.ActorKindAgent
+	h.actorAgent = &agentID
 }
 
 func (h *harness) expectIssue(issue entity.Issue) {
@@ -93,6 +105,8 @@ func (h *harness) issue() entity.Issue {
 		WorkspaceID: h.workspaceID,
 		TeamID:      uuid.New(),
 		Version:     3,
+		Status:      entity.IssueStatusActive,
+		Priority:    entity.IssuePriorityNone,
 		State:       entity.IssueState{ID: uuid.New(), Category: entity.StateCategoryActive},
 	}
 }

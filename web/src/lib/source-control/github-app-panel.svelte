@@ -26,11 +26,16 @@
 		application,
 		notice,
 		connectedTo = null,
+		repositoryCount = 0,
+		connectHref = "",
 	}: {
 		workspaceId: string;
 		workspaceSlug: string;
 		application: SourceControlAppState;
 		connectedTo?: string | null;
+		/** How many repositories the workspace watches. Nothing works until this is above zero. */
+		repositoryCount?: number;
+		connectHref?: string;
 		notice?: SourceControlAppNotice;
 	} = $props();
 
@@ -249,6 +254,41 @@
 						<Button size="sm" class="w-max" disabled={working} onclick={signIn}>
 							{working ? "Opening GitHub…" : "Connect GitHub"}
 						</Button>
+					{/if}
+				</div>
+			</li>
+
+			<li class="flex min-w-0 gap-3">
+				<span
+					class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-2xs {repositoryCount >
+					0
+						? 'border-success/40 text-success'
+						: connectedTo
+							? 'border-line-strong text-ink-900'
+							: 'border-line-subtle text-muted-foreground'}"
+					aria-hidden="true"
+				>
+					{repositoryCount > 0 ? "✓" : "3"}
+				</span>
+				<div class="flex min-w-0 flex-1 flex-col gap-1.5">
+					<p
+						class="text-sm leading-normal text-pretty {connectedTo
+							? 'text-ink-900'
+							: 'text-muted-foreground'}"
+					>
+						{#if repositoryCount === 1}
+							Watching 1 repository.
+						{:else if repositoryCount > 1}
+							Watching {repositoryCount} repositories.
+						{:else if connectedTo}
+							Choose the repositories Norn watches. Until one is connected, everything GitHub
+							sends is discarded.
+						{:else}
+							Then choose the repositories Norn watches.
+						{/if}
+					</p>
+					{#if connectedTo && repositoryCount === 0 && connectHref}
+						<Button size="sm" class="w-max" href={connectHref}>Connect a repository</Button>
 					{/if}
 				</div>
 			</li>

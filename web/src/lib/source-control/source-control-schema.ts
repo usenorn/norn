@@ -49,6 +49,20 @@ export const addRepositorySchema = z.object({
 		.optional(),
 });
 
+export const connectRepositoriesSchema = z.object({
+	connectionId: z.string().min(1, "Choose a connection."),
+	// Several at once: an application installed across an account grants many, and connecting
+	// them one at a time is how somebody gives up half way.
+	fullNames: z
+		.array(repository)
+		.min(1, "Choose at least one repository, or type one below.")
+		.max(50, "Connect at most 50 at a time."),
+	mirrorLabel: z.string().trim().max(80, "Keep the label under 80 characters.").optional(),
+	// Optional on purpose: routes only narrow, and a repository with none reaches every team.
+	teamId: z.union([z.literal(""), z.uuid("Choose a team.")]).optional(),
+	pathPrefix: z.string().trim().max(200, "Keep the path under 200 characters.").optional(),
+});
+
 export const mapIdentitySchema = z.object({
 	accountId: z.string().min(1, "Choose a member."),
 	provider: z.enum(["github", "gitlab"], { error: "Choose a platform." }),

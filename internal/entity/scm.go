@@ -34,6 +34,7 @@ var (
 	ErrSCMConnectionBroken        = errors.New("source control connection is broken")
 	ErrSCMDeliveryDuplicate       = errors.New("delivery has already been received")
 	ErrSCMSignatureInvalid        = errors.New("delivery signature did not verify")
+	ErrSCMDeliveryUnroutable      = errors.New("delivery does not say which repository it is about")
 	ErrSCMRepositoryNotFound      = errors.New("repository is not connected")
 	ErrSCMRepositoryExists        = errors.New("that repository is already connected")
 	ErrSCMRouteNotFound           = errors.New("route not found")
@@ -136,6 +137,10 @@ type SCMConnection struct {
 	Capabilities         SCMCapabilitySet
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
+
+	// What the connection actually reaches. A connection can be healthy and reach nothing, and
+	// reporting only that it works is how that goes unnoticed.
+	RepositoryCount int
 }
 
 func (c SCMConnection) UsesApp() bool {

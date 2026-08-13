@@ -29,7 +29,8 @@ const repositoryColumns = `
     coalesce(octet_length(webhook_secret_sealed), 0) > 0, external_hook_id, mirror_label, sync_direction,
     webhooks_disabled,
     extract(epoch FROM poll_interval), reconcile_cursor, reconciled_at, reconcile_after,
-    last_seen_at, backfilled_at, created_at, updated_at`
+    last_seen_at, backfilled_at, created_at, updated_at,
+    (SELECT count(*) FROM workspace_scm_routes WHERE repository_id = r.id)`
 
 func scanRepository(row interface{ Scan(...any) error }) (entity.SCMRepository, error) {
 	var (
@@ -59,6 +60,7 @@ func scanRepository(row interface{ Scan(...any) error }) (entity.SCMRepository, 
 		&stored.BackfilledAt,
 		&stored.CreatedAt,
 		&stored.UpdatedAt,
+		&stored.RouteCount,
 	)
 	if err != nil {
 		return entity.SCMRepository{}, err
@@ -70,7 +72,7 @@ func scanRepository(row interface{ Scan(...any) error }) (entity.SCMRepository, 
 }
 
 const insertRepositoryQuery = `
-INSERT INTO workspace_scm_repositories (
+INSERT INTO workspace_scm_repositories AS r (
     id, connection_id, workspace_id, provider, full_name, external_id, default_branch, url,
     webhook_secret_sealed, mirror_label, sync_direction, poll_interval
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, make_interval(secs => $12))
@@ -130,7 +132,7 @@ func (r *repositoryRepository) Create(
 
 const getRepositoryQuery = `
 SELECT` + repositoryColumns + `
-FROM workspace_scm_repositories
+FROM workspace_scm_repositories AS r
 WHERE workspace_id = $1 AND id = $2`
 
 func (r *repositoryRepository) GetByID(
@@ -153,7 +155,7 @@ func (r *repositoryRepository) GetByID(
 
 const getRepositoryByFullNameQuery = `
 SELECT` + repositoryColumns + `
-FROM workspace_scm_repositories
+FROM workspace_scm_repositories AS r
 WHERE connection_id = $1 AND lower(full_name) = lower($2)`
 
 func (r *repositoryRepository) GetByFullName(
@@ -177,7 +179,7 @@ func (r *repositoryRepository) GetByFullName(
 
 const getRepositoryForDeliveryQuery = `
 SELECT` + repositoryColumns + `
-FROM workspace_scm_repositories
+FROM workspace_scm_repositories AS r
 WHERE id = $1`
 
 func (r *repositoryRepository) GetForDelivery(
@@ -200,7 +202,7 @@ func (r *repositoryRepository) GetForDelivery(
 
 const listRepositoriesByConnectionQuery = `
 SELECT` + repositoryColumns + `
-FROM workspace_scm_repositories
+FROM workspace_scm_repositories AS r
 WHERE connection_id = $1
 ORDER BY full_name`
 
@@ -213,7 +215,7 @@ func (r *repositoryRepository) ListByConnection(
 
 const listRepositoriesByWorkspaceQuery = `
 SELECT` + repositoryColumns + `
-FROM workspace_scm_repositories
+FROM workspace_scm_repositories AS r
 WHERE workspace_id = $1
 ORDER BY full_name`
 
@@ -278,13 +280,13 @@ func (r *repositoryRepository) WebhookSecret(
 }
 
 const updateRepositorySettingsQuery = `
-UPDATE workspace_scm_repositories
+UPDATE workspace_scm_repositories AS r
 SET mirror_label = $2,
     sync_direction = $3,
     webhooks_disabled = $4,
     poll_interval = make_interval(secs => $5),
     updated_at = now()
-WHERE id = $1
+WHERE r.id = $1
 RETURNING` + repositoryColumns
 
 func (r *repositoryRepository) UpdateSettings(

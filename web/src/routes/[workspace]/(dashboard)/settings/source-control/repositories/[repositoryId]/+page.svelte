@@ -303,14 +303,15 @@
 		<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
 			<h2 class="text-md font-medium tracking-snug text-ink-900">Routes</h2>
 			<p class="text-sm leading-normal text-muted-foreground text-pretty">
-				A route decides which team the changes under a path belong to. The longest matching path
-				wins, and a route with no path is where everything else goes. A repository with no route
-				reaches no issue at all.
+				A route narrows which team the changes under a path belong to. The longest matching path
+				wins, and a route with no path is where everything else goes.
 			</p>
 
 			{#if view.routes.length === 0}
-				<p class="text-sm text-destructive">
-					No team is routed, so nothing in this repository reaches an issue yet.
+				<p class="text-sm leading-normal text-muted-foreground text-pretty">
+					No route narrows this repository, so a change here can link an issue on any team. Add
+					one only to restrict it — once a route exists, changes whose paths match none of them
+					link nothing.
 				</p>
 			{:else}
 				<ul class="flex flex-col gap-2">

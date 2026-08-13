@@ -1,0 +1,93 @@
+name: pull-request
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: pull-request-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: norn-runner-set
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_USER: norn
+          POSTGRES_PASSWORD: norn
+          POSTGRES_DB: norn
+        options: >-
+          --health-cmd "pg_isready -U norn"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+
+    env:
+      NORN_POSTGRES_DSN: postgres://norn:norn@127.0.0.1:5432/norn?sslmode=disable
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Apply migrations
+        run: go run . migrate
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Lint
+        run: go tool golangci-lint run
+
+      - name: Vulnerabilities
+        run: go tool govulncheck ./...
+
+  frontend:
+    runs-on: norn-runner-set
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # Every step runs inside web/, because corepack reads packageManager from the nearest
+      # package.json: from the repository root it finds none and fetches whatever is newest,
+      # which pnpm then refuses as the wrong version.
+      - name: Use the pinned pnpm
+        run: corepack enable
+        working-directory: web
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        working-directory: web
+
+      - name: Contract has not drifted
+        run: pnpm gen:api:check
+        working-directory: web
+
+      - name: Types
+        run: pnpm check
+        working-directory: web
+
+      - name: Build
+        run: pnpm build
+        working-directory: web
