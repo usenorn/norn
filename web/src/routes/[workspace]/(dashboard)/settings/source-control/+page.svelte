@@ -2,38 +2,34 @@
 	import { page } from "$app/state";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import CircleCheck from "@lucide/svelte/icons/circle-check";
+	import GitBranch from "@lucide/svelte/icons/git-branch";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
 	import { api } from "$lib/api";
 	import * as Alert from "$lib/components/ui/alert";
 	import { Button } from "$lib/components/ui/button";
 	import * as Form from "$lib/components/ui/form";
-	import { Checkbox } from "$lib/components/ui/checkbox";
 	import { Input } from "$lib/components/ui/input";
-	import { Textarea } from "$lib/components/ui/textarea";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import GithubAppPanel from "$lib/source-control/github-app-panel.svelte";
+	import VerdictBanner from "$lib/source-control/verdict-banner.svelte";
 	import {
 		brokenLabel,
 		connectionLabel,
 		detailOf,
 		failureMessage,
 		providerLabel,
-		requiresAddress,
+		routingLabel,
+		sourceControlConnectPath,
 		sourceControlConnectionPath,
 		sourceControlFailure,
 		sourceControlIdentitiesPath,
 		sourceControlRepositoryPath,
-		type AvailableSourceControlRepository,
-		type MintedRepository,
+		sourceControlVerdict,
 		type SourceControlFailure,
 		type SourceControlView,
 	} from "$lib/source-control/source-control";
-	import {
-		addRepositorySchema,
-		connectSourceControlSchema,
-	} from "$lib/source-control/source-control-schema";
+	import { connectSourceControlSchema } from "$lib/source-control/source-control-schema";
 	import { sourceControlPreviewStates } from "./preview";
 	import type { PageData } from "./$types";
 
@@ -46,7 +42,6 @@
 	);
 
 	let loaded = $state.raw<SourceControlView | undefined>(undefined);
-	let minted = $state.raw<MintedRepository | undefined>(undefined);
 	let failure = $state.raw<SourceControlFailure | undefined>(undefined);
 	let failureDetail = $state("");
 
@@ -55,9 +50,31 @@
 
 	const connections = $derived(view.kind === "list" ? view.connections : []);
 	const githubConnection = $derived(
-		connections.find((connection) => connection.provider === "github") ?? null
+		connections.find((connection) => connection.provider === "github") ?? null,
 	);
 	const repositories = $derived(view.kind === "list" ? view.repositories : []);
+	const repositoriesUnavailable = $derived(
+		view.kind === "list" ? Boolean(view.repositoriesUnavailable) : false,
+	);
+
+	const shown = $derived(failure ?? preview?.failure);
+	const shownApplication = $derived(preview?.application ?? data.application);
+	const shownNotice = $derived(preview?.notice ?? data.notice);
+
+	const verdict = $derived(
+		sourceControlVerdict({
+			slug: workspace.slug,
+			application: shownApplication,
+			connections,
+			repositories,
+		}),
+	);
+
+	function deliversCentrally(connectionId: string): boolean {
+		return connections.some(
+			(connection) => connection.id === connectionId && connection.authKind === "app",
+		);
+	}
 
 	const connectForm = superForm(defaults(zod4(connectSourceControlSchema)), {
 		id: "connect-source-control",
@@ -101,11 +118,7 @@
 
 			if (!created) return;
 
-			loaded = {
-				kind: "list",
-				connections: [created, ...connections],
-				repositories,
-			};
+			loaded = { kind: "list", connections: [created, ...connections], repositories };
 		},
 	});
 
@@ -115,121 +128,6 @@
 		submitting: connecting,
 		delayed: connectDelayed,
 	} = connectForm;
-
-	const repositoryForm = superForm(defaults(zod4(addRepositorySchema)), {
-		id: "add-source-control-repository",
-		SPA: true,
-		validators: zod4Client(addRepositorySchema),
-		resetForm: false,
-		onUpdate: async ({ form: entered }) => {
-			if (!entered.valid) return;
-
-			failure = undefined;
-			failureDetail = "";
-
-			const { data: added, error } = await api.POST(
-				"/workspaces/{workspaceId}/source-control/repositories",
-				{
-					params: { path: { workspaceId: workspace.id } },
-					body: {
-						connectionId: entered.data.connectionId,
-						fullName: entered.data.fullName,
-						mirrorLabel: entered.data.mirrorLabel || undefined,
-					},
-				},
-			);
-
-			if (error) {
-				const mapped = sourceControlFailure(error);
-				const said = detailOf(error, mapped);
-
-				if (mapped.kind === "already_connected" || mapped.kind === "repository_unreachable") {
-					setError(entered, "fullName", said);
-				} else {
-					failure = mapped;
-					failureDetail = said;
-				}
-
-				return;
-			}
-
-			if (!added) return;
-
-			minted = added;
-			loaded = {
-				kind: "list",
-				connections,
-				repositories: [added.repository, ...repositories],
-			};
-		},
-	});
-
-	const {
-		form: repositoryFields,
-		enhance: repositoryEnhance,
-		submitting: adding,
-		delayed: addingDelayed,
-	} = repositoryForm;
-
-	const shown = $derived(failure ?? preview?.failure);
-	const shownMinted = $derived(minted ?? preview?.minted);
-	const shownApplication = $derived(preview?.application ?? data.application);
-	const shownNotice = $derived(preview?.notice ?? data.notice);
-
-	function deliversCentrally(connectionId: string): boolean {
-		return connections.some(
-			(connection) => connection.id === connectionId && connection.authKind === "app",
-		);
-	}
-
-	const chosenConnection = $derived(
-		connections.find((connection) => connection.id === $repositoryFields.connectionId),
-	);
-
-	let offered = $state.raw<AvailableSourceControlRepository[]>([]);
-	let offering = $state(false);
-	let offerUnreadable = $state(false);
-
-	const offeringConnectionId = $derived(
-		chosenConnection?.authKind === "app" ? chosenConnection.id : "",
-	);
-	const offeringWorkspaceId = $derived(workspace.id);
-
-	$effect(() => {
-		if (!offeringConnectionId) {
-			offered = [];
-			offerUnreadable = false;
-			offering = false;
-
-			return;
-		}
-
-		let current = true;
-		offering = true;
-		offerUnreadable = false;
-
-		api
-			.GET(
-				"/workspaces/{workspaceId}/source-control/connections/{connectionId}/available-repositories",
-				{
-					params: {
-						path: { workspaceId: offeringWorkspaceId, connectionId: offeringConnectionId },
-					},
-				},
-			)
-			.then(({ data: reachable, error: unreadable }) => {
-				if (!current) return;
-
-				offered = reachable ?? [];
-				offerUnreadable = Boolean(unreadable);
-				offering = false;
-			});
-
-		return () => {
-			current = false;
-			offering = false;
-		};
-	});
 </script>
 
 <svelte:head><title>Source control · {workspace.name} · Norn</title></svelte:head>
@@ -263,48 +161,7 @@
 			<Alert.Description>{failureMessage({ kind: "unavailable" })}</Alert.Description>
 		</Alert.Root>
 	{:else}
-		{#if shownMinted}
-			<section
-				class="flex flex-col gap-3 rounded-lg border border-line-subtle bg-card p-4"
-				aria-live="polite"
-			>
-				<h2 class="flex items-center gap-2 text-md font-medium tracking-snug text-ink-900">
-					<CircleCheck class="size-icon-row shrink-0 text-success" aria-hidden="true" />
-					{shownMinted.repository.fullName} is connected
-				</h2>
-				<p class="text-sm leading-normal text-muted-foreground text-pretty">
-					{#if deliversCentrally(shownMinted.repository.connectionId)}
-						Deliveries arrive through the application's own webhook, so this repository needs
-						none of its own.
-					{:else if shownMinted.repository.hookInstalled}
-						Norn installed the webhook for you. If you ever need to add it by hand, this is the
-						only time the secret is shown.
-					{:else}
-						Norn could not install the webhook — the token may not administer this repository.
-						Add it by hand; this is the only time the secret is shown.
-					{/if}
-				</p>
-				{#if !deliversCentrally(shownMinted.repository.connectionId)}
-					<dl class="flex flex-col gap-2 text-sm">
-						<div class="flex flex-col gap-0.5">
-							<dt class="text-muted-foreground">Payload address</dt>
-							<dd class="font-mono text-xs break-all text-ink-900">{shownMinted.webhookUrl}</dd>
-						</div>
-						<div class="flex flex-col gap-0.5">
-							<dt class="text-muted-foreground">Secret</dt>
-							<dd class="font-mono text-xs break-all text-ink-900">{shownMinted.webhookSecret}</dd>
-						</div>
-					</dl>
-				{/if}
-				<Button
-					variant="secondary"
-					href={sourceControlRepositoryPath(workspace.slug, shownMinted.repository.id)}
-					class="self-start"
-				>
-					Route it to a team
-				</Button>
-			</section>
-		{/if}
+		<VerdictBanner {verdict} />
 
 		{#if shown}
 			<Alert.Root variant="destructive">
@@ -319,6 +176,8 @@
 			application={shownApplication}
 			notice={shownNotice}
 			connectedTo={githubConnection ? connectionLabel(githubConnection) : null}
+			repositoryCount={repositories.length}
+			connectHref={sourceControlConnectPath(workspace.slug)}
 		/>
 
 		<section class="flex flex-col gap-2 rounded-lg border border-line-subtle p-4">
@@ -381,10 +240,39 @@
 		</section>
 
 		<section class="flex flex-col gap-3">
-			<h2 class="text-md font-medium tracking-snug text-ink-900">Repositories</h2>
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<h2 class="text-md font-medium tracking-snug text-ink-900">Repositories</h2>
+				{#if connections.length > 0 && repositories.length > 0}
+					<Button variant="secondary" href={sourceControlConnectPath(workspace.slug)}>
+						Connect a repository
+					</Button>
+				{/if}
+			</div>
 
-			{#if repositories.length === 0}
-				<p class="text-sm text-muted-foreground">No repository is connected yet.</p>
+			{#if repositoriesUnavailable}
+				<Alert.Root variant="destructive">
+					<TriangleAlert class="size-icon-row shrink-0" aria-hidden="true" />
+					<Alert.Title>The connected repositories could not be read</Alert.Title>
+					<Alert.Description>
+						This is not the same as having none. Until this loads, what Norn watches is unknown —
+						check your connection and reload.
+					</Alert.Description>
+				</Alert.Root>
+			{:else if repositories.length === 0}
+				<div
+					class="flex flex-col items-center gap-2 rounded-lg border border-line-default bg-paper-0 px-6 py-10 text-center"
+				>
+					<GitBranch class="size-5 text-muted-foreground" aria-hidden="true" />
+					<p class="max-w-100 text-sm leading-normal text-muted-foreground text-pretty">
+						Norn is watching nothing yet, so every event GitHub sends is discarded. Connect a
+						repository and its branches, commits and pull requests start reaching their issues.
+					</p>
+					{#if connections.length > 0}
+						<Button href={sourceControlConnectPath(workspace.slug)} class="mt-1">
+							Connect a repository
+						</Button>
+					{/if}
+				</div>
 			{:else}
 				<ul class="flex flex-col gap-3">
 					{#each repositories as repository (repository.id)}
@@ -398,10 +286,8 @@
 								<p class="text-sm text-muted-foreground">
 									{#if !repository.hookInstalled && !deliversCentrally(repository.connectionId)}
 										The webhook is not installed — the sweep is carrying it.
-									{:else if repository.routeCount === 0}
-										No team is routed yet, so nothing here reaches an issue.
 									{:else}
-										Watching for the label “{repository.mirrorLabel}”.
+										Watching for “{repository.mirrorLabel}”. {routingLabel(repository)}.
 									{/if}
 								</p>
 							</div>
@@ -417,16 +303,18 @@
 			{/if}
 		</section>
 
-		<form
-			method="POST"
-			use:connectEnhance
-			class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4"
-		>
-			<h2 class="text-md font-medium tracking-snug text-ink-900">Hold a credential</h2>
-			<p class="text-sm leading-normal text-muted-foreground text-pretty">
-				GitLab and Gitea have no application to install, so they are reached with a token. GitHub
-				accepts one too, until an application is set up.
-			</p>
+		<details class="rounded-lg border border-line-subtle p-4">
+			<summary
+				class="cursor-pointer text-md font-medium tracking-snug text-ink-900 marker:text-muted-foreground"
+			>
+				Connect without the application
+			</summary>
+
+			<form method="POST" use:connectEnhance class="mt-4 flex flex-col gap-4">
+				<p class="text-sm leading-normal text-muted-foreground text-pretty">
+					GitLab and Gitea have no application to install, so they are reached with a token. GitHub
+					accepts one too, until an application is set up.
+				</p>
 
 			<Form.Field form={connectForm} name="provider">
 				<Form.Control>
@@ -498,106 +386,12 @@
 				<Form.FieldErrors />
 			</Form.Field>
 
-			<div class="flex flex-wrap gap-2">
-				<Button type="submit" disabled={$connecting}>
-					{$connectDelayed ? "Checking the token…" : "Hold it"}
-				</Button>
-			</div>
-		</form>
-
-		{#if connections.length > 0}
-			<form
-				method="POST"
-				use:repositoryEnhance
-				class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4"
-			>
-				<h2 class="text-md font-medium tracking-snug text-ink-900">Connect a repository</h2>
-
-				<Form.Field form={repositoryForm} name="connectionId">
-					<Form.Control>
-						{#snippet children({ props })}
-							<Form.Label>Credential</Form.Label>
-							<select
-								{...props}
-								bind:value={$repositoryFields.connectionId}
-								class="h-9 rounded-md border border-line-subtle bg-transparent px-3 text-sm text-ink-900"
-							>
-								<option value="">Choose a connection</option>
-								{#each connections as connection (connection.id)}
-									<option value={connection.id}>
-										{providerLabel(connection.provider)} · {connectionLabel(connection)}
-									</option>
-								{/each}
-							</select>
-						{/snippet}
-					</Form.Control>
-					<Form.FieldErrors />
-				</Form.Field>
-
-				<Form.Field form={repositoryForm} name="fullName">
-					<Form.Control>
-						{#snippet children({ props })}
-							<Form.Label>Repository</Form.Label>
-							{#if chosenConnection?.authKind === "app"}
-								<select
-									{...props}
-									bind:value={$repositoryFields.fullName}
-									disabled={offering || offered.length === 0}
-									class="h-9 rounded-md border border-line-subtle bg-transparent px-3 text-sm text-ink-900"
-								>
-									<option value="">
-										{#if offering}
-											Reading what the installation reaches…
-										{:else if offerUnreadable}
-											GitHub could not be asked what this installation reaches
-										{:else if offered.length === 0}
-											This installation was granted no repositories
-										{:else}
-											Choose a repository
-										{/if}
-									</option>
-									{#each offered as available (available.externalId)}
-										<option value={available.fullName}>{available.fullName}</option>
-									{/each}
-								</select>
-							{:else}
-								<Input {...props} bind:value={$repositoryFields.fullName} placeholder="acme/api" />
-							{/if}
-						{/snippet}
-					</Form.Control>
-					<Form.Description>
-						{#if chosenConnection?.authKind === "app" && offerUnreadable}
-							The connection may have stopped working. Verify it, then try again.
-						{:else if chosenConnection?.authKind === "app"}
-							Only what you granted the installation is listed. Grant more on GitHub and it
-							appears here.
-						{:else}
-							Write it the way the platform does, as owner/name.
-						{/if}
-					</Form.Description>
-					<Form.FieldErrors />
-				</Form.Field>
-
-				<Form.Field form={repositoryForm} name="mirrorLabel">
-					<Form.Control>
-						{#snippet children({ props })}
-							<Form.Label>Label to watch for</Form.Label>
-							<Input {...props} bind:value={$repositoryFields.mirrorLabel} placeholder="norn" />
-						{/snippet}
-					</Form.Control>
-					<Form.Description>
-						A platform issue carrying this label is brought across and kept in step. Everything
-						else stays where it is.
-					</Form.Description>
-					<Form.FieldErrors />
-				</Form.Field>
-
 				<div class="flex flex-wrap gap-2">
-					<Button type="submit" disabled={$adding}>
-						{$addingDelayed ? "Reading the repository…" : "Connect it"}
+					<Button type="submit" disabled={$connecting}>
+						{$connectDelayed ? "Checking the token…" : "Hold it"}
 					</Button>
 				</div>
 			</form>
-		{/if}
+		</details>
 	{/if}
 </div>

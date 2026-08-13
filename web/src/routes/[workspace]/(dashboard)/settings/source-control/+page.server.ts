@@ -92,11 +92,14 @@ export const load: PageServerLoad = async ({
 		return { view: { kind: "empty" }, ...common };
 	}
 
+	// A repository listing that failed is not the same fact as a workspace that has connected
+	// none, and reporting them identically is what let "nothing is connected" pass for normal.
 	return {
 		view: {
 			kind: "list",
 			connections: listing.data,
 			repositories: repositories.data ?? [],
+			repositoriesUnavailable: Boolean(repositories.error),
 		},
 		...common,
 	};

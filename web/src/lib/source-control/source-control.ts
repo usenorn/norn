@@ -48,6 +48,8 @@ export type SourceControlView =
 			kind: "list";
 			connections: SourceControlConnection[];
 			repositories: SourceControlRepository[];
+			/** True when the repository listing itself failed, which is not the same as none. */
+			repositoriesUnavailable?: boolean;
 	  }
 	| { kind: "sealing_unavailable" }
 	| { kind: "forbidden" }
@@ -406,4 +408,124 @@ export function connectionLabel(connection: SourceControlConnection): string {
 
 export function routeLabel(route: SourceControlRoute): string {
 	return route.pathPrefix || "Everything else";
+}
+
+export function sourceControlConnectPath(slug: string): string {
+	return workspacePath(slug, "/settings/source-control/repositories/connect");
+}
+
+export type SourceControlStage =
+	| "unsupported"
+	| "install"
+	| "authorise"
+	| "connect_repository"
+	| "broken"
+	| "watching";
+
+export type SourceControlVerdict = {
+	stage: SourceControlStage;
+	tone: "warning" | "destructive" | "success" | "muted";
+	title: string;
+	detail: string;
+	/** Present when there is something to click that moves the stage on. */
+	action?: { label: string; href: string };
+};
+
+/**
+ * The whole pipeline reduced to the one stage it is stuck at. Every screen renders this rather
+ * than deciding for itself, because the failure this exists to prevent was each panel reporting
+ * its own step as fine while the pipeline as a whole did nothing.
+ */
+export function sourceControlVerdict(input: {
+	slug: string;
+	application: SourceControlAppState;
+	connections: SourceControlConnection[];
+	repositories: SourceControlRepository[];
+}): SourceControlVerdict {
+	const { slug, application, connections, repositories } = input;
+
+	const broken = connections.find((connection) => connection.status === "broken");
+
+	if (broken) {
+		return {
+			stage: "broken",
+			tone: "destructive",
+			title: `${connectionLabel(broken)} has stopped working`,
+			detail: `${brokenLabel(broken)}. Nothing from it reaches Norn until it is working again.`,
+			action: { label: "Open the connection", href: sourceControlConnectionPath(slug, broken.id) },
+		};
+	}
+
+	if (repositories.length > 0) {
+		const watching =
+			repositories.length === 1
+				? "Watching 1 repository."
+				: `Watching ${repositories.length} repositories.`;
+
+		return {
+			stage: "watching",
+			tone: "success",
+			title: watching,
+			detail:
+				"Branches, commits and pull requests naming an issue are linked to it as they happen.",
+		};
+	}
+
+	if (connections.length > 0) {
+		return {
+			stage: "connect_repository",
+			tone: "warning",
+			title: "No repository is connected",
+			detail:
+				"The credential is held and working, but Norn is not watching anything yet, so every event GitHub sends is discarded.",
+			action: { label: "Connect a repository", href: sourceControlConnectPath(slug) },
+		};
+	}
+
+	if (application.kind === "registered" && application.installed) {
+		return {
+			stage: "authorise",
+			tone: "warning",
+			title: "The application is installed but not connected",
+			detail: "Sign in to GitHub to say which installation this workspace uses.",
+		};
+	}
+
+	if (application.kind === "registered") {
+		return {
+			stage: "install",
+			tone: "warning",
+			title: "The application is not installed yet",
+			detail: "Install it on the repositories Norn should watch, then connect it here.",
+		};
+	}
+
+	if (application.kind === "choosing") {
+		return {
+			stage: "authorise",
+			tone: "warning",
+			title: "Choose the installation this workspace uses",
+			detail: "You are signed in to GitHub. Pick the account whose repositories Norn watches.",
+		};
+	}
+
+	return {
+		stage: "unsupported",
+		tone: "muted",
+		title: "No application is set up on this instance",
+		detail: "A credential can still be held directly, which reaches as far as that token does.",
+	};
+}
+
+/**
+ * Routes only ever narrow. A repository carrying none reaches every team, so the absence of
+ * routes is the working state and must never be reported as a problem.
+ */
+export function routingLabel(repository: SourceControlRepository): string {
+	const routes = repository.routeCount ?? 0;
+
+	if (routes === 0) return "Any team can be linked from it";
+	if (routes === 1) return "Narrowed to 1 routed path";
+
+	return `Narrowed to ${routes} routed paths`;
 }
