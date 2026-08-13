@@ -245,6 +245,42 @@ func (r *linkRepository) collect(
 	return links, nil
 }
 
+const claimAnnouncementQuery = `
+UPDATE workspace_code_links
+SET announced_at = $2, updated_at = now()
+WHERE id = $1 AND announced_at IS NULL`
+
+func (r *linkRepository) ClaimAnnouncement(
+	ctx context.Context,
+	linkID uuid.UUID,
+	at time.Time,
+) (bool, error) {
+	result, err := r.db.Querier(ctx).ExecContext(ctx, claimAnnouncementQuery, linkID, at)
+	if err != nil {
+		return false, fmt.Errorf("claim a linked change announcement: %w", err)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("read affected rows: %w", err)
+	}
+
+	return affected > 0, nil
+}
+
+const releaseAnnouncementQuery = `
+UPDATE workspace_code_links
+SET announced_at = NULL, updated_at = now()
+WHERE id = $1`
+
+func (r *linkRepository) ReleaseAnnouncement(ctx context.Context, linkID uuid.UUID) error {
+	if _, err := r.db.Querier(ctx).ExecContext(ctx, releaseAnnouncementQuery, linkID); err != nil {
+		return fmt.Errorf("release a linked change announcement: %w", err)
+	}
+
+	return nil
+}
+
 const claimTransitionQuery = `
 INSERT INTO workspace_code_link_transitions (link_id, transition, issue_id, state_id, applied_at)
 VALUES ($1, $2, $3, $4, $5)

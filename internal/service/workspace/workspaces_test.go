@@ -17,6 +17,7 @@ import (
 	breakglassrepo "github.com/usenorn/norn/internal/repository/breakglass"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	throttlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	ssoconnectionrepo "github.com/usenorn/norn/internal/repository/ssoconnection"
 	ssoidentityrepo "github.com/usenorn/norn/internal/repository/ssoidentity"
@@ -41,6 +42,7 @@ type harness struct {
 	teams        *teamrepo.MockTeam
 	teamMembers  *teammemberrepo.MockTeamMember
 	states       *workflowstaterepo.MockWorkflowState
+	rules        *scmrepo.MockSCMTransitionRule
 	authPolicies *authpolicyrepo.MockWorkspaceAuthPolicy
 	connections  *ssoconnectionrepo.MockSSOConnection
 	identities   *ssoidentityrepo.MockSSOIdentity
@@ -91,6 +93,7 @@ func newHarnessWithLicence(t *testing.T, licence entity.Licence) *harness {
 		teams:        teamrepo.NewMockTeam(ctrl),
 		teamMembers:  teammemberrepo.NewMockTeamMember(ctrl),
 		states:       workflowstaterepo.NewMockWorkflowState(ctrl),
+		rules:        scmrepo.NewMockSCMTransitionRule(ctrl),
 		authPolicies: authpolicyrepo.NewMockWorkspaceAuthPolicy(ctrl),
 		connections:  ssoconnectionrepo.NewMockSSOConnection(ctrl),
 		identities:   ssoidentityrepo.NewMockSSOIdentity(ctrl),
@@ -108,6 +111,7 @@ func newHarnessWithLicence(t *testing.T, licence entity.Licence) *harness {
 		h.teams,
 		h.teamMembers,
 		h.states,
+		h.rules,
 		h.authPolicies,
 		h.connections,
 		h.identities,

@@ -46,6 +46,7 @@ var TableNames = struct {
 	WorkspaceIssueMirrorConflicts     string
 	WorkspaceIssueMirrors             string
 	WorkspaceIssueNumbers             string
+	WorkspaceIssueQuestions           string
 	WorkspaceIssueRelations           string
 	WorkspaceIssues                   string
 	WorkspaceLabelGroups              string
@@ -127,6 +128,7 @@ var TableNames = struct {
 	WorkspaceIssueMirrorConflicts:     "workspace_issue_mirror_conflicts",
 	WorkspaceIssueMirrors:             "workspace_issue_mirrors",
 	WorkspaceIssueNumbers:             "workspace_issue_numbers",
+	WorkspaceIssueQuestions:           "workspace_issue_questions",
 	WorkspaceIssueRelations:           "workspace_issue_relations",
 	WorkspaceIssues:                   "workspace_issues",
 	WorkspaceLabelGroups:              "workspace_label_groups",

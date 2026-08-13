@@ -683,6 +683,21 @@ func (m *MockCodeLink) EXPECT() *MockCodeLinkMockRecorder {
 	return m.recorder
 }
 
+// ClaimAnnouncement mocks base method.
+func (m *MockCodeLink) ClaimAnnouncement(ctx context.Context, linkID uuid.UUID, at time.Time) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClaimAnnouncement", ctx, linkID, at)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClaimAnnouncement indicates an expected call of ClaimAnnouncement.
+func (mr *MockCodeLinkMockRecorder) ClaimAnnouncement(ctx, linkID, at any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClaimAnnouncement", reflect.TypeOf((*MockCodeLink)(nil).ClaimAnnouncement), ctx, linkID, at)
+}
+
 // ClaimTransition mocks base method.
 func (m *MockCodeLink) ClaimTransition(ctx context.Context, linkID uuid.UUID, transition entity.CodeChangeState, issueID, stateID uuid.UUID, at time.Time) (bool, error) {
 	m.ctrl.T.Helper()
@@ -814,6 +829,20 @@ func (m *MockCodeLink) ListReviewers(ctx context.Context, linkIDs []uuid.UUID) (
 func (mr *MockCodeLinkMockRecorder) ListReviewers(ctx, linkIDs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListReviewers", reflect.TypeOf((*MockCodeLink)(nil).ListReviewers), ctx, linkIDs)
+}
+
+// ReleaseAnnouncement mocks base method.
+func (m *MockCodeLink) ReleaseAnnouncement(ctx context.Context, linkID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReleaseAnnouncement", ctx, linkID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReleaseAnnouncement indicates an expected call of ReleaseAnnouncement.
+func (mr *MockCodeLinkMockRecorder) ReleaseAnnouncement(ctx, linkID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseAnnouncement", reflect.TypeOf((*MockCodeLink)(nil).ReleaseAnnouncement), ctx, linkID)
 }
 
 // ReplaceReviewers mocks base method.
@@ -1506,6 +1535,20 @@ func NewMockSCMTransitionRule(ctrl *gomock.Controller) *MockSCMTransitionRule {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSCMTransitionRule) EXPECT() *MockSCMTransitionRuleMockRecorder {
 	return m.recorder
+}
+
+// CreateMany mocks base method.
+func (m *MockSCMTransitionRule) CreateMany(ctx context.Context, rules entity.SCMTransitionRules) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateMany", ctx, rules)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateMany indicates an expected call of CreateMany.
+func (mr *MockSCMTransitionRuleMockRecorder) CreateMany(ctx, rules any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateMany", reflect.TypeOf((*MockSCMTransitionRule)(nil).CreateMany), ctx, rules)
 }
 
 // Delete mocks base method.

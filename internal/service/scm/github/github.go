@@ -416,6 +416,23 @@ func (f *Forge) Issues(
 	return page, nil
 }
 
+func (f *Forge) PostChangeComment(
+	ctx context.Context,
+	target entity.SCMTarget,
+	number int,
+	body string,
+) error {
+	_, err := f.call(
+		ctx,
+		target,
+		http.MethodPost,
+		f.issuePath(target, number)+"/comments",
+		map[string]any{"body": body},
+	)
+
+	return err
+}
+
 func (f *Forge) issuePath(target entity.SCMTarget, number int) string {
 	return "/repos/" + target.Repository + "/issues/" + strconv.Itoa(number)
 }

@@ -199,3 +199,38 @@ func TestAVerbBindsToTheReferenceItPrecedes(t *testing.T) {
 		t.Error("ENG-2 is a bare mention; a verb earlier in the line must not reach it")
 	}
 }
+
+func TestABranchNamedAfterAnIssueDrivesItLikeAClosingKeyword(t *testing.T) {
+	found := entity.ScanChangeReferences(
+		"vlad/ENG-12-rewrite-the-importer",
+		"Rewrite the importer",
+		"Groundwork for ENG-99.",
+	)
+
+	if len(found) != 2 {
+		t.Fatalf("ScanChangeReferences found %v, want ENG-12 and ENG-99", found)
+	}
+
+	if found[0].Reference != (entity.IssueReference{Key: "ENG", Number: 12}) || !found[0].Resolving {
+		t.Errorf(
+			"the branch reference is %v resolving=%t, want ENG-12 resolving — a change opened "+
+				"from a Norn branch has to move its issue without anybody typing a keyword",
+			found[0].Reference, found[0].Resolving,
+		)
+	}
+
+	if found[1].Reference != (entity.IssueReference{Key: "ENG", Number: 99}) || found[1].Resolving {
+		t.Errorf(
+			"the body reference is %v resolving=%t, want ENG-99 not resolving",
+			found[1].Reference, found[1].Resolving,
+		)
+	}
+}
+
+func TestAKeywordInTheBodyStillResolvesAnIssueTheBranchDoesNotName(t *testing.T) {
+	found := entity.ScanChangeReferences("hotfix", "Patch the parser", "Fixes ENG-7")
+
+	if len(found) != 1 || !found[0].Resolving {
+		t.Fatalf("ScanChangeReferences = %v, want ENG-7 resolving", found)
+	}
+}

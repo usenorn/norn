@@ -94,7 +94,32 @@ func (r SCMRoute) Covers(path string) bool {
 	return cleaned == r.PathPrefix || strings.HasPrefix(cleaned, r.PathPrefix+"/")
 }
 
+type SCMRouting struct {
+	EveryTeam bool
+	Teams     []uuid.UUID
+}
+
+func (r SCMRouting) Covers(teamID uuid.UUID) bool {
+	return r.EveryTeam || containsID(r.Teams, teamID)
+}
+
+func (r SCMRouting) Single() (uuid.UUID, bool) {
+	if r.EveryTeam || len(r.Teams) != 1 {
+		return uuid.Nil, false
+	}
+
+	return r.Teams[0], true
+}
+
 type SCMRoutes []SCMRoute
+
+func (routes SCMRoutes) Route(paths []string) SCMRouting {
+	if len(routes) == 0 {
+		return SCMRouting{EveryTeam: true}
+	}
+
+	return SCMRouting{Teams: routes.Teams(paths)}
+}
 
 func (routes SCMRoutes) Teams(paths []string) []uuid.UUID {
 	if len(paths) == 0 {
@@ -139,6 +164,10 @@ func (routes SCMRoutes) teamsFor(path string) []uuid.UUID {
 }
 
 func (routes SCMRoutes) Reaches(teamID uuid.UUID) bool {
+	if len(routes) == 0 {
+		return true
+	}
+
 	for _, route := range routes {
 		if route.TeamID == teamID {
 			return true

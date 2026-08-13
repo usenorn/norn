@@ -51,6 +51,7 @@ type WorkspaceCodeLink struct {
 	Checks          string            `boil:"checks" json:"checks" toml:"checks" yaml:"checks"`
 	MergeCommitSha  string            `boil:"merge_commit_sha" json:"merge_commit_sha" toml:"merge_commit_sha" yaml:"merge_commit_sha"`
 	HeadSha         string            `boil:"head_sha" json:"head_sha" toml:"head_sha" yaml:"head_sha"`
+	AnnouncedAt     null.Time         `boil:"announced_at" json:"announced_at,omitempty" toml:"announced_at" yaml:"announced_at,omitempty"`
 
 	R *workspaceCodeLinkR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceCodeLinkL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -83,6 +84,7 @@ var WorkspaceCodeLinkColumns = struct {
 	Checks          string
 	MergeCommitSha  string
 	HeadSha         string
+	AnnouncedAt     string
 }{
 	ID:              "id",
 	WorkspaceID:     "workspace_id",
@@ -110,6 +112,7 @@ var WorkspaceCodeLinkColumns = struct {
 	Checks:          "checks",
 	MergeCommitSha:  "merge_commit_sha",
 	HeadSha:         "head_sha",
+	AnnouncedAt:     "announced_at",
 }
 
 var WorkspaceCodeLinkTableColumns = struct {
@@ -139,6 +142,7 @@ var WorkspaceCodeLinkTableColumns = struct {
 	Checks          string
 	MergeCommitSha  string
 	HeadSha         string
+	AnnouncedAt     string
 }{
 	ID:              "workspace_code_links.id",
 	WorkspaceID:     "workspace_code_links.workspace_id",
@@ -166,6 +170,7 @@ var WorkspaceCodeLinkTableColumns = struct {
 	Checks:          "workspace_code_links.checks",
 	MergeCommitSha:  "workspace_code_links.merge_commit_sha",
 	HeadSha:         "workspace_code_links.head_sha",
+	AnnouncedAt:     "workspace_code_links.announced_at",
 }
 
 // Generated where
@@ -197,6 +202,7 @@ var WorkspaceCodeLinkWhere = struct {
 	Checks          whereHelperstring
 	MergeCommitSha  whereHelperstring
 	HeadSha         whereHelperstring
+	AnnouncedAt     whereHelpernull_Time
 }{
 	ID:              whereHelperstring{field: "\"workspace_code_links\".\"id\""},
 	WorkspaceID:     whereHelperstring{field: "\"workspace_code_links\".\"workspace_id\""},
@@ -224,6 +230,7 @@ var WorkspaceCodeLinkWhere = struct {
 	Checks:          whereHelperstring{field: "\"workspace_code_links\".\"checks\""},
 	MergeCommitSha:  whereHelperstring{field: "\"workspace_code_links\".\"merge_commit_sha\""},
 	HeadSha:         whereHelperstring{field: "\"workspace_code_links\".\"head_sha\""},
+	AnnouncedAt:     whereHelpernull_Time{field: "\"workspace_code_links\".\"announced_at\""},
 }
 
 // WorkspaceCodeLinkRels is where relationship names are stored.
@@ -377,9 +384,9 @@ func (r *workspaceCodeLinkR) GetLinkWorkspaceSCMReleaseLinks() WorkspaceSCMRelea
 type workspaceCodeLinkL struct{}
 
 var (
-	workspaceCodeLinkAllColumns            = []string{"id", "workspace_id", "issue_id", "repository_id", "provider", "repository_name", "kind", "external_id", "number", "title", "url", "state", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at", "checks", "merge_commit_sha", "head_sha"}
+	workspaceCodeLinkAllColumns            = []string{"id", "workspace_id", "issue_id", "repository_id", "provider", "repository_name", "kind", "external_id", "number", "title", "url", "state", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at", "checks", "merge_commit_sha", "head_sha", "announced_at"}
 	workspaceCodeLinkColumnsWithoutDefault = []string{"workspace_id", "issue_id", "provider", "repository_name", "kind", "external_id"}
-	workspaceCodeLinkColumnsWithDefault    = []string{"id", "repository_id", "number", "title", "url", "state", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at", "checks", "merge_commit_sha", "head_sha"}
+	workspaceCodeLinkColumnsWithDefault    = []string{"id", "repository_id", "number", "title", "url", "state", "author", "head_branch", "base_branch", "paths", "detected_in", "resolving", "source_updated_at", "merged_at", "closed_at", "created_at", "updated_at", "checks", "merge_commit_sha", "head_sha", "announced_at"}
 	workspaceCodeLinkPrimaryKeyColumns     = []string{"id"}
 	workspaceCodeLinkGeneratedColumns      = []string{}
 )
