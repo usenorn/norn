@@ -34,7 +34,7 @@
 		accounts: SignedInAccount[];
 		actingAccountId: string;
 		workspace?: WorkspaceContext;
-		trigger?: "workspace" | "avatar";
+		trigger?: "workspace" | "avatar" | "person";
 		class?: string;
 	} = $props();
 
@@ -63,12 +63,12 @@
 	<DropdownMenu.Trigger
 		class={[
 			"flex items-center text-left motion-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-			trigger === "workspace"
-				? "h-8.5 w-full gap-2 rounded-md px-1.5 hover:bg-accent"
-				: "rounded-full",
+			trigger === "avatar"
+				? "rounded-full"
+				: "h-8.5 w-full gap-2 rounded-md px-1.5 hover:bg-accent",
 			className,
 		]}
-		aria-label="Switch account or workspace"
+		aria-label={trigger === "person" ? "Your account" : "Switch account or workspace"}
 	>
 		{#if trigger === "workspace" && workspace}
 			<WorkspaceMark name={workspace.name} />
@@ -83,10 +83,22 @@
 				{/if}
 				<Avatar.Fallback>{initialsOf(acting?.account.displayName ?? "")}</Avatar.Fallback>
 			</Avatar.Root>
+
+			{#if trigger === "person"}
+				<span class="min-w-0 flex-1 truncate text-sm text-ink-600">
+					{acting?.account.displayName}
+				</span>
+				<ChevronsUpDown class="size-icon-row shrink-0 text-muted-foreground" aria-hidden="true" />
+			{/if}
 		{/if}
 	</DropdownMenu.Trigger>
 
-	<DropdownMenu.Content align="start" sideOffset={4} width="menu">
+	<DropdownMenu.Content
+		align="start"
+		side={trigger === "person" ? "top" : "bottom"}
+		sideOffset={4}
+		width="menu"
+	>
 		{#each accounts as signedIn (signedIn.account.id)}
 			<DropdownMenu.Group>
 				<DropdownMenu.GroupHeading class="flex items-center justify-between gap-2 px-2 py-1.5">
@@ -198,6 +210,19 @@
 				</a>
 			{/snippet}
 		</DropdownMenu.Item>
+
+		<DropdownMenu.Separator />
+
+		{#if acting}
+			<DropdownMenu.Item variant="destructive">
+				{#snippet child({ props })}
+					<button type="submit" form={signOutForm(acting.account.id)} {...props}>
+						<LogOut aria-hidden="true" />
+						Sign out
+					</button>
+				{/snippet}
+			</DropdownMenu.Item>
+		{/if}
 
 		{#if accounts.length > 1}
 			<DropdownMenu.Item variant="destructive">

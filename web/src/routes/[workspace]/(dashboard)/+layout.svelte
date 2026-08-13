@@ -34,7 +34,6 @@
 	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
 	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
 	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import {
@@ -47,7 +46,6 @@
 	import { viewEntries, viewsPath } from "$lib/views/views";
 	import { cyclePath } from "$lib/cycles/cycles";
 	import { projectPath, projectsPath } from "$lib/projects/projects";
-	import { initialsOf } from "$lib/team/members";
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();
@@ -120,7 +118,6 @@
 	const views = $derived(viewEntries(slug, data.views ?? []));
 	const tabs = $derived(mobileNav(slug));
 
-	const initials = $derived(initialsOf(data.member.name));
 	const teams = $derived((data.teams ?? []).filter((team) => team.status === "active"));
 	const cycleFor = $derived((teamId: string) => data.cycles.find((entry) => entry.teamId === teamId));
 </script>
@@ -264,10 +261,12 @@
 		</div>
 
 		<div class="mt-2 flex h-9.5 items-center gap-2 border-t border-line-default px-1.5">
-			<Avatar.Root size="sm">
-				<Avatar.Fallback>{initials}</Avatar.Fallback>
-			</Avatar.Root>
-			<span class="min-w-0 flex-1 truncate text-sm text-ink-600">{data.member.name}</span>
+			<AccountSwitcher
+				accounts={data.accounts}
+				actingAccountId={data.member.id}
+				workspace={{ slug, name: data.workspace.name }}
+				trigger="person"
+			/>
 			<Button
 				href={workspacePath(slug, "/settings")}
 				variant="ghost"
