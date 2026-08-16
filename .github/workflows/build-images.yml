@@ -28,10 +28,10 @@ jobs:
         include:
           - image: norn-api
             dockerfile: Dockerfile.api
-            build-args: VERSION
+            build_args: VERSION
           - image: norn-web
             dockerfile: Dockerfile.web
-            build-args: ""
+            build_args: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +61,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: ${{ matrix.build-args && format('{0}={1}', matrix.build-args, inputs.version) || '' }}
+          build-args: ${{ matrix.build_args && format('{0}={1}', matrix.build_args, inputs.version) || '' }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
