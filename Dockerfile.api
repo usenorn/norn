@@ -17,9 +17,6 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
 # directory, so a stray file there would silently supply configuration.
 FROM gcr.io/distroless/static-debian12:nonroot
 
-# Declared after the final FROM so the compile stage above stays version-independent and
-# cached. viper reads this as app.version; it answers on /v1/health and /v1/instance. An
-# envFrom entry would override it, so NORN_APP_VERSION must stay out of the norn-app Secret.
 ARG VERSION=dev
 ENV NORN_APP_VERSION=${VERSION}
 

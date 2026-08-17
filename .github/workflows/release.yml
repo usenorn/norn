@@ -14,6 +14,7 @@ jobs:
     outputs:
       tag: ${{ steps.resolve.outputs.tag }}
       number: ${{ steps.resolve.outputs.number }}
+      series: ${{ steps.resolve.outputs.series }}
     steps:
       - id: resolve
         env:
@@ -24,8 +25,11 @@ jobs:
             echo "release tag must be vMAJOR.MINOR.PATCH with an optional prerelease suffix; got '$TAG'" >&2
             exit 1
           fi
+          number="${TAG#v}"
+          base="${number%%-*}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "number=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          echo "series=v${base%.*}" >> "$GITHUB_OUTPUT"
 
   images:
     needs: version
@@ -36,8 +40,8 @@ jobs:
     with:
       version: ${{ needs.version.outputs.tag }}
       tags: |
-        type=semver,pattern=v{{version}}
-        type=semver,pattern=v{{major}}.{{minor}}
+        type=raw,value=${{ needs.version.outputs.tag }}
+        type=raw,value=${{ needs.version.outputs.series }},enable=${{ !github.event.release.prerelease }}
         type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
 
   ship:
