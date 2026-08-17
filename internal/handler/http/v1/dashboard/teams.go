@@ -13,8 +13,8 @@ func (h *handler) ListWorkspaceTeams(ctx context.Context, request api.ListWorksp
 		return unauthorized(), nil
 	}
 
-	var status entity.TeamStatus
-	if request.Params.Status != nil {
+	status := entity.DefaultTeamStatus
+	if request.Params.Status != nil && *request.Params.Status != "" {
 		status = entity.TeamStatus(*request.Params.Status)
 	}
 

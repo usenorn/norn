@@ -7,6 +7,7 @@ import {
 	readDisplay,
 	readLayout,
 	readTab,
+	readTeam,
 	writeDisplay,
 	type Display,
 	type IssueLayout,
@@ -64,7 +65,8 @@ export const load: PageServerLoad = async ({
 
 	const q = url.searchParams;
 	const remembered = displayCookie(member.id, workspace.id);
-	const chosen = carriesDisplay(q) ? q : new URLSearchParams(cookies.get(remembered) ?? "");
+	const stored = new URLSearchParams(cookies.get(remembered) ?? "");
+	const chosen = carriesDisplay(q) ? q : stored;
 
 	const facets = readFacets(q);
 	const display = readDisplay(chosen);
@@ -72,25 +74,28 @@ export const load: PageServerLoad = async ({
 	const tab = readTab(chosen);
 	const today = calendarDate(now, workspace.timezone);
 
-	if (carriesDisplay(q)) {
-		cookies.set(remembered, writeDisplay(display, layout, tab).toString(), {
+	const options = { tab, layout, facets, display, today };
+
+	const available = teams ?? [];
+	const applied = appliedView(q.get("view") ?? "", views ?? [], available);
+	const requested = readTeam(q) ?? readTeam(stored);
+
+	const team =
+		applied.kind === "applied"
+			? applied.team
+			: (available.find((candidate) => candidate.key === requested) ?? available[0] ?? null);
+
+	const keep = team && applied.kind !== "applied" ? team.key : readTeam(stored);
+	const persist = writeDisplay(display, layout, tab, keep).toString();
+
+	if (persist !== cookies.get(remembered)) {
+		cookies.set(remembered, persist, {
 			path: "/",
 			httpOnly: true,
 			sameSite: "lax",
 			maxAge: 60 * 60 * 24 * 365,
 		});
 	}
-
-	const options = { tab, layout, facets, display, today };
-
-	const available = teams ?? [];
-	const applied = appliedView(q.get("view") ?? "", views ?? [], available);
-	const requested = q.get("team")?.toUpperCase();
-
-	const team =
-		applied.kind === "applied"
-			? applied.team
-			: (available.find((candidate) => candidate.key === requested) ?? available[0] ?? null);
 
 	if (available.length === 0) {
 		return {

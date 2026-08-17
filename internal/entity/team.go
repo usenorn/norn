@@ -35,6 +35,8 @@ const (
 	TeamStatusArchived TeamStatus = "archived"
 )
 
+const DefaultTeamStatus = TeamStatusActive
+
 func (s TeamStatus) Valid() bool {
 	switch s {
 	case TeamStatusActive, TeamStatusArchived:

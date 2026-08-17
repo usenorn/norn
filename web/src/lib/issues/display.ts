@@ -90,6 +90,10 @@ export function readTab(params: URLSearchParams): IssueTab {
 	return pick(params.get("tab"), issueTabs, "active");
 }
 
+export function readTeam(params: URLSearchParams): string | null {
+	return params.get("team")?.toUpperCase() || null;
+}
+
 export const displayKeys = ["group", "order", "empty", "hide", "layout", "tab"] as const;
 
 export function carriesDisplay(params: URLSearchParams): boolean {
@@ -99,7 +103,8 @@ export function carriesDisplay(params: URLSearchParams): boolean {
 export function writeDisplay(
 	display: Display,
 	layout: IssueLayout,
-	tab: IssueTab
+	tab: IssueTab,
+	teamKey: string | null
 ): URLSearchParams {
 	const hidden = rowProperties.filter((property) => !display.shown.includes(property));
 	const params = new URLSearchParams();
@@ -110,6 +115,8 @@ export function writeDisplay(
 	params.set("hide", hidden.join(","));
 	params.set("layout", layout);
 	params.set("tab", tab);
+
+	if (teamKey) params.set("team", teamKey);
 
 	return params;
 }

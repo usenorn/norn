@@ -1049,6 +1049,7 @@ paths:
         - name: status
           in: query
           required: false
+          description: Which teams to list; defaults to active teams only
           schema: { $ref: '#/components/schemas/TeamStatus' }
       responses:
         '200':

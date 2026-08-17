@@ -8517,6 +8517,7 @@ export interface operations {
     listWorkspaceTeams: {
         parameters: {
             query?: {
+                /** @description Which teams to list; defaults to active teams only */
                 status?: components["schemas"]["TeamStatus"];
             };
             header?: never;

@@ -118,7 +118,7 @@
 	const views = $derived(viewEntries(slug, data.views ?? []));
 	const tabs = $derived(mobileNav(slug));
 
-	const teams = $derived((data.teams ?? []).filter((team) => team.status === "active"));
+	const teams = $derived(data.teams ?? []);
 	const cycleFor = $derived((teamId: string) => data.cycles.find((entry) => entry.teamId === teamId));
 </script>
 

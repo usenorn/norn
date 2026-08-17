@@ -7811,6 +7811,7 @@ type ListWorkspaceSourceControlRepositoriesParams struct {
 
 // ListWorkspaceTeamsParams defines parameters for ListWorkspaceTeams.
 type ListWorkspaceTeamsParams struct {
+	// Status Which teams to list; defaults to active teams only
 	Status *TeamStatus `form:"status,omitempty" json:"status,omitempty"`
 }
 

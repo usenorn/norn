@@ -242,7 +242,7 @@
 
 		for (const [kind, value] of Object.entries(facets)) if (value) q.set(kind, value);
 
-		for (const [key, value] of writeDisplay(display, data.layout, data.tab)) q.set(key, value);
+		for (const [key, value] of writeDisplay(display, data.layout, data.tab, null)) q.set(key, value);
 
 		return q;
 	});

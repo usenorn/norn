@@ -207,7 +207,10 @@
 
 			if (changed) {
 				submitted = settingsFor(changed);
-				await invalidate(keys.page(page.route.id));
+				await Promise.all([
+					invalidate(keys.page(page.route.id)),
+					invalidate(keys.workspaceScope(data.workspace.id)),
+				]);
 
 				return;
 			}

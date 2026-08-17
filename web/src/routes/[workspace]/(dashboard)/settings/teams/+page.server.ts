@@ -16,13 +16,17 @@ import type { Actions, PageServerLoad } from "./$types";
 type CreateTeamForm = Infer<typeof createTeamSchema>;
 type CreateTeamOutcome = { kind: "created"; team: Team } | TeamCreationFailure;
 
-export const load: PageServerLoad = async ({ depends, route, parent }) => {
+export const load: PageServerLoad = async ({ depends, route, locals, parent }) => {
 	depends(keys.page(route.id));
 
-	const { teams } = await parent();
+	const { workspace, teams } = await parent();
+
+	const archived = await locals.api.GET("/workspaces/{workspaceId}/teams", {
+		params: { path: { workspaceId: workspace.id }, query: { status: "archived" } },
+	});
 
 	return {
-		listing: listingFor(teams),
+		listing: listingFor(teams && [...teams, ...(archived.data ?? [])]),
 		form: await superValidate<CreateTeamForm, CreateTeamOutcome>(zod4(createTeamSchema)),
 	};
 };
@@ -59,9 +63,12 @@ export const actions: Actions = {
 		if (error.status === 403) return message(form, { kind: "forbidden" }, { status: 403 });
 
 		if (error.status === 409) {
-			const existing = await locals.api.GET("/workspaces/{workspaceId}/teams", {
-				params: { path },
-			});
+			const [active, archived] = await Promise.all([
+				locals.api.GET("/workspaces/{workspaceId}/teams", { params: { path } }),
+				locals.api.GET("/workspaces/{workspaceId}/teams", {
+					params: { path, query: { status: "archived" } },
+				}),
+			]);
 
 			return message(
 				form,
@@ -71,7 +78,7 @@ export const actions: Actions = {
 					suggestions: teamKeySuggestions(
 						form.data.name,
 						form.data.key,
-						(existing.data ?? []).map((team) => team.key)
+						[...(active.data ?? []), ...(archived.data ?? [])].map((team) => team.key)
 					),
 				},
 				{ status: 409 }

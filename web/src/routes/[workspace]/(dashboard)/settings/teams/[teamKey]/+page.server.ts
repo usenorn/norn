@@ -57,7 +57,16 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 
 	if (!teams) return { ...unavailable, form };
 
-	const team = teams.find((candidate) => candidate.key === params.teamKey.toUpperCase());
+	const key = params.teamKey.toUpperCase();
+	const byKey = (candidate: Team) => candidate.key === key;
+
+	const team =
+		teams.find(byKey) ??
+		(
+			await locals.api.GET("/workspaces/{workspaceId}/teams", {
+				params: { path: { workspaceId: workspace.id }, query: { status: "archived" } },
+			})
+		).data?.find(byKey);
 
 	if (!team) return { ...unavailable, settings: { kind: "not_found" } as TeamSettings, form };
 
