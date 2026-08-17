@@ -6,7 +6,6 @@
 data
 deploy/local
 docker-compose.yml
-manifests
 web/node_modules
 web/build
 web/.svelte-kit

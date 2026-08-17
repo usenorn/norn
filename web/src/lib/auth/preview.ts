@@ -5,7 +5,7 @@ export const authPreviewDeployments: Record<string, Partial<Instance>> = {
 	"self-hosted": {
 		selfHosted: true,
 		host: "norn.northwind.internal",
-		version: "1.4.2",
+		version: "v1.4.2",
 	},
 };
 

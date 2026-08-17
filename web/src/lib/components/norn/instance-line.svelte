@@ -6,6 +6,6 @@
 
 {#if instance.selfHosted && instance.version}
 	<p class="text-center font-mono text-xs break-all text-muted-foreground">
-		{instance.host} · v{instance.version}
+		{instance.host} · {instance.version}
 	</p>
 {/if}

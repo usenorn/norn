@@ -1,0 +1,61 @@
+name: release
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      number: ${{ steps.resolve.outputs.number }}
+    steps:
+      - id: resolve
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "release tag must be vMAJOR.MINOR.PATCH with an optional prerelease suffix; got '$TAG'" >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "number=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+  images:
+    needs: version
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-images.yml
+    with:
+      version: ${{ needs.version.outputs.tag }}
+      tags: |
+        type=semver,pattern=v{{version}}
+        type=semver,pattern=v{{major}}.{{minor}}
+        type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
+
+  ship:
+    needs: [version, images]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy production
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_DISPATCH_TOKEN }}
+        run: |
+          gh workflow run deploy.yml --repo usenorn/infrastructure --ref main \
+            --field version='${{ needs.version.outputs.tag }}'
+
+      - name: Publish the chart
+        if: ${{ !github.event.release.prerelease }}
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_DISPATCH_TOKEN }}
+        run: |
+          gh workflow run release.yml --repo usenorn/charts --ref main \
+            --field version='${{ needs.version.outputs.number }}' \
+            --field app_version='${{ needs.version.outputs.tag }}'
