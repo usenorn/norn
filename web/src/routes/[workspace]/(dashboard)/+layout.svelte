@@ -38,11 +38,10 @@
 		Crosshair as CrosshairGlyph,
 		List as ListGlyph,
 		ListChecks as ListChecksGlyph,
-		Lock as LockGlyph,
 		Target as TargetGlyph,
-		Users as UsersGlyph,
-		UsersRound as UsersRoundGlyph,
 	} from "lucide";
+	import Lock from "@lucide/svelte/icons/lock";
+	import Users from "@lucide/svelte/icons/users";
 	import SidebarBranch from "$lib/components/norn/sidebar-branch.svelte";
 	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
 	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
@@ -242,8 +241,7 @@
 					id="team-{team.key}"
 					href={teamPath(slug, team.key)}
 					label={team.name}
-					glyph={team.visibility === "private" ? LockGlyph : UsersGlyph}
-					glyphEngaged={team.visibility === "private" ? LockGlyph : UsersRoundGlyph}
+					icon={team.visibility === "private" ? Lock : Users}
 					active={exactly(teamPath(slug, team.key))}
 					expanded={expanded.includes(team.key)}
 					ontoggle={() => toggle(team.key)}
