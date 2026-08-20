@@ -65,7 +65,9 @@ export function applyMoves(
 	return arranged;
 }
 
-function groupMove(grouping: Grouping, key: string): IssueMove {
+function groupMove(grouping: Grouping, key: string, dragged: Issue): IssueMove {
+	if (keyOf(grouping, dragged) === key) return {};
+
 	switch (grouping) {
 		case "priority":
 			return { priority: key as IssuePriority };
@@ -80,7 +82,14 @@ function groupMove(grouping: Grouping, key: string): IssueMove {
 	}
 }
 
-function groupFields(grouping: Grouping, key: string, held: Issue[]): Partial<Issue> {
+function groupFields(
+	grouping: Grouping,
+	key: string,
+	held: Issue[],
+	dragged: Issue
+): Partial<Issue> {
+	if (keyOf(grouping, dragged) === key) return {};
+
 	const sibling = held[0];
 
 	switch (grouping) {
@@ -121,7 +130,7 @@ export function landing(
 
 	const above = without[index - 1];
 	const below = without[index];
-	const grouped = groupMove(grouping, target.key);
+	const grouped = groupMove(grouping, target.key, dragged);
 	const carried = settles(grouping, ordering) ? inherited(ordering, above) : {};
 	const cleared = [...(grouped.clear ?? [])];
 
@@ -142,13 +151,21 @@ export function landing(
 			issueId: dragged.id,
 			key: target.key,
 			index,
-			fields: { ...groupFields(grouping, target.key, held), ...carried },
+			fields: { ...groupFields(grouping, target.key, held, dragged), ...carried },
 		},
 	};
 }
 
 export function movedInto(move: IssueMove): boolean {
 	return Object.values(move).some((value) => value !== undefined);
+}
+
+const rankFields = ["afterIssueId", "beforeIssueId"];
+
+export function changedProperty(move: IssueMove): boolean {
+	return Object.entries(move).some(
+		([field, value]) => value !== undefined && !rankFields.includes(field)
+	);
 }
 
 export function stayedPut(
