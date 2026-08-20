@@ -59,6 +59,7 @@
 
 	const cursor = listCursor(() => ({
 		rows,
+		keyOf: key,
 		open: (notification) => void goto(subjectPath(slug, notification)),
 	}));
 

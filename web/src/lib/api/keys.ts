@@ -7,6 +7,7 @@ export const keys = {
 	triage: (workspaceId: string) => `norn:triage:${workspaceId}`,
 	members: (workspaceId: string) => `norn:members:${workspaceId}`,
 	labels: (workspaceId: string) => `norn:labels:${workspaceId}`,
+	states: (workspaceId: string) => `norn:states:${workspaceId}`,
 	projects: (workspaceId: string) => `norn:projects:${workspaceId}`,
 	cycles: (workspaceId: string) => `norn:cycles:${workspaceId}`,
 	views: (workspaceId: string) => `norn:views:${workspaceId}`,

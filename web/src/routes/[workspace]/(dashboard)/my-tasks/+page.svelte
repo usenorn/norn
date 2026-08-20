@@ -7,9 +7,12 @@
 	import Settings from "@lucide/svelte/icons/settings";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
 	import TaskRow from "$lib/components/norn/task-row.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import { goto } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { bucketsOf } from "$lib/tasks/tasks";
 	import type { TaskBucket } from "$lib/tasks/types";
@@ -80,6 +83,28 @@
 		rows: flat,
 		open: (task) => void goto(workspacePath(data.workspace.slug, `/issues/${task.id}`)),
 	}));
+
+	const issueOf = $derived(new Map(loaded.map((issue) => [issue.reference, issue])));
+
+	let said = $state("");
+
+	bindShortcuts({
+		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
+	});
+
+	async function moveStatus(nth: number) {
+		const task = cursor.row;
+		const issue = task && issueOf.get(task.id);
+		const state = issue && nthState(data.states, issue.teamId, nth);
+
+		if (!issue || !state) return;
+
+		const outcome = await setStatus(data.workspace.id, issue, state);
+
+		said = statusMessage(outcome, issue.reference);
+
+		if (outcome.kind === "changed") await invalidate(keys.issues(data.workspace.id));
+	}
 </script>
 
 <svelte:head><title>My tasks · Norn</title></svelte:head>
@@ -176,5 +201,7 @@
 		{/if}
 	</div>
 
-	<ShortcutBar ids={["cursor-down", "cursor-open", "issue-new", "search", "help"]} />
+	<p class="sr-only" role="status" aria-live="polite">{said}</p>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "status-set", "issue-new", "help"]} />
 </div>

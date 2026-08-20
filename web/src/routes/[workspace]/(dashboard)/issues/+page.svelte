@@ -42,6 +42,7 @@
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import { statusIndexOf } from "$lib/issues/set-status";
 	import BulkResult from "$lib/issues/bulk-result.svelte";
 	import IssueCard from "$lib/issues/issue-card.svelte";
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
@@ -783,7 +784,26 @@
 		},
 		"issue-list": () => void goto(linkWith({ layout: null })),
 		"issue-board": () => void goto(linkWith({ layout: "board" })),
+		"status-set": (binding) => void pickStatus(statusIndexOf(binding)),
 	});
+
+	async function pickStatus(nth: number) {
+		if (selected.size > 0) {
+			const shared = sharedStates[nth];
+
+			if (shared) await applyBulk({ stateId: shared.id });
+
+			return;
+		}
+
+		const issue = cursor.row;
+
+		if (!issue || draftIDs.has(issue.id)) return;
+
+		const state = statesOfTeam(issue.teamId)[nth];
+
+		if (state) await setState(issue, state.id);
+	}
 
 	function step(by: number): boolean {
 		const here = columns.findIndex((column) => {
@@ -1814,7 +1834,15 @@
 		/>
 	{:else}
 		<ShortcutBar
-			ids={["cursor-down", "cursor-open", "select-toggle", "issue-filter", "issue-new", "help"]}
+			ids={[
+				"cursor-down",
+				"cursor-open",
+				"status-set",
+				"select-toggle",
+				"issue-filter",
+				"issue-new",
+				"help",
+			]}
 		>
 			{#snippet lead()}
 				<span class="font-mono text-xs text-muted-foreground tabular-nums">

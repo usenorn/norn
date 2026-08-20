@@ -2,7 +2,7 @@
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import { cn } from "$lib/utils.js";
 	import { useShortcuts } from "./registry.svelte";
-	import { displayKeys, isApplePlatform, shortcutOf, type ShortcutId } from "./shortcuts";
+	import { isApplePlatform, keycap, shortcutOf, type ShortcutId } from "./shortcuts";
 
 	let {
 		ids,
@@ -21,7 +21,7 @@
 	<div class={cn("flex flex-wrap items-center gap-x-3 gap-y-1.5", className)}>
 		{#each shown as shortcut (shortcut.id)}
 			<span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys={displayKeys(shortcut.keys[0], apple)} />{shortcut.label}
+				<Kbd keys={keycap(shortcut, apple)} />{shortcut.label}
 			</span>
 		{/each}
 	</div>

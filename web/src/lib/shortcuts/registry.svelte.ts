@@ -12,7 +12,7 @@ const key = Symbol("norn.shortcuts");
 
 const sequenceTimeout = 1200;
 
-type Handler = () => void;
+type Handler = (binding: string) => void;
 
 function chordOf(event: KeyboardEvent): string {
 	const pressed = event.key.toLowerCase();
@@ -146,7 +146,7 @@ export class ShortcutRegistry {
 			if (focused && shortcut.yieldsToFocus) continue;
 			if (!shortcut.keys.includes(binding)) continue;
 
-			this.#bound.get(shortcut.id)?.();
+			this.#bound.get(shortcut.id)?.(binding);
 
 			return true;
 		}

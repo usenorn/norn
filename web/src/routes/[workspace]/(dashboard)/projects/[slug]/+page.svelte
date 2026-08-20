@@ -21,6 +21,8 @@
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { issuePageSize } from "$lib/issues/filter";
 	import type { Issue } from "$lib/issues/issues";
@@ -81,6 +83,30 @@
 		rows,
 		open: (issue) => void goto(workspacePath(slug, `/issues/${issue.reference}`)),
 	}));
+
+	let said = $state("");
+
+	bindShortcuts({
+		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
+	});
+
+	async function moveStatus(nth: number) {
+		const issue = cursor.row;
+		const state = issue && nthState(data.states, issue.teamId, nth);
+
+		if (!issue || !state) return;
+
+		const outcome = await setStatus(data.workspace.id, issue, state);
+
+		said = statusMessage(outcome, issue.reference);
+
+		if (outcome.kind === "changed") {
+			await Promise.all([
+				invalidate(keys.page(page.route.id)),
+				invalidate(keys.issues(data.workspace.id)),
+			]);
+		}
+	}
 
 	const members = $derived(ready?.members ?? []);
 	const latest = $derived(ready?.updates[0] ?? null);
@@ -720,5 +746,7 @@
 		</div>
 	</div>
 
-	<ShortcutBar ids={["cursor-down", "cursor-open", "issue-new", "search", "help"]} />
+	<p class="sr-only" role="status" aria-live="polite">{said}</p>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "status-set", "issue-new", "help"]} />
 </div>

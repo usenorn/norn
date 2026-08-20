@@ -14,7 +14,8 @@
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import { api } from "$lib/api";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { holdShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { bindShortcuts, holdShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		cycleFailureMessage,
@@ -64,6 +65,30 @@
 	}));
 
 	holdShortcuts(() => closing);
+
+	let said = $state("");
+
+	bindShortcuts({
+		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
+	});
+
+	async function moveStatus(nth: number) {
+		const issue = cursor.row;
+		const state = issue && nthState(states ?? [], issue.teamId, nth);
+
+		if (!issue || !state) return;
+
+		const outcome = await setStatus(data.workspace.id, issue, state);
+
+		said = statusMessage(outcome, issue.reference);
+
+		if (outcome.kind === "changed") {
+			await Promise.all([
+				invalidate(keys.page(page.route.id)),
+				invalidate(keys.issues(data.workspace.id)),
+			]);
+		}
+	}
 
 	let rollover = $state<CycleRollover>("next");
 	let overrides = $state<Record<string, CycleRollover>>({});
@@ -403,5 +428,7 @@
 		</div>
 	</div>
 
-	<ShortcutBar ids={["cursor-down", "cursor-open", "issue-new", "search", "help"]} />
+	<p class="sr-only" role="status" aria-live="polite">{said}</p>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "status-set", "issue-new", "help"]} />
 </div>
