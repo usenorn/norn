@@ -86,7 +86,15 @@ Checked 14 August 2026.
 
 ## Run it
 
-Sign up for the [managed EU cloud](https://app.norn.so/sign-up), or run it on infrastructure you control — start with the [self-hosting docs](https://docs.norn.so/self-hosting). The official [Helm chart](https://docs.norn.so/self-hosting/helm) installs the Norn API, web dashboard, worker, database migrations, and authorisation policy seed; by default it also installs single-node PostgreSQL, Valkey, and Garage.
+Sign up for the [managed EU cloud](https://app.norn.so/sign-up), or run it on infrastructure you control — start with the [self-hosting docs](https://docs.norn.so/self-hosting).
+
+On a single host, one command installs it:
+
+```bash
+curl -fsSL https://get.norn.so | bash
+```
+
+[Docker Compose](https://docs.norn.so/self-hosting/compose) runs the API, dashboard, worker, migrations and policy seed alongside PostgreSQL, Valkey, and a Caddy proxy that obtains the TLS certificate. On Kubernetes, the official [Helm chart](https://docs.norn.so/self-hosting/helm) installs the same workloads, and by default single-node PostgreSQL, Valkey, and Garage too.
 
 ## Development
 

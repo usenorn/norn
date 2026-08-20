@@ -1,0 +1,211 @@
+name: norn
+
+x-norn-service: &norn-service
+  image: ghcr.io/usenorn/norn-api:${NORN_VERSION:-latest}
+  env_file:
+    - .env
+  environment:
+    NORN_APP_ENV: production
+    NORN_INSTANCE_SELF_HOSTED: "true"
+    NORN_HTTP_ADDR: 0.0.0.0:8080
+    NORN_HTTP_CLIENT_IP_HEADER: X-Forwarded-For
+    NORN_HTTP_TRUSTED_PROXIES: ${NETWORK_SUBNET:-172.30.0.0/16}
+    NORN_WORKER_HEALTH_ADDR: 0.0.0.0:8090
+    NORN_POSTGRES_DSN: postgres://norn:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/norn?sslmode=disable
+    NORN_VALKEY_ADDR: valkey:6379
+    NORN_VALKEY_PASSWORD: ${VALKEY_PASSWORD:?set VALKEY_PASSWORD in .env}
+    NORN_VALKEY_DB: "0"
+    NORN_ASYNQ_ADDR: valkey:6379
+    NORN_ASYNQ_PASSWORD: ${VALKEY_PASSWORD:?set VALKEY_PASSWORD in .env}
+    NORN_ASYNQ_DB: "1"
+    NORN_STORAGE_BACKEND: filesystem
+    NORN_STORAGE_ROOT: /var/lib/norn/blobs
+
+services:
+  postgres:
+    image: postgres:18.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: norn
+      POSTGRES_DB: norn
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGDATA: /var/lib/postgresql/18/docker
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U norn -d norn"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  valkey:
+    image: valkey/valkey:9.1.1-alpine
+    restart: unless-stopped
+    command: ["valkey-server", "/etc/valkey/valkey.conf"]
+    environment:
+      VALKEYCLI_AUTH: ${VALKEY_PASSWORD:?set VALKEY_PASSWORD in .env}
+    configs:
+      - source: valkey-conf
+        target: /etc/valkey/valkey.conf
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  storage-init:
+    image: busybox:1.37.0
+    command: ["sh", "-c", "mkdir -p /var/lib/norn/blobs && chown 65532:65532 /var/lib/norn/blobs"]
+    volumes:
+      - blob-data:/var/lib/norn/blobs
+
+  migrate:
+    <<: *norn-service
+    command: ["migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  seed:
+    <<: *norn-service
+    command: ["seed"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_healthy
+
+  api:
+    <<: *norn-service
+    command: ["serve"]
+    restart: unless-stopped
+    stop_grace_period: 40s
+    volumes:
+      - blob-data:/var/lib/norn/blobs
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      storage-init:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *norn-service
+    command: ["worker"]
+    restart: unless-stopped
+    stop_grace_period: 40s
+    volumes:
+      - blob-data:/var/lib/norn/blobs
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      storage-init:
+        condition: service_completed_successfully
+
+  web:
+    image: ghcr.io/usenorn/norn-web:${NORN_VERSION:-latest}
+    restart: unless-stopped
+    stop_grace_period: 45s
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3000"
+      ORIGIN: ${NORN_APP_BASE_URL:?set NORN_APP_BASE_URL in .env}
+      INTERNAL_API_ORIGIN: http://api:8080
+      ADDRESS_HEADER: X-Forwarded-For
+      XFF_DEPTH: "1"
+      BODY_SIZE_LIMIT: 4M
+      SHUTDOWN_TIMEOUT: "30"
+    depends_on:
+      api:
+        condition: service_started
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/robots.txt').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      NORN_APP_BASE_URL: ${NORN_APP_BASE_URL:?set NORN_APP_BASE_URL in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_started
+
+configs:
+  valkey-conf:
+    content: |
+      appendonly yes
+      maxmemory-policy noeviction
+      requirepass ${VALKEY_PASSWORD:?set VALKEY_PASSWORD in .env}
+
+  caddyfile:
+    content: |
+      {
+      	email {$$ACME_EMAIL}
+      	admin off
+      }
+
+      {$$NORN_APP_BASE_URL} {
+      	header Strict-Transport-Security "max-age=31536000"
+
+      	encode {
+      		zstd
+      		gzip
+      		match {
+      			header Content-Type text/html*
+      			header Content-Type text/plain*
+      			header Content-Type text/css*
+      			header Content-Type application/javascript*
+      			header Content-Type application/json*
+      			header Content-Type application/problem+json*
+      			header Content-Type image/svg+xml*
+      		}
+      	}
+
+      	route {
+      		@events path_regexp ^/v1/workspaces/[^/]+/events$$
+      		reverse_proxy @events api:8080 {
+      			flush_interval -1
+      		}
+
+      		@api path /v1/* /mcp /mcp/* /oauth/* /.well-known/*
+      		reverse_proxy @api api:8080
+
+      		reverse_proxy web:3000
+      	}
+      }
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${NETWORK_SUBNET:-172.30.0.0/16}
+
+volumes:
+  postgres-data:
+  valkey-data:
+  blob-data:
+  caddy-data:
+  caddy-config:
