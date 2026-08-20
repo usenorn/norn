@@ -31,6 +31,7 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { inboxPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import { showToast } from "$lib/toast/toasts";
 
 	let { data }: PageProps = $props();
 
@@ -43,9 +44,9 @@
 	let extra = $state.raw<Notification[]>([]);
 	let pageCursor = $state<string | undefined>(undefined);
 	let loadingMore = $state(false);
-	let announcement = $state("");
 
 	const slug = $derived(data.workspace.slug);
+
 	const filter = $derived(preview?.filter ?? data.filter);
 	const unread = $derived(preview?.unread ?? data.unread);
 	const failure = $derived<NotificationFailure | null>(preview?.failure ?? localFailure);
@@ -109,7 +110,7 @@
 				return;
 			}
 
-			announcement = `${notification.title} is marked read.`;
+			showToast(`${notification.title} is marked read.`);
 			await reload();
 		} catch {
 			localFailure = { kind: "unavailable" };
@@ -133,7 +134,7 @@
 				return;
 			}
 
-			announcement = "Your inbox is clear.";
+			showToast("Your inbox is clear.");
 			await reload();
 		} catch {
 			localFailure = { kind: "unavailable" };
@@ -169,7 +170,7 @@
 				return;
 			}
 
-			announcement = `${notification.title} is hidden for now.`;
+			showToast(`${notification.title} is hidden for now.`);
 			await reload();
 		} catch {
 			localFailure = { kind: "unavailable" };
@@ -246,7 +247,6 @@
 
 	<div class="flex-1 overflow-auto">
 		<div class="pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]">
-			<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
 
 			{#if failure}
 				<div class="px-4 pt-3">

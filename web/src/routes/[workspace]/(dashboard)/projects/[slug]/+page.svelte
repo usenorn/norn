@@ -23,6 +23,7 @@
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
+	import { showToast } from "$lib/toast/toasts";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { issuePageSize } from "$lib/issues/filter";
 	import type { Issue } from "$lib/issues/issues";
@@ -50,6 +51,7 @@
 	let { data }: PageProps = $props();
 
 	const slug = $derived(data.workspace.slug);
+
 	const preview = $derived(
 		import.meta.env.DEV
 			? projectPreviewStates[page.url.searchParams.get("state") ?? ""]
@@ -84,8 +86,6 @@
 		open: (issue) => void goto(workspacePath(slug, `/issues/${issue.reference}`)),
 	}));
 
-	let said = $state("");
-
 	bindShortcuts({
 		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
 	});
@@ -98,7 +98,11 @@
 
 		const outcome = await setStatus(data.workspace.id, issue, state);
 
-		said = statusMessage(outcome, issue.reference);
+		if (outcome.kind !== "unchanged") {
+			showToast(statusMessage(outcome, issue.reference), {
+				href: workspacePath(slug, `/issues/${issue.reference}`),
+			});
+		}
 
 		if (outcome.kind === "changed") {
 			await Promise.all([
@@ -745,8 +749,6 @@
 			{/if}
 		</div>
 	</div>
-
-	<p class="sr-only" role="status" aria-live="polite">{said}</p>
 
 	<ShortcutBar ids={["cursor-down", "cursor-open", "status-set", "issue-new", "help"]} />
 </div>

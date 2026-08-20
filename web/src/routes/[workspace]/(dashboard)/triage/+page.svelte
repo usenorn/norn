@@ -21,12 +21,12 @@
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
-	import Toast from "$lib/components/norn/toast.svelte";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import PropertyPicker from "$lib/issues/property-picker.svelte";
 	import { api } from "$lib/api";
 	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import { showToast } from "$lib/toast/toasts";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { lift } from "$lib/motion";
 	import { priorityLabel } from "$lib/issues/issues";
@@ -63,10 +63,8 @@
 	let reason = $state<TriageDeclineReason | null>(null);
 	let note = $state("");
 	let duplicateOf = $state<IssueCandidate | null>(null);
-	let notice = $state("");
-	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
-	let announcement = $state("");
 	let pendingTeamId = $state("");
+
 
 	const slug = $derived(data.workspace.slug);
 	const at = $derived((path: string) => workspacePath(slug, path));
@@ -112,13 +110,6 @@
 			(candidate) => candidate.id !== item?.id && candidate.triageState !== "waiting"
 		)
 	);
-
-	function announce(message: string) {
-		notice = message;
-		announcement = message;
-		clearTimeout(noticeTimer);
-		noticeTimer = setTimeout(() => (notice = ""), 5000);
-	}
 
 	$effect(() => {
 		tab;
@@ -170,7 +161,9 @@
 			}
 
 			closeFlow();
-			announce(said ?? `${issue.reference} decided`);
+			showToast(said ?? `${issue.reference} decided`, {
+				href: at(`/issues/${issue.reference}`),
+			});
 			await invalidate(keys.triage(data.workspace.id));
 		} catch {
 			localFailure = { kind: "unavailable" };
@@ -297,8 +290,6 @@
 			</span>
 		</div>
 	</div>
-
-	<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
 
 	{#if failure}
 		<div class="flex-none px-4 pt-3">
@@ -679,9 +670,3 @@
 		ids={["cursor-down", "cursor-open", "triage-accept", "triage-decline", "triage-move", "help"]}
 	/>
 </div>
-
-{#if notice}
-	<div class="fixed right-4 bottom-4 z-70">
-		<Toast message={notice} />
-	</div>
-{/if}

@@ -35,6 +35,7 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { viewsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import { showToast } from "$lib/toast/toasts";
 
 	const formId = "saved-view-form";
 
@@ -46,9 +47,9 @@
 
 	let localFailure = $state<ViewFailure | null>(null);
 	let localWorking = $state("");
-	let announcement = $state("");
 
 	const slug = $derived(data.workspace.slug);
+
 	const listing = $derived<ViewListing>(preview?.listing ?? data.listing);
 	const views = $derived(viewsOf(listing));
 	const teams = $derived(preview?.teams ?? data.teams);
@@ -75,7 +76,7 @@
 			localFailure = null;
 		},
 		onResult: ({ result }) => {
-			if (result.type === "redirect") announcement = `${$formData.name} was saved.`;
+			if (result.type === "redirect") showToast(`${$formData.name} was saved.`);
 		},
 	});
 
@@ -139,7 +140,7 @@
 				return;
 			}
 
-			announcement = `${removing.name} was removed.`;
+			showToast(`${removing.name} was removed.`);
 			await closePanels();
 			await invalidate(keys.views(data.workspace.id));
 		} catch {
@@ -168,7 +169,7 @@
 				return;
 			}
 
-			announcement = `${view.name} moved to position ${savedViewIds.indexOf(view.id) + 1} of ${savedViewIds.length}.`;
+			showToast(`${view.name} moved to position ${savedViewIds.indexOf(view.id) + 1} of ${savedViewIds.length}.`);
 			await invalidate(keys.views(data.workspace.id));
 		} catch {
 			localFailure = { kind: "unavailable" };
@@ -214,7 +215,6 @@
 		<div
 			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
 		>
-			<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
 
 			{#if failure}
 				<Alert.Root variant="destructive">

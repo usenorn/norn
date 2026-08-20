@@ -9,6 +9,7 @@
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
+	import { showToast } from "$lib/toast/toasts";
 	import TaskRow from "$lib/components/norn/task-row.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { goto, invalidate } from "$app/navigation";
@@ -86,7 +87,6 @@
 
 	const issueOf = $derived(new Map(loaded.map((issue) => [issue.reference, issue])));
 
-	let said = $state("");
 
 	bindShortcuts({
 		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
@@ -101,7 +101,11 @@
 
 		const outcome = await setStatus(data.workspace.id, issue, state);
 
-		said = statusMessage(outcome, issue.reference);
+		if (outcome.kind !== "unchanged") {
+			showToast(statusMessage(outcome, issue.reference), {
+				href: workspacePath(data.workspace.slug, `/issues/${issue.reference}`),
+			});
+		}
 
 		if (outcome.kind === "changed") await invalidate(keys.issues(data.workspace.id));
 	}
@@ -200,8 +204,6 @@
 			</div>
 		{/if}
 	</div>
-
-	<p class="sr-only" role="status" aria-live="polite">{said}</p>
 
 	<ShortcutBar ids={["cursor-down", "cursor-open", "status-set", "issue-new", "help"]} />
 </div>

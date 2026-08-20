@@ -36,12 +36,12 @@
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import Toast from "$lib/components/norn/toast.svelte";
 	import LabelDot from "$lib/labels/label-dot.svelte";
 	import BulkBar, { type BulkPicker } from "$lib/issues/bulk-bar.svelte";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import { showToast } from "$lib/toast/toasts";
 	import { statusIndexOf } from "$lib/issues/set-status";
 	import BulkResult from "$lib/issues/bulk-result.svelte";
 	import IssueCard from "$lib/issues/issue-card.svelte";
@@ -128,6 +128,7 @@
 			: undefined
 	);
 
+
 	const slug = $derived(data.workspace.slug);
 	const at = $derived((path: string) => workspacePath(slug, path));
 
@@ -139,8 +140,6 @@
 	let dragging = $state<string | null>(null);
 	let dropTarget = $state<DropTarget | null>(null);
 	let failure = $state<string | null>(null);
-	let toast = $state<{ message: string; undo?: () => Promise<void> } | null>(null);
-	let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const team = $derived(preview?.team ?? data.team);
 	const states = $derived(preview?.states ?? data.states ?? []);
@@ -260,12 +259,8 @@
 		linkWith(Object.fromEntries(pickableFacets.map((kind) => [kind, null])) as Record<string, null>)
 	);
 
-	$effect(() => () => clearTimeout(toastTimer));
-
-	function announce(message: string, undo?: () => Promise<void>) {
-		clearTimeout(toastTimer);
-		toast = { message, undo };
-		toastTimer = setTimeout(() => (toast = null), 6000);
+	function announce(message: string, undo?: () => Promise<void>, href?: string) {
+		showToast(message, { href, onaction: undo && (() => void undo()) });
 	}
 
 	async function patch(
@@ -311,12 +306,15 @@
 			return;
 		}
 
-		announce(message, async () => {
-			toast = null;
-			edits = without(edits, issue.id);
+		announce(
+			message,
+			async () => {
+				edits = without(edits, issue.id);
 
-			await patch(asLoaded(issue), previous);
-		});
+				await patch(asLoaded(issue), previous);
+			},
+			at(`/issues/${issue.reference}`)
+		);
 
 		await invalidate(keys.page(page.route.id));
 	}
@@ -392,8 +390,6 @@
 				? `Removed ${name} from ${issue.reference}`
 				: `Added ${name} to ${issue.reference}`,
 			async () => {
-				toast = null;
-
 				const fresh = asLoaded(issue);
 
 				edits = without(edits, issue.id);
@@ -404,7 +400,8 @@
 				});
 
 				await invalidate(keys.page(page.route.id));
-			}
+			},
+			at(`/issues/${issue.reference}`)
 		);
 
 		await invalidate(keys.page(page.route.id));
@@ -518,12 +515,15 @@
 			return;
 		}
 
-		announce(movedMessage(issue, placed, key), async () => {
-			toast = null;
-			moves = moves.filter((held) => held.issueId !== issue.id);
+		announce(
+			movedMessage(issue, placed, key),
+			async () => {
+				moves = moves.filter((held) => held.issueId !== issue.id);
 
-			await patch(asLoaded(issue), returning(issue, placed));
-		});
+				await patch(asLoaded(issue), returning(issue, placed));
+			},
+			at(`/issues/${issue.reference}`)
+		);
 
 		await invalidate(keys.page(page.route.id));
 	}
@@ -732,7 +732,7 @@
 			return;
 		}
 
-		announce(`Created ${outcome.issue.reference}`);
+		announce(`Created ${outcome.issue.reference}`, undefined, at(`/issues/${outcome.issue.reference}`));
 
 		await invalidate(keys.page(page.route.id));
 	}
@@ -1800,12 +1800,6 @@
 						</div>
 					{/each}
 				</div>
-			</div>
-		{/if}
-
-		{#if toast}
-			<div class="absolute right-3.5 bottom-3.5 z-10">
-				<Toast message={toast.message} onaction={toast.undo && (() => void toast?.undo?.())} />
 			</div>
 		{/if}
 	</div>
