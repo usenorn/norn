@@ -159,7 +159,7 @@
 				</Alert.Root>
 			{/if}
 
-			<section class="flex flex-col gap-4">
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">General</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -228,7 +228,7 @@
 				</div>
 			</section>
 
-			<section class="flex flex-col gap-4">
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">Members</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -243,7 +243,7 @@
 				</div>
 			</section>
 
-			<section class="flex flex-col gap-4">
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">Teams</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -291,7 +291,7 @@
 				</div>
 			</section>
 
-			<section class="flex flex-col gap-4">
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">Authentication</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">

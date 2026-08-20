@@ -3,6 +3,16 @@ import Inbox from "@lucide/svelte/icons/inbox";
 import List from "@lucide/svelte/icons/list";
 import Menu from "@lucide/svelte/icons/menu";
 import Zap from "@lucide/svelte/icons/zap";
+import {
+	CircleDot as CircleDotGlyph,
+	Eye as EyeGlyph,
+	Filter as FilterGlyph,
+	Inbox as InboxGlyph,
+	MailOpen as MailOpenGlyph,
+	Target as TargetGlyph,
+	Zap as ZapGlyph,
+} from "lucide";
+import type { IconNode } from "morphicons/svelte";
 import type { IconComponent } from "$lib/utils.js";
 
 export type NavEntry = {
@@ -10,6 +20,8 @@ export type NavEntry = {
 	href: string;
 	icon?: IconComponent;
 	iconClass?: string;
+	glyph?: IconNode;
+	glyphEngaged?: IconNode;
 	dot?: string;
 	count?: number;
 };
@@ -21,15 +33,33 @@ export function workspacePath(workspace: string, path = ""): string {
 export function primaryNav(workspace: string, waiting = 0, unread = 0): NavEntry[] {
 	const at = (path: string) => workspacePath(workspace, path);
 	return [
-		{ label: "Inbox", href: at("/inbox"), icon: Inbox, count: unread || undefined },
-		{ label: "My tasks", href: at("/my-tasks"), icon: CircleDot },
+		{
+			label: "Inbox",
+			href: at("/inbox"),
+			glyph: InboxGlyph,
+			glyphEngaged: MailOpenGlyph,
+			count: unread || undefined,
+		},
+		{
+			label: "My tasks",
+			href: at("/my-tasks"),
+			glyph: CircleDotGlyph,
+			glyphEngaged: TargetGlyph,
+		},
 		{
 			label: "Reviews",
 			href: at("/reviews"),
-			icon: CircleDot,
+			glyph: CircleDotGlyph,
+			glyphEngaged: EyeGlyph,
 			iconClass: "text-status-active",
 		},
-		{ label: "Triage", href: at("/triage"), icon: Zap, count: waiting || undefined },
+		{
+			label: "Triage",
+			href: at("/triage"),
+			glyph: ZapGlyph,
+			glyphEngaged: FilterGlyph,
+			count: waiting || undefined,
+		},
 	];
 }
 

@@ -8,7 +8,7 @@ import {
 	slugMessage,
 	slugSuggestions,
 } from "$lib/workspace/create-workspace-schema";
-import { teamKeyMessage, teamKeySuggestions } from "$lib/team/teams";
+import { teamKeyMessage, teamKeySuggestions, teamNameMessage } from "$lib/team/teams";
 import type { WorkspaceContext, WorkspaceCreationFailure } from "$lib/workspace/types";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -55,7 +55,11 @@ export const actions: Actions = {
 			redirect(303, withSlot(`/invite-teammates?workspace=${data.slug}`, slot));
 		}
 
-		if (error && "code" in error && error.code === "team_key_taken") {
+		if (!error) return message(form, { kind: "unavailable" }, { status: 500 });
+
+		if (error.status === 401) return message(form, { kind: "signed_out" }, { status: 401 });
+
+		if ("code" in error && error.code === "team_key_taken") {
 			return message(form, {
 				kind: "team_key_taken",
 				key: form.data.teamKey,
@@ -63,7 +67,7 @@ export const actions: Actions = {
 			});
 		}
 
-		if (error?.status === 409) {
+		if (error.status === 409 && !("code" in error)) {
 			return message(form, {
 				kind: "slug_taken",
 				slug: form.data.slug,
@@ -71,12 +75,20 @@ export const actions: Actions = {
 			});
 		}
 
-		for (const field of error?.errors ?? []) {
+		let handled = false;
+
+		for (const field of error.errors ?? []) {
 			if (field.field === "slug") setError(form, "slug", slugMessage(field.code));
-			if (field.field === "name") setError(form, "name", "Enter a workspace name.");
-			if (field.field === "key") setError(form, "teamKey", teamKeyMessage(field.code));
+			else if (field.field === "name") setError(form, "name", "Enter a workspace name.");
+			else if (field.field === "team.key") setError(form, "teamKey", teamKeyMessage(field.code));
+			else if (field.field === "team.name") setError(form, "teamName", teamNameMessage(field.code));
+			else continue;
+
+			handled = true;
 		}
 
-		return fail(400, { form });
+		if (handled) return fail(400, { form });
+
+		return message(form, { kind: "unavailable" }, { status: 500 });
 	},
 };

@@ -248,6 +248,113 @@ func TestCreateRejectsAMalformedSlug(t *testing.T) {
 	}
 }
 
+func TestCreateRefusesAFirstTeamWhoseKeyOrNameBreaksTheRules(t *testing.T) {
+	cases := []struct {
+		name  string
+		team  service.CreateWorkspaceTeamInput
+		field string
+		code  string
+	}{
+		{
+			name:  "key too long",
+			team:  service.CreateWorkspaceTeamInput{Key: "TOOLONGKEY", Name: "Engineering"},
+			field: "team.key",
+			code:  entity.ValidationCodeTooLong,
+		},
+		{
+			name:  "key too short",
+			team:  service.CreateWorkspaceTeamInput{Key: "E", Name: "Engineering"},
+			field: "team.key",
+			code:  entity.ValidationCodeTooShort,
+		},
+		{
+			name:  "key not letters",
+			team:  service.CreateWorkspaceTeamInput{Key: "EN1", Name: "Engineering"},
+			field: "team.key",
+			code:  entity.ValidationCodeMalformed,
+		},
+		{
+			name:  "name missing",
+			team:  service.CreateWorkspaceTeamInput{Key: "ENG", Name: "   "},
+			field: "team.name",
+			code:  entity.ValidationCodeRequired,
+		},
+	}
+
+	for _, each := range cases {
+		t.Run(each.name, func(t *testing.T) {
+			h := newHarness(t)
+
+			_, err := h.service.Create(actingAs(uuid.New()), service.CreateWorkspaceInput{
+				Slug: "acme-labs",
+				Name: "Acme Labs",
+				Team: &each.team,
+			})
+
+			var validation entity.ValidationError
+			if !errors.As(err, &validation) {
+				t.Fatalf("Create error = %v, want a ValidationError", err)
+			}
+
+			if len(validation.Fields) != 1 {
+				t.Fatalf("Create fields = %v, want exactly one", validation.Fields)
+			}
+
+			if validation.Fields[0].Field != each.field {
+				t.Errorf("field = %q, want %q", validation.Fields[0].Field, each.field)
+			}
+
+			if validation.Fields[0].Code != each.code {
+				t.Errorf("code = %q, want %q", validation.Fields[0].Code, each.code)
+			}
+		})
+	}
+}
+
+func TestCreateUppercasesTheFirstTeamKey(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID := uuid.New()
+
+	h.workspaces.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, workspace entity.Workspace) (entity.Workspace, error) {
+			workspace.ID = workspaceID
+
+			return workspace, nil
+		})
+	h.memberships.EXPECT().Create(gomock.Any(), gomock.Any()).Return(entity.Membership{}, nil)
+
+	var captured entity.Team
+
+	h.teams.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, team entity.Team) (entity.Team, error) {
+			captured = team
+			team.ID = uuid.New()
+
+			return team, nil
+		})
+	h.states.EXPECT().CreateMany(gomock.Any(), gomock.Any()).Return(nil, nil)
+	h.rules.EXPECT().CreateMany(gomock.Any(), gomock.Any()).Return(nil)
+	h.teamMembers.EXPECT().Create(gomock.Any(), gomock.Any()).Return(entity.TeamMembership{}, nil)
+	h.workspaces.EXPECT().
+		UpdateSettings(gomock.Any(), workspaceID, gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(activeWorkspace(workspaceID), nil)
+
+	if _, err := h.service.Create(actingAs(uuid.New()), service.CreateWorkspaceInput{
+		Slug: "acme-labs",
+		Name: "Acme Labs",
+		Team: &service.CreateWorkspaceTeamInput{Key: " eng ", Name: "Engineering"},
+	}); err != nil {
+		t.Fatalf("Create error = %v", err)
+	}
+
+	if captured.Key != "ENG" {
+		t.Errorf("team key = %q, want %q", captured.Key, "ENG")
+	}
+}
+
 func TestCreateWithoutAnIdentityIsRefused(t *testing.T) {
 	h := newHarness(t)
 

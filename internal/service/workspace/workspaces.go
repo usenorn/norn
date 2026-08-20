@@ -104,6 +104,20 @@ func (s *workspacesService) Create(ctx context.Context, input service.CreateWork
 		return entity.Workspace{}, entity.ErrWorkspaceSlugTaken
 	}
 
+	var first service.CreateWorkspaceTeamInput
+
+	if input.Team != nil {
+		first = *input.Team
+		first.Key = entity.NormalizeTeamKey(first.Key)
+
+		if err := entity.NewValidationError(
+			entity.ValidateTeamKey("team.key", first.Key),
+			entity.ValidateTeamName("team.name", first.Name),
+		); err != nil {
+			return entity.Workspace{}, err
+		}
+	}
+
 	var workspace entity.Workspace
 
 	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
@@ -123,7 +137,7 @@ func (s *workspacesService) Create(ctx context.Context, input service.CreateWork
 		}
 
 		if input.Team != nil {
-			created, err = s.seedFirstTeam(ctx, created, actor, *input.Team)
+			created, err = s.seedFirstTeam(ctx, created, actor, first)
 			if err != nil {
 				return err
 			}
