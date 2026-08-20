@@ -24,6 +24,10 @@ export function assignable(kind: AccountKind | undefined): boolean {
 	return !machine(kind);
 }
 
+export function assignees(members: Membership[]): Membership[] {
+	return members.filter((member) => assignable(member.kind));
+}
+
 export const roleLabels: Record<MembershipRole, string> = {
 	admin: "Admin",
 	member: "Member",

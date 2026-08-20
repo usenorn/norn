@@ -47,6 +47,7 @@
 		type DelegationPanel,
 	} from "$lib/agents/delegation";
 	import { totalIssues } from "$lib/issues/board";
+	import { assignees } from "$lib/workspace/members";
 	import { initialsOf } from "$lib/team/members";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
@@ -288,6 +289,7 @@
 		delegationPreview?.panel ?? delegated ?? (ready ? ready.delegation : { kind: "loading" })
 	);
 	const agents = $derived(agentMembers(ready?.members ?? []));
+	const people = $derived(assignees(ready?.members ?? []));
 	const delegationFailure = $derived(delegationFailed ?? delegationPreview?.failure ?? null);
 	const issue = $derived((pushed?.source === ready ? pushed.issue : null) ?? ready?.issue ?? null);
 	const following = $derived(ready?.follow === "following");
@@ -2328,7 +2330,7 @@
 						editable={canEdit}
 						options={[
 							{ value: "", label: "Unassigned", checked: !issue.assigneeAccountId },
-							...ready.members.map((member) => ({
+							...people.map((member) => ({
 								value: member.accountId,
 								label: member.displayName || member.email || member.accountId,
 								checked: member.accountId === issue.assigneeAccountId,

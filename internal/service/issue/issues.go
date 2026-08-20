@@ -136,6 +136,12 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		}
 	}
 
+	if input.AssigneeAccountID != uuid.Nil {
+		if err := s.assignable(ctx, input.WorkspaceID, input.TeamID, input.AssigneeAccountID, decision); err != nil {
+			return entity.Issue{}, err
+		}
+	}
+
 	if err := s.heldCreation(ctx, decision, input); err != nil {
 		return entity.Issue{}, err
 	}
@@ -472,7 +478,7 @@ func (s *issuesService) Update(
 		}
 
 		if change.Assignee != nil {
-			if err := s.assignable(ctx, issue, *change.Assignee, decision); err != nil {
+			if err := s.assignable(ctx, issue.WorkspaceID, issue.TeamID, *change.Assignee, decision); err != nil {
 				return err
 			}
 		}
@@ -909,11 +915,10 @@ var clearable = []string{
 
 func (s *issuesService) assignable(
 	ctx context.Context,
-	issue entity.Issue,
-	accountID uuid.UUID,
+	workspaceID, teamID, accountID uuid.UUID,
 	decision entity.Decision,
 ) error {
-	if _, err := s.memberships.Get(ctx, issue.WorkspaceID, accountID); err != nil {
+	if _, err := s.memberships.Get(ctx, workspaceID, accountID); err != nil {
 		if errors.Is(err, entity.ErrMembershipNotFound) {
 			return entity.NewValidationError(entity.FieldError{
 				Field: "assigneeId",
@@ -924,7 +929,19 @@ func (s *issuesService) assignable(
 		return err
 	}
 
-	if !decision.Scope.Covers(issue.TeamID) {
+	account, err := s.accounts.GetByID(ctx, accountID)
+	if err != nil {
+		return err
+	}
+
+	if account.Kind.Machine() {
+		return entity.NewValidationError(entity.FieldError{
+			Field: "assigneeId",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
+	if !decision.Scope.Covers(teamID) {
 		return entity.ErrIssueNotFound
 	}
 
