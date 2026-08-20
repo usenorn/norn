@@ -32,7 +32,7 @@
 	} from "$lib/team/states";
 	import { workflowStateSchema } from "$lib/team/workflow-state-schema";
 	import type { Team } from "$lib/team/teams";
-	import { useToasts } from "$lib/toast/toasts.svelte";
+	import { showToast } from "$lib/toast/toasts";
 
 	const formId = "workflow-state-form";
 
@@ -43,7 +43,6 @@
 		locked = false,
 	}: { workspaceId: string; team: Team; list: StateList; locked?: boolean } = $props();
 
-	const toasts = useToasts();
 
 	let submitted = $state<WorkflowState[] | null>(null);
 	let failure = $state<StateFailure | null>(null);
@@ -82,7 +81,7 @@
 						});
 
 				if (result.data) {
-					toasts.show(editing
+					showToast(editing
 						? `${result.data.name} was saved.`
 						: `${result.data.name} was added.`);
 					stopEditing();
@@ -161,7 +160,7 @@
 
 			if (data) {
 				submitted = data;
-				toasts.show(`${state.name} moved to position ${stateIds.indexOf(state.id) + 1} of ${stateIds.length}.`);
+				showToast(`${state.name} moved to position ${stateIds.indexOf(state.id) + 1} of ${stateIds.length}.`);
 				await invalidate(keys.page(page.route.id));
 
 				return;
@@ -194,7 +193,7 @@
 
 			if (data) {
 				submitted = data;
-				toasts.show(
+				showToast(
 					role === "default"
 						? `New issues now start in ${state.name}.`
 						: `${state.name} now counts as finished.`
@@ -271,7 +270,7 @@
 			}
 
 			const target = states.find((state) => state.id === reassignTo);
-			toasts.show(`${removalState.name} was removed. Its issues moved to ${target?.name ?? "another state"}.`);
+			showToast(`${removalState.name} was removed. Its issues moved to ${target?.name ?? "another state"}.`);
 			await closeRemoval();
 			await refresh();
 		} catch {

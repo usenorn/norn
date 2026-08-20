@@ -31,7 +31,7 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { inboxPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import { useToasts } from "$lib/toast/toasts.svelte";
+	import { showToast } from "$lib/toast/toasts";
 
 	let { data }: PageProps = $props();
 
@@ -47,7 +47,6 @@
 
 	const slug = $derived(data.workspace.slug);
 
-	const toasts = useToasts();
 	const filter = $derived(preview?.filter ?? data.filter);
 	const unread = $derived(preview?.unread ?? data.unread);
 	const failure = $derived<NotificationFailure | null>(preview?.failure ?? localFailure);
@@ -111,7 +110,7 @@
 				return;
 			}
 
-			toasts.show(`${notification.title} is marked read.`);
+			showToast(`${notification.title} is marked read.`);
 			await reload();
 		} catch {
 			localFailure = { kind: "unavailable" };
@@ -135,7 +134,7 @@
 				return;
 			}
 
-			toasts.show("Your inbox is clear.");
+			showToast("Your inbox is clear.");
 			await reload();
 		} catch {
 			localFailure = { kind: "unavailable" };
@@ -171,7 +170,7 @@
 				return;
 			}
 
-			toasts.show(`${notification.title} is hidden for now.`);
+			showToast(`${notification.title} is hidden for now.`);
 			await reload();
 		} catch {
 			localFailure = { kind: "unavailable" };

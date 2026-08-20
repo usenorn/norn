@@ -16,7 +16,7 @@
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import { bindShortcuts, holdShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
-	import { useToasts } from "$lib/toast/toasts.svelte";
+	import { showToast } from "$lib/toast/toasts";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		cycleFailureMessage,
@@ -38,7 +38,6 @@
 
 	const slug = $derived(data.workspace.slug);
 
-	const toasts = useToasts();
 	const preview = $derived(
 		import.meta.env.DEV ? cyclePreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
@@ -82,7 +81,7 @@
 		const outcome = await setStatus(data.workspace.id, issue, state);
 
 		if (outcome.kind !== "unchanged") {
-			toasts.show(statusMessage(outcome, issue.reference), {
+			showToast(statusMessage(outcome, issue.reference), {
 				href: workspacePath(slug, `/issues/${issue.reference}`),
 			});
 		}

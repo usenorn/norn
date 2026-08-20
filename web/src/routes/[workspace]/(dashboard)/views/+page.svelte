@@ -35,7 +35,7 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { viewsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import { useToasts } from "$lib/toast/toasts.svelte";
+	import { showToast } from "$lib/toast/toasts";
 
 	const formId = "saved-view-form";
 
@@ -50,7 +50,6 @@
 
 	const slug = $derived(data.workspace.slug);
 
-	const toasts = useToasts();
 	const listing = $derived<ViewListing>(preview?.listing ?? data.listing);
 	const views = $derived(viewsOf(listing));
 	const teams = $derived(preview?.teams ?? data.teams);
@@ -77,7 +76,7 @@
 			localFailure = null;
 		},
 		onResult: ({ result }) => {
-			if (result.type === "redirect") toasts.show(`${$formData.name} was saved.`);
+			if (result.type === "redirect") showToast(`${$formData.name} was saved.`);
 		},
 	});
 
@@ -141,7 +140,7 @@
 				return;
 			}
 
-			toasts.show(`${removing.name} was removed.`);
+			showToast(`${removing.name} was removed.`);
 			await closePanels();
 			await invalidate(keys.views(data.workspace.id));
 		} catch {
@@ -170,7 +169,7 @@
 				return;
 			}
 
-			toasts.show(`${view.name} moved to position ${savedViewIds.indexOf(view.id) + 1} of ${savedViewIds.length}.`);
+			showToast(`${view.name} moved to position ${savedViewIds.indexOf(view.id) + 1} of ${savedViewIds.length}.`);
 			await invalidate(keys.views(data.workspace.id));
 		} catch {
 			localFailure = { kind: "unavailable" };

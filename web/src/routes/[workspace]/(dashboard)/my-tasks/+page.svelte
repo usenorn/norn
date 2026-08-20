@@ -9,7 +9,7 @@
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
-	import { useToasts } from "$lib/toast/toasts.svelte";
+	import { showToast } from "$lib/toast/toasts";
 	import TaskRow from "$lib/components/norn/task-row.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { goto, invalidate } from "$app/navigation";
@@ -87,7 +87,6 @@
 
 	const issueOf = $derived(new Map(loaded.map((issue) => [issue.reference, issue])));
 
-	const toasts = useToasts();
 
 	bindShortcuts({
 		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
@@ -103,7 +102,7 @@
 		const outcome = await setStatus(data.workspace.id, issue, state);
 
 		if (outcome.kind !== "unchanged") {
-			toasts.show(statusMessage(outcome, issue.reference), {
+			showToast(statusMessage(outcome, issue.reference), {
 				href: workspacePath(data.workspace.slug, `/issues/${issue.reference}`),
 			});
 		}

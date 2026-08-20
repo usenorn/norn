@@ -13,11 +13,10 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { notificationSettingsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import { useToasts } from "$lib/toast/toasts.svelte";
+	import { showToast } from "$lib/toast/toasts";
 
 	let { data }: PageProps = $props();
 
-	const toasts = useToasts();
 
 	const preview = $derived(
 		import.meta.env.DEV
@@ -54,7 +53,7 @@
 				return;
 			}
 
-			toasts.show("Your notification settings are saved.");
+			showToast("Your notification settings are saved.");
 			draft = null;
 			await invalidate(keys.page(page.route.id));
 		} catch {

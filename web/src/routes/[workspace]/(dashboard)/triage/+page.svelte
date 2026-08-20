@@ -26,7 +26,7 @@
 	import { api } from "$lib/api";
 	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { useToasts } from "$lib/toast/toasts.svelte";
+	import { showToast } from "$lib/toast/toasts";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { lift } from "$lib/motion";
 	import { priorityLabel } from "$lib/issues/issues";
@@ -65,7 +65,6 @@
 	let duplicateOf = $state<IssueCandidate | null>(null);
 	let pendingTeamId = $state("");
 
-	const toasts = useToasts();
 
 	const slug = $derived(data.workspace.slug);
 	const at = $derived((path: string) => workspacePath(slug, path));
@@ -162,7 +161,7 @@
 			}
 
 			closeFlow();
-			toasts.show(said ?? `${issue.reference} decided`, {
+			showToast(said ?? `${issue.reference} decided`, {
 				href: at(`/issues/${issue.reference}`),
 			});
 			await invalidate(keys.triage(data.workspace.id));

@@ -1,11 +1,8 @@
 <script lang="ts">
 	import './layout.css';
-	import Toaster from '$lib/toast/toaster.svelte';
-	import { provideToasts } from '$lib/toast/toasts.svelte';
+	import { Toaster } from '$lib/components/ui/sonner/index.js';
 
 	let { children } = $props();
-
-	provideToasts();
 </script>
 
 {@render children()}

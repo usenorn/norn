@@ -30,7 +30,7 @@
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import { provideNewIssue } from "$lib/issues/new-issue.svelte";
-	import { useToasts } from "$lib/toast/toasts.svelte";
+	import { showToast } from "$lib/toast/toasts";
 	import type { CreationOutcome } from "$lib/issues/creating";
 	import { calendarDate } from "$lib/time";
 	import ShortcutHelp from "$lib/shortcuts/shortcut-help.svelte";
@@ -108,7 +108,6 @@
 	bindRoam(provideRoam());
 
 	const raising = provideNewIssue();
-	const toasts = useToasts();
 
 	holdShortcuts(() => raising.open);
 
@@ -133,14 +132,14 @@
 		}
 
 		if (outcome.kind === "refused") {
-			toasts.show(outcome.failure);
+			showToast(outcome.failure);
 
 			if (outcome.input) raising.raise(outcome.input);
 
 			return;
 		}
 
-		toasts.show(`Created ${outcome.issue.reference}`, {
+		showToast(`Created ${outcome.issue.reference}`, {
 			href: workspacePath(slug, `/issues/${outcome.issue.reference}`),
 		});
 

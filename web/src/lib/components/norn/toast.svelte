@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { cn } from "$lib/utils.js";
-	import { lift } from "$lib/motion";
 
 	let {
 		message,
@@ -20,7 +19,6 @@
 </script>
 
 <div
-	transition:lift
 	class={cn(
 		"notch-ink flex max-w-full items-center gap-2.5 px-3 py-2 text-md [--keycap-lip:var(--ink-700)]",
 		className

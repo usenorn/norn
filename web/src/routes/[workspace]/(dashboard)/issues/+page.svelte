@@ -41,7 +41,7 @@
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { useToasts } from "$lib/toast/toasts.svelte";
+	import { showToast } from "$lib/toast/toasts";
 	import { statusIndexOf } from "$lib/issues/set-status";
 	import BulkResult from "$lib/issues/bulk-result.svelte";
 	import IssueCard from "$lib/issues/issue-card.svelte";
@@ -128,7 +128,6 @@
 			: undefined
 	);
 
-	const toasts = useToasts();
 
 	const slug = $derived(data.workspace.slug);
 	const at = $derived((path: string) => workspacePath(slug, path));
@@ -261,7 +260,7 @@
 	);
 
 	function announce(message: string, undo?: () => Promise<void>, href?: string) {
-		toasts.show(message, { href, onaction: undo && (() => void undo()) });
+		showToast(message, { href, onaction: undo && (() => void undo()) });
 	}
 
 	async function patch(
@@ -310,7 +309,6 @@
 		announce(
 			message,
 			async () => {
-				toasts.dismiss();
 				edits = without(edits, issue.id);
 
 				await patch(asLoaded(issue), previous);
@@ -392,8 +390,6 @@
 				? `Removed ${name} from ${issue.reference}`
 				: `Added ${name} to ${issue.reference}`,
 			async () => {
-				toasts.dismiss();
-
 				const fresh = asLoaded(issue);
 
 				edits = without(edits, issue.id);
@@ -522,7 +518,6 @@
 		announce(
 			movedMessage(issue, placed, key),
 			async () => {
-				toasts.dismiss();
 				moves = moves.filter((held) => held.issueId !== issue.id);
 
 				await patch(asLoaded(issue), returning(issue, placed));

@@ -51,7 +51,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
 	import { useShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { useToasts } from "$lib/toast/toasts.svelte";
+	import { showToast } from "$lib/toast/toasts";
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
@@ -1354,7 +1354,7 @@
 	}
 
 	function announce(message: string) {
-		toasts.show(message);
+		showToast(message);
 	}
 
 	async function copy(text: string, said: string) {
@@ -1440,7 +1440,6 @@
 	}
 
 	const shortcuts = useShortcuts();
-	const toasts = useToasts();
 
 	$effect(() => {
 		if (!canEdit || editingField) return;
