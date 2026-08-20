@@ -6,8 +6,6 @@
 	import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down";
 	import Layers from "@lucide/svelte/icons/layers";
 	import List from "@lucide/svelte/icons/list";
-	import Target from "@lucide/svelte/icons/target";
-	import Lock from "@lucide/svelte/icons/lock";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Search from "@lucide/svelte/icons/search";
 	import LogOut from "@lucide/svelte/icons/log-out";
@@ -26,7 +24,6 @@
 	import ProviderRequired from "$lib/workspace/provider-required.svelte";
 	import Tags from "@lucide/svelte/icons/tags";
 	import UserRound from "@lucide/svelte/icons/user-round";
-	import Users from "@lucide/svelte/icons/users";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import { provideNewIssue } from "$lib/issues/new-issue.svelte";
@@ -37,6 +34,15 @@
 	import { bindShortcuts, holdShortcuts, provideShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { destinations } from "$lib/shortcuts/destinations";
 	import { bindRoam, provideRoam } from "$lib/shortcuts/roam/roam.svelte";
+	import {
+		Crosshair as CrosshairGlyph,
+		List as ListGlyph,
+		ListChecks as ListChecksGlyph,
+		Lock as LockGlyph,
+		Target as TargetGlyph,
+		Users as UsersGlyph,
+		UsersRound as UsersRoundGlyph,
+	} from "lucide";
 	import SidebarBranch from "$lib/components/norn/sidebar-branch.svelte";
 	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
 	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
@@ -211,6 +217,8 @@
 					label={entry.label}
 					icon={entry.icon}
 					iconClass={entry.iconClass}
+					glyph={entry.glyph}
+					glyphEngaged={entry.glyphEngaged}
 					count={entry.count}
 					active={current(entry.href)}
 				/>
@@ -234,7 +242,8 @@
 					id="team-{team.key}"
 					href={teamPath(slug, team.key)}
 					label={team.name}
-					icon={team.visibility === "private" ? Lock : Users}
+					glyph={team.visibility === "private" ? LockGlyph : UsersGlyph}
+					glyphEngaged={team.visibility === "private" ? LockGlyph : UsersRoundGlyph}
 					active={exactly(teamPath(slug, team.key))}
 					expanded={expanded.includes(team.key)}
 					ontoggle={() => toggle(team.key)}
@@ -242,7 +251,8 @@
 					<SidebarItem
 						href={teamIssuesPath(slug, team.key)}
 						label="Issues"
-						icon={List}
+						glyph={ListGlyph}
+						glyphEngaged={ListChecksGlyph}
 						indent
 						active={current(teamIssuesPath(slug, team.key))}
 					/>
@@ -283,7 +293,8 @@
 				<SidebarItem
 					href={projectPath(slug, project)}
 					label={project.name}
-					icon={Target}
+					glyph={TargetGlyph}
+					glyphEngaged={CrosshairGlyph}
 					indent
 					active={current(projectPath(slug, project))}
 				/>
