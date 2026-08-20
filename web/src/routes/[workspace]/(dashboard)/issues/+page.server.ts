@@ -14,15 +14,11 @@ import {
 } from "$lib/issues/display";
 import { facetFilters, readFacets, type Facets } from "$lib/issues/facets";
 import type { IssueGroupTally, IssueQueryBody } from "$lib/issues/filter";
-import type { Label } from "$lib/labels/labels";
 import { appliedView, viewQuery, viewTeams, type AppliedView } from "$lib/views/applied";
 import { calendarDate } from "$lib/time";
 import type { Team } from "$lib/team/teams";
 import type { WorkflowState } from "$lib/team/states";
-import type { components } from "$lib/api/dashboard.gen";
 import type { PageServerLoad } from "./$types";
-
-export type Member = components["schemas"]["Membership"];
 
 export type IssuesPageData = {
 	team: Team | null;
@@ -34,9 +30,7 @@ export type IssuesPageData = {
 	groups: IssueGroupTally[] | undefined;
 	totals: IssueGroupTally[] | undefined;
 	states: WorkflowState[] | undefined;
-	labels: Label[];
 	progress: IssueProgress | undefined;
-	members: Member[];
 	facets: Facets;
 	display: Display;
 	today: string;
@@ -104,9 +98,7 @@ export const load: PageServerLoad = async ({
 			groups: undefined,
 			totals: undefined,
 			states: undefined,
-			labels: [],
 			progress: undefined,
-			members: [],
 		};
 	}
 
@@ -139,7 +131,7 @@ export const load: PageServerLoad = async ({
 
 	const across = viewQuery(applied, "all", team?.id ?? null, "", { filters, grouping: "state" });
 
-	const [issues, totals, progress, members, labels, detail] = await Promise.all([
+	const [issues, totals, progress, detail] = await Promise.all([
 		locals.api.POST("/workspaces/{workspaceId}/issues/query", { params: { path }, body: query }),
 		locals.api.POST("/workspaces/{workspaceId}/issues/query", {
 			params: { path },
@@ -150,8 +142,6 @@ export const load: PageServerLoad = async ({
 					params: { path, query: { cycleId: facets.cycle } },
 				})
 			: Promise.resolve({ data: undefined }),
-		locals.api.GET("/workspaces/{workspaceId}/members", { params: { path } }),
-		locals.api.GET("/workspaces/{workspaceId}/labels", { params: { path } }),
 		applied.kind === "applied"
 			? locals.api.GET("/workspaces/{workspaceId}/saved-views/{savedViewId}", {
 					params: { path: { ...path, savedViewId: applied.view.id } },
@@ -173,8 +163,6 @@ export const load: PageServerLoad = async ({
 		groups: issues.data?.groups,
 		totals: totals.data?.groups,
 		states,
-		labels: labels.data ?? [],
 		progress: progress.data,
-		members: members.data?.members ?? [],
 	};
 };

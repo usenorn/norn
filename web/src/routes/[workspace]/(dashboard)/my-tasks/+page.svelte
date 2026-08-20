@@ -5,13 +5,14 @@
 	import Funnel from "@lucide/svelte/icons/funnel";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Settings from "@lucide/svelte/icons/settings";
-	import ShortcutHints from "$lib/shortcuts/shortcut-hints.svelte";
-	import RoamIndicator from "$lib/shortcuts/roam/roam-indicator.svelte";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { registerRoam } from "$lib/shortcuts/roam/roam.svelte";
+	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
 	import TaskRow from "$lib/components/norn/task-row.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import { goto } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { bucketsOf } from "$lib/tasks/tasks";
 	import type { TaskBucket } from "$lib/tasks/types";
@@ -76,25 +77,34 @@
 		}
 	}
 
-	let cursor = $state(0);
 	const flat = $derived(buckets.flatMap((bucket) => bucket.tasks));
 
+	const cursor = listCursor(() => ({
+		rows: flat,
+		open: (task) => void goto(workspacePath(data.workspace.slug, `/issues/${task.id}`)),
+	}));
+
+	const issueOf = $derived(new Map(loaded.map((issue) => [issue.reference, issue])));
+
+	let said = $state("");
+
 	bindShortcuts({
-		"cursor-down": () => (cursor = Math.min(cursor + 1, flat.length - 1)),
-		"cursor-up": () => (cursor = Math.max(cursor - 1, 0)),
+		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
 	});
 
-	registerRoam(() => ({
-		up: () => (cursor = Math.max(cursor - 1, 0)),
-		down: () => (cursor = Math.min(cursor + 1, flat.length - 1)),
-		left: () => false,
-		right: () => false,
-		enter: () => {
-			const task = flat[cursor];
+	async function moveStatus(nth: number) {
+		const task = cursor.row;
+		const issue = task && issueOf.get(task.id);
+		const state = issue && nthState(data.states, issue.teamId, nth);
 
-			if (task) void goto(workspacePath(data.workspace.slug, `/issues/${task.id}`));
-		},
-	}));
+		if (!issue || !state) return;
+
+		const outcome = await setStatus(data.workspace.id, issue, state);
+
+		said = statusMessage(outcome, issue.reference);
+
+		if (outcome.kind === "changed") await invalidate(keys.issues(data.workspace.id));
+	}
 </script>
 
 <svelte:head><title>My tasks · Norn</title></svelte:head>
@@ -143,7 +153,6 @@
 			</div>
 		{:else}
 			{#each buckets as bucket (bucket.key)}
-				{@const offset = flat.indexOf(bucket.tasks[0])}
 				<section>
 					<div
 						class="sticky top-0 z-1 flex h-7.5 items-center gap-2 border-b border-line-default bg-background pr-3 pl-3.5"
@@ -160,8 +169,12 @@
 						</span>
 						<span class="h-px flex-1 bg-line-default" aria-hidden="true"></span>
 					</div>
-					{#each bucket.tasks as task, index (task.id)}
-						<TaskRow {task} href={workspacePath(data.workspace.slug, `/issues/${task.id}`)} cursor={offset + index === cursor} />
+					{#each bucket.tasks as task (task.id)}
+						<TaskRow
+							{task}
+							href={workspacePath(data.workspace.slug, `/issues/${task.id}`)}
+							cursor={cursor.holds(task)}
+						/>
 					{/each}
 				</section>
 			{/each}
@@ -188,10 +201,7 @@
 		{/if}
 	</div>
 
-	<div
-		class="hidden h-7.5 flex-none items-center justify-end gap-4 border-t border-line-subtle bg-card px-3.5 md:flex"
-	>
-		<ShortcutHints ids={["cursor-down", "search", "help"]} />
-		<RoamIndicator />
-	</div>
+	<p class="sr-only" role="status" aria-live="polite">{said}</p>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "status-set", "issue-new", "help"]} />
 </div>

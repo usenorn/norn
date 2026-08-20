@@ -14,7 +14,9 @@ export type Shortcut = {
 	keys: string[];
 	label: string;
 	group: ShortcutGroup;
+	keysLabel?: string;
 	whileTyping?: boolean;
+	yieldsToFocus?: boolean;
 	mode?: string;
 };
 
@@ -51,10 +53,18 @@ const declared = [
 
 	{ id: "cursor-down", keys: ["j", "arrowdown"], label: "Move down", group: "list" },
 	{ id: "cursor-up", keys: ["k", "arrowup"], label: "Move up", group: "list" },
+	{ id: "cursor-open", keys: ["enter", "o"], label: "Open", group: "list", yieldsToFocus: true },
 	{ id: "issue-new", keys: ["c"], label: "New issue", group: "issues" },
 	{ id: "issue-filter", keys: ["f"], label: "Filter", group: "issues" },
-	{ id: "issue-list", keys: ["1"], label: "List", group: "issues" },
-	{ id: "issue-board", keys: ["2"], label: "Board", group: "issues" },
+	{ id: "issue-list", keys: ["shift+l"], label: "List", group: "issues" },
+	{ id: "issue-board", keys: ["shift+b"], label: "Board", group: "issues" },
+	{
+		id: "status-set",
+		keys: ["1", "2", "3", "4", "5", "6"],
+		keysLabel: "1 – 6",
+		label: "Set status",
+		group: "issues",
+	},
 	{ id: "issue-edit", keys: ["e"], label: "Edit the description", group: "issues" },
 
 	{ id: "select-toggle", keys: ["x", " "], label: "Select", group: "selection" },
@@ -116,6 +126,10 @@ export function displayKeys(binding: string, apple: boolean): string {
 		.join(" ");
 }
 
+export function keycap(shortcut: Shortcut, apple: boolean): string {
+	return shortcut.keysLabel ?? displayKeys(shortcut.keys[0], apple);
+}
+
 export function isApplePlatform(): boolean {
 	if (typeof navigator === "undefined") return true;
 
@@ -128,4 +142,21 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 	return (
 		target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)
 	);
+}
+
+const activatable = [
+	"button",
+	"summary",
+	"a[href]",
+	'[role="button"]',
+	'[role="menuitem"]',
+	'[role="option"]',
+	'[role="tab"]',
+	'[role="link"]',
+].join(", ");
+
+export function isActivatableTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) return false;
+
+	return Boolean(target.closest(activatable));
 }

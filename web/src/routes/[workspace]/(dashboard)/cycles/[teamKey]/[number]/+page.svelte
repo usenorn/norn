@@ -13,6 +13,10 @@
 	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import { api } from "$lib/api";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import { bindShortcuts, holdShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		cycleFailureMessage,
 		openIssues,
@@ -52,6 +56,39 @@
 
 	const closing = $derived(page.url.searchParams.has("close"));
 	const canClose = $derived(detail.kind === "ready" && detail.cycle.phase === "ended");
+
+	const rows = $derived(groups.flatMap((group) => group.issues));
+
+	const cursor = listCursor(() => ({
+		rows,
+		open: (issue) => void goto(workspacePath(slug, `/issues/${issue.reference}`)),
+	}));
+
+	holdShortcuts(() => closing);
+
+	let said = $state("");
+
+	bindShortcuts({
+		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
+	});
+
+	async function moveStatus(nth: number) {
+		const issue = cursor.row;
+		const state = issue && nthState(states ?? [], issue.teamId, nth);
+
+		if (!issue || !state) return;
+
+		const outcome = await setStatus(data.workspace.id, issue, state);
+
+		said = statusMessage(outcome, issue.reference);
+
+		if (outcome.kind === "changed") {
+			await Promise.all([
+				invalidate(keys.page(page.route.id)),
+				invalidate(keys.issues(data.workspace.id)),
+			]);
+		}
+	}
 
 	let rollover = $state<CycleRollover>("next");
 	let overrides = $state<Record<string, CycleRollover>>({});
@@ -324,6 +361,7 @@
 												href={workspacePath(slug, `/issues/${issue.reference}`)}
 												now={data.now}
 												timezone={data.workspace.timezone}
+												cursor={cursor.holds(issue)}
 												class="min-w-0 flex-1"
 											/>
 											{#if addedIds.has(issue.id)}
@@ -389,4 +427,8 @@
 			{/if}
 		</div>
 	</div>
+
+	<p class="sr-only" role="status" aria-live="polite">{said}</p>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "status-set", "issue-new", "help"]} />
 </div>

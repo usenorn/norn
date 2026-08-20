@@ -10,6 +10,8 @@
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		healthLabel,
 		projectFailureMessage,
@@ -47,6 +49,13 @@
 			}))
 			.filter((group) => group.projects.length > 0);
 	});
+
+	const rows = $derived(grouped.flatMap((group) => group.projects));
+
+	const cursor = listCursor(() => ({
+		rows,
+		open: (project) => void goto(projectPath(slug, project)),
+	}));
 
 	let name = $state("");
 	let address = $state("");
@@ -204,7 +213,10 @@
 						<Eyebrow class="text-ink-600">{stateLabel(group.state)}</Eyebrow>
 						<ul class="flex flex-col rounded-lg border border-line-subtle">
 							{#each group.projects as project (project.id)}
-								<li class="border-b border-line-subtle last:border-b-0">
+								<li
+									class="cursor-row border-b border-line-subtle last:border-b-0"
+									{...cursor.props(project)}
+								>
 									<a
 										href={projectPath(slug, project)}
 										class="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 motion-control hover:bg-paper-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
@@ -236,4 +248,6 @@
 			{/if}
 		</div>
 	</div>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "issue-new", "search", "help"]} />
 </div>

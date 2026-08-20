@@ -3,10 +3,13 @@ import { keys } from "$lib/api/keys";
 import { reachOfSlug, type SignedInAccount } from "$lib/account/accounts";
 import type { components } from "$lib/api/dashboard.gen";
 import type { TeamCycle } from "$lib/cycles/cycles";
+import type { Label } from "$lib/labels/labels";
+import type { Membership } from "$lib/workspace/members";
 import type { Project } from "$lib/projects/projects";
 import type { SavedView } from "$lib/views/views";
 import { waitingTotal } from "$lib/triage/triage";
 import type { Team } from "$lib/team/teams";
+import type { WorkflowState } from "$lib/team/states";
 import type { LayoutServerLoad } from "./$types";
 
 export type WorkspaceSummary = components["schemas"]["Workspace"];
@@ -21,6 +24,9 @@ export type WorkspaceScope = {
 	cycles: TeamCycle[];
 	projects: Project[];
 	views: SavedView[] | null;
+	members: Membership[];
+	labels: Label[];
+	states: WorkflowState[];
 	waiting: number;
 	unread: number;
 	narrowed: boolean;
@@ -49,10 +55,13 @@ export const load: LayoutServerLoad = async ({
 	depends(keys.views(workspace.id));
 	depends(keys.triage(workspace.id));
 	depends(keys.inbox(workspace.id));
+	depends(keys.members(workspace.id));
+	depends(keys.labels(workspace.id));
+	depends(keys.states(workspace.id));
 
 	const path = { workspaceId: workspace.id };
 
-	const [teams, cycles, projects, views, triage, inbox] = await Promise.all([
+	const [teams, cycles, projects, views, triage, inbox, members, labels] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/cycles/current", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/projects", {
@@ -63,7 +72,19 @@ export const load: LayoutServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/notifications", {
 			params: { path, query: { limit: 1 } },
 		}),
+		locals.api.GET("/workspaces/{workspaceId}/members", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/labels", { params: { path } }),
 	]);
+
+	const reachable = teams.data ?? [];
+
+	const workflows = await Promise.all(
+		reachable.map((team) =>
+			locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
+				params: { path: { ...path, teamId: team.id } },
+			})
+		)
+	);
 
 	return {
 		narrowed: requiresProvider(teams.error),
@@ -81,6 +102,9 @@ export const load: LayoutServerLoad = async ({
 		cycles: cycles.data ?? [],
 		projects: projects.data ?? [],
 		views: views.data ?? null,
+		members: members.data?.members ?? [],
+		labels: labels.data ?? [],
+		states: workflows.flatMap((workflow) => workflow.data ?? []),
 		waiting: waitingTotal(triage.data),
 		unread: inbox.data?.unread ?? 0,
 	};

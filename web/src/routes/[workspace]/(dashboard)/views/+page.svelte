@@ -14,6 +14,9 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { api } from "$lib/api";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import { holdShortcuts } from "$lib/shortcuts/registry.svelte";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { viewSchema } from "$lib/views/view-schema";
 	import {
 		reordered,
@@ -55,6 +58,13 @@
 	const removing = $derived(views.find((view) => view.id === removalId) ?? null);
 	const editingId = $derived(preview?.editing ?? page.url.searchParams.get("edit") ?? "");
 	const editing = $derived(views.find((view) => view.id === editingId) ?? null);
+
+	const cursor = listCursor(() => ({
+		rows: views,
+		open: (view) => void goto(viewPath(slug, view)),
+	}));
+
+	holdShortcuts(() => Boolean(editing || removing));
 
 	// svelte-ignore state_referenced_locally
 	const form = superForm(data.form, {
@@ -237,7 +247,7 @@
 			{:else}
 				<ul class="flex flex-col divide-y divide-line-subtle rounded-lg border border-line-default">
 					{#each views as view, index (view.id)}
-						<li class="flex flex-col">
+						<li class="cursor-row flex flex-col" {...cursor.props(view)}>
 							<div class="flex flex-wrap items-center gap-2 px-3 py-2">
 								<a
 									href={viewPath(slug, view)}
@@ -393,4 +403,6 @@
 			{/if}
 		</div>
 	</div>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "issue-new", "search", "help"]} />
 </div>

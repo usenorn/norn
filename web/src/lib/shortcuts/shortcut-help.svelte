@@ -3,8 +3,8 @@
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import { holdShortcuts, useShortcuts } from "./registry.svelte";
 	import {
-		displayKeys,
 		isApplePlatform,
+		keycap,
 		shortcutGroupLabels,
 		shortcutGroupOrder,
 		type ShortcutGroup,
@@ -48,9 +48,7 @@
 							<li class="flex items-center justify-between gap-4 py-1.5">
 								<span class="min-w-0 text-sm text-ink-900">{shortcut.label}</span>
 								<span class="flex shrink-0 items-center gap-1">
-									{#each shortcut.keys.slice(0, 1) as binding (binding)}
-										<Kbd keys={displayKeys(binding, apple)} />
-									{/each}
+									<Kbd keys={keycap(shortcut, apple)} />
 								</span>
 							</li>
 						{/each}

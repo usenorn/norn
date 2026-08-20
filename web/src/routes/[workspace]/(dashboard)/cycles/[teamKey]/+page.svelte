@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { page } from "$app/state";
+	import { goto } from "$app/navigation";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Layers from "@lucide/svelte/icons/layers";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { cyclePath, phaseLabel, type Cycle } from "$lib/cycles/cycles";
 	import { cycleWindow } from "$lib/time";
 	import { workspacePath } from "$lib/workspace/navigation";
@@ -36,6 +39,13 @@
 
 		return sections.filter((section) => section.cycles.length > 0);
 	});
+
+	const rows = $derived(grouped.flatMap((section) => section.cycles));
+
+	const cursor = listCursor(() => ({
+		rows,
+		open: (cycle) => void goto(cyclePath(slug, cycle)),
+	}));
 </script>
 
 <svelte:head>
@@ -115,7 +125,10 @@
 						<Eyebrow class="text-ink-600">{section.label}</Eyebrow>
 						<ul class="flex flex-col rounded-lg border border-line-subtle">
 							{#each section.cycles as cycle (cycle.id)}
-								<li class="border-b border-line-subtle last:border-b-0">
+								<li
+									class="cursor-row border-b border-line-subtle last:border-b-0"
+									{...cursor.props(cycle)}
+								>
 									<a
 										href={cyclePath(slug, cycle)}
 										class="flex items-center justify-between gap-3 px-3 py-2.5 motion-control hover:bg-paper-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
@@ -144,4 +157,6 @@
 			{/if}
 		</div>
 	</div>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "issue-new", "search", "help"]} />
 </div>

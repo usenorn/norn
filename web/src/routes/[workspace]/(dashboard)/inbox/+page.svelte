@@ -12,6 +12,9 @@
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
+	import { goto } from "$app/navigation";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		actorKindLabels,
 		listingFor,
@@ -38,7 +41,7 @@
 	let localFailure = $state<NotificationFailure | null>(null);
 	let working = $state("");
 	let extra = $state.raw<Notification[]>([]);
-	let cursor = $state<string | undefined>(undefined);
+	let pageCursor = $state<string | undefined>(undefined);
 	let loadingMore = $state(false);
 	let announcement = $state("");
 
@@ -49,8 +52,16 @@
 	const busy = $derived(working !== "");
 
 	const listing = $derived<InboxListing>(
-		mergeLoaded(preview?.listing ?? data.listing, extra, cursor)
+		mergeLoaded(preview?.listing ?? data.listing, extra, pageCursor)
 	);
+
+	const rows = $derived(listing.kind === "ready" ? listing.notifications : []);
+
+	const cursor = listCursor(() => ({
+		rows,
+		keyOf: key,
+		open: (notification) => void goto(subjectPath(slug, notification)),
+	}));
 
 	function mergeLoaded(
 		base: InboxListing,
@@ -188,7 +199,7 @@
 			}
 
 			extra = [...extra, ...next.notifications];
-			cursor = next.nextCursor;
+			pageCursor = next.nextCursor;
 		} catch {
 			localFailure = { kind: "unavailable" };
 		} finally {
@@ -198,7 +209,7 @@
 
 	async function reload() {
 		extra = [];
-		cursor = undefined;
+		pageCursor = undefined;
 		await invalidate(keys.inbox(data.workspace.id));
 	}
 </script>
@@ -278,7 +289,7 @@
 					{#each listing.notifications as notification (key(notification))}
 						{@const Marker = marker(notification)}
 						{@const snoozed = notification.snoozedUntil}
-						<li class="border-b border-line-subtle">
+						<li class="cursor-row border-b border-line-subtle" {...cursor.props(notification)}>
 							<div class="flex flex-wrap items-center gap-2 pr-3">
 								<a
 									href={subjectPath(slug, notification)}
@@ -386,4 +397,6 @@
 			{/if}
 		</div>
 	</div>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "issue-new", "search", "help"]} />
 </div>

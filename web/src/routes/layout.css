@@ -356,6 +356,13 @@
 	box-shadow: inset 2px 0 0 var(--rule-lead-color, var(--primary));
 }
 
+@utility cursor-row {
+	&[data-cursor='true'] {
+		box-shadow: inset 3px 0 0 var(--rule-lead-color, var(--primary));
+		background-color: var(--surface-cursor);
+	}
+}
+
 @utility label-rule {
 	&::after {
 		content: '';

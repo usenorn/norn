@@ -75,6 +75,7 @@
 	data-issue={issue.id}
 	data-selected={selected}
 	data-cursor={cursor}
+	aria-current={cursor ? "true" : undefined}
 	data-dragging={dragging}
 	data-pending={pending}
 	aria-busy={pending}
@@ -82,7 +83,7 @@
 	{ondragstart}
 	{ondragend}
 	class={cn(
-		"relative flex flex-col gap-2 rounded-lg border border-line-default bg-card px-3 py-2.5 motion-control hover:border-ink-400 active:bg-paper-2 data-[cursor=true]:rule-lead data-[cursor=true]:bg-surface-cursor data-[selected=true]:rule-lead data-[selected=true]:border-ink-400 data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
+		"relative flex flex-col gap-2 rounded-lg border border-line-default bg-card px-3 py-2.5 motion-control hover:border-ink-400 cursor-row active:bg-paper-2 data-[selected=true]:rule-lead data-[selected=true]:border-ink-400 data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
 		draggable && !pending && "cursor-grab active:cursor-grabbing",
 		className
 	)}
