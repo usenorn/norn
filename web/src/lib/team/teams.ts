@@ -15,6 +15,16 @@ export type TeamListing =
 
 export type TeamListView = "list" | "create";
 
+export type TeamOverview =
+	| { kind: "loading" }
+	| { kind: "unavailable" }
+	| { kind: "not_found" }
+	| { kind: "ready"; team: Team };
+
+export function teamPath(workspace: string, teamKey: string): string {
+	return `/${workspace}/teams/${teamKey.toUpperCase()}`;
+}
+
 export const teamListTabs = ["active", "archived"] as const;
 
 export type TeamListTab = (typeof teamListTabs)[number];

@@ -1,46 +1,7 @@
-import { backlogStates } from "$lib/issues/board";
 import { keys } from "$lib/api/keys";
-import type { Issue, IssueProgress } from "$lib/issues/board";
-import {
-	carriesDisplay,
-	displayCookie,
-	readDisplay,
-	readLayout,
-	readTab,
-	writeDisplay,
-	type Display,
-	type IssueLayout,
-	type IssueTab,
-} from "$lib/issues/display";
-import { facetFilters, readFacets, type Facets } from "$lib/issues/facets";
-import type { IssueGroupTally, IssueQueryBody } from "$lib/issues/filter";
-import { appliedView, viewQuery, viewTeams, type AppliedView } from "$lib/views/applied";
-import { calendarDate } from "$lib/time";
-import type { Team } from "$lib/team/teams";
-import type { WorkflowState } from "$lib/team/states";
+import { issuesListing } from "$lib/issues/listing.server";
+import type { IssuesListingData } from "$lib/issues/listing";
 import type { PageServerLoad } from "./$types";
-
-export type IssuesPageData = {
-	team: Team | null;
-	teams: Team[];
-	applied: AppliedView;
-	query: IssueQueryBody;
-	issues: Issue[] | undefined;
-	nextCursor: string | undefined;
-	groups: IssueGroupTally[] | undefined;
-	totals: IssueGroupTally[] | undefined;
-	states: WorkflowState[] | undefined;
-	progress: IssueProgress | undefined;
-	facets: Facets;
-	display: Display;
-	today: string;
-	tab: IssueTab;
-	layout: IssueLayout;
-};
-
-function byPositionThenName(a: WorkflowState, b: WorkflowState): number {
-	return a.position - b.position || a.name.localeCompare(b.name);
-}
 
 export const load: PageServerLoad = async ({
 	depends,
@@ -49,120 +10,23 @@ export const load: PageServerLoad = async ({
 	url,
 	cookies,
 	parent,
-}): Promise<IssuesPageData> => {
+}): Promise<IssuesListingData> => {
 	depends(keys.page(route.id));
 
-	const { workspace, teams, views, now, member } = await parent();
+	const { workspace, teams, views, states, now, member } = await parent();
 
 	depends(keys.issues(workspace.id));
 
-	const q = url.searchParams;
-	const remembered = displayCookie(member.id, workspace.id);
-	const chosen = carriesDisplay(q) ? q : new URLSearchParams(cookies.get(remembered) ?? "");
-
-	const facets = readFacets(q);
-	const display = readDisplay(chosen);
-	const layout = readLayout(chosen);
-	const tab = readTab(chosen);
-	const today = calendarDate(now, workspace.timezone);
-
-	if (carriesDisplay(q)) {
-		cookies.set(remembered, writeDisplay(display, layout, tab).toString(), {
-			path: "/",
-			httpOnly: true,
-			sameSite: "lax",
-			maxAge: 60 * 60 * 24 * 365,
-		});
-	}
-
-	const options = { tab, layout, facets, display, today };
-
-	const available = teams ?? [];
-	const applied = appliedView(q.get("view") ?? "", views ?? [], available);
-	const requested = q.get("team")?.toUpperCase();
-
-	const team =
-		applied.kind === "applied"
-			? applied.team
-			: (available.find((candidate) => candidate.key === requested) ?? available[0] ?? null);
-
-	if (available.length === 0) {
-		return {
-			...options,
-			applied,
-			query: viewQuery(applied, options.tab, null),
-			team: null,
-			teams: available,
-			issues: undefined,
-			nextCursor: undefined,
-			groups: undefined,
-			totals: undefined,
-			states: undefined,
-			progress: undefined,
-		};
-	}
-
-	const path = { workspaceId: workspace.id };
-
-	const scoped = viewTeams(applied, available);
-	const covered = scoped.length > 0 ? scoped : team ? [team] : [];
-
-	const fetched = await Promise.all(
-		covered.map((each) =>
-			locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
-				params: { path: { ...path, teamId: each.id } },
-			})
-		)
-	);
-
-	const states = fetched.some((result) => result.data)
-		? fetched.flatMap((result) => result.data ?? []).sort(byPositionThenName)
-		: undefined;
-
-	const backlog = backlogStates(states ?? []);
-	const filters = facetFilters(facets, today);
-
-	const query = viewQuery(applied, options.tab, team?.id ?? null, "", {
-		filters,
-		sort: display.ordering,
-		grouping: display.grouping,
-		backlogStateIds: backlog.map((state) => state.id),
-	});
-
-	const across = viewQuery(applied, "all", team?.id ?? null, "", { filters, grouping: "state" });
-
-	const [issues, totals, progress, detail] = await Promise.all([
-		locals.api.POST("/workspaces/{workspaceId}/issues/query", { params: { path }, body: query }),
-		locals.api.POST("/workspaces/{workspaceId}/issues/query", {
-			params: { path },
-			body: { ...across, perGroup: undefined, limit: 1 },
-		}),
-		facets.cycle
-			? locals.api.GET("/workspaces/{workspaceId}/issues/progress", {
-					params: { path, query: { cycleId: facets.cycle } },
-				})
-			: Promise.resolve({ data: undefined }),
-		applied.kind === "applied"
-			? locals.api.GET("/workspaces/{workspaceId}/saved-views/{savedViewId}", {
-					params: { path: { ...path, savedViewId: applied.view.id } },
-				})
-			: Promise.resolve({ data: undefined }),
-	]);
-
-	return {
-		...options,
-		applied:
-			applied.kind === "applied" && detail.data
-				? { ...applied, references: detail.data.references }
-				: applied,
-		query,
-		team,
-		teams: available,
-		issues: issues.data?.issues,
-		nextCursor: issues.data?.nextCursor,
-		groups: issues.data?.groups,
-		totals: totals.data?.groups,
+	return issuesListing({
+		api: locals.api,
+		workspaceId: workspace.id,
+		timezone: workspace.timezone,
+		now,
+		memberId: member.id,
+		teams: teams ?? [],
 		states,
-		progress: progress.data,
-	};
+		scope: { kind: "workspace", views: views ?? [] },
+		url,
+		cookies,
+	});
 };

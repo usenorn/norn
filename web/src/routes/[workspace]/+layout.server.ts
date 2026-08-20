@@ -8,6 +8,7 @@ import type { Membership } from "$lib/workspace/members";
 import type { Project } from "$lib/projects/projects";
 import type { SavedView } from "$lib/views/views";
 import { waitingTotal } from "$lib/triage/triage";
+import { expansionCookie, readExpanded } from "$lib/workspace/sidebar";
 import type { Team } from "$lib/team/teams";
 import type { WorkflowState } from "$lib/team/states";
 import type { LayoutServerLoad } from "./$types";
@@ -30,9 +31,11 @@ export type WorkspaceScope = {
 	waiting: number;
 	unread: number;
 	narrowed: boolean;
+	expanded: string[];
 };
 
 export const load: LayoutServerLoad = async ({
+	cookies,
 	depends,
 	locals,
 	params,
@@ -107,6 +110,10 @@ export const load: LayoutServerLoad = async ({
 		states: workflows.flatMap((workflow) => workflow.data ?? []),
 		waiting: waitingTotal(triage.data),
 		unread: inbox.data?.unread ?? 0,
+		expanded: readExpanded(
+			cookies.get(expansionCookie(signedIn.account.id, workspace.id)),
+			reachable.filter((team) => team.status === "active").map((team) => team.key)
+		),
 	};
 };
 
