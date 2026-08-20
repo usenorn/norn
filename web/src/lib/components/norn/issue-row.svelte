@@ -86,6 +86,7 @@
 	role="listitem"
 	data-issue={issue.id}
 	data-cursor={cursor}
+	aria-current={cursor ? "true" : undefined}
 	data-selected={selected}
 	data-dragging={dragging}
 	data-pending={pending}
@@ -94,7 +95,7 @@
 	{ondragstart}
 	{ondragend}
 	class={cn(
-		"group/row relative flex min-h-12 items-center gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 hover:bg-accent data-[cursor=true]:rule-lead data-[cursor=true]:bg-surface-cursor data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
+		"group/row relative flex min-h-12 items-center gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 cursor-row hover:bg-accent data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
 		draggable && !pending && "cursor-grab active:cursor-grabbing",
 		className
 	)}

@@ -6,6 +6,7 @@ export const keys = {
 	inbox: (workspaceId: string) => `norn:inbox:${workspaceId}`,
 	triage: (workspaceId: string) => `norn:triage:${workspaceId}`,
 	members: (workspaceId: string) => `norn:members:${workspaceId}`,
+	labels: (workspaceId: string) => `norn:labels:${workspaceId}`,
 	projects: (workspaceId: string) => `norn:projects:${workspaceId}`,
 	cycles: (workspaceId: string) => `norn:cycles:${workspaceId}`,
 	views: (workspaceId: string) => `norn:views:${workspaceId}`,

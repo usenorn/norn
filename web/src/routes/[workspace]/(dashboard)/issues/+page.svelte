@@ -39,17 +39,12 @@
 	import Toast from "$lib/components/norn/toast.svelte";
 	import LabelDot from "$lib/labels/label-dot.svelte";
 	import BulkBar, { type BulkPicker } from "$lib/issues/bulk-bar.svelte";
-	import ShortcutHints from "$lib/shortcuts/shortcut-hints.svelte";
-	import RoamIndicator from "$lib/shortcuts/roam/roam-indicator.svelte";
-	import {
-		bindShortcuts,
-		holdShortcuts,
-		useShortcuts,
-	} from "$lib/shortcuts/registry.svelte";
-	import { registerRoam } from "$lib/shortcuts/roam/roam.svelte";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
+	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import BulkResult from "$lib/issues/bulk-result.svelte";
 	import IssueCard from "$lib/issues/issue-card.svelte";
-	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
+	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
 	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
 	import { rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
 	import { api } from "$lib/api";
@@ -612,15 +607,12 @@
 		}
 	}
 
-	let cursor = $state(0);
 	let selected = $state(new SvelteSet<string>());
 	let anchor = $state<string | null>(null);
 	let liveBulk = $state<BulkActionResult | null>(null);
 	let applying = $state(false);
 	let polling = $state<ReturnType<typeof setTimeout> | null>(null);
 	let collapsed = $state(new SvelteSet<string>());
-	let creating = $state(false);
-	let prefill = $state<Partial<NewIssueInput> | undefined>(undefined);
 	let filterOpen = $state(false);
 	let filterCategory = $state<FacetKind | null>(null);
 	let filterSearch = $state("");
@@ -734,10 +726,7 @@
 		if (outcome.kind === "refused") {
 			announce(outcome.failure);
 
-			if (outcome.input) {
-				prefill = outcome.input;
-				creating = true;
-			}
+			if (outcome.input) raising.raise(outcome.input);
 
 			return;
 		}
@@ -745,11 +734,6 @@
 		announce(`Created ${outcome.issue.reference}`);
 
 		await invalidate(keys.page(page.route.id));
-	}
-
-	function raise(seed?: Partial<NewIssueInput>) {
-		prefill = { teamId: team?.id ?? "", ...seed };
-		creating = true;
 	}
 
 	function seedFor(key: string): Partial<NewIssueInput> {
@@ -768,51 +752,50 @@
 	}
 
 	const shortcuts = useShortcuts();
+	const raising = useNewIssue();
 
 	let bulkBar = $state.raw<{ pick: (what: BulkPicker) => void } | undefined>(undefined);
 
-	holdShortcuts(() => creating);
+	const cursor = listCursor(() => ({
+		rows: flat,
+		open: (issue) => {
+			if (!draftIDs.has(issue.id)) void goto(at(`/issues/${issue.reference}`));
+		},
+		left: () => step(-1),
+		right: () => step(1),
+	}));
+
+	registerNewIssue(() => ({
+		seed: { teamId: team?.id ?? "" },
+		onraising: (key, draft) => (creations = withDraft(creations, key, draft)),
+		onsettled: settle,
+	}));
 
 	bindShortcuts({
 		"select-toggle": () => {
-			const issue = flat[cursor];
+			const issue = cursor.row;
 
 			if (issue && !draftIDs.has(issue.id)) toggle(issue.id);
 		},
-		"issue-new": raise,
 		"issue-filter": () => {
 			filterCategory = null;
 			filterOpen = true;
 		},
 		"issue-list": () => void goto(linkWith({ layout: null })),
 		"issue-board": () => void goto(linkWith({ layout: "board" })),
-		"cursor-down": () => (cursor = Math.min(cursor + 1, flat.length - 1)),
-		"cursor-up": () => (cursor = Math.max(cursor - 1, 0)),
 	});
-
-	registerRoam(() => ({
-		up: () => (cursor = Math.max(cursor - 1, 0)),
-		down: () => (cursor = Math.min(cursor + 1, flat.length - 1)),
-		left: () => step(-1),
-		right: () => step(1),
-		enter: () => {
-			const issue = flat[cursor];
-
-			if (issue && !draftIDs.has(issue.id)) void goto(at(`/issues/${issue.reference}`));
-		},
-	}));
 
 	function step(by: number): boolean {
 		const here = columns.findIndex((column) => {
 			const start = offsets.get(column.key) ?? 0;
 
-			return cursor >= start && cursor < start + column.issues.length;
+			return cursor.at >= start && cursor.at < start + column.issues.length;
 		});
 
 		for (let next = (here < 0 ? 0 : here) + by; next >= 0 && next < columns.length; next += by) {
 			if (columns[next].issues.length === 0) continue;
 
-			cursor = offsets.get(columns[next].key) ?? 0;
+			cursor.to(offsets.get(columns[next].key) ?? 0);
 
 			return true;
 		}
@@ -1246,7 +1229,7 @@
 				<Button href={at("/inbox")} variant="outline" size="icon-sm" aria-label="Notifications">
 					<Bell class="size-icon-toolbar" aria-hidden="true" />
 				</Button>
-				<Button size="sm" disabled={!team} onclick={() => raise()}>
+				<Button size="sm" disabled={!team} onclick={() => raising.raise()}>
 					<Plus aria-hidden="true" />
 					New issue
 				</Button>
@@ -1617,7 +1600,7 @@
 						Raise the first one, and it starts in whichever state this team files new work into.
 					{/if}
 				</p>
-				<Button size="sm" disabled={!team} onclick={() => raise()}>
+				<Button size="sm" disabled={!team} onclick={() => raising.raise()}>
 					<Plus aria-hidden="true" />
 					New issue
 				</Button>
@@ -1625,7 +1608,6 @@
 		{:else if data.layout === "list"}
 			<div class="flex-1 overflow-auto">
 				{#each columns as column (column.key)}
-					{@const offset = offsets.get(column.key) ?? 0}
 					{@const shut = collapsed.has(column.key)}
 					<section
 						aria-label={column.name}
@@ -1667,7 +1649,7 @@
 								size="icon-xs"
 								aria-label="New issue in {column.name}"
 								disabled={!team}
-								onclick={() => raise(seedFor(column.key))}
+								onclick={() => raising.raise(seedFor(column.key))}
 							>
 								<Plus aria-hidden="true" />
 							</Button>
@@ -1683,7 +1665,7 @@
 										now={data.now}
 										timezone={data.workspace.timezone}
 										shown={display.shown}
-										cursor={offset + index === cursor}
+										cursor={cursor.holds(issue)}
 										selected={selected.has(issue.id)}
 										pending={draftIDs.has(issue.id)}
 										onselect={(extend) => toggle(issue.id, extend)}
@@ -1738,7 +1720,7 @@
 									size="icon-xs"
 									aria-label="New issue in {column.name}"
 									disabled={!team}
-									onclick={() => raise(seedFor(column.key))}
+									onclick={() => raising.raise(seedFor(column.key))}
 								>
 									<Plus aria-hidden="true" />
 								</Button>
@@ -1749,7 +1731,7 @@
 									{@render dropGap(column.key, index)}
 									<IssueCard
 										{issue}
-										cursor={(offsets.get(column.key) ?? 0) + index === cursor}
+										cursor={cursor.holds(issue)}
 										href={at(`/issues/${issue.reference}`)}
 										assignee={names.get(issue.assigneeAccountId ?? "") ?? ""}
 										now={data.now}
@@ -1789,7 +1771,7 @@
 							<button
 								type="button"
 								disabled={!team}
-								onclick={() => raise(seedFor(column.key))}
+								onclick={() => raising.raise(seedFor(column.key))}
 								class="flex h-7.5 w-full cursor-pointer items-center gap-1.75 rounded-md border border-dashed border-line-strong px-2 text-sm text-ink-600 opacity-0 motion-control group-hover/column:opacity-100 focus-visible:opacity-100 hover:bg-accent hover:text-foreground disabled:pointer-events-none"
 							>
 								<Plus class="size-3.5" aria-hidden="true" />
@@ -1831,35 +1813,16 @@
 			onclear={clearSelection}
 		/>
 	{:else}
-		<div
-			class="hidden h-8.5 flex-none items-center gap-4 border-t border-line-subtle bg-card pr-3.5 pl-3.5 md:flex"
+		<ShortcutBar
+			ids={["cursor-down", "cursor-open", "select-toggle", "issue-filter", "issue-new", "help"]}
 		>
-			<span class="font-mono text-xs text-muted-foreground tabular-nums">
-				{total}
-				{total === 1 ? "issue" : "issues"}
-			</span>
-			<span class="flex-1"></span>
-			<ShortcutHints
-				ids={["cursor-down", "select-toggle", "issue-filter", "issue-new", "help"]}
-			/>
-			<RoamIndicator />
-		</div>
+			{#snippet lead()}
+				<span class="font-mono text-xs text-muted-foreground tabular-nums">
+					{total}
+					{total === 1 ? "issue" : "issues"}
+				</span>
+			{/snippet}
+		</ShortcutBar>
 	{/if}
 </div>
 
-{#if team}
-	<NewIssueDialog
-		bind:open={creating}
-		workspaceId={data.workspace.id}
-		teams={data.teams}
-		states={statesByTeam}
-		{members}
-		{labels}
-		projects={data.projects ?? []}
-		today={data.today}
-		now={data.now}
-		{prefill}
-		onraising={(key, draft) => (creations = withDraft(creations, key, draft))}
-		onsettled={settle}
-	/>
-{/if}

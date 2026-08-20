@@ -1,5 +1,6 @@
 import { getContext, onDestroy, setContext } from "svelte";
 import {
+	isActivatableTarget,
 	isTypingTarget,
 	shortcutOf,
 	shortcuts,
@@ -94,13 +95,14 @@ export class ShortcutRegistry {
 
 		const chord = chordOf(event);
 		const typing = isTypingTarget(event.target);
+		const focused = isActivatableTarget(event.target);
 
 		if (this.#pending && Date.now() < this.#expires) {
 			const sequence = `${this.#pending} ${chord}`;
 
 			this.#pending = "";
 
-			if (this.#run(sequence, typing)) {
+			if (this.#run(sequence, typing, focused)) {
 				event.preventDefault();
 
 				return true;
@@ -117,7 +119,7 @@ export class ShortcutRegistry {
 			return true;
 		}
 
-		if (this.#run(chord, typing)) {
+		if (this.#run(chord, typing, focused)) {
 			event.preventDefault();
 
 			return true;
@@ -138,9 +140,10 @@ export class ShortcutRegistry {
 		return this.#mode ? [...inMode, ...outside] : outside;
 	}
 
-	#run(binding: string, typing: boolean): boolean {
+	#run(binding: string, typing: boolean, focused: boolean): boolean {
 		for (const shortcut of this.#declared()) {
 			if (typing && !shortcut.whileTyping) continue;
+			if (focused && shortcut.yieldsToFocus) continue;
 			if (!shortcut.keys.includes(binding)) continue;
 
 			this.#bound.get(shortcut.id)?.();

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { goto } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
+	import { keys } from "$lib/api/keys";
 	import Check from "@lucide/svelte/icons/check";
 	import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down";
 	import Layers from "@lucide/svelte/icons/layers";
@@ -27,8 +28,12 @@
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Users from "@lucide/svelte/icons/users";
 	import Kbd from "$lib/components/norn/kbd.svelte";
+	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
+	import { provideNewIssue } from "$lib/issues/new-issue.svelte";
+	import type { CreationOutcome } from "$lib/issues/creating";
+	import { calendarDate } from "$lib/time";
 	import ShortcutHelp from "$lib/shortcuts/shortcut-help.svelte";
-	import { bindShortcuts, provideShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { bindShortcuts, holdShortcuts, provideShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { destinations } from "$lib/shortcuts/destinations";
 	import { bindRoam, provideRoam } from "$lib/shortcuts/roam/roam.svelte";
 	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
@@ -66,6 +71,7 @@
 	const exactly = $derived((href: string) => isExactly(pathname, href));
 
 	let searching = $state(false);
+	let created = $state("");
 
 	const realtime = provideRealtime();
 
@@ -101,10 +107,42 @@
 
 	bindRoam(provideRoam());
 
+	const raising = provideNewIssue();
+
+	holdShortcuts(() => raising.open);
+
 	bindShortcuts({
 		search: () => (searching = true),
 		help: () => (helping = true),
 	});
+
+	$effect(() => {
+		if (teams.length === 0) return;
+
+		return shortcuts.register("issue-new", () => raising.raise());
+	});
+
+	async function settled(outcome: CreationOutcome) {
+		const handled = raising.onsettled;
+
+		if (handled) {
+			await handled(outcome);
+
+			return;
+		}
+
+		if (outcome.kind === "refused") {
+			created = outcome.failure;
+
+			if (outcome.input) raising.raise(outcome.input);
+
+			return;
+		}
+
+		created = `Created ${outcome.issue.reference}`;
+
+		await invalidate(keys.issues(data.workspace.id));
+	}
 
 	$effect(() => {
 		const released = destinations(slug).map((destination) =>
@@ -119,6 +157,7 @@
 	const tabs = $derived(mobileNav(slug));
 
 	const teams = $derived((data.teams ?? []).filter((team) => team.status === "active"));
+	const today = $derived(calendarDate(data.now, data.workspace.timezone));
 	const cycleFor = $derived((teamId: string) => data.cycles.find((entry) => entry.teamId === teamId));
 </script>
 
@@ -314,7 +353,7 @@
 				{@const Glyph = entry.icon}
 				{#if index === 2}
 					<div class="flex flex-1 items-center justify-center">
-						<Button size="touch" aria-label="New task">
+						<Button size="touch" aria-label="New task" onclick={() => raising.raise()}>
 							<Plus aria-hidden="true" />
 						</Button>
 					</div>
@@ -338,6 +377,25 @@
 <svelte:window onkeydown={(event) => shortcuts.handle(event)} />
 
 <ShortcutHelp bind:open={helping} />
+
+{#if teams.length > 0}
+	<NewIssueDialog
+		bind:open={raising.open}
+		workspaceId={data.workspace.id}
+		{teams}
+		states={{}}
+		members={data.members}
+		labels={data.labels}
+		projects={data.projects}
+		{today}
+		now={data.now}
+		prefill={raising.prefill}
+		onraising={raising.onraising}
+		onsettled={settled}
+	/>
+{/if}
+
+<p class="sr-only" role="status" aria-live="polite">{created}</p>
 
 <SearchPalette
 	bind:open={searching}

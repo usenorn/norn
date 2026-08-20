@@ -20,6 +20,8 @@
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { issuePageSize } from "$lib/issues/filter";
 	import type { Issue } from "$lib/issues/issues";
 	import {
@@ -72,6 +74,13 @@
 	);
 	const paging = $derived<Paging>(preview?.paging ?? localPaging);
 	const groups = $derived(groupByCategory(loaded));
+
+	const rows = $derived(groups.flatMap((group) => group.issues));
+
+	const cursor = listCursor(() => ({
+		rows,
+		open: (issue) => void goto(workspacePath(slug, `/issues/${issue.reference}`)),
+	}));
 
 	const members = $derived(ready?.members ?? []);
 	const latest = $derived(ready?.updates[0] ?? null);
@@ -639,6 +648,7 @@
 												href={workspacePath(slug, `/issues/${issue.reference}`)}
 												now={data.now}
 												timezone={data.workspace.timezone}
+												cursor={cursor.holds(issue)}
 											/>
 										</li>
 									{/each}
@@ -709,4 +719,6 @@
 			{/if}
 		</div>
 	</div>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "issue-new", "search", "help"]} />
 </div>

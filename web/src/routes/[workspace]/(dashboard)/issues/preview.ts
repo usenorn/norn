@@ -4,7 +4,7 @@ import type { Facets } from "$lib/issues/facets";
 import type { WorkflowState } from "$lib/team/states";
 import type { Team } from "$lib/team/teams";
 import type { Label } from "$lib/labels/labels";
-import type { Member } from "./+page.server";
+import type { Membership } from "$lib/workspace/members";
 import type { BulkActionResult } from "$lib/issues/bulk";
 import type { IssueGroupTally } from "$lib/issues/filter";
 import type { ColumnPage } from "$lib/issues/paging";
@@ -20,7 +20,7 @@ export type IssuesPreview = {
 	totals?: IssueGroupTally[];
 	pages?: Record<string, ColumnPage>;
 	progress?: IssueProgress;
-	members?: Member[];
+	members?: Membership[];
 	facets?: Facets;
 	display?: Display;
 };

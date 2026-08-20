@@ -303,6 +303,12 @@
 	});
 
 	$effect(() => {
+		if (!open || !team) return;
+
+		void loadStates(team.id);
+	});
+
+	$effect(() => {
 		if (!resuming || $submitting || !titleField) return;
 
 		titleField.focus();

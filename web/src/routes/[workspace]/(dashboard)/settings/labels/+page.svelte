@@ -75,7 +75,10 @@
 	}
 
 	async function refresh() {
-		await invalidate(keys.page(page.route.id));
+		await Promise.all([
+			invalidate(keys.page(page.route.id)),
+			invalidate(keys.labels(data.workspace.id)),
+		]);
 	}
 
 	function readFailure(error: unknown): LabelFailure {

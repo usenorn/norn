@@ -5,10 +5,8 @@
 	import Funnel from "@lucide/svelte/icons/funnel";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Settings from "@lucide/svelte/icons/settings";
-	import ShortcutHints from "$lib/shortcuts/shortcut-hints.svelte";
-	import RoamIndicator from "$lib/shortcuts/roam/roam-indicator.svelte";
-	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { registerRoam } from "$lib/shortcuts/roam/roam.svelte";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import TaskRow from "$lib/components/norn/task-row.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { goto } from "$app/navigation";
@@ -76,24 +74,11 @@
 		}
 	}
 
-	let cursor = $state(0);
 	const flat = $derived(buckets.flatMap((bucket) => bucket.tasks));
 
-	bindShortcuts({
-		"cursor-down": () => (cursor = Math.min(cursor + 1, flat.length - 1)),
-		"cursor-up": () => (cursor = Math.max(cursor - 1, 0)),
-	});
-
-	registerRoam(() => ({
-		up: () => (cursor = Math.max(cursor - 1, 0)),
-		down: () => (cursor = Math.min(cursor + 1, flat.length - 1)),
-		left: () => false,
-		right: () => false,
-		enter: () => {
-			const task = flat[cursor];
-
-			if (task) void goto(workspacePath(data.workspace.slug, `/issues/${task.id}`));
-		},
+	const cursor = listCursor(() => ({
+		rows: flat,
+		open: (task) => void goto(workspacePath(data.workspace.slug, `/issues/${task.id}`)),
 	}));
 </script>
 
@@ -143,7 +128,6 @@
 			</div>
 		{:else}
 			{#each buckets as bucket (bucket.key)}
-				{@const offset = flat.indexOf(bucket.tasks[0])}
 				<section>
 					<div
 						class="sticky top-0 z-1 flex h-7.5 items-center gap-2 border-b border-line-default bg-background pr-3 pl-3.5"
@@ -160,8 +144,12 @@
 						</span>
 						<span class="h-px flex-1 bg-line-default" aria-hidden="true"></span>
 					</div>
-					{#each bucket.tasks as task, index (task.id)}
-						<TaskRow {task} href={workspacePath(data.workspace.slug, `/issues/${task.id}`)} cursor={offset + index === cursor} />
+					{#each bucket.tasks as task (task.id)}
+						<TaskRow
+							{task}
+							href={workspacePath(data.workspace.slug, `/issues/${task.id}`)}
+							cursor={cursor.holds(task)}
+						/>
 					{/each}
 				</section>
 			{/each}
@@ -188,10 +176,5 @@
 		{/if}
 	</div>
 
-	<div
-		class="hidden h-7.5 flex-none items-center justify-end gap-4 border-t border-line-subtle bg-card px-3.5 md:flex"
-	>
-		<ShortcutHints ids={["cursor-down", "search", "help"]} />
-		<RoamIndicator />
-	</div>
+	<ShortcutBar ids={["cursor-down", "cursor-open", "issue-new", "search", "help"]} />
 </div>

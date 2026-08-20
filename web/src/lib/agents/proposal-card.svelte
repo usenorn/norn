@@ -27,6 +27,7 @@
 		slug,
 		timezone,
 		busy,
+		cursor = false,
 		deciding,
 		ondecide,
 	}: {
@@ -34,6 +35,7 @@
 		slug: string;
 		timezone: string;
 		busy: boolean;
+		cursor?: boolean;
 		deciding: string | null;
 		ondecide: (
 			proposalId: string,
@@ -77,7 +79,11 @@
 	);
 </script>
 
-<li class="flex flex-col gap-3 rounded-lg border border-line-subtle bg-paper-0 p-4">
+<li
+	data-cursor={cursor}
+	aria-current={cursor ? "true" : undefined}
+	class="cursor-row flex flex-col gap-3 rounded-lg border border-line-subtle bg-paper-0 p-4"
+>
 	<div class="flex flex-col gap-1.5">
 		<div class="flex flex-wrap items-center gap-2">
 			<Bot class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

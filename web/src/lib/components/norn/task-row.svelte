@@ -50,10 +50,11 @@
 	{ondragstart}
 	{ondragend}
 	data-cursor={cursor}
+	aria-current={cursor ? "true" : undefined}
 	data-selected={selected}
 	data-dragging={dragging}
 	class={cn(
-		"flex h-row items-center gap-2 border-b border-line-subtle bg-card px-row-x motion-row hover:bg-accent data-[cursor=true]:rule-lead data-[cursor=true]:bg-surface-cursor data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40",
+		"flex h-row items-center gap-2 border-b border-line-subtle bg-card px-row-x motion-row cursor-row hover:bg-accent data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40",
 		draggable && "cursor-grab active:cursor-grabbing",
 		className
 	)}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidate } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import Bot from "@lucide/svelte/icons/bot";
@@ -26,6 +26,8 @@
 	import PropertyPicker from "$lib/issues/property-picker.svelte";
 	import { api } from "$lib/api";
 	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { lift } from "$lib/motion";
 	import { priorityLabel } from "$lib/issues/issues";
 	import { initialsOf } from "$lib/team/members";
@@ -56,7 +58,6 @@
 
 	let localFailure = $state<TriageFailure | null>(null);
 	let working = $state(false);
-	let cursor = $state(0);
 	const tab = $derived(readSource(page.url.searchParams.get("source")));
 	let flow = $state<"accept" | "decline" | "merge" | null>(null);
 	let reason = $state<TriageDeclineReason | null>(null);
@@ -92,8 +93,12 @@
 	const shown = $derived(
 		tab === "all" ? waiting : waiting.filter((issue) => issue.triageSource === tab)
 	);
-	const at_cursor = $derived(Math.min(cursor, Math.max(0, shown.length - 1)));
-	const item = $derived<Issue | null>(shown[at_cursor] ?? null);
+	const cursor = listCursor(() => ({
+		rows: shown,
+		open: (issue) => void goto(at(`/issues/${issue.reference}`)),
+	}));
+
+	const item = $derived<Issue | null>(cursor.row ?? null);
 
 	const teamOf = $derived((issue: Issue) => teams.find((team) => team.id === issue.teamId) ?? null);
 	const reporterOf = $derived((issue: Issue) => {
@@ -117,7 +122,11 @@
 
 	$effect(() => {
 		tab;
-		cursor = 0;
+		cursor.to(0);
+	});
+
+	$effect(() => {
+		cursor.row;
 		closeFlow();
 	});
 
@@ -126,11 +135,6 @@
 		reason = null;
 		note = "";
 		duplicateOf = null;
-	}
-
-	function move(step: number) {
-		closeFlow();
-		cursor = Math.min(Math.max(0, at_cursor + step), Math.max(0, shown.length - 1));
 	}
 
 	function open(next: "accept" | "decline" | "merge") {
@@ -220,11 +224,7 @@
 
 	const shortcuts = useShortcuts();
 
-	bindShortcuts({
-		"triage-close": closeFlow,
-		"cursor-down": () => move(1),
-		"cursor-up": () => move(-1),
-	});
+	bindShortcuts({ "triage-close": closeFlow });
 
 	$effect(() => {
 		if (readOnly || !item) return;
@@ -257,7 +257,7 @@
 			{#if item}
 				<span class="h-3.5 w-px bg-line-default" aria-hidden="true"></span>
 				<span class="font-mono text-xs text-muted-foreground">
-					{at_cursor + 1} of {shown.length}
+					{cursor.at + 1} of {shown.length}
 				</span>
 			{/if}
 			<div class="flex-1"></div>
@@ -359,25 +359,19 @@
 						<li>
 							<button
 								type="button"
-								aria-current={index === at_cursor}
-								onclick={() => {
-									cursor = index;
-									closeFlow();
-								}}
-								class="flex w-full cursor-pointer gap-2.25 border-b border-line-subtle px-3 py-2.25 text-left motion-control hover:bg-accent {index ===
-								at_cursor
-									? 'rule-inset bg-surface-cursor'
-									: ''}"
+								{...cursor.props(issue)}
+								onclick={() => cursor.to(index)}
+								class="cursor-row flex w-full cursor-pointer gap-2.25 border-b border-line-subtle px-3 py-2.25 text-left motion-control hover:bg-accent"
 							>
 								<Glyph
-									class="mt-0.25 size-icon-row shrink-0 {index === at_cursor
+									class="mt-0.25 size-icon-row shrink-0 {cursor.holds(issue)
 										? 'text-ink-900'
 										: 'text-muted-foreground'}"
 									aria-hidden="true"
 								/>
 								<span class="flex min-w-0 flex-1 flex-col gap-1">
 									<span
-										class="truncate text-md tracking-snug {index === at_cursor
+										class="truncate text-md tracking-snug {cursor.holds(issue)
 											? 'text-ink-900'
 											: 'text-ink-600'}"
 									>
@@ -673,13 +667,17 @@
 							<Kbd keys="J K" /> move through the queue
 						</span>
 						<span class="font-mono text-xs text-muted-foreground">
-							{at_cursor + 1} of {shown.length}
+							{cursor.at + 1} of {shown.length}
 						</span>
 					</div>
 				</div>
 			{/if}
 		</div>
 	{/if}
+
+	<ShortcutBar
+		ids={["cursor-down", "cursor-open", "triage-accept", "triage-decline", "triage-move", "help"]}
+	/>
 </div>
 
 {#if notice}

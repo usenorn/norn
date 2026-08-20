@@ -9,6 +9,8 @@
 	import Users from "@lucide/svelte/icons/users";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		kindLabels,
 		resultPath,
@@ -34,6 +36,15 @@
 
 	let typed = $state("");
 	let timer: ReturnType<typeof setTimeout> | undefined;
+
+	const rows = $derived(
+		listing.kind === "results" ? listing.groups.flatMap((group) => group.results) : []
+	);
+
+	const cursor = listCursor(() => ({
+		rows,
+		open: (result) => void goto(resultPath(slug, result)),
+	}));
 
 	$effect(() => {
 		typed = query;
@@ -62,6 +73,29 @@
 			noScroll: true,
 		});
 	}
+
+	function steer(event: KeyboardEvent) {
+		if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+			if (rows.length === 0) return;
+
+			event.preventDefault();
+			cursor.move(event.key === "ArrowDown" ? 1 : -1);
+
+			return;
+		}
+
+		if (event.key !== "Enter") return;
+
+		event.preventDefault();
+
+		if (typed !== query || !cursor.row) {
+			commit();
+
+			return;
+		}
+
+		cursor.open();
+	}
 </script>
 
 <svelte:head><title>{query ? `${query} · Search` : "Search"} · {data.workspace.name} · Norn</title></svelte:head>
@@ -84,7 +118,7 @@
 				placeholder="Search issues, comments, projects, teams and people…"
 				aria-label="Search this workspace"
 				oninput={(event) => type(event.currentTarget.value)}
-				onkeydown={(event) => event.key === "Enter" && commit()}
+				onkeydown={steer}
 			/>
 
 			{#if listing.kind === "idle"}
@@ -136,7 +170,7 @@
 
 						<ul>
 							{#each group.results as result (result.id)}
-								<li class="border-b border-line-subtle">
+								<li class="cursor-row border-b border-line-subtle" {...cursor.props(result)}>
 									<a
 										href={resultPath(slug, result)}
 										class="flex min-w-0 items-center gap-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
@@ -177,4 +211,6 @@
 			{/if}
 		</div>
 	</div>
+
+	<ShortcutBar ids={["cursor-down", "cursor-open", "issue-new", "help"]} />
 </div>
