@@ -92,6 +92,7 @@
 		type IssueCreation,
 	} from "$lib/issues/creating";
 	import {
+		changedProperty,
 		insertionIndex,
 		landing,
 		movedInto,
@@ -494,10 +495,9 @@
 		onDragEnd();
 
 		const issue = flat.find((candidate) => candidate.id === id);
-		if (!issue || !landsIn(id, key)) return;
+		if (!issue || !landsIn(id, target.key)) return;
 
-		const column = columns.find((candidate) => candidate.key === key);
-		const held = column?.issues ?? [];
+		const held = columns.find((candidate) => candidate.key === target.key)?.issues ?? [];
 
 		if (stayedPut(issue, held, target, display.grouping)) return;
 
@@ -515,28 +515,38 @@
 			return;
 		}
 
-		announce(
-			movedMessage(issue, placed, key),
-			async () => {
-				moves = moves.filter((held) => held.issueId !== issue.id);
+		if (changedProperty(placed.move)) {
+			announce(
+				movedMessage(issue, target.key),
+				async () => {
+					moves = moves.filter((held) => held.issueId !== issue.id);
 
-				await patch(asLoaded(issue), returning(issue, placed));
-			},
-			at(`/issues/${issue.reference}`)
-		);
+					await patch(asLoaded(issue), returning(issue, placed));
+				},
+				at(`/issues/${issue.reference}`)
+			);
+		}
 
 		await invalidate(keys.page(page.route.id));
 	}
 
-	function movedMessage(issue: Issue, placed: ReturnType<typeof landing>, key: string): string {
+	function movedMessage(issue: Issue, key: string): string {
 		const name = columns.find((column) => column.key === key)?.name ?? "another column";
-		const priority = placed.move.priority;
 
-		if (!placed.move.stateId && priority && priority !== issue.priority) {
-			return `Moved ${issue.reference} to ${priorityLabel(priority).toLowerCase()}`;
+		switch (display.grouping) {
+			case "priority":
+				return key === "none"
+					? `Cleared the priority on ${issue.reference}`
+					: `Set ${issue.reference} to ${priorityLabel(key as IssuePriority).toLowerCase()} priority`;
+			case "assignee":
+				return key ? `Assigned ${issue.reference} to ${name}` : `Unassigned ${issue.reference}`;
+			case "project":
+				return key
+					? `Put ${issue.reference} in ${name}`
+					: `Took ${issue.reference} out of its project`;
+			default:
+				return `Moved ${issue.reference} to ${name}`;
 		}
-
-		return `Moved ${issue.reference} to ${name}`;
 	}
 
 	function returning(issue: Issue, placed: ReturnType<typeof landing>): Record<string, unknown> {
