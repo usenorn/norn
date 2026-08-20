@@ -8,7 +8,7 @@ import {
 	slugMessage,
 	slugSuggestions,
 } from "$lib/workspace/create-workspace-schema";
-import { teamKeyMessage, teamKeySuggestions } from "$lib/team/teams";
+import { teamKeyMessage, teamKeySuggestions, teamNameMessage } from "$lib/team/teams";
 import type { WorkspaceContext, WorkspaceCreationFailure } from "$lib/workspace/types";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -67,7 +67,7 @@ export const actions: Actions = {
 			});
 		}
 
-		if (error.status === 409) {
+		if (error.status === 409 && !("code" in error)) {
 			return message(form, {
 				kind: "slug_taken",
 				slug: form.data.slug,
@@ -80,7 +80,8 @@ export const actions: Actions = {
 		for (const field of error.errors ?? []) {
 			if (field.field === "slug") setError(form, "slug", slugMessage(field.code));
 			else if (field.field === "name") setError(form, "name", "Enter a workspace name.");
-			else if (field.field === "key") setError(form, "teamKey", teamKeyMessage(field.code));
+			else if (field.field === "team.key") setError(form, "teamKey", teamKeyMessage(field.code));
+			else if (field.field === "team.name") setError(form, "teamName", teamNameMessage(field.code));
 			else continue;
 
 			handled = true;
