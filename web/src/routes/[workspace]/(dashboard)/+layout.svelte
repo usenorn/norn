@@ -37,6 +37,7 @@
 	import { bindShortcuts, holdShortcuts, provideShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { destinations } from "$lib/shortcuts/destinations";
 	import { bindRoam, provideRoam } from "$lib/shortcuts/roam/roam.svelte";
+	import SidebarBranch from "$lib/components/norn/sidebar-branch.svelte";
 	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
 	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
 	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
@@ -51,6 +52,9 @@
 	} from "$lib/workspace/navigation";
 	import { viewEntries, viewsPath } from "$lib/views/views";
 	import { cyclePath } from "$lib/cycles/cycles";
+	import { teamIssuesPath } from "$lib/issues/listing";
+	import { teamPath } from "$lib/team/teams";
+	import { expansionCookie, toggledExpansion, writeExpanded } from "$lib/workspace/sidebar";
 	import { projectPath, projectsPath } from "$lib/projects/projects";
 	import type { LayoutProps } from "./$types";
 
@@ -72,6 +76,23 @@
 	const exactly = $derived((href: string) => isExactly(pathname, href));
 
 	let searching = $state(false);
+
+	let opened = $state.raw<{ source: string[]; keys: string[] } | null>(null);
+
+	const expanded = $derived(
+		opened && opened.source === data.expanded ? opened.keys : data.expanded
+	);
+
+	function toggle(key: string) {
+		const keys = toggledExpansion(expanded, key);
+
+		opened = { source: data.expanded, keys };
+
+		const name = expansionCookie(data.member.id, data.workspace.id);
+		const year = 60 * 60 * 24 * 365;
+
+		document.cookie = `${name}=${writeExpanded(keys)}; path=/; max-age=${year}; samesite=lax`;
+	}
 
 	const realtime = provideRealtime();
 
@@ -209,22 +230,32 @@
 			</SidebarSection>
 			{#each teams as team (team.id)}
 				{@const running = cycleFor(team.id)}
-				<SidebarItem
-					href={workspacePath(slug, `/settings/teams/${team.key}`)}
+				<SidebarBranch
+					id="team-{team.key}"
+					href={teamPath(slug, team.key)}
 					label={team.name}
 					icon={team.visibility === "private" ? Lock : Users}
-					indent
-					active={current(workspacePath(slug, `/settings/teams/${team.key}`))}
-				/>
-				{#if running}
+					active={exactly(teamPath(slug, team.key))}
+					expanded={expanded.includes(team.key)}
+					ontoggle={() => toggle(team.key)}
+				>
 					<SidebarItem
-						href={cyclePath(slug, running.cycle)}
-						label={running.cycle.name}
-						icon={Layers}
+						href={teamIssuesPath(slug, team.key)}
+						label="Issues"
+						icon={List}
 						indent
-						active={current(cyclePath(slug, running.cycle))}
+						active={current(teamIssuesPath(slug, team.key))}
 					/>
-				{/if}
+					{#if running}
+						<SidebarItem
+							href={cyclePath(slug, running.cycle)}
+							label={running.cycle.name}
+							icon={Layers}
+							indent
+							active={current(cyclePath(slug, running.cycle))}
+						/>
+					{/if}
+				</SidebarBranch>
 			{/each}
 			{#if teams.length === 0}
 				<SidebarItem

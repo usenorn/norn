@@ -48,7 +48,7 @@ export function resultPath(workspace: string, result: SearchResult): string {
 		case "project":
 			return `/${workspace}/projects/${result.slug ?? result.id}`;
 		case "team":
-			return `/${workspace}/settings/teams/${result.teamKey ?? result.id}`;
+			return `/${workspace}/teams/${result.teamKey ?? result.id}`;
 		case "person":
 			return `/${workspace}/settings/members?q=${encodeURIComponent(result.title)}`;
 		default:

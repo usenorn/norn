@@ -30,7 +30,6 @@ export function primaryNav(workspace: string, waiting = 0, unread = 0): NavEntry
 			iconClass: "text-status-active",
 		},
 		{ label: "Triage", href: at("/triage"), icon: Zap, count: waiting || undefined },
-		{ label: "Issues", href: at("/issues"), icon: List },
 	];
 }
 

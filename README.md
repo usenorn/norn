@@ -1,13 +1,26 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/norn-wordmark-dark.svg">
-  <img src=".github/norn-wordmark-light.svg" alt="Norn" height="26">
-</picture>
+<p align="center">
+  <img src=".github/norn-banner.png" alt="Norn" width="100%">
+</p>
 
-# An issue tracker you run yourself
+<h1 align="center">An issue tracker you run yourself</h1>
 
-Open source and keyboard-first. Use the managed EU cloud, or deploy it on your own hardware.
+<p align="center">
+  Open source and keyboard-first. Use the managed EU cloud, or deploy it on your own hardware.
+</p>
 
-[norn.so](https://norn.so) · [Documentation](https://docs.norn.so) · [Changelog](https://docs.norn.so/changelog) · [Roadmap](https://roadmap.norn.so) · [Status](https://status.norn.so)
+<p align="center">
+  <a href="https://norn.so">norn.so</a> ·
+  <a href="https://docs.norn.so">Documentation</a> ·
+  <a href="https://docs.norn.so/changelog">Changelog</a> ·
+  <a href="https://roadmap.norn.so">Roadmap</a> ·
+  <a href="https://status.norn.so">Status</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/usenorn/norn/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/usenorn/norn?style=flat-square&labelColor=0f1116&color=1a1e25"></a>
+  <a href="LICENSE"><img alt="AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-1a1e25?style=flat-square&labelColor=0f1116"></a>
+  <a href="go.mod"><img alt="Go 1.26" src="https://img.shields.io/badge/go-1.26-1a1e25?style=flat-square&labelColor=0f1116"></a>
+</p>
 
 **Yours to run.** Deploy it yourself, or sign up for the managed EU cloud. Same software, same features, either way.
 
@@ -18,6 +31,10 @@ Open source and keyboard-first. Use the managed EU cloud, or deploy it on your o
 **Built for the keyboard.** Every action has a shortcut.
 
 ## The tracker
+
+<p align="center">
+  <img src=".github/norn-issue-list.png" alt="Issue list, grouped by status, cycle 25" width="100%">
+</p>
 
 Boards, grouped and filtered issue lists, cycles, and triage. Drag between states, or change them from the keyboard. Issues carry a description, sub-issues, relations, and full history. Cycles show scope, progress, and what rolls over. Triage collects everything unsorted in one queue.
 
