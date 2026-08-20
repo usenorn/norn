@@ -5,6 +5,7 @@
 !.env.example
 data
 deploy/local
+deploy/compose
 docker-compose.yml
 web/node_modules
 web/build
