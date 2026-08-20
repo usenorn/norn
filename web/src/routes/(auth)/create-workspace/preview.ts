@@ -30,6 +30,14 @@ export const createWorkspacePreviewStates: Record<string, CreateWorkspacePreview
 					suggestions: ["MOBI", "MOBIL", "MBL"],
 				},
 			},
+			signed_out: {
+				form: { name: "Northwind", slug: "northwind", teamName: "Mobile", teamKey: "MOB" },
+				failure: { kind: "signed_out" },
+			},
+			unavailable: {
+				form: { name: "Northwind", slug: "northwind", teamName: "Mobile", teamKey: "MOB" },
+				failure: { kind: "unavailable" },
+			},
 			creating: {
 				form: { name: "Northwind", slug: "northwind", teamName: "Mobile", teamKey: "MOB" },
 				busy: true,

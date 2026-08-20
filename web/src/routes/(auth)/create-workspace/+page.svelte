@@ -3,6 +3,8 @@
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
+	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
+	import * as Alert from "$lib/components/ui/alert/index.js";
 	import AccountIdentity from "$lib/account/account-identity.svelte";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
@@ -51,6 +53,24 @@
 		failure?.kind === "team_key_taken" && failure.key === $formData.teamKey.toUpperCase()
 	);
 
+	const notice = $derived.by(() => {
+		if (failure?.kind === "signed_out") {
+			return {
+				title: "Your sign-in has expired",
+				body: "The workspace was not created. Sign in again and it will pick up where you left off.",
+			};
+		}
+
+		if (failure?.kind === "unavailable") {
+			return {
+				title: "Could not reach the server",
+				body: "Nothing was created. Check your connection and try again.",
+			};
+		}
+
+		return null;
+	});
+
 	const eyebrow = $derived(additional ? "Second workspace" : "Step 3 of 4");
 	const title = $derived(additional ? "Create another workspace" : "Create a workspace");
 	const lede = $derived(
@@ -60,12 +80,12 @@
 	);
 
 	const steps = $derived<Step[]>([
-		{ label: "Workspace created", state: "done" },
+		{ label: "Creating the workspace", state: "active" },
 		{
 			label: $formData.teamName
 				? `Setting up the ${$formData.teamName} team`
 				: "Setting up your first team",
-			state: "active",
+			state: "waiting",
 		},
 		{ label: "Preparing your first cycle", state: "waiting" },
 	]);
@@ -131,6 +151,19 @@
 				{/if}
 				<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
 			</div>
+
+			{#if notice}
+				<Alert.Root variant="destructive">
+					<TriangleAlert aria-hidden="true" />
+					<Alert.Title>{notice.title}</Alert.Title>
+					<Alert.Description>{notice.body}</Alert.Description>
+					{#if failure?.kind === "signed_out"}
+						<Alert.Action>
+							<Button href="/sign-in" variant="secondary" size="sm">Sign in</Button>
+						</Alert.Action>
+					{/if}
+				</Alert.Root>
+			{/if}
 
 			{#if !busy}
 				<form
