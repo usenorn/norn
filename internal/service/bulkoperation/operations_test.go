@@ -9,6 +9,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/usenorn/norn/internal/entity"
+	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	bulkrepo "github.com/usenorn/norn/internal/repository/bulkaction"
 	checkrepo "github.com/usenorn/norn/internal/repository/check"
@@ -33,6 +34,7 @@ type harness struct {
 	labels       *labelrepo.MockLabel
 	activity     *activityrepo.MockActivity
 	members      *membershiprepo.MockMembership
+	accounts     *accountrepo.MockAccount
 	cycles       *cyclerepo.MockCycle
 	scopeChanges *cyclerepo.MockCycleScopeChange
 	jobs         *jobqueuerepo.MockJobProducer
@@ -63,6 +65,7 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 		labels:       labelrepo.NewMockLabel(ctrl),
 		activity:     activityrepo.NewMockActivity(ctrl),
 		members:      membershiprepo.NewMockMembership(ctrl),
+		accounts:     accountrepo.NewMockAccount(ctrl),
 		cycles:       cyclerepo.NewMockCycle(ctrl),
 		scopeChanges: cyclerepo.NewMockCycleScopeChange(ctrl),
 		jobs:         jobqueuerepo.NewMockJobProducer(ctrl),
@@ -81,7 +84,7 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 		AnyTimes()
 
 	h.service = bulksvc.New(
-		h.actions, h.issues, h.states, h.labels, h.activity, h.members,
+		h.actions, h.issues, h.states, h.labels, h.activity, h.members, h.accounts,
 		h.cycles, h.scopeChanges, h.jobs, checkgate.New(h.checks, h.evidence, h.codeLinks), h.authorizer, tx,
 	)
 
@@ -241,6 +244,41 @@ func TestAnIssueOnATeamOutsideTheScopeIsRefusedIndividuallyNotForTheWholeBatch(t
 		if outcome.IssueID == ok.ID && !outcome.Outcome.Applied() {
 			t.Errorf("the in-scope issue reported %q, want it applied", outcome.Outcome)
 		}
+	}
+}
+
+func TestABulkAssignmentToAnAgentIsRefused(t *testing.T) {
+	workspaceID, teamID := uuid.New(), uuid.New()
+
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	target := issueOn(teamID, 1)
+	agentID := uuid.New()
+
+	h.expectAction(workspaceID, ptr(1))
+	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, target.ID, gomock.Any()).Return(target, nil)
+	h.members.EXPECT().
+		Get(gomock.Any(), workspaceID, agentID).
+		Return(entity.Membership{WorkspaceID: workspaceID, AccountID: agentID}, nil)
+	h.accounts.EXPECT().
+		GetByID(gomock.Any(), agentID).
+		Return(entity.Account{ID: agentID, Kind: entity.AccountKindAgent}, nil)
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().RecordOutcomes(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Advance(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Claim(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.actions.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	result, err := h.service.Apply(context.Background(), workspaceID, service.ApplyBulkInput{
+		Change: entity.BulkChange{AssigneeID: &agentID},
+		Set:    entity.BulkSet{IssueIDs: []uuid.UUID{target.ID}},
+	})
+	if err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	if len(result.Outcomes) != 1 || result.Outcomes[0].Outcome != entity.BulkOutcomeInvalid {
+		t.Fatalf("outcomes = %+v, want the agent assignment reported invalid", result.Outcomes)
 	}
 }
 

@@ -680,6 +680,121 @@ func TestRaisingAnIssueIntoAnArchivedProjectIsRefused(t *testing.T) {
 	}
 }
 
+func TestRaisingAnIssueAssignedToAnAgentIsRefused(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID, agentID := uuid.New(), uuid.New(), uuid.New()
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	h.states.EXPECT().
+		DefaultForTeam(gomock.Any(), teamID).
+		Return(entity.WorkflowState{ID: uuid.New(), TeamID: teamID, IsDefault: true}, nil)
+	h.memberships.EXPECT().
+		Get(gomock.Any(), workspaceID, agentID).
+		Return(entity.Membership{WorkspaceID: workspaceID, AccountID: agentID}, nil)
+	h.accounts.EXPECT().
+		GetByID(gomock.Any(), agentID).
+		Return(entity.Account{ID: agentID, Kind: entity.AccountKindAgent}, nil)
+
+	_, err := h.service.Create(context.Background(), service.CreateIssueInput{
+		WorkspaceID:       workspaceID,
+		TeamID:            teamID,
+		Title:             "An issue",
+		AssigneeAccountID: agentID,
+	})
+
+	assertNotAssignable(t, err)
+}
+
+func TestRaisingAnIssueAssignedToAPersonNamesThemOnTheIssue(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID, personID := uuid.New(), uuid.New(), uuid.New()
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	h.states.EXPECT().
+		DefaultForTeam(gomock.Any(), teamID).
+		Return(entity.WorkflowState{ID: uuid.New(), TeamID: teamID, IsDefault: true}, nil)
+	h.memberships.EXPECT().
+		Get(gomock.Any(), workspaceID, personID).
+		Return(entity.Membership{WorkspaceID: workspaceID, AccountID: personID}, nil)
+	h.accounts.EXPECT().
+		GetByID(gomock.Any(), personID).
+		Return(entity.Account{ID: personID, Kind: entity.AccountKindPerson}, nil)
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil)
+
+	var captured entity.Issue
+
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, issue entity.Issue) (entity.Issue, error) {
+			captured = issue
+
+			return issue, nil
+		})
+
+	if _, err := h.service.Create(context.Background(), service.CreateIssueInput{
+		WorkspaceID:       workspaceID,
+		TeamID:            teamID,
+		Title:             "An issue",
+		AssigneeAccountID: personID,
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if captured.AssigneeAccountID != personID {
+		t.Fatalf("assignee = %v, want the person %v", captured.AssigneeAccountID, personID)
+	}
+}
+
+func TestAssigningAnIssueToAnAgentIsRefused(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID, issueID, agentID := uuid.New(), uuid.New(), uuid.New(), uuid.New()
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	h.issues.EXPECT().
+		LockByID(gomock.Any(), workspaceID, issueID, gomock.Any()).
+		Return(entity.Issue{
+			ID:          issueID,
+			WorkspaceID: workspaceID,
+			TeamID:      teamID,
+			Version:     1,
+			Status:      entity.IssueStatusActive,
+		}, nil)
+	h.memberships.EXPECT().
+		Get(gomock.Any(), workspaceID, agentID).
+		Return(entity.Membership{WorkspaceID: workspaceID, AccountID: agentID}, nil)
+	h.accounts.EXPECT().
+		GetByID(gomock.Any(), agentID).
+		Return(entity.Account{ID: agentID, Kind: entity.AccountKindAgent}, nil)
+
+	_, err := h.service.Update(context.Background(), workspaceID, issueID, service.UpdateIssueInput{
+		ExpectedVersion: 1,
+		AssigneeID:      &agentID,
+	})
+
+	assertNotAssignable(t, err)
+}
+
+func assertNotAssignable(t *testing.T, err error) {
+	t.Helper()
+
+	var validation entity.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("error = %v, want a ValidationError", err)
+	}
+
+	if len(validation.Fields) != 1 ||
+		validation.Fields[0].Field != "assigneeId" ||
+		validation.Fields[0].Code != entity.ValidationCodeUnsupportedValue {
+		t.Fatalf("refusal did not point at the assignee: %+v", validation.Fields)
+	}
+}
+
 func TestAnEmptyTitleIsRefused(t *testing.T) {
 	h := newHarness(t)
 

@@ -276,6 +276,9 @@ func TestDisablingAnAgentAlsoKillsItsCredentials(t *testing.T) {
 		Return(entity.Agent{ID: agentID, AccountID: agentAccount, Status: entity.AgentStatusActive}, nil)
 
 	h.agents.EXPECT().Disable(gomock.Any(), h.workspaceID, agentID, gomock.Any()).Return(nil)
+	h.members.EXPECT().
+		SetDeactivated(gomock.Any(), h.workspaceID, agentAccount, gomock.Any()).
+		Return(entity.Membership{}, nil)
 
 	var revoked uuid.UUID
 
@@ -295,6 +298,42 @@ func TestDisablingAnAgentAlsoKillsItsCredentials(t *testing.T) {
 		t.Fatal(
 			"disabling an agent left its tokens live. The status check refuses it on the next " +
 				"request, but a credential that still authenticates is one bug away from working.",
+		)
+	}
+}
+
+func TestDisablingAnAgentTakesItsWorkspaceMembershipOutOfUse(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	agentID, agentAccount := uuid.New(), uuid.New()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{ID: agentID, AccountID: agentAccount, Status: entity.AgentStatusActive}, nil)
+
+	h.agents.EXPECT().Disable(gomock.Any(), h.workspaceID, agentID, gomock.Any()).Return(nil)
+	h.tokens.EXPECT().
+		RevokeAllByAccount(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	var deactivated *time.Time
+
+	h.members.EXPECT().
+		SetDeactivated(gomock.Any(), h.workspaceID, agentAccount, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID, at *time.Time) (entity.Membership, error) {
+			deactivated = at
+
+			return entity.Membership{DeactivatedAt: at}, nil
+		})
+
+	if err := h.service.Disable(context.Background(), h.workspaceID, agentID); err != nil {
+		t.Fatalf("Disable: %v", err)
+	}
+
+	if deactivated == nil {
+		t.Fatal(
+			"disabling an agent left its membership active. Every surface that offers agents " +
+				"reads the membership, so a disabled one stays selectable.",
 		)
 	}
 }

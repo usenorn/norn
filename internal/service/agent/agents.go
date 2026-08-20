@@ -294,6 +294,10 @@ func (s *agentsService) Disable(ctx context.Context, workspaceID, agentID uuid.U
 			return err
 		}
 
+		if _, err := s.memberships.SetDeactivated(ctx, workspaceID, agent.AccountID, &now); err != nil {
+			return err
+		}
+
 		return s.tokens.RevokeAllByAccount(ctx, agent.AccountID, now)
 	}); err != nil {
 		return err

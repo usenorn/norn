@@ -137,8 +137,9 @@ func (t *toolset) register(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_list_workspace_members",
-		Description: "List the people in a workspace with their account ids, " +
-			"for assigning issues and reading roles.",
+		Description: "List the members of a workspace with their account ids and roles. " +
+			"Only members of kind person can be assigned an issue; an agent takes work " +
+			"through delegation instead.",
 		Annotations: read,
 	}, t.listWorkspaceMembers)
 

@@ -23,6 +23,7 @@ type operationsService struct {
 	labels       repository.Label
 	activity     repository.Activity
 	members      repository.Membership
+	accounts     repository.Account
 	cycles       repository.Cycle
 	scopeChanges repository.CycleScopeChange
 	jobs         repository.JobProducer
@@ -38,6 +39,7 @@ func New(
 	labels repository.Label,
 	activity repository.Activity,
 	members repository.Membership,
+	accounts repository.Account,
 	cycles repository.Cycle,
 	scopeChanges repository.CycleScopeChange,
 	jobs repository.JobProducer,
@@ -52,6 +54,7 @@ func New(
 		labels:       labels,
 		activity:     activity,
 		members:      members,
+		accounts:     accounts,
 		cycles:       cycles,
 		scopeChanges: scopeChanges,
 		jobs:         jobs,
@@ -512,11 +515,8 @@ func (s *operationsService) edit(
 	}
 
 	if action.Change.AssigneeID != nil {
-		if _, err := s.members.Get(ctx, action.WorkspaceID, *action.Change.AssigneeID); err != nil {
-			return entity.NewValidationError(entity.FieldError{
-				Field: "assigneeId",
-				Code:  entity.ValidationCodeUnsupportedValue,
-			})
+		if err := s.assignable(ctx, action.WorkspaceID, *action.Change.AssigneeID); err != nil {
+			return err
 		}
 	}
 
@@ -583,6 +583,29 @@ func (s *operationsService) edit(
 		if err := s.rescope(ctx, decision, issue, joining, now); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (s *operationsService) assignable(ctx context.Context, workspaceID, accountID uuid.UUID) error {
+	if _, err := s.members.Get(ctx, workspaceID, accountID); err != nil {
+		return entity.NewValidationError(entity.FieldError{
+			Field: "assigneeId",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
+	}
+
+	account, err := s.accounts.GetByID(ctx, accountID)
+	if err != nil {
+		return err
+	}
+
+	if account.Kind.Machine() {
+		return entity.NewValidationError(entity.FieldError{
+			Field: "assigneeId",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
 	}
 
 	return nil

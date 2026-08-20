@@ -116,6 +116,7 @@
 	import { referenceLabel, scopeOf, viewsPath } from "$lib/views/views";
 	import { initialsOf } from "$lib/team/members";
 	import type { WorkflowState } from "$lib/team/states";
+	import { assignees } from "$lib/workspace/members";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { cycleWindow } from "$lib/time";
 	import { issuesPreviewStates } from "./preview";
@@ -146,6 +147,7 @@
 	const states = $derived(preview?.states ?? data.states ?? []);
 	const progress = $derived(preview?.progress ?? data.progress);
 	const members = $derived(preview?.members ?? data.members ?? []);
+	const people = $derived(assignees(members));
 	const labels = $derived(preview?.labels ?? data.labels ?? []);
 	const display = $derived(preview?.display ?? data.display);
 	const facets = $derived(preview?.facets ?? data.facets);
@@ -191,7 +193,7 @@
 			display.grouping,
 			{
 				states,
-				members,
+				members: people,
 				projects: data.projects ?? [],
 				tab: data.tab,
 				backlogStateIds: backlog.map((state) => state.id),
@@ -858,7 +860,7 @@
 					}));
 				case "assignee":
 					return [
-						...members.map((member) => ({
+						...people.map((member) => ({
 							value: member.accountId,
 							label: member.displayName ?? "Someone",
 							checked: facets.assignee === member.accountId,
@@ -1111,7 +1113,7 @@
 	{@const held = names.get(issue.assigneeAccountId ?? "") ?? ""}
 	<PropertyPicker
 		options={[
-			...members.map((member) => ({
+			...people.map((member) => ({
 				value: member.accountId,
 				label: member.displayName ?? "Someone",
 				checked: member.accountId === issue.assigneeAccountId,
@@ -1825,7 +1827,7 @@
 			bind:this={bulkBar}
 			count={selected.size}
 			states={sharedStates}
-			{members}
+			members={people}
 			cycles={teamCycles}
 			working={applying}
 			onpriority={(priority) => applyBulk({ priority })}
