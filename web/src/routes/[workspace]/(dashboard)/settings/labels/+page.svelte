@@ -35,11 +35,14 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { labelsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import { useToasts } from "$lib/toast/toasts.svelte";
 
 	const labelFormId = "label-form";
 	const groupFormId = "label-group-form";
 
 	let { data }: PageProps = $props();
+
+	const toasts = useToasts();
 
 	const preview = $derived(
 		import.meta.env.DEV
@@ -48,7 +51,6 @@
 	);
 
 	let directFailure = $state<LabelFailure | null>(null);
-	let announcement = $state("");
 	let editingId = $state("");
 	let working = $state("");
 	let usage = $state<number | null>(null);
@@ -106,9 +108,9 @@
 		onUpdated: ({ form: result }) => {
 			if (!result.valid || result.message) return;
 
-			announcement = editing
+			toasts.show(editing
 				? `${result.data.name} was saved.`
-				: `${result.data.name} was added.`;
+				: `${result.data.name} was added.`);
 			stopEditing();
 		},
 	});
@@ -124,7 +126,7 @@
 		onUpdated: ({ form: result }) => {
 			if (!result.valid || result.message) return;
 
-			announcement = `${result.data.name} was added. Labels in it are mutually exclusive.`;
+			toasts.show(`${result.data.name} was added. Labels in it are mutually exclusive.`);
 		},
 	});
 	const {
@@ -229,7 +231,7 @@
 				return;
 			}
 
-			announcement = `${removing.name} was removed from ${usage} ${usage === 1 ? "issue" : "issues"}.`;
+			toasts.show(`${removing.name} was removed from ${usage} ${usage === 1 ? "issue" : "issues"}.`);
 			await closePanels();
 			await refresh();
 		} catch {
@@ -260,7 +262,7 @@
 				return;
 			}
 
-			announcement = `${merging.name} was merged into ${kept?.name ?? "the other label"}.`;
+			toasts.show(`${merging.name} was merged into ${kept?.name ?? "the other label"}.`);
 			await closePanels();
 			await refresh();
 		} catch {
@@ -285,7 +287,7 @@
 				return;
 			}
 
-			announcement = `${name} was removed. Its labels are still here, no longer exclusive.`;
+			toasts.show(`${name} was removed. Its labels are still here, no longer exclusive.`);
 			await refresh();
 		} catch {
 			directFailure = { kind: "unavailable" };
@@ -309,7 +311,6 @@
 		<div
 			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
 		>
-			<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
 
 			{#if failure}
 				<Alert.Root variant="destructive">

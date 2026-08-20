@@ -35,7 +35,6 @@
 	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
-	import Toast from "$lib/components/norn/toast.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueField from "$lib/issues/issue-field.svelte";
 	import DelegateDialog from "$lib/agents/delegate-dialog.svelte";
@@ -52,6 +51,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
 	import { useShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { useToasts } from "$lib/toast/toasts.svelte";
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
@@ -266,9 +266,11 @@
 
 			if (error) return;
 
-			announcement = following
-				? `You will not be notified about ${issue.reference} unless someone names you.`
-				: `You are following ${issue.reference}.`;
+			announce(
+				following
+					? `You will not be notified about ${issue.reference} unless someone names you.`
+					: `You are following ${issue.reference}.`
+			);
 
 			await invalidate(keys.page(page.route.id));
 		} finally {
@@ -474,7 +476,7 @@
 
 			if (await patch(body)) {
 				editingField = null;
-				announcement = `Saved ${issue.reference}.`;
+				announce(`Saved ${issue.reference}.`);
 
 				return;
 			}
@@ -532,7 +534,6 @@
 			working = false;
 		}
 	}
-	let announcement = $state("");
 
 	function readFailure(error: unknown): LabelFailure {
 		if (error && typeof error === "object" && "code" in error) {
@@ -574,7 +575,9 @@
 			}
 
 			applied = next ?? [];
-			announcement = `This issue now carries ${applied.length} ${applied.length === 1 ? "label" : "labels"}.`;
+			announce(
+				`This issue now carries ${applied.length} ${applied.length === 1 ? "label" : "labels"}.`
+			);
 			await invalidate(keys.page(page.route.id));
 		} catch {
 			labelFailure = { kind: "unavailable" };
@@ -626,9 +629,13 @@
 			return;
 		}
 
-		if (!(await patch({ stateId })) && failure?.kind === "children_open") {
-			pendingStateId = stateId;
+		if (await patch({ stateId })) {
+			announce(`Moved ${issue.reference} to ${target?.name ?? "another status"}`);
+
+			return;
 		}
+
+		if (failure?.kind === "children_open") pendingStateId = stateId;
 	}
 
 	async function finishUnproven() {
@@ -1203,8 +1210,6 @@
 	let childPrefill = $state<Partial<NewIssueInput> | undefined>(undefined);
 	const due = $derived(issue?.dueOn ? parseDate(issue.dueOn) : undefined);
 	let shown = $state<"all" | "comments">("all");
-	let notice = $state("");
-	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const role = $derived(
 		ready?.members.find((member) => member.accountId === data.member.id)?.role ?? "member"
@@ -1349,9 +1354,7 @@
 	}
 
 	function announce(message: string) {
-		notice = message;
-		clearTimeout(noticeTimer);
-		noticeTimer = setTimeout(() => (notice = ""), 4000);
+		toasts.show(message);
 	}
 
 	async function copy(text: string, said: string) {
@@ -1437,6 +1440,7 @@
 	}
 
 	const shortcuts = useShortcuts();
+	const toasts = useToasts();
 
 	$effect(() => {
 		if (!canEdit || editingField) return;
@@ -1730,8 +1734,6 @@
 				<div
 					class="mx-auto flex max-w-192 flex-col gap-6.5 px-4 pt-5 pb-16 sm:px-8 pb-[calc(--spacing(16)+env(safe-area-inset-bottom))]"
 				>
-					<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
-
 					{#if labelFailure}
 						<Alert.Root variant="destructive">
 							<CircleX aria-hidden="true" />
@@ -2789,10 +2791,4 @@
 			onclose={() => (unprovenStateId = "")}
 		/>
 	{/if}
-{/if}
-
-{#if notice}
-	<div class="fixed bottom-4 left-4 z-70">
-		<Toast message={notice} />
-	</div>
 {/if}

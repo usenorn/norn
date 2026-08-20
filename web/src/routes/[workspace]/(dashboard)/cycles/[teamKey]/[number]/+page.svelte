@@ -16,6 +16,7 @@
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import { bindShortcuts, holdShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
+	import { useToasts } from "$lib/toast/toasts.svelte";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		cycleFailureMessage,
@@ -36,6 +37,8 @@
 	let { data }: PageProps = $props();
 
 	const slug = $derived(data.workspace.slug);
+
+	const toasts = useToasts();
 	const preview = $derived(
 		import.meta.env.DEV ? cyclePreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
@@ -66,8 +69,6 @@
 
 	holdShortcuts(() => closing);
 
-	let said = $state("");
-
 	bindShortcuts({
 		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
 	});
@@ -80,7 +81,11 @@
 
 		const outcome = await setStatus(data.workspace.id, issue, state);
 
-		said = statusMessage(outcome, issue.reference);
+		if (outcome.kind !== "unchanged") {
+			toasts.show(statusMessage(outcome, issue.reference), {
+				href: workspacePath(slug, `/issues/${issue.reference}`),
+			});
+		}
 
 		if (outcome.kind === "changed") {
 			await Promise.all([
@@ -427,8 +432,6 @@
 			{/if}
 		</div>
 	</div>
-
-	<p class="sr-only" role="status" aria-live="polite">{said}</p>
 
 	<ShortcutBar ids={["cursor-down", "cursor-open", "status-set", "issue-new", "help"]} />
 </div>

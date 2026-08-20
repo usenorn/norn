@@ -30,6 +30,7 @@
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import { provideNewIssue } from "$lib/issues/new-issue.svelte";
+	import { useToasts } from "$lib/toast/toasts.svelte";
 	import type { CreationOutcome } from "$lib/issues/creating";
 	import { calendarDate } from "$lib/time";
 	import ShortcutHelp from "$lib/shortcuts/shortcut-help.svelte";
@@ -71,7 +72,6 @@
 	const exactly = $derived((href: string) => isExactly(pathname, href));
 
 	let searching = $state(false);
-	let created = $state("");
 
 	const realtime = provideRealtime();
 
@@ -108,6 +108,7 @@
 	bindRoam(provideRoam());
 
 	const raising = provideNewIssue();
+	const toasts = useToasts();
 
 	holdShortcuts(() => raising.open);
 
@@ -132,14 +133,16 @@
 		}
 
 		if (outcome.kind === "refused") {
-			created = outcome.failure;
+			toasts.show(outcome.failure);
 
 			if (outcome.input) raising.raise(outcome.input);
 
 			return;
 		}
 
-		created = `Created ${outcome.issue.reference}`;
+		toasts.show(`Created ${outcome.issue.reference}`, {
+			href: workspacePath(slug, `/issues/${outcome.issue.reference}`),
+		});
 
 		await invalidate(keys.issues(data.workspace.id));
 	}
@@ -394,8 +397,6 @@
 		onsettled={settled}
 	/>
 {/if}
-
-<p class="sr-only" role="status" aria-live="polite">{created}</p>
 
 <SearchPalette
 	bind:open={searching}

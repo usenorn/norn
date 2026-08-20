@@ -32,6 +32,7 @@
 	} from "$lib/team/states";
 	import { workflowStateSchema } from "$lib/team/workflow-state-schema";
 	import type { Team } from "$lib/team/teams";
+	import { useToasts } from "$lib/toast/toasts.svelte";
 
 	const formId = "workflow-state-form";
 
@@ -42,9 +43,10 @@
 		locked = false,
 	}: { workspaceId: string; team: Team; list: StateList; locked?: boolean } = $props();
 
+	const toasts = useToasts();
+
 	let submitted = $state<WorkflowState[] | null>(null);
 	let failure = $state<StateFailure | null>(null);
-	let announcement = $state("");
 	let editingId = $state("");
 	let working = $state("");
 	let removing = $state(false);
@@ -80,9 +82,9 @@
 						});
 
 				if (result.data) {
-					announcement = editing
+					toasts.show(editing
 						? `${result.data.name} was saved.`
-						: `${result.data.name} was added.`;
+						: `${result.data.name} was added.`);
 					stopEditing();
 					await refresh();
 
@@ -159,7 +161,7 @@
 
 			if (data) {
 				submitted = data;
-				announcement = `${state.name} moved to position ${stateIds.indexOf(state.id) + 1} of ${stateIds.length}.`;
+				toasts.show(`${state.name} moved to position ${stateIds.indexOf(state.id) + 1} of ${stateIds.length}.`);
 				await invalidate(keys.page(page.route.id));
 
 				return;
@@ -192,10 +194,11 @@
 
 			if (data) {
 				submitted = data;
-				announcement =
+				toasts.show(
 					role === "default"
 						? `New issues now start in ${state.name}.`
-						: `${state.name} now counts as finished.`;
+						: `${state.name} now counts as finished.`
+				);
 				await invalidate(keys.page(page.route.id));
 
 				return;
@@ -268,7 +271,7 @@
 			}
 
 			const target = states.find((state) => state.id === reassignTo);
-			announcement = `${removalState.name} was removed. Its issues moved to ${target?.name ?? "another state"}.`;
+			toasts.show(`${removalState.name} was removed. Its issues moved to ${target?.name ?? "another state"}.`);
 			await closeRemoval();
 			await refresh();
 		} catch {
@@ -287,8 +290,6 @@
 			categories are what let progress add up across teams that use different words.
 		</p>
 	</div>
-
-	<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
 
 	{#if failure}
 		<Alert.Root variant="destructive">
