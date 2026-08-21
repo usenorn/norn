@@ -1760,6 +1760,7 @@ func runnerDTO(runner entity.Runner) api.Runner {
 		Id:          runner.ID,
 		WorkspaceId: runner.WorkspaceID,
 		AgentId:     runner.AgentID,
+		AgentName:   runner.AgentName,
 		Name:        runner.Name,
 		Host: api.RunnerHost{
 			Hostname: runner.Host.Hostname,

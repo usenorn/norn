@@ -75,6 +75,7 @@ type Runner struct {
 	ID          uuid.UUID
 	WorkspaceID uuid.UUID
 	AgentID     uuid.UUID
+	AgentName   string
 	Name        string
 	Host        RunnerHost
 	Authority   RequestedAuthority

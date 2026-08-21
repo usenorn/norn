@@ -6888,11 +6888,15 @@ components:
 
     Runner:
       type: object
-      required: [id, workspaceId, agentId, name, host, status, enrolledAt]
+      required: [id, workspaceId, agentId, agentName, name, host, status, enrolledAt]
       properties:
         id: { type: string, format: uuid }
         workspaceId: { type: string, format: uuid }
         agentId: { type: string, format: uuid }
+        agentName:
+          type: string
+          maxLength: 200
+          description: The agent this machine acts as, so a runner can name it without a second call
         name: { type: string, maxLength: 200 }
         host: { $ref: '#/components/schemas/RunnerHost' }
         status: { $ref: '#/components/schemas/RunnerStatus' }

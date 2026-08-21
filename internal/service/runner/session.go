@@ -42,6 +42,17 @@ func (s *runnersService) Exchange(
 		return service.RunnerSession{}, entity.ErrRunnerRevoked
 	}
 
+	agent, err := s.agents.GetByID(ctx, held.WorkspaceID, held.AgentID)
+	if err != nil {
+		return service.RunnerSession{}, err
+	}
+
+	if agent.Disabled() {
+		return service.RunnerSession{}, entity.ErrAgentDisabled
+	}
+
+	held.AgentName = agent.Name
+
 	if input.RunnerID != held.ID {
 		return service.RunnerSession{}, entity.ErrRunnerAssertionMismatch
 	}

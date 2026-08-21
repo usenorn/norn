@@ -4185,6 +4185,8 @@ export interface components {
             workspaceId: string;
             /** Format: uuid */
             agentId: string;
+            /** @description The agent this machine acts as, so a runner can name it without a second call */
+            agentName: string;
             name: string;
             host: components["schemas"]["RunnerHost"];
             status: components["schemas"]["RunnerStatus"];

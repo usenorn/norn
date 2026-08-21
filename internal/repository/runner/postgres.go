@@ -60,6 +60,10 @@ func toEntity(model *dbpostgres.WorkspaceRunner) (entity.Runner, error) {
 		UpdatedAt:   model.UpdatedAt,
 	}
 
+	if model.R != nil && model.R.Agent != nil {
+		runner.AgentName = model.R.Agent.Name
+	}
+
 	if model.LastSeenAt.Valid {
 		seen := model.LastSeenAt.Time
 		runner.LastSeenAt = &seen
@@ -149,7 +153,9 @@ func (r *runnerRepository) Enrol(ctx context.Context, runner entity.Runner) (ent
 }
 
 func (r *runnerRepository) one(ctx context.Context, mods ...qm.QueryMod) (entity.Runner, error) {
-	model, err := dbpostgres.WorkspaceRunners(mods...).One(ctx, r.db.Querier(ctx))
+	model, err := dbpostgres.WorkspaceRunners(
+		append(mods, qm.Load(dbpostgres.WorkspaceRunnerRels.Agent))...,
+	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.Runner{}, entity.ErrRunnerNotFound
@@ -178,6 +184,7 @@ func (r *runnerRepository) ListByWorkspaceID(
 ) ([]entity.Runner, error) {
 	models, err := dbpostgres.WorkspaceRunners(
 		dbpostgres.WorkspaceRunnerWhere.WorkspaceID.EQ(workspaceID.String()),
+		qm.Load(dbpostgres.WorkspaceRunnerRels.Agent),
 		qm.OrderBy(
 			dbpostgres.WorkspaceRunnerColumns.EnrolledAt+" DESC, "+
 				dbpostgres.WorkspaceRunnerColumns.ID,

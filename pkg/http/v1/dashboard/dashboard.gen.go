@@ -5940,7 +5940,10 @@ type ReviewVerdict string
 
 // Runner defines model for Runner.
 type Runner struct {
-	AgentId     openapi_types.UUID `json:"agentId"`
+	AgentId openapi_types.UUID `json:"agentId"`
+
+	// AgentName The agent this machine acts as, so a runner can name it without a second call
+	AgentName   string             `json:"agentName"`
 	EnrolledAt  time.Time          `json:"enrolledAt"`
 	Host        RunnerHost         `json:"host"`
 	Id          openapi_types.UUID `json:"id"`
