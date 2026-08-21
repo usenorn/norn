@@ -64,6 +64,14 @@ func (a Agent) Disabled() bool {
 	return a.Status == AgentStatusDisabled
 }
 
+func (a Agent) OwnedBy(accountID uuid.UUID) bool {
+	return a.OwnerAccountID != uuid.Nil && a.OwnerAccountID == accountID
+}
+
+func (a Agent) ManageableBy(accountID uuid.UUID, role MembershipRole) bool {
+	return a.OwnedBy(accountID) || role == MembershipRoleAdmin
+}
+
 func (a Agent) Allowance() int {
 	if a.ActionLimit == nil || *a.ActionLimit <= 0 {
 		return AgentActionsPerWindow

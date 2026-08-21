@@ -505,3 +505,162 @@ func TestADisabledAgentCannotBeHandedAFreshCredential(t *testing.T) {
 		)
 	}
 }
+
+func TestAMemberRegistersAnAgentThatActsForItself(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	var registered entity.Agent
+
+	h.members.EXPECT().
+		Get(gomock.Any(), h.workspaceID, h.adminID).
+		Return(entity.Membership{Role: entity.MembershipRoleMember}, nil)
+
+	h.accounts.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, account entity.Account) (entity.Account, error) {
+			account.ID = uuid.New()
+
+			return account, nil
+		})
+
+	h.members.EXPECT().Create(gomock.Any(), gomock.Any()).Return(entity.Membership{}, nil)
+	h.agents.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, agent entity.Agent) (entity.Agent, error) {
+			agent.ID = uuid.New()
+			registered = agent
+
+			return agent, nil
+		})
+	h.tokens.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, token entity.APIToken) (entity.APIToken, error) {
+			return token, nil
+		})
+
+	if _, err := h.service.Register(context.Background(), service.RegisterAgentInput{
+		WorkspaceID: h.workspaceID,
+		Name:        "triage-bot",
+		Scopes:      readScopes(),
+		AllTeams:    true,
+	}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+
+	if registered.OwnerAccountID != h.adminID {
+		t.Fatal(
+			"a member registered an agent and it was recorded against somebody else. An agent " +
+				"carries its owner's authority, so the owner is the whole bound.",
+		)
+	}
+}
+
+func TestOnlyAnAdministratorRegistersAnAgentForSomebodyElse(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	_, err := h.service.Register(context.Background(), service.RegisterAgentInput{
+		WorkspaceID:    h.workspaceID,
+		OwnerAccountID: uuid.New(),
+		Name:           "triage-bot",
+		Scopes:         readScopes(),
+		AllTeams:       true,
+	})
+
+	if !errors.Is(err, entity.ErrAccountForbidden) {
+		t.Fatalf(
+			"a member registered an agent acting for somebody else: err = %v, want forbidden. "+
+				"The scope ceiling is read from the owner, so naming an administrator would "+
+				"mint an agent that outranks the person who asked for it.",
+			err,
+		)
+	}
+}
+
+func TestAMemberIsShownOnlyTheAgentsItActsFor(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	mine := entity.Agent{ID: uuid.New(), OwnerAccountID: h.adminID, Name: "mine"}
+	theirs := entity.Agent{ID: uuid.New(), OwnerAccountID: uuid.New(), Name: "theirs"}
+
+	h.agents.EXPECT().
+		ListByWorkspaceID(gomock.Any(), h.workspaceID).
+		Return([]entity.Agent{mine, theirs}, nil)
+
+	h.accounts.EXPECT().
+		GetByID(gomock.Any(), h.adminID).
+		Return(entity.Account{ID: h.adminID, DisplayName: "Rae"}, nil)
+
+	listed, err := h.service.List(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if len(listed) != 1 || listed[0].Agent.ID != mine.ID {
+		t.Fatalf(
+			"a member was shown %d agents, want only the one it acts for. The list names the "+
+				"owner of every agent, so somebody else's is somebody else's business.",
+			len(listed),
+		)
+	}
+}
+
+func TestAnAgentSomebodyElseActsForIsNotThereToDisable(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	agentID := uuid.New()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{ID: agentID, OwnerAccountID: uuid.New()}, nil)
+
+	if err := h.service.Disable(
+		context.Background(), h.workspaceID, agentID,
+	); !errors.Is(err, entity.ErrAgentNotFound) {
+		t.Fatalf(
+			"a member disabling an agent it does not act for: err = %v, want not found. "+
+				"Refusing it any other way would confirm the agent exists.",
+			err,
+		)
+	}
+}
+
+func TestAnAgentSomebodyElseActsForKeepsItsCredential(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	agentID := uuid.New()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{ID: agentID, OwnerAccountID: uuid.New()}, nil)
+
+	if _, err := h.service.Rotate(
+		context.Background(), h.workspaceID, agentID,
+	); !errors.Is(err, entity.ErrAgentNotFound) {
+		t.Fatalf(
+			"a member rotated the credential of an agent it does not act for: err = %v, want "+
+				"not found",
+			err,
+		)
+	}
+}
+
+func TestAMemberDoesNotRatifyWhatATeamHeld(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	if _, err := h.service.Waiting(
+		context.Background(), h.workspaceID,
+	); !errors.Is(err, entity.ErrAccountForbidden) {
+		t.Fatalf("a member reading the approval queue: err = %v, want forbidden", err)
+	}
+
+	if _, err := h.service.Approve(
+		context.Background(), h.workspaceID, uuid.New(),
+	); !errors.Is(err, entity.ErrAccountForbidden) {
+		t.Fatalf(
+			"a member approved a held write: err = %v, want forbidden. A team holds an agent's "+
+				"writes so that somebody who runs the workspace agrees to them, and letting a "+
+				"member registering agents also ratify them would answer the hold with itself.",
+			err,
+		)
+	}
+}

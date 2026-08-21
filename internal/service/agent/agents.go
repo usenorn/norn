@@ -92,6 +92,10 @@ func (s *agentsService) Register(
 		owner = decision.Actor.AccountID
 	}
 
+	if owner != decision.Actor.AccountID && decision.Role != entity.MembershipRoleAdmin {
+		return service.RegisteredAgent{}, entity.ErrAccountForbidden
+	}
+
 	ownership, err := s.memberships.Get(ctx, input.WorkspaceID, owner)
 	if err != nil {
 		return service.RegisteredAgent{}, entity.ErrAgentOwnerInvalid
@@ -205,11 +209,12 @@ func (s *agentsService) grant(
 }
 
 func (s *agentsService) List(ctx context.Context, workspaceID uuid.UUID) ([]service.OwnedAgent, error) {
-	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceAgent,
 		Action:      entity.ActionRead,
 		WorkspaceID: workspaceID,
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -221,6 +226,10 @@ func (s *agentsService) List(ctx context.Context, workspaceID uuid.UUID) ([]serv
 	owned := make([]service.OwnedAgent, 0, len(agents))
 
 	for _, agent := range agents {
+		if manageable(agent, decision) != nil {
+			continue
+		}
+
 		described, err := s.describe(ctx, agent)
 		if err != nil {
 			return nil, err
@@ -236,11 +245,12 @@ func (s *agentsService) Get(
 	ctx context.Context,
 	workspaceID, agentID uuid.UUID,
 ) (service.OwnedAgent, error) {
-	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceAgent,
 		Action:      entity.ActionRead,
 		WorkspaceID: workspaceID,
-	}); err != nil {
+	})
+	if err != nil {
 		return service.OwnedAgent{}, err
 	}
 
@@ -249,7 +259,19 @@ func (s *agentsService) Get(
 		return service.OwnedAgent{}, err
 	}
 
+	if err := manageable(agent, decision); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
 	return s.describe(ctx, agent)
+}
+
+func manageable(agent entity.Agent, decision entity.Decision) error {
+	if agent.ManageableBy(decision.Actor.Authority(), decision.Role) {
+		return nil
+	}
+
+	return entity.ErrAgentNotFound
 }
 
 func (s *agentsService) describe(ctx context.Context, agent entity.Agent) (service.OwnedAgent, error) {
@@ -281,6 +303,10 @@ func (s *agentsService) Disable(ctx context.Context, workspaceID, agentID uuid.U
 
 	agent, err := s.agents.GetByID(ctx, workspaceID, agentID)
 	if err != nil {
+		return err
+	}
+
+	if err := manageable(agent, decision); err != nil {
 		return err
 	}
 
@@ -316,16 +342,21 @@ func (s *agentsService) Activity(
 	workspaceID, agentID uuid.UUID,
 	page entity.ActivityPage,
 ) (service.ActivityPage, error) {
-	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceAgent,
 		Action:      entity.ActionRead,
 		WorkspaceID: workspaceID,
-	}); err != nil {
+	})
+	if err != nil {
 		return service.ActivityPage{}, err
 	}
 
 	agent, err := s.agents.GetByID(ctx, workspaceID, agentID)
 	if err != nil {
+		return service.ActivityPage{}, err
+	}
+
+	if err := manageable(agent, decision); err != nil {
 		return service.ActivityPage{}, err
 	}
 
@@ -388,6 +419,10 @@ func (s *agentsService) Rotate(
 
 	agent, err := s.agents.GetByID(ctx, workspaceID, agentID)
 	if err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	if err := manageable(agent, decision); err != nil {
 		return service.RegisteredAgent{}, err
 	}
 

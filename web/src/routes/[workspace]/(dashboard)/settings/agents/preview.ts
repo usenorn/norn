@@ -7,6 +7,7 @@ type Membership = components["schemas"]["Membership"];
 export type AgentsPreview = {
 	listing?: AgentListing;
 	people?: Membership[];
+	role?: Membership["role"];
 	teams?: Team[];
 	busy?: boolean;
 };
@@ -15,6 +16,29 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 	? {
 			loading: { listing: { kind: "loading" } },
 			empty: { listing: { kind: "empty" } },
+			member_empty: { listing: { kind: "empty" }, role: "member" },
+			member_ready: {
+				role: "member",
+				listing: {
+					kind: "ready",
+					agents: [
+						{
+							agent: {
+								id: "00000000-0000-4000-8000-0000000009c3",
+								workspaceId: "00000000-0000-4000-8000-0000000009a1",
+								accountId: "00000000-0000-4000-8000-0000000009d3",
+								ownerAccountId: "00000000-0000-4000-8000-0000000009e2",
+								name: "my-triage-bot",
+								status: "active",
+								actionLimit: 120,
+								createdAt: "2026-08-11T09:00:00Z",
+							},
+							ownerName: "Jun Park",
+							ownerEmail: "jun@northwind.co",
+						},
+					],
+				},
+			},
 			ready: {
 				listing: {
 					kind: "ready",

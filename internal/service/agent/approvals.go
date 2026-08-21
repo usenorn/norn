@@ -92,6 +92,10 @@ func (s *agentsService) Waiting(
 		return nil, err
 	}
 
+	if decision.Role != entity.MembershipRoleAdmin {
+		return nil, entity.ErrAccountForbidden
+	}
+
 	waiting, err := s.proposals.ListWaiting(ctx, workspaceID, entity.ActivityPageMaxSize)
 	if err != nil {
 		return nil, err
@@ -282,6 +286,10 @@ func (s *agentsService) decidable(
 
 	if decision.Actor.Kind != entity.ActorKindUser {
 		return entity.Decision{}, entity.AgentProposal{}, entity.ErrAPITokenMintForbidden
+	}
+
+	if decision.Role != entity.MembershipRoleAdmin {
+		return entity.Decision{}, entity.AgentProposal{}, entity.ErrAccountForbidden
 	}
 
 	proposal, err := s.proposals.GetByID(ctx, workspaceID, proposalID)

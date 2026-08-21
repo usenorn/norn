@@ -155,7 +155,7 @@ export function failureMessage(failure: AgentFailure): string {
 		case "grant_invalid":
 			return "One of those teams is not one you can reach.";
 		case "forbidden":
-			return "You may not manage agents in this workspace.";
+			return "You may not register agents in this workspace.";
 		case "unavailable":
 			return "We could not reach the server. Try again in a moment.";
 	}

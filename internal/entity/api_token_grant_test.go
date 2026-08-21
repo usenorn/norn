@@ -181,3 +181,64 @@ func TestEveryMintableScopeIsSomethingTheRoleMayActuallyDo(t *testing.T) {
 		}
 	}
 }
+
+func TestAMemberRunsAgentsAndAViewerHasNone(t *testing.T) {
+	for _, probe := range []struct {
+		role    entity.MembershipRole
+		action  entity.Action
+		allowed bool
+		why     string
+	}{
+		{entity.MembershipRoleAdmin, entity.ActionRead, true, "an administrator runs the workspace"},
+		{entity.MembershipRoleAdmin, entity.ActionManage, true, "an administrator runs the workspace"},
+		{entity.MembershipRoleAdmin, entity.ActionUpdate, true, "an administrator runs the workspace"},
+		{entity.MembershipRoleAdmin, entity.ActionDelete, true, "an administrator runs the workspace"},
+		{
+			entity.MembershipRoleMember,
+			entity.ActionRead,
+			true,
+			"a member cannot be shown the agents it owns without being allowed to read them",
+		},
+		{
+			entity.MembershipRoleMember,
+			entity.ActionManage,
+			true,
+			"registering an agent to work under your own authority is ordinary work, not " +
+				"administration; ownership is what narrows it, and that is settled in the service",
+		},
+		{
+			entity.MembershipRoleMember,
+			entity.ActionUpdate,
+			false,
+			"an agent is never edited in place, it is disabled and registered again",
+		},
+		{
+			entity.MembershipRoleMember,
+			entity.ActionDelete,
+			false,
+			"an agent is never edited in place, it is disabled and registered again",
+		},
+		{
+			entity.MembershipRoleViewer,
+			entity.ActionRead,
+			false,
+			"a viewer reads and comments, nothing more",
+		},
+		{
+			entity.MembershipRoleViewer,
+			entity.ActionManage,
+			false,
+			"an agent carries its owner's authority, so a viewer's agent could do nothing " +
+				"a viewer cannot already do by hand",
+		},
+	} {
+		if got := entity.RoleGrants(
+			probe.role, entity.ResourceAgent, probe.action,
+		); got != probe.allowed {
+			t.Errorf(
+				"a %s asking to %s an agent: allowed = %v, want %v — %s",
+				probe.role, probe.action, got, probe.allowed, probe.why,
+			)
+		}
+	}
+}
