@@ -50,6 +50,8 @@
 	const listing = $derived<AgentListing>(preview?.listing ?? data.listing);
 	const people = $derived(preview?.people ?? data.people);
 	const teams = $derived(preview?.teams ?? data.teams);
+	const role = $derived(preview?.role ?? data.role);
+	const choosesOwner = $derived(role === "admin");
 
 	// svelte-ignore state_referenced_locally
 	const form = superForm(defaults(zod4(registerAgentSchema)), {
@@ -79,6 +81,12 @@
 		}
 	});
 
+	$effect(() => {
+		if (!choosesOwner && $formData.ownerAccountId !== data.member.id) {
+			formData.update((entered) => ({ ...entered, ownerAccountId: data.member.id }));
+		}
+	});
+
 	const busy = $derived(preview?.busy || $submitting || disabling !== null);
 
 	const current = $derived(
@@ -94,7 +102,7 @@
 
 	const ownerName = $derived(
 		people.find((person) => person.accountId === $formData.ownerAccountId)?.displayName ??
-			"Choose a person"
+			(choosesOwner ? "Choose a person" : data.member.name)
 	);
 
 	function toggleScope(scope: string, checked: boolean) {
@@ -225,8 +233,11 @@
 			{#if listing.kind === "forbidden"}
 				<Alert.Root variant="muted">
 					<CircleAlert aria-hidden="true" />
-					<Alert.Title>You may not manage agents here</Alert.Title>
-					<Alert.Description>Ask an administrator of {workspace.name}.</Alert.Description>
+					<Alert.Title>You may not register agents here</Alert.Title>
+					<Alert.Description>
+						An agent acts under a person's authority, so it needs somebody who can change
+						something. Ask an administrator of {workspace.name}.
+					</Alert.Description>
 				</Alert.Root>
 			{:else if listing.kind === "unavailable"}
 				<Alert.Root variant="destructive">
@@ -286,24 +297,32 @@
 						<Form.Control>
 							{#snippet children({ props })}
 								<Form.Label>Acts for</Form.Label>
-								<Select.Root
-									type="single"
-									name={props.name}
-									bind:value={$formData.ownerAccountId}
-									disabled={busy}
-								>
-									<Select.Trigger {...props}>{ownerName}</Select.Trigger>
-									<Select.Content>
-										{#each people as person (person.accountId)}
-											<Select.Item value={person.accountId}>
-												{person.displayName || person.email}
-											</Select.Item>
-										{/each}
-									</Select.Content>
-								</Select.Root>
-								<Form.Description>
-									Everything the agent may do is bounded by this person.
-								</Form.Description>
+								{#if choosesOwner}
+									<Select.Root
+										type="single"
+										name={props.name}
+										bind:value={$formData.ownerAccountId}
+										disabled={busy}
+									>
+										<Select.Trigger {...props}>{ownerName}</Select.Trigger>
+										<Select.Content>
+											{#each people as person (person.accountId)}
+												<Select.Item value={person.accountId}>
+													{person.displayName || person.email}
+												</Select.Item>
+											{/each}
+										</Select.Content>
+									</Select.Root>
+									<Form.Description>
+										Everything the agent may do is bounded by this person.
+									</Form.Description>
+								{:else}
+									<input type="hidden" name={props.name} value={$formData.ownerAccountId} />
+									<p {...props} class="text-sm text-ink-900">{ownerName}</p>
+									<Form.Description>
+										An agent you register acts for you, and can never do more than you can.
+									</Form.Description>
+								{/if}
 							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
@@ -425,10 +444,16 @@
 			{#if listing.kind === "loading"}
 				<p class="text-sm text-muted-foreground">Loading agents…</p>
 			{:else if current.length === 0 && showForm}
-				<p class="text-sm text-muted-foreground">No agents act in {workspace.name} yet.</p>
+				<p class="text-sm text-muted-foreground">
+					{choosesOwner
+						? `No agents act in ${workspace.name} yet.`
+						: "No agents act for you yet."}
+				</p>
 			{:else if current.length > 0}
 				<section class="flex flex-col gap-2">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">Registered agents</h2>
+					<h2 class="text-md font-medium tracking-snug text-ink-900">
+						{choosesOwner ? "Registered agents" : "Agents you registered"}
+					</h2>
 					<ul class="rounded-lg border border-line-subtle bg-paper-0">
 						{#each current as owned (owned.agent.id)}
 							<li

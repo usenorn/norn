@@ -21,7 +21,7 @@ type AgentOutcome = { kind: "issued"; agent: Agent; value: string } | AgentFailu
 export const load: PageServerLoad = async ({ depends, route, locals, parent }) => {
 	depends(keys.page(route.id));
 
-	const { workspace, teams } = await parent();
+	const { workspace, teams, member } = await parent();
 
 	const [agents, members] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/agents", {
@@ -32,12 +32,15 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 		}),
 	]);
 
-	const people = (members.data?.members ?? []).filter((member) => member.kind !== "agent");
+	const everybody = members.data?.members ?? [];
+	const people = everybody.filter((entry) => entry.kind !== "agent");
 	const reachable = (teams ?? []).filter((team) => team.status === "active");
+	const role = everybody.find((entry) => entry.accountId === member.id)?.role;
 
 	if (agents.error) {
 		return {
 			people,
+			role,
 			teams: reachable,
 			listing: {
 				kind: agents.error.status === 403 ? "forbidden" : "unavailable",
@@ -46,11 +49,12 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 	}
 
 	if (!agents.data || agents.data.length === 0) {
-		return { people, teams: reachable, listing: { kind: "empty" } as AgentListing };
+		return { people, role, teams: reachable, listing: { kind: "empty" } as AgentListing };
 	}
 
 	return {
 		people,
+		role,
 		teams: reachable,
 		listing: { kind: "ready", agents: agents.data } as AgentListing,
 	};

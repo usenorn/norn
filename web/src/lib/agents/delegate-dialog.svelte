@@ -100,8 +100,8 @@
 
 		{#if agents.length === 0}
 			<p class="text-md leading-normal text-muted-foreground text-pretty">
-				No agents are registered in this workspace yet. An administrator registers them in
-				settings, and they appear here once they exist.
+				No agents are registered in this workspace yet. Register one in settings, and it appears
+				here once it exists.
 			</p>
 			<Dialog.Footer>
 				<Button variant="secondary" onclick={() => (open = false)}>Close</Button>
