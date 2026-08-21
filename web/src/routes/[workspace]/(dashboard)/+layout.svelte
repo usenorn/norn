@@ -139,6 +139,7 @@
 
 	bindShortcuts({
 		search: () => (searching = true),
+		"search-find": () => (searching = true),
 		help: () => (helping = true),
 	});
 
