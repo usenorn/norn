@@ -3,4 +3,5 @@ output: dashboard.gen.go
 generate:
   chi-server: true
   strict-server: true
+  client: true
   models: true
