@@ -59,6 +59,7 @@ var TableNames = struct {
 	WorkspaceProjectMembers           string
 	WorkspaceProjectStatusUpdates     string
 	WorkspaceProjects                 string
+	WorkspaceRunners                  string
 	WorkspaceSamlConnections          string
 	WorkspaceSavedViewPlacements      string
 	WorkspaceSavedViews               string
@@ -139,6 +140,7 @@ var TableNames = struct {
 	WorkspaceProjectMembers:           "workspace_project_members",
 	WorkspaceProjectStatusUpdates:     "workspace_project_status_updates",
 	WorkspaceProjects:                 "workspace_projects",
+	WorkspaceRunners:                  "workspace_runners",
 	WorkspaceSamlConnections:          "workspace_saml_connections",
 	WorkspaceSavedViewPlacements:      "workspace_saved_view_placements",
 	WorkspaceSavedViews:               "workspace_saved_views",

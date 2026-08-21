@@ -31,6 +31,7 @@ func New(
 	mcpCfg config.MCP,
 	sessions service.Sessions,
 	tokens service.APITokens,
+	runners service.Runners,
 	mcpThrottle repository.MCPThrottle,
 	dashboard api.StrictServerInterface,
 	callback *sso.Callback,
@@ -77,7 +78,7 @@ func New(
 
 	mcpOps := base.With(
 		middleware.MCPEnabled(mcpCfg),
-		middleware.BearerToken(tokens),
+		middleware.BearerToken(tokens, runners),
 		middleware.RequireToken,
 		middleware.MCPRateLimit(mcpThrottle, mcpCfg),
 		maxRequestBytes(cfg.MaxRequestBytes),
@@ -89,7 +90,7 @@ func New(
 	streams.Get(events.Path, eventsEdge.Serve)
 
 	exports := base.With(
-		middleware.BearerToken(tokens),
+		middleware.BearerToken(tokens, runners),
 		middleware.Session(sessions, sessionCfg),
 	)
 	exports.Get(auditexport.WorkspacePath, auditEdge.ServeWorkspace)
@@ -131,7 +132,7 @@ func New(
 		Middlewares: []api.MiddlewareFunc{
 			maxRequestBytes(cfg.MaxRequestBytes),
 			chimiddleware.Timeout(cfg.RequestTimeout),
-			middleware.BearerToken(tokens),
+			middleware.BearerToken(tokens, runners),
 			middleware.Session(sessions, sessionCfg),
 		},
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {

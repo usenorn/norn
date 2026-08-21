@@ -140,6 +140,10 @@ func validate(cfg Config) error {
 		return err
 	}
 
+	if err := validateRunner(cfg.Runner); err != nil {
+		return err
+	}
+
 	if cfg.SourceControl.MaxDeliveryBytes > cfg.HTTP.MaxRequestBytes {
 		return fmt.Errorf(
 			"source_control.max_delivery_bytes (%d) is above http.max_request_bytes (%d). A forge "+
@@ -162,6 +166,28 @@ func validate(cfg Config) error {
 	}
 
 	return validateStorage(cfg)
+}
+
+func validateRunner(cfg Runner) error {
+	if cfg.AccessTTL <= 0 || cfg.TicketTTL <= 0 {
+		return fmt.Errorf("runner.access_ttl and runner.ticket_ttl must be positive")
+	}
+
+	if cfg.MaxClockSkew <= 0 {
+		return fmt.Errorf("runner.max_clock_skew must be positive")
+	}
+
+	if cfg.NonceTTL < 2*cfg.MaxClockSkew {
+		return fmt.Errorf(
+			"runner.nonce_ttl (%s) must be at least twice runner.max_clock_skew (%s). A runner's "+
+				"assertion is accepted anywhere inside the skew window in either direction, so a "+
+				"nonce that stops being remembered sooner than that window is wide leaves a gap in "+
+				"which the same signed assertion can be presented a second time and accepted",
+			cfg.NonceTTL, cfg.MaxClockSkew,
+		)
+	}
+
+	return nil
 }
 
 func validateWebhooks(cfg Webhooks) error {
@@ -498,6 +524,11 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("saml.replay_ttl", 30*time.Minute)
 	v.SetDefault("saml.max_clock_skew", 3*time.Minute)
 	v.SetDefault("saml.max_issue_delay", 90*time.Second)
+
+	v.SetDefault("runner.access_ttl", 15*time.Minute)
+	v.SetDefault("runner.ticket_ttl", time.Minute)
+	v.SetDefault("runner.nonce_ttl", 10*time.Minute)
+	v.SetDefault("runner.max_clock_skew", 3*time.Minute)
 	v.SetDefault("asynq.addr", "127.0.0.1:6381")
 	v.SetDefault("asynq.username", "")
 	v.SetDefault("asynq.password", "")

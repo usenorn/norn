@@ -3588,6 +3588,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bind this machine to the agent whose token authorises the call
+         * @description The bearer token is an ordinary agent API token, the same one an MCP client uses. It says which agent this machine may act as and is read once: it is never stored, and it is not what the machine keeps. What comes back is a refresh secret bound to the device key, shown here and never again.
+         */
+        post: operations["enrolRunner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runners/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trade a signed assertion for a short-lived access token and a channel ticket
+         * @description Authenticated by the refresh secret and an Ed25519 signature over the assertion, both carried in the body, so this endpoint takes no session and no bearer token. The signature covers the version, the runner id, the nonce, the timestamp and the audience, joined by newlines. A nonce is accepted once.
+         */
+        post: operations["exchangeRunnerToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runners/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What this machine is, as the server sees it */
+        get: operations["getCurrentRunner"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/runners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Every machine connected to this workspace, newest first */
+        get: operations["listWorkspaceRunners"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/runners/{runnerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                runnerId: components["parameters"]["RunnerId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Cut this machine off, leaving its agent working everywhere else */
+        delete: operations["revokeWorkspaceRunner"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4122,6 +4218,71 @@ export interface components {
             /** @enum {string} */
             code: "comment_deleted" | "comment_not_replyable";
         };
+        /** @enum {string} */
+        RunnerStatus: "active" | "revoked";
+        RunnerHost: {
+            hostname: string;
+            os: string;
+            arch: string;
+            version: string;
+        };
+        Runner: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            agentId: string;
+            name: string;
+            host: components["schemas"]["RunnerHost"];
+            status: components["schemas"]["RunnerStatus"];
+            /** Format: date-time */
+            enrolledAt: string;
+            /** Format: date-time */
+            lastSeenAt?: string;
+            /** Format: date-time */
+            revokedAt?: string;
+        };
+        EnrolRunnerRequest: {
+            /** @description What to call this machine. Defaults to its hostname. */
+            name?: string;
+            /** @description The machine's Ed25519 public key, 32 bytes in standard base64 */
+            publicKey: string;
+            host: components["schemas"]["RunnerHost"];
+        };
+        EnrolledRunner: {
+            runner: components["schemas"]["Runner"];
+            /** @description Carried once and never returned again. It belongs in the OS keystore beside the device private key, not in a file. */
+            refreshToken: string;
+        };
+        ExchangeRunnerTokenRequest: {
+            refreshToken: string;
+            /** Format: uuid */
+            runnerId: string;
+            nonce: string;
+            /** Format: date-time */
+            issuedAt: string;
+            audience: string;
+            /** @description Standard base64 of the Ed25519 signature over the assertion */
+            signature: string;
+        };
+        RunnerSession: {
+            runner: components["schemas"]["Runner"];
+            accessToken: string;
+            /**
+             * Format: int32
+             * @description Seconds the access token stays usable
+             */
+            expiresIn: number;
+            /** @description Single use, spent when opening the runner channel */
+            ticket: string;
+            /** Format: int32 */
+            ticketExpiresIn: number;
+        };
+        RunnerProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "runner_credential_invalid" | "runner_revoked" | "runner_assertion_forged" | "runner_assertion_stale" | "runner_assertion_replayed" | "runner_assertion_mismatch" | "runner_name_taken";
+        };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_delegation_not_yours" | "delegation_claim_held" | "delegation_claim_lost" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
@@ -4428,7 +4589,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "agent.disabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "agent.disabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -6376,6 +6537,24 @@ export interface components {
                 "application/problem+json": components["schemas"]["IssueConflictProblem"];
             };
         };
+        /** @description The runner's credential, signature or assertion was refused */
+        RunnerCredential: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["RunnerProblem"];
+            };
+        };
+        /** @description Another live machine on this agent already holds that name */
+        RunnerConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["RunnerProblem"];
+            };
+        };
         /** @description The cycle refuses the change, or needs a decision first */
         CycleConflict: {
             headers: {
@@ -6636,6 +6815,7 @@ export interface components {
         InvitationId: string;
         TokenId: string;
         AgentId: string;
+        RunnerId: string;
         ProposalId: string;
         StateId: string;
         IssueId: string;
@@ -14285,6 +14465,136 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The pairing is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    enrolRunner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrolRunnerRequest"];
+            };
+        };
+        responses: {
+            /** @description The runner, carrying its refresh secret for the only time */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrolledRunner"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["RunnerConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    exchangeRunnerToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExchangeRunnerTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description A scoped access token and a single-use channel ticket */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerSession"];
+                };
+            };
+            401: components["responses"]["RunnerCredential"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getCurrentRunner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The calling runner */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Runner"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceRunners: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The runners on record, live and revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Runner"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    revokeWorkspaceRunner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                runnerId: components["parameters"]["RunnerId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The runner was revoked */
             204: {
                 headers: {
                     [name: string]: unknown;

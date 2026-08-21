@@ -139,6 +139,7 @@ var WorkspaceRels = struct {
 	WorkspaceMemberships          string
 	WorkspaceNotificationEvents   string
 	WorkspaceProjects             string
+	WorkspaceRunners              string
 	WorkspaceSavedViews           string
 	WorkspaceSCMConnections       string
 	WorkspaceSCMIdentities        string
@@ -169,6 +170,7 @@ var WorkspaceRels = struct {
 	WorkspaceMemberships:          "WorkspaceMemberships",
 	WorkspaceNotificationEvents:   "WorkspaceNotificationEvents",
 	WorkspaceProjects:             "WorkspaceProjects",
+	WorkspaceRunners:              "WorkspaceRunners",
 	WorkspaceSavedViews:           "WorkspaceSavedViews",
 	WorkspaceSCMConnections:       "WorkspaceSCMConnections",
 	WorkspaceSCMIdentities:        "WorkspaceSCMIdentities",
@@ -202,6 +204,7 @@ type workspaceR struct {
 	WorkspaceMemberships          WorkspaceMembershipSlice          `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
 	WorkspaceNotificationEvents   WorkspaceNotificationEventSlice   `boil:"WorkspaceNotificationEvents" json:"WorkspaceNotificationEvents" toml:"WorkspaceNotificationEvents" yaml:"WorkspaceNotificationEvents"`
 	WorkspaceProjects             WorkspaceProjectSlice             `boil:"WorkspaceProjects" json:"WorkspaceProjects" toml:"WorkspaceProjects" yaml:"WorkspaceProjects"`
+	WorkspaceRunners              WorkspaceRunnerSlice              `boil:"WorkspaceRunners" json:"WorkspaceRunners" toml:"WorkspaceRunners" yaml:"WorkspaceRunners"`
 	WorkspaceSavedViews           WorkspaceSavedViewSlice           `boil:"WorkspaceSavedViews" json:"WorkspaceSavedViews" toml:"WorkspaceSavedViews" yaml:"WorkspaceSavedViews"`
 	WorkspaceSCMConnections       WorkspaceSCMConnectionSlice       `boil:"WorkspaceSCMConnections" json:"WorkspaceSCMConnections" toml:"WorkspaceSCMConnections" yaml:"WorkspaceSCMConnections"`
 	WorkspaceSCMIdentities        WorkspaceSCMIdentitySlice         `boil:"WorkspaceSCMIdentities" json:"WorkspaceSCMIdentities" toml:"WorkspaceSCMIdentities" yaml:"WorkspaceSCMIdentities"`
@@ -596,6 +599,22 @@ func (r *workspaceR) GetWorkspaceProjects() WorkspaceProjectSlice {
 	}
 
 	return r.WorkspaceProjects
+}
+
+func (o *Workspace) GetWorkspaceRunners() WorkspaceRunnerSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceRunners()
+}
+
+func (r *workspaceR) GetWorkspaceRunners() WorkspaceRunnerSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceRunners
 }
 
 func (o *Workspace) GetWorkspaceSavedViews() WorkspaceSavedViewSlice {
@@ -1310,6 +1329,20 @@ func (o *Workspace) WorkspaceProjects(mods ...qm.QueryMod) workspaceProjectQuery
 	)
 
 	return WorkspaceProjects(queryMods...)
+}
+
+// WorkspaceRunners retrieves all the workspace_runner's WorkspaceRunners with an executor.
+func (o *Workspace) WorkspaceRunners(mods ...qm.QueryMod) workspaceRunnerQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_runners\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceRunners(queryMods...)
 }
 
 // WorkspaceSavedViews retrieves all the workspace_saved_view's WorkspaceSavedViews with an executor.
@@ -4125,6 +4158,119 @@ func (workspaceL) LoadWorkspaceProjects(ctx context.Context, e boil.ContextExecu
 	return nil
 }
 
+// LoadWorkspaceRunners allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceRunners(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_runners`),
+		qm.WhereIn(`workspace_runners.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_runners")
+	}
+
+	var resultSlice []*WorkspaceRunner
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_runners")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_runners")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_runners")
+	}
+
+	if len(workspaceRunnerAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceRunners = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceRunnerR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceRunners = append(local.R.WorkspaceRunners, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceRunnerR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadWorkspaceSavedViews allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceL) LoadWorkspaceSavedViews(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
@@ -5965,6 +6111,59 @@ func (o *Workspace) AddWorkspaceProjects(ctx context.Context, exec boil.ContextE
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceProjectR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceRunners adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceRunners.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceRunners(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceRunner) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_runners\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceRunnerPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceRunners: related,
+		}
+	} else {
+		o.R.WorkspaceRunners = append(o.R.WorkspaceRunners, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceRunnerR{
 				Workspace: o,
 			}
 		} else {

@@ -120,12 +120,14 @@ var WorkspaceAgentRels = struct {
 	Workspace                      string
 	AgentWorkspaceAgentProposals   string
 	AgentWorkspaceIssueDelegations string
+	AgentWorkspaceRunners          string
 }{
 	Account:                        "Account",
 	OwnerAccount:                   "OwnerAccount",
 	Workspace:                      "Workspace",
 	AgentWorkspaceAgentProposals:   "AgentWorkspaceAgentProposals",
 	AgentWorkspaceIssueDelegations: "AgentWorkspaceIssueDelegations",
+	AgentWorkspaceRunners:          "AgentWorkspaceRunners",
 }
 
 // workspaceAgentR is where relationships are stored.
@@ -135,6 +137,7 @@ type workspaceAgentR struct {
 	Workspace                      *Workspace                    `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
 	AgentWorkspaceAgentProposals   WorkspaceAgentProposalSlice   `boil:"AgentWorkspaceAgentProposals" json:"AgentWorkspaceAgentProposals" toml:"AgentWorkspaceAgentProposals" yaml:"AgentWorkspaceAgentProposals"`
 	AgentWorkspaceIssueDelegations WorkspaceIssueDelegationSlice `boil:"AgentWorkspaceIssueDelegations" json:"AgentWorkspaceIssueDelegations" toml:"AgentWorkspaceIssueDelegations" yaml:"AgentWorkspaceIssueDelegations"`
+	AgentWorkspaceRunners          WorkspaceRunnerSlice          `boil:"AgentWorkspaceRunners" json:"AgentWorkspaceRunners" toml:"AgentWorkspaceRunners" yaml:"AgentWorkspaceRunners"`
 }
 
 // NewStruct creates a new relationship struct
@@ -220,6 +223,22 @@ func (r *workspaceAgentR) GetAgentWorkspaceIssueDelegations() WorkspaceIssueDele
 	}
 
 	return r.AgentWorkspaceIssueDelegations
+}
+
+func (o *WorkspaceAgent) GetAgentWorkspaceRunners() WorkspaceRunnerSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetAgentWorkspaceRunners()
+}
+
+func (r *workspaceAgentR) GetAgentWorkspaceRunners() WorkspaceRunnerSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.AgentWorkspaceRunners
 }
 
 // workspaceAgentL is where Load methods for each relationship are stored.
@@ -597,6 +616,20 @@ func (o *WorkspaceAgent) AgentWorkspaceIssueDelegations(mods ...qm.QueryMod) wor
 	)
 
 	return WorkspaceIssueDelegations(queryMods...)
+}
+
+// AgentWorkspaceRunners retrieves all the workspace_runner's WorkspaceRunners with an executor via agent_id column.
+func (o *WorkspaceAgent) AgentWorkspaceRunners(mods ...qm.QueryMod) workspaceRunnerQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_runners\".\"agent_id\"=?", o.ID),
+	)
+
+	return WorkspaceRunners(queryMods...)
 }
 
 // LoadAccount allows an eager lookup of values, cached into the
@@ -1185,6 +1218,119 @@ func (workspaceAgentL) LoadAgentWorkspaceIssueDelegations(ctx context.Context, e
 	return nil
 }
 
+// LoadAgentWorkspaceRunners allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceAgentL) LoadAgentWorkspaceRunners(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceAgent any, mods queries.Applicator) error {
+	var slice []*WorkspaceAgent
+	var object *WorkspaceAgent
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceAgent.(*WorkspaceAgent)
+		if !ok {
+			object = new(WorkspaceAgent)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceAgent)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceAgent))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceAgent.(*[]*WorkspaceAgent)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceAgent)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceAgent))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceAgentR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceAgentR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_runners`),
+		qm.WhereIn(`workspace_runners.agent_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_runners")
+	}
+
+	var resultSlice []*WorkspaceRunner
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_runners")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_runners")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_runners")
+	}
+
+	if len(workspaceRunnerAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.AgentWorkspaceRunners = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceRunnerR{}
+			}
+			foreign.R.Agent = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.AgentID {
+				local.R.AgentWorkspaceRunners = append(local.R.AgentWorkspaceRunners, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceRunnerR{}
+				}
+				foreign.R.Agent = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetAccount of the workspaceAgent to the related item.
 // Sets o.R.Account to related.
 // Adds o to related.R.WorkspaceAgent.
@@ -1423,6 +1569,59 @@ func (o *WorkspaceAgent) AddAgentWorkspaceIssueDelegations(ctx context.Context, 
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceIssueDelegationR{
+				Agent: o,
+			}
+		} else {
+			rel.R.Agent = o
+		}
+	}
+	return nil
+}
+
+// AddAgentWorkspaceRunners adds the given related objects to the existing relationships
+// of the workspace_agent, optionally inserting them as new records.
+// Appends related to o.R.AgentWorkspaceRunners.
+// Sets related.R.Agent appropriately.
+func (o *WorkspaceAgent) AddAgentWorkspaceRunners(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceRunner) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.AgentID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_runners\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"agent_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceRunnerPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.AgentID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceAgentR{
+			AgentWorkspaceRunners: related,
+		}
+	} else {
+		o.R.AgentWorkspaceRunners = append(o.R.AgentWorkspaceRunners, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceRunnerR{
 				Agent: o,
 			}
 		} else {

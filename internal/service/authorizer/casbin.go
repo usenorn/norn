@@ -30,6 +30,7 @@ var policyResources = []entity.Resource{
 	entity.ResourceNotification,
 	entity.ResourceAPIToken,
 	entity.ResourceAgent,
+	entity.ResourceRunner,
 	entity.ResourceAuditLog,
 }
 

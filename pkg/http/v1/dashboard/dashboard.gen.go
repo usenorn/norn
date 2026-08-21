@@ -395,6 +395,8 @@ const (
 	AuditActionMembershipAuditAccessChanged AuditAction = "membership.audit_access_changed"
 	AuditActionMembershipRemoved            AuditAction = "membership.removed"
 	AuditActionMembershipRoleChanged        AuditAction = "membership.role_changed"
+	AuditActionRunnerEnrolled               AuditAction = "runner.enrolled"
+	AuditActionRunnerRevoked                AuditAction = "runner.revoked"
 	AuditActionSessionRevoked               AuditAction = "session.revoked"
 	AuditActionSessionSignInFailed          AuditAction = "session.sign_in_failed"
 	AuditActionSessionSignedIn              AuditAction = "session.signed_in"
@@ -463,6 +465,10 @@ func (e AuditAction) Valid() bool {
 	case AuditActionMembershipRemoved:
 		return true
 	case AuditActionMembershipRoleChanged:
+		return true
+	case AuditActionRunnerEnrolled:
+		return true
+	case AuditActionRunnerRevoked:
 		return true
 	case AuditActionSessionRevoked:
 		return true
@@ -2377,6 +2383,57 @@ func (e ReviewVerdict) Valid() bool {
 	case ReviewVerdictDismissed:
 		return true
 	case ReviewVerdictRequested:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RunnerProblemCode.
+const (
+	RunnerProblemCodeRunnerAssertionForged   RunnerProblemCode = "runner_assertion_forged"
+	RunnerProblemCodeRunnerAssertionMismatch RunnerProblemCode = "runner_assertion_mismatch"
+	RunnerProblemCodeRunnerAssertionReplayed RunnerProblemCode = "runner_assertion_replayed"
+	RunnerProblemCodeRunnerAssertionStale    RunnerProblemCode = "runner_assertion_stale"
+	RunnerProblemCodeRunnerCredentialInvalid RunnerProblemCode = "runner_credential_invalid"
+	RunnerProblemCodeRunnerNameTaken         RunnerProblemCode = "runner_name_taken"
+	RunnerProblemCodeRunnerRevoked           RunnerProblemCode = "runner_revoked"
+)
+
+// Valid indicates whether the value is a known member of the RunnerProblemCode enum.
+func (e RunnerProblemCode) Valid() bool {
+	switch e {
+	case RunnerProblemCodeRunnerAssertionForged:
+		return true
+	case RunnerProblemCodeRunnerAssertionMismatch:
+		return true
+	case RunnerProblemCodeRunnerAssertionReplayed:
+		return true
+	case RunnerProblemCodeRunnerAssertionStale:
+		return true
+	case RunnerProblemCodeRunnerCredentialInvalid:
+		return true
+	case RunnerProblemCodeRunnerNameTaken:
+		return true
+	case RunnerProblemCodeRunnerRevoked:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RunnerStatus.
+const (
+	RunnerStatusActive  RunnerStatus = "active"
+	RunnerStatusRevoked RunnerStatus = "revoked"
+)
+
+// Valid indicates whether the value is a known member of the RunnerStatus enum.
+func (e RunnerStatus) Valid() bool {
+	switch e {
+	case RunnerStatusActive:
+		return true
+	case RunnerStatusRevoked:
 		return true
 	default:
 		return false
@@ -4491,6 +4548,36 @@ type EnforcementRefusedProblem struct {
 // EnforcementRefusedProblemCode defines model for EnforcementRefusedProblem.Code.
 type EnforcementRefusedProblemCode string
 
+// EnrolRunnerRequest defines model for EnrolRunnerRequest.
+type EnrolRunnerRequest struct {
+	Host RunnerHost `json:"host"`
+
+	// Name What to call this machine. Defaults to its hostname.
+	Name *string `json:"name,omitempty"`
+
+	// PublicKey The machine's Ed25519 public key, 32 bytes in standard base64
+	PublicKey string `json:"publicKey"`
+}
+
+// EnrolledRunner defines model for EnrolledRunner.
+type EnrolledRunner struct {
+	// RefreshToken Carried once and never returned again. It belongs in the OS keystore beside the device private key, not in a file.
+	RefreshToken string `json:"refreshToken"`
+	Runner       Runner `json:"runner"`
+}
+
+// ExchangeRunnerTokenRequest defines model for ExchangeRunnerTokenRequest.
+type ExchangeRunnerTokenRequest struct {
+	Audience     string             `json:"audience"`
+	IssuedAt     time.Time          `json:"issuedAt"`
+	Nonce        string             `json:"nonce"`
+	RefreshToken string             `json:"refreshToken"`
+	RunnerId     openapi_types.UUID `json:"runnerId"`
+
+	// Signature Standard base64 of the Ed25519 signature over the assertion
+	Signature string `json:"signature"`
+}
+
 // ExecuteImportRequest defines model for ExecuteImportRequest.
 type ExecuteImportRequest struct {
 	AcknowledgeTriage *bool  `json:"acknowledgeTriage,omitempty"`
@@ -5756,6 +5843,57 @@ type ResetLinkUsedProblemCode string
 // ReviewVerdict defines model for ReviewVerdict.
 type ReviewVerdict string
 
+// Runner defines model for Runner.
+type Runner struct {
+	AgentId     openapi_types.UUID `json:"agentId"`
+	EnrolledAt  time.Time          `json:"enrolledAt"`
+	Host        RunnerHost         `json:"host"`
+	Id          openapi_types.UUID `json:"id"`
+	LastSeenAt  *time.Time         `json:"lastSeenAt,omitempty"`
+	Name        string             `json:"name"`
+	RevokedAt   *time.Time         `json:"revokedAt,omitempty"`
+	Status      RunnerStatus       `json:"status"`
+	WorkspaceId openapi_types.UUID `json:"workspaceId"`
+}
+
+// RunnerHost defines model for RunnerHost.
+type RunnerHost struct {
+	Arch     string `json:"arch"`
+	Hostname string `json:"hostname"`
+	Os       string `json:"os"`
+	Version  string `json:"version"`
+}
+
+// RunnerProblem defines model for RunnerProblem.
+type RunnerProblem struct {
+	Code     RunnerProblemCode `json:"code"`
+	Detail   *string           `json:"detail,omitempty"`
+	Errors   *[]FieldError     `json:"errors,omitempty"`
+	Instance *string           `json:"instance,omitempty"`
+	Status   int32             `json:"status"`
+	Title    string            `json:"title"`
+	Type     string            `json:"type"`
+}
+
+// RunnerProblemCode defines model for RunnerProblem.Code.
+type RunnerProblemCode string
+
+// RunnerSession defines model for RunnerSession.
+type RunnerSession struct {
+	AccessToken string `json:"accessToken"`
+
+	// ExpiresIn Seconds the access token stays usable
+	ExpiresIn int32  `json:"expiresIn"`
+	Runner    Runner `json:"runner"`
+
+	// Ticket Single use, spent when opening the runner channel
+	Ticket          string `json:"ticket"`
+	TicketExpiresIn int32  `json:"ticketExpiresIn"`
+}
+
+// RunnerStatus defines model for RunnerStatus.
+type RunnerStatus string
+
 // SCMDeployment defines model for SCMDeployment.
 type SCMDeployment struct {
 	Environment string             `json:"environment"`
@@ -6882,6 +7020,9 @@ type Reaction = CommentReaction
 // RunId defines model for RunId.
 type RunId = openapi_types.UUID
 
+// RunnerId defines model for RunnerId.
+type RunnerId = openapi_types.UUID
+
 // SavedViewId defines model for SavedViewId.
 type SavedViewId = openapi_types.UUID
 
@@ -6992,6 +7133,12 @@ type PasswordResetLinkUsed = ResetLinkUsedProblem
 
 // ProjectConflict defines model for ProjectConflict.
 type ProjectConflict = ProjectConflictProblem
+
+// RunnerConflict defines model for RunnerConflict.
+type RunnerConflict = RunnerProblem
+
+// RunnerCredential defines model for RunnerCredential.
+type RunnerCredential = RunnerProblem
 
 // SavedViewConflict defines model for SavedViewConflict.
 type SavedViewConflict = SavedViewConflictProblem
@@ -7306,6 +7453,12 @@ type AcceptInvitationJSONRequestBody = AcceptInvitationRequest
 
 // PreviewInvitationJSONRequestBody defines body for PreviewInvitation for application/json ContentType.
 type PreviewInvitationJSONRequestBody = PreviewInvitationRequest
+
+// EnrolRunnerJSONRequestBody defines body for EnrolRunner for application/json ContentType.
+type EnrolRunnerJSONRequestBody = EnrolRunnerRequest
+
+// ExchangeRunnerTokenJSONRequestBody defines body for ExchangeRunnerToken for application/json ContentType.
+type ExchangeRunnerTokenJSONRequestBody = ExchangeRunnerTokenRequest
 
 // BeginOidcLoginJSONRequestBody defines body for BeginOidcLogin for application/json ContentType.
 type BeginOidcLoginJSONRequestBody = BeginOidcLoginRequest
@@ -7636,6 +7789,15 @@ type ServerInterface interface {
 	// PreviewInvitation Describe an invitation link before anyone acts on it
 	// (POST /invitations/preview)
 	PreviewInvitation(w http.ResponseWriter, r *http.Request)
+	// EnrolRunner Bind this machine to the agent whose token authorises the call
+	// (POST /runners)
+	EnrolRunner(w http.ResponseWriter, r *http.Request)
+	// GetCurrentRunner What this machine is, as the server sees it
+	// (GET /runners/me)
+	GetCurrentRunner(w http.ResponseWriter, r *http.Request)
+	// ExchangeRunnerToken Trade a signed assertion for a short-lived access token and a channel ticket
+	// (POST /runners/token)
+	ExchangeRunnerToken(w http.ResponseWriter, r *http.Request)
 	// RevokeAllSessions Revoke every session for the account, including the current one
 	// (DELETE /sessions)
 	RevokeAllSessions(w http.ResponseWriter, r *http.Request)
@@ -8077,6 +8239,12 @@ type ServerInterface interface {
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListWorkspaceRunners Every machine connected to this workspace, newest first
+	// (GET /workspaces/{workspaceId}/runners)
+	ListWorkspaceRunners(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// RevokeWorkspaceRunner Cut this machine off, leaving its agent working everywhere else
+	// (DELETE /workspaces/{workspaceId}/runners/{runnerId})
+	RevokeWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId)
 	// ListWorkspaceSavedViews The saved views this caller can see, in the order they arranged them
 	// (GET /workspaces/{workspaceId}/saved-views)
 	ListWorkspaceSavedViews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -8518,6 +8686,24 @@ func (_ Unimplemented) AcceptInvitation(w http.ResponseWriter, r *http.Request) 
 // PreviewInvitation Describe an invitation link before anyone acts on it
 // (POST /invitations/preview)
 func (_ Unimplemented) PreviewInvitation(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// EnrolRunner Bind this machine to the agent whose token authorises the call
+// (POST /runners)
+func (_ Unimplemented) EnrolRunner(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetCurrentRunner What this machine is, as the server sees it
+// (GET /runners/me)
+func (_ Unimplemented) GetCurrentRunner(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ExchangeRunnerToken Trade a signed assertion for a short-lived access token and a channel ticket
+// (POST /runners/token)
+func (_ Unimplemented) ExchangeRunnerToken(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -9400,6 +9586,18 @@ func (_ Unimplemented) UnarchiveWorkspaceProject(w http.ResponseWriter, r *http.
 // RestoreWorkspace Recover a workspace before its purge date passes
 // (POST /workspaces/{workspaceId}/restore)
 func (_ Unimplemented) RestoreWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceRunners Every machine connected to this workspace, newest first
+// (GET /workspaces/{workspaceId}/runners)
+func (_ Unimplemented) ListWorkspaceRunners(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RevokeWorkspaceRunner Cut this machine off, leaving its agent working everywhere else
+// (DELETE /workspaces/{workspaceId}/runners/{runnerId})
+func (_ Unimplemented) RevokeWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -10453,6 +10651,48 @@ func (siw *ServerInterfaceWrapper) PreviewInvitation(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PreviewInvitation(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnrolRunner operation middleware
+func (siw *ServerInterfaceWrapper) EnrolRunner(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnrolRunner(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCurrentRunner operation middleware
+func (siw *ServerInterfaceWrapper) GetCurrentRunner(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCurrentRunner(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ExchangeRunnerToken operation middleware
+func (siw *ServerInterfaceWrapper) ExchangeRunnerToken(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ExchangeRunnerToken(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -15808,6 +16048,67 @@ func (siw *ServerInterfaceWrapper) RestoreWorkspace(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceRunners operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceRunners(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceRunners(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeWorkspaceRunner operation middleware
+func (siw *ServerInterfaceWrapper) RevokeWorkspaceRunner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "runnerId" -------------
+	var runnerId RunnerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "runnerId", chi.URLParam(r, "runnerId"), &runnerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runnerId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeWorkspaceRunner(w, r, workspaceId, runnerId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceSavedViews operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceSavedViews(w http.ResponseWriter, r *http.Request) {
 
@@ -19984,6 +20285,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/mirrors/{mirrorId}", wrapper.UnmirrorWorkspaceIssue)
 	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/runners", wrapper.EnrolRunner)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/runners/token", wrapper.ExchangeRunnerToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/runners/me", wrapper.GetCurrentRunner)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/runners", wrapper.ListWorkspaceRunners)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/runners/{runnerId}", wrapper.RevokeWorkspaceRunner)
+	})
 
 	return r
 }
@@ -20044,6 +20360,10 @@ type PasswordResetLinkUsedApplicationProblemPlusJSONResponse ResetLinkUsedProble
 type ProblemApplicationProblemPlusJSONResponse Problem
 
 type ProjectConflictApplicationProblemPlusJSONResponse ProjectConflictProblem
+
+type RunnerConflictApplicationProblemPlusJSONResponse RunnerProblem
+
+type RunnerCredentialApplicationProblemPlusJSONResponse RunnerProblem
 
 type SavedViewConflictApplicationProblemPlusJSONResponse SavedViewConflictProblem
 
@@ -21989,6 +22309,237 @@ func (response PreviewInvitation409ApplicationProblemPlusJSONResponse) VisitPrev
 type PreviewInvitation500ApplicationProblemPlusJSONResponse Problem
 
 func (response PreviewInvitation500ApplicationProblemPlusJSONResponse) VisitPreviewInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnrolRunnerRequestObject struct {
+	Body *EnrolRunnerJSONRequestBody
+}
+
+type EnrolRunnerResponseObject interface {
+	VisitEnrolRunnerResponse(w http.ResponseWriter) error
+}
+
+type EnrolRunner201JSONResponse EnrolledRunner
+
+func (response EnrolRunner201JSONResponse) VisitEnrolRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnrolRunner401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response EnrolRunner401ApplicationProblemPlusJSONResponse) VisitEnrolRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnrolRunner403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response EnrolRunner403ApplicationProblemPlusJSONResponse) VisitEnrolRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnrolRunner409ApplicationProblemPlusJSONResponse struct {
+	RunnerConflictApplicationProblemPlusJSONResponse
+}
+
+func (response EnrolRunner409ApplicationProblemPlusJSONResponse) VisitEnrolRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnrolRunner422ApplicationProblemPlusJSONResponse Problem
+
+func (response EnrolRunner422ApplicationProblemPlusJSONResponse) VisitEnrolRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnrolRunner500ApplicationProblemPlusJSONResponse Problem
+
+func (response EnrolRunner500ApplicationProblemPlusJSONResponse) VisitEnrolRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentRunnerRequestObject struct {
+}
+
+type GetCurrentRunnerResponseObject interface {
+	VisitGetCurrentRunnerResponse(w http.ResponseWriter) error
+}
+
+type GetCurrentRunner200JSONResponse Runner
+
+func (response GetCurrentRunner200JSONResponse) VisitGetCurrentRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentRunner401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetCurrentRunner401ApplicationProblemPlusJSONResponse) VisitGetCurrentRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentRunner404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCurrentRunner404ApplicationProblemPlusJSONResponse) VisitGetCurrentRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentRunner500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCurrentRunner500ApplicationProblemPlusJSONResponse) VisitGetCurrentRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExchangeRunnerTokenRequestObject struct {
+	Body *ExchangeRunnerTokenJSONRequestBody
+}
+
+type ExchangeRunnerTokenResponseObject interface {
+	VisitExchangeRunnerTokenResponse(w http.ResponseWriter) error
+}
+
+type ExchangeRunnerToken200JSONResponse RunnerSession
+
+func (response ExchangeRunnerToken200JSONResponse) VisitExchangeRunnerTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExchangeRunnerToken401ApplicationProblemPlusJSONResponse struct {
+	RunnerCredentialApplicationProblemPlusJSONResponse
+}
+
+func (response ExchangeRunnerToken401ApplicationProblemPlusJSONResponse) VisitExchangeRunnerTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExchangeRunnerToken422ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ExchangeRunnerToken422ApplicationProblemPlusJSONResponse) VisitExchangeRunnerTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExchangeRunnerToken500ApplicationProblemPlusJSONResponse Problem
+
+func (response ExchangeRunnerToken500ApplicationProblemPlusJSONResponse) VisitExchangeRunnerTokenResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -35470,6 +36021,165 @@ func (response RestoreWorkspace500ApplicationProblemPlusJSONResponse) VisitResto
 	return err
 }
 
+type ListWorkspaceRunnersRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceRunnersResponseObject interface {
+	VisitListWorkspaceRunnersResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceRunners200JSONResponse []Runner
+
+func (response ListWorkspaceRunners200JSONResponse) VisitListWorkspaceRunnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceRunners401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceRunners401ApplicationProblemPlusJSONResponse) VisitListWorkspaceRunnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceRunners403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceRunners403ApplicationProblemPlusJSONResponse) VisitListWorkspaceRunnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceRunners404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceRunners404ApplicationProblemPlusJSONResponse) VisitListWorkspaceRunnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceRunners500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceRunners500ApplicationProblemPlusJSONResponse) VisitListWorkspaceRunnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeWorkspaceRunnerRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	RunnerId    RunnerId    `json:"runnerId"`
+}
+
+type RevokeWorkspaceRunnerResponseObject interface {
+	VisitRevokeWorkspaceRunnerResponse(w http.ResponseWriter) error
+}
+
+type RevokeWorkspaceRunner204Response struct {
+}
+
+func (response RevokeWorkspaceRunner204Response) VisitRevokeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeWorkspaceRunner401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RevokeWorkspaceRunner401ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeWorkspaceRunner403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RevokeWorkspaceRunner403ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeWorkspaceRunner404ApplicationProblemPlusJSONResponse Problem
+
+func (response RevokeWorkspaceRunner404ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeWorkspaceRunner500ApplicationProblemPlusJSONResponse Problem
+
+func (response RevokeWorkspaceRunner500ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceSavedViewsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -44148,6 +44858,15 @@ type StrictServerInterface interface {
 	// PreviewInvitation Describe an invitation link before anyone acts on it
 	// (POST /invitations/preview)
 	PreviewInvitation(ctx context.Context, request PreviewInvitationRequestObject) (PreviewInvitationResponseObject, error)
+	// EnrolRunner Bind this machine to the agent whose token authorises the call
+	// (POST /runners)
+	EnrolRunner(ctx context.Context, request EnrolRunnerRequestObject) (EnrolRunnerResponseObject, error)
+	// GetCurrentRunner What this machine is, as the server sees it
+	// (GET /runners/me)
+	GetCurrentRunner(ctx context.Context, request GetCurrentRunnerRequestObject) (GetCurrentRunnerResponseObject, error)
+	// ExchangeRunnerToken Trade a signed assertion for a short-lived access token and a channel ticket
+	// (POST /runners/token)
+	ExchangeRunnerToken(ctx context.Context, request ExchangeRunnerTokenRequestObject) (ExchangeRunnerTokenResponseObject, error)
 	// RevokeAllSessions Revoke every session for the account, including the current one
 	// (DELETE /sessions)
 	RevokeAllSessions(ctx context.Context, request RevokeAllSessionsRequestObject) (RevokeAllSessionsResponseObject, error)
@@ -44589,6 +45308,12 @@ type StrictServerInterface interface {
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(ctx context.Context, request RestoreWorkspaceRequestObject) (RestoreWorkspaceResponseObject, error)
+	// ListWorkspaceRunners Every machine connected to this workspace, newest first
+	// (GET /workspaces/{workspaceId}/runners)
+	ListWorkspaceRunners(ctx context.Context, request ListWorkspaceRunnersRequestObject) (ListWorkspaceRunnersResponseObject, error)
+	// RevokeWorkspaceRunner Cut this machine off, leaving its agent working everywhere else
+	// (DELETE /workspaces/{workspaceId}/runners/{runnerId})
+	RevokeWorkspaceRunner(ctx context.Context, request RevokeWorkspaceRunnerRequestObject) (RevokeWorkspaceRunnerResponseObject, error)
 	// ListWorkspaceSavedViews The saved views this caller can see, in the order they arranged them
 	// (GET /workspaces/{workspaceId}/saved-views)
 	ListWorkspaceSavedViews(ctx context.Context, request ListWorkspaceSavedViewsRequestObject) (ListWorkspaceSavedViewsResponseObject, error)
@@ -45624,6 +46349,92 @@ func (sh *strictHandler) PreviewInvitation(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PreviewInvitationResponseObject); ok {
 		if err := validResponse.VisitPreviewInvitationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EnrolRunner operation middleware
+func (sh *strictHandler) EnrolRunner(w http.ResponseWriter, r *http.Request) {
+	var request EnrolRunnerRequestObject
+
+	var body EnrolRunnerJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EnrolRunner(ctx, request.(EnrolRunnerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EnrolRunner")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EnrolRunnerResponseObject); ok {
+		if err := validResponse.VisitEnrolRunnerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCurrentRunner operation middleware
+func (sh *strictHandler) GetCurrentRunner(w http.ResponseWriter, r *http.Request) {
+	var request GetCurrentRunnerRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCurrentRunner(ctx, request.(GetCurrentRunnerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCurrentRunner")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCurrentRunnerResponseObject); ok {
+		if err := validResponse.VisitGetCurrentRunnerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ExchangeRunnerToken operation middleware
+func (sh *strictHandler) ExchangeRunnerToken(w http.ResponseWriter, r *http.Request) {
+	var request ExchangeRunnerTokenRequestObject
+
+	var body ExchangeRunnerTokenJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ExchangeRunnerToken(ctx, request.(ExchangeRunnerTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ExchangeRunnerToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ExchangeRunnerTokenResponseObject); ok {
+		if err := validResponse.VisitExchangeRunnerTokenResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -49909,6 +50720,59 @@ func (sh *strictHandler) RestoreWorkspace(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RestoreWorkspaceResponseObject); ok {
 		if err := validResponse.VisitRestoreWorkspaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceRunners operation middleware
+func (sh *strictHandler) ListWorkspaceRunners(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceRunnersRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceRunners(ctx, request.(ListWorkspaceRunnersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceRunners")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceRunnersResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceRunnersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeWorkspaceRunner operation middleware
+func (sh *strictHandler) RevokeWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId) {
+	var request RevokeWorkspaceRunnerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.RunnerId = runnerId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeWorkspaceRunner(ctx, request.(RevokeWorkspaceRunnerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeWorkspaceRunner")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeWorkspaceRunnerResponseObject); ok {
+		if err := validResponse.VisitRevokeWorkspaceRunnerResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

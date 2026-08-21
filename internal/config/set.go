@@ -8,6 +8,7 @@ var Set = wire.NewSet(
 	NewSecurity,
 	NewOIDC,
 	NewSAML,
+	NewRunner,
 	NewCycles,
 	NewInstance,
 	NewLicence,
