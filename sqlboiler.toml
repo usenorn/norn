@@ -18,6 +18,8 @@ blacklist = [
   "workspace_import_mappings",
   "workspace_import_ledger",
   "workspace_import_report_lines",
+  "workspace_codebases",
+  "workspace_codebase_repositories",
 ]
 host = "127.0.0.1"
 port = 5433

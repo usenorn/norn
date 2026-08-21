@@ -87,6 +87,7 @@ type WorkspaceMember struct {
 	DisplayName string
 	Email       string
 	SortName    string
+	HasRunner   bool
 }
 
 func (m WorkspaceMember) Cursor() MembershipCursor {

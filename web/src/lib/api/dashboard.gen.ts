@@ -3618,6 +3618,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runners/me/codebases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every folder this machine has connected */
+        get: operations["listCurrentRunnerCodebases"];
+        put?: never;
+        /**
+         * Report what a connected folder holds
+         * @description Idempotent on the root path. The first call connects the folder; a later call carrying a different set of repositories replaces the inventory and marks the codebase as drifted until a person confirms it on the machine. Remote URLs are sent as fingerprints, never in full.
+         */
+        post: operations["connectCodebase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runners/me/codebases/{codebaseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                codebaseId: components["parameters"]["CodebaseId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Stop offering this folder, leaving its record readable */
+        delete: operations["disconnectCodebase"];
+        options?: never;
+        head?: never;
+        /** Accept the inventory as it was last reported, clearing drift */
+        patch: operations["confirmCodebase"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}/codebases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The folders this agent's machines hold
+         * @description A runner is somebody's own machine, so this serves the agent's owner and workspace administrators. Anyone else is told the agent does not exist rather than that they may not look. There is deliberately no workspace-wide codebase listing.
+         */
+        get: operations["listAgentCodebases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4167,6 +4231,65 @@ export interface components {
             /** Format: int32 */
             ticketExpiresIn: number;
         };
+        /** @enum {string} */
+        CodebaseState: "active" | "drift" | "disconnected";
+        /** @enum {string} */
+        CodebaseRuntime: "process" | "docker" | "kvm";
+        /** @description What a repository's remote is, without saying where it is. The hash identifies the remote well enough to recognise the same one on another machine; the host and path tail are for a person reading the screen. The full URL never leaves the machine. */
+        RemoteFingerprint: {
+            hash?: string;
+            host?: string;
+            pathTail?: string;
+        };
+        CodebaseRepository: {
+            name: string;
+            /** @description Where the repository sits inside the connected folder */
+            relPath: string;
+            defaultBranch?: string;
+            remote?: components["schemas"]["RemoteFingerprint"];
+        };
+        CodingTool: {
+            name: string;
+            version?: string;
+        };
+        Codebase: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            runnerId: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            agentId: string;
+            name: string;
+            rootPath: string;
+            state: components["schemas"]["CodebaseState"];
+            repositories: components["schemas"]["CodebaseRepository"][];
+            /** @description Instruction and configuration files found at the root, by name */
+            sharedFiles: string[];
+            runtimes: components["schemas"]["CodebaseRuntime"][];
+            /** @description Coding agents installed on the machine, with the versions detected */
+            tools: components["schemas"]["CodingTool"][];
+            /** Format: date-time */
+            connectedAt: string;
+            /** Format: date-time */
+            lastSeenAt?: string;
+            /** Format: date-time */
+            disconnectedAt?: string;
+        };
+        ConnectCodebaseRequest: {
+            /** @description What to call this folder. Defaults to its root path. */
+            name?: string;
+            rootPath: string;
+            repositories?: components["schemas"]["CodebaseRepository"][];
+            sharedFiles?: string[];
+            runtimes?: components["schemas"]["CodebaseRuntime"][];
+            tools?: components["schemas"]["CodingTool"][];
+        };
+        CodebaseProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "codebase_root_taken" | "codebase_not_drifted" | "codebase_disconnected";
+        };
         RunnerProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "runner_credential_invalid" | "runner_revoked" | "runner_assertion_forged" | "runner_assertion_stale" | "runner_assertion_replayed" | "runner_assertion_mismatch" | "runner_name_taken";
@@ -4477,7 +4600,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "agent.disabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -5833,6 +5956,8 @@ export interface components {
             lastActiveAt?: string;
             lastAuthMethod?: components["schemas"]["SessionAuthMethod"];
             readsAudit?: boolean;
+            /** @description Whether this member is an agent with at least one machine connected. False for people and for an agent that is MCP-only. What lets the delegate picker say so before the work is handed over; it never blocks the delegation. */
+            hasRunner?: boolean;
             /** Format: date-time */
             deactivatedAt?: string;
         };
@@ -6443,6 +6568,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["RunnerProblem"];
             };
         };
+        /** @description The codebase refuses the change */
+        CodebaseConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["CodebaseProblem"];
+            };
+        };
         /** @description The cycle refuses the change, or needs a decision first */
         CycleConflict: {
             headers: {
@@ -6703,6 +6837,7 @@ export interface components {
         InvitationId: string;
         TokenId: string;
         AgentId: string;
+        CodebaseId: string;
         RunnerId: string;
         ProposalId: string;
         StateId: string;
@@ -14368,6 +14503,139 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listCurrentRunnerCodebases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The codebases on record for the calling runner */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Codebase"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    connectCodebase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectCodebaseRequest"];
+            };
+        };
+        responses: {
+            /** @description The codebase as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Codebase"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["CodebaseConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    disconnectCodebase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                codebaseId: components["parameters"]["CodebaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The codebase, now disconnected */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Codebase"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["CodebaseConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    confirmCodebase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                codebaseId: components["parameters"]["CodebaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The codebase, no longer drifted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Codebase"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["CodebaseConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listAgentCodebases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The codebases held by this agent's runners, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Codebase"][];
+                };
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];

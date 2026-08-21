@@ -33,6 +33,7 @@ tags:
   - name: source-control
   - name: questions
   - name: runners
+  - name: codebases
 
 paths:
   /health:
@@ -5553,6 +5554,107 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /runners/me/codebases:
+    get:
+      tags: [codebases]
+      operationId: listCurrentRunnerCodebases
+      summary: Every folder this machine has connected
+      responses:
+        '200':
+          description: The codebases on record for the calling runner
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Codebase' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [codebases]
+      operationId: connectCodebase
+      summary: Report what a connected folder holds
+      description: >-
+        Idempotent on the root path. The first call connects the folder; a later call carrying a
+        different set of repositories replaces the inventory and marks the codebase as drifted
+        until a person confirms it on the machine. Remote URLs are sent as fingerprints, never in
+        full.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConnectCodebaseRequest' }
+      responses:
+        '200':
+          description: The codebase as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Codebase' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/CodebaseConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /runners/me/codebases/{codebaseId}:
+    parameters:
+      - $ref: '#/components/parameters/CodebaseId'
+    patch:
+      tags: [codebases]
+      operationId: confirmCodebase
+      summary: Accept the inventory as it was last reported, clearing drift
+      responses:
+        '200':
+          description: The codebase, no longer drifted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Codebase' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/CodebaseConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [codebases]
+      operationId: disconnectCodebase
+      summary: Stop offering this folder, leaving its record readable
+      responses:
+        '200':
+          description: The codebase, now disconnected
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Codebase' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/CodebaseConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/codebases:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentId'
+    get:
+      tags: [codebases]
+      operationId: listAgentCodebases
+      summary: The folders this agent's machines hold
+      description: >-
+        A runner is somebody's own machine, so this serves the agent's owner and workspace
+        administrators. Anyone else is told the agent does not exist rather than that they may not
+        look. There is deliberately no workspace-wide codebase listing.
+      responses:
+        '200':
+          description: The codebases held by this agent's runners, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Codebase' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
     bearerToken:
@@ -5591,6 +5693,12 @@ components:
       schema: { type: string, format: uuid }
     AgentId:
       name: agentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    CodebaseId:
+      name: codebaseId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -5918,6 +6026,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/RunnerProblem' }
+
+    CodebaseConflict:
+      description: The codebase refuses the change
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/CodebaseProblem' }
 
     CycleConflict:
       description: The cycle refuses the change, or needs a decision first
@@ -6838,6 +6952,111 @@ components:
           description: Single use, spent when opening the runner channel
         ticketExpiresIn: { type: integer, format: int32 }
 
+    CodebaseState:
+      type: string
+      enum: [active, drift, disconnected]
+
+    CodebaseRuntime:
+      type: string
+      enum: [process, docker, kvm]
+
+    RemoteFingerprint:
+      type: object
+      description: >-
+        What a repository's remote is, without saying where it is. The hash identifies the remote
+        well enough to recognise the same one on another machine; the host and path tail are for a
+        person reading the screen. The full URL never leaves the machine.
+      properties:
+        hash: { type: string, maxLength: 128 }
+        host: { type: string, maxLength: 255 }
+        pathTail: { type: string, maxLength: 255 }
+
+    CodebaseRepository:
+      type: object
+      required: [name, relPath]
+      properties:
+        name: { type: string, maxLength: 200 }
+        relPath:
+          type: string
+          maxLength: 1024
+          description: Where the repository sits inside the connected folder
+        defaultBranch: { type: string, maxLength: 255 }
+        remote: { $ref: '#/components/schemas/RemoteFingerprint' }
+
+    CodingTool:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 64 }
+        version: { type: string, maxLength: 64 }
+
+    Codebase:
+      type: object
+      required: [id, runnerId, workspaceId, agentId, name, rootPath, state, repositories, sharedFiles, runtimes, tools, connectedAt]
+      properties:
+        id: { type: string, format: uuid }
+        runnerId: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        agentId: { type: string, format: uuid }
+        name: { type: string, maxLength: 200 }
+        rootPath: { type: string, maxLength: 1024 }
+        state: { $ref: '#/components/schemas/CodebaseState' }
+        repositories:
+          type: array
+          items: { $ref: '#/components/schemas/CodebaseRepository' }
+        sharedFiles:
+          type: array
+          description: Instruction and configuration files found at the root, by name
+          items: { type: string, maxLength: 255 }
+        runtimes:
+          type: array
+          items: { $ref: '#/components/schemas/CodebaseRuntime' }
+        tools:
+          type: array
+          description: Coding agents installed on the machine, with the versions detected
+          items: { $ref: '#/components/schemas/CodingTool' }
+        connectedAt: { type: string, format: date-time }
+        lastSeenAt: { type: string, format: date-time }
+        disconnectedAt: { type: string, format: date-time }
+
+    ConnectCodebaseRequest:
+      type: object
+      required: [rootPath]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: What to call this folder. Defaults to its root path.
+        rootPath: { type: string, maxLength: 1024 }
+        repositories:
+          type: array
+          maxItems: 200
+          items: { $ref: '#/components/schemas/CodebaseRepository' }
+        sharedFiles:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 255 }
+        runtimes:
+          type: array
+          items: { $ref: '#/components/schemas/CodebaseRuntime' }
+        tools:
+          type: array
+          maxItems: 32
+          items: { $ref: '#/components/schemas/CodingTool' }
+
+    CodebaseProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - codebase_root_taken
+                - codebase_not_drifted
+                - codebase_disconnected
+
     RunnerProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -7346,6 +7565,8 @@ components:
         - agent.registered
         - runner.enrolled
         - runner.revoked
+        - codebase.connected
+        - codebase.disconnected
         - agent.disabled
         - agent.proposal_decided
         - webhook.registered
@@ -9428,6 +9649,12 @@ components:
         lastActiveAt: { type: string, format: date-time }
         lastAuthMethod: { $ref: '#/components/schemas/SessionAuthMethod' }
         readsAudit: { type: boolean }
+        hasRunner:
+          type: boolean
+          description: >-
+            Whether this member is an agent with at least one machine connected. False for people
+            and for an agent that is MCP-only. What lets the delegate picker say so before the
+            work is handed over; it never blocks the delegation.
         deactivatedAt: { type: string, format: date-time }
 
     MemberPage:
