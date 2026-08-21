@@ -1,6 +1,7 @@
 import { getContext, onDestroy, setContext } from "svelte";
 import {
 	isActivatableTarget,
+	isApplePlatform,
 	isTypingTarget,
 	shortcutOf,
 	shortcuts,
@@ -14,11 +15,11 @@ const sequenceTimeout = 1200;
 
 type Handler = (binding: string) => void;
 
-function chordOf(event: KeyboardEvent): string {
+export function chordOf(event: KeyboardEvent): string {
 	const pressed = event.key.toLowerCase();
 	const parts: string[] = [];
 
-	if (event.metaKey || event.ctrlKey) parts.push("mod");
+	if (isApplePlatform() ? event.metaKey : event.ctrlKey) parts.push("mod");
 	if (event.shiftKey && pressed !== "?" && pressed !== " ") parts.push("shift");
 
 	parts.push(pressed);
