@@ -16,7 +16,6 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
-	checksvc "github.com/usenorn/norn/internal/service/check"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
@@ -48,7 +47,6 @@ var toolScopes = entity.APIScopeSet{
 
 type harness struct {
 	issues        *issuesvc.MockIssues
-	checks        *checksvc.MockChecks
 	questions     *issuequestionsvc.MockIssueQuestions
 	asked         []entity.IssueQuestion
 	agents        *agentsvc.MockAgents
@@ -67,7 +65,6 @@ func newHarness(t *testing.T) *harness {
 
 	h := &harness{
 		issues:        issuesvc.NewMockIssues(ctrl),
-		checks:        checksvc.NewMockChecks(ctrl),
 		agents:        agentsvc.NewMockAgents(ctrl),
 		teams:         teamsvc.NewMockTeams(ctrl),
 		questions:     issuequestionsvc.NewMockIssueQuestions(ctrl),
@@ -83,7 +80,6 @@ func newHarness(t *testing.T) *harness {
 
 	h.edge = mcpserver.New(
 		h.issues,
-		h.checks,
 		h.questions,
 		h.agents,
 		issuecommentsvc.NewMockIssueComments(ctrl),
@@ -208,9 +204,6 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		"norn_change_issue_state",
 		"norn_create_comment",
 		"norn_whoami",
-		"norn_get_issue_checks",
-		"norn_propose_checks",
-		"norn_submit_evidence",
 		"norn_ask",
 		"norn_start_issue",
 	} {
@@ -219,8 +212,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		}
 	}
 
-	if len(tools.Tools) != 21 {
-		t.Errorf("registered %d tools, want 21", len(tools.Tools))
+	if len(tools.Tools) != 18 {
+		t.Errorf("registered %d tools, want 18", len(tools.Tools))
 	}
 }
 
@@ -378,7 +371,6 @@ func TestDisabledMCPAnswers404(t *testing.T) {
 
 	edge := mcpserver.New(
 		issuesvc.NewMockIssues(ctrl),
-		checksvc.NewMockChecks(ctrl),
 		issuequestionsvc.NewMockIssueQuestions(ctrl),
 		agentsvc.NewMockAgents(ctrl),
 		issuecommentsvc.NewMockIssueComments(ctrl),

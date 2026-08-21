@@ -8,7 +8,6 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/repository"
-	"github.com/usenorn/norn/internal/service/checkgate"
 )
 
 type Gate struct {
@@ -19,7 +18,6 @@ type Gate struct {
 	delegations repository.IssueDelegation
 	questions   repository.IssueQuestion
 	notify      repository.NotificationEvent
-	checks      *checkgate.Gate
 }
 
 func New(
@@ -30,7 +28,6 @@ func New(
 	delegations repository.IssueDelegation,
 	questions repository.IssueQuestion,
 	notify repository.NotificationEvent,
-	checks *checkgate.Gate,
 ) *Gate {
 	return &Gate{
 		settings:    settings,
@@ -40,7 +37,6 @@ func New(
 		delegations: delegations,
 		questions:   questions,
 		notify:      notify,
-		checks:      checks,
 	}
 }
 
@@ -81,19 +77,8 @@ func (g *Gate) Hold(
 		action, policy = entity.AgentActionStateChange, entity.AgentHoldAlways
 	}
 
-	switch policy {
-	case entity.AgentHoldNever:
+	if policy == entity.AgentHoldNever {
 		return entity.AgentProposal{}, false, nil
-
-	case entity.AgentHoldUnlessProven:
-		waits, err := g.unproven(ctx, issue, completing)
-		if err != nil {
-			return entity.AgentProposal{}, false, err
-		}
-
-		if !waits {
-			return entity.AgentProposal{}, false, nil
-		}
 	}
 
 	agent, err := g.agents.GetByAccountID(ctx, decision.Actor.AccountID)
@@ -183,19 +168,6 @@ func (g *Gate) HoldCreation(
 	return held, true, nil
 }
 
-func (g *Gate) unproven(ctx context.Context, issue entity.Issue, completing bool) (bool, error) {
-	if !completing {
-		return false, nil
-	}
-
-	blocking, err := g.checks.Blocking(ctx, issue.WorkspaceID, issue.ID)
-	if err != nil {
-		return false, err
-	}
-
-	return len(blocking) > 0, nil
-}
-
 func (g *Gate) unanswered(
 	ctx context.Context,
 	issue entity.Issue,
@@ -203,11 +175,6 @@ func (g *Gate) unanswered(
 ) ([]entity.IssueQuestion, error) {
 	if !completing {
 		return nil, nil
-	}
-
-	_, unratified, err := g.checks.Obstructing(ctx, issue.WorkspaceID, issue.ID)
-	if err != nil || len(unratified) > 0 {
-		return nil, err
 	}
 
 	asked, err := g.questions.ListByIssue(ctx, issue.WorkspaceID, issue.ID)

@@ -14,7 +14,6 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
-	"github.com/usenorn/norn/internal/service/checkgate"
 )
 
 type issuesService struct {
@@ -35,7 +34,6 @@ type issuesService struct {
 	followers    repository.IssueFollower
 	jobs         repository.JobProducer
 	gate         *agenthold.Gate
-	checks       *checkgate.Gate
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
 }
@@ -58,7 +56,6 @@ func New(
 	followers repository.IssueFollower,
 	jobs repository.JobProducer,
 	gate *agenthold.Gate,
-	checks *checkgate.Gate,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.Issues {
@@ -80,7 +77,6 @@ func New(
 		followers:    followers,
 		jobs:         jobs,
 		gate:         gate,
-		checks:       checks,
 		authorizer:   authorizer,
 		transactor:   transactor,
 	}
@@ -437,9 +433,8 @@ func (s *issuesService) Update(
 	}
 
 	var (
-		updated    entity.Issue
-		overridden []entity.Check
-		completed  entity.WorkflowState
+		updated   entity.Issue
+		completed entity.WorkflowState
 	)
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
@@ -510,23 +505,6 @@ func (s *issuesService) Update(
 					return entity.IssueChildrenOpenError{Children: open}
 				}
 			}
-
-			blocking, unratified, err := s.checks.Obstructing(ctx, workspaceID, issueID)
-			if err != nil {
-				return err
-			}
-
-			if len(unratified) > 0 && refused(ctx, decision) {
-				return entity.IssueChecksUnratifiedError{Checks: unratified}
-			}
-
-			if len(blocking) > 0 {
-				if refused(ctx, decision) {
-					return entity.IssueChecksUnprovenError{Checks: blocking}
-				}
-
-				overridden = blocking
-			}
 		}
 
 		now := time.Now().UTC()
@@ -566,12 +544,6 @@ func (s *issuesService) Update(
 			}
 
 			if err := s.notifyStateChanged(ctx, issue, decision, uuid.Nil); err != nil {
-				return err
-			}
-
-			if err := s.recordOverride(
-				ctx, issue, decision, overridden, input.AcknowledgeUnprovenChecks,
-			); err != nil {
 				return err
 			}
 

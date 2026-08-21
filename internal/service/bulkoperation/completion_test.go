@@ -46,11 +46,6 @@ func (h *harness) completingBulk(
 	}
 
 	h.issues.EXPECT().
-		ListChildren(gomock.Any(), workspaceID, gomock.Any(), gomock.Any()).
-		Return(nil, nil).
-		AnyTimes()
-
-	h.issues.EXPECT().
 		Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
@@ -92,13 +87,21 @@ func TestABulkCloseIsRefusedPerIssueAndTheRestStillApply(t *testing.T) {
 
 	h.completingBulk(t, workspaceID, []entity.Issue{blocked, clear}, done)
 
-	h.blocking = map[uuid.UUID][]entity.Check{
-		blocked.ID: {{
-			ID:        uuid.New(),
-			Statement: "payments retry without duplicating a charge",
-			Approval:  entity.CheckApprovalApproved,
-		}},
-	}
+	h.issues.EXPECT().
+		ListChildren(gomock.Any(), workspaceID, blocked.ID, gomock.Any()).
+		Return([]entity.Issue{{
+			ID:          uuid.New(),
+			WorkspaceID: workspaceID,
+			Status:      entity.IssueStatusActive,
+			Title:       "the retry path still double-charges",
+			State:       entity.IssueState{ID: uuid.New(), Category: entity.StateCategoryActive},
+		}}, nil).
+		AnyTimes()
+
+	h.issues.EXPECT().
+		ListChildren(gomock.Any(), workspaceID, gomock.Any(), gomock.Any()).
+		Return(nil, nil).
+		AnyTimes()
 
 	outcomes := map[uuid.UUID]entity.BulkOutcome{}
 
@@ -122,7 +125,7 @@ func TestABulkCloseIsRefusedPerIssueAndTheRestStillApply(t *testing.T) {
 
 	if outcomes[blocked.ID] != entity.BulkOutcomeConflict {
 		t.Fatalf(
-			"the issue with an unproven check was recorded as %q, want a conflict",
+			"the issue with an open child was recorded as %q, want a conflict",
 			outcomes[blocked.ID],
 		)
 	}

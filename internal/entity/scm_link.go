@@ -173,19 +173,13 @@ const (
 type CodeTransitionBlock string
 
 const (
-	CodeTransitionChildrenOpen     CodeTransitionBlock = "children_open"
-	CodeTransitionChecksUnproven   CodeTransitionBlock = "checks_unproven"
-	CodeTransitionChecksUnratified CodeTransitionBlock = "checks_unratified"
+	CodeTransitionChildrenOpen CodeTransitionBlock = "children_open"
 )
 
 func CodeTransitionBlockedBy(err error) (CodeTransitionBlock, bool) {
 	switch {
 	case errors.Is(err, ErrIssueChildrenOpen):
 		return CodeTransitionChildrenOpen, true
-	case errors.Is(err, ErrIssueChecksUnproven):
-		return CodeTransitionChecksUnproven, true
-	case errors.Is(err, ErrIssueChecksUnratified):
-		return CodeTransitionChecksUnratified, true
 	default:
 		return "", false
 	}

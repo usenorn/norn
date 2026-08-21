@@ -135,44 +135,6 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
-	var unproven entity.IssueChecksUnprovenError
-	if errors.As(err, &unproven) {
-		base := baseProblem(http.StatusConflict, unproven.Error())
-		checks := issueCheckDTOs(unproven.Checks)
-
-		return problemResponse{
-			status: http.StatusConflict,
-			body: api.IssueConflictProblem{
-				Code:     api.IssueConflictProblemCodeIssueChecksUnproven,
-				Checks:   &checks,
-				Detail:   base.Detail,
-				Instance: base.Instance,
-				Status:   base.Status,
-				Title:    base.Title,
-				Type:     base.Type,
-			},
-		}, true
-	}
-
-	var unratified entity.IssueChecksUnratifiedError
-	if errors.As(err, &unratified) {
-		base := baseProblem(http.StatusConflict, unratified.Error())
-		checks := issueCheckDTOs(unratified.Checks)
-
-		return problemResponse{
-			status: http.StatusConflict,
-			body: api.IssueConflictProblem{
-				Code:     api.IssueConflictProblemCodeIssueChecksUnratified,
-				Checks:   &checks,
-				Detail:   base.Detail,
-				Instance: base.Instance,
-				Status:   base.Status,
-				Title:    base.Title,
-				Type:     base.Type,
-			},
-		}, true
-	}
-
 	var tooDeep entity.IssueTooDeepError
 	if errors.As(err, &tooDeep) {
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueParentTooDeep, tooDeep), true
@@ -454,33 +416,6 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrBulkSetEmpty),
 		errors.Is(err, entity.ErrBulkSetAmbiguous):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
-
-	case errors.Is(err, entity.ErrCheckSettled):
-		return checkConflictProblem(api.CheckConflictProblemCodeCheckSettled, err), true
-
-	case errors.Is(err, entity.ErrCheckDecided):
-		return checkConflictProblem(api.CheckConflictProblemCodeCheckDecided, err), true
-
-	case errors.Is(err, entity.ErrCheckDeclined):
-		return checkConflictProblem(api.CheckConflictProblemCodeCheckDeclined, err), true
-
-	case errors.Is(err, entity.ErrCheckLimitReached):
-		return checkConflictProblem(api.CheckConflictProblemCodeCheckLimitReached, err), true
-
-	case errors.Is(err, entity.ErrCheckDecisionNotPersonal):
-		return checkConflictProblem(api.CheckConflictProblemCodeCheckDecisionNotPersonal, err), true
-
-	case errors.Is(err, entity.ErrCheckWaiverNotPersonal):
-		return checkConflictProblem(api.CheckConflictProblemCodeCheckWaiverNotPersonal, err), true
-
-	case errors.Is(err, entity.ErrCheckRemovalNotPersonal):
-		return checkConflictProblem(api.CheckConflictProblemCodeCheckRemovalNotPersonal, err), true
-
-	case errors.Is(err, entity.ErrEvidenceEmpty):
-		return checkConflictProblem(api.CheckConflictProblemCodeEvidenceEmpty, err), true
-
-	case errors.Is(err, entity.ErrCheckNotFound), errors.Is(err, entity.ErrEvidenceNotFound):
-		return newProblem(http.StatusNotFound, err.Error()), true
 
 	case errors.Is(err, entity.ErrIssueDelegationHeld):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationHeld, err), true
@@ -1460,42 +1395,6 @@ func (r problemResponse) VisitAnswerWorkspaceIssueQuestionResponse(w http.Respon
 	return r.write(w)
 }
 
-func (r problemResponse) VisitUpdateWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitListWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitAddWorkspaceIssueChecksResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitRemoveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitDecideWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitWaiveWorkspaceIssueCheckResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitDeclareWorkspaceIssueCheckGapResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitListWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitSubmitWorkspaceIssueCheckEvidenceResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
 func (r problemResponse) VisitListWorkspaceIssueDelegationsResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
@@ -2021,22 +1920,6 @@ func storageRefusedProblem(code api.StorageRefusedProblemCode, status int, err e
 	}
 
 	return problemResponse{status: status, body: body}
-}
-
-func checkConflictProblem(code api.CheckConflictProblemCode, err error) problemResponse {
-	base := baseProblem(http.StatusConflict, err.Error())
-
-	return problemResponse{
-		status: http.StatusConflict,
-		body: api.CheckConflictProblem{
-			Code:     code,
-			Detail:   base.Detail,
-			Instance: base.Instance,
-			Status:   base.Status,
-			Title:    base.Title,
-			Type:     base.Type,
-		},
-	}
 }
 
 func issueConflictProblem(code api.IssueConflictProblemCode, err error) problemResponse {

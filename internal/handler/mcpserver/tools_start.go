@@ -24,8 +24,6 @@ type startIssueInput struct {
 type startIssueOutput struct {
 	Issue     issueDTO      `json:"issue"`
 	Branch    string        `json:"branch"`
-	Checks    []checkDTO    `json:"checks"`
-	Summary   summaryDTO    `json:"summary"`
 	Questions []questionDTO `json:"questions"`
 	Reminder  string        `json:"reminder"`
 }
@@ -67,11 +65,6 @@ func (t *toolset) startIssue(
 		return nil, startIssueOutput{}, toolFailure(ctx, err)
 	}
 
-	ledger, err := t.checks.Ledger(ctx, workspace.ID, issue.ID)
-	if err != nil {
-		return nil, startIssueOutput{}, toolFailure(ctx, err)
-	}
-
 	asked, err := t.questions.List(ctx, workspace.ID, issue.ID)
 	if err != nil {
 		return nil, startIssueOutput{}, toolFailure(ctx, err)
@@ -80,8 +73,6 @@ func (t *toolset) startIssue(
 	return nil, startIssueOutput{
 		Issue:     issueDTOFrom(started),
 		Branch:    branch,
-		Checks:    checkDTOs(ledger.Reports),
-		Summary:   summaryDTOFrom(ledger.Summary),
 		Questions: questionDTOs(entity.UnansweredQuestions(asked)),
 		Reminder:  startReminder,
 	}, nil

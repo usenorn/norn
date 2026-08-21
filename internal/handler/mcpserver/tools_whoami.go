@@ -22,7 +22,6 @@ type teamRulesDTO struct {
 	HoldStateChanges  string `json:"holdStateChanges"`
 	HoldIssueEdits    string `json:"holdIssueEdits"`
 	HoldIssueCreation string `json:"holdIssueCreation"`
-	HoldCheckSets     string `json:"holdCheckSets"`
 }
 
 type whoamiOutput struct {
@@ -34,8 +33,7 @@ type whoamiOutput struct {
 }
 
 const whoamiReminder = "A held write is not an error and not a reason to retry: Norn records it " +
-	"as a proposal and applies it as you if a person approves. A check set is always held, " +
-	"whatever a team's other rules say."
+	"as a proposal and applies it as you if a person approves."
 
 func (t *toolset) whoami(
 	ctx context.Context,
@@ -91,7 +89,6 @@ func (t *toolset) whoami(
 			HoldStateChanges:  string(settings.Holds(entity.AgentActionStateChange)),
 			HoldIssueEdits:    string(settings.Holds(entity.AgentActionIssueEdit)),
 			HoldIssueCreation: string(settings.Holds(entity.AgentActionIssueCreate)),
-			HoldCheckSets:     string(settings.Holds(entity.AgentActionCheckSet)),
 		})
 	}
 

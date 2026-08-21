@@ -35,7 +35,6 @@ const untrustedContentInstructions = workingInstructions +
 
 type toolset struct {
 	issues         service.Issues
-	checks         service.Checks
 	questions      service.IssueQuestions
 	agents         service.Agents
 	issueComments  service.IssueComments
@@ -56,7 +55,6 @@ type Edge struct {
 
 func New(
 	issues service.Issues,
-	checks service.Checks,
 	questions service.IssueQuestions,
 	agents service.Agents,
 	issueComments service.IssueComments,
@@ -73,7 +71,6 @@ func New(
 ) *Edge {
 	tools := &toolset{
 		issues:         issues,
-		checks:         checks,
 		questions:      questions,
 		agents:         agents,
 		issueComments:  issueComments,
@@ -231,30 +228,6 @@ func (t *toolset) register(server *mcp.Server) {
 			"in a workspace rather than learning the rules by being refused.",
 		Annotations: read,
 	}, t.whoami)
-
-	mcp.AddTool(server, &mcp.Tool{
-		Name: "norn_get_issue_checks",
-		Description: "Read what done means on an issue: every criterion, whether it is proven, " +
-			"and the evidence behind it as Norn stored it. This is the answer to whether the " +
-			"issue can be finished; blocked is true while an approved criterion is unproven.",
-		Annotations: read,
-	}, t.getIssueChecks)
-
-	mcp.AddTool(server, &mcp.Tool{
-		Name: "norn_propose_checks",
-		Description: "State what would have to be true for an issue to be done. Each criterion " +
-			"is a claim plus the path its proof travels. A person approves them, because a new " +
-			"criterion changes what done means, so waiting is the expected outcome.",
-		Annotations: create,
-	}, t.proposeChecks)
-
-	mcp.AddTool(server, &mcp.Tool{
-		Name: "norn_submit_evidence",
-		Description: "File the verbatim result you observed against one criterion. Send what " +
-			"the command actually printed, not a summary of it; Norn stores it and recomputes " +
-			"whether the criterion is proven, and answers with the outcome.",
-		Annotations: create,
-	}, t.submitEvidence)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_ask",

@@ -23,7 +23,6 @@ const (
 	TaskTypeNotificationDigest      = "notification:digest"
 	TaskTypeAPITokenExpirySweep     = "api_token:expiry_sweep"
 	TaskTypeAuditSweep              = "audit:retention_sweep"
-	TaskTypeCheckExpirySweep        = "check:expiry_sweep"
 	TaskTypeWebhookFanOut           = "webhook:fan_out"
 	TaskTypeWebhookDeliver          = "webhook:deliver"
 	TaskTypeWebhookSweep            = "webhook:retention_sweep"

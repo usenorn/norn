@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -24,29 +23,14 @@ type Agents interface {
 	Configure(ctx context.Context, input ConfigureAgentInput) (entity.AgentSettings, error)
 
 	Waiting(ctx context.Context, workspaceID uuid.UUID) ([]WaitingProposal, error)
-	Approve(ctx context.Context, workspaceID, proposalID uuid.UUID, input ApproveProposalInput) (entity.AgentProposal, error)
+	Approve(ctx context.Context, workspaceID, proposalID uuid.UUID) (entity.AgentProposal, error)
 	Reject(ctx context.Context, workspaceID, proposalID uuid.UUID) (entity.AgentProposal, error)
-}
-
-type ProposedCheckEdit struct {
-	CheckID   uuid.UUID
-	Statement string
-	Method    entity.CheckMethod
-	Proof     string
-	TimeLimit *time.Duration
-}
-
-type ApproveProposalInput struct {
-	Checks []ProposedCheckEdit
-	Edited bool
 }
 
 type WaitingProposal struct {
 	Proposal  entity.AgentProposal
 	Team      entity.Team
 	Issue     entity.Issue
-	Checks    IssueChecks
-	Proposed  []entity.Check
 	Questions []entity.IssueQuestion
 	State     entity.WorkflowState
 }

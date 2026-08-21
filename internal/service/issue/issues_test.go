@@ -18,7 +18,6 @@ import (
 	agentrepo "github.com/usenorn/norn/internal/repository/agent"
 	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
-	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
@@ -37,7 +36,6 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
-	"github.com/usenorn/norn/internal/service/checkgate"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 )
@@ -63,8 +61,6 @@ type harness struct {
 	events      *eventsvc.MockEvents
 	followers   *issuefollowerrepo.MockIssueFollower
 	jobs        *jobqueuerepo.MockJobProducer
-	checks      *checkrepo.MockCheck
-	evidence    *checkrepo.MockCheckEvidence
 	codeLinks   *scmrepo.MockCodeLink
 	transactor  *transactorrepo.MockTransactor
 	authorizer  *authorizersvc.MockAuthorizer
@@ -72,7 +68,6 @@ type harness struct {
 	proposals   *agentproposalrepo.MockAgentProposal
 	agents      *agentrepo.MockAgent
 	actor       entity.Actor
-	blocking    []entity.Check
 	holds       entity.AgentSettings
 	service     service.Issues
 }
@@ -100,8 +95,6 @@ func newHarness(t *testing.T) *harness {
 		events:      eventsvc.NewMockEvents(ctrl),
 		followers:   issuefollowerrepo.NewMockIssueFollower(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
-		checks:      checkrepo.NewMockCheck(ctrl),
-		evidence:    checkrepo.NewMockCheckEvidence(ctrl),
 		codeLinks:   scmrepo.NewMockCodeLink(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
@@ -131,9 +124,7 @@ func newHarness(t *testing.T) *harness {
 			h.delegations,
 			h.questions,
 			h.notify,
-			checkgate.New(h.checks, h.evidence, h.codeLinks),
 		),
-		checkgate.New(h.checks, h.evidence, h.codeLinks),
 		h.authorizer, h.transactor,
 	)
 
@@ -173,18 +164,6 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 	h.events.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()
 	h.followers.EXPECT().Follow(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-
-	h.checks.EXPECT().
-		ListByIssue(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) ([]entity.Check, error) {
-			return h.blocking, nil
-		}).
-		AnyTimes()
-
-	h.evidence.EXPECT().
-		Digest(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil, nil).
-		AnyTimes()
 
 	h.codeLinks.EXPECT().
 		ListByIssue(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -1158,4 +1137,22 @@ func TestADropWithNoNeighboursLeavesTheOrderAlone(t *testing.T) {
 			*written.Rank,
 		)
 	}
+}
+
+func (h *harness) expectGateDecision() {
+	h.authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, request entity.AccessRequest) (entity.Decision, error) {
+			return entity.Decision{
+				Actor: h.actor,
+				Scope: entity.TeamScope{WorkspaceID: request.WorkspaceID, AllTeams: true},
+			}, nil
+		}).
+		AnyTimes()
+}
+func (h *harness) expectStateWrite(issueID uuid.UUID) {
+	h.issues.EXPECT().
+		Update(gomock.Any(), issueID, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
 }

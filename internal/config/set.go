@@ -12,7 +12,6 @@ var Set = wire.NewSet(
 	NewInstance,
 	NewLicence,
 	NewAudit,
-	NewChecks,
 	NewHTTP,
 	NewPostgres,
 	NewValkey,

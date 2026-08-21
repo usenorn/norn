@@ -16,21 +16,18 @@ import (
 	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
-	checkrepo "github.com/usenorn/norn/internal/repository/check"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
-	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
-	"github.com/usenorn/norn/internal/service/checkgate"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
 )
@@ -97,11 +94,6 @@ func newHarness(t *testing.T) *harness {
 			delegationrepo.NewMockIssueDelegation(ctrl),
 			questionrepo.NewMockIssueQuestion(ctrl),
 			notificationeventrepo.NewMockNotificationEvent(ctrl),
-			checkgate.New(
-				checkrepo.NewMockCheck(ctrl),
-				checkrepo.NewMockCheckEvidence(ctrl),
-				scmrepo.NewMockCodeLink(ctrl),
-			),
 		),
 		h.authorizer, transactor,
 	)

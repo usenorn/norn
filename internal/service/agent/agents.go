@@ -23,7 +23,6 @@ type agentsService struct {
 	states      repository.WorkflowState
 	issues      service.Issues
 	comments    service.IssueComments
-	checks      service.Checks
 	questions   repository.IssueQuestion
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
@@ -42,7 +41,6 @@ func New(
 	states repository.WorkflowState,
 	issues service.Issues,
 	comments service.IssueComments,
-	checks service.Checks,
 	questions repository.IssueQuestion,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
@@ -60,7 +58,6 @@ func New(
 		states:      states,
 		issues:      issues,
 		comments:    comments,
-		checks:      checks,
 		questions:   questions,
 		authorizer:  authorizer,
 		transactor:  transactor,
