@@ -3,12 +3,12 @@ package account
 import (
 	"embed"
 	"fmt"
-	htmltemplate "html/template"
 	"net/url"
 	"strings"
 	texttemplate "text/template"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/mailtemplate"
 )
 
 const (
@@ -28,16 +28,16 @@ var templates embed.FS
 
 var (
 	signUpVerificationPlain = texttemplate.Must(texttemplate.ParseFS(templates, "templates/sign_up_verification.txt"))
-	signUpVerificationHTML  = htmltemplate.Must(htmltemplate.ParseFS(templates, "templates/sign_up_verification.html"))
+	signUpVerificationHTML  = mailtemplate.MustHTML(templates, "templates/sign_up_verification.html")
 
 	emailChangePlain = texttemplate.Must(texttemplate.ParseFS(templates, "templates/email_change.txt"))
-	emailChangeHTML  = htmltemplate.Must(htmltemplate.ParseFS(templates, "templates/email_change.html"))
+	emailChangeHTML  = mailtemplate.MustHTML(templates, "templates/email_change.html")
 
 	passwordResetPlain = texttemplate.Must(texttemplate.ParseFS(templates, "templates/password_reset.txt"))
-	passwordResetHTML  = htmltemplate.Must(htmltemplate.ParseFS(templates, "templates/password_reset.html"))
+	passwordResetHTML  = mailtemplate.MustHTML(templates, "templates/password_reset.html")
 
 	passwordResetSSOPlain = texttemplate.Must(texttemplate.ParseFS(templates, "templates/password_reset_sso.txt"))
-	passwordResetSSOHTML  = htmltemplate.Must(htmltemplate.ParseFS(templates, "templates/password_reset_sso.html"))
+	passwordResetSSOHTML  = mailtemplate.MustHTML(templates, "templates/password_reset_sso.html")
 )
 
 func (s *accountsService) signUpURL(token string) string {
@@ -54,7 +54,7 @@ type signUpVerificationContent struct {
 	ConfirmURL  string
 }
 
-func buildSignUpVerification(confirmURL, displayName, email string) (entity.Mail, error) {
+func buildSignUpVerification(baseURL, confirmURL, displayName, email string) (entity.Mail, error) {
 	content := signUpVerificationContent{
 		DisplayName: displayName,
 		ConfirmURL:  confirmURL,
@@ -65,16 +65,22 @@ func buildSignUpVerification(confirmURL, displayName, email string) (entity.Mail
 		return entity.Mail{}, fmt.Errorf("render sign-up verification plain body: %w", err)
 	}
 
-	var html strings.Builder
-	if err := signUpVerificationHTML.ExecuteTemplate(&html, "sign_up_verification.html", content); err != nil {
-		return entity.Mail{}, fmt.Errorf("render sign-up verification html body: %w", err)
+	html, err := mailtemplate.Render(signUpVerificationHTML, mailtemplate.Shell{
+		Subject:   signUpVerificationSubject,
+		Preheader: "One link, good for an hour.",
+		Eyebrow:   "Account",
+		LogoURL:   mailtemplate.LogoURL(baseURL),
+		Content:   content,
+	})
+	if err != nil {
+		return entity.Mail{}, err
 	}
 
 	return entity.Mail{
 		To:        email,
 		Subject:   signUpVerificationSubject,
 		PlainBody: plain.String(),
-		HTMLBody:  html.String(),
+		HTMLBody:  html,
 	}, nil
 }
 
@@ -103,16 +109,22 @@ func buildEmailChangeConfirmation(baseURL, displayName, newEmail, token string) 
 		return entity.Mail{}, fmt.Errorf("render email change plain body: %w", err)
 	}
 
-	var html strings.Builder
-	if err := emailChangeHTML.ExecuteTemplate(&html, "email_change.html", content); err != nil {
-		return entity.Mail{}, fmt.Errorf("render email change html body: %w", err)
+	html, err := mailtemplate.Render(emailChangeHTML, mailtemplate.Shell{
+		Subject:   emailChangeSubject,
+		Preheader: "Confirm the new address to finish the change.",
+		Eyebrow:   "Account",
+		LogoURL:   mailtemplate.LogoURL(baseURL),
+		Content:   content,
+	})
+	if err != nil {
+		return entity.Mail{}, err
 	}
 
 	return entity.Mail{
 		To:        newEmail,
 		Subject:   emailChangeSubject,
 		PlainBody: plain.String(),
-		HTMLBody:  html.String(),
+		HTMLBody:  html,
 	}, nil
 }
 
@@ -141,16 +153,22 @@ func buildPasswordReset(baseURL, displayName, email, token string) (entity.Mail,
 		return entity.Mail{}, fmt.Errorf("render password reset plain body: %w", err)
 	}
 
-	var html strings.Builder
-	if err := passwordResetHTML.ExecuteTemplate(&html, "password_reset.html", content); err != nil {
-		return entity.Mail{}, fmt.Errorf("render password reset html body: %w", err)
+	html, err := mailtemplate.Render(passwordResetHTML, mailtemplate.Shell{
+		Subject:   passwordResetSubject,
+		Preheader: "Set a new password with a one-time link.",
+		Eyebrow:   "Security",
+		LogoURL:   mailtemplate.LogoURL(baseURL),
+		Content:   content,
+	})
+	if err != nil {
+		return entity.Mail{}, err
 	}
 
 	return entity.Mail{
 		To:        email,
 		Subject:   passwordResetSubject,
 		PlainBody: plain.String(),
-		HTMLBody:  html.String(),
+		HTMLBody:  html,
 	}, nil
 }
 
@@ -162,15 +180,20 @@ func buildPasswordResetSSONotice(displayName, email string) (entity.Mail, error)
 		return entity.Mail{}, fmt.Errorf("render password reset sso plain body: %w", err)
 	}
 
-	var html strings.Builder
-	if err := passwordResetSSOHTML.ExecuteTemplate(&html, "password_reset_sso.html", content); err != nil {
-		return entity.Mail{}, fmt.Errorf("render password reset sso html body: %w", err)
+	html, err := mailtemplate.Render(passwordResetSSOHTML, mailtemplate.Shell{
+		Subject:   passwordResetSSOSubject,
+		Preheader: "Your workspaces sign in through your identity provider.",
+		Eyebrow:   "Security",
+		Content:   content,
+	})
+	if err != nil {
+		return entity.Mail{}, err
 	}
 
 	return entity.Mail{
 		To:        email,
 		Subject:   passwordResetSSOSubject,
 		PlainBody: plain.String(),
-		HTMLBody:  html.String(),
+		HTMLBody:  html,
 	}, nil
 }

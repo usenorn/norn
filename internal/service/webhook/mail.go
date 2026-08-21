@@ -4,11 +4,11 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	htmltemplate "html/template"
 	"strings"
 	texttemplate "text/template"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/mailtemplate"
 	"github.com/usenorn/norn/internal/observability/logging"
 )
 
@@ -24,9 +24,7 @@ var (
 	webhookDisabledPlain = texttemplate.Must(
 		texttemplate.ParseFS(templates, "templates/webhook_disabled.txt"),
 	)
-	webhookDisabledHTML = htmltemplate.Must(
-		htmltemplate.ParseFS(templates, "templates/webhook_disabled.html"),
-	)
+	webhookDisabledHTML = mailtemplate.MustHTML(templates, "templates/webhook_disabled.html")
 )
 
 type webhookDisabledContent struct {
@@ -43,21 +41,28 @@ func webhooksURL(baseURL, slug string) string {
 }
 
 func buildWebhookDisabled(to string, content webhookDisabledContent) (entity.Mail, error) {
-	var plain, html strings.Builder
+	var plain strings.Builder
 
 	if err := webhookDisabledPlain.Execute(&plain, content); err != nil {
 		return entity.Mail{}, fmt.Errorf("render webhook disabled text: %w", err)
 	}
 
-	if err := webhookDisabledHTML.Execute(&html, content); err != nil {
-		return entity.Mail{}, fmt.Errorf("render webhook disabled html: %w", err)
+	html, err := mailtemplate.Render(webhookDisabledHTML, mailtemplate.Shell{
+		Subject:   webhookDisabledSubject,
+		Preheader: "Fix the receiver, then turn the subscription back on.",
+		Eyebrow:   "Webhook",
+		LogoURL:   mailtemplate.LogoURLFrom(content.SettingsURL),
+		Content:   content,
+	})
+	if err != nil {
+		return entity.Mail{}, err
 	}
 
 	return entity.Mail{
 		To:        to,
 		Subject:   webhookDisabledSubject,
 		PlainBody: plain.String(),
-		HTMLBody:  html.String(),
+		HTMLBody:  html,
 	}, nil
 }
 

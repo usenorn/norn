@@ -24,6 +24,7 @@ const (
 	ResourceNotification   Resource = "notification"
 	ResourceAPIToken       Resource = "api_token"
 	ResourceAgent          Resource = "agent"
+	ResourceRunner         Resource = "runner"
 	ResourceAuthPolicy     Resource = "auth_policy"
 	ResourceSSOConnection  Resource = "sso_connection"
 	ResourceAccount        Resource = "account"
@@ -97,6 +98,7 @@ type Actor struct {
 	AccountID      uuid.UUID
 	AgentID        *uuid.UUID
 	AgentAllowance int
+	RunnerID       *uuid.UUID
 	OwnerAccountID uuid.UUID
 	TokenID        *uuid.UUID
 	TokenName      string

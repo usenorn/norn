@@ -74,6 +74,8 @@ import (
 	passwordhistoryrepo "github.com/usenorn/norn/internal/repository/passwordhistory"
 	passwordresetrepo "github.com/usenorn/norn/internal/repository/passwordreset"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
+	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
+	runnersessionrepo "github.com/usenorn/norn/internal/repository/runnersession"
 	samlreplayrepo "github.com/usenorn/norn/internal/repository/samlreplay"
 	samlrequestrepo "github.com/usenorn/norn/internal/repository/samlrequest"
 	savedviewrepo "github.com/usenorn/norn/internal/repository/savedview"
@@ -118,6 +120,7 @@ import (
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
+	runnersvc "github.com/usenorn/norn/internal/service/runner"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
 	scmsvc "github.com/usenorn/norn/internal/service/scm"
 	giteasvc "github.com/usenorn/norn/internal/service/scm/gitea"
@@ -170,6 +173,8 @@ var baseSet = wire.NewSet(
 	activityrepo.Set,
 	issuedelegationrepo.Set,
 	issuequestionrepo.Set,
+	runnerrepo.Set,
+	runnersessionrepo.Set,
 	issuerelationrepo.Set,
 	bulkactionrepo.Set,
 	cyclerepo.Set,
@@ -229,6 +234,7 @@ var baseSet = wire.NewSet(
 	attachmentsvc.Set,
 	issuecommentsvc.Set,
 	issuequestionsvc.Set,
+	runnersvc.Set,
 	notificationsvc.Set,
 	savedviewsvc.Set,
 	eventsvc.Set,

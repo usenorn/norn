@@ -26,6 +26,7 @@ type handler struct {
 	issueComments     service.IssueComments
 	delegations       service.Delegations
 	questions         service.IssueQuestions
+	runners           service.Runners
 	attachments       service.Attachments
 	bulkOperations    service.BulkOperations
 	workflowStates    service.WorkflowStates
@@ -66,6 +67,7 @@ func New(
 	issueComments service.IssueComments,
 	delegations service.Delegations,
 	questions service.IssueQuestions,
+	runners service.Runners,
 	attachments service.Attachments,
 	bulkOperations service.BulkOperations,
 	workflowStates service.WorkflowStates,
@@ -105,6 +107,7 @@ func New(
 		issueComments:     issueComments,
 		delegations:       delegations,
 		questions:         questions,
+		runners:           runners,
 		attachments:       attachments,
 		bulkOperations:    bulkOperations,
 		workflowStates:    workflowStates,

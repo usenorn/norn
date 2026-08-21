@@ -12,8 +12,6 @@ import (
 const (
 	IssueBriefMaxLen = 4000
 
-	RunnerNameMaxLen = 200
-
 	DelegationClaimTTLMin     = 30 * time.Second
 	DelegationClaimTTLMax     = time.Hour
 	DelegationClaimTTLDefault = 5 * time.Minute
@@ -81,19 +79,6 @@ func ValidateIssueBrief(field, brief string) FieldError {
 	}
 
 	return FieldError{}
-}
-
-func ValidateRunnerName(field, runner string) FieldError {
-	trimmed := strings.TrimSpace(runner)
-
-	switch {
-	case trimmed == "":
-		return FieldError{Field: field, Code: ValidationCodeRequired}
-	case utf8.RuneCountInString(trimmed) > RunnerNameMaxLen:
-		return FieldError{Field: field, Code: ValidationCodeTooLong}
-	default:
-		return FieldError{}
-	}
 }
 
 func ValidateDelegationClaimTTL(field string, ttl time.Duration) FieldError {

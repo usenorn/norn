@@ -5,7 +5,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	htmltemplate "html/template"
 	"net/url"
 	"strconv"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/mailtemplate"
 )
 
 const digestSubject = "What happened while you were away"
@@ -22,7 +22,7 @@ var templates embed.FS
 
 var (
 	digestPlain = texttemplate.Must(texttemplate.ParseFS(templates, "templates/digest.txt"))
-	digestHTML  = htmltemplate.Must(htmltemplate.ParseFS(templates, "templates/digest.html"))
+	digestHTML  = mailtemplate.MustHTML(templates, "templates/digest.html")
 )
 
 type digestEntry struct {
@@ -129,16 +129,22 @@ func buildDigest(
 		return entity.Mail{}, fmt.Errorf("render digest plain body: %w", err)
 	}
 
-	var html strings.Builder
-	if err := digestHTML.ExecuteTemplate(&html, "digest.html", content); err != nil {
-		return entity.Mail{}, fmt.Errorf("render digest html body: %w", err)
+	html, err := mailtemplate.Render(digestHTML, mailtemplate.Shell{
+		Subject:   digestSubject,
+		Preheader: "A summary of what changed while you were away.",
+		Eyebrow:   "Digest",
+		LogoURL:   mailtemplate.LogoURL(baseURL),
+		Content:   content,
+	})
+	if err != nil {
+		return entity.Mail{}, err
 	}
 
 	return entity.Mail{
 		To:        email,
 		Subject:   digestSubject,
 		PlainBody: plain.String(),
-		HTMLBody:  html.String(),
+		HTMLBody:  html,
 	}, nil
 }
 

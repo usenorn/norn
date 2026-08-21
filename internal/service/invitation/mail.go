@@ -5,7 +5,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	htmltemplate "html/template"
 	"net/url"
 	"strings"
 	texttemplate "text/template"
@@ -14,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/mailtemplate"
 )
 
 const (
@@ -26,7 +26,7 @@ var templates embed.FS
 
 var (
 	invitationPlain = texttemplate.Must(texttemplate.ParseFS(templates, "templates/invitation.txt"))
-	invitationHTML  = htmltemplate.Must(htmltemplate.ParseFS(templates, "templates/invitation.html"))
+	invitationHTML  = mailtemplate.MustHTML(templates, "templates/invitation.html")
 )
 
 type invitationContent struct {
@@ -45,7 +45,7 @@ func (s *invitationsService) invitationURL(token string) string {
 	return acceptURL + "?token=" + url.QueryEscape(token)
 }
 
-func buildInvitation(acceptURL, workspaceName, email string, role entity.MembershipRole) (entity.Mail, error) {
+func buildInvitation(baseURL, acceptURL, workspaceName, email string, role entity.MembershipRole) (entity.Mail, error) {
 	content := invitationContent{
 		WorkspaceName: workspaceName,
 		Role:          string(role),
@@ -58,16 +58,22 @@ func buildInvitation(acceptURL, workspaceName, email string, role entity.Members
 		return entity.Mail{}, fmt.Errorf("render invitation plain body: %w", err)
 	}
 
-	var html strings.Builder
-	if err := invitationHTML.ExecuteTemplate(&html, "invitation.html", content); err != nil {
-		return entity.Mail{}, fmt.Errorf("render invitation html body: %w", err)
+	html, err := mailtemplate.Render(invitationHTML, mailtemplate.Shell{
+		Subject:   invitationSubject,
+		Preheader: "The link works once and expires.",
+		Eyebrow:   "Workspace",
+		LogoURL:   mailtemplate.LogoURL(baseURL),
+		Content:   content,
+	})
+	if err != nil {
+		return entity.Mail{}, err
 	}
 
 	return entity.Mail{
 		To:        email,
 		Subject:   invitationSubject,
 		PlainBody: plain.String(),
-		HTMLBody:  html.String(),
+		HTMLBody:  html,
 	}, nil
 }
 
@@ -94,7 +100,7 @@ func (s *invitationsService) SendInvitation(ctx context.Context, invitationID uu
 		return err
 	}
 
-	message, err := buildInvitation(s.invitationURL(token), workspace.Name, invitation.Email, invitation.Role)
+	message, err := buildInvitation(s.app.BaseURL, s.invitationURL(token), workspace.Name, invitation.Email, invitation.Role)
 	if err != nil {
 		return err
 	}

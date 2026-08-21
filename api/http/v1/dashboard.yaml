@@ -32,6 +32,7 @@ tags:
   - name: imports
   - name: source-control
   - name: questions
+  - name: runners
 
 paths:
   /health:
@@ -5541,6 +5542,109 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /runners:
+    post:
+      tags: [runners]
+      operationId: enrolRunner
+      summary: Bind this machine to the agent whose token authorises the call
+      description: >-
+        The bearer token is an ordinary agent API token, the same one an MCP client uses. It says
+        which agent this machine may act as and is read once: it is never stored, and it is not
+        what the machine keeps. What comes back is a refresh secret bound to the device key, shown
+        here and never again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EnrolRunnerRequest' }
+      responses:
+        '201':
+          description: The runner, carrying its refresh secret for the only time
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnrolledRunner' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/RunnerConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /runners/token:
+    post:
+      tags: [runners]
+      operationId: exchangeRunnerToken
+      summary: Trade a signed assertion for a short-lived access token and a channel ticket
+      description: >-
+        Authenticated by the refresh secret and an Ed25519 signature over the assertion, both
+        carried in the body, so this endpoint takes no session and no bearer token. The signature
+        covers the version, the runner id, the nonce, the timestamp and the audience, joined by
+        newlines. A nonce is accepted once.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExchangeRunnerTokenRequest' }
+      responses:
+        '200':
+          description: A scoped access token and a single-use channel ticket
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RunnerSession' }
+        '401': { $ref: '#/components/responses/RunnerCredential' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /runners/me:
+    get:
+      tags: [runners]
+      operationId: getCurrentRunner
+      summary: What this machine is, as the server sees it
+      responses:
+        '200':
+          description: The calling runner
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Runner' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/runners:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [runners]
+      operationId: listWorkspaceRunners
+      summary: Every machine connected to this workspace, newest first
+      responses:
+        '200':
+          description: The runners on record, live and revoked
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Runner' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/runners/{runnerId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/RunnerId'
+    delete:
+      tags: [runners]
+      operationId: revokeWorkspaceRunner
+      summary: Cut this machine off, leaving its agent working everywhere else
+      responses:
+        '204': { description: The runner was revoked }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
     bearerToken:
@@ -5579,6 +5683,12 @@ components:
       schema: { type: string, format: uuid }
     AgentId:
       name: agentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    RunnerId:
+      name: runnerId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -5888,6 +5998,18 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/IssueConflictProblem' }
+
+    RunnerCredential:
+      description: The runner's credential, signature or assertion was refused
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/RunnerProblem' }
+
+    RunnerConflict:
+      description: Another live machine on this agent already holds that name
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/RunnerProblem' }
 
     CycleConflict:
       description: The cycle refuses the change, or needs a decision first
@@ -6803,6 +6925,102 @@ components:
                 - comment_deleted
                 - comment_not_replyable
 
+    RunnerStatus:
+      type: string
+      enum: [active, revoked]
+
+    RunnerHost:
+      type: object
+      required: [hostname, os, arch, version]
+      properties:
+        hostname: { type: string, maxLength: 255 }
+        os: { type: string, maxLength: 64 }
+        arch: { type: string, maxLength: 64 }
+        version: { type: string, maxLength: 64 }
+
+    Runner:
+      type: object
+      required: [id, workspaceId, agentId, name, host, status, enrolledAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        agentId: { type: string, format: uuid }
+        name: { type: string, maxLength: 200 }
+        host: { $ref: '#/components/schemas/RunnerHost' }
+        status: { $ref: '#/components/schemas/RunnerStatus' }
+        enrolledAt: { type: string, format: date-time }
+        lastSeenAt: { type: string, format: date-time }
+        revokedAt: { type: string, format: date-time }
+
+    EnrolRunnerRequest:
+      type: object
+      required: [publicKey, host]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: What to call this machine. Defaults to its hostname.
+        publicKey:
+          type: string
+          description: The machine's Ed25519 public key, 32 bytes in standard base64
+        host: { $ref: '#/components/schemas/RunnerHost' }
+
+    EnrolledRunner:
+      type: object
+      required: [runner, refreshToken]
+      properties:
+        runner: { $ref: '#/components/schemas/Runner' }
+        refreshToken:
+          type: string
+          description: >-
+            Carried once and never returned again. It belongs in the OS keystore beside the
+            device private key, not in a file.
+
+    ExchangeRunnerTokenRequest:
+      type: object
+      required: [refreshToken, runnerId, nonce, issuedAt, audience, signature]
+      properties:
+        refreshToken: { type: string }
+        runnerId: { type: string, format: uuid }
+        nonce: { type: string, minLength: 16, maxLength: 128 }
+        issuedAt: { type: string, format: date-time }
+        audience: { type: string }
+        signature:
+          type: string
+          description: Standard base64 of the Ed25519 signature over the assertion
+
+    RunnerSession:
+      type: object
+      required: [runner, accessToken, expiresIn, ticket, ticketExpiresIn]
+      properties:
+        runner: { $ref: '#/components/schemas/Runner' }
+        accessToken: { type: string }
+        expiresIn:
+          type: integer
+          format: int32
+          description: Seconds the access token stays usable
+        ticket:
+          type: string
+          description: Single use, spent when opening the runner channel
+        ticketExpiresIn: { type: integer, format: int32 }
+
+    RunnerProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - runner_credential_invalid
+                - runner_revoked
+                - runner_assertion_forged
+                - runner_assertion_stale
+                - runner_assertion_replayed
+                - runner_assertion_mismatch
+                - runner_name_taken
+
     IssueConflictProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -7295,6 +7513,8 @@ components:
         - token.minted
         - token.revoked
         - agent.registered
+        - runner.enrolled
+        - runner.revoked
         - agent.disabled
         - agent.proposal_decided
         - webhook.registered

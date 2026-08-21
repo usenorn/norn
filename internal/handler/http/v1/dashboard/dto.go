@@ -1781,3 +1781,41 @@ func agentReasoningFrom(body *api.AgentReasoning) entity.AgentReasoning {
 
 	return reasoning
 }
+
+func runnerHostOf(host api.RunnerHost) entity.RunnerHost {
+	return entity.RunnerHost{
+		Hostname: host.Hostname,
+		OS:       host.Os,
+		Arch:     host.Arch,
+		Version:  host.Version,
+	}
+}
+
+func runnerDTO(runner entity.Runner) api.Runner {
+	return api.Runner{
+		Id:          runner.ID,
+		WorkspaceId: runner.WorkspaceID,
+		AgentId:     runner.AgentID,
+		Name:        runner.Name,
+		Host: api.RunnerHost{
+			Hostname: runner.Host.Hostname,
+			Os:       runner.Host.OS,
+			Arch:     runner.Host.Arch,
+			Version:  runner.Host.Version,
+		},
+		Status:     api.RunnerStatus(runner.Status),
+		EnrolledAt: runner.EnrolledAt,
+		LastSeenAt: runner.LastSeenAt,
+		RevokedAt:  runner.RevokedAt,
+	}
+}
+
+func runnerDTOs(runners []entity.Runner) []api.Runner {
+	dtos := make([]api.Runner, 0, len(runners))
+
+	for _, runner := range runners {
+		dtos = append(dtos, runnerDTO(runner))
+	}
+
+	return dtos
+}

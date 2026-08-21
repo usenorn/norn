@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>{{ .Subject }}</title>
+<!--[if mso]>
+<noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+<![endif]-->
+<style>
+  body { margin: 0; padding: 0; width: 100% !important; background: #f4f5f7; }
+  table { border-collapse: collapse; }
+  img { border: 0; line-height: 100%; outline: none; text-decoration: none; }
+  a { color: #17708a; }
+  .norn-body p { margin: 0 0 16px; }
+  .norn-body p:last-child { margin-bottom: 0; }
+  .norn-body ul { margin: 0 0 16px; padding-left: 20px; }
+  .norn-body li { margin: 0 0 10px; }
+  .norn-body strong { color: #0f1116; font-weight: 600; }
+  .norn-body code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px; background: #f1f3f5; padding: 2px 5px; border-radius: 3px; color: #2b303a;
+  }
+  @media (max-width: 620px) {
+    .norn-shell { width: 100% !important; }
+    .norn-pad { padding-left: 22px !important; padding-right: 22px !important; }
+    .norn-h1 { font-size: 21px !important; }
+  }
+  @media (prefers-color-scheme: dark) {
+    body, .norn-page { background: #0f1116 !important; }
+    .norn-card { background: #14171d !important; border-color: #262b34 !important; }
+    .norn-h1, .norn-body strong, .norn-mark { color: #e8ebf2 !important; }
+    .norn-body, .norn-body p, .norn-body li { color: #b6bcca !important; }
+    .norn-body code { background: #1a1e25 !important; color: #d3d8e2 !important; }
+    .norn-rule { background: #262b34 !important; }
+    .norn-quiet { color: #7e8698 !important; }
+    .norn-eyebrow { color: #5cc6e0 !important; }
+    .norn-meta-label { color: #7e8698 !important; }
+    .norn-meta-value { color: #d3d8e2 !important; }
+    .norn-meta-row td { border-color: #262b34 !important; }
+    a { color: #5cc6e0 !important; }
+    .norn-btn { background: #e8ebf2 !important; }
+    .norn-btn a { color: #0f1116 !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#f4f5f7;">
+<div style="display:none;font-size:1px;color:#f4f5f7;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+  {{ .Preheader }}&#8203;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;&#847;
+</div>
+<table role="presentation" class="norn-page" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f5f7;">
+  <tr>
+    <td align="center" style="padding:32px 12px 40px;">
+      <table role="presentation" class="norn-shell" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+        <tr>
+          <td class="norn-band" bgcolor="#0f1116" style="background:#0f1116;border-radius:6px 6px 0 0;padding:20px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                {{ if .LogoURL }}<td style="padding-right:11px;vertical-align:middle;line-height:0;">
+                  <img src="{{ .LogoURL }}" width="21" height="24" alt="Norn" style="display:block;width:21px;height:24px;border:0;">
+                </td>{{ end }}
+                <td style="vertical-align:middle;">
+                  <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:16px;font-weight:600;letter-spacing:0.17em;color:#e8ebf2;text-transform:uppercase;">Norn</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="norn-card" style="background:#ffffff;border:1px solid #e6e8ec;border-top:0;border-radius:0 0 6px 6px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="height:3px;line-height:3px;font-size:0;background:#35b7d6;">&nbsp;</td>
+              </tr>
+              <tr>
+                <td class="norn-pad norn-body" style="padding:30px 32px 32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#3a4150;">
+                  {{ if .Eyebrow }}<p class="norn-eyebrow" style="margin:0 0 10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;font-weight:600;letter-spacing:0.11em;line-height:1.4;color:#17708a;text-transform:uppercase;">{{ .Eyebrow }}</p>{{ end }}
+                  <h1 class="norn-h1" style="margin:0 0 18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:23px;line-height:1.25;font-weight:600;letter-spacing:-0.01em;color:#0f1116;">{{ .Subject }}</h1>
+                  {{ template "content" .Content }}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="norn-pad" style="padding:22px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr><td class="norn-rule" style="height:1px;line-height:1px;font-size:0;background:#e6e8ec;">&nbsp;</td></tr>
+            </table>
+            <p class="norn-quiet" style="margin:14px 0 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;letter-spacing:0.06em;line-height:1.5;color:#8a93a6;text-transform:uppercase;">
+              Sent by Norn
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

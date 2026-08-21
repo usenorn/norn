@@ -438,6 +438,36 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrDelegationQueueNotAgent):
 		return newProblem(http.StatusForbidden, err.Error()), true
 
+	case errors.Is(err, entity.ErrRunnerCredentialInvalid):
+		return runnerProblem(api.RunnerProblemCodeRunnerCredentialInvalid, err), true
+
+	case errors.Is(err, entity.ErrRunnerRevoked):
+		return runnerProblem(api.RunnerProblemCodeRunnerRevoked, err), true
+
+	case errors.Is(err, entity.ErrRunnerAssertionForged):
+		return runnerProblem(api.RunnerProblemCodeRunnerAssertionForged, err), true
+
+	case errors.Is(err, entity.ErrRunnerAssertionStale):
+		return runnerProblem(api.RunnerProblemCodeRunnerAssertionStale, err), true
+
+	case errors.Is(err, entity.ErrRunnerAssertionReplayed):
+		return runnerProblem(api.RunnerProblemCodeRunnerAssertionReplayed, err), true
+
+	case errors.Is(err, entity.ErrRunnerAssertionMismatch):
+		return runnerProblem(api.RunnerProblemCodeRunnerAssertionMismatch, err), true
+
+	case errors.Is(err, entity.ErrRunnerNameTaken):
+		return runnerConflictProblem(api.RunnerProblemCodeRunnerNameTaken, err), true
+
+	case errors.Is(err, entity.ErrRunnerNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrRunnerEnrolmentNotAgent):
+		return newProblem(http.StatusForbidden, err.Error()), true
+
+	case errors.Is(err, entity.ErrRunnerKeyMalformed):
+		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
+
 	case errors.Is(err, entity.ErrIssueRelationSelf):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueRelationSelf, err), true
 
@@ -1936,6 +1966,50 @@ func issueConflictProblem(code api.IssueConflictProblemCode, err error) problemR
 			Type:     base.Type,
 		},
 	}
+}
+
+func runnerProblem(code api.RunnerProblemCode, err error) problemResponse {
+	return runnerProblemAt(http.StatusUnauthorized, code, err)
+}
+
+func runnerConflictProblem(code api.RunnerProblemCode, err error) problemResponse {
+	return runnerProblemAt(http.StatusConflict, code, err)
+}
+
+func runnerProblemAt(status int, code api.RunnerProblemCode, err error) problemResponse {
+	base := baseProblem(status, err.Error())
+
+	return problemResponse{
+		status: status,
+		body: api.RunnerProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func (r problemResponse) VisitEnrolRunnerResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitExchangeRunnerTokenResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetCurrentRunnerResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceRunnersResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRevokeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+	return r.write(w)
 }
 
 func (r problemResponse) VisitListWorkspaceIssueCommentsResponse(w http.ResponseWriter) error {

@@ -39,6 +39,7 @@ type Config struct {
 	OIDC          OIDC          `mapstructure:"oidc"`
 	SAML          SAML          `mapstructure:"saml"`
 	Cycles        Cycles        `mapstructure:"cycles"`
+	Runner        Runner        `mapstructure:"runner"`
 }
 
 type Licence struct {
@@ -64,6 +65,13 @@ type OIDC struct {
 	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
 	MaxResponseSize int64         `mapstructure:"max_response_size"`
 	StateTTL        time.Duration `mapstructure:"state_ttl"`
+}
+
+type Runner struct {
+	AccessTTL    time.Duration `mapstructure:"access_ttl"`
+	TicketTTL    time.Duration `mapstructure:"ticket_ttl"`
+	NonceTTL     time.Duration `mapstructure:"nonce_ttl"`
+	MaxClockSkew time.Duration `mapstructure:"max_clock_skew"`
 }
 
 type SAML struct {
