@@ -55,6 +55,7 @@ func (s *runnersService) Enrol(
 	enrolled, err := s.runners.Enrol(ctx, entity.Runner{
 		WorkspaceID: agent.WorkspaceID,
 		AgentID:     agent.ID,
+		AgentName:   agent.Name,
 		Name:        name,
 		Host:        host,
 		Authority:   entity.AuthorityOf(actor, agent.WorkspaceID),
@@ -67,6 +68,8 @@ func (s *runnersService) Enrol(
 	if err != nil {
 		return service.EnrolledRunner{}, err
 	}
+
+	enrolled.AgentName = agent.Name
 
 	s.audit.Record(ctx, entity.AuditEntry{
 		WorkspaceID:  enrolled.WorkspaceID,

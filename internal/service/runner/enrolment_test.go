@@ -185,3 +185,30 @@ func TestAMalformedDeviceKeyIsRefusedBeforeAnythingIsWritten(t *testing.T) {
 		t.Fatalf("enrol with a short key returned %v, want it refused", err)
 	}
 }
+
+func TestEnrolmentNamesTheAgentTheMachineWillActAs(t *testing.T) {
+	h := newHarness(t)
+	h.expectAgent()
+
+	d := newDevice(t)
+
+	h.runners.EXPECT().
+		Enrol(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, runner entity.Runner) (entity.Runner, error) {
+			runner.ID = uuid.New()
+
+			return runner, nil
+		})
+
+	enrolled, err := h.service.Enrol(h.asAgent(), enrolling(d))
+	if err != nil {
+		t.Fatalf("enrol: %v", err)
+	}
+
+	if enrolled.Runner.AgentName != h.agent.Name {
+		t.Fatalf(
+			"enrolment named the agent %q, want %q so the machine can report it without another call",
+			enrolled.Runner.AgentName, h.agent.Name,
+		)
+	}
+}

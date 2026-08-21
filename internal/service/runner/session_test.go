@@ -25,6 +25,7 @@ func (h *harness) expectFreshNonce() {
 
 func TestAnExchangeReturnsAnAccessTokenAndATicketAndMarksTheMachineSeen(t *testing.T) {
 	h := newHarness(t)
+	h.expectAgent()
 	d := newDevice(t)
 
 	const refresh = "nrr_secret"
@@ -74,6 +75,7 @@ func TestAnExchangeReturnsAnAccessTokenAndATicketAndMarksTheMachineSeen(t *testi
 
 func TestAnAssertionIsAcceptedOnlyOnce(t *testing.T) {
 	h := newHarness(t)
+	h.expectAgent()
 	d := newDevice(t)
 
 	const refresh = "nrr_secret"
@@ -92,6 +94,7 @@ func TestAnAssertionIsAcceptedOnlyOnce(t *testing.T) {
 
 func TestAnUnreachableNonceStoreRefusesTheExchangeRatherThanAdmittingIt(t *testing.T) {
 	h := newHarness(t)
+	h.expectAgent()
 	d := newDevice(t)
 
 	const refresh = "nrr_secret"
@@ -113,6 +116,7 @@ func TestAnUnreachableNonceStoreRefusesTheExchangeRatherThanAdmittingIt(t *testi
 
 func TestAnAssertionOutsideTheSkewWindowIsRefused(t *testing.T) {
 	h := newHarness(t)
+	h.expectAgent()
 	d := newDevice(t)
 
 	const refresh = "nrr_secret"
@@ -135,6 +139,7 @@ func TestAnAssertionOutsideTheSkewWindowIsRefused(t *testing.T) {
 
 func TestATamperedSignatureIsRefused(t *testing.T) {
 	h := newHarness(t)
+	h.expectAgent()
 	d := newDevice(t)
 
 	const refresh = "nrr_secret"
@@ -153,6 +158,7 @@ func TestATamperedSignatureIsRefused(t *testing.T) {
 
 func TestAnAssertionSignedByAnotherMachinesKeyIsRefused(t *testing.T) {
 	h := newHarness(t)
+	h.expectAgent()
 	d := newDevice(t)
 
 	const refresh = "nrr_secret"
@@ -170,6 +176,7 @@ func TestAnAssertionSignedByAnotherMachinesKeyIsRefused(t *testing.T) {
 
 func TestAnAssertionNamingAnotherRunnerIsRefused(t *testing.T) {
 	h := newHarness(t)
+	h.expectAgent()
 	d := newDevice(t)
 
 	const refresh = "nrr_secret"
@@ -318,5 +325,58 @@ func TestSelfIsRefusedWithoutARunnerOnTheActor(t *testing.T) {
 
 	if _, err := h.service.Self(context.Background()); !errors.Is(err, entity.ErrRunnerCredentialInvalid) {
 		t.Fatalf("self without a runner actor returned %v, want it refused", err)
+	}
+}
+
+func TestADisabledAgentCannotRenewOnAnyOfItsMachines(t *testing.T) {
+	h := newHarness(t)
+	d := newDevice(t)
+
+	const refresh = "nrr_secret"
+
+	runner := h.enrolled(d, refresh)
+
+	disabled := h.agent
+	disabled.Status = entity.AgentStatusDisabled
+
+	h.expectRunnerByRefresh(runner, refresh)
+	h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, h.agent.ID).Return(disabled, nil)
+
+	_, err := h.service.Exchange(context.Background(), h.exchanging(runner, refresh, d))
+	if !errors.Is(err, entity.ErrAgentDisabled) {
+		t.Fatalf(
+			"a machine belonging to a disabled agent was handed a fresh token and got %v, want it refused",
+			err,
+		)
+	}
+}
+
+func TestAnExchangeNamesTheAgentSoTheMachineNeedsNoSecondCall(t *testing.T) {
+	h := newHarness(t)
+	h.expectAgent()
+
+	d := newDevice(t)
+
+	const refresh = "nrr_secret"
+
+	runner := h.enrolled(d, refresh)
+
+	h.expectRunnerByRefresh(runner, refresh)
+	h.expectFreshNonce()
+
+	h.sessions.EXPECT().Grant(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.sessions.EXPECT().IssueTicket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.runners.EXPECT().RecordSeen(gomock.Any(), runner.ID, gomock.Any()).Return(nil)
+
+	session, err := h.service.Exchange(context.Background(), h.exchanging(runner, refresh, d))
+	if err != nil {
+		t.Fatalf("exchange: %v", err)
+	}
+
+	if session.Runner.AgentName != h.agent.Name {
+		t.Fatalf(
+			"the session named the agent %q, want %q so a runner can say who it acts as",
+			session.Runner.AgentName, h.agent.Name,
+		)
 	}
 }
