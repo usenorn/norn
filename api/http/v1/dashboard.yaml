@@ -31,7 +31,6 @@ tags:
   - name: licence
   - name: imports
   - name: source-control
-  - name: checks
   - name: questions
 
 paths:
@@ -2217,11 +2216,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
         - $ref: '#/components/parameters/ProposalId'
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/ApproveAgentProposalRequest' }
       responses:
         '200':
           description: The settled proposal, applied or carrying why it could not be
@@ -3840,50 +3834,6 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
-  /workspaces/{workspaceId}/issues/{issueId}/checks:
-    parameters:
-      - $ref: '#/components/parameters/WorkspaceId'
-      - $ref: '#/components/parameters/IssueId'
-    get:
-      tags: [checks]
-      operationId: listWorkspaceIssueChecks
-      summary: Read the criteria that decide whether this issue is finished
-      responses:
-        '200':
-          description: Every check on the issue with its state, plus a tally across them
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/IssueCheckList' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-    post:
-      tags: [checks]
-      operationId: addWorkspaceIssueChecks
-      summary: Write down what done means here, as one set approved or refused together
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/AddIssueChecksRequest' }
-      responses:
-        '201':
-          description: >-
-            The checks as they now stand. A person's checks arrive approved; an agent's arrive
-            waiting for a person, and never block anything until one approves them.
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/IssueCheck' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/CheckConflict' }
-        '422': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
   /workspaces/{workspaceId}/issues/{issueId}/questions:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -3947,167 +3897,6 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
-        '422': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}:
-    parameters:
-      - $ref: '#/components/parameters/WorkspaceId'
-      - $ref: '#/components/parameters/IssueId'
-      - $ref: '#/components/parameters/CheckId'
-    patch:
-      tags: [checks]
-      operationId: updateWorkspaceIssueCheck
-      summary: Correct what a criterion says, or how its proof travels
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/UpdateIssueCheckRequest' }
-      responses:
-        '200':
-          description: The criterion as it now reads
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/IssueCheck' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/CheckConflict' }
-        '422': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-    delete:
-      tags: [checks]
-      operationId: removeWorkspaceIssueCheck
-      summary: Drop a criterion that should never have been part of the definition of done
-      responses:
-        '204': { description: The check is gone, and so is the evidence filed against it }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/decision:
-    parameters:
-      - $ref: '#/components/parameters/WorkspaceId'
-      - $ref: '#/components/parameters/IssueId'
-      - $ref: '#/components/parameters/CheckId'
-    post:
-      tags: [checks]
-      operationId: decideWorkspaceIssueCheck
-      summary: Approve or decline a criterion an agent proposed, which only a person may do
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/DecideIssueCheckRequest' }
-      responses:
-        '200':
-          description: The check as it now stands
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/IssueCheck' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/CheckConflict' }
-        '422': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/waiver:
-    parameters:
-      - $ref: '#/components/parameters/WorkspaceId'
-      - $ref: '#/components/parameters/IssueId'
-      - $ref: '#/components/parameters/CheckId'
-    post:
-      tags: [checks]
-      operationId: waiveWorkspaceIssueCheck
-      summary: Set a criterion aside with a reason, which only a person may do
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/WaiveIssueCheckRequest' }
-      responses:
-        '200':
-          description: The waived check
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/IssueCheck' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/CheckConflict' }
-        '422': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/gap:
-    parameters:
-      - $ref: '#/components/parameters/WorkspaceId'
-      - $ref: '#/components/parameters/IssueId'
-      - $ref: '#/components/parameters/CheckId'
-    post:
-      tags: [checks]
-      operationId: declareWorkspaceIssueCheckGap
-      summary: Record that a criterion cannot be met, filing the child issue that carries it
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/DeclareIssueCheckGapRequest' }
-      responses:
-        '201':
-          description: The check and the child issue it filed
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/IssueCheckGap' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/IssueConflict' }
-        '422': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence:
-    parameters:
-      - $ref: '#/components/parameters/WorkspaceId'
-      - $ref: '#/components/parameters/IssueId'
-      - $ref: '#/components/parameters/CheckId'
-    get:
-      tags: [checks]
-      operationId: listWorkspaceIssueCheckEvidence
-      summary: Read every observation filed against a criterion, oldest first
-      responses:
-        '200':
-          description: The evidence, verbatim, including records that no longer count
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/CheckEvidence' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-    post:
-      tags: [checks]
-      operationId: submitWorkspaceIssueCheckEvidence
-      summary: File an observation against a criterion, which is never edited afterwards
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/SubmitCheckEvidenceRequest' }
-      responses:
-        '201':
-          description: The stored record and the check as it now stands
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/SubmittedCheckEvidence' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/CheckConflict' }
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
@@ -5808,12 +5597,6 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
-    CheckId:
-      name: checkId
-      in: path
-      required: true
-      schema: { type: string, format: uuid }
-
     QuestionId:
       name: questionId
       in: path
@@ -6105,12 +5888,6 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/IssueConflictProblem' }
-
-    CheckConflict:
-      description: The criterion cannot take that change, or the observation cannot count
-      content:
-        application/problem+json:
-          schema: { $ref: '#/components/schemas/CheckConflictProblem' }
 
     CycleConflict:
       description: The cycle refuses the change, or needs a decision first
@@ -6511,193 +6288,6 @@ components:
           items: { $ref: '#/components/schemas/Issue' }
         progress: { $ref: '#/components/schemas/IssueProgress' }
 
-    CheckMethod:
-      type: string
-      description: How a criterion will be proven. Norn runs none of these itself.
-      enum: [command, observation, manual, regression]
-
-    CheckApproval:
-      type: string
-      description: A check counts only once a person has approved it.
-      enum: [pending, approved, declined]
-
-    CheckResolution:
-      type: string
-      description: >-
-        How a person set this criterion aside. A gap is an honest "not done" and files a child
-        issue, which then keeps the parent open until it is closed.
-      enum: [none, waived, gap]
-
-    EvidenceVerdict:
-      type: string
-      description: >-
-        absent_negative is the finding that nothing bad appeared. It is a real category and a
-        different thing from having observed something working.
-      enum: [passed, failed, absent_negative, inconclusive]
-
-    EvidenceChannel:
-      type: string
-      description: Where the observation came from. Declared by the submitter; Norn cannot verify it.
-      enum: [command, http, log, screenshot, database, human]
-
-    IssueCheck:
-      type: object
-      required:
-        [id, workspaceId, issueId, position, statement, method, proof, approval, resolution,
-         authorKind, addedAfterDelegation, createdAt]
-      properties:
-        id: { type: string, format: uuid }
-        workspaceId: { type: string, format: uuid }
-        issueId: { type: string, format: uuid }
-        position: { type: integer, format: int32 }
-        statement: { type: string }
-        method: { $ref: '#/components/schemas/CheckMethod' }
-        proof:
-          type: string
-          description: >-
-            How this will be proven — the command to run, what to inspect, or the path a
-            person's proof travels, so nobody is asked to verify something nothing can produce.
-        timeLimitSeconds:
-          type: integer
-          format: int32
-          description: >-
-            How long an observation counts for. Absent means Norn's own default applies, so
-            there is no way to say that a proof never stops counting.
-        approval: { $ref: '#/components/schemas/CheckApproval' }
-        approvedByAccountId: { type: string, format: uuid }
-        approvedAt: { type: string, format: date-time }
-        resolution: { $ref: '#/components/schemas/CheckResolution' }
-        resolutionReason: { type: string }
-        resolvedByAccountId: { type: string, format: uuid }
-        resolvedAt: { type: string, format: date-time }
-        gapIssueId: { type: string, format: uuid }
-        authorKind: { $ref: '#/components/schemas/NotificationActorKind' }
-        createdByAccountId: { type: string, format: uuid }
-        addedAfterDelegation:
-          type: boolean
-          description: True when the criterion was written after the issue was handed to an agent.
-        state: { $ref: '#/components/schemas/CheckState' }
-        blocking:
-          type: boolean
-          description: True when this check stands between an agent and finishing the issue.
-        restsOnAbsence:
-          type: boolean
-          description: True when the only evidence filed is that nothing bad appeared.
-        expired:
-          type: boolean
-          description: True when this was proven once and the proof has since stopped counting.
-        awaiting: { $ref: '#/components/schemas/CheckAwaiting' }
-        evidenceCount: { type: integer, format: int32 }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-
-    CheckEvidence:
-      type: object
-      required:
-        [id, issueId, checkId, verdict, channel, output, truncated, redactions,
-         observedAt, receivedAt, actorKind, expired]
-      properties:
-        id: { type: string, format: uuid }
-        issueId: { type: string, format: uuid }
-        checkId: { type: string, format: uuid }
-        verdict: { $ref: '#/components/schemas/EvidenceVerdict' }
-        channel: { $ref: '#/components/schemas/EvidenceChannel' }
-        command: { type: string }
-        output:
-          type: string
-          description: >-
-            Verbatim, never a summary. Norn keeps 64 KiB and marks the record truncated rather
-            than refusing it; read truncated rather than parsing the marker.
-        truncated: { type: boolean }
-        redactions:
-          type: integer
-          format: int32
-          description: Secrets removed from the output and command before either was stored.
-        exitCode: { type: integer, format: int32 }
-        observedAt:
-          type: string
-          format: date-time
-          description: When the submitter says it looked, clamped so it can never be later than receivedAt.
-        receivedAt:
-          type: string
-          format: date-time
-          description: >-
-            When Norn took delivery. This is the stamp everything else is measured against, so
-            misreporting observedAt buys nothing.
-        actorKind: { $ref: '#/components/schemas/NotificationActorKind' }
-        actorAccountId: { type: string, format: uuid }
-        actorName: { type: string }
-        codeLinkId: { type: string, format: uuid }
-        commitSha:
-          type: string
-          description: The head commit Norn held for the linked change when this arrived.
-        expired:
-          type: boolean
-          description: True when this observation no longer counts towards proving its check.
-        expiryReason: { $ref: '#/components/schemas/EvidenceExpiry' }
-
-    CheckState:
-      type: string
-      description: >-
-        Derived from the evidence on file every time it is read, never stored. A check whose
-        proof has expired reads as unproven again; expired tells that apart from never proven.
-      enum: [unproven, proven, failed, waived, gap]
-
-    CheckAwaiting:
-      type: string
-      description: >-
-        What an unproven check is still short of, so the reason can be said in each surface's
-        own words rather than inferred from the evidence again. Absent once a check is settled.
-      enum:
-        [correction, fresh_proof, attestation, prior_failure, positive_result, evidence]
-
-    EvidenceExpiry:
-      type: string
-      description: >-
-        Why an observation stopped counting. `head_moved` means the change it was taken at has
-        new commits on it, so it says nothing about the code that replaced them; evidence Norn
-        could not bind to a change is judged on its time limit alone.
-      enum: [time_limit, head_moved]
-
-    IssueCheckSummary:
-      type: object
-      required:
-        [total, proven, unproven, failed, waived, gaps, expired, unapproved, blocking,
-         restingOnAbsence]
-      properties:
-        total: { type: integer, format: int32 }
-        proven: { type: integer, format: int32 }
-        unproven: { type: integer, format: int32 }
-        failed: { type: integer, format: int32 }
-        waived: { type: integer, format: int32 }
-        gaps: { type: integer, format: int32 }
-        expired:
-          type: integer
-          format: int32
-          description: Checks that were proven once and lost it.
-        unapproved: { type: integer, format: int32 }
-        blocking:
-          type: integer
-          format: int32
-          description: >-
-            Approved checks that are unproven or failed. An agent cannot move the issue into a
-            completion state while this is above zero. A person can.
-        restingOnAbsence:
-          type: integer
-          format: int32
-          description: >-
-            Unproven checks whose only evidence is that nothing bad appeared, which is a real
-            finding and never a proof.
-
-    IssueCheckList:
-      type: object
-      required: [checks, summary]
-      properties:
-        checks:
-          type: array
-          items: { $ref: '#/components/schemas/IssueCheck' }
-        summary: { $ref: '#/components/schemas/IssueCheckSummary' }
-
     IssueQuestionList:
       type: object
       required: [questions]
@@ -6748,103 +6338,6 @@ components:
       required: [answer]
       properties:
         answer: { type: string, maxLength: 2000 }
-
-    SubmittedCheckEvidence:
-      type: object
-      required: [evidence, check]
-      properties:
-        evidence: { $ref: '#/components/schemas/CheckEvidence' }
-        check:
-          $ref: '#/components/schemas/IssueCheck'
-          description: The check as it now stands, so a submitter sees at once what its evidence proved.
-
-    IssueCheckGap:
-      type: object
-      required: [check, issue]
-      properties:
-        check: { $ref: '#/components/schemas/IssueCheck' }
-        issue: { $ref: '#/components/schemas/Issue' }
-
-    NewIssueCheck:
-      type: object
-      required: [statement, method, proof]
-      properties:
-        statement: { type: string, minLength: 3, maxLength: 300 }
-        method: { $ref: '#/components/schemas/CheckMethod' }
-        proof: { type: string, minLength: 1, maxLength: 2000 }
-        timeLimitSeconds: { type: integer, format: int32, minimum: 3600 }
-
-    AddIssueChecksRequest:
-      type: object
-      required: [checks]
-      properties:
-        checks:
-          type: array
-          minItems: 1
-          maxItems: 40
-          items: { $ref: '#/components/schemas/NewIssueCheck' }
-        reasoning: { $ref: '#/components/schemas/AgentReasoning' }
-
-    DecideIssueCheckRequest:
-      type: object
-      required: [approval]
-      properties:
-        approval:
-          type: string
-          enum: [approved, declined]
-
-    WaiveIssueCheckRequest:
-      type: object
-      required: [reason]
-      properties:
-        reason: { type: string, minLength: 1, maxLength: 2000 }
-
-    DeclareIssueCheckGapRequest:
-      type: object
-      required: [reason]
-      properties:
-        reason: { type: string, minLength: 1, maxLength: 2000 }
-        title:
-          type: string
-          maxLength: 200
-          description: The child issue's title. Defaults to the criterion's own statement.
-
-    SubmitCheckEvidenceRequest:
-      type: object
-      required: [verdict, channel, output]
-      properties:
-        verdict: { $ref: '#/components/schemas/EvidenceVerdict' }
-        channel: { $ref: '#/components/schemas/EvidenceChannel' }
-        command: { type: string, maxLength: 2000 }
-        output:
-          type: string
-          minLength: 1
-          description: The verbatim output, not a summary of it.
-        exitCode: { type: integer, format: int32 }
-        observedAt:
-          type: string
-          format: date-time
-          description: >-
-            When you looked, if that differs from now. Absent means Norn takes the moment it
-            received this, and a stated time later than arrival is clamped to arrival.
-
-    CheckConflictProblem:
-      allOf:
-        - $ref: '#/components/schemas/Problem'
-        - type: object
-          required: [code]
-          properties:
-            code:
-              type: string
-              enum:
-                - check_settled
-                - check_decided
-                - check_declined
-                - check_limit_reached
-                - check_decision_not_personal
-                - check_waiver_not_personal
-                - check_removal_not_personal
-                - evidence_empty
 
     IssueDelegation:
       type: object
@@ -7076,12 +6569,6 @@ components:
           type: boolean
           description: Complete this issue even though children of it are still open
         reasoning: { $ref: '#/components/schemas/AgentReasoning' }
-        acknowledgeUnprovenChecks:
-          type: boolean
-          description: >-
-            Record that whoever finished this issue was shown its unproven criteria first. It
-            never changes whether the write succeeds — a person is never refused — only what
-            the timeline can say about the override.
         expectedVersion: { type: integer, format: int32 }
         title: { type: string }
         stateId: { type: string, format: uuid }
@@ -7336,8 +6823,6 @@ components:
                 - issue_parent_too_deep
                 - issue_parent_not_active
                 - issue_children_open
-                - issue_checks_unproven
-                - issue_checks_unratified
                 - issue_delegation_held
                 - issue_delegation_agent_unusable
                 - issue_delegation_not_yours
@@ -7359,10 +6844,6 @@ components:
             children:
               type: array
               items: { $ref: '#/components/schemas/Issue' }
-            checks:
-              type: array
-              description: The criteria in the way, named so an agent is told what to do next
-              items: { $ref: '#/components/schemas/IssueCheck' }
             relation: { $ref: '#/components/schemas/IssueRelation' }
 
     CycleConflictProblem:
@@ -7676,16 +7157,6 @@ components:
         - code_unlinked
         - delegated
         - recalled
-        - check_added
-        - check_removed
-        - check_approved
-        - check_declined
-        - check_edited
-        - check_waived
-        - check_gap_declared
-        - evidence_added
-        - checks_overridden
-        - check_expired
 
     LicenceStatus:
       type: string
@@ -8398,11 +7869,8 @@ components:
 
     AgentHold:
       type: string
-      description: >-
-        Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced
-        completion through and holds everything else, and is offered on state changes alone —
-        the other categories have no notion of proof to judge.
-      enum: [never, unless_proven, always]
+      description: Whether a write of this kind waits for a person.
+      enum: [never, always]
 
     AgentSettings:
       type: object
@@ -8415,10 +7883,7 @@ components:
 
     AgentAction:
       type: string
-      description: >-
-        `check_set` is always held whatever a team's settings say. A new criterion changes the
-        definition of done, and that is not something an agent settles alone.
-      enum: [comment, state_change, issue_edit, issue_create, check_set]
+      enum: [comment, state_change, issue_edit, issue_create]
 
     AgentProposalStatus:
       type: string
@@ -8442,10 +7907,6 @@ components:
         stateId: { type: string, format: uuid }
         title: { type: string }
         description: { type: string }
-        checkIds:
-          type: array
-          description: The criteria a check set proposal would add to the definition of done
-          items: { type: string, format: uuid }
         reasoning: { $ref: '#/components/schemas/AgentReasoning' }
         issueReference:
           type: string
@@ -8457,15 +7918,6 @@ components:
         stateName:
           type: string
           description: The state a state change would move the issue to
-        proposedChecks:
-          type: array
-          description: The criteria a check set proposal would add, in full
-          items: { $ref: '#/components/schemas/IssueCheck' }
-        checkState:
-          $ref: '#/components/schemas/IssueCheckList'
-          description: >-
-            What the issue's criteria say right now, so the person deciding sees whether they
-            are being asked to let unproven work through.
         questions:
           type: array
           description: >-
@@ -8476,37 +7928,6 @@ components:
         decidedAt: { type: string, format: date-time }
         failure: { type: string }
         createdAt: { type: string, format: date-time }
-
-    UpdateIssueCheckRequest:
-      type: object
-      required: [statement, method, proof]
-      properties:
-        statement: { type: string, maxLength: 300 }
-        method: { $ref: '#/components/schemas/CheckMethod' }
-        proof: { type: string, maxLength: 2000 }
-        timeLimitSeconds: { type: integer, format: int32 }
-
-    ApproveAgentProposalRequest:
-      type: object
-      required: [checks]
-      description: >-
-        Present only when correcting a proposed check set while approving it. The array is the
-        set as it should stand: an entry with an id edits that criterion, an entry without one
-        adds it, and a proposed criterion left out is dropped.
-      properties:
-        checks:
-          type: array
-          items: { $ref: '#/components/schemas/ApprovedCheckEdit' }
-
-    ApprovedCheckEdit:
-      type: object
-      required: [statement, method, proof]
-      properties:
-        id: { type: string, format: uuid }
-        statement: { type: string, maxLength: 300 }
-        method: { $ref: '#/components/schemas/CheckMethod' }
-        proof: { type: string, maxLength: 2000 }
-        timeLimitSeconds: { type: integer, format: int32 }
 
     AgentUnusableProblem:
       allOf:
@@ -10525,8 +9946,7 @@ components:
 
     NotificationKind:
       type: string
-      enum: [assigned, mentioned, commented, state_changed, membership, check_failed,
-             gap_declared, approval_waiting]
+      enum: [assigned, mentioned, commented, state_changed, membership, approval_waiting]
 
     NotificationReason:
       type: string
@@ -10577,17 +9997,13 @@ components:
 
     NotificationPreferences:
       type: object
-      required: [assigned, mentioned, commented, stateChanged, membership, checks, approvals,
-                 agents]
+      required: [assigned, mentioned, commented, stateChanged, membership, approvals, agents]
       properties:
         assigned: { $ref: '#/components/schemas/NotificationChannels' }
         mentioned: { $ref: '#/components/schemas/NotificationChannels' }
         commented: { $ref: '#/components/schemas/NotificationChannels' }
         stateChanged: { $ref: '#/components/schemas/NotificationChannels' }
         membership: { $ref: '#/components/schemas/NotificationChannels' }
-        checks:
-          $ref: '#/components/schemas/NotificationChannels'
-          description: A criterion on something you follow failed, or somebody recorded a gap.
         approvals:
           $ref: '#/components/schemas/NotificationChannels'
           description: An agent is waiting for you to approve something before it can carry on.
