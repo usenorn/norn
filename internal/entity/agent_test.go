@@ -207,3 +207,35 @@ func errorsIs(err, target error) bool {
 
 	return false
 }
+
+func TestAnAgentIsManagedByWhoeverItActsForOrAnAdministrator(t *testing.T) {
+	owner, stranger := uuid.New(), uuid.New()
+	agent := entity.Agent{OwnerAccountID: owner}
+
+	for name, probe := range map[string]struct {
+		accountID uuid.UUID
+		role      entity.MembershipRole
+		allowed   bool
+	}{
+		"the person it acts for": {owner, entity.MembershipRoleMember, true},
+		"another member":         {stranger, entity.MembershipRoleMember, false},
+		"an administrator":       {stranger, entity.MembershipRoleAdmin, true},
+		"a viewer who owns it":   {owner, entity.MembershipRoleViewer, true},
+		"a viewer who does not":  {stranger, entity.MembershipRoleViewer, false},
+	} {
+		if got := agent.ManageableBy(probe.accountID, probe.role); got != probe.allowed {
+			t.Errorf("%s managing the agent: allowed = %v, want %v", name, got, probe.allowed)
+		}
+	}
+}
+
+func TestAnUnownedAgentBelongsToNobody(t *testing.T) {
+	agent := entity.Agent{}
+
+	if agent.OwnedBy(uuid.Nil) {
+		t.Error(
+			"an agent with no owner recorded was claimed by an account with no id. Every " +
+				"caller without an account would inherit it.",
+		)
+	}
+}

@@ -124,6 +124,10 @@ func RoleGrants(role MembershipRole, resource Resource, action Action) bool {
 	}
 
 	if resource == ResourceAgent {
+		if action == ActionRead || action == ActionManage {
+			return role != MembershipRoleViewer
+		}
+
 		return role == MembershipRoleAdmin
 	}
 
