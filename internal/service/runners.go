@@ -43,6 +43,7 @@ type Runners interface {
 	Enrol(ctx context.Context, input EnrolRunnerInput) (EnrolledRunner, error)
 	Exchange(ctx context.Context, input ExchangeRunnerTokenInput) (RunnerSession, error)
 	Authenticate(ctx context.Context, token string) (entity.Actor, error)
+	ActorFor(ctx context.Context, runnerID uuid.UUID) (entity.Actor, entity.Runner, error)
 	Self(ctx context.Context) (entity.Runner, error)
 	List(ctx context.Context, workspaceID uuid.UUID) ([]entity.Runner, error)
 	Revoke(ctx context.Context, workspaceID, runnerID uuid.UUID) error

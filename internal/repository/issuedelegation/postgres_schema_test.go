@@ -150,14 +150,10 @@ func contains(values []string, wanted string) bool {
 
 func statements() map[string]string {
 	return map[string]string{
-		"insertDelegationQuery":       insertDelegationQuery,
-		"delegationsByIssueQuery":     delegationsByIssueQuery,
-		"delegationByIDQuery":         delegationByIDQuery,
-		"openDelegationQuery":         openDelegationQuery,
-		"openDelegationsByAgentQuery": openDelegationsByAgentQuery,
-		"recallDelegationQuery":       recallDelegationQuery,
-		"claimDelegationQuery":        claimDelegationQuery,
-		"heartbeatDelegationQuery":    heartbeatDelegationQuery,
-		"releaseDelegationClaimQuery": releaseDelegationClaimQuery,
+		"insertDelegationQuery":   insertDelegationQuery,
+		"delegationsByIssueQuery": delegationsByIssueQuery,
+		"delegationByIDQuery":     delegationByIDQuery,
+		"openDelegationQuery":     openDelegationQuery,
+		"recallDelegationQuery":   recallDelegationQuery,
 	}
 }

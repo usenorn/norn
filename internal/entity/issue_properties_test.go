@@ -160,29 +160,3 @@ func TestQueueOrderPutsUrgentWorkFirstAndUnknownPriorityLast(t *testing.T) {
 		}
 	}
 }
-
-func TestIssuesOfEqualPriorityKeepTheOrderTheBoardPutsThemIn(t *testing.T) {
-	earlier := time.Date(2026, 8, 12, 9, 0, 0, 0, time.UTC)
-
-	high := func(rank string, created time.Time) entity.Issue {
-		return entity.Issue{Priority: entity.IssuePriorityHigh, Rank: rank, CreatedAt: created}
-	}
-
-	if got := entity.CompareIssueQueueOrder(high("a", earlier), high("b", earlier)); got >= 0 {
-		t.Errorf("rank a did not sort ahead of rank b: %d", got)
-	}
-
-	if got := entity.CompareIssueQueueOrder(
-		high("a", earlier), high("a", earlier.Add(time.Hour)),
-	); got >= 0 {
-		t.Errorf(
-			"two issues that share a rank did not fall back to which arrived first: %d; without a "+
-				"total order the queue can reshuffle between polls and the runner keeps changing its mind",
-			got,
-		)
-	}
-
-	if got := entity.CompareIssueQueueOrder(high("a", earlier), high("a", earlier)); got != 0 {
-		t.Errorf("two identical issues did not compare equal: %d", got)
-	}
-}

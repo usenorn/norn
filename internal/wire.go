@@ -10,6 +10,7 @@ import (
 	blobedge "github.com/usenorn/norn/internal/handler/http/blob"
 	eventsedge "github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/router"
+	runnerchanneledge "github.com/usenorn/norn/internal/handler/http/runnerchannel"
 	scimedge "github.com/usenorn/norn/internal/handler/http/scim"
 	sourcecontroledge "github.com/usenorn/norn/internal/handler/http/sourcecontrol"
 	ssohandler "github.com/usenorn/norn/internal/handler/http/sso"
@@ -75,6 +76,7 @@ import (
 	passwordresetrepo "github.com/usenorn/norn/internal/repository/passwordreset"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
+	runnerchannelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
 	runnersessionrepo "github.com/usenorn/norn/internal/repository/runnersession"
 	samlreplayrepo "github.com/usenorn/norn/internal/repository/samlreplay"
 	samlrequestrepo "github.com/usenorn/norn/internal/repository/samlrequest"
@@ -121,6 +123,7 @@ import (
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	runnersvc "github.com/usenorn/norn/internal/service/runner"
+	runnerchannelsvc "github.com/usenorn/norn/internal/service/runnerchannel"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
 	scmsvc "github.com/usenorn/norn/internal/service/scm"
 	giteasvc "github.com/usenorn/norn/internal/service/scm/gitea"
@@ -174,6 +177,7 @@ var baseSet = wire.NewSet(
 	issuedelegationrepo.Set,
 	issuequestionrepo.Set,
 	runnerrepo.Set,
+	runnerchannelrepo.Set,
 	runnersessionrepo.Set,
 	issuerelationrepo.Set,
 	bulkactionrepo.Set,
@@ -235,6 +239,7 @@ var baseSet = wire.NewSet(
 	issuecommentsvc.Set,
 	issuequestionsvc.Set,
 	runnersvc.Set,
+	runnerchannelsvc.Set,
 	notificationsvc.Set,
 	savedviewsvc.Set,
 	eventsvc.Set,
@@ -265,6 +270,7 @@ var baseSet = wire.NewSet(
 	ssohandler.Set,
 	blobedge.Set,
 	eventsedge.Set,
+	runnerchanneledge.Set,
 	auditexportedge.Set,
 	scimedge.Set,
 	sourcecontroledge.Set,

@@ -11,6 +11,7 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/handler/http/runnerchannel"
 	"github.com/usenorn/norn/internal/handler/http/scim"
 	"github.com/usenorn/norn/internal/handler/http/sourcecontrol"
 	"github.com/usenorn/norn/internal/handler/http/sso"
@@ -43,6 +44,7 @@ func New(
 	sourceControlEdge *sourcecontrol.Edge,
 	sourceControlApps *sourcecontrol.AppEdge,
 	mcpEdge *mcpserver.Edge,
+	runnerChannel *runnerchannel.Edge,
 ) http.Handler {
 	base := chi.NewRouter()
 	base.Use(
@@ -88,6 +90,8 @@ func New(
 
 	streams := base.With(middleware.Session(sessions, sessionCfg))
 	streams.Get(events.Path, eventsEdge.Serve)
+
+	base.Get(runnerchannel.Path, runnerChannel.Serve)
 
 	exports := base.With(
 		middleware.BearerToken(tokens, runners),

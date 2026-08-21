@@ -426,18 +426,6 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrIssueDelegationNotFound):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
-	case errors.Is(err, entity.ErrIssueDelegationNotYours):
-		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationNotYours, err), true
-
-	case errors.Is(err, entity.ErrDelegationClaimHeld):
-		return issueConflictProblem(api.IssueConflictProblemCodeDelegationClaimHeld, err), true
-
-	case errors.Is(err, entity.ErrDelegationClaimLost):
-		return issueConflictProblem(api.IssueConflictProblemCodeDelegationClaimLost, err), true
-
-	case errors.Is(err, entity.ErrDelegationQueueNotAgent):
-		return newProblem(http.StatusForbidden, err.Error()), true
-
 	case errors.Is(err, entity.ErrRunnerCredentialInvalid):
 		return runnerProblem(api.RunnerProblemCodeRunnerCredentialInvalid, err), true
 
@@ -1434,26 +1422,6 @@ func (r problemResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWrit
 }
 
 func (r problemResponse) VisitRecallWorkspaceIssueResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitListWorkspaceDelegationQueueResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitClaimWorkspaceIssueDelegationResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitHeartbeatWorkspaceIssueDelegationClaimResponse(
-	w http.ResponseWriter,
-) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitReleaseWorkspaceIssueDelegationClaimResponse(
-	w http.ResponseWriter,
-) error {
 	return r.write(w)
 }
 
