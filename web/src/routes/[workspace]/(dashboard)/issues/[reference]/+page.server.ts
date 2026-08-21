@@ -8,7 +8,8 @@ import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
 import type { FollowState } from "$lib/notifications/notifications";
 import { currentDelegation, type DelegationPanel } from "$lib/agents/delegation";
-import type { ChecksPanel, IssueQuestion } from "$lib/checks/checks";
+import type { ChecksPanel } from "$lib/checks/checks";
+import type { IssueQuestion } from "$lib/questions/questions";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type {
 	CodeLink,

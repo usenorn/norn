@@ -87,7 +87,7 @@
 	} from "$lib/activity/activity";
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
 	import CheckList from "$lib/checks/check-list.svelte";
-	import QuestionList from "$lib/checks/question-list.svelte";
+	import QuestionList from "$lib/questions/question-list.svelte";
 	import CheckSummary from "$lib/checks/check-summary.svelte";
 	import NewCheckDialog from "$lib/checks/new-check-dialog.svelte";
 	import FileEvidenceDialog from "$lib/checks/file-evidence-dialog.svelte";
@@ -100,8 +100,8 @@
 		type ChecksPanel,
 		type EvidencePanel,
 		type IssueCheck,
-		type IssueQuestion,
 	} from "$lib/checks/checks";
+	import type { IssueQuestion } from "$lib/questions/questions";
 	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
 
 	import {

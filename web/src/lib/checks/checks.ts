@@ -9,7 +9,6 @@ export type CheckMethod = components["schemas"]["CheckMethod"];
 export type CheckAwaiting = components["schemas"]["CheckAwaiting"];
 export type EvidenceVerdict = components["schemas"]["EvidenceVerdict"];
 export type EvidenceChannel = components["schemas"]["EvidenceChannel"];
-export type IssueQuestion = components["schemas"]["IssueQuestion"];
 
 export type ChecksPanel =
 	| { kind: "loading" }

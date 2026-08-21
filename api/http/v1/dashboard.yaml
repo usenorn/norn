@@ -32,6 +32,7 @@ tags:
   - name: imports
   - name: source-control
   - name: checks
+  - name: questions
 
 paths:
   /health:
@@ -3888,7 +3889,7 @@ paths:
       - $ref: '#/components/parameters/WorkspaceId'
       - $ref: '#/components/parameters/IssueId'
     get:
-      tags: [checks]
+      tags: [questions]
       operationId: listWorkspaceIssueQuestions
       summary: Read what an agent asked while working this issue, and what it worked on meanwhile
       responses:
@@ -3902,7 +3903,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
     post:
-      tags: [checks]
+      tags: [questions]
       operationId: askWorkspaceIssueQuestion
       summary: Ask a person something without stopping, declaring what you will do if nobody answers
       requestBody:
@@ -3928,7 +3929,7 @@ paths:
       - $ref: '#/components/parameters/IssueId'
       - $ref: '#/components/parameters/QuestionId'
     post:
-      tags: [checks]
+      tags: [questions]
       operationId: answerWorkspaceIssueQuestion
       summary: Answer a question an agent asked, replacing the default it was working on
       requestBody:

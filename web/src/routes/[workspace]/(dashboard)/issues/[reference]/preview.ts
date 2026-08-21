@@ -11,8 +11,8 @@ import type {
 	CheckFailure,
 	ChecksPanel,
 	EvidencePanel,
-	IssueQuestion,
 } from "$lib/checks/checks";
+import type { IssueQuestion } from "$lib/questions/questions";
 import type { IssueDetail } from "./+page.server";
 
 export type IssueDetailPreview = { detail: IssueDetail };
