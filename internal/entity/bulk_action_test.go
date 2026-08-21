@@ -21,7 +21,6 @@ func TestEveryDomainErrorABulkLoopCanMeetClassifiesToAnOutcome(t *testing.T) {
 		entity.ErrIssueStale:                entity.BulkOutcomeConflict,
 		entity.ErrIssueStatusTransition:     entity.BulkOutcomeConflict,
 		entity.ErrIssueChildrenOpen:         entity.BulkOutcomeConflict,
-		entity.ErrIssueChecksUnproven:       entity.BulkOutcomeConflict,
 		entity.ErrLabelOutOfScope:           entity.BulkOutcomeInvalid,
 		entity.ErrIssueDestinationIncapable: entity.BulkOutcomeInvalid,
 	}

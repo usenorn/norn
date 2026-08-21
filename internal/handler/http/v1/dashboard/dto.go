@@ -1432,7 +1432,6 @@ func notificationPreferencesDTO(preferences entity.NotificationPreferences) api.
 		Commented:    notificationChannelsDTO(preferences.Commented),
 		StateChanged: notificationChannelsDTO(preferences.StateChanged),
 		Membership:   notificationChannelsDTO(preferences.Membership),
-		Checks:       notificationChannelsDTO(preferences.Checks),
 		Approvals:    notificationChannelsDTO(preferences.Approvals),
 		Agents:       notificationChannelsDTO(preferences.Agents),
 	}
@@ -1449,7 +1448,6 @@ func notificationPreferences(dto api.NotificationPreferences) entity.Notificatio
 		Commented:    notificationChannels(dto.Commented),
 		StateChanged: notificationChannels(dto.StateChanged),
 		Membership:   notificationChannels(dto.Membership),
-		Checks:       notificationChannels(dto.Checks),
 		Approvals:    notificationChannels(dto.Approvals),
 		Agents:       notificationChannels(dto.Agents),
 	}
@@ -1555,169 +1553,6 @@ func agentSettingsDTO(settings entity.AgentSettings) api.AgentSettings {
 	}
 }
 
-func issueCheckReportDTO(report entity.CheckReport) api.IssueCheck {
-	dto := issueCheckDTO(report.Check)
-
-	state := api.CheckState(report.State)
-	blocking := report.Blocks()
-	quiet := report.RestsOnAbsence()
-	expired := report.Expired()
-	count := int32(len(report.Evidence))
-
-	dto.State = &state
-	dto.Blocking = &blocking
-	dto.RestsOnAbsence = &quiet
-	dto.Expired = &expired
-	dto.EvidenceCount = &count
-
-	if awaiting := report.Awaiting(); awaiting != entity.CheckAwaitingNothing {
-		reason := api.CheckAwaiting(awaiting)
-		dto.Awaiting = &reason
-	}
-
-	return dto
-}
-
-func issueCheckListDTO(checks service.IssueChecks) api.IssueCheckList {
-	reports := make([]api.IssueCheck, 0, len(checks.Reports))
-
-	for _, report := range checks.Reports {
-		reports = append(reports, issueCheckReportDTO(report))
-	}
-
-	return api.IssueCheckList{
-		Checks: reports,
-		Summary: api.IssueCheckSummary{
-			Total:            int32(checks.Summary.Total),
-			Proven:           int32(checks.Summary.Proven),
-			Unproven:         int32(checks.Summary.Unproven),
-			Failed:           int32(checks.Summary.Failed),
-			Waived:           int32(checks.Summary.Waived),
-			Gaps:             int32(checks.Summary.Gaps),
-			Expired:          int32(checks.Summary.Expired),
-			Unapproved:       int32(checks.Summary.Unapproved),
-			Blocking:         int32(checks.Summary.Blocking),
-			RestingOnAbsence: int32(checks.Summary.RestingOnAbsence),
-		},
-	}
-}
-
-func checkEvidenceRecordDTO(record entity.EvidenceRecord) api.CheckEvidence {
-	dto := checkEvidenceDTO(record.Evidence)
-	dto.Expired = record.Expiry.Expired()
-
-	if dto.Expired {
-		reason := api.EvidenceExpiry(record.Expiry)
-		dto.ExpiryReason = &reason
-	}
-
-	return dto
-}
-
-func checkEvidenceRecordDTOs(records []entity.EvidenceRecord) []api.CheckEvidence {
-	dtos := make([]api.CheckEvidence, 0, len(records))
-
-	for _, record := range records {
-		dtos = append(dtos, checkEvidenceRecordDTO(record))
-	}
-
-	return dtos
-}
-
-func issueCheckDTO(check entity.Check) api.IssueCheck {
-	dto := api.IssueCheck{
-		Id:                   check.ID,
-		WorkspaceId:          check.WorkspaceID,
-		IssueId:              check.IssueID,
-		Position:             int32(check.Position),
-		Statement:            check.Statement,
-		Method:               api.CheckMethod(check.Method),
-		Proof:                check.Proof,
-		Approval:             api.CheckApproval(check.Approval),
-		Resolution:           api.CheckResolution(check.Resolution),
-		ResolutionReason:     nilIfEmpty(check.ResolutionReason),
-		AuthorKind:           api.NotificationActorKind(check.AuthorKind),
-		AddedAfterDelegation: check.AddedAfterDelegation,
-		ApprovedAt:           check.ApprovedAt,
-		ResolvedAt:           check.ResolvedAt,
-		CreatedAt:            check.CreatedAt,
-		UpdatedAt:            &check.UpdatedAt,
-	}
-
-	if check.TimeLimit != nil {
-		window := int32(*check.TimeLimit / time.Second)
-		dto.TimeLimitSeconds = &window
-	}
-
-	if check.ApprovedByAccountID != uuid.Nil {
-		approver := check.ApprovedByAccountID
-		dto.ApprovedByAccountId = &approver
-	}
-
-	if check.ResolvedByAccountID != uuid.Nil {
-		resolver := check.ResolvedByAccountID
-		dto.ResolvedByAccountId = &resolver
-	}
-
-	if check.GapIssueID != uuid.Nil {
-		gap := check.GapIssueID
-		dto.GapIssueId = &gap
-	}
-
-	if check.CreatedByAccountID != uuid.Nil {
-		author := check.CreatedByAccountID
-		dto.CreatedByAccountId = &author
-	}
-
-	return dto
-}
-
-func issueCheckDTOs(checks []entity.Check) []api.IssueCheck {
-	dtos := make([]api.IssueCheck, 0, len(checks))
-
-	for _, check := range checks {
-		dtos = append(dtos, issueCheckDTO(check))
-	}
-
-	return dtos
-}
-
-func checkEvidenceDTO(evidence entity.Evidence) api.CheckEvidence {
-	dto := api.CheckEvidence{
-		Id:         evidence.ID,
-		IssueId:    evidence.IssueID,
-		CheckId:    evidence.CheckID,
-		Verdict:    api.EvidenceVerdict(evidence.Verdict),
-		Channel:    api.EvidenceChannel(evidence.Channel),
-		Command:    nilIfEmpty(evidence.Command),
-		Output:     evidence.Output,
-		Truncated:  evidence.Truncated,
-		Redactions: int32(evidence.Redactions),
-		ObservedAt: evidence.ObservedAt,
-		ReceivedAt: evidence.ReceivedAt,
-		ActorKind:  api.NotificationActorKind(evidence.Actor.Kind),
-		ActorName:  nilIfEmpty(evidence.ActorName),
-		CommitSha:  nilIfEmpty(evidence.CommitSHA),
-	}
-
-	if evidence.ExitCode != nil {
-		code := int32(*evidence.ExitCode)
-		dto.ExitCode = &code
-	}
-
-	if evidence.Actor.AccountID != uuid.Nil {
-		actor := evidence.Actor.AccountID
-		dto.ActorAccountId = &actor
-	}
-
-	if evidence.CodeLinkID != uuid.Nil {
-		link := evidence.CodeLinkID
-		dto.CodeLinkId = &link
-	}
-
-	return dto
-}
-
 func issueDelegationDTO(delegation entity.IssueDelegation) api.IssueDelegation {
 	dto := api.IssueDelegation{
 		Id:             delegation.ID,
@@ -1811,10 +1646,6 @@ func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
 	dto.Title = proposal.Change.Title
 	dto.Description = proposal.Change.Description
 
-	if len(proposal.Change.CheckIDs) > 0 {
-		ids := proposal.Change.CheckIDs
-		dto.CheckIds = &ids
-	}
 	dto.Failure = nilIfEmpty(proposal.Failure)
 	dto.Reasoning = agentReasoningDTO(proposal.Reasoning)
 	dto.DecidedAt = proposal.DecidedAt
@@ -1865,14 +1696,6 @@ func waitingProposalDTO(waiting service.WaitingProposal) api.AgentProposal {
 		reference := waiting.Issue.Reference()
 		dto.IssueReference = &reference
 		dto.IssueTitle = &waiting.Issue.Title
-
-		state := issueCheckListDTO(waiting.Checks)
-		dto.CheckState = &state
-	}
-
-	if len(waiting.Proposed) > 0 {
-		proposed := issueCheckDTOs(waiting.Proposed)
-		dto.ProposedChecks = &proposed
 	}
 
 	if len(waiting.Questions) > 0 {

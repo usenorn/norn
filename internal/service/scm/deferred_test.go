@@ -3,7 +3,6 @@ package scm_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
@@ -11,49 +10,6 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
 )
-
-func TestAMergedChangeBlockedByUnprovenChecksKeepsItsTransitionForLater(t *testing.T) {
-	h := newAdvanceHarness(t)
-	merged := h.mergedChange(t)
-
-	h.issueWriter.EXPECT().
-		Update(gomock.Any(), merged.workspaceID, merged.issueID, gomock.Any()).
-		Return(entity.Issue{}, entity.IssueChecksUnprovenError{
-			Checks: []entity.Check{{Statement: "payments retry without duplicating a charge"}},
-		})
-
-	var deferred entity.CodeTransitionBlock
-
-	h.links.EXPECT().
-		DeferTransition(gomock.Any(), merged.linkID, entity.CodeChangeMerged, gomock.Any(), gomock.Any()).
-		DoAndReturn(func(
-			_ context.Context,
-			_ uuid.UUID,
-			_ entity.CodeChangeState,
-			blockedBy entity.CodeTransitionBlock,
-			_ time.Time,
-		) error {
-			deferred = blockedBy
-
-			return nil
-		})
-
-	h.deliveries.EXPECT().
-		Settle(gomock.Any(), merged.deliveryID, gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil)
-
-	if err := h.sync.Apply(context.Background(), merged.deliveryID); err != nil {
-		t.Fatalf("Apply: %v", err)
-	}
-
-	if deferred != entity.CodeTransitionChecksUnproven {
-		t.Fatalf(
-			"a blocked merge recorded %q; without a deferred record the transition is burned and "+
-				"the issue never advances even after the checks pass",
-			deferred,
-		)
-	}
-}
 
 func TestABlockedTransitionAdvancesOnceTheWayIsClear(t *testing.T) {
 	h := newAdvanceHarness(t)
@@ -79,7 +35,7 @@ func TestABlockedTransitionAdvancesOnceTheWayIsClear(t *testing.T) {
 			Transition: entity.CodeChangeMerged,
 			StateID:    doneID,
 			Status:     entity.CodeTransitionDeferred,
-			BlockedBy:  entity.CodeTransitionChecksUnproven,
+			BlockedBy:  entity.CodeTransitionChildrenOpen,
 		}}, nil)
 
 	h.issues.EXPECT().

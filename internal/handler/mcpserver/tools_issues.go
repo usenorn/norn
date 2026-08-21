@@ -18,8 +18,9 @@ type getIssueInput struct {
 }
 
 type getIssueOutput struct {
-	Issue    issueDTO     `json:"issue"`
-	Comments []commentDTO `json:"comments,omitempty"`
+	Issue     issueDTO      `json:"issue"`
+	Comments  []commentDTO  `json:"comments,omitempty"`
+	Questions []questionDTO `json:"questions,omitempty"`
 }
 
 func (t *toolset) getIssue(
@@ -49,6 +50,13 @@ func (t *toolset) getIssue(
 			output.Comments = append(output.Comments, commentDTOFrom(comment))
 		}
 	}
+
+	asked, err := t.questions.List(ctx, workspace.ID, issue.ID)
+	if err != nil {
+		return nil, getIssueOutput{}, toolFailure(ctx, err)
+	}
+
+	output.Questions = questionDTOs(entity.UnansweredQuestions(asked))
 
 	return nil, output, nil
 }

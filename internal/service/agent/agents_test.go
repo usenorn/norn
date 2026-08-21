@@ -92,7 +92,6 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		workflowstaterepo.NewMockWorkflowState(ctrl),
 		h.issues,
 		(service.IssueComments)(nil),
-		(service.Checks)(nil),
 		h.questions,
 		h.authorizer,
 		transactor,
@@ -351,9 +350,7 @@ func TestAnApprovedProposalCannotBeApprovedTwice(t *testing.T) {
 			Status:      entity.AgentProposalApplied,
 		}, nil)
 
-	_, err := h.service.Approve(
-		context.Background(), h.workspaceID, proposalID, service.ApproveProposalInput{},
-	)
+	_, err := h.service.Approve(context.Background(), h.workspaceID, proposalID)
 
 	if !errors.Is(err, entity.ErrAgentProposalSettled) {
 		t.Fatalf(
@@ -388,7 +385,6 @@ func TestATokenMayNotRegisterOrApproveOnAnAgentsBehalf(t *testing.T) {
 		workflowstaterepo.NewMockWorkflowState(ctrl),
 		(service.Issues)(nil),
 		(service.IssueComments)(nil),
-		(service.Checks)(nil),
 		questionrepo.NewMockIssueQuestion(ctrl),
 		authorizer,
 		transactorrepo.NewMockTransactor(ctrl),
@@ -412,7 +408,6 @@ func TestRotatingACredentialRevokesTheOldOneAndKeepsWhatTheAgentMayDo(t *testing
 
 	scopes := entity.APIScopeSet{
 		entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage),
-		entity.NewAPIScope(entity.ResourceCheck, entity.ActionManage),
 	}
 	grants := entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}}
 

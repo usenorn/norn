@@ -13,7 +13,6 @@ import (
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
-	"github.com/usenorn/norn/internal/service/checkgate"
 )
 
 type operationsService struct {
@@ -27,7 +26,6 @@ type operationsService struct {
 	cycles       repository.Cycle
 	scopeChanges repository.CycleScopeChange
 	jobs         repository.JobProducer
-	checks       *checkgate.Gate
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
 }
@@ -43,7 +41,6 @@ func New(
 	cycles repository.Cycle,
 	scopeChanges repository.CycleScopeChange,
 	jobs repository.JobProducer,
-	checks *checkgate.Gate,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.BulkOperations {
@@ -58,7 +55,6 @@ func New(
 		cycles:       cycles,
 		scopeChanges: scopeChanges,
 		jobs:         jobs,
-		checks:       checks,
 		authorizer:   authorizer,
 		transactor:   transactor,
 	}

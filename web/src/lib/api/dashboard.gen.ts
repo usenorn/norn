@@ -2509,27 +2509,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/workspaces/{workspaceId}/issues/{issueId}/checks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-            };
-            cookie?: never;
-        };
-        /** Read the criteria that decide whether this issue is finished */
-        get: operations["listWorkspaceIssueChecks"];
-        put?: never;
-        /** Write down what done means here, as one set approved or refused together */
-        post: operations["addWorkspaceIssueChecks"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/workspaces/{workspaceId}/issues/{issueId}/questions": {
         parameters: {
             query?: never;
@@ -2566,113 +2545,6 @@ export interface paths {
         put?: never;
         /** Answer a question an agent asked, replacing the default it was working on */
         post: operations["answerWorkspaceIssueQuestion"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Drop a criterion that should never have been part of the definition of done */
-        delete: operations["removeWorkspaceIssueCheck"];
-        options?: never;
-        head?: never;
-        /** Correct what a criterion says, or how its proof travels */
-        patch: operations["updateWorkspaceIssueCheck"];
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/decision": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Approve or decline a criterion an agent proposed, which only a person may do */
-        post: operations["decideWorkspaceIssueCheck"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/waiver": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Set a criterion aside with a reason, which only a person may do */
-        post: operations["waiveWorkspaceIssueCheck"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/gap": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Record that a criterion cannot be met, filing the child issue that carries it */
-        post: operations["declareWorkspaceIssueCheckGap"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/issues/{issueId}/checks/{checkId}/evidence": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        /** Read every observation filed against a criterion, oldest first */
-        get: operations["listWorkspaceIssueCheckEvidence"];
-        put?: never;
-        /** File an observation against a criterion, which is never edited afterwards */
-        post: operations["submitWorkspaceIssueCheckEvidence"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3890,174 +3762,6 @@ export interface components {
             issues: components["schemas"]["Issue"][];
             progress: components["schemas"]["IssueProgress"];
         };
-        /**
-         * @description How a criterion will be proven. Norn runs none of these itself.
-         * @enum {string}
-         */
-        CheckMethod: "command" | "observation" | "manual" | "regression";
-        /**
-         * @description A check counts only once a person has approved it.
-         * @enum {string}
-         */
-        CheckApproval: "pending" | "approved" | "declined";
-        /**
-         * @description How a person set this criterion aside. A gap is an honest "not done" and files a child issue, which then keeps the parent open until it is closed.
-         * @enum {string}
-         */
-        CheckResolution: "none" | "waived" | "gap";
-        /**
-         * @description absent_negative is the finding that nothing bad appeared. It is a real category and a different thing from having observed something working.
-         * @enum {string}
-         */
-        EvidenceVerdict: "passed" | "failed" | "absent_negative" | "inconclusive";
-        /**
-         * @description Where the observation came from. Declared by the submitter; Norn cannot verify it.
-         * @enum {string}
-         */
-        EvidenceChannel: "command" | "http" | "log" | "screenshot" | "database" | "human";
-        IssueCheck: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            workspaceId: string;
-            /** Format: uuid */
-            issueId: string;
-            /** Format: int32 */
-            position: number;
-            statement: string;
-            method: components["schemas"]["CheckMethod"];
-            /** @description How this will be proven — the command to run, what to inspect, or the path a person's proof travels, so nobody is asked to verify something nothing can produce. */
-            proof: string;
-            /**
-             * Format: int32
-             * @description How long an observation counts for. Absent means Norn's own default applies, so there is no way to say that a proof never stops counting.
-             */
-            timeLimitSeconds?: number;
-            approval: components["schemas"]["CheckApproval"];
-            /** Format: uuid */
-            approvedByAccountId?: string;
-            /** Format: date-time */
-            approvedAt?: string;
-            resolution: components["schemas"]["CheckResolution"];
-            resolutionReason?: string;
-            /** Format: uuid */
-            resolvedByAccountId?: string;
-            /** Format: date-time */
-            resolvedAt?: string;
-            /** Format: uuid */
-            gapIssueId?: string;
-            authorKind: components["schemas"]["NotificationActorKind"];
-            /** Format: uuid */
-            createdByAccountId?: string;
-            /** @description True when the criterion was written after the issue was handed to an agent. */
-            addedAfterDelegation: boolean;
-            state?: components["schemas"]["CheckState"];
-            /** @description True when this check stands between an agent and finishing the issue. */
-            blocking?: boolean;
-            /** @description True when the only evidence filed is that nothing bad appeared. */
-            restsOnAbsence?: boolean;
-            /** @description True when this was proven once and the proof has since stopped counting. */
-            expired?: boolean;
-            awaiting?: components["schemas"]["CheckAwaiting"];
-            /** Format: int32 */
-            evidenceCount?: number;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt?: string;
-        };
-        CheckEvidence: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            issueId: string;
-            /** Format: uuid */
-            checkId: string;
-            verdict: components["schemas"]["EvidenceVerdict"];
-            channel: components["schemas"]["EvidenceChannel"];
-            command?: string;
-            /** @description Verbatim, never a summary. Norn keeps 64 KiB and marks the record truncated rather than refusing it; read truncated rather than parsing the marker. */
-            output: string;
-            truncated: boolean;
-            /**
-             * Format: int32
-             * @description Secrets removed from the output and command before either was stored.
-             */
-            redactions: number;
-            /** Format: int32 */
-            exitCode?: number;
-            /**
-             * Format: date-time
-             * @description When the submitter says it looked, clamped so it can never be later than receivedAt.
-             */
-            observedAt: string;
-            /**
-             * Format: date-time
-             * @description When Norn took delivery. This is the stamp everything else is measured against, so misreporting observedAt buys nothing.
-             */
-            receivedAt: string;
-            actorKind: components["schemas"]["NotificationActorKind"];
-            /** Format: uuid */
-            actorAccountId?: string;
-            actorName?: string;
-            /** Format: uuid */
-            codeLinkId?: string;
-            /** @description The head commit Norn held for the linked change when this arrived. */
-            commitSha?: string;
-            /** @description True when this observation no longer counts towards proving its check. */
-            expired: boolean;
-            expiryReason?: components["schemas"]["EvidenceExpiry"];
-        };
-        /**
-         * @description Derived from the evidence on file every time it is read, never stored. A check whose proof has expired reads as unproven again; expired tells that apart from never proven.
-         * @enum {string}
-         */
-        CheckState: "unproven" | "proven" | "failed" | "waived" | "gap";
-        /**
-         * @description What an unproven check is still short of, so the reason can be said in each surface's own words rather than inferred from the evidence again. Absent once a check is settled.
-         * @enum {string}
-         */
-        CheckAwaiting: "correction" | "fresh_proof" | "attestation" | "prior_failure" | "positive_result" | "evidence";
-        /**
-         * @description Why an observation stopped counting. `head_moved` means the change it was taken at has new commits on it, so it says nothing about the code that replaced them; evidence Norn could not bind to a change is judged on its time limit alone.
-         * @enum {string}
-         */
-        EvidenceExpiry: "time_limit" | "head_moved";
-        IssueCheckSummary: {
-            /** Format: int32 */
-            total: number;
-            /** Format: int32 */
-            proven: number;
-            /** Format: int32 */
-            unproven: number;
-            /** Format: int32 */
-            failed: number;
-            /** Format: int32 */
-            waived: number;
-            /** Format: int32 */
-            gaps: number;
-            /**
-             * Format: int32
-             * @description Checks that were proven once and lost it.
-             */
-            expired: number;
-            /** Format: int32 */
-            unapproved: number;
-            /**
-             * Format: int32
-             * @description Approved checks that are unproven or failed. An agent cannot move the issue into a completion state while this is above zero. A person can.
-             */
-            blocking: number;
-            /**
-             * Format: int32
-             * @description Unproven checks whose only evidence is that nothing bad appeared, which is a real finding and never a proof.
-             */
-            restingOnAbsence: number;
-        };
-        IssueCheckList: {
-            checks: components["schemas"]["IssueCheck"][];
-            summary: components["schemas"]["IssueCheckSummary"];
-        };
         IssueQuestionList: {
             questions: components["schemas"]["IssueQuestion"][];
         };
@@ -4096,56 +3800,6 @@ export interface components {
         };
         AnswerIssueQuestionRequest: {
             answer: string;
-        };
-        SubmittedCheckEvidence: {
-            evidence: components["schemas"]["CheckEvidence"];
-            /** @description The check as it now stands, so a submitter sees at once what its evidence proved. */
-            check: components["schemas"]["IssueCheck"];
-        };
-        IssueCheckGap: {
-            check: components["schemas"]["IssueCheck"];
-            issue: components["schemas"]["Issue"];
-        };
-        NewIssueCheck: {
-            statement: string;
-            method: components["schemas"]["CheckMethod"];
-            proof: string;
-            /** Format: int32 */
-            timeLimitSeconds?: number;
-        };
-        AddIssueChecksRequest: {
-            checks: components["schemas"]["NewIssueCheck"][];
-            reasoning?: components["schemas"]["AgentReasoning"];
-        };
-        DecideIssueCheckRequest: {
-            /** @enum {string} */
-            approval: "approved" | "declined";
-        };
-        WaiveIssueCheckRequest: {
-            reason: string;
-        };
-        DeclareIssueCheckGapRequest: {
-            reason: string;
-            /** @description The child issue's title. Defaults to the criterion's own statement. */
-            title?: string;
-        };
-        SubmitCheckEvidenceRequest: {
-            verdict: components["schemas"]["EvidenceVerdict"];
-            channel: components["schemas"]["EvidenceChannel"];
-            command?: string;
-            /** @description The verbatim output, not a summary of it. */
-            output: string;
-            /** Format: int32 */
-            exitCode?: number;
-            /**
-             * Format: date-time
-             * @description When you looked, if that differs from now. Absent means Norn takes the moment it received this, and a stated time later than arrival is clamped to arrival.
-             */
-            observedAt?: string;
-        };
-        CheckConflictProblem: components["schemas"]["Problem"] & {
-            /** @enum {string} */
-            code: "check_settled" | "check_decided" | "check_declined" | "check_limit_reached" | "check_decision_not_personal" | "check_waiver_not_personal" | "check_removal_not_personal" | "evidence_empty";
         };
         IssueDelegation: {
             /** Format: uuid */
@@ -4294,8 +3948,6 @@ export interface components {
             /** @description Complete this issue even though children of it are still open */
             acknowledgeOpenChildren?: boolean;
             reasoning?: components["schemas"]["AgentReasoning"];
-            /** @description Record that whoever finished this issue was shown its unproven criteria first. It never changes whether the write succeeds — a person is never refused — only what the timeline can say about the override. */
-            acknowledgeUnprovenChecks?: boolean;
             /** Format: int32 */
             expectedVersion: number;
             title?: string;
@@ -4472,14 +4124,12 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_checks_unproven" | "issue_checks_unratified" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_delegation_not_yours" | "delegation_claim_held" | "delegation_claim_lost" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_delegation_not_yours" | "delegation_claim_held" | "delegation_claim_lost" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
             labels?: components["schemas"]["Label"][];
             children?: components["schemas"]["Issue"][];
-            /** @description The criteria in the way, named so an agent is told what to do next */
-            checks?: components["schemas"]["IssueCheck"][];
             relation?: components["schemas"]["IssueRelation"];
         };
         CycleConflictProblem: components["schemas"]["Problem"] & {
@@ -4701,7 +4351,7 @@ export interface components {
             version?: number;
         };
         /** @enum {string} */
-        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled" | "check_added" | "check_removed" | "check_approved" | "check_declined" | "check_edited" | "check_waived" | "check_gap_declared" | "evidence_added" | "checks_overridden" | "check_expired";
+        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled";
         /** @enum {string} */
         LicenceStatus: "absent" | "active" | "grace" | "expired";
         LicenceFeature: {
@@ -5163,21 +4813,18 @@ export interface components {
             uncertain?: string;
         };
         /**
-         * @description Whether a write of this kind waits for a person. `unless_proven` lets a well-evidenced completion through and holds everything else, and is offered on state changes alone — the other categories have no notion of proof to judge.
+         * @description Whether a write of this kind waits for a person.
          * @enum {string}
          */
-        AgentHold: "never" | "unless_proven" | "always";
+        AgentHold: "never" | "always";
         AgentSettings: {
             holdComments: components["schemas"]["AgentHold"];
             holdStateChanges: components["schemas"]["AgentHold"];
             holdIssueEdits: components["schemas"]["AgentHold"];
             holdIssueCreation: components["schemas"]["AgentHold"];
         };
-        /**
-         * @description `check_set` is always held whatever a team's settings say. A new criterion changes the definition of done, and that is not something an agent settles alone.
-         * @enum {string}
-         */
-        AgentAction: "comment" | "state_change" | "issue_edit" | "issue_create" | "check_set";
+        /** @enum {string} */
+        AgentAction: "comment" | "state_change" | "issue_edit" | "issue_create";
         /** @enum {string} */
         AgentProposalStatus: "pending" | "rejected" | "applied" | "failed";
         AgentProposal: {
@@ -5200,8 +4847,6 @@ export interface components {
             stateId?: string;
             title?: string;
             description?: string;
-            /** @description The criteria a check set proposal would add to the definition of done */
-            checkIds?: string[];
             reasoning?: components["schemas"]["AgentReasoning"];
             /** @description So an approver can open the issue the proposal is about */
             issueReference?: string;
@@ -5210,10 +4855,6 @@ export interface components {
             teamKey?: string;
             /** @description The state a state change would move the issue to */
             stateName?: string;
-            /** @description The criteria a check set proposal would add, in full */
-            proposedChecks?: components["schemas"]["IssueCheck"][];
-            /** @description What the issue's criteria say right now, so the person deciding sees whether they are being asked to let unproven work through. */
-            checkState?: components["schemas"]["IssueCheckList"];
             /** @description Questions the agent asked on this issue that nobody answered, so approving the proposal also ratifies the default it worked on. */
             questions?: components["schemas"]["IssueQuestion"][];
             /** Format: uuid */
@@ -5223,26 +4864,6 @@ export interface components {
             failure?: string;
             /** Format: date-time */
             createdAt: string;
-        };
-        UpdateIssueCheckRequest: {
-            statement: string;
-            method: components["schemas"]["CheckMethod"];
-            proof: string;
-            /** Format: int32 */
-            timeLimitSeconds?: number;
-        };
-        /** @description Present only when correcting a proposed check set while approving it. The array is the set as it should stand: an entry with an id edits that criterion, an entry without one adds it, and a proposed criterion left out is dropped. */
-        ApproveAgentProposalRequest: {
-            checks: components["schemas"]["ApprovedCheckEdit"][];
-        };
-        ApprovedCheckEdit: {
-            /** Format: uuid */
-            id?: string;
-            statement: string;
-            method: components["schemas"]["CheckMethod"];
-            proof: string;
-            /** Format: int32 */
-            timeLimitSeconds?: number;
         };
         AgentUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -6548,7 +6169,7 @@ export interface components {
         /** @enum {string} */
         NotificationSubjectKind: "issue" | "project" | "team";
         /** @enum {string} */
-        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "check_failed" | "gap_declared" | "approval_waiting";
+        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting";
         /** @enum {string} */
         NotificationReason: "mentioned" | "approval" | "assigned" | "membership" | "following";
         /** @enum {string} */
@@ -6581,8 +6202,6 @@ export interface components {
             commented: components["schemas"]["NotificationChannels"];
             stateChanged: components["schemas"]["NotificationChannels"];
             membership: components["schemas"]["NotificationChannels"];
-            /** @description A criterion on something you follow failed, or somebody recorded a gap. */
-            checks: components["schemas"]["NotificationChannels"];
             /** @description An agent is waiting for you to approve something before it can carry on. */
             approvals: components["schemas"]["NotificationChannels"];
             agents: components["schemas"]["NotificationChannels"];
@@ -6755,15 +6374,6 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["IssueConflictProblem"];
-            };
-        };
-        /** @description The criterion cannot take that change, or the observation cannot count */
-        CheckConflict: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["CheckConflictProblem"];
             };
         };
         /** @description The cycle refuses the change, or needs a decision first */
@@ -7029,7 +6639,6 @@ export interface components {
         ProposalId: string;
         StateId: string;
         IssueId: string;
-        CheckId: string;
         QuestionId: string;
         CycleId: string;
         ProjectId: string;
@@ -10181,11 +9790,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ApproveAgentProposalRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description The settled proposal, applied or carrying why it could not be */
             200: {
@@ -12327,66 +11932,6 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
-    listWorkspaceIssueChecks: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Every check on the issue with its state, plus a tally across them */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IssueCheckList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    addWorkspaceIssueChecks: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddIssueChecksRequest"];
-            };
-        };
-        responses: {
-            /** @description The checks as they now stand. A person's checks arrive approved; an agent's arrive waiting for a person, and never block anything until one approves them. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IssueCheck"][];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["CheckConflict"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
     listWorkspaceIssueQuestions: {
         parameters: {
             query?: never;
@@ -12476,230 +12021,6 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    removeWorkspaceIssueCheck: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The check is gone */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    updateWorkspaceIssueCheck: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateIssueCheckRequest"];
-            };
-        };
-        responses: {
-            /** @description The criterion as it now reads */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IssueCheck"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["CheckConflict"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    decideWorkspaceIssueCheck: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DecideIssueCheckRequest"];
-            };
-        };
-        responses: {
-            /** @description The check as it now stands */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IssueCheck"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["CheckConflict"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    waiveWorkspaceIssueCheck: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WaiveIssueCheckRequest"];
-            };
-        };
-        responses: {
-            /** @description The waived check */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IssueCheck"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["CheckConflict"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    declareWorkspaceIssueCheckGap: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeclareIssueCheckGapRequest"];
-            };
-        };
-        responses: {
-            /** @description The check and the child issue it filed */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IssueCheckGap"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["IssueConflict"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    listWorkspaceIssueCheckEvidence: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The evidence, verbatim, including records that no longer count */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CheckEvidence"][];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    submitWorkspaceIssueCheckEvidence: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-                checkId: components["parameters"]["CheckId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmitCheckEvidenceRequest"];
-            };
-        };
-        responses: {
-            /** @description The stored record and the check as it now stands */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmittedCheckEvidence"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["CheckConflict"];
             422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };

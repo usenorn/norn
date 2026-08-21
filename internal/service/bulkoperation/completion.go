@@ -27,26 +27,5 @@ func (s *operationsService) completable(
 		return entity.IssueChildrenOpenError{Children: open}
 	}
 
-	blocking, unratified, err := s.checks.Obstructing(ctx, action.WorkspaceID, issue.ID)
-	if err != nil {
-		return err
-	}
-
-	if len(unratified) > 0 && decision.Actor.Kind == entity.ActorKindAgent {
-		return entity.IssueChecksUnratifiedError{Checks: unratified}
-	}
-
-	if len(blocking) == 0 {
-		return nil
-	}
-
-	if decision.Actor.Kind == entity.ActorKindAgent {
-		return entity.IssueChecksUnprovenError{Checks: blocking}
-	}
-
-	return s.record(ctx, action, decision, issue, entity.Activity{
-		Kind:    entity.ActivityKindChecksOverridden,
-		Field:   entity.ActivityFieldChecks,
-		ToValue: entity.CheckStatements(blocking),
-	})
+	return nil
 }

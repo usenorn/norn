@@ -4,7 +4,7 @@
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { onDateAndTime } from "$lib/time";
-	import type { IssueQuestion } from "./checks";
+	import type { IssueQuestion } from "./questions";
 
 	let {
 		questions,

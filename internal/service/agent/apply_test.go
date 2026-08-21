@@ -75,9 +75,7 @@ func TestAnApprovedProposalAppliesEveryFieldTheAgentAsked(t *testing.T) {
 			return entity.Issue{}, nil
 		})
 
-	if _, err := h.service.Approve(
-		context.Background(), h.workspaceID, held.ID, service.ApproveProposalInput{},
-	); err != nil {
+	if _, err := h.service.Approve(context.Background(), h.workspaceID, held.ID); err != nil {
 		t.Fatalf("approve: %v", err)
 	}
 
@@ -170,9 +168,7 @@ func TestApprovingAHeldCreationFilesTheIssueTheAgentAsked(t *testing.T) {
 			return entity.Issue{ID: uuid.New()}, nil
 		})
 
-	if _, err := h.service.Approve(
-		context.Background(), h.workspaceID, held.ID, service.ApproveProposalInput{},
-	); err != nil {
+	if _, err := h.service.Approve(context.Background(), h.workspaceID, held.ID); err != nil {
 		t.Fatalf("approve: %v", err)
 	}
 

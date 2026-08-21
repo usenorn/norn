@@ -11,10 +11,9 @@ import (
 )
 
 var (
-	ErrAgentActionHeld          = errors.New("agent action is waiting for a person to approve it")
-	ErrAgentProposalNotFound    = errors.New("agent proposal not found")
-	ErrAgentProposalSettled     = errors.New("agent proposal has already been decided")
-	ErrAgentProposalNotEditable = errors.New("only a proposed check set can be edited while approving")
+	ErrAgentActionHeld       = errors.New("agent action is waiting for a person to approve it")
+	ErrAgentProposalNotFound = errors.New("agent proposal not found")
+	ErrAgentProposalSettled  = errors.New("agent proposal has already been decided")
 )
 
 type AgentAction string
@@ -24,7 +23,6 @@ const (
 	AgentActionStateChange AgentAction = "state_change"
 	AgentActionIssueEdit   AgentAction = "issue_edit"
 	AgentActionIssueCreate AgentAction = "issue_create"
-	AgentActionCheckSet    AgentAction = "check_set"
 )
 
 func AgentActions() []AgentAction {
@@ -33,7 +31,6 @@ func AgentActions() []AgentAction {
 		AgentActionStateChange,
 		AgentActionIssueEdit,
 		AgentActionIssueCreate,
-		AgentActionCheckSet,
 	}
 }
 
@@ -41,19 +38,14 @@ func (a AgentAction) Valid() bool {
 	return slices.Contains(AgentActions(), a)
 }
 
-func (a AgentAction) JudgedOnProof() bool {
-	return a == AgentActionStateChange
-}
-
 type AgentHold string
 
 const (
-	AgentHoldNever        AgentHold = "never"
-	AgentHoldUnlessProven AgentHold = "unless_proven"
-	AgentHoldAlways       AgentHold = "always"
+	AgentHoldNever  AgentHold = "never"
+	AgentHoldAlways AgentHold = "always"
 )
 
-var agentHoldOrder = []AgentHold{AgentHoldNever, AgentHoldUnlessProven, AgentHoldAlways}
+var agentHoldOrder = []AgentHold{AgentHoldNever, AgentHoldAlways}
 
 func AgentHolds() []AgentHold {
 	return slices.Clone(agentHoldOrder)
@@ -67,12 +59,8 @@ func (h AgentHold) Stronger(other AgentHold) bool {
 	return slices.Index(agentHoldOrder, h) > slices.Index(agentHoldOrder, other)
 }
 
-func ValidateAgentHold(field string, hold AgentHold, action AgentAction) FieldError {
+func ValidateAgentHold(field string, hold AgentHold) FieldError {
 	if !hold.Valid() {
-		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
-	}
-
-	if hold == AgentHoldUnlessProven && !action.JudgedOnProof() {
 		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
 	}
 
@@ -98,8 +86,6 @@ func (s AgentSettings) Holds(action AgentAction) AgentHold {
 		return normalisedHold(s.HoldIssueEdits)
 	case AgentActionIssueCreate:
 		return normalisedHold(s.HoldIssueCreation)
-	case AgentActionCheckSet:
-		return AgentHoldAlways
 	default:
 		return AgentHoldNever
 	}
@@ -140,8 +126,6 @@ func (a AgentAction) Scopes() APIScopeSet {
 		return APIScopeSet{NewAPIScope(ResourceComment, ActionManage)}
 	case AgentActionStateChange, AgentActionIssueEdit, AgentActionIssueCreate:
 		return APIScopeSet{NewAPIScope(ResourceIssue, ActionManage)}
-	case AgentActionCheckSet:
-		return APIScopeSet{NewAPIScope(ResourceCheck, ActionManage)}
 	default:
 		return APIScopeSet{}
 	}
@@ -206,7 +190,6 @@ type AgentChange struct {
 	CycleID         *uuid.UUID     `json:"cycleId,omitempty"`
 	ProjectID       *uuid.UUID     `json:"projectId,omitempty"`
 	Clear           []string       `json:"clear,omitempty"`
-	CheckIDs        []uuid.UUID    `json:"checkIds,omitempty"`
 	LabelIDs        []uuid.UUID    `json:"labelIds,omitempty"`
 }
 

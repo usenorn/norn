@@ -11,10 +11,8 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-const startReminder = "Work on the branch above. Read the criteria before you write anything: " +
-	"they are what this issue will be judged on. If one is missing, propose it with " +
-	"norn_propose_checks and stop until a person approves it. File evidence as each criterion " +
-	"becomes true, not in one batch at the end."
+const startReminder = "Work on the branch above. Any question below is one an agent asked and " +
+	"nobody has answered; the default it recorded is what stands until somebody does."
 
 type startIssueInput struct {
 	Workspace string `json:"workspace" jsonschema:"the workspace slug or id"`
@@ -24,8 +22,6 @@ type startIssueInput struct {
 type startIssueOutput struct {
 	Issue     issueDTO      `json:"issue"`
 	Branch    string        `json:"branch"`
-	Checks    []checkDTO    `json:"checks"`
-	Summary   summaryDTO    `json:"summary"`
 	Questions []questionDTO `json:"questions"`
 	Reminder  string        `json:"reminder"`
 }
@@ -67,11 +63,6 @@ func (t *toolset) startIssue(
 		return nil, startIssueOutput{}, toolFailure(ctx, err)
 	}
 
-	ledger, err := t.checks.Ledger(ctx, workspace.ID, issue.ID)
-	if err != nil {
-		return nil, startIssueOutput{}, toolFailure(ctx, err)
-	}
-
 	asked, err := t.questions.List(ctx, workspace.ID, issue.ID)
 	if err != nil {
 		return nil, startIssueOutput{}, toolFailure(ctx, err)
@@ -80,8 +71,6 @@ func (t *toolset) startIssue(
 	return nil, startIssueOutput{
 		Issue:     issueDTOFrom(started),
 		Branch:    branch,
-		Checks:    checkDTOs(ledger.Reports),
-		Summary:   summaryDTOFrom(ledger.Summary),
 		Questions: questionDTOs(entity.UnansweredQuestions(asked)),
 		Reminder:  startReminder,
 	}, nil

@@ -43,16 +43,6 @@ const (
 	ActivityKindCodeUnlinked      ActivityKind = "code_unlinked"
 	ActivityKindDelegated         ActivityKind = "delegated"
 	ActivityKindRecalled          ActivityKind = "recalled"
-	ActivityKindCheckAdded        ActivityKind = "check_added"
-	ActivityKindCheckRemoved      ActivityKind = "check_removed"
-	ActivityKindCheckApproved     ActivityKind = "check_approved"
-	ActivityKindCheckDeclined     ActivityKind = "check_declined"
-	ActivityKindCheckWaived       ActivityKind = "check_waived"
-	ActivityKindCheckEdited       ActivityKind = "check_edited"
-	ActivityKindCheckGapDeclared  ActivityKind = "check_gap_declared"
-	ActivityKindEvidenceAdded     ActivityKind = "evidence_added"
-	ActivityKindChecksOverridden  ActivityKind = "checks_overridden"
-	ActivityKindCheckExpired      ActivityKind = "check_expired"
 )
 
 func ActivityKinds() []ActivityKind {
@@ -80,16 +70,6 @@ func ActivityKinds() []ActivityKind {
 		ActivityKindCodeUnlinked,
 		ActivityKindDelegated,
 		ActivityKindRecalled,
-		ActivityKindCheckAdded,
-		ActivityKindCheckRemoved,
-		ActivityKindCheckApproved,
-		ActivityKindCheckDeclined,
-		ActivityKindCheckWaived,
-		ActivityKindCheckEdited,
-		ActivityKindCheckGapDeclared,
-		ActivityKindEvidenceAdded,
-		ActivityKindChecksOverridden,
-		ActivityKindCheckExpired,
 	}
 }
 
@@ -100,9 +80,6 @@ func (k ActivityKind) Valid() bool {
 const (
 	ActivityFieldAttachment = "attachment"
 	ActivityFieldAgent      = "agent"
-	ActivityFieldCheck      = "check"
-	ActivityFieldChecks     = "checks"
-	ActivityFieldEvidence   = "evidence"
 	ActivityFieldMember     = "member"
 	ActivityFieldName       = "name"
 	ActivityFieldLead       = "lead"

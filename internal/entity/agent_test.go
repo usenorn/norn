@@ -96,20 +96,6 @@ func TestOnlyTheActionsATeamNamedAreHeld(t *testing.T) {
 	}
 }
 
-func TestAProposedCheckSetIsHeldWhateverATeamConfigured(t *testing.T) {
-	for _, settings := range []entity.AgentSettings{
-		{},
-		{HoldComments: entity.AgentHoldNever, HoldStateChanges: entity.AgentHoldNever},
-	} {
-		if settings.Holds(entity.AgentActionCheckSet) != entity.AgentHoldAlways {
-			t.Fatal(
-				"a check set went through without a person. A new criterion changes the " +
-					"definition of done, which is not something an agent settles alone.",
-			)
-		}
-	}
-}
-
 func TestAWriteIsHeldByTheStrongestPolicyAnyFieldItChangesAsksFor(t *testing.T) {
 	both := []entity.AgentAction{entity.AgentActionStateChange, entity.AgentActionIssueEdit}
 
@@ -138,31 +124,8 @@ func TestAWriteIsHeldByTheStrongestPolicyAnyFieldItChangesAsksFor(t *testing.T) 
 }
 
 func TestHoldPoliciesAreOrderedFromWeakestToStrongest(t *testing.T) {
-	if !entity.AgentHoldAlways.Stronger(entity.AgentHoldUnlessProven) ||
-		!entity.AgentHoldUnlessProven.Stronger(entity.AgentHoldNever) {
+	if !entity.AgentHoldAlways.Stronger(entity.AgentHoldNever) {
 		t.Fatal("hold policies are not ordered, so the strongest one cannot be chosen")
-	}
-}
-
-func TestHoldUnlessProvenIsOfferedOnlyWhereThereIsProofToJudge(t *testing.T) {
-	if err := entity.NewValidationError(entity.ValidateAgentHold(
-		"holdStateChanges", entity.AgentHoldUnlessProven, entity.AgentActionStateChange,
-	)); err != nil {
-		t.Fatalf("a state change could not be set to hold unless proven: %v", err)
-	}
-
-	for _, action := range []entity.AgentAction{
-		entity.AgentActionComment, entity.AgentActionIssueEdit,
-	} {
-		if err := entity.NewValidationError(entity.ValidateAgentHold(
-			"hold", entity.AgentHoldUnlessProven, action,
-		)); err == nil {
-			t.Fatalf(
-				"%q accepted hold-unless-proven, which has no meaning there: a comment carries "+
-					"no claim that anything is finished",
-				action,
-			)
-		}
 	}
 }
 

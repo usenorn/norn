@@ -238,7 +238,6 @@ var WorkspaceCodeLinkRels = struct {
 	Issue                            string
 	Repository                       string
 	Workspace                        string
-	CodeLinkWorkspaceCheckEvidences  string
 	LinkWorkspaceCodeLinkReviewers   string
 	LinkWorkspaceCodeLinkTransitions string
 	LinkWorkspaceSCMReleaseLinks     string
@@ -246,7 +245,6 @@ var WorkspaceCodeLinkRels = struct {
 	Issue:                            "Issue",
 	Repository:                       "Repository",
 	Workspace:                        "Workspace",
-	CodeLinkWorkspaceCheckEvidences:  "CodeLinkWorkspaceCheckEvidences",
 	LinkWorkspaceCodeLinkReviewers:   "LinkWorkspaceCodeLinkReviewers",
 	LinkWorkspaceCodeLinkTransitions: "LinkWorkspaceCodeLinkTransitions",
 	LinkWorkspaceSCMReleaseLinks:     "LinkWorkspaceSCMReleaseLinks",
@@ -257,7 +255,6 @@ type workspaceCodeLinkR struct {
 	Issue                            *WorkspaceIssue                  `boil:"Issue" json:"Issue" toml:"Issue" yaml:"Issue"`
 	Repository                       *WorkspaceSCMRepository          `boil:"Repository" json:"Repository" toml:"Repository" yaml:"Repository"`
 	Workspace                        *Workspace                       `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	CodeLinkWorkspaceCheckEvidences  WorkspaceCheckEvidenceSlice      `boil:"CodeLinkWorkspaceCheckEvidences" json:"CodeLinkWorkspaceCheckEvidences" toml:"CodeLinkWorkspaceCheckEvidences" yaml:"CodeLinkWorkspaceCheckEvidences"`
 	LinkWorkspaceCodeLinkReviewers   WorkspaceCodeLinkReviewerSlice   `boil:"LinkWorkspaceCodeLinkReviewers" json:"LinkWorkspaceCodeLinkReviewers" toml:"LinkWorkspaceCodeLinkReviewers" yaml:"LinkWorkspaceCodeLinkReviewers"`
 	LinkWorkspaceCodeLinkTransitions WorkspaceCodeLinkTransitionSlice `boil:"LinkWorkspaceCodeLinkTransitions" json:"LinkWorkspaceCodeLinkTransitions" toml:"LinkWorkspaceCodeLinkTransitions" yaml:"LinkWorkspaceCodeLinkTransitions"`
 	LinkWorkspaceSCMReleaseLinks     WorkspaceSCMReleaseLinkSlice     `boil:"LinkWorkspaceSCMReleaseLinks" json:"LinkWorkspaceSCMReleaseLinks" toml:"LinkWorkspaceSCMReleaseLinks" yaml:"LinkWorkspaceSCMReleaseLinks"`
@@ -314,22 +311,6 @@ func (r *workspaceCodeLinkR) GetWorkspace() *Workspace {
 	}
 
 	return r.Workspace
-}
-
-func (o *WorkspaceCodeLink) GetCodeLinkWorkspaceCheckEvidences() WorkspaceCheckEvidenceSlice {
-	if o == nil {
-		return nil
-	}
-
-	return o.R.GetCodeLinkWorkspaceCheckEvidences()
-}
-
-func (r *workspaceCodeLinkR) GetCodeLinkWorkspaceCheckEvidences() WorkspaceCheckEvidenceSlice {
-	if r == nil {
-		return nil
-	}
-
-	return r.CodeLinkWorkspaceCheckEvidences
 }
 
 func (o *WorkspaceCodeLink) GetLinkWorkspaceCodeLinkReviewers() WorkspaceCodeLinkReviewerSlice {
@@ -727,20 +708,6 @@ func (o *WorkspaceCodeLink) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	queryMods = append(queryMods, mods...)
 
 	return Workspaces(queryMods...)
-}
-
-// CodeLinkWorkspaceCheckEvidences retrieves all the workspace_check_evidence's WorkspaceCheckEvidences with an executor via code_link_id column.
-func (o *WorkspaceCodeLink) CodeLinkWorkspaceCheckEvidences(mods ...qm.QueryMod) workspaceCheckEvidenceQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"workspace_check_evidence\".\"code_link_id\"=?", o.ID),
-	)
-
-	return WorkspaceCheckEvidences(queryMods...)
 }
 
 // LinkWorkspaceCodeLinkReviewers retrieves all the workspace_code_link_reviewer's WorkspaceCodeLinkReviewers with an executor via link_id column.
@@ -1141,119 +1108,6 @@ func (workspaceCodeLinkL) LoadWorkspace(ctx context.Context, e boil.ContextExecu
 					foreign.R = &workspaceR{}
 				}
 				foreign.R.WorkspaceCodeLinks = append(foreign.R.WorkspaceCodeLinks, local)
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadCodeLinkWorkspaceCheckEvidences allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (workspaceCodeLinkL) LoadCodeLinkWorkspaceCheckEvidences(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceCodeLink any, mods queries.Applicator) error {
-	var slice []*WorkspaceCodeLink
-	var object *WorkspaceCodeLink
-
-	if singular {
-		var ok bool
-		object, ok = maybeWorkspaceCodeLink.(*WorkspaceCodeLink)
-		if !ok {
-			object = new(WorkspaceCodeLink)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceCodeLink)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceCodeLink))
-			}
-		}
-	} else {
-		s, ok := maybeWorkspaceCodeLink.(*[]*WorkspaceCodeLink)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceCodeLink)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceCodeLink))
-			}
-		}
-	}
-
-	args := make(map[any]struct{})
-	if singular {
-		if object.R == nil {
-			object.R = &workspaceCodeLinkR{}
-		}
-		args[object.ID] = struct{}{}
-	} else {
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &workspaceCodeLinkR{}
-			}
-			args[obj.ID] = struct{}{}
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	argsSlice := make([]any, len(args))
-	i := 0
-	for arg := range args {
-		argsSlice[i] = arg
-		i++
-	}
-
-	query := NewQuery(
-		qm.From(`workspace_check_evidence`),
-		qm.WhereIn(`workspace_check_evidence.code_link_id in ?`, argsSlice...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load workspace_check_evidence")
-	}
-
-	var resultSlice []*WorkspaceCheckEvidence
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice workspace_check_evidence")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on workspace_check_evidence")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_check_evidence")
-	}
-
-	if len(workspaceCheckEvidenceAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.CodeLinkWorkspaceCheckEvidences = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &workspaceCheckEvidenceR{}
-			}
-			foreign.R.CodeLink = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if queries.Equal(local.ID, foreign.CodeLinkID) {
-				local.R.CodeLinkWorkspaceCheckEvidences = append(local.R.CodeLinkWorkspaceCheckEvidences, foreign)
-				if foreign.R == nil {
-					foreign.R = &workspaceCheckEvidenceR{}
-				}
-				foreign.R.CodeLink = local
 				break
 			}
 		}
@@ -1770,133 +1624,6 @@ func (o *WorkspaceCodeLink) SetWorkspace(ctx context.Context, exec boil.ContextE
 		}
 	} else {
 		related.R.WorkspaceCodeLinks = append(related.R.WorkspaceCodeLinks, o)
-	}
-
-	return nil
-}
-
-// AddCodeLinkWorkspaceCheckEvidences adds the given related objects to the existing relationships
-// of the workspace_code_link, optionally inserting them as new records.
-// Appends related to o.R.CodeLinkWorkspaceCheckEvidences.
-// Sets related.R.CodeLink appropriately.
-func (o *WorkspaceCodeLink) AddCodeLinkWorkspaceCheckEvidences(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCheckEvidence) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			queries.Assign(&rel.CodeLinkID, o.ID)
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"workspace_check_evidence\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"code_link_id"}),
-				strmangle.WhereClause("\"", "\"", 2, workspaceCheckEvidencePrimaryKeyColumns),
-			)
-			values := []any{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			queries.Assign(&rel.CodeLinkID, o.ID)
-		}
-	}
-
-	if o.R == nil {
-		o.R = &workspaceCodeLinkR{
-			CodeLinkWorkspaceCheckEvidences: related,
-		}
-	} else {
-		o.R.CodeLinkWorkspaceCheckEvidences = append(o.R.CodeLinkWorkspaceCheckEvidences, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &workspaceCheckEvidenceR{
-				CodeLink: o,
-			}
-		} else {
-			rel.R.CodeLink = o
-		}
-	}
-	return nil
-}
-
-// SetCodeLinkWorkspaceCheckEvidences removes all previously related items of the
-// workspace_code_link replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.CodeLink's CodeLinkWorkspaceCheckEvidences accordingly.
-// Replaces o.R.CodeLinkWorkspaceCheckEvidences with related.
-// Sets related.R.CodeLink's CodeLinkWorkspaceCheckEvidences accordingly.
-func (o *WorkspaceCodeLink) SetCodeLinkWorkspaceCheckEvidences(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCheckEvidence) error {
-	query := "update \"workspace_check_evidence\" set \"code_link_id\" = null where \"code_link_id\" = $1"
-	values := []any{o.ID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.CodeLinkWorkspaceCheckEvidences {
-			queries.SetScanner(&rel.CodeLinkID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.CodeLink = nil
-		}
-		o.R.CodeLinkWorkspaceCheckEvidences = nil
-	}
-
-	return o.AddCodeLinkWorkspaceCheckEvidences(ctx, exec, insert, related...)
-}
-
-// RemoveCodeLinkWorkspaceCheckEvidences relationships from objects passed in.
-// Removes related items from R.CodeLinkWorkspaceCheckEvidences (uses pointer comparison, removal does not keep order)
-// Sets related.R.CodeLink.
-func (o *WorkspaceCodeLink) RemoveCodeLinkWorkspaceCheckEvidences(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceCheckEvidence) error {
-	if len(related) == 0 {
-		return nil
-	}
-
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.CodeLinkID, nil)
-		if rel.R != nil {
-			rel.R.CodeLink = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("code_link_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.CodeLinkWorkspaceCheckEvidences {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.CodeLinkWorkspaceCheckEvidences)
-			if ln > 1 && i < ln-1 {
-				o.R.CodeLinkWorkspaceCheckEvidences[i] = o.R.CodeLinkWorkspaceCheckEvidences[ln-1]
-			}
-			o.R.CodeLinkWorkspaceCheckEvidences = o.R.CodeLinkWorkspaceCheckEvidences[:ln-1]
-			break
-		}
 	}
 
 	return nil

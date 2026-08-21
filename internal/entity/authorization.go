@@ -16,7 +16,6 @@ const (
 	ResourceTeam           Resource = "team"
 	ResourceTeamMembership Resource = "team_membership"
 	ResourceIssue          Resource = "issue"
-	ResourceCheck          Resource = "check"
 	ResourceCycle          Resource = "cycle"
 	ResourceProject        Resource = "project"
 	ResourceLabel          Resource = "label"

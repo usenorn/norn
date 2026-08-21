@@ -253,7 +253,7 @@ func TestAWriteThatChangesNothingIsNeverHeld(t *testing.T) {
 
 	h.holding(entity.AgentSettings{HoldIssueEdits: entity.AgentHoldAlways})
 	h.expectStateWrite(issueID)
-	h.captureOverride()
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	unchanged := issue.Title
 

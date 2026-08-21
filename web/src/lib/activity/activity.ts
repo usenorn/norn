@@ -80,22 +80,6 @@ const changeLines: Record<ActivityKind, (change: ActivityChange) => string> = {
 		`Unlinked ${codeKindNames[change.field ?? ""] ?? "a change"} ${change.toValue}`,
 	delegated: (change) => `Handed this to ${change.toValue}`,
 	recalled: (change) => `Took this back from ${change.fromValue}`,
-	check_added: (change) => `Added a check: ${change.toValue}`,
-	check_removed: (change) => `Removed the check: ${change.toValue}`,
-	check_approved: (change) => `Approved the check: ${change.toValue}`,
-	check_declined: (change) => `Declined the check: ${change.toValue}`,
-	check_waived: (change) => `Waived the check: ${change.toValue}`,
-	check_edited: (change) => `Rewrote a criterion: ${change.toValue}`,
-	check_gap_declared: (change) => `Declared a gap against: ${change.toValue}`,
-	evidence_added: (change) => `Filed evidence for: ${change.toValue}`,
-	check_expired: (change) =>
-		change.fromValue === "head_moved"
-			? `The proof of "${change.toValue}" stopped counting: the change it was taken at moved on`
-			: `The proof of "${change.toValue}" stopped counting: it is past its time limit`,
-	checks_overridden: (change) =>
-		change.fromValue === "acknowledged"
-			? `Finished this with unproven checks, having been shown them: ${change.toValue}`
-			: `Finished this with unproven checks: ${change.toValue}`,
 	triaged: triageLine,
 	property_changed: propertyLine,
 };

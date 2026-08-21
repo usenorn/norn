@@ -207,29 +207,7 @@ func (h *handler) ApproveWorkspaceAgentProposal(
 	ctx context.Context,
 	request api.ApproveWorkspaceAgentProposalRequestObject,
 ) (api.ApproveWorkspaceAgentProposalResponseObject, error) {
-	input := service.ApproveProposalInput{}
-
-	if request.Body != nil {
-		input.Edited = true
-		input.Checks = make([]service.ProposedCheckEdit, 0, len(request.Body.Checks))
-
-		for _, edit := range request.Body.Checks {
-			edited := service.ProposedCheckEdit{
-				Statement: edit.Statement,
-				Method:    entity.CheckMethod(edit.Method),
-				Proof:     edit.Proof,
-				TimeLimit: checkTimeLimit(edit.TimeLimitSeconds),
-			}
-
-			if edit.Id != nil {
-				edited.CheckID = *edit.Id
-			}
-
-			input.Checks = append(input.Checks, edited)
-		}
-	}
-
-	proposal, err := h.agents.Approve(ctx, request.WorkspaceId, request.ProposalId, input)
+	proposal, err := h.agents.Approve(ctx, request.WorkspaceId, request.ProposalId)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
