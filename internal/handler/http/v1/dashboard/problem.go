@@ -453,6 +453,21 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrRunnerEnrolmentNotAgent):
 		return newProblem(http.StatusForbidden, err.Error()), true
 
+	case errors.Is(err, entity.ErrCodebaseRootTaken):
+		return codebaseConflictProblem(api.CodebaseProblemCodeCodebaseRootTaken, err), true
+
+	case errors.Is(err, entity.ErrCodebaseNotDrifted):
+		return codebaseConflictProblem(api.CodebaseProblemCodeCodebaseNotDrifted, err), true
+
+	case errors.Is(err, entity.ErrCodebaseDisconnected):
+		return codebaseConflictProblem(api.CodebaseProblemCodeCodebaseDisconnected, err), true
+
+	case errors.Is(err, entity.ErrCodebaseNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrCodebaseNotRunner):
+		return newProblem(http.StatusForbidden, err.Error()), true
+
 	case errors.Is(err, entity.ErrRunnerKeyMalformed):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
@@ -1936,6 +1951,22 @@ func issueConflictProblem(code api.IssueConflictProblemCode, err error) problemR
 	}
 }
 
+func codebaseConflictProblem(code api.CodebaseProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.CodebaseProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
 func runnerProblem(code api.RunnerProblemCode, err error) problemResponse {
 	return runnerProblemAt(http.StatusUnauthorized, code, err)
 }
@@ -1977,6 +2008,26 @@ func (r problemResponse) VisitListWorkspaceRunnersResponse(w http.ResponseWriter
 }
 
 func (r problemResponse) VisitRevokeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitConnectCodebaseResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListCurrentRunnerCodebasesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitConfirmCodebaseResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDisconnectCodebaseResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListAgentCodebasesResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

@@ -27,6 +27,7 @@ type handler struct {
 	delegations       service.Delegations
 	questions         service.IssueQuestions
 	runners           service.Runners
+	codebases         service.Codebases
 	attachments       service.Attachments
 	bulkOperations    service.BulkOperations
 	workflowStates    service.WorkflowStates
@@ -68,6 +69,7 @@ func New(
 	delegations service.Delegations,
 	questions service.IssueQuestions,
 	runners service.Runners,
+	codebases service.Codebases,
 	attachments service.Attachments,
 	bulkOperations service.BulkOperations,
 	workflowStates service.WorkflowStates,
@@ -108,6 +110,7 @@ func New(
 		delegations:       delegations,
 		questions:         questions,
 		runners:           runners,
+		codebases:         codebases,
 		attachments:       attachments,
 		bulkOperations:    bulkOperations,
 		workflowStates:    workflowStates,

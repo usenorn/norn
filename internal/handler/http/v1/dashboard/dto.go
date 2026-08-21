@@ -99,6 +99,7 @@ func membershipDTO(member entity.WorkspaceMember) api.Membership {
 	}
 
 	dto.ReadsAudit = &member.Membership.ReadsAudit
+	dto.HasRunner = &member.HasRunner
 	dto.DeactivatedAt = member.Membership.DeactivatedAt
 
 	return dto
@@ -1778,6 +1779,132 @@ func runnerDTOs(runners []entity.Runner) []api.Runner {
 
 	for _, runner := range runners {
 		dtos = append(dtos, runnerDTO(runner))
+	}
+
+	return dtos
+}
+
+func codebaseRepositoriesOf(repositories *[]api.CodebaseRepository) []entity.CodebaseRepository {
+	if repositories == nil {
+		return nil
+	}
+
+	held := make([]entity.CodebaseRepository, 0, len(*repositories))
+
+	for _, repository := range *repositories {
+		mapped := entity.CodebaseRepository{Name: repository.Name, RelPath: repository.RelPath}
+
+		if repository.DefaultBranch != nil {
+			mapped.DefaultBranch = *repository.DefaultBranch
+		}
+
+		if repository.Remote != nil {
+			mapped.Remote = entity.RemoteFingerprint{
+				Hash:     textOf(repository.Remote.Hash),
+				Host:     textOf(repository.Remote.Host),
+				PathTail: textOf(repository.Remote.PathTail),
+			}
+		}
+
+		held = append(held, mapped)
+	}
+
+	return held
+}
+
+func sharedFilesOf(files *[]string) []string {
+	if files == nil {
+		return nil
+	}
+
+	return *files
+}
+
+func codebaseRuntimesOf(runtimes *[]api.CodebaseRuntime) []entity.CodebaseRuntime {
+	if runtimes == nil {
+		return nil
+	}
+
+	held := make([]entity.CodebaseRuntime, 0, len(*runtimes))
+	for _, runtime := range *runtimes {
+		held = append(held, entity.CodebaseRuntime(runtime))
+	}
+
+	return held
+}
+
+func codingToolsOf(tools *[]api.CodingTool) []entity.CodingTool {
+	if tools == nil {
+		return nil
+	}
+
+	held := make([]entity.CodingTool, 0, len(*tools))
+	for _, tool := range *tools {
+		held = append(held, entity.CodingTool{Name: tool.Name, Version: textOf(tool.Version)})
+	}
+
+	return held
+}
+
+func codebaseDTO(codebase entity.Codebase) api.Codebase {
+	repositories := make([]api.CodebaseRepository, 0, len(codebase.Repositories))
+
+	for _, repository := range codebase.Repositories {
+		mapped := api.CodebaseRepository{
+			Name:          repository.Name,
+			RelPath:       repository.RelPath,
+			DefaultBranch: nilIfEmpty(repository.DefaultBranch),
+		}
+
+		if repository.Remote != (entity.RemoteFingerprint{}) {
+			mapped.Remote = &api.RemoteFingerprint{
+				Hash:     nilIfEmpty(repository.Remote.Hash),
+				Host:     nilIfEmpty(repository.Remote.Host),
+				PathTail: nilIfEmpty(repository.Remote.PathTail),
+			}
+		}
+
+		repositories = append(repositories, mapped)
+	}
+
+	runtimes := make([]api.CodebaseRuntime, 0, len(codebase.Runtimes))
+	for _, runtime := range codebase.Runtimes {
+		runtimes = append(runtimes, api.CodebaseRuntime(runtime))
+	}
+
+	tools := make([]api.CodingTool, 0, len(codebase.Tools))
+	for _, tool := range codebase.Tools {
+		tools = append(tools, api.CodingTool{Name: tool.Name, Version: nilIfEmpty(tool.Version)})
+	}
+
+	shared := codebase.SharedFiles
+	if shared == nil {
+		shared = []string{}
+	}
+
+	return api.Codebase{
+		Id:             codebase.ID,
+		RunnerId:       codebase.RunnerID,
+		WorkspaceId:    codebase.WorkspaceID,
+		AgentId:        codebase.AgentID,
+		Name:           codebase.Name,
+		RootPath:       codebase.RootPath,
+		State:          api.CodebaseState(codebase.State),
+		Repositories:   repositories,
+		SharedFiles:    shared,
+		Runtimes:       runtimes,
+		Tools:          tools,
+		ConnectedAt:    codebase.ConnectedAt,
+		LastSeenAt:     codebase.LastSeenAt,
+		DisconnectedAt: codebase.DisconnectedAt,
+	}
+}
+
+func codebaseDTOs(codebases []entity.Codebase) []api.Codebase {
+	dtos := make([]api.Codebase, 0, len(codebases))
+
+	for _, codebase := range codebases {
+		dtos = append(dtos, codebaseDTO(codebase))
 	}
 
 	return dtos

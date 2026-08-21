@@ -385,6 +385,8 @@ const (
 	AuditActionAgentProposalDecided         AuditAction = "agent.proposal_decided"
 	AuditActionAgentRegistered              AuditAction = "agent.registered"
 	AuditActionAuditExported                AuditAction = "audit.exported"
+	AuditActionCodebaseConnected            AuditAction = "codebase.connected"
+	AuditActionCodebaseDisconnected         AuditAction = "codebase.disconnected"
 	AuditActionDirectoryConnected           AuditAction = "directory.connected"
 	AuditActionDirectoryDisconnected        AuditAction = "directory.disconnected"
 	AuditActionDirectoryTokenRotated        AuditAction = "directory.token_rotated"
@@ -445,6 +447,10 @@ func (e AuditAction) Valid() bool {
 	case AuditActionAgentRegistered:
 		return true
 	case AuditActionAuditExported:
+		return true
+	case AuditActionCodebaseConnected:
+		return true
+	case AuditActionCodebaseDisconnected:
 		return true
 	case AuditActionDirectoryConnected:
 		return true
@@ -748,6 +754,69 @@ func (e CodeLinkKind) Valid() bool {
 	case Change:
 		return true
 	case Commit:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CodebaseProblemCode.
+const (
+	CodebaseProblemCodeCodebaseDisconnected CodebaseProblemCode = "codebase_disconnected"
+	CodebaseProblemCodeCodebaseNotDrifted   CodebaseProblemCode = "codebase_not_drifted"
+	CodebaseProblemCodeCodebaseRootTaken    CodebaseProblemCode = "codebase_root_taken"
+)
+
+// Valid indicates whether the value is a known member of the CodebaseProblemCode enum.
+func (e CodebaseProblemCode) Valid() bool {
+	switch e {
+	case CodebaseProblemCodeCodebaseDisconnected:
+		return true
+	case CodebaseProblemCodeCodebaseNotDrifted:
+		return true
+	case CodebaseProblemCodeCodebaseRootTaken:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CodebaseRuntime.
+const (
+	Docker  CodebaseRuntime = "docker"
+	Kvm     CodebaseRuntime = "kvm"
+	Process CodebaseRuntime = "process"
+)
+
+// Valid indicates whether the value is a known member of the CodebaseRuntime enum.
+func (e CodebaseRuntime) Valid() bool {
+	switch e {
+	case Docker:
+		return true
+	case Kvm:
+		return true
+	case Process:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CodebaseState.
+const (
+	CodebaseStateActive       CodebaseState = "active"
+	CodebaseStateDisconnected CodebaseState = "disconnected"
+	CodebaseStateDrift        CodebaseState = "drift"
+)
+
+// Valid indicates whether the value is a known member of the CodebaseState enum.
+func (e CodebaseState) Valid() bool {
+	switch e {
+	case CodebaseStateActive:
+		return true
+	case CodebaseStateDisconnected:
+		return true
+	case CodebaseStateDrift:
 		return true
 	default:
 		return false
@@ -4115,6 +4184,66 @@ type CodeReviewer struct {
 	Verdict    ReviewVerdict `json:"verdict"`
 }
 
+// Codebase defines model for Codebase.
+type Codebase struct {
+	AgentId        openapi_types.UUID   `json:"agentId"`
+	ConnectedAt    time.Time            `json:"connectedAt"`
+	DisconnectedAt *time.Time           `json:"disconnectedAt,omitempty"`
+	Id             openapi_types.UUID   `json:"id"`
+	LastSeenAt     *time.Time           `json:"lastSeenAt,omitempty"`
+	Name           string               `json:"name"`
+	Repositories   []CodebaseRepository `json:"repositories"`
+	RootPath       string               `json:"rootPath"`
+	RunnerId       openapi_types.UUID   `json:"runnerId"`
+	Runtimes       []CodebaseRuntime    `json:"runtimes"`
+
+	// SharedFiles Instruction and configuration files found at the root, by name
+	SharedFiles []string      `json:"sharedFiles"`
+	State       CodebaseState `json:"state"`
+
+	// Tools Coding agents installed on the machine, with the versions detected
+	Tools       []CodingTool       `json:"tools"`
+	WorkspaceId openapi_types.UUID `json:"workspaceId"`
+}
+
+// CodebaseProblem defines model for CodebaseProblem.
+type CodebaseProblem struct {
+	Code     CodebaseProblemCode `json:"code"`
+	Detail   *string             `json:"detail,omitempty"`
+	Errors   *[]FieldError       `json:"errors,omitempty"`
+	Instance *string             `json:"instance,omitempty"`
+	Status   int32               `json:"status"`
+	Title    string              `json:"title"`
+	Type     string              `json:"type"`
+}
+
+// CodebaseProblemCode defines model for CodebaseProblem.Code.
+type CodebaseProblemCode string
+
+// CodebaseRepository defines model for CodebaseRepository.
+type CodebaseRepository struct {
+	DefaultBranch *string `json:"defaultBranch,omitempty"`
+	Name          string  `json:"name"`
+
+	// RelPath Where the repository sits inside the connected folder
+	RelPath string `json:"relPath"`
+
+	// Remote What a repository's remote is, without saying where it is. The hash identifies the remote well enough to recognise the same one on another machine; the host and path tail are for a person reading the screen. The full URL never leaves the machine.
+	Remote *RemoteFingerprint `json:"remote,omitempty"`
+}
+
+// CodebaseRuntime defines model for CodebaseRuntime.
+type CodebaseRuntime string
+
+// CodebaseState defines model for CodebaseState.
+type CodebaseState string
+
+// CodingTool defines model for CodingTool.
+type CodingTool struct {
+	Name    string  `json:"name"`
+	Version *string `json:"version,omitempty"`
+}
+
 // CommentAuthorKind defines model for CommentAuthorKind.
 type CommentAuthorKind string
 
@@ -4190,6 +4319,17 @@ type ConfirmedSignUp struct {
 
 	// Slot The session this call issued. Name it to act as the account the link created.
 	Slot string `json:"slot"`
+}
+
+// ConnectCodebaseRequest defines model for ConnectCodebaseRequest.
+type ConnectCodebaseRequest struct {
+	// Name What to call this folder. Defaults to its root path.
+	Name         *string               `json:"name,omitempty"`
+	Repositories *[]CodebaseRepository `json:"repositories,omitempty"`
+	RootPath     string                `json:"rootPath"`
+	Runtimes     *[]CodebaseRuntime    `json:"runtimes,omitempty"`
+	SharedFiles  *[]string             `json:"sharedFiles,omitempty"`
+	Tools        *[]CodingTool         `json:"tools,omitempty"`
 }
 
 // ConnectSourceControlRequest allowPrivateAddress is a deliberate exception an administrator grants this one connection so it may reach a forge on their own network. It is not an instance-wide relaxation, and it never opens loopback or the link-local range a cloud provider answers on.
@@ -5377,7 +5517,10 @@ type Membership struct {
 	DeactivatedAt *time.Time         `json:"deactivatedAt,omitempty"`
 	DisplayName   *string            `json:"displayName,omitempty"`
 	Email         *string            `json:"email,omitempty"`
-	JoinedAt      *time.Time         `json:"joinedAt,omitempty"`
+
+	// HasRunner Whether this member is an agent with at least one machine connected. False for people and for an agent that is MCP-only. What lets the delegate picker say so before the work is handed over; it never blocks the delegation.
+	HasRunner *bool      `json:"hasRunner,omitempty"`
+	JoinedAt  *time.Time `json:"joinedAt,omitempty"`
 
 	// Kind An integration account is one Norn created to stand behind a source control connection. It authors the content that connection mirrors, so it reaches every surface that names an author even though nobody signs in as it.
 	Kind           *AccountKind       `json:"kind,omitempty"`
@@ -5713,6 +5856,13 @@ type RegisterAgentRequest struct {
 type RegisteredAgent struct {
 	Agent Agent  `json:"agent"`
 	Value string `json:"value"`
+}
+
+// RemoteFingerprint What a repository's remote is, without saying where it is. The hash identifies the remote well enough to recognise the same one on another machine; the host and path tail are for a person reading the screen. The full URL never leaves the machine.
+type RemoteFingerprint struct {
+	Hash     *string `json:"hash,omitempty"`
+	Host     *string `json:"host,omitempty"`
+	PathTail *string `json:"pathTail,omitempty"`
 }
 
 // ReorderSavedViewsRequest defines model for ReorderSavedViewsRequest.
@@ -6906,6 +7056,9 @@ type AuditTo = time.Time
 // CodeLinkId defines model for CodeLinkId.
 type CodeLinkId = openapi_types.UUID
 
+// CodebaseId defines model for CodebaseId.
+type CodebaseId = openapi_types.UUID
+
 // CommentId defines model for CommentId.
 type CommentId = openapi_types.UUID
 
@@ -7022,6 +7175,9 @@ type AuditUnlicensed = AuditUnlicensedProblem
 
 // BreachCheckUnavailable defines model for BreachCheckUnavailable.
 type BreachCheckUnavailable = BreachCheckUnavailableProblem
+
+// CodebaseConflict defines model for CodebaseConflict.
+type CodebaseConflict = CodebaseProblem
 
 // CommentConflict defines model for CommentConflict.
 type CommentConflict = CommentConflictProblem
@@ -7395,6 +7551,9 @@ type PreviewInvitationJSONRequestBody = PreviewInvitationRequest
 // EnrolRunnerJSONRequestBody defines body for EnrolRunner for application/json ContentType.
 type EnrolRunnerJSONRequestBody = EnrolRunnerRequest
 
+// ConnectCodebaseJSONRequestBody defines body for ConnectCodebase for application/json ContentType.
+type ConnectCodebaseJSONRequestBody = ConnectCodebaseRequest
+
 // ExchangeRunnerTokenJSONRequestBody defines body for ExchangeRunnerToken for application/json ContentType.
 type ExchangeRunnerTokenJSONRequestBody = ExchangeRunnerTokenRequest
 
@@ -7727,6 +7886,18 @@ type ServerInterface interface {
 	// GetCurrentRunner What this machine is, as the server sees it
 	// (GET /runners/me)
 	GetCurrentRunner(w http.ResponseWriter, r *http.Request)
+	// ListCurrentRunnerCodebases Every folder this machine has connected
+	// (GET /runners/me/codebases)
+	ListCurrentRunnerCodebases(w http.ResponseWriter, r *http.Request)
+	// ConnectCodebase Report what a connected folder holds
+	// (POST /runners/me/codebases)
+	ConnectCodebase(w http.ResponseWriter, r *http.Request)
+	// DisconnectCodebase Stop offering this folder, leaving its record readable
+	// (DELETE /runners/me/codebases/{codebaseId})
+	DisconnectCodebase(w http.ResponseWriter, r *http.Request, codebaseId CodebaseId)
+	// ConfirmCodebase Accept the inventory as it was last reported, clearing drift
+	// (PATCH /runners/me/codebases/{codebaseId})
+	ConfirmCodebase(w http.ResponseWriter, r *http.Request, codebaseId CodebaseId)
 	// ExchangeRunnerToken Trade a signed assertion for a short-lived access token and a channel ticket
 	// (POST /runners/token)
 	ExchangeRunnerToken(w http.ResponseWriter, r *http.Request)
@@ -7799,6 +7970,9 @@ type ServerInterface interface {
 	// ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 	ListWorkspaceAgentActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, params ListWorkspaceAgentActivityParams)
+	// ListAgentCodebases The folders this agent's machines hold
+	// (GET /workspaces/{workspaceId}/agents/{agentId}/codebases)
+	ListAgentCodebases(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
 	RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
@@ -8621,6 +8795,30 @@ func (_ Unimplemented) GetCurrentRunner(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListCurrentRunnerCodebases Every folder this machine has connected
+// (GET /runners/me/codebases)
+func (_ Unimplemented) ListCurrentRunnerCodebases(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ConnectCodebase Report what a connected folder holds
+// (POST /runners/me/codebases)
+func (_ Unimplemented) ConnectCodebase(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DisconnectCodebase Stop offering this folder, leaving its record readable
+// (DELETE /runners/me/codebases/{codebaseId})
+func (_ Unimplemented) DisconnectCodebase(w http.ResponseWriter, r *http.Request, codebaseId CodebaseId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ConfirmCodebase Accept the inventory as it was last reported, clearing drift
+// (PATCH /runners/me/codebases/{codebaseId})
+func (_ Unimplemented) ConfirmCodebase(w http.ResponseWriter, r *http.Request, codebaseId CodebaseId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ExchangeRunnerToken Trade a signed assertion for a short-lived access token and a channel ticket
 // (POST /runners/token)
 func (_ Unimplemented) ExchangeRunnerToken(w http.ResponseWriter, r *http.Request) {
@@ -8762,6 +8960,12 @@ func (_ Unimplemented) GetWorkspaceAgent(w http.ResponseWriter, r *http.Request,
 // ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 // (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 func (_ Unimplemented) ListWorkspaceAgentActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, params ListWorkspaceAgentActivityParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListAgentCodebases The folders this agent's machines hold
+// (GET /workspaces/{workspaceId}/agents/{agentId}/codebases)
+func (_ Unimplemented) ListAgentCodebases(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -10584,6 +10788,86 @@ func (siw *ServerInterfaceWrapper) GetCurrentRunner(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// ListCurrentRunnerCodebases operation middleware
+func (siw *ServerInterfaceWrapper) ListCurrentRunnerCodebases(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCurrentRunnerCodebases(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConnectCodebase operation middleware
+func (siw *ServerInterfaceWrapper) ConnectCodebase(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConnectCodebase(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisconnectCodebase operation middleware
+func (siw *ServerInterfaceWrapper) DisconnectCodebase(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "codebaseId" -------------
+	var codebaseId CodebaseId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "codebaseId", chi.URLParam(r, "codebaseId"), &codebaseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "codebaseId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisconnectCodebase(w, r, codebaseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConfirmCodebase operation middleware
+func (siw *ServerInterfaceWrapper) ConfirmCodebase(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "codebaseId" -------------
+	var codebaseId CodebaseId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "codebaseId", chi.URLParam(r, "codebaseId"), &codebaseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "codebaseId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfirmCodebase(w, r, codebaseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ExchangeRunnerToken operation middleware
 func (siw *ServerInterfaceWrapper) ExchangeRunnerToken(w http.ResponseWriter, r *http.Request) {
 
@@ -11160,6 +11444,41 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceAgentActivity(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWorkspaceAgentActivity(w, r, workspaceId, agentId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAgentCodebases operation middleware
+func (siw *ServerInterfaceWrapper) ListAgentCodebases(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAgentCodebases(w, r, workspaceId, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -20037,6 +20356,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/runners/{runnerId}", wrapper.RevokeWorkspaceRunner)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/runners/me/codebases", wrapper.ListCurrentRunnerCodebases)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/runners/me/codebases", wrapper.ConnectCodebase)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/runners/me/codebases/{codebaseId}", wrapper.DisconnectCodebase)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/runners/me/codebases/{codebaseId}", wrapper.ConfirmCodebase)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/codebases", wrapper.ListAgentCodebases)
+	})
 
 	return r
 }
@@ -20052,6 +20386,8 @@ type AgentUnusableApplicationProblemPlusJSONResponse AgentUnusableProblem
 type AuditUnlicensedApplicationProblemPlusJSONResponse AuditUnlicensedProblem
 
 type BreachCheckUnavailableApplicationProblemPlusJSONResponse BreachCheckUnavailableProblem
+
+type CodebaseConflictApplicationProblemPlusJSONResponse CodebaseProblem
 
 type CommentConflictApplicationProblemPlusJSONResponse CommentConflictProblem
 
@@ -22220,6 +22556,367 @@ func (response GetCurrentRunner500ApplicationProblemPlusJSONResponse) VisitGetCu
 	return err
 }
 
+type ListCurrentRunnerCodebasesRequestObject struct {
+}
+
+type ListCurrentRunnerCodebasesResponseObject interface {
+	VisitListCurrentRunnerCodebasesResponse(w http.ResponseWriter) error
+}
+
+type ListCurrentRunnerCodebases200JSONResponse []Codebase
+
+func (response ListCurrentRunnerCodebases200JSONResponse) VisitListCurrentRunnerCodebasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCurrentRunnerCodebases401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListCurrentRunnerCodebases401ApplicationProblemPlusJSONResponse) VisitListCurrentRunnerCodebasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCurrentRunnerCodebases403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListCurrentRunnerCodebases403ApplicationProblemPlusJSONResponse) VisitListCurrentRunnerCodebasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCurrentRunnerCodebases500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListCurrentRunnerCodebases500ApplicationProblemPlusJSONResponse) VisitListCurrentRunnerCodebasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectCodebaseRequestObject struct {
+	Body *ConnectCodebaseJSONRequestBody
+}
+
+type ConnectCodebaseResponseObject interface {
+	VisitConnectCodebaseResponse(w http.ResponseWriter) error
+}
+
+type ConnectCodebase200JSONResponse Codebase
+
+func (response ConnectCodebase200JSONResponse) VisitConnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectCodebase401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectCodebase401ApplicationProblemPlusJSONResponse) VisitConnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectCodebase403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectCodebase403ApplicationProblemPlusJSONResponse) VisitConnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectCodebase409ApplicationProblemPlusJSONResponse struct {
+	CodebaseConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectCodebase409ApplicationProblemPlusJSONResponse) VisitConnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectCodebase422ApplicationProblemPlusJSONResponse Problem
+
+func (response ConnectCodebase422ApplicationProblemPlusJSONResponse) VisitConnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectCodebase500ApplicationProblemPlusJSONResponse Problem
+
+func (response ConnectCodebase500ApplicationProblemPlusJSONResponse) VisitConnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectCodebaseRequestObject struct {
+	CodebaseId CodebaseId `json:"codebaseId"`
+}
+
+type DisconnectCodebaseResponseObject interface {
+	VisitDisconnectCodebaseResponse(w http.ResponseWriter) error
+}
+
+type DisconnectCodebase200JSONResponse Codebase
+
+func (response DisconnectCodebase200JSONResponse) VisitDisconnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectCodebase401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectCodebase401ApplicationProblemPlusJSONResponse) VisitDisconnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectCodebase403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectCodebase403ApplicationProblemPlusJSONResponse) VisitDisconnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectCodebase404ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectCodebase404ApplicationProblemPlusJSONResponse) VisitDisconnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectCodebase409ApplicationProblemPlusJSONResponse struct {
+	CodebaseConflictApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectCodebase409ApplicationProblemPlusJSONResponse) VisitDisconnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectCodebase500ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectCodebase500ApplicationProblemPlusJSONResponse) VisitDisconnectCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmCodebaseRequestObject struct {
+	CodebaseId CodebaseId `json:"codebaseId"`
+}
+
+type ConfirmCodebaseResponseObject interface {
+	VisitConfirmCodebaseResponse(w http.ResponseWriter) error
+}
+
+type ConfirmCodebase200JSONResponse Codebase
+
+func (response ConfirmCodebase200JSONResponse) VisitConfirmCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmCodebase401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConfirmCodebase401ApplicationProblemPlusJSONResponse) VisitConfirmCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmCodebase403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ConfirmCodebase403ApplicationProblemPlusJSONResponse) VisitConfirmCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmCodebase404ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmCodebase404ApplicationProblemPlusJSONResponse) VisitConfirmCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmCodebase409ApplicationProblemPlusJSONResponse struct {
+	CodebaseConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ConfirmCodebase409ApplicationProblemPlusJSONResponse) VisitConfirmCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmCodebase500ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmCodebase500ApplicationProblemPlusJSONResponse) VisitConfirmCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ExchangeRunnerTokenRequestObject struct {
 	Body *ExchangeRunnerTokenJSONRequestBody
 }
@@ -24042,6 +24739,89 @@ func (response ListWorkspaceAgentActivity404ApplicationProblemPlusJSONResponse) 
 type ListWorkspaceAgentActivity500ApplicationProblemPlusJSONResponse Problem
 
 func (response ListWorkspaceAgentActivity500ApplicationProblemPlusJSONResponse) VisitListWorkspaceAgentActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAgentCodebasesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+}
+
+type ListAgentCodebasesResponseObject interface {
+	VisitListAgentCodebasesResponse(w http.ResponseWriter) error
+}
+
+type ListAgentCodebases200JSONResponse []Codebase
+
+func (response ListAgentCodebases200JSONResponse) VisitListAgentCodebasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAgentCodebases401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListAgentCodebases401ApplicationProblemPlusJSONResponse) VisitListAgentCodebasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAgentCodebases403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListAgentCodebases403ApplicationProblemPlusJSONResponse) VisitListAgentCodebasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAgentCodebases404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListAgentCodebases404ApplicationProblemPlusJSONResponse) VisitListAgentCodebasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAgentCodebases500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListAgentCodebases500ApplicationProblemPlusJSONResponse) VisitListAgentCodebasesResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -44197,6 +44977,18 @@ type StrictServerInterface interface {
 	// GetCurrentRunner What this machine is, as the server sees it
 	// (GET /runners/me)
 	GetCurrentRunner(ctx context.Context, request GetCurrentRunnerRequestObject) (GetCurrentRunnerResponseObject, error)
+	// ListCurrentRunnerCodebases Every folder this machine has connected
+	// (GET /runners/me/codebases)
+	ListCurrentRunnerCodebases(ctx context.Context, request ListCurrentRunnerCodebasesRequestObject) (ListCurrentRunnerCodebasesResponseObject, error)
+	// ConnectCodebase Report what a connected folder holds
+	// (POST /runners/me/codebases)
+	ConnectCodebase(ctx context.Context, request ConnectCodebaseRequestObject) (ConnectCodebaseResponseObject, error)
+	// DisconnectCodebase Stop offering this folder, leaving its record readable
+	// (DELETE /runners/me/codebases/{codebaseId})
+	DisconnectCodebase(ctx context.Context, request DisconnectCodebaseRequestObject) (DisconnectCodebaseResponseObject, error)
+	// ConfirmCodebase Accept the inventory as it was last reported, clearing drift
+	// (PATCH /runners/me/codebases/{codebaseId})
+	ConfirmCodebase(ctx context.Context, request ConfirmCodebaseRequestObject) (ConfirmCodebaseResponseObject, error)
 	// ExchangeRunnerToken Trade a signed assertion for a short-lived access token and a channel ticket
 	// (POST /runners/token)
 	ExchangeRunnerToken(ctx context.Context, request ExchangeRunnerTokenRequestObject) (ExchangeRunnerTokenResponseObject, error)
@@ -44269,6 +45061,9 @@ type StrictServerInterface interface {
 	// ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 	ListWorkspaceAgentActivity(ctx context.Context, request ListWorkspaceAgentActivityRequestObject) (ListWorkspaceAgentActivityResponseObject, error)
+	// ListAgentCodebases The folders this agent's machines hold
+	// (GET /workspaces/{workspaceId}/agents/{agentId}/codebases)
+	ListAgentCodebases(ctx context.Context, request ListAgentCodebasesRequestObject) (ListAgentCodebasesResponseObject, error)
 	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
 	RotateWorkspaceAgentCredential(ctx context.Context, request RotateWorkspaceAgentCredentialRequestObject) (RotateWorkspaceAgentCredentialResponseObject, error)
@@ -45732,6 +46527,113 @@ func (sh *strictHandler) GetCurrentRunner(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// ListCurrentRunnerCodebases operation middleware
+func (sh *strictHandler) ListCurrentRunnerCodebases(w http.ResponseWriter, r *http.Request) {
+	var request ListCurrentRunnerCodebasesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCurrentRunnerCodebases(ctx, request.(ListCurrentRunnerCodebasesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCurrentRunnerCodebases")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCurrentRunnerCodebasesResponseObject); ok {
+		if err := validResponse.VisitListCurrentRunnerCodebasesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConnectCodebase operation middleware
+func (sh *strictHandler) ConnectCodebase(w http.ResponseWriter, r *http.Request) {
+	var request ConnectCodebaseRequestObject
+
+	var body ConnectCodebaseJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConnectCodebase(ctx, request.(ConnectCodebaseRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConnectCodebase")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConnectCodebaseResponseObject); ok {
+		if err := validResponse.VisitConnectCodebaseResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisconnectCodebase operation middleware
+func (sh *strictHandler) DisconnectCodebase(w http.ResponseWriter, r *http.Request, codebaseId CodebaseId) {
+	var request DisconnectCodebaseRequestObject
+
+	request.CodebaseId = codebaseId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisconnectCodebase(ctx, request.(DisconnectCodebaseRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisconnectCodebase")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisconnectCodebaseResponseObject); ok {
+		if err := validResponse.VisitDisconnectCodebaseResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfirmCodebase operation middleware
+func (sh *strictHandler) ConfirmCodebase(w http.ResponseWriter, r *http.Request, codebaseId CodebaseId) {
+	var request ConfirmCodebaseRequestObject
+
+	request.CodebaseId = codebaseId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfirmCodebase(ctx, request.(ConfirmCodebaseRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfirmCodebase")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfirmCodebaseResponseObject); ok {
+		if err := validResponse.VisitConfirmCodebaseResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ExchangeRunnerToken operation middleware
 func (sh *strictHandler) ExchangeRunnerToken(w http.ResponseWriter, r *http.Request) {
 	var request ExchangeRunnerTokenRequestObject
@@ -46391,6 +47293,33 @@ func (sh *strictHandler) ListWorkspaceAgentActivity(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListWorkspaceAgentActivityResponseObject); ok {
 		if err := validResponse.VisitListWorkspaceAgentActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAgentCodebases operation middleware
+func (sh *strictHandler) ListAgentCodebases(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request ListAgentCodebasesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAgentCodebases(ctx, request.(ListAgentCodebasesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAgentCodebases")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAgentCodebasesResponseObject); ok {
+		if err := validResponse.VisitListAgentCodebasesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

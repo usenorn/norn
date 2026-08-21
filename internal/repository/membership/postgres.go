@@ -68,7 +68,13 @@ SELECT m.id,
        a.kind AS account_kind,
        coalesce(a.display_name, '') AS display_name,
        coalesce(a.email, '') AS email,
-       lower(coalesce(a.display_name, '')) AS sort_name
+       lower(coalesce(a.display_name, '')) AS sort_name,
+       EXISTS (
+           SELECT 1
+           FROM workspace_agents g
+           JOIN workspace_runners n ON n.agent_id = g.id AND n.status <> 'revoked'
+           WHERE g.account_id = m.account_id AND g.workspace_id = m.workspace_id
+       ) AS has_runner
 FROM workspace_memberships m
 JOIN accounts a ON a.id = m.account_id
 WHERE m.workspace_id = $1
@@ -261,6 +267,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		displayName    string
 		email          string
 		sortName       string
+		hasRunner      bool
 	)
 
 	if err := rows.Scan(
@@ -279,6 +286,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		&displayName,
 		&email,
 		&sortName,
+		&hasRunner,
 	); err != nil {
 		return entity.WorkspaceMember{}, fmt.Errorf("scan workspace member: %w", err)
 	}
@@ -329,6 +337,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		DisplayName: displayName,
 		Email:       email,
 		SortName:    sortName,
+		HasRunner:   hasRunner,
 	}, nil
 }
 
