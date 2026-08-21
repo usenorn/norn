@@ -3,11 +3,11 @@ package apitoken
 import (
 	"embed"
 	"fmt"
-	htmltemplate "html/template"
 	"strings"
 	texttemplate "text/template"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/mailtemplate"
 )
 
 const (
@@ -23,9 +23,7 @@ var (
 	tokenExpiryPlain = texttemplate.Must(
 		texttemplate.ParseFS(templates, "templates/token_expiry.txt"),
 	)
-	tokenExpiryHTML = htmltemplate.Must(
-		htmltemplate.ParseFS(templates, "templates/token_expiry.html"),
-	)
+	tokenExpiryHTML = mailtemplate.MustHTML(templates, "templates/token_expiry.html")
 )
 
 type tokenExpiryContent struct {
@@ -42,14 +40,10 @@ func tokensURL(baseURL string) string {
 }
 
 func buildTokenExpiry(to string, content tokenExpiryContent) (entity.Mail, error) {
-	var plain, html strings.Builder
+	var plain strings.Builder
 
 	if err := tokenExpiryPlain.Execute(&plain, content); err != nil {
 		return entity.Mail{}, fmt.Errorf("render token expiry text: %w", err)
-	}
-
-	if err := tokenExpiryHTML.Execute(&html, content); err != nil {
-		return entity.Mail{}, fmt.Errorf("render token expiry html: %w", err)
 	}
 
 	subject := tokenExpirySubject
@@ -57,10 +51,21 @@ func buildTokenExpiry(to string, content tokenExpiryContent) (entity.Mail, error
 		subject = tokenExpiredSubject
 	}
 
+	html, err := mailtemplate.Render(tokenExpiryHTML, mailtemplate.Shell{
+		Subject:   subject,
+		Preheader: "Mint a replacement and move anything using this token over.",
+		Eyebrow:   "API token",
+		LogoURL:   mailtemplate.LogoURLFrom(content.SettingsURL),
+		Content:   content,
+	})
+	if err != nil {
+		return entity.Mail{}, err
+	}
+
 	return entity.Mail{
 		To:        to,
 		Subject:   subject,
 		PlainBody: plain.String(),
-		HTMLBody:  html.String(),
+		HTMLBody:  html,
 	}, nil
 }

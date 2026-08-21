@@ -1,3 +1,4 @@
+{{ define "content" }}
 <p>
   {{if .Expired}}
     Your API token &ldquo;{{.Name}}&rdquo; expired on {{.ExpiresAt}}. Anything using it is
@@ -8,9 +9,12 @@
     being refused from that moment.
   {{end}}
 </p>
+{{ row "Token" .Name }}
+{{ row "Expires" .ExpiresAt }}
+{{ if .Workspaces }}{{ row "Reaches" .Workspaces }}{{ end }}
 <p>
   A token cannot be extended. Mint a replacement, move whatever uses this one over to it,
   and revoke this one:
 </p>
-<p><a href="{{.SettingsURL}}">{{.SettingsURL}}</a></p>
-{{if .Workspaces}}<p>This token reaches: {{.Workspaces}}</p>{{end}}
+{{ button "Manage API tokens" .SettingsURL }}
+{{ end }}

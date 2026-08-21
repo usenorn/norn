@@ -195,7 +195,7 @@ func (s *accountsService) SendSignUpVerification(ctx context.Context, signUpID u
 		return nil
 	}
 
-	message, err := buildSignUpVerification(s.signUpURL(token), signUp.DisplayName, signUp.Email)
+	message, err := buildSignUpVerification(s.app.BaseURL, s.signUpURL(token), signUp.DisplayName, signUp.Email)
 	if err != nil {
 		return err
 	}

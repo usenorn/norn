@@ -3,11 +3,11 @@ package ssoconnection
 import (
 	"embed"
 	"fmt"
-	htmltemplate "html/template"
 	"strings"
 	texttemplate "text/template"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/mailtemplate"
 )
 
 const (
@@ -23,9 +23,7 @@ var (
 	certificateExpiryPlain = texttemplate.Must(
 		texttemplate.ParseFS(templates, "templates/certificate_expiry.txt"),
 	)
-	certificateExpiryHTML = htmltemplate.Must(
-		htmltemplate.ParseFS(templates, "templates/certificate_expiry.html"),
-	)
+	certificateExpiryHTML = mailtemplate.MustHTML(templates, "templates/certificate_expiry.html")
 )
 
 type certificateExpiryContent struct {
@@ -42,14 +40,10 @@ func settingsURL(baseURL, workspaceSlug string) string {
 }
 
 func buildCertificateExpiry(to string, content certificateExpiryContent) (entity.Mail, error) {
-	var plain, html strings.Builder
+	var plain strings.Builder
 
 	if err := certificateExpiryPlain.Execute(&plain, content); err != nil {
 		return entity.Mail{}, fmt.Errorf("render certificate expiry text: %w", err)
-	}
-
-	if err := certificateExpiryHTML.Execute(&html, content); err != nil {
-		return entity.Mail{}, fmt.Errorf("render certificate expiry html: %w", err)
 	}
 
 	subject := certificateExpirySubject
@@ -57,10 +51,21 @@ func buildCertificateExpiry(to string, content certificateExpiryContent) (entity
 		subject = certificateExpiredSubject
 	}
 
+	html, err := mailtemplate.Render(certificateExpiryHTML, mailtemplate.Shell{
+		Subject:   subject,
+		Preheader: "Upload the replacement certificate before it lapses.",
+		Eyebrow:   "Single sign-on",
+		LogoURL:   mailtemplate.LogoURLFrom(content.SettingsURL),
+		Content:   content,
+	})
+	if err != nil {
+		return entity.Mail{}, err
+	}
+
 	return entity.Mail{
 		To:        to,
 		Subject:   subject,
 		PlainBody: plain.String(),
-		HTMLBody:  html.String(),
+		HTMLBody:  html,
 	}, nil
 }

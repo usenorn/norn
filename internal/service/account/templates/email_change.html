@@ -1,5 +1,7 @@
+{{ define "content" }}
 <p>Hi {{ .DisplayName }},</p>
 <p>Confirm <strong>{{ .NewEmail }}</strong> as the address for your Norn account:</p>
-<p><a href="{{ .ConfirmURL }}">Confirm this address</a></p>
+{{ button "Confirm this address" .ConfirmURL }}
 <p>The link expires in {{ .ExpiresInHours }} hours. Until you confirm, your current address stays active.</p>
 <p>If you did not request this change, ignore this message.</p>
+{{ end }}

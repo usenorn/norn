@@ -1,3 +1,4 @@
+{{ define "content" }}
 <p>
   {{if .Expired}}
     The signing certificate from {{.Provider}} expired on {{.ExpiresAt}}. Until it is
@@ -11,3 +12,4 @@
 <p>Copy the current certificate from your provider and save it here:</p>
 <p><a href="{{.SettingsURL}}">{{.SettingsURL}}</a></p>
 <p>If anyone still has a Norn password they can sign in with that in the meantime.</p>
+{{ end }}
