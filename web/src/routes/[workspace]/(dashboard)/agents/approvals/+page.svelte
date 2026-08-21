@@ -10,7 +10,7 @@
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { keys } from "$lib/api/keys";
-	import { agentsPath, type ProposalQueue, type ProposedCheckEdit } from "$lib/agents/agents";
+	import { agentsPath, type ProposalQueue } from "$lib/agents/agents";
 	import ProposalCard from "$lib/agents/proposal-card.svelte";
 	import { approvalsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -38,11 +38,7 @@
 		},
 	}));
 
-	async function decide(
-		proposalId: string,
-		verdict: "approve" | "reject",
-		checks?: ProposedCheckEdit[]
-	) {
+	async function decide(proposalId: string, verdict: "approve" | "reject") {
 		deciding = proposalId;
 		failed = null;
 
@@ -51,7 +47,6 @@
 				verdict === "approve"
 					? await api.POST("/workspaces/{workspaceId}/agent-proposals/{proposalId}/approve", {
 							params: { path: { workspaceId: workspace.id, proposalId } },
-							...(checks ? { body: { checks } } : {}),
 						})
 					: await api.POST("/workspaces/{workspaceId}/agent-proposals/{proposalId}/reject", {
 							params: { path: { workspaceId: workspace.id, proposalId } },

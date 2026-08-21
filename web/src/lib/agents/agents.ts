@@ -4,7 +4,6 @@ export type Agent = components["schemas"]["Agent"];
 export type WorkspaceAgent = components["schemas"]["WorkspaceAgent"];
 export type AgentSettings = components["schemas"]["AgentSettings"];
 export type AgentProposal = components["schemas"]["AgentProposal"];
-export type ProposedCheckEdit = components["schemas"]["ApprovedCheckEdit"];
 export type AgentAction = components["schemas"]["AgentAction"];
 export type APIScope = components["schemas"]["APIScope"];
 
@@ -42,28 +41,22 @@ export type ProposalQueue =
 
 export type AgentHold = components["schemas"]["AgentHold"];
 export type AgentReasoning = components["schemas"]["AgentReasoning"];
-export type IssueCheck = components["schemas"]["IssueCheck"];
-export type IssueCheckSummary = components["schemas"]["IssueCheckSummary"];
 
 export const actionLabels: Record<AgentAction, string> = {
 	comment: "Leave a comment",
 	state_change: "Change the state",
 	issue_edit: "Edit the issue",
 	issue_create: "Raise an issue",
-	check_set: "Add to what done means",
 };
 
 export const holdOptionLabels: Record<AgentHold, string> = {
 	never: "Never hold",
-	unless_proven: "Hold unless proven",
 	always: "Always hold",
 };
 
 export const holdOptionHints: Record<AgentHold, string> = {
 	never: "An agent with the right permissions does this straight away.",
 	always: "Every one of these waits for a person, however well evidenced.",
-	unless_proven:
-		"A finish whose checks all pass goes through. Everything else waits. An issue carrying no approved checks has nothing to prove, so it is not held.",
 };
 
 export const holdLabels: {
@@ -82,7 +75,7 @@ export const holdLabels: {
 		key: "holdStateChanges",
 		title: "State changes",
 		detail: "An agent cannot move work through this team's board on its own.",
-		options: ["never", "unless_proven", "always"],
+		options: ["never", "always"],
 	},
 	{
 		key: "holdIssueEdits",
@@ -100,7 +93,6 @@ export const holdLabels: {
 
 export const agentScopeGroups: { title: string; scopes: APIScope[] }[] = [
 	{ title: "Issues", scopes: ["issue:read", "issue:manage"] },
-	{ title: "What done means", scopes: ["check:read", "check:manage"] },
 	{ title: "Cycles", scopes: ["cycle:read"] },
 	{ title: "Projects", scopes: ["project:read", "project:manage"] },
 	{ title: "Labels", scopes: ["label:read", "label:manage"] },
@@ -113,8 +105,6 @@ export const agentScopeGroups: { title: string; scopes: APIScope[] }[] = [
 export const agentScopeLabels: Record<string, string> = {
 	"issue:read": "Read issues",
 	"issue:manage": "Raise and change issues",
-	"check:read": "Read an issue's criteria and the evidence behind them",
-	"check:manage": "Propose criteria and file evidence against them",
 	"cycle:read": "Read cycles",
 	"project:read": "Read projects",
 	"project:manage": "Create and change projects",
@@ -183,10 +173,6 @@ export function proposalSummary(proposal: AgentProposal): string {
 			return proposal.title
 				? `“${proposal.title}”${proposal.teamKey ? ` on ${proposal.teamKey}` : ""}`
 				: "a new issue";
-		case "check_set":
-			return proposal.checkIds?.length === 1
-				? "one criterion for what done means here"
-				: `${proposal.checkIds?.length ?? 0} criteria for what done means here`;
 	}
 }
 
@@ -222,37 +208,3 @@ export function approvalsPath(workspace: string): string {
 	return `/${workspace}/agents/approvals`;
 }
 
-export function overriding(proposal: AgentProposal): boolean {
-	if (proposal.action !== "state_change") return false;
-
-	return (proposal.checkState?.summary.blocking ?? 0) > 0;
-}
-
-export function blockingLine(summary: IssueCheckSummary): string {
-	if (summary.blocking === 0) return "";
-
-	return `${summary.blocking} ${summary.blocking === 1 ? "check is" : "checks are"} not proven.`;
-}
-
-export const checkStateLabels: Record<components["schemas"]["CheckState"], string> = {
-	unproven: "Unproven",
-	proven: "Proven",
-	failed: "Failed",
-	waived: "Waived",
-	gap: "Gap",
-};
-
-export const checkStateTones: Record<components["schemas"]["CheckState"], string> = {
-	unproven: "text-muted-foreground",
-	proven: "text-success",
-	failed: "text-destructive",
-	waived: "text-muted-foreground",
-	gap: "text-warning",
-};
-
-export const methodLabels: Record<components["schemas"]["CheckMethod"], string> = {
-	command: "Command",
-	observation: "Observation",
-	manual: "Manual",
-	regression: "Regression",
-};

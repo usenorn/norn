@@ -91,8 +91,6 @@ const kindVerbs: Record<NotificationKind, string> = {
 	commented: "commented",
 	state_changed: "changed the state",
 	membership: "added you",
-	check_failed: "filed a result that disproves a criterion",
-	gap_declared: "recorded a gap against a criterion",
 	approval_waiting: "is waiting for you to approve what it proposed",
 };
 
@@ -157,11 +155,6 @@ export const preferenceRows: PreferenceRow[] = [
 		description: "Someone brought you into a group.",
 	},
 	{
-		key: "checks",
-		label: "Criteria",
-		description: "A criterion on something you follow failed, or somebody recorded a gap.",
-	},
-	{
 		key: "approvals",
 		label: "Waiting on you",
 		description: "An agent has stopped and cannot carry on until you approve what it proposed.",
@@ -175,7 +168,6 @@ export function defaultPreferences(): NotificationPreferences {
 		commented: { inbox: true, email: false },
 		stateChanged: { inbox: true, email: false },
 		membership: { inbox: true, email: false },
-		checks: { inbox: true, email: false },
 		approvals: { inbox: true, email: true },
 		agents: { inbox: true, email: true },
 	};

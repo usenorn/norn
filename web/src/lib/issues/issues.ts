@@ -52,8 +52,6 @@ export type IssueFailure =
 	| { kind: "destination_incapable" }
 	| { kind: "status_transition" }
 	| { kind: "children_open"; children: string[] }
-	| { kind: "checks_unproven"; checks: string[] }
-	| { kind: "checks_unratified"; checks: string[] }
 	| { kind: "parent_cycle" }
 	| { kind: "parent_too_deep" }
 	| { kind: "parent_not_active" }
@@ -129,10 +127,6 @@ export function issueFailureMessage(failure: IssueFailure): string {
 			return "This issue is not in a state that allows that.";
 		case "children_open":
 			return `${failure.children.join(", ")} ${failure.children.length === 1 ? "is" : "are"} still open. Finishing this issue will leave ${failure.children.length === 1 ? "it" : "them"} where ${failure.children.length === 1 ? "it is" : "they are"}.`;
-		case "checks_unproven":
-			return `${failure.checks.join("; ")} ${failure.checks.length === 1 ? "is" : "are"} not proven, so this cannot be finished from here.`;
-		case "checks_unratified":
-			return `${failure.checks.join("; ")} ${failure.checks.length === 1 ? "is" : "are"} still waiting for approval, so this cannot be finished from here.`;
 		case "parent_cycle":
 			return "An issue cannot be filed under itself, or under anything already beneath it.";
 		case "parent_too_deep":
@@ -166,7 +160,6 @@ export function readIssueFailure(error: unknown): IssueFailure {
 		conflicts?: string[];
 		labels?: { name: string }[];
 		children?: { reference: string }[];
-		checks?: { statement: string }[];
 		relation?: { kind: IssueRelationKind; issue: { reference: string } };
 		errors?: { field?: string }[];
 		status?: number;
@@ -187,16 +180,6 @@ export function readIssueFailure(error: unknown): IssueFailure {
 			return {
 				kind: "children_open",
 				children: (problem.children ?? []).map((child) => child.reference),
-			};
-		case "issue_checks_unproven":
-			return {
-				kind: "checks_unproven",
-				checks: (problem.checks ?? []).map((check) => check.statement),
-			};
-		case "issue_checks_unratified":
-			return {
-				kind: "checks_unratified",
-				checks: (problem.checks ?? []).map((check) => check.statement),
 			};
 		case "issue_parent_cycle":
 			return { kind: "parent_cycle" };
