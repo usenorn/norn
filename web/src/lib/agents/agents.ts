@@ -56,7 +56,7 @@ export const holdOptionLabels: Record<AgentHold, string> = {
 
 export const holdOptionHints: Record<AgentHold, string> = {
 	never: "An agent with the right permissions does this straight away.",
-	always: "Every one of these waits for a person, however well evidenced.",
+	always: "Every one of these waits for a person.",
 };
 
 export const holdLabels: {

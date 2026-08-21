@@ -11,10 +11,8 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-const startReminder = "Work on the branch above. Read the criteria before you write anything: " +
-	"they are what this issue will be judged on. If one is missing, propose it with " +
-	"norn_propose_checks and stop until a person approves it. File evidence as each criterion " +
-	"becomes true, not in one batch at the end."
+const startReminder = "Work on the branch above. Any question below is one an agent asked and " +
+	"nobody has answered; the default it recorded is what stands until somebody does."
 
 type startIssueInput struct {
 	Workspace string `json:"workspace" jsonschema:"the workspace slug or id"`
