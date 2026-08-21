@@ -2573,72 +2573,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/workspaces/{workspaceId}/delegations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-            };
-            cookie?: never;
-        };
-        /**
-         * Read the work handed to the calling agent, in the order the tracker ranks it
-         * @description A runner works this list from the top and never chooses for itself, so the order is the whole of its judgment. Only an agent has a queue; a person reads delegations on the issue.
-         */
-        get: operations["listWorkspaceDelegationQueue"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/issues/{issueId}/delegation/claim": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Take exclusive hold of this delegation, so no second runner can work it
-         * @description The hold lapses on its own, because a runner that dies holding one must not strand the issue. Keep it with the heartbeat for as long as the work runs.
-         */
-        post: operations["claimWorkspaceIssueDelegation"];
-        /** Let go of this delegation, leaving it for whoever takes it next */
-        delete: operations["releaseWorkspaceIssueDelegationClaim"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/issues/{issueId}/delegation/claim/heartbeat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Say the runner is still working, pushing the hold's expiry out */
-        post: operations["heartbeatWorkspaceIssueDelegationClaim"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/workspaces/{workspaceId}/issues/{issueId}/labels": {
         parameters: {
             query?: never;
@@ -3923,52 +3857,6 @@ export interface components {
              * @description Absent while the delegation is open
              */
             recalledAt?: string;
-            claim?: components["schemas"]["DelegationClaimHold"];
-        };
-        /** @description Whether a runner is working this delegation right now. The token is never returned here, only to whoever took the hold, because presenting it is what proves a heartbeat comes from the runner that still holds the work rather than one that lapsed and was replaced. */
-        DelegationClaimHold: {
-            held: boolean;
-            /** @description What the holding runner calls itself, so a person can tell which machine it is */
-            runner?: string;
-            /**
-             * Format: date-time
-             * @description When the hold lapses unless the runner says it is still working
-             */
-            expiresAt?: string;
-        };
-        DelegationQueue: {
-            delegations: components["schemas"]["DelegatedWork"][];
-        };
-        /** @description One delegation with the issue it was made on, so a runner needs no second call */
-        DelegatedWork: {
-            delegation: components["schemas"]["IssueDelegation"];
-            issue: components["schemas"]["Issue"];
-        };
-        DelegationClaim: {
-            /** Format: uuid */
-            issueId: string;
-            runner: string;
-            /**
-             * Format: uuid
-             * @description Present this on every heartbeat and on the release; it is returned once
-             */
-            token: string;
-            /** Format: date-time */
-            claimedAt: string;
-            /** Format: date-time */
-            expiresAt: string;
-        };
-        ClaimDelegationRequest: {
-            /** @description A name stable across this runner's restarts, so the same runner re-taking its own hold is not mistaken for a second one arriving */
-            runner: string;
-            /** Format: int32 */
-            ttlSeconds?: number;
-        };
-        HeartbeatDelegationClaimRequest: {
-            /** Format: uuid */
-            token: string;
-            /** Format: int32 */
-            ttlSeconds?: number;
         };
         DelegateIssueRequest: {
             /**
@@ -4285,7 +4173,7 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_delegation_not_yours" | "delegation_claim_held" | "delegation_claim_lost" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
@@ -12289,126 +12177,6 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    listWorkspaceDelegationQueue: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The open delegations this agent holds, highest priority first */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DelegationQueue"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    claimWorkspaceIssueDelegation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClaimDelegationRequest"];
-            };
-        };
-        responses: {
-            /** @description The hold, with the token every later call must present */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DelegationClaim"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["IssueConflict"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    releaseWorkspaceIssueDelegationClaim: {
-        parameters: {
-            query: {
-                token: string;
-            };
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The hold is released */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["IssueConflict"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    heartbeatWorkspaceIssueDelegationClaim: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                issueId: components["parameters"]["IssueId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HeartbeatDelegationClaimRequest"];
-            };
-        };
-        responses: {
-            /** @description The hold as it now stands */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DelegationClaim"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["IssueConflict"];
-            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

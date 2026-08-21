@@ -43,6 +43,22 @@ func (m *MockRunners) EXPECT() *MockRunnersMockRecorder {
 	return m.recorder
 }
 
+// ActorFor mocks base method.
+func (m *MockRunners) ActorFor(ctx context.Context, runnerID uuid.UUID) (entity.Actor, entity.Runner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ActorFor", ctx, runnerID)
+	ret0, _ := ret[0].(entity.Actor)
+	ret1, _ := ret[1].(entity.Runner)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ActorFor indicates an expected call of ActorFor.
+func (mr *MockRunnersMockRecorder) ActorFor(ctx, runnerID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ActorFor", reflect.TypeOf((*MockRunners)(nil).ActorFor), ctx, runnerID)
+}
+
 // Authenticate mocks base method.
 func (m *MockRunners) Authenticate(ctx context.Context, token string) (entity.Actor, error) {
 	m.ctrl.T.Helper()

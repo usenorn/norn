@@ -221,3 +221,22 @@ func TestEveryPartOfTheHostIsRequired(t *testing.T) {
 		}
 	}
 }
+
+func TestARunnerMustNameItself(t *testing.T) {
+	cases := map[string]struct {
+		runner string
+		want   string
+	}{
+		"empty":          {"", entity.ValidationCodeRequired},
+		"only spaces":    {"   ", entity.ValidationCodeRequired},
+		"a name":         {"laptop-a", ""},
+		"far too long":   {string(make([]rune, entity.RunnerNameMaxLen+1)), entity.ValidationCodeTooLong},
+		"exactly at max": {string(make([]rune, entity.RunnerNameMaxLen)), ""},
+	}
+
+	for name, tc := range cases {
+		if got := entity.ValidateRunnerName("runner", tc.runner).Code; got != tc.want {
+			t.Errorf("%s: code = %q, want %q", name, got, tc.want)
+		}
+	}
+}

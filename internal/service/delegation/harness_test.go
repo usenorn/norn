@@ -80,11 +80,6 @@ func newHarness(t *testing.T) *harness {
 	return h
 }
 
-func (h *harness) asAgent(agentID uuid.UUID) {
-	h.actorKind = entity.ActorKindAgent
-	h.actorAgent = &agentID
-}
-
 func (h *harness) expectIssue(issue entity.Issue) {
 	h.issues.EXPECT().
 		GetVisible(gomock.Any(), h.workspaceID, issue.ID, gomock.Any()).

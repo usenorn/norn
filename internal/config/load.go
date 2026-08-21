@@ -525,6 +525,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("saml.max_clock_skew", 3*time.Minute)
 	v.SetDefault("saml.max_issue_delay", 90*time.Second)
 
+	v.SetDefault("runner.channel_enabled", true)
 	v.SetDefault("runner.access_ttl", 15*time.Minute)
 	v.SetDefault("runner.ticket_ttl", time.Minute)
 	v.SetDefault("runner.nonce_ttl", 10*time.Minute)

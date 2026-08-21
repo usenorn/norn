@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
 )
@@ -108,33 +110,42 @@ func (s *runnersService) Authenticate(ctx context.Context, token string) (entity
 		return entity.Actor{}, err
 	}
 
+	actor, _, err := s.ActorFor(ctx, runnerID)
+
+	return actor, err
+}
+
+func (s *runnersService) ActorFor(
+	ctx context.Context,
+	runnerID uuid.UUID,
+) (entity.Actor, entity.Runner, error) {
 	held, err := s.runners.GetByID(ctx, runnerID)
 	if err != nil {
-		return entity.Actor{}, err
+		return entity.Actor{}, entity.Runner{}, err
 	}
 
 	if held.Revoked() {
-		return entity.Actor{}, entity.ErrRunnerRevoked
+		return entity.Actor{}, entity.Runner{}, entity.ErrRunnerRevoked
 	}
 
 	agent, err := s.agents.GetByID(ctx, held.WorkspaceID, held.AgentID)
 	if err != nil {
-		return entity.Actor{}, err
+		return entity.Actor{}, entity.Runner{}, err
 	}
 
 	if agent.Disabled() {
-		return entity.Actor{}, entity.ErrAgentDisabled
+		return entity.Actor{}, entity.Runner{}, entity.ErrAgentDisabled
 	}
 
 	actor := held.Authority.Replay(entity.ActorKindAgent, agent.AccountID, "", held.WorkspaceID)
 
 	agentID := agent.ID
-	runnerID = held.ID
+	machineID := held.ID
 
 	actor.AgentID = &agentID
 	actor.AgentAllowance = agent.Allowance()
 	actor.OwnerAccountID = agent.OwnerAccountID
-	actor.RunnerID = &runnerID
+	actor.RunnerID = &machineID
 
-	return actor, nil
+	return actor, held, nil
 }

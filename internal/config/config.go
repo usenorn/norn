@@ -68,10 +68,11 @@ type OIDC struct {
 }
 
 type Runner struct {
-	AccessTTL    time.Duration `mapstructure:"access_ttl"`
-	TicketTTL    time.Duration `mapstructure:"ticket_ttl"`
-	NonceTTL     time.Duration `mapstructure:"nonce_ttl"`
-	MaxClockSkew time.Duration `mapstructure:"max_clock_skew"`
+	ChannelEnabled bool          `mapstructure:"channel_enabled"`
+	AccessTTL      time.Duration `mapstructure:"access_ttl"`
+	TicketTTL      time.Duration `mapstructure:"ticket_ttl"`
+	NonceTTL       time.Duration `mapstructure:"nonce_ttl"`
+	MaxClockSkew   time.Duration `mapstructure:"max_clock_skew"`
 }
 
 type SAML struct {

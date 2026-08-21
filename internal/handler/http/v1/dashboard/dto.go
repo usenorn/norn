@@ -1575,8 +1575,6 @@ func issueDelegationDTO(delegation entity.IssueDelegation) api.IssueDelegation {
 		dto.RecalledByAccountId = &recaller
 	}
 
-	dto.Claim = delegationClaimHoldDTO(delegation.Claim)
-
 	return dto
 }
 
@@ -1585,41 +1583,6 @@ func issueDelegationDTOs(delegations []entity.IssueDelegation) []api.IssueDelega
 
 	for _, delegation := range delegations {
 		dtos = append(dtos, issueDelegationDTO(delegation))
-	}
-
-	return dtos
-}
-
-func delegationClaimHoldDTO(claim entity.DelegationClaim) *api.DelegationClaimHold {
-	hold := api.DelegationClaimHold{Held: claim.Held()}
-
-	if claim.Held() {
-		hold.Runner = nilIfEmpty(claim.Runner)
-		expires := claim.ExpiresAt
-		hold.ExpiresAt = &expires
-	}
-
-	return &hold
-}
-
-func delegationClaimDTO(delegation entity.IssueDelegation) api.DelegationClaim {
-	return api.DelegationClaim{
-		IssueId:   delegation.IssueID,
-		Runner:    delegation.Claim.Runner,
-		Token:     delegation.Claim.Token,
-		ClaimedAt: delegation.Claim.ClaimedAt,
-		ExpiresAt: delegation.Claim.ExpiresAt,
-	}
-}
-
-func delegatedWorkDTOs(queue []service.DelegatedWork) []api.DelegatedWork {
-	dtos := make([]api.DelegatedWork, 0, len(queue))
-
-	for _, work := range queue {
-		dtos = append(dtos, api.DelegatedWork{
-			Delegation: issueDelegationDTO(work.Delegation),
-			Issue:      issueDTO(work.Issue),
-		})
 	}
 
 	return dtos

@@ -24,6 +24,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.43.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.106.2
 	github.com/casbin/casbin/v3 v3.10.0
+	github.com/coder/websocket v1.8.15
 	github.com/coreos/go-oidc/v3 v3.20.0
 	github.com/crewjam/saml v0.5.1
 	github.com/friendsofgo/errors v0.9.2
@@ -35,6 +36,7 @@ require (
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/oapi-codegen/runtime v1.6.0
+	github.com/oklog/ulid/v2 v2.1.2
 	github.com/oschwald/geoip2-golang/v2 v2.2.0
 	github.com/pressly/goose/v3 v3.27.3
 	github.com/redis/go-redis/v9 v9.21.0
@@ -121,7 +123,6 @@ require (
 	github.com/ckaznocha/intrange v0.3.1 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
-	github.com/coder/websocket v1.8.15 // indirect
 	github.com/curioswitch/go-reassign v0.3.0 // indirect
 	github.com/daixiang0/gci v0.13.7 // indirect
 	github.com/dave/dst v0.27.3 // indirect
