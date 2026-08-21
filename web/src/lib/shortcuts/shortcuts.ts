@@ -42,6 +42,13 @@ export const shortcutGroupOrder: ShortcutGroup[] = [
 
 const declared = [
 	{ id: "search", keys: ["mod+k"], label: "Go anywhere", group: "global" },
+	{
+		id: "search-find",
+		keys: ["mod+f"],
+		label: "Search this workspace",
+		group: "global",
+		whileTyping: true,
+	},
 	{ id: "help", keys: ["?"], label: "Show these shortcuts", group: "global" },
 
 	{ id: "go-inbox", keys: ["g n"], label: "Inbox", group: "navigation" },

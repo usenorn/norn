@@ -8,7 +8,7 @@
 	import * as Command from "$lib/components/ui/command/index.js";
 	import { api } from "$lib/api";
 	import { destinations } from "$lib/shortcuts/destinations";
-	import { holdShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { chordOf, holdShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { displayKeys, isApplePlatform, shortcutOf } from "$lib/shortcuts/shortcuts";
 	import {
 		kindLabels,
@@ -104,6 +104,9 @@
 		placeholder="Search issues, comments, projects, teams and people…"
 		value={typed}
 		oninput={(event) => type(event.currentTarget.value)}
+		onkeydown={(event) => {
+			if (shortcutOf("search-find").keys.includes(chordOf(event))) event.preventDefault();
+		}}
 	/>
 	<Command.List>
 		{#if listing.kind === "idle"}
