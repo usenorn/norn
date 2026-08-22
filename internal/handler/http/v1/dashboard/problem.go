@@ -468,6 +468,27 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrCodebaseNotRunner):
 		return newProblem(http.StatusForbidden, err.Error()), true
 
+	case errors.Is(err, entity.ErrExecutionNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrExecutionTransition):
+		return executionConflictProblem(api.ExecutionTransition, err), true
+
+	case errors.Is(err, entity.ErrExecutionFinished):
+		return executionConflictProblem(api.ExecutionFinished, err), true
+
+	case errors.Is(err, entity.ErrExecutionUnfinished):
+		return executionConflictProblem(api.ExecutionUnfinished, err), true
+
+	case errors.Is(err, entity.ErrExecutionNotReviewable):
+		return executionConflictProblem(api.ExecutionNotReviewable, err), true
+
+	case errors.Is(err, entity.ErrExecutionSelfApproval):
+		return newProblem(http.StatusForbidden, err.Error()), true
+
+	case errors.Is(err, entity.ErrExecutionNoRunner):
+		return executionConflictProblem(api.ExecutionNoRunner, err), true
+
 	case errors.Is(err, entity.ErrRunnerKeyMalformed):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
@@ -1967,6 +1988,22 @@ func codebaseConflictProblem(code api.CodebaseProblemCode, err error) problemRes
 	}
 }
 
+func executionConflictProblem(code api.ExecutionProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.ExecutionProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
 func runnerProblem(code api.RunnerProblemCode, err error) problemResponse {
 	return runnerProblemAt(http.StatusUnauthorized, code, err)
 }
@@ -2231,4 +2268,32 @@ func sourceControlConflict(
 			Type:     base.Type,
 		},
 	}
+}
+
+func (r problemResponse) VisitListWorkspaceIssueExecutionsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceExecutionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceExecutionTimelineResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCancelWorkspaceExecutionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRestartWorkspaceExecutionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitApproveWorkspaceExecutionResponse(w http.ResponseWriter) error {
+	return r.write(w)
 }

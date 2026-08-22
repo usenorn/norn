@@ -34,6 +34,7 @@ tags:
   - name: questions
   - name: runners
   - name: codebases
+  - name: executions
 
 paths:
   /health:
@@ -5655,6 +5656,176 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/executions:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [executions]
+      operationId: listWorkspaceIssueExecutions
+      summary: Every run this issue has had, newest attempt first
+      responses:
+        '200':
+          description: The executions on record for this issue
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Execution' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [executions]
+      operationId: getWorkspaceExecution
+      summary: One run, with the beginning of its timeline
+      description: >-
+        The timeline here is the first page, oldest first, so the screen renders in one request.
+        Page the rest through the timeline path.
+      responses:
+        '200':
+          description: The execution and the opening of its history
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExecutionDetail' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/timeline:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [executions]
+      operationId: listWorkspaceExecutionTimeline
+      summary: What happened during this run, oldest first
+      parameters:
+        - name: after
+          in: query
+          description: The sequence of the last entry already held
+          schema: { type: integer, format: int64, minimum: 0 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500 }
+      responses:
+        '200':
+          description: The next page of the timeline
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExecutionEvent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [executions]
+      operationId: cancelWorkspaceExecution
+      summary: Stop this run and tell the machine to tear it down
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CancelExecutionRequest' }
+      responses:
+        '200':
+          description: The execution as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Execution' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/restart:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [executions]
+      operationId: restartWorkspaceExecution
+      summary: Run this issue again, as a fresh attempt
+      description: >-
+        A finished run is never reopened. This offers the same delegation to the machine again as
+        the next attempt, so the failed run's timeline stays readable beside the new one.
+      responses:
+        '201':
+          description: The new attempt, waiting for the machine to accept it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Execution' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/resume:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [executions]
+      operationId: resumeWorkspaceExecution
+      summary: Send this run back to work with feedback
+      description: >-
+        The same run continues in the same folder with the same branches and the same session, and
+        the feedback is handed to the coding agent verbatim.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResumeExecutionRequest' }
+      responses:
+        '200':
+          description: The execution as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Execution' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/approve:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [executions]
+      operationId: approveWorkspaceExecution
+      summary: Accept what this run produced
+      responses:
+        '200':
+          description: The execution as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Execution' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
     bearerToken:
@@ -5702,6 +5873,12 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+
+    ExecutionId:
+      name: executionId
+      in: path
+      required: true
+      schema: { type: string, maxLength: 64 }
 
     RunnerId:
       name: runnerId
@@ -6032,6 +6209,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/CodebaseProblem' }
+
+    ExecutionConflict:
+      description: The execution refuses the change
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ExecutionProblem' }
 
     CycleConflict:
       description: The cycle refuses the change, or needs a decision first
@@ -7047,6 +7230,136 @@ components:
           type: array
           maxItems: 32
           items: { $ref: '#/components/schemas/CodingTool' }
+
+    ExecutionState:
+      type: string
+      enum:
+        - queued
+        - leased
+        - preparing
+        - running
+        - waiting_for_input
+        - queued_for_resume
+        - finalizing
+        - awaiting_review
+        - approved
+        - completed
+        - failed
+        - cancelled
+        - interrupted
+
+    ExecutionEventKind:
+      type: string
+      enum: [transition, phase, command, tool, service, preview, note]
+
+    ExecutionParams:
+      type: object
+      description: How this run was asked for. What is not set is the machine's own default.
+      properties:
+        tool: { type: string, maxLength: 64 }
+        model: { type: string, maxLength: 128 }
+        runtime: { $ref: '#/components/schemas/CodebaseRuntime' }
+        brief: { type: string, maxLength: 4000 }
+
+    ExecutionActor:
+      type: object
+      description: Who caused an entry. A machine reports as the agent it is bound to.
+      required: [kind]
+      properties:
+        kind: { $ref: '#/components/schemas/ActivityActorKind' }
+        accountId: { type: string, format: uuid }
+        agentId: { type: string, format: uuid }
+        runnerId: { type: string, format: uuid }
+
+    Execution:
+      type: object
+      required: [id, reference, workspaceId, issueId, issueReference, attempt, state, params, queuedAt]
+      properties:
+        id: { type: string, maxLength: 64 }
+        reference:
+          type: string
+          description: The issue reference, suffixed with the attempt from the second run on
+        workspaceId: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        issueReference: { type: string }
+        teamId: { type: string, format: uuid }
+        delegationId: { type: string, format: uuid }
+        agentId: { type: string, format: uuid }
+        agentName: { type: string }
+        runnerId: { type: string, format: uuid }
+        codebaseId: { type: string, format: uuid }
+        attempt: { type: integer, minimum: 1 }
+        state: { $ref: '#/components/schemas/ExecutionState' }
+        reason: { type: string, maxLength: 4000 }
+        params: { $ref: '#/components/schemas/ExecutionParams' }
+        restartable:
+          type: boolean
+          description: Whether this run can be offered again as a fresh attempt
+        leaseExpiresAt: { type: string, format: date-time }
+        queuedAt: { type: string, format: date-time }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time }
+
+    ExecutionEvent:
+      type: object
+      required: [id, executionId, sequence, kind, actor, occurredAt]
+      properties:
+        id: { type: string, format: uuid }
+        executionId: { type: string, maxLength: 64 }
+        sequence:
+          type: integer
+          format: int64
+          description: Pass the last one back as after to read on from here
+        kind: { $ref: '#/components/schemas/ExecutionEventKind' }
+        fromState: { $ref: '#/components/schemas/ExecutionState' }
+        toState: { $ref: '#/components/schemas/ExecutionState' }
+        actor: { $ref: '#/components/schemas/ExecutionActor' }
+        reason: { type: string }
+        detail:
+          type: object
+          additionalProperties: true
+          description: Whatever the machine attached to this entry
+        occurredAt: { type: string, format: date-time }
+        recordedAt: { type: string, format: date-time }
+
+    ExecutionDetail:
+      type: object
+      required: [execution, timeline]
+      properties:
+        execution: { $ref: '#/components/schemas/Execution' }
+        timeline:
+          type: array
+          items: { $ref: '#/components/schemas/ExecutionEvent' }
+
+    CancelExecutionRequest:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 2000 }
+
+    ResumeExecutionRequest:
+      type: object
+      required: [feedback]
+      properties:
+        feedback:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          description: Handed to the coding agent verbatim
+
+    ExecutionProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - execution_transition
+                - execution_finished
+                - execution_unfinished
+                - execution_not_reviewable
+                - execution_no_runner
 
     CodebaseProblem:
       allOf:

@@ -9,6 +9,7 @@ var Set = wire.NewSet(
 	NewOIDC,
 	NewSAML,
 	NewRunner,
+	NewExecutions,
 	NewCycles,
 	NewInstance,
 	NewLicence,

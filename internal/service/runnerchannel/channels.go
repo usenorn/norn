@@ -21,10 +21,11 @@ type leasedExecutions struct {
 }
 
 type channelsService struct {
-	channels repository.RunnerChannel
-	sessions repository.RunnerSession
-	runners  repository.Runner
-	machines service.Runners
+	channels   repository.RunnerChannel
+	sessions   repository.RunnerSession
+	runners    repository.Runner
+	machines   service.Runners
+	executions service.Executions
 }
 
 func New(
@@ -32,12 +33,14 @@ func New(
 	sessions repository.RunnerSession,
 	runners repository.Runner,
 	machines service.Runners,
+	executions service.Executions,
 ) service.RunnerChannels {
 	return &channelsService{
-		channels: channels,
-		sessions: sessions,
-		runners:  runners,
-		machines: machines,
+		channels:   channels,
+		sessions:   sessions,
+		runners:    runners,
+		machines:   machines,
+		executions: executions,
 	}
 }
 
@@ -107,6 +110,10 @@ func (s *channelsService) Heartbeat(ctx context.Context, session service.Channel
 		return entity.ErrRunnerRevoked
 	}
 
+	if err := s.executions.Renew(ctx, session.Runner); err != nil {
+		return err
+	}
+
 	return s.runners.RecordSeen(ctx, session.Runner.ID, time.Now().UTC())
 }
 
@@ -143,21 +150,20 @@ func (s *channelsService) Close(ctx context.Context, session service.ChannelSess
 	}
 }
 
-func (s *channelsService) Send(
-	ctx context.Context,
-	runnerID uuid.UUID,
-	message entity.ChannelMessage,
-) error {
-	if !message.Type.FromServer() {
-		return entity.ErrChannelTypeUnknown
+func (s *channelsService) sync(ctx context.Context, runnerID uuid.UUID) error {
+	held, err := s.executions.Leased(ctx, runnerID)
+	if err != nil {
+		return err
 	}
 
-	if message.ID == "" {
-		message.ID = ulid.Make().String()
+	payload, err := json.Marshal(leasedExecutions{Executions: held})
+	if err != nil {
+		return fmt.Errorf("encode the channel sync: %w", err)
 	}
 
-	if message.IssuedAt.IsZero() {
-		message.IssuedAt = time.Now().UTC()
+	message, err := entity.NewServerMessage(entity.ChannelSync, "", payload, time.Now().UTC())
+	if err != nil {
+		return err
 	}
 
 	if _, err := s.channels.Append(ctx, runnerID, message); err != nil {
@@ -165,16 +171,4 @@ func (s *channelsService) Send(
 	}
 
 	return nil
-}
-
-func (s *channelsService) sync(ctx context.Context, runnerID uuid.UUID) error {
-	payload, err := json.Marshal(leasedExecutions{Executions: []string{}})
-	if err != nil {
-		return fmt.Errorf("encode the channel sync: %w", err)
-	}
-
-	return s.Send(ctx, runnerID, entity.ChannelMessage{
-		Type:    entity.ChannelSync,
-		Payload: payload,
-	})
 }

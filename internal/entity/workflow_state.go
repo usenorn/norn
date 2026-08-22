@@ -107,3 +107,51 @@ func DefaultWorkflowStates(workspaceID, teamID uuid.UUID) []WorkflowState {
 
 	return states
 }
+
+func FirstActiveState(states []WorkflowState) (WorkflowState, bool) {
+	var (
+		earliest WorkflowState
+		found    bool
+	)
+
+	for _, state := range states {
+		if state.Category != StateCategoryActive {
+			continue
+		}
+
+		if !found || state.Position < earliest.Position {
+			earliest, found = state, true
+		}
+	}
+
+	return earliest, found
+}
+
+func LastActiveState(states []WorkflowState) (WorkflowState, bool) {
+	var (
+		latest WorkflowState
+		found  bool
+	)
+
+	for _, state := range states {
+		if state.Category != StateCategoryActive {
+			continue
+		}
+
+		if !found || state.Position > latest.Position {
+			latest, found = state, true
+		}
+	}
+
+	return latest, found
+}
+
+func CompletionState(states []WorkflowState) (WorkflowState, bool) {
+	for _, state := range states {
+		if state.IsCompletion {
+			return state, true
+		}
+	}
+
+	return WorkflowState{}, false
+}

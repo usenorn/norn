@@ -197,6 +197,26 @@ func (r *runnerRepository) ListByWorkspaceID(
 	return toEntities(models)
 }
 
+func (r *runnerRepository) ListByAgentID(
+	ctx context.Context,
+	agentID uuid.UUID,
+) ([]entity.Runner, error) {
+	models, err := dbpostgres.WorkspaceRunners(
+		dbpostgres.WorkspaceRunnerWhere.AgentID.EQ(agentID.String()),
+		dbpostgres.WorkspaceRunnerWhere.Status.NEQ(string(entity.RunnerStatusRevoked)),
+		qm.Load(dbpostgres.WorkspaceRunnerRels.Agent),
+		qm.OrderBy(
+			dbpostgres.WorkspaceRunnerColumns.EnrolledAt+" DESC, "+
+				dbpostgres.WorkspaceRunnerColumns.ID,
+		),
+	).All(ctx, r.db.Querier(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("list an agent's runners: %w", err)
+	}
+
+	return toEntities(models)
+}
+
 func (r *runnerRepository) Revoke(
 	ctx context.Context,
 	workspaceID, runnerID uuid.UUID,

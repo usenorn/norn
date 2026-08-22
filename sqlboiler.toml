@@ -20,6 +20,8 @@ blacklist = [
   "workspace_import_report_lines",
   "workspace_codebases",
   "workspace_codebase_repositories",
+  "workspace_executions",
+  "workspace_execution_events",
 ]
 host = "127.0.0.1"
 port = 5433

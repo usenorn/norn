@@ -92,6 +92,10 @@ func (r Runner) Revoked() bool {
 	return r.Status == RunnerStatusRevoked
 }
 
+func (r Runner) Reaches(teamID uuid.UUID) bool {
+	return r.Authority.AllTeams || containsID(r.Authority.TeamIDs, teamID)
+}
+
 type RunnerAssertion struct {
 	RunnerID  uuid.UUID
 	Nonce     string

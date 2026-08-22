@@ -20,6 +20,7 @@ type delegationsService struct {
 	agents      repository.Agent
 	activity    repository.Activity
 	emitter     service.WebhookEmitter
+	executions  service.Executions
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
 }
@@ -30,6 +31,7 @@ func New(
 	agents repository.Agent,
 	activity repository.Activity,
 	emitter service.WebhookEmitter,
+	executions service.Executions,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 ) service.Delegations {
@@ -39,6 +41,7 @@ func New(
 		agents:      agents,
 		activity:    activity,
 		emitter:     emitter,
+		executions:  executions,
 		authorizer:  authorizer,
 		transactor:  transactor,
 	}
@@ -80,10 +83,13 @@ func (s *delegationsService) Delegate(
 		return entity.IssueDelegation{}, err
 	}
 
-	var delegated entity.IssueDelegation
+	var (
+		delegated entity.IssueDelegation
+		issue     entity.Issue
+	)
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		issue, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
+		issue, err = s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
 		if err != nil {
 			return err
 		}
@@ -128,6 +134,10 @@ func (s *delegationsService) Delegate(
 		return s.emit(ctx, issue, delegated, decision)
 	})
 	if err != nil {
+		return entity.IssueDelegation{}, err
+	}
+
+	if err := s.executions.OnDelegated(ctx, issue, delegated); err != nil {
 		return entity.IssueDelegation{}, err
 	}
 

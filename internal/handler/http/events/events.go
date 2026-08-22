@@ -242,6 +242,22 @@ func translate(event entity.Event) json.RawMessage {
 		}
 
 		return marshal(dashboard.CommentEvent(comment))
+	case entity.EventExecutionUpdated:
+		var execution entity.Execution
+
+		if err := json.Unmarshal(event.Payload, &execution); err != nil {
+			return json.RawMessage("{}")
+		}
+
+		return marshal(dashboard.ExecutionEventDTO(execution))
+	case entity.EventExecutionEvent:
+		var entry entity.ExecutionEvent
+
+		if err := json.Unmarshal(event.Payload, &entry); err != nil {
+			return json.RawMessage("{}")
+		}
+
+		return marshal(dashboard.ExecutionTimelineEvent(entry))
 	default:
 		return json.RawMessage("{}")
 	}

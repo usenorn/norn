@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"slices"
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -85,21 +84,10 @@ func (t *toolset) firstActiveState(
 		return entity.WorkflowState{}, err
 	}
 
-	active := make([]entity.WorkflowState, 0, len(states))
-
-	for _, state := range states {
-		if state.Category == entity.StateCategoryActive {
-			active = append(active, state)
-		}
-	}
-
-	if len(active) == 0 {
+	active, found := entity.FirstActiveState(states)
+	if !found {
 		return entity.WorkflowState{}, entity.ErrWorkflowStateNotFound
 	}
 
-	slices.SortFunc(active, func(a, b entity.WorkflowState) int {
-		return a.Position - b.Position
-	})
-
-	return active[0], nil
+	return active, nil
 }

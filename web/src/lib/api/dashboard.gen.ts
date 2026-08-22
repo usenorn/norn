@@ -3682,6 +3682,155 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Every run this issue has had, newest attempt first */
+        get: operations["listWorkspaceIssueExecutions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * One run, with the beginning of its timeline
+         * @description The timeline here is the first page, oldest first, so the screen renders in one request. Page the rest through the timeline path.
+         */
+        get: operations["getWorkspaceExecution"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        /** What happened during this run, oldest first */
+        get: operations["listWorkspaceExecutionTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop this run and tell the machine to tear it down */
+        post: operations["cancelWorkspaceExecution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run this issue again, as a fresh attempt
+         * @description A finished run is never reopened. This offers the same delegation to the machine again as the next attempt, so the failed run's timeline stays readable beside the new one.
+         */
+        post: operations["restartWorkspaceExecution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send this run back to work with feedback
+         * @description The same run continues in the same folder with the same branches and the same session, and the feedback is handed to the coding agent verbatim.
+         */
+        post: operations["resumeWorkspaceExecution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept what this run produced */
+        post: operations["approveWorkspaceExecution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4287,6 +4436,100 @@ export interface components {
             sharedFiles?: string[];
             runtimes?: components["schemas"]["CodebaseRuntime"][];
             tools?: components["schemas"]["CodingTool"][];
+        };
+        /** @enum {string} */
+        ExecutionState: "queued" | "leased" | "preparing" | "running" | "waiting_for_input" | "queued_for_resume" | "finalizing" | "awaiting_review" | "approved" | "completed" | "failed" | "cancelled" | "interrupted";
+        /** @enum {string} */
+        ExecutionEventKind: "transition" | "phase" | "command" | "tool" | "service" | "preview" | "note";
+        /** @description How this run was asked for. What is not set is the machine's own default. */
+        ExecutionParams: {
+            tool?: string;
+            model?: string;
+            runtime?: components["schemas"]["CodebaseRuntime"];
+            brief?: string;
+        };
+        /** @description Who caused an entry. A machine reports as the agent it is bound to. */
+        ExecutionActor: {
+            kind: components["schemas"]["ActivityActorKind"];
+            /** Format: uuid */
+            accountId?: string;
+            /** Format: uuid */
+            agentId?: string;
+            /** Format: uuid */
+            runnerId?: string;
+        };
+        Execution: {
+            id: string;
+            /** @description The issue reference, suffixed with the attempt from the second run on */
+            reference: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            issueId: string;
+            issueReference: string;
+            /** Format: uuid */
+            teamId?: string;
+            /** Format: uuid */
+            delegationId?: string;
+            /** Format: uuid */
+            agentId?: string;
+            agentName?: string;
+            /** Format: uuid */
+            runnerId?: string;
+            /** Format: uuid */
+            codebaseId?: string;
+            attempt: number;
+            state: components["schemas"]["ExecutionState"];
+            reason?: string;
+            params: components["schemas"]["ExecutionParams"];
+            /** @description Whether this run can be offered again as a fresh attempt */
+            restartable?: boolean;
+            /** Format: date-time */
+            leaseExpiresAt?: string;
+            /** Format: date-time */
+            queuedAt: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            finishedAt?: string;
+        };
+        ExecutionEvent: {
+            /** Format: uuid */
+            id: string;
+            executionId: string;
+            /**
+             * Format: int64
+             * @description Pass the last one back as after to read on from here
+             */
+            sequence: number;
+            kind: components["schemas"]["ExecutionEventKind"];
+            fromState?: components["schemas"]["ExecutionState"];
+            toState?: components["schemas"]["ExecutionState"];
+            actor: components["schemas"]["ExecutionActor"];
+            reason?: string;
+            /** @description Whatever the machine attached to this entry */
+            detail?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: date-time */
+            recordedAt?: string;
+        };
+        ExecutionDetail: {
+            execution: components["schemas"]["Execution"];
+            timeline: components["schemas"]["ExecutionEvent"][];
+        };
+        CancelExecutionRequest: {
+            reason?: string;
+        };
+        ResumeExecutionRequest: {
+            /** @description Handed to the coding agent verbatim */
+            feedback: string;
+        };
+        ExecutionProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_no_runner";
         };
         CodebaseProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -6579,6 +6822,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["CodebaseProblem"];
             };
         };
+        /** @description The execution refuses the change */
+        ExecutionConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ExecutionProblem"];
+            };
+        };
         /** @description The cycle refuses the change, or needs a decision first */
         CycleConflict: {
             headers: {
@@ -6840,6 +7092,7 @@ export interface components {
         TokenId: string;
         AgentId: string;
         CodebaseId: string;
+        ExecutionId: string;
         RunnerId: string;
         ProposalId: string;
         StateId: string;
@@ -14642,6 +14895,213 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueExecutions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The executions on record for this issue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The execution and the opening of its history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionDetail"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceExecutionTimeline: {
+        parameters: {
+            query?: {
+                /** @description The sequence of the last entry already held */
+                after?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The next page of the timeline */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionEvent"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    cancelWorkspaceExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CancelExecutionRequest"];
+            };
+        };
+        responses: {
+            /** @description The execution as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    restartWorkspaceExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The new attempt, waiting for the machine to accept it */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    resumeWorkspaceExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResumeExecutionRequest"];
+            };
+        };
+        responses: {
+            /** @description The execution as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    approveWorkspaceExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The execution as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
             500: components["responses"]["Problem"];
         };
     };

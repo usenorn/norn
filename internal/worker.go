@@ -28,6 +28,7 @@ type Worker struct {
 	webhooks      config.Webhooks
 	imports       config.Imports
 	sourceControl config.SourceControl
+	executions    config.Executions
 	server        *taskqueue.Server
 	scheduler     *taskqueue.Scheduler
 	inspector     *taskqueue.Inspector
@@ -62,6 +63,7 @@ func NewServeMux(
 	scmReconcile *job.SCMReconcileHandler,
 	scmBackfill *job.SCMBackfillHandler,
 	scmResume *job.SCMResumeHandler,
+	executionLeaseSweep *job.ExecutionLeaseSweepHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -90,6 +92,7 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeSCMReconcile, scmReconcile)
 	mux.Handle(entity.TaskTypeSCMBackfill, scmBackfill)
 	mux.Handle(entity.TaskTypeSCMResume, scmResume)
+	mux.Handle(entity.TaskTypeExecutionLeaseSweep, executionLeaseSweep)
 
 	return mux
 }
@@ -105,6 +108,7 @@ func NewWorker(
 	webhooks config.Webhooks,
 	imports config.Imports,
 	sourceControl config.SourceControl,
+	executions config.Executions,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	inspector *taskqueue.Inspector,
@@ -122,6 +126,7 @@ func NewWorker(
 		webhooks:      webhooks,
 		imports:       imports,
 		sourceControl: sourceControl,
+		executions:    executions,
 		server:        server,
 		scheduler:     scheduler,
 		inspector:     inspector,
@@ -179,6 +184,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueMail),
 	); err != nil {
 		return fmt.Errorf("register api token expiry sweep: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.executions.LeaseSweepSchedule,
+		asynq.NewTask(entity.TaskTypeExecutionLeaseSweep, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register execution lease sweep: %w", err)
 	}
 
 	if _, err := w.scheduler.Register(

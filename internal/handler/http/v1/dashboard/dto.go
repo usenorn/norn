@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -1510,6 +1511,14 @@ func CommentEvent(comment entity.IssueComment) api.IssueComment {
 	return commentDTO(comment)
 }
 
+func ExecutionEventDTO(execution entity.Execution) api.Execution {
+	return executionDTO(execution)
+}
+
+func ExecutionTimelineEvent(event entity.ExecutionEvent) api.ExecutionEvent {
+	return executionEventDTO(event)
+}
+
 func agentDTO(agent entity.Agent) api.Agent {
 	dto := api.Agent{
 		Id:             agent.ID,
@@ -1906,6 +1915,124 @@ func codebaseDTOs(codebases []entity.Codebase) []api.Codebase {
 
 	for _, codebase := range codebases {
 		dtos = append(dtos, codebaseDTO(codebase))
+	}
+
+	return dtos
+}
+
+func nilIfNilID(id uuid.UUID) *uuid.UUID {
+	if id == uuid.Nil {
+		return nil
+	}
+
+	return &id
+}
+
+func executionDTO(execution entity.Execution) api.Execution {
+	restartable := execution.Restartable()
+
+	return api.Execution{
+		Id:             execution.ID,
+		Reference:      execution.Reference(),
+		WorkspaceId:    execution.WorkspaceID,
+		IssueId:        execution.IssueID,
+		IssueReference: execution.IssueReference,
+		TeamId:         nilIfNilID(execution.TeamID),
+		DelegationId:   nilIfNilID(execution.DelegationID),
+		AgentId:        nilIfNilID(execution.AgentID),
+		AgentName:      nilIfEmpty(execution.AgentName),
+		RunnerId:       nilIfNilID(execution.RunnerID),
+		CodebaseId:     nilIfNilID(execution.CodebaseID),
+		Attempt:        execution.Attempt,
+		State:          api.ExecutionState(execution.State),
+		Reason:         nilIfEmpty(execution.Reason),
+		Params:         executionParamsDTO(execution.Params),
+		Restartable:    &restartable,
+		LeaseExpiresAt: execution.LeaseExpiresAt,
+		QueuedAt:       execution.QueuedAt,
+		StartedAt:      execution.StartedAt,
+		FinishedAt:     execution.FinishedAt,
+	}
+}
+
+func executionDTOs(executions []entity.Execution) []api.Execution {
+	dtos := make([]api.Execution, 0, len(executions))
+
+	for _, execution := range executions {
+		dtos = append(dtos, executionDTO(execution))
+	}
+
+	return dtos
+}
+
+func executionParamsDTO(params entity.ExecutionParams) api.ExecutionParams {
+	dto := api.ExecutionParams{
+		Tool:  nilIfEmpty(params.Tool),
+		Model: nilIfEmpty(params.Model),
+		Brief: nilIfEmpty(params.Brief),
+	}
+
+	if params.Runtime != "" {
+		runtime := api.CodebaseRuntime(params.Runtime)
+		dto.Runtime = &runtime
+	}
+
+	return dto
+}
+
+func executionActorDTO(actor entity.ExecutionActor) api.ExecutionActor {
+	return api.ExecutionActor{
+		Kind:      api.ActivityActorKind(actor.Kind),
+		AccountId: nilIfNilID(actor.AccountID),
+		AgentId:   nilIfNilID(actor.AgentID),
+		RunnerId:  nilIfNilID(actor.RunnerID),
+	}
+}
+
+func executionEventDTO(event entity.ExecutionEvent) api.ExecutionEvent {
+	dto := api.ExecutionEvent{
+		Id:          event.ID,
+		ExecutionId: event.ExecutionID,
+		Sequence:    event.Sequence,
+		Kind:        api.ExecutionEventKind(event.Kind),
+		Actor:       executionActorDTO(event.Actor),
+		Reason:      nilIfEmpty(event.Reason),
+		Detail:      executionDetailDTO(event.Detail),
+		OccurredAt:  event.OccurredAt,
+		RecordedAt:  &event.RecordedAt,
+	}
+
+	if event.FromState != "" {
+		from := api.ExecutionState(event.FromState)
+		dto.FromState = &from
+	}
+
+	if event.ToState != "" {
+		to := api.ExecutionState(event.ToState)
+		dto.ToState = &to
+	}
+
+	return dto
+}
+
+func executionDetailDTO(detail []byte) *map[string]any {
+	if len(detail) == 0 {
+		return nil
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(detail, &decoded); err != nil || decoded == nil {
+		return nil
+	}
+
+	return &decoded
+}
+
+func executionEventDTOs(events []entity.ExecutionEvent) []api.ExecutionEvent {
+	dtos := make([]api.ExecutionEvent, 0, len(events))
+
+	for _, event := range events {
+		dtos = append(dtos, executionEventDTO(event))
 	}
 
 	return dtos

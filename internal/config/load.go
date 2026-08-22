@@ -530,6 +530,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("runner.ticket_ttl", time.Minute)
 	v.SetDefault("runner.nonce_ttl", 10*time.Minute)
 	v.SetDefault("runner.max_clock_skew", 3*time.Minute)
+	v.SetDefault("executions.lease_sweep_schedule", "@every 30s")
 	v.SetDefault("asynq.addr", "127.0.0.1:6381")
 	v.SetDefault("asynq.username", "")
 	v.SetDefault("asynq.password", "")

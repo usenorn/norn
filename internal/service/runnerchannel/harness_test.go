@@ -12,16 +12,18 @@ import (
 	channelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
 	sessionrepo "github.com/usenorn/norn/internal/repository/runnersession"
 	"github.com/usenorn/norn/internal/service"
+	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	runnersvc "github.com/usenorn/norn/internal/service/runner"
 	channelsvc "github.com/usenorn/norn/internal/service/runnerchannel"
 )
 
 type harness struct {
-	channels *channelrepo.MockRunnerChannel
-	sessions *sessionrepo.MockRunnerSession
-	runners  *runnerrepo.MockRunner
-	machines *runnersvc.MockRunners
-	service  service.RunnerChannels
+	channels   *channelrepo.MockRunnerChannel
+	sessions   *sessionrepo.MockRunnerSession
+	runners    *runnerrepo.MockRunner
+	machines   *runnersvc.MockRunners
+	executions *executionsvc.MockExecutions
+	service    service.RunnerChannels
 
 	runner entity.Runner
 	actor  entity.Actor
@@ -37,10 +39,11 @@ func newHarness(t *testing.T) *harness {
 	agentID := uuid.New()
 
 	h := &harness{
-		channels: channelrepo.NewMockRunnerChannel(ctrl),
-		sessions: sessionrepo.NewMockRunnerSession(ctrl),
-		runners:  runnerrepo.NewMockRunner(ctrl),
-		machines: runnersvc.NewMockRunners(ctrl),
+		channels:   channelrepo.NewMockRunnerChannel(ctrl),
+		sessions:   sessionrepo.NewMockRunnerSession(ctrl),
+		runners:    runnerrepo.NewMockRunner(ctrl),
+		machines:   runnersvc.NewMockRunners(ctrl),
+		executions: executionsvc.NewMockExecutions(ctrl),
 		runner: entity.Runner{
 			ID:          runnerID,
 			WorkspaceID: workspaceID,
@@ -56,7 +59,9 @@ func newHarness(t *testing.T) *harness {
 		},
 	}
 
-	h.service = channelsvc.New(h.channels, h.sessions, h.runners, h.machines)
+	h.executions.EXPECT().Renew(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	h.service = channelsvc.New(h.channels, h.sessions, h.runners, h.machines, h.executions)
 
 	return h
 }
@@ -65,7 +70,7 @@ func (h *harness) session() service.ChannelSession {
 	return service.ChannelSession{Runner: h.runner, Actor: h.actor, Epoch: "epoch", Cursor: "0-0"}
 }
 
-func (h *harness) opening(ticket string) {
+func (h *harness) opening(ticket string, leased ...string) {
 	h.sessions.EXPECT().
 		RedeemTicket(gomock.Any(), entity.HashRunnerSecret(ticket)).
 		Return(h.runner.ID, nil)
@@ -74,6 +79,12 @@ func (h *harness) opening(ticket string) {
 	h.channels.EXPECT().Attach(gomock.Any(), h.runner.ID, gomock.Any(), gomock.Any()).Return(nil)
 	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil).AnyTimes()
 	h.channels.EXPECT().Cursor(gomock.Any(), h.runner.ID).Return("0-0", nil)
+
+	if leased == nil {
+		leased = []string{}
+	}
+
+	h.executions.EXPECT().Leased(gomock.Any(), h.runner.ID).Return(leased, nil)
 }
 
 func (h *harness) freshMessage(id string, kind entity.ChannelMessageType) entity.ChannelMessage {

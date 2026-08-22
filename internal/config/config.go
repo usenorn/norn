@@ -40,6 +40,7 @@ type Config struct {
 	SAML          SAML          `mapstructure:"saml"`
 	Cycles        Cycles        `mapstructure:"cycles"`
 	Runner        Runner        `mapstructure:"runner"`
+	Executions    Executions    `mapstructure:"executions"`
 }
 
 type Licence struct {
@@ -65,6 +66,10 @@ type OIDC struct {
 	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
 	MaxResponseSize int64         `mapstructure:"max_response_size"`
 	StateTTL        time.Duration `mapstructure:"state_ttl"`
+}
+
+type Executions struct {
+	LeaseSweepSchedule string `mapstructure:"lease_sweep_schedule"`
 }
 
 type Runner struct {
