@@ -689,21 +689,6 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrAuditCursorInvalid):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
-	case errors.Is(err, entity.ErrMailDeliveryNotConfigured):
-		base := baseProblem(http.StatusServiceUnavailable, err.Error())
-
-		return problemResponse{
-			status: http.StatusServiceUnavailable,
-			body: api.MailUnavailableProblem{
-				Code:     api.MailUnavailableProblemCodeMailUnavailable,
-				Detail:   base.Detail,
-				Instance: base.Instance,
-				Status:   base.Status,
-				Title:    base.Title,
-				Type:     base.Type,
-			},
-		}, true
-
 	case errors.Is(err, entity.ErrSignUpUndeliverable):
 		base := baseProblem(http.StatusServiceUnavailable, entity.ErrSignUpUndeliverable.Error())
 

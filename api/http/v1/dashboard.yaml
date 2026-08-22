@@ -150,7 +150,6 @@ paths:
               schema: { $ref: '#/components/schemas/PasswordResetRequested' }
         '422': { $ref: '#/components/responses/Problem' }
         '429': { $ref: '#/components/responses/TooManyAttempts' }
-        '503': { $ref: '#/components/responses/MailUnavailable' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /auth/password-reset/confirm:
@@ -6345,12 +6344,6 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/ImportSigningUnavailableProblem' }
-    MailUnavailable:
-      description: The instance is not configured to send mail
-      content:
-        application/problem+json:
-          schema: { $ref: '#/components/schemas/MailUnavailableProblem' }
-
     BreachCheckUnavailable:
       description: The password breach check could not be completed
       content:
@@ -9752,14 +9745,6 @@ components:
           properties:
             code: { type: string, enum: [webhook_signing_unavailable] }
 
-    MailUnavailableProblem:
-      allOf:
-        - $ref: '#/components/schemas/Problem'
-        - type: object
-          required: [code]
-          properties:
-            code: { type: string, enum: [mail_unavailable] }
-
     BreachCheckUnavailableProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -10283,19 +10268,13 @@ components:
         timezone: { type: string }
         password: { type: string }
 
-    SignUpDelivery:
-      type: string
-      enum: [mailed, link_only]
-
     SignUpRequested:
       type: object
-      required: [email, delivery, requestedAt, expiresAt]
+      required: [email, requestedAt, expiresAt]
       properties:
         email: { type: string }
-        delivery: { $ref: '#/components/schemas/SignUpDelivery' }
         requestedAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
-        url: { type: string }
 
     ConfirmSignUpRequest:
       type: object
@@ -10375,7 +10354,7 @@ components:
 
     InvitationDelivery:
       type: string
-      enum: [pending, sent, failed, link_only]
+      enum: [pending, sent, failed]
 
     InvitationOutcome:
       type: string
@@ -10423,7 +10402,6 @@ components:
         email: { type: string }
         outcome: { $ref: '#/components/schemas/InvitationOutcome' }
         invitation: { $ref: '#/components/schemas/Invitation' }
-        url: { type: string }
 
     InvitationBatch:
       type: object
@@ -10435,10 +10413,9 @@ components:
 
     IssuedInvitation:
       type: object
-      required: [invitation, url]
+      required: [invitation]
       properties:
         invitation: { $ref: '#/components/schemas/Invitation' }
-        url: { type: string }
 
     PreviewInvitationRequest:
       type: object
@@ -10584,12 +10561,11 @@ components:
 
     NotificationSettings:
       type: object
-      required: [preferences, workspace, overridden, emailEnabled]
+      required: [preferences, workspace, overridden]
       properties:
         preferences: { $ref: '#/components/schemas/NotificationPreferences' }
         workspace: { $ref: '#/components/schemas/NotificationPreferences' }
         overridden: { type: boolean }
-        emailEnabled: { type: boolean }
 
     NotificationPreferences:
       type: object

@@ -27,7 +27,6 @@ type NotificationSettingsView struct {
 	Global         entity.NotificationPreferences
 	Team           entity.NotificationPreferences
 	TeamOverridden bool
-	EmailEnabled   bool
 }
 
 type Notifications interface {

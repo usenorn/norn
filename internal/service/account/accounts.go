@@ -32,7 +32,6 @@ type accountsService struct {
 	sessions        service.Sessions
 	authorizer      service.Authorizer
 	app             config.App
-	smtp            config.SMTP
 	instance        config.Instance
 	attachments     config.Attachments
 	audit           service.Audit
@@ -56,7 +55,6 @@ func New(
 	sessions service.Sessions,
 	authorizer service.Authorizer,
 	app config.App,
-	smtp config.SMTP,
 	instance config.Instance,
 	attachments config.Attachments,
 	audit service.Audit,
@@ -79,7 +77,6 @@ func New(
 		sessions:        sessions,
 		authorizer:      authorizer,
 		app:             app,
-		smtp:            smtp,
 		instance:        instance,
 		attachments:     attachments,
 		audit:           audit,
@@ -191,10 +188,6 @@ func (s *accountsService) PendingEmailChange(ctx context.Context, accountID uuid
 func (s *accountsService) RequestEmailChange(ctx context.Context, accountID uuid.UUID, newEmail string) (entity.EmailChange, error) {
 	if err := s.authorizeSelf(ctx, entity.ActionUpdate, accountID); err != nil {
 		return entity.EmailChange{}, err
-	}
-
-	if !s.smtp.Configured() {
-		return entity.EmailChange{}, entity.ErrMailDeliveryNotConfigured
 	}
 
 	email := entity.NormalizeEmail(newEmail)

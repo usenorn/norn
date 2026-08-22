@@ -6048,10 +6048,6 @@ export interface components {
             /** @enum {string} */
             code: "webhook_signing_unavailable";
         };
-        MailUnavailableProblem: components["schemas"]["Problem"] & {
-            /** @enum {string} */
-            code: "mail_unavailable";
-        };
         BreachCheckUnavailableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "breach_check_unavailable";
@@ -6421,16 +6417,12 @@ export interface components {
             timezone?: string;
             password: string;
         };
-        /** @enum {string} */
-        SignUpDelivery: "mailed" | "link_only";
         SignUpRequested: {
             email: string;
-            delivery: components["schemas"]["SignUpDelivery"];
             /** Format: date-time */
             requestedAt: string;
             /** Format: date-time */
             expiresAt: string;
-            url?: string;
         };
         ConfirmSignUpRequest: {
             token: string;
@@ -6476,7 +6468,7 @@ export interface components {
         /** @enum {string} */
         InvitationStatus: "pending" | "accepted" | "revoked";
         /** @enum {string} */
-        InvitationDelivery: "pending" | "sent" | "failed" | "link_only";
+        InvitationDelivery: "pending" | "sent" | "failed";
         /** @enum {string} */
         InvitationOutcome: "created" | "invalid_email" | "already_member";
         Invitation: {
@@ -6508,14 +6500,12 @@ export interface components {
             email: string;
             outcome: components["schemas"]["InvitationOutcome"];
             invitation?: components["schemas"]["Invitation"];
-            url?: string;
         };
         InvitationBatch: {
             results: components["schemas"]["InvitationResult"][];
         };
         IssuedInvitation: {
             invitation: components["schemas"]["Invitation"];
-            url: string;
         };
         PreviewInvitationRequest: {
             token: string;
@@ -6613,7 +6603,6 @@ export interface components {
             preferences: components["schemas"]["NotificationPreferences"];
             workspace: components["schemas"]["NotificationPreferences"];
             overridden: boolean;
-            emailEnabled: boolean;
         };
         NotificationPreferences: {
             assigned: components["schemas"]["NotificationChannels"];
@@ -7039,15 +7028,6 @@ export interface components {
                 "application/problem+json": components["schemas"]["ImportSigningUnavailableProblem"];
             };
         };
-        /** @description The instance is not configured to send mail */
-        MailUnavailable: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["MailUnavailableProblem"];
-            };
-        };
         /** @description The password breach check could not be completed */
         BreachCheckUnavailable: {
             headers: {
@@ -7296,7 +7276,6 @@ export interface operations {
             422: components["responses"]["Problem"];
             429: components["responses"]["TooManyAttempts"];
             500: components["responses"]["Problem"];
-            503: components["responses"]["MailUnavailable"];
         };
     };
     confirmPasswordReset: {

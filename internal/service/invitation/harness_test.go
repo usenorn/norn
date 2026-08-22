@@ -30,8 +30,6 @@ import (
 
 const baseURL = "https://norn.test"
 
-var configuredSMTP = config.SMTP{Host: "smtp.test", FromAddress: "no-reply@norn.test"}
-
 type harness struct {
 	invitations  *invitationrepo.MockInvitation
 	memberships  *membershiprepo.MockMembership
@@ -50,12 +48,6 @@ type harness struct {
 }
 
 func newHarness(t *testing.T) *harness {
-	t.Helper()
-
-	return newHarnessWithSMTP(t, configuredSMTP)
-}
-
-func newHarnessWithSMTP(t *testing.T, smtp config.SMTP) *harness {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
@@ -98,7 +90,6 @@ func newHarnessWithSMTP(t *testing.T, smtp config.SMTP) *harness {
 		h.registration,
 		h.sessions,
 		config.App{BaseURL: baseURL},
-		smtp,
 		silentAudit(ctrl),
 	)
 

@@ -24,7 +24,6 @@ type notificationsService struct {
 	mailer        repository.Mailer
 	broadcast     service.Events
 	authorizer    service.Authorizer
-	smtp          config.SMTP
 	app           config.App
 }
 
@@ -40,7 +39,6 @@ func New(
 	mailer repository.Mailer,
 	broadcast service.Events,
 	authorizer service.Authorizer,
-	smtp config.SMTP,
 	app config.App,
 ) service.Notifications {
 	return &notificationsService{
@@ -55,7 +53,6 @@ func New(
 		mailer:        mailer,
 		broadcast:     broadcast,
 		authorizer:    authorizer,
-		smtp:          smtp,
 		app:           app,
 	}
 }
@@ -336,8 +333,7 @@ func (s *notificationsService) view(
 	}
 
 	view := service.NotificationSettingsView{
-		Global:       entity.ResolveNotificationPreferences(settings, uuid.Nil),
-		EmailEnabled: s.smtp.Configured(),
+		Global: entity.ResolveNotificationPreferences(settings, uuid.Nil),
 	}
 
 	view.Team = entity.ResolveNotificationPreferences(settings, teamID)

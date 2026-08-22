@@ -25,22 +25,6 @@ var (
 	ErrSignUpUndeliverable    = errors.New("sign-up verification link could not be sent")
 )
 
-type SignUpDelivery string
-
-const (
-	SignUpDeliveryMailed   SignUpDelivery = "mailed"
-	SignUpDeliveryLinkOnly SignUpDelivery = "link_only"
-)
-
-func (d SignUpDelivery) Valid() bool {
-	switch d {
-	case SignUpDeliveryMailed, SignUpDeliveryLinkOnly:
-		return true
-	default:
-		return false
-	}
-}
-
 type SignUp struct {
 	ID           uuid.UUID
 	Email        string

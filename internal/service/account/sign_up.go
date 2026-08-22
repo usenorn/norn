@@ -12,14 +12,6 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-func (s *accountsService) signUpDelivery() entity.SignUpDelivery {
-	if s.smtp.Configured() {
-		return entity.SignUpDeliveryMailed
-	}
-
-	return entity.SignUpDeliveryLinkOnly
-}
-
 func (s *accountsService) RequestSignUp(ctx context.Context, input service.RequestSignUpInput) (service.RequestedSignUp, error) {
 	if !s.instance.SignupsOpen {
 		return service.RequestedSignUp{}, entity.ErrSignUpsClosed
@@ -104,13 +96,6 @@ func (s *accountsService) RequestSignUp(ctx context.Context, input service.Reque
 		Email:       signUp.Email,
 		RequestedAt: signUp.RequestedAt,
 		ExpiresAt:   signUp.ExpiresAt,
-		Delivery:    s.signUpDelivery(),
-	}
-
-	if requested.Delivery == entity.SignUpDeliveryLinkOnly {
-		requested.URL = s.signUpURL(token)
-
-		return requested, nil
 	}
 
 	if err := s.producer.EnqueueSignUpVerification(ctx, entity.SignUpVerificationPayload{

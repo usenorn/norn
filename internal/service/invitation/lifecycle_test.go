@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"strings"
 	"testing"
 	"time"
 
@@ -50,8 +49,7 @@ func TestResendReplacesTheStoredTokenSoThePriorLinkStopsResolving(t *testing.T) 
 
 	enqueued := h.captureEnqueued()
 
-	issued, err := h.service.Resend(actingAs(actor), workspace.ID, invitation.ID)
-	if err != nil {
+	if _, err := h.service.Resend(actingAs(actor), workspace.ID, invitation.ID); err != nil {
 		t.Fatalf("Resend: %v", err)
 	}
 
@@ -59,10 +57,14 @@ func TestResendReplacesTheStoredTokenSoThePriorLinkStopsResolving(t *testing.T) 
 		t.Fatal("resend kept the previous token hash, so the previous link still works")
 	}
 
-	token := strings.TrimPrefix(issued.URL, baseURL+"/accept-invitation?token=")
+	if len(*enqueued) != 1 {
+		t.Fatalf("resend enqueued %d mails, want one", len(*enqueued))
+	}
+
+	token := (*enqueued)[0].Token
 
 	if !bytes.Equal(storedHash, entity.HashInvitationToken(token)) {
-		t.Fatal("the stored hash does not match the link handed back")
+		t.Fatal("the stored hash does not match the token that was sent")
 	}
 
 	if bytes.Equal(entity.HashInvitationToken(token), priorHash) {
@@ -73,9 +75,6 @@ func TestResendReplacesTheStoredTokenSoThePriorLinkStopsResolving(t *testing.T) 
 		t.Error("resend did not extend the expiry")
 	}
 
-	if len(*enqueued) != 1 || (*enqueued)[0].Token != token {
-		t.Fatalf("resend enqueued %d mails, want one carrying the new token", len(*enqueued))
-	}
 }
 
 func TestResendRefusesAnInvitationThatIsNoLongerPending(t *testing.T) {

@@ -97,7 +97,6 @@ func (h *handler) ResendWorkspaceInvitation(ctx context.Context, request api.Res
 
 	return api.ResendWorkspaceInvitation200JSONResponse{
 		Invitation: invitationDTO(issued.Invitation),
-		Url:        issued.URL,
 	}, nil
 }
 

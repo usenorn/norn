@@ -126,12 +126,12 @@ func TestInvitationEnumsAcceptOnlyKnownValues(t *testing.T) {
 	}
 
 	deliveries := map[entity.InvitationDelivery]bool{
-		entity.InvitationDeliveryPending:  true,
-		entity.InvitationDeliverySent:     true,
-		entity.InvitationDeliveryFailed:   true,
-		entity.InvitationDeliveryLinkOnly: true,
-		"":                                false,
-		"bounced":                         false,
+		entity.InvitationDeliveryPending: true,
+		entity.InvitationDeliverySent:    true,
+		entity.InvitationDeliveryFailed:  true,
+		"":                               false,
+		"link_only":                      false,
+		"bounced":                        false,
 	}
 
 	for delivery, want := range deliveries {

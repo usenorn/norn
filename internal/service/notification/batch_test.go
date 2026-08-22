@@ -8,12 +8,11 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
-	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 )
 
 func TestAnEventThatCannotFanOutDoesNotTakeTheRestOfTheBatchWithIt(t *testing.T) {
-	h := newHarness(t, config.SMTP{})
+	h := newHarness(t)
 
 	unreadable := uuid.New()
 	broken := h.issueEvent(entity.NotificationKindStateChanged, entity.ActorKindUser)

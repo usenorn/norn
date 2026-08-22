@@ -24,10 +24,6 @@ func (s *accountsService) RequestPasswordReset(ctx context.Context, input servic
 		return time.Time{}, entity.ErrSignInRateLimited
 	}
 
-	if !s.smtp.Configured() {
-		return time.Time{}, entity.ErrMailDeliveryNotConfigured
-	}
-
 	normalized := entity.NormalizeEmail(input.Email)
 
 	if err := entity.NewValidationError(entity.ValidateEmail("email", normalized)); err != nil {

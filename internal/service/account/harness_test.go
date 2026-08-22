@@ -106,20 +106,16 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
-	h.service = newServiceWithSMTP(h, config.SMTP{Host: "smtp.test", FromAddress: "no-reply@norn.test"})
+	h.service = newService(h, config.Instance{SignupsOpen: true, PasswordAuth: true})
 
 	return h
 }
 
-func newServiceWithSMTP(h *harness, smtp config.SMTP) service.Accounts {
-	return newService(h, smtp, config.Instance{SignupsOpen: true, PasswordAuth: true})
-}
-
 func newServiceWithInstance(h *harness, instance config.Instance) service.Accounts {
-	return newService(h, config.SMTP{Host: "smtp.test", FromAddress: "no-reply@norn.test"}, instance)
+	return newService(h, instance)
 }
 
-func newService(h *harness, smtp config.SMTP, instance config.Instance) service.Accounts {
+func newService(h *harness, instance config.Instance) service.Accounts {
 	return accountsvc.New(
 		h.accounts,
 		h.emailChanges,
@@ -138,7 +134,6 @@ func newService(h *harness, smtp config.SMTP, instance config.Instance) service.
 		h.sessions,
 		h.authorizer,
 		config.App{BaseURL: baseURL},
-		smtp,
 		instance,
 		config.Attachments{LinkTTL: 5 * time.Minute},
 		h.audit,

@@ -1601,18 +1601,15 @@ func (e InvalidCredentialsProblemCode) Valid() bool {
 
 // Defines values for InvitationDelivery.
 const (
-	InvitationDeliveryFailed   InvitationDelivery = "failed"
-	InvitationDeliveryLinkOnly InvitationDelivery = "link_only"
-	InvitationDeliveryPending  InvitationDelivery = "pending"
-	InvitationDeliverySent     InvitationDelivery = "sent"
+	InvitationDeliveryFailed  InvitationDelivery = "failed"
+	InvitationDeliveryPending InvitationDelivery = "pending"
+	InvitationDeliverySent    InvitationDelivery = "sent"
 )
 
 // Valid indicates whether the value is a known member of the InvitationDelivery enum.
 func (e InvitationDelivery) Valid() bool {
 	switch e {
 	case InvitationDeliveryFailed:
-		return true
-	case InvitationDeliveryLinkOnly:
 		return true
 	case InvitationDeliveryPending:
 		return true
@@ -2196,21 +2193,6 @@ func (e LicenceStatus) Valid() bool {
 	}
 }
 
-// Defines values for MailUnavailableProblemCode.
-const (
-	MailUnavailableProblemCodeMailUnavailable MailUnavailableProblemCode = "mail_unavailable"
-)
-
-// Valid indicates whether the value is a known member of the MailUnavailableProblemCode enum.
-func (e MailUnavailableProblemCode) Valid() bool {
-	switch e {
-	case MailUnavailableProblemCodeMailUnavailable:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for MembershipConflictProblemCode.
 const (
 	MembershipConflictProblemCodeDirectoryManaged MembershipConflictProblemCode = "directory_managed"
@@ -2733,24 +2715,6 @@ const (
 func (e SignUpClosedProblemCode) Valid() bool {
 	switch e {
 	case SignUpClosed:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SignUpDelivery.
-const (
-	SignUpDeliveryLinkOnly SignUpDelivery = "link_only"
-	SignUpDeliveryMailed   SignUpDelivery = "mailed"
-)
-
-// Valid indicates whether the value is a known member of the SignUpDelivery enum.
-func (e SignUpDelivery) Valid() bool {
-	switch e {
-	case SignUpDeliveryLinkOnly:
-		return true
-	case SignUpDeliveryMailed:
 		return true
 	default:
 		return false
@@ -5251,7 +5215,6 @@ type InvitationResult struct {
 	Email      string            `json:"email"`
 	Invitation *Invitation       `json:"invitation,omitempty"`
 	Outcome    InvitationOutcome `json:"outcome"`
-	Url        *string           `json:"url,omitempty"`
 }
 
 // InvitationStatus defines model for InvitationStatus.
@@ -5611,7 +5574,6 @@ type IssueStatus string
 // IssuedInvitation defines model for IssuedInvitation.
 type IssuedInvitation struct {
 	Invitation Invitation `json:"invitation"`
-	Url        string     `json:"url"`
 }
 
 // IssuedSession defines model for IssuedSession.
@@ -5688,20 +5650,6 @@ type LicenceStatus string
 type LinkIssueCodeRequest struct {
 	Url string `json:"url"`
 }
-
-// MailUnavailableProblem defines model for MailUnavailableProblem.
-type MailUnavailableProblem struct {
-	Code     MailUnavailableProblemCode `json:"code"`
-	Detail   *string                    `json:"detail,omitempty"`
-	Errors   *[]FieldError              `json:"errors,omitempty"`
-	Instance *string                    `json:"instance,omitempty"`
-	Status   int32                      `json:"status"`
-	Title    string                     `json:"title"`
-	Type     string                     `json:"type"`
-}
-
-// MailUnavailableProblemCode defines model for MailUnavailableProblem.Code.
-type MailUnavailableProblemCode string
 
 // MapSCMIdentityRequest defines model for MapSCMIdentityRequest.
 type MapSCMIdentityRequest struct {
@@ -5896,10 +5844,9 @@ type NotificationReason string
 
 // NotificationSettings defines model for NotificationSettings.
 type NotificationSettings struct {
-	EmailEnabled bool                    `json:"emailEnabled"`
-	Overridden   bool                    `json:"overridden"`
-	Preferences  NotificationPreferences `json:"preferences"`
-	Workspace    NotificationPreferences `json:"workspace"`
+	Overridden  bool                    `json:"overridden"`
+	Preferences NotificationPreferences `json:"preferences"`
+	Workspace   NotificationPreferences `json:"workspace"`
 }
 
 // NotificationSubjectKind defines model for NotificationSubjectKind.
@@ -6472,9 +6419,6 @@ type SignUpClosedProblem struct {
 // SignUpClosedProblemCode defines model for SignUpClosedProblem.Code.
 type SignUpClosedProblemCode string
 
-// SignUpDelivery defines model for SignUpDelivery.
-type SignUpDelivery string
-
 // SignUpExpiredProblem defines model for SignUpExpiredProblem.
 type SignUpExpiredProblem struct {
 	Code     SignUpExpiredProblemCode `json:"code"`
@@ -6491,11 +6435,9 @@ type SignUpExpiredProblemCode string
 
 // SignUpRequested defines model for SignUpRequested.
 type SignUpRequested struct {
-	Delivery    SignUpDelivery `json:"delivery"`
-	Email       string         `json:"email"`
-	ExpiresAt   time.Time      `json:"expiresAt"`
-	RequestedAt time.Time      `json:"requestedAt"`
-	Url         *string        `json:"url,omitempty"`
+	Email       string    `json:"email"`
+	ExpiresAt   time.Time `json:"expiresAt"`
+	RequestedAt time.Time `json:"requestedAt"`
 }
 
 // SignUpUnavailableProblem defines model for SignUpUnavailableProblem.
@@ -7447,9 +7389,6 @@ type IssueConflict = IssueConflictProblem
 
 // LabelConflict defines model for LabelConflict.
 type LabelConflict = LabelConflictProblem
-
-// MailUnavailable defines model for MailUnavailable.
-type MailUnavailable = MailUnavailableProblem
 
 // MembershipConflict defines model for MembershipConflict.
 type MembershipConflict = MembershipConflictProblem
@@ -33265,8 +33204,6 @@ type RequestPasswordResetResponse struct {
 	ApplicationproblemJSON429 *TooManyAttempts
 	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
 	ApplicationproblemJSON500 *Problem
-	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
-	ApplicationproblemJSON503 *MailUnavailable
 	// Headers429 the parsed response headers for an HTTP 429 response
 	Headers429 *RequestPasswordResetResponse429Headers
 }
@@ -33289,11 +33226,6 @@ func (r RequestPasswordResetResponse) GetApplicationproblemJSON429() *TooManyAtt
 // GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
 func (r RequestPasswordResetResponse) GetApplicationproblemJSON500() *Problem {
 	return r.ApplicationproblemJSON500
-}
-
-// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
-func (r RequestPasswordResetResponse) GetApplicationproblemJSON503() *MailUnavailable {
-	return r.ApplicationproblemJSON503
 }
 
 // GetBody returns the raw response body bytes
@@ -58039,13 +57971,6 @@ func ParseRequestPasswordResetResponse(rsp *http.Response) (*RequestPasswordRese
 			return nil, err
 		}
 		response.ApplicationproblemJSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest MailUnavailable
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON503 = &dest
 
 	}
 
@@ -86207,8 +86132,6 @@ type IssueConflictApplicationProblemPlusJSONResponse IssueConflictProblem
 
 type LabelConflictApplicationProblemPlusJSONResponse LabelConflictProblem
 
-type MailUnavailableApplicationProblemPlusJSONResponse MailUnavailableProblem
-
 type MembershipConflictApplicationProblemPlusJSONResponse MembershipConflictProblem
 
 type PasswordResetLinkExpiredApplicationProblemPlusJSONResponse ResetLinkExpiredProblem
@@ -87416,22 +87339,6 @@ func (response RequestPasswordReset500ApplicationProblemPlusJSONResponse) VisitR
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RequestPasswordReset503ApplicationProblemPlusJSONResponse struct {
-	MailUnavailableApplicationProblemPlusJSONResponse
-}
-
-func (response RequestPasswordReset503ApplicationProblemPlusJSONResponse) VisitRequestPasswordResetResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(503)
 	_, err := buf.WriteTo(w)
 	return err
 }
