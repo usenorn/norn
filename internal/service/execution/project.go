@@ -13,7 +13,7 @@ import (
 )
 
 func (s *executionsService) project(ctx context.Context, execution entity.Execution) {
-	if !execution.State.MovesTheIssue() {
+	if !entity.MovesTheIssue(execution.State) {
 		return
 	}
 

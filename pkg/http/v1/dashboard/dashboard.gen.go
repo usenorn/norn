@@ -2570,6 +2570,7 @@ const (
 	RunnerProblemCodeRunnerAssertionStale    RunnerProblemCode = "runner_assertion_stale"
 	RunnerProblemCodeRunnerCredentialInvalid RunnerProblemCode = "runner_credential_invalid"
 	RunnerProblemCodeRunnerNameTaken         RunnerProblemCode = "runner_name_taken"
+	RunnerProblemCodeRunnerOutdated          RunnerProblemCode = "runner_outdated"
 	RunnerProblemCodeRunnerRevoked           RunnerProblemCode = "runner_revoked"
 )
 
@@ -2587,6 +2588,8 @@ func (e RunnerProblemCode) Valid() bool {
 	case RunnerProblemCodeRunnerCredentialInvalid:
 		return true
 	case RunnerProblemCodeRunnerNameTaken:
+		return true
+	case RunnerProblemCodeRunnerOutdated:
 		return true
 	case RunnerProblemCodeRunnerRevoked:
 		return true

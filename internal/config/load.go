@@ -9,6 +9,8 @@ import (
 
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/viper"
+
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
 const envPrefix = "NORN"
@@ -169,6 +171,15 @@ func validate(cfg Config) error {
 }
 
 func validateRunner(cfg Runner) error {
+	if !channelv1.Released(cfg.MinimumVersion) {
+		return fmt.Errorf(
+			"runner.minimum_version (%q) must be a semantic version such as 1.2.0. It is the oldest "+
+				"runner this server will open a channel to, and a value it cannot compare would "+
+				"either let every machine in or lock every machine out",
+			cfg.MinimumVersion,
+		)
+	}
+
 	if cfg.AccessTTL <= 0 || cfg.TicketTTL <= 0 {
 		return fmt.Errorf("runner.access_ttl and runner.ticket_ttl must be positive")
 	}
@@ -526,6 +537,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("saml.max_issue_delay", 90*time.Second)
 
 	v.SetDefault("runner.channel_enabled", true)
+	v.SetDefault("runner.minimum_version", channelv1.MinimumRunner)
 	v.SetDefault("runner.access_ttl", 15*time.Minute)
 	v.SetDefault("runner.ticket_ttl", time.Minute)
 	v.SetDefault("runner.nonce_ttl", 10*time.Minute)

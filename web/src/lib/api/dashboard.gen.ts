@@ -4537,7 +4537,7 @@ export interface components {
         };
         RunnerProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "runner_credential_invalid" | "runner_revoked" | "runner_assertion_forged" | "runner_assertion_stale" | "runner_assertion_replayed" | "runner_assertion_mismatch" | "runner_name_taken";
+            code: "runner_credential_invalid" | "runner_revoked" | "runner_assertion_forged" | "runner_assertion_stale" | "runner_assertion_replayed" | "runner_assertion_mismatch" | "runner_name_taken" | "runner_outdated";
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */

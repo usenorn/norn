@@ -16,50 +16,8 @@ import (
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
-
-const (
-	resumeReasonApproved = "approved"
-	resumeReasonFeedback = "review_feedback"
-)
-
-type offeredParams struct {
-	Tool    string `json:"tool,omitempty"`
-	Model   string `json:"model,omitempty"`
-	Runtime string `json:"runtime,omitempty"`
-}
-
-type offeredIssue struct {
-	ID          string `json:"id"`
-	Reference   string `json:"reference"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Brief       string `json:"brief"`
-}
-
-type executionOffer struct {
-	ExecutionID string        `json:"execution_id"`
-	Reference   string        `json:"reference"`
-	Attempt     int           `json:"attempt"`
-	WorkspaceID string        `json:"workspace_id"`
-	Issue       offeredIssue  `json:"issue"`
-	Params      offeredParams `json:"params"`
-}
-
-type executionStart struct {
-	ExecutionID    string        `json:"execution_id"`
-	LeaseExpiresAt *time.Time    `json:"lease_expires_at"`
-	Params         offeredParams `json:"params"`
-}
-
-type cancelReason struct {
-	Reason string `json:"reason"`
-}
-
-type resumeInstruction struct {
-	Reason      string `json:"reason"`
-	Instruction string `json:"instruction,omitempty"`
-}
 
 type opening struct {
 	issue        entity.Issue
@@ -80,21 +38,21 @@ type move struct {
 	occurredAt     time.Time
 }
 
-func paramsOf(params entity.ExecutionParams) offeredParams {
-	return offeredParams{
+func paramsOf(params entity.ExecutionParams) channelv1.Params {
+	return channelv1.Params{
 		Tool:    params.Tool,
 		Model:   params.Model,
 		Runtime: string(params.Runtime),
 	}
 }
 
-func offerOf(execution entity.Execution, issue entity.Issue) executionOffer {
-	return executionOffer{
+func offerOf(execution entity.Execution, issue entity.Issue) channelv1.Offer {
+	return channelv1.Offer{
 		ExecutionID: execution.ID,
 		Reference:   execution.Reference(),
 		Attempt:     execution.Attempt,
 		WorkspaceID: execution.WorkspaceID.String(),
-		Issue: offeredIssue{
+		Issue: channelv1.Issue{
 			ID:          issue.ID.String(),
 			Reference:   issue.Reference(),
 			Title:       issue.Title,

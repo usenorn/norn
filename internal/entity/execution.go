@@ -2,13 +2,14 @@ package entity
 
 import (
 	"errors"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
 const (
@@ -38,98 +39,39 @@ var (
 	ErrExecutionLeaseLapsed     = errors.New("the runner stopped reporting and its lease lapsed")
 )
 
-type ExecutionState string
+type ExecutionState = channelv1.State
 
 const (
-	ExecutionQueued          ExecutionState = "queued"
-	ExecutionLeased          ExecutionState = "leased"
-	ExecutionPreparing       ExecutionState = "preparing"
-	ExecutionRunning         ExecutionState = "running"
-	ExecutionWaitingForInput ExecutionState = "waiting_for_input"
-	ExecutionQueuedForResume ExecutionState = "queued_for_resume"
-	ExecutionFinalizing      ExecutionState = "finalizing"
-	ExecutionAwaitingReview  ExecutionState = "awaiting_review"
-	ExecutionApproved        ExecutionState = "approved"
-	ExecutionCompleted       ExecutionState = "completed"
-	ExecutionFailed          ExecutionState = "failed"
-	ExecutionCancelled       ExecutionState = "cancelled"
-	ExecutionInterrupted     ExecutionState = "interrupted"
+	ExecutionQueued          = channelv1.StateQueued
+	ExecutionLeased          = channelv1.StateLeased
+	ExecutionPreparing       = channelv1.StatePreparing
+	ExecutionRunning         = channelv1.StateRunning
+	ExecutionWaitingForInput = channelv1.StateWaitingForInput
+	ExecutionQueuedForResume = channelv1.StateQueuedForResume
+	ExecutionFinalizing      = channelv1.StateFinalizing
+	ExecutionAwaitingReview  = channelv1.StateAwaitingReview
+	ExecutionApproved        = channelv1.StateApproved
+	ExecutionCompleted       = channelv1.StateCompleted
+	ExecutionFailed          = channelv1.StateFailed
+	ExecutionCancelled       = channelv1.StateCancelled
+	ExecutionInterrupted     = channelv1.StateInterrupted
 )
 
 func ExecutionStates() []ExecutionState {
-	return []ExecutionState{
-		ExecutionQueued, ExecutionLeased, ExecutionPreparing, ExecutionRunning,
-		ExecutionWaitingForInput, ExecutionQueuedForResume, ExecutionFinalizing,
-		ExecutionAwaitingReview, ExecutionApproved, ExecutionCompleted, ExecutionFailed,
-		ExecutionCancelled, ExecutionInterrupted,
-	}
+	return channelv1.States()
 }
 
 func TerminalExecutionStates() []ExecutionState {
-	return []ExecutionState{
-		ExecutionCompleted, ExecutionFailed, ExecutionCancelled, ExecutionInterrupted,
-	}
+	return channelv1.TerminalStates()
 }
 
 func RunnerDrivenExecutionStates() []ExecutionState {
-	return []ExecutionState{
-		ExecutionPreparing, ExecutionRunning, ExecutionWaitingForInput, ExecutionFinalizing,
-		ExecutionAwaitingReview, ExecutionCompleted, ExecutionFailed,
-	}
+	return channelv1.RunnerDrivenStates()
 }
 
-func (s ExecutionState) Valid() bool {
-	return slices.Contains(ExecutionStates(), s)
-}
-
-func (s ExecutionState) Terminal() bool {
-	return slices.Contains(TerminalExecutionStates(), s)
-}
-
-func (s ExecutionState) RunnerDriven() bool {
-	return slices.Contains(RunnerDrivenExecutionStates(), s)
-}
-
-func (s ExecutionState) Parked() bool {
-	return s == ExecutionWaitingForInput || s == ExecutionAwaitingReview
-}
-
-func (s ExecutionState) HoldsLease() bool {
-	return s != ExecutionQueued && !s.Terminal()
-}
-
-func (s ExecutionState) CanTransitionTo(target ExecutionState) bool {
-	if !s.Valid() || !target.Valid() {
-		return false
-	}
-
-	switch s {
-	case ExecutionQueued:
-		return target == ExecutionLeased || target == ExecutionCancelled || target == ExecutionFailed
-	case ExecutionLeased:
-		return target == ExecutionPreparing || abandons(target)
-	case ExecutionPreparing:
-		return target == ExecutionRunning || abandons(target)
-	case ExecutionRunning:
-		return target == ExecutionFinalizing || target == ExecutionWaitingForInput || abandons(target)
-	case ExecutionWaitingForInput:
-		return target == ExecutionQueuedForResume || abandons(target)
-	case ExecutionQueuedForResume:
-		return target == ExecutionRunning || abandons(target)
-	case ExecutionFinalizing:
-		return target == ExecutionAwaitingReview || target == ExecutionRunning || abandons(target)
-	case ExecutionAwaitingReview:
-		return target == ExecutionApproved || target == ExecutionQueuedForResume ||
-			target == ExecutionCancelled || target == ExecutionFailed
-	case ExecutionApproved:
-		return target == ExecutionCompleted || target == ExecutionFailed
-	default:
-		return false
-	}
-}
-
-func (s ExecutionState) MovesTheIssue() bool {
-	return s == ExecutionRunning || s == ExecutionAwaitingReview || s == ExecutionCompleted
+func MovesTheIssue(state ExecutionState) bool {
+	return state == ExecutionRunning || state == ExecutionAwaitingReview ||
+		state == ExecutionCompleted
 }
 
 func IssueStateFor(state ExecutionState, states []WorkflowState) (WorkflowState, bool) {
@@ -143,11 +85,6 @@ func IssueStateFor(state ExecutionState, states []WorkflowState) (WorkflowState,
 	default:
 		return WorkflowState{}, false
 	}
-}
-
-func abandons(target ExecutionState) bool {
-	return target == ExecutionFailed || target == ExecutionCancelled ||
-		target == ExecutionInterrupted
 }
 
 type ExecutionParams struct {
@@ -228,27 +165,20 @@ func ExecutionActorOf(actor Actor) ExecutionActor {
 	return acting
 }
 
-type ExecutionEventKind string
+type ExecutionEventKind = channelv1.EventKind
 
 const (
-	ExecutionEventTransition ExecutionEventKind = "transition"
-	ExecutionEventPhase      ExecutionEventKind = "phase"
-	ExecutionEventCommand    ExecutionEventKind = "command"
-	ExecutionEventTool       ExecutionEventKind = "tool"
-	ExecutionEventService    ExecutionEventKind = "service"
-	ExecutionEventPreview    ExecutionEventKind = "preview"
-	ExecutionEventNote       ExecutionEventKind = "note"
+	ExecutionEventTransition = channelv1.EventTransition
+	ExecutionEventPhase      = channelv1.EventPhase
+	ExecutionEventCommand    = channelv1.EventCommand
+	ExecutionEventTool       = channelv1.EventTool
+	ExecutionEventService    = channelv1.EventService
+	ExecutionEventPreview    = channelv1.EventPreview
+	ExecutionEventNote       = channelv1.EventNote
 )
 
 func ExecutionEventKinds() []ExecutionEventKind {
-	return []ExecutionEventKind{
-		ExecutionEventTransition, ExecutionEventPhase, ExecutionEventCommand, ExecutionEventTool,
-		ExecutionEventService, ExecutionEventPreview, ExecutionEventNote,
-	}
-}
-
-func (k ExecutionEventKind) Valid() bool {
-	return slices.Contains(ExecutionEventKinds(), k)
+	return channelv1.EventKinds()
 }
 
 type ExecutionEvent struct {

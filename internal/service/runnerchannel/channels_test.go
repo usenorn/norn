@@ -141,6 +141,42 @@ func TestARedeliveredMessageIsNotActedOnTwice(t *testing.T) {
 	}
 }
 
+func TestSayingHelloTellsTheServerWhichBuildIsNowOnTheMachine(t *testing.T) {
+	h := newHarness(t)
+	session := h.session()
+
+	message := h.freshMessage("01HELLO", entity.ChannelRunnerHello)
+	message.Payload = []byte(`{"version":"1.4.0","protocol":1,"capacity":2}`)
+
+	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any()).Return(nil)
+	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
+	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
+	h.runners.EXPECT().RecordVersion(gomock.Any(), h.runner.ID, "1.4.0").Return(nil)
+
+	if err := h.service.Receive(context.Background(), session, message); err != nil {
+		t.Fatalf("saying hello: %v", err)
+	}
+}
+
+func TestAHelloThatNamesTheVersionAlreadyOnRecordChangesNothing(t *testing.T) {
+	h := newHarness(t)
+	h.runner.Host.Version = "1.4.0"
+	session := h.session()
+
+	message := h.freshMessage("01HELLO", entity.ChannelRunnerHello)
+	message.Payload = []byte(`{"version":"1.4.0","protocol":1}`)
+
+	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any()).Return(nil)
+	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
+	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
+
+	if err := h.service.Receive(context.Background(), session, message); err != nil {
+		t.Fatalf("saying hello: %v", err)
+	}
+}
+
 func TestAMessageForSomethingTheServerCannotDoYetIsStillAccepted(t *testing.T) {
 	h := newHarness(t)
 

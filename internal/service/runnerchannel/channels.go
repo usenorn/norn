@@ -14,11 +14,8 @@ import (
 	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
-
-type leasedExecutions struct {
-	Executions []string `json:"executions"`
-}
 
 type channelsService struct {
 	channels   repository.RunnerChannel
@@ -156,7 +153,7 @@ func (s *channelsService) sync(ctx context.Context, runnerID uuid.UUID) error {
 		return err
 	}
 
-	payload, err := json.Marshal(leasedExecutions{Executions: held})
+	payload, err := json.Marshal(channelv1.Leased{Executions: held})
 	if err != nil {
 		return fmt.Errorf("encode the channel sync: %w", err)
 	}

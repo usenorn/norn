@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"sync"
@@ -16,6 +17,8 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/service"
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
+	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
 
 const Path = "/v1/runners/channel"
@@ -45,6 +48,14 @@ func (e *Edge) Serve(w http.ResponseWriter, r *http.Request) {
 		middleware.WriteProblem(
 			w, r, http.StatusUnauthorized, "open the channel with the ticket from /v1/runners/token",
 		)
+
+		return
+	}
+
+	reported := r.URL.Query().Get("version")
+
+	if !channelv1.RunnerSupported(reported, e.cfg.MinimumVersion) {
+		e.writeOutdated(w, r, reported)
 
 		return
 	}
@@ -83,7 +94,7 @@ func (e *Edge) Serve(w http.ResponseWriter, r *http.Request) {
 		socket:   socket,
 		channels: e.channels,
 		session:  session,
-		writes:   make(chan envelope, outbound),
+		writes:   make(chan channelv1.Envelope, outbound),
 		inflight: map[string]string{},
 	}
 
@@ -95,7 +106,7 @@ type connection struct {
 	channels service.RunnerChannels
 	session  service.ChannelSession
 
-	writes chan envelope
+	writes chan channelv1.Envelope
 
 	mu       sync.Mutex
 	inflight map[string]string
@@ -149,26 +160,30 @@ func (c *connection) readPump(ctx context.Context) error {
 			return entity.ErrChannelEnvelopeInvalid
 		}
 
-		var frame envelope
+		var inbound channelv1.Envelope
 
-		if err := json.Unmarshal(raw, &frame); err != nil {
+		if err := json.Unmarshal(raw, &inbound); err != nil {
 			return entity.ErrChannelEnvelopeInvalid
 		}
 
-		if entity.ChannelMessageType(frame.Type) == entity.ChannelAck {
-			if err := c.settle(ctx, frame.AckID); err != nil {
+		if inbound.V != channelv1.Version {
+			return entity.ErrChannelEnvelopeInvalid
+		}
+
+		if inbound.Acknowledging() {
+			if err := c.settle(ctx, inbound.AckID); err != nil {
 				return err
 			}
 
 			continue
 		}
 
-		if err := c.channels.Receive(ctx, c.session, frame.message()); err != nil {
+		if err := c.channels.Receive(ctx, c.session, inbound.Message()); err != nil {
 			return err
 		}
 
 		select {
-		case c.writes <- acknowledgement(frame.ID):
+		case c.writes <- channelv1.Acknowledgement(inbound.ID, time.Now()):
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -212,7 +227,7 @@ func (c *connection) spoolPump(ctx context.Context) error {
 			c.remember(waiting.Message.ID, waiting.Cursor)
 
 			select {
-			case c.writes <- frame(waiting.Message):
+			case c.writes <- channelv1.Frame(waiting.Message):
 			case <-ctx.Done():
 				return ctx.Err()
 			}
@@ -254,6 +269,24 @@ func (c *connection) settle(ctx context.Context, messageID string) error {
 	}
 
 	return c.channels.Acknowledge(ctx, c.session, cursor)
+}
+
+func (e *Edge) writeOutdated(w http.ResponseWriter, r *http.Request, reported string) {
+	middleware.WriteRunnerProblem(
+		w, r, http.StatusUpgradeRequired, api.RunnerProblemCodeRunnerOutdated,
+		fmt.Sprintf(
+			"this runner is %s and norn needs %s or newer. Take the new one with: %s",
+			named(reported), e.cfg.MinimumVersion, channelv1.InstallRunner,
+		),
+	)
+}
+
+func named(reported string) string {
+	if reported == "" {
+		return "an unnamed build"
+	}
+
+	return reported
 }
 
 func refusal(err error) (int, string) {

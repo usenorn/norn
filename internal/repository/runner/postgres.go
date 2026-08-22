@@ -242,6 +242,23 @@ func (r *runnerRepository) Revoke(
 	return nil
 }
 
+func (r *runnerRepository) RecordVersion(
+	ctx context.Context,
+	runnerID uuid.UUID,
+	version string,
+) error {
+	_, err := dbpostgres.WorkspaceRunners(
+		dbpostgres.WorkspaceRunnerWhere.ID.EQ(runnerID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceRunnerColumns.RunnerVersion: version,
+	})
+	if err != nil {
+		return fmt.Errorf("record runner version: %w", err)
+	}
+
+	return nil
+}
+
 func (r *runnerRepository) RecordSeen(
 	ctx context.Context,
 	runnerID uuid.UUID,

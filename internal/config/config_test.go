@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/usenorn/norn/internal/config"
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
 func TestTrustedProxiesAcceptBareAddressesAndCIDRBlocks(t *testing.T) {
@@ -32,5 +33,27 @@ func TestATrustedProxyThatIsNotAnAddressIsRejected(t *testing.T) {
 
 	if _, err := cfg.TrustedPrefixes(); err == nil {
 		t.Fatal("TrustedPrefixes() = nil error, want a rejection of the malformed entry")
+	}
+}
+
+func TestAMinimumRunnerVersionTheServerCannotCompareIsRefused(t *testing.T) {
+	t.Setenv("NORN_RUNNER_MINIMUM_VERSION", "latest")
+
+	if _, err := config.New(""); err == nil {
+		t.Fatal("config.New() accepted a minimum runner version it can never compare against")
+	}
+}
+
+func TestAServerDefaultsToAMinimumRunnerVersionItCanCompare(t *testing.T) {
+	cfg, err := config.New("")
+	if err != nil {
+		t.Fatalf("config.New() = %v, want the defaults to be a working configuration", err)
+	}
+
+	if !channelv1.Released(cfg.Runner.MinimumVersion) {
+		t.Fatalf(
+			"the default runner floor is %q, which no runner version can be compared against",
+			cfg.Runner.MinimumVersion,
+		)
 	}
 }

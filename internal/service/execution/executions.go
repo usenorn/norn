@@ -11,6 +11,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
 const sweepBatch = 200
@@ -181,7 +182,7 @@ func (s *executionsService) Cancel(
 	}
 
 	if cancelled.RunnerID != uuid.Nil {
-		if err := s.tell(ctx, cancelled, entity.ChannelExecutionCancel, cancelReason{
+		if err := s.tell(ctx, cancelled, entity.ChannelExecutionCancel, channelv1.Cancellation{
 			Reason: cancelled.Reason,
 		}); err != nil {
 			return entity.Execution{}, err
@@ -220,8 +221,8 @@ func (s *executionsService) Approve(
 	}
 
 	if approved.RunnerID != uuid.Nil {
-		if err := s.tell(ctx, approved, entity.ChannelExecutionResume, resumeInstruction{
-			Reason: resumeReasonApproved,
+		if err := s.tell(ctx, approved, entity.ChannelExecutionResume, channelv1.Instruction{
+			Reason: channelv1.ResumeApproved,
 		}); err != nil {
 			return entity.Execution{}, err
 		}
@@ -264,8 +265,8 @@ func (s *executionsService) Resume(
 	}
 
 	if resumed.RunnerID != uuid.Nil {
-		if err := s.tell(ctx, resumed, entity.ChannelExecutionResume, resumeInstruction{
-			Reason:      resumeReasonFeedback,
+		if err := s.tell(ctx, resumed, entity.ChannelExecutionResume, channelv1.Instruction{
+			Reason:      channelv1.ResumeFeedback,
 			Instruction: instruction,
 		}); err != nil {
 			return entity.Execution{}, err
