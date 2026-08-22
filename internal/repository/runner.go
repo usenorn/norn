@@ -16,6 +16,7 @@ type Runner interface {
 	GetByID(ctx context.Context, runnerID uuid.UUID) (entity.Runner, error)
 	GetByRefreshHash(ctx context.Context, refreshHash []byte) (entity.Runner, error)
 	ListByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]entity.Runner, error)
+	ListByAgentID(ctx context.Context, agentID uuid.UUID) ([]entity.Runner, error)
 	Revoke(ctx context.Context, workspaceID, runnerID uuid.UUID, revokedAt time.Time) error
 	RecordSeen(ctx context.Context, runnerID uuid.UUID, seenAt time.Time) error
 }

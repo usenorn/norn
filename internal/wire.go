@@ -52,6 +52,7 @@ import (
 	directoryrepo "github.com/usenorn/norn/internal/repository/directory"
 	emailchangerepo "github.com/usenorn/norn/internal/repository/emailchange"
 	eventstreamrepo "github.com/usenorn/norn/internal/repository/eventstream"
+	executionrepo "github.com/usenorn/norn/internal/repository/execution"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
 	importsrepo "github.com/usenorn/norn/internal/repository/imports"
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
@@ -111,6 +112,7 @@ import (
 	delegationsvc "github.com/usenorn/norn/internal/service/delegation"
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
+	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	importssvc "github.com/usenorn/norn/internal/service/imports"
 	csvfilesvc "github.com/usenorn/norn/internal/service/imports/csvfile"
 	linearsvc "github.com/usenorn/norn/internal/service/imports/linear"
@@ -180,6 +182,7 @@ var baseSet = wire.NewSet(
 	issuequestionrepo.Set,
 	runnerrepo.Set,
 	codebaserepo.Set,
+	executionrepo.Set,
 	runnerchannelrepo.Set,
 	runnersessionrepo.Set,
 	issuerelationrepo.Set,
@@ -243,6 +246,7 @@ var baseSet = wire.NewSet(
 	issuequestionsvc.Set,
 	runnersvc.Set,
 	codebasesvc.Set,
+	executionsvc.Set,
 	runnerchannelsvc.Set,
 	notificationsvc.Set,
 	savedviewsvc.Set,

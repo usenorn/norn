@@ -28,6 +28,7 @@ type handler struct {
 	questions         service.IssueQuestions
 	runners           service.Runners
 	codebases         service.Codebases
+	executions        service.Executions
 	attachments       service.Attachments
 	bulkOperations    service.BulkOperations
 	workflowStates    service.WorkflowStates
@@ -70,6 +71,7 @@ func New(
 	questions service.IssueQuestions,
 	runners service.Runners,
 	codebases service.Codebases,
+	executions service.Executions,
 	attachments service.Attachments,
 	bulkOperations service.BulkOperations,
 	workflowStates service.WorkflowStates,
@@ -111,6 +113,7 @@ func New(
 		questions:         questions,
 		runners:           runners,
 		codebases:         codebases,
+		executions:        executions,
 		attachments:       attachments,
 		bulkOperations:    bulkOperations,
 		workflowStates:    workflowStates,

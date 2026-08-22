@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 )
 
 const (
@@ -29,6 +30,7 @@ var (
 	ErrChannelEnvelopeInvalid = errors.New("runner channel envelope is malformed")
 	ErrChannelTypeUnknown     = errors.New("runner channel message type is not recognised")
 	ErrChannelTypeNotInbound  = errors.New("that message type is only ever sent to a runner")
+	ErrChannelTypeNotOutbound = errors.New("that message type is only ever sent by a runner")
 	ErrChannelSpoolLapsed     = errors.New("the message a runner resumed from is no longer spooled")
 )
 
@@ -121,6 +123,25 @@ type RunnerPresence struct {
 
 func (p RunnerPresence) Live() bool {
 	return p.Epoch != ""
+}
+
+func NewServerMessage(
+	kind ChannelMessageType,
+	executionID string,
+	payload []byte,
+	issuedAt time.Time,
+) (ChannelMessage, error) {
+	if !kind.FromServer() {
+		return ChannelMessage{}, ErrChannelTypeNotOutbound
+	}
+
+	return ChannelMessage{
+		ID:          ulid.Make().String(),
+		Type:        kind,
+		ExecutionID: executionID,
+		IssuedAt:    issuedAt,
+		Payload:     payload,
+	}, nil
 }
 
 func ValidateChannelInbound(message ChannelMessage) error {

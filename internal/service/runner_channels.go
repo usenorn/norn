@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/google/uuid"
-
 	"github.com/usenorn/norn/internal/entity"
 )
 
@@ -27,5 +25,4 @@ type RunnerChannels interface {
 	Heartbeat(ctx context.Context, session ChannelSession) error
 	Verify(ctx context.Context, session ChannelSession) error
 	Close(ctx context.Context, session ChannelSession)
-	Send(ctx context.Context, runnerID uuid.UUID, message entity.ChannelMessage) error
 }

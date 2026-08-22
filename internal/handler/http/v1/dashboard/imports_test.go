@@ -30,6 +30,7 @@ import (
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	delegationsvc "github.com/usenorn/norn/internal/service/delegation"
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
+	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	importssvc "github.com/usenorn/norn/internal/service/imports"
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
@@ -86,6 +87,7 @@ func newImportHarness(t *testing.T) *importHarness {
 		issuequestionsvc.NewMockIssueQuestions(ctrl),
 		runnersvc.NewMockRunners(ctrl),
 		codebasesvc.NewMockCodebases(ctrl),
+		executionsvc.NewMockExecutions(ctrl),
 		attachmentsvc.NewMockAttachments(ctrl),
 		bulkoperationsvc.NewMockBulkOperations(ctrl),
 		workflowstatesvc.NewMockWorkflowStates(ctrl),

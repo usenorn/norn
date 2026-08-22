@@ -3,6 +3,7 @@ package runnerchannel_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -143,7 +144,7 @@ func TestARedeliveredMessageIsNotActedOnTwice(t *testing.T) {
 func TestAMessageForSomethingTheServerCannotDoYetIsStillAccepted(t *testing.T) {
 	h := newHarness(t)
 
-	message := h.freshMessage("01DEF", entity.ChannelExecutionState)
+	message := h.freshMessage("01DEF", entity.ChannelChangeSetUpdated)
 
 	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
 
@@ -153,6 +154,62 @@ func TestAMessageForSomethingTheServerCannotDoYetIsStillAccepted(t *testing.T) {
 				"runner would reconnect forever",
 			err,
 		)
+	}
+}
+
+func TestWhatARunnerReportsAboutAnExecutionReachesTheExecution(t *testing.T) {
+	cases := map[entity.ChannelMessageType]func(*harness) *gomock.Call{
+		entity.ChannelExecutionAccepted: func(h *harness) *gomock.Call {
+			return h.executions.EXPECT().Accepted(gomock.Any(), h.runner, gomock.Any())
+		},
+		entity.ChannelExecutionDeclined: func(h *harness) *gomock.Call {
+			return h.executions.EXPECT().Declined(gomock.Any(), h.runner, gomock.Any())
+		},
+		entity.ChannelExecutionState: func(h *harness) *gomock.Call {
+			return h.executions.EXPECT().Reported(gomock.Any(), h.runner, gomock.Any())
+		},
+		entity.ChannelExecutionEvent: func(h *harness) *gomock.Call {
+			return h.executions.EXPECT().Observed(gomock.Any(), h.runner, gomock.Any())
+		},
+	}
+
+	for kind, expect := range cases {
+		t.Run(string(kind), func(t *testing.T) {
+			h := newHarness(t)
+			message := h.freshMessage("01MNO", kind)
+
+			h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+			expect(h).Return(nil)
+
+			if err := h.service.Receive(context.Background(), h.session(), message); err != nil {
+				t.Fatalf("%s was not acted on: %v", kind, err)
+			}
+		})
+	}
+}
+
+func TestAReconnectingRunnerIsToldWhatItIsStillHolding(t *testing.T) {
+	h := newHarness(t)
+
+	h.opening("ticket", "exec-01ABC")
+	h.channels.EXPECT().
+		Append(gomock.Any(), h.runner.ID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, message entity.ChannelMessage) (string, error) {
+			if message.Type != entity.ChannelSync {
+				t.Fatalf("the first message on a fresh channel is %q, want %q",
+					message.Type, entity.ChannelSync)
+			}
+
+			if !strings.Contains(string(message.Payload), "exec-01ABC") {
+				t.Fatalf("the sync carries %s, which does not name the leased execution",
+					message.Payload)
+			}
+
+			return "1-0", nil
+		})
+
+	if _, err := h.service.Open(context.Background(), "ticket"); err != nil {
+		t.Fatalf("open a channel: %v", err)
 	}
 }
 
@@ -171,32 +228,6 @@ func TestAMessageTheProtocolDoesNotDefineIsRefused(t *testing.T) {
 				t.Fatalf("%s was accepted", name)
 			}
 		})
-	}
-}
-
-func TestTheServerOnlySendsWhatARunnerIsMeantToReceive(t *testing.T) {
-	h := newHarness(t)
-
-	if err := h.service.Send(context.Background(), h.runner.ID, entity.ChannelMessage{
-		Type: entity.ChannelRunnerHeartbeat,
-	}); err == nil {
-		t.Fatalf("the server sent a runner-only message type down the channel")
-	}
-
-	h.channels.EXPECT().
-		Append(gomock.Any(), h.runner.ID, gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ uuid.UUID, message entity.ChannelMessage) (string, error) {
-			if message.ID == "" || message.IssuedAt.IsZero() {
-				t.Fatalf("the server spooled a message with no id or timestamp: %+v", message)
-			}
-
-			return "1-0", nil
-		})
-
-	if err := h.service.Send(context.Background(), h.runner.ID, entity.ChannelMessage{
-		Type: entity.ChannelExecutionCancel,
-	}); err != nil {
-		t.Fatalf("send: %v", err)
 	}
 }
 

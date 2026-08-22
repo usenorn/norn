@@ -284,8 +284,8 @@ func DefaultSCMTransitionRules(workspaceID, teamID uuid.UUID, states []WorkflowS
 		trigger CodeChangeState
 		state   func([]WorkflowState) (WorkflowState, bool)
 	}{
-		{CodeChangeOpen, lastActiveState},
-		{CodeChangeMerged, completionState},
+		{CodeChangeOpen, LastActiveState},
+		{CodeChangeMerged, CompletionState},
 	} {
 		state, found := seed.state(states)
 		if !found {
@@ -301,35 +301,6 @@ func DefaultSCMTransitionRules(workspaceID, teamID uuid.UUID, states []WorkflowS
 	}
 
 	return rules
-}
-
-func lastActiveState(states []WorkflowState) (WorkflowState, bool) {
-	var (
-		latest WorkflowState
-		found  bool
-	)
-
-	for _, state := range states {
-		if state.Category != StateCategoryActive {
-			continue
-		}
-
-		if !found || state.Position > latest.Position {
-			latest, found = state, true
-		}
-	}
-
-	return latest, found
-}
-
-func completionState(states []WorkflowState) (WorkflowState, bool) {
-	for _, state := range states {
-		if state.IsCompletion {
-			return state, true
-		}
-	}
-
-	return WorkflowState{}, false
 }
 
 func (r SCMTransitionRule) TargetState(states []WorkflowState) (WorkflowState, bool) {

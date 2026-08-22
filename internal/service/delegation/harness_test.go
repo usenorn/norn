@@ -16,6 +16,7 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	delegationsvc "github.com/usenorn/norn/internal/service/delegation"
+	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	webhooksvc "github.com/usenorn/norn/internal/service/webhook"
 )
 
@@ -25,6 +26,7 @@ type harness struct {
 	agents      *agentrepo.MockAgent
 	activity    *activityrepo.MockActivity
 	emitter     *webhooksvc.MockWebhookEmitter
+	executions  *executionsvc.MockExecutions
 	authorizer  *authorizersvc.MockAuthorizer
 	service     service.Delegations
 
@@ -45,6 +47,7 @@ func newHarness(t *testing.T) *harness {
 		agents:      agentrepo.NewMockAgent(ctrl),
 		activity:    activityrepo.NewMockActivity(ctrl),
 		emitter:     webhooksvc.NewMockWebhookEmitter(ctrl),
+		executions:  executionsvc.NewMockExecutions(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID: uuid.New(),
 		actorID:     uuid.New(),
@@ -73,8 +76,14 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.executions.EXPECT().
+		OnDelegated(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
 	h.service = delegationsvc.New(
-		h.delegations, h.issues, h.agents, h.activity, h.emitter, h.authorizer, transactor,
+		h.delegations, h.issues, h.agents, h.activity, h.emitter, h.executions, h.authorizer,
+		transactor,
 	)
 
 	return h

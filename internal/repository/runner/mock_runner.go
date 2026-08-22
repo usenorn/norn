@@ -88,6 +88,21 @@ func (mr *MockRunnerMockRecorder) GetByRefreshHash(ctx, refreshHash any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByRefreshHash", reflect.TypeOf((*MockRunner)(nil).GetByRefreshHash), ctx, refreshHash)
 }
 
+// ListByAgentID mocks base method.
+func (m *MockRunner) ListByAgentID(ctx context.Context, agentID uuid.UUID) ([]entity.Runner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByAgentID", ctx, agentID)
+	ret0, _ := ret[0].([]entity.Runner)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByAgentID indicates an expected call of ListByAgentID.
+func (mr *MockRunnerMockRecorder) ListByAgentID(ctx, agentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByAgentID", reflect.TypeOf((*MockRunner)(nil).ListByAgentID), ctx, agentID)
+}
+
 // ListByWorkspaceID mocks base method.
 func (m *MockRunner) ListByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]entity.Runner, error) {
 	m.ctrl.T.Helper()

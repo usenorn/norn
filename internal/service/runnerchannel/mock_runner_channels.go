@@ -13,7 +13,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
 	service "github.com/usenorn/norn/internal/service"
 	gomock "go.uber.org/mock/gomock"
@@ -126,20 +125,6 @@ func (m *MockRunnerChannels) Receive(ctx context.Context, session service.Channe
 func (mr *MockRunnerChannelsMockRecorder) Receive(ctx, session, message any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Receive", reflect.TypeOf((*MockRunnerChannels)(nil).Receive), ctx, session, message)
-}
-
-// Send mocks base method.
-func (m *MockRunnerChannels) Send(ctx context.Context, runnerID uuid.UUID, message entity.ChannelMessage) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", ctx, runnerID, message)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Send indicates an expected call of Send.
-func (mr *MockRunnerChannelsMockRecorder) Send(ctx, runnerID, message any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockRunnerChannels)(nil).Send), ctx, runnerID, message)
 }
 
 // Verify mocks base method.

@@ -29,4 +29,5 @@ var Set = wire.NewSet(
 	NewSCMReconcileHandler,
 	NewSCMBackfillHandler,
 	NewSCMResumeHandler,
+	NewExecutionLeaseSweepHandler,
 )
