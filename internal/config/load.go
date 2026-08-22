@@ -88,8 +88,12 @@ func validate(cfg Config) error {
 		)
 	}
 
-	if (cfg.SMTP.Host == "") != (cfg.SMTP.FromAddress == "") {
-		return fmt.Errorf("smtp.host and smtp.from_address must be set together")
+	if cfg.SMTP.Host == "" || cfg.SMTP.FromAddress == "" {
+		return fmt.Errorf(
+			"smtp.host and smtp.from_address are both required; signing in, confirming an " +
+				"address, recovering a password and inviting somebody all send mail, and an " +
+				"instance that cannot send it cannot let anybody in",
+		)
 	}
 
 	if cfg.Password.BreachCheckEnabled && cfg.Password.BreachCheckEndpoint == "" {

@@ -12,6 +12,8 @@ func TestTheDocumentedGitHubAppEnvironmentVariablesAreActuallyRead(t *testing.T)
 	t.Setenv("NORN_SOURCE_CONTROL_GITHUB_APP_PRIVATE_KEY", "-----BEGIN RSA PRIVATE KEY-----\nx\n-----END RSA PRIVATE KEY-----\n")
 	t.Setenv("NORN_SOURCE_CONTROL_GITHUB_APP_WEBHOOK_SECRET", "shhh")
 	t.Setenv("NORN_SECURITY_ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef")
+	t.Setenv("NORN_SMTP_HOST", "smtp.test")
+	t.Setenv("NORN_SMTP_FROM_ADDRESS", "no-reply@norn.test")
 
 	cfg, err := config.New("")
 	if err != nil {
