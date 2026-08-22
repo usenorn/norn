@@ -101,6 +101,16 @@ func (s *executionsService) visible(
 	return decision, execution, nil
 }
 
+func (s *executionsService) Visible(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	executionID string,
+) (entity.Execution, error) {
+	_, execution, err := s.visible(ctx, workspaceID, executionID, entity.ActionRead)
+
+	return execution, err
+}
+
 func (s *executionsService) Get(
 	ctx context.Context,
 	workspaceID uuid.UUID,

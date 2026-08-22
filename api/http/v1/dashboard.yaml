@@ -5847,6 +5847,268 @@ paths:
         '409': { $ref: '#/components/responses/ExecutionConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /runners/me/executions/{executionId}/logs:
+    parameters:
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [executions]
+      operationId: uploadExecutionLogs
+      summary: Send a batch of this run's command output
+      description: >-
+        Command output is too voluminous for the channel, so it travels here instead. A batch is
+        stored whole and identified by the digest of what it carries, so a machine that replays
+        one after a reconnect is answered with the receipt it already had rather than storing it
+        twice. Send the body gzipped with Content-Encoding when it is worth compressing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UploadExecutionLogsRequest' }
+      responses:
+        '202':
+          description: What the server holds for this batch
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExecutionChunkReceipt' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /runners/me/executions/{executionId}/transcript:
+    parameters:
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [executions]
+      operationId: uploadExecutionTranscript
+      summary: Send a chunk of the coding agent's normalised event stream
+      description: >-
+        Ordered by sequence and resumable: ask the streams path what the server already holds and
+        carry on from there. A workspace whose telemetry is minimal refuses these and says so.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UploadExecutionTranscriptRequest' }
+      responses:
+        '202':
+          description: What the server holds for this chunk
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExecutionChunkReceipt' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /runners/me/executions/{executionId}/artifacts:
+    parameters:
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [executions]
+      operationId: uploadExecutionArtifact
+      summary: Publish a file this run produced
+      description: >-
+        A diff, a screenshot, a report. The id that comes back is what the timeline and the
+        ChangeSet reference. A file sent twice keeps the first id.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: The artifact as the server now holds it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExecutionArtifactReceipt' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /runners/me/executions/{executionId}/streams:
+    parameters:
+      - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [executions]
+      operationId: getExecutionStreams
+      summary: How far each of this run's streams got
+      description: >-
+        What a machine reads after a restart to know where to carry on from, so a reconnect
+        resends nothing it does not have to.
+      responses:
+        '200':
+          description: One cursor per stream the server holds anything for
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExecutionStreamCursor' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/logs:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [executions]
+      operationId: listWorkspaceExecutionLogs
+      summary: What this run printed, oldest batch first
+      parameters:
+        - name: after
+          in: query
+          description: The sequence of the last batch already held
+          schema: { type: integer, format: int64, minimum: 0 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50 }
+      responses:
+        '200':
+          description: The next batches of output
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExecutionLogChunk' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/transcript:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [executions]
+      operationId: listWorkspaceExecutionTranscript
+      summary: What the coding agent did, oldest chunk first
+      description: >-
+        Empty once the retention window has passed, or where the workspace keeps summaries only.
+        The timeline is kept either way.
+      parameters:
+        - name: after
+          in: query
+          description: The sequence of the last chunk already held
+          schema: { type: integer, format: int64, minimum: 0 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50 }
+      responses:
+        '200':
+          description: The next chunks of the transcript
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExecutionTranscriptChunk' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/artifacts:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [executions]
+      operationId: listWorkspaceExecutionArtifacts
+      summary: The files this run published, oldest first
+      responses:
+        '200':
+          description: The artifacts on record
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExecutionArtifact' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/artifacts/{artifactId}/content:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+      - $ref: '#/components/parameters/ArtifactId'
+    get:
+      tags: [executions]
+      operationId: downloadWorkspaceExecutionArtifact
+      summary: Fetch the bytes of one artifact
+      description: Answers with a short-lived link to the stored object rather than the bytes.
+      responses:
+        '303':
+          description: The artifact is at the location given
+          headers:
+            Location:
+              schema: { type: string }
+            Cache-Control:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/execution-policy:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [executions]
+      operationId: getWorkspaceExecutionPolicy
+      summary: Read how much of a run this workspace keeps, and for how long
+      responses:
+        '200':
+          description: The workspace execution policy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceExecutionPolicy' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [executions]
+      operationId: setWorkspaceExecutionPolicy
+      summary: Set how much of a run this workspace keeps, and for how long
+      description: >-
+        On minimal the server stops accepting full transcripts, so the setting holds even against
+        a machine that has not noticed it changed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetWorkspaceExecutionPolicyRequest' }
+      responses:
+        '200':
+          description: The policy as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceExecutionPolicy' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
     bearerToken:
@@ -5891,6 +6153,12 @@ components:
 
     CodebaseId:
       name: codebaseId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    ArtifactId:
+      name: artifactId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -7107,6 +7375,12 @@ components:
         enrolledAt: { type: string, format: date-time }
         lastSeenAt: { type: string, format: date-time }
         revokedAt: { type: string, format: date-time }
+        telemetry:
+          allOf:
+            - $ref: '#/components/schemas/TelemetryMode'
+          description: >-
+            How much of a run this machine's workspace keeps. On minimal the server declines full
+            transcripts, so a machine reads this to send summaries instead of having them refused.
 
     EnrolRunnerRequest:
       type: object
@@ -7367,6 +7641,168 @@ components:
           maxLength: 4000
           description: Handed to the coding agent verbatim
 
+    ExecutionStream:
+      type: string
+      enum: [logs, transcript]
+
+    TelemetryMode:
+      type: string
+      enum: [full, minimal]
+
+    ExecutionLogEntry:
+      type: object
+      required: [text]
+      properties:
+        at:
+          type: string
+          format: date-time
+          description: When the line was written. Defaults to when the server received the batch.
+        stream: { type: string, maxLength: 64, description: Which handle it came out of }
+        source: { type: string, maxLength: 128, description: The service or step that wrote it }
+        text: { type: string }
+
+    ExecutionTranscriptEntry:
+      type: object
+      required: [type]
+      properties:
+        at: { type: string, format: date-time }
+        type:
+          type: string
+          maxLength: 64
+          description: The normalised event kind, such as message, tool_call, tool_result or usage
+        payload:
+          type: object
+          additionalProperties: true
+          description: Whatever the driver put in the event
+
+    UploadExecutionLogsRequest:
+      type: object
+      required: [sequence, entries]
+      properties:
+        sequence:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Where this batch sits in the stream. A position may be filled once.
+        entries:
+          type: array
+          minItems: 1
+          maxItems: 5000
+          items: { $ref: '#/components/schemas/ExecutionLogEntry' }
+
+    UploadExecutionTranscriptRequest:
+      type: object
+      required: [sequence, entries]
+      properties:
+        sequence:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Where this chunk sits in the stream. A position may be filled once.
+        entries:
+          type: array
+          minItems: 1
+          maxItems: 5000
+          items: { $ref: '#/components/schemas/ExecutionTranscriptEntry' }
+
+    ExecutionChunkReceipt:
+      type: object
+      required: [stream, sequence, digest, entryCount, bytes, duplicate, receivedAt]
+      properties:
+        stream: { $ref: '#/components/schemas/ExecutionStream' }
+        sequence: { type: integer, format: int64 }
+        digest:
+          type: string
+          description: The server's own digest of what it stored, and what makes a replay a no-op
+        entryCount: { type: integer }
+        bytes: { type: integer, format: int64, description: What the batch takes in storage }
+        duplicate:
+          type: boolean
+          description: True when this batch was already held, so nothing was stored a second time
+        receivedAt: { type: string, format: date-time }
+
+    ExecutionStreamCursor:
+      type: object
+      required: [stream, lastSequence, chunks, entryCount, bytes]
+      properties:
+        stream: { $ref: '#/components/schemas/ExecutionStream' }
+        lastSequence: { type: integer, format: int64 }
+        chunks: { type: integer }
+        entryCount: { type: integer, format: int64 }
+        bytes: { type: integer, format: int64 }
+
+    ExecutionChunk:
+      type: object
+      required: [stream, sequence, digest, entryCount, bytes, firstAt, lastAt, receivedAt]
+      properties:
+        stream: { $ref: '#/components/schemas/ExecutionStream' }
+        sequence: { type: integer, format: int64 }
+        digest: { type: string }
+        entryCount: { type: integer }
+        bytes: { type: integer, format: int64 }
+        firstAt: { type: string, format: date-time }
+        lastAt: { type: string, format: date-time }
+        receivedAt: { type: string, format: date-time }
+
+    ExecutionLogChunk:
+      allOf:
+        - $ref: '#/components/schemas/ExecutionChunk'
+        - type: object
+          required: [entries]
+          properties:
+            entries:
+              type: array
+              items: { $ref: '#/components/schemas/ExecutionLogEntry' }
+
+    ExecutionTranscriptChunk:
+      allOf:
+        - $ref: '#/components/schemas/ExecutionChunk'
+        - type: object
+          required: [entries]
+          properties:
+            entries:
+              type: array
+              items: { $ref: '#/components/schemas/ExecutionTranscriptEntry' }
+
+    ExecutionArtifact:
+      type: object
+      required: [id, executionId, name, contentType, bytes, digest, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        executionId: { type: string, maxLength: 64 }
+        name: { type: string, maxLength: 255 }
+        contentType: { type: string, maxLength: 128 }
+        bytes: { type: integer, format: int64 }
+        digest: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    ExecutionArtifactReceipt:
+      allOf:
+        - $ref: '#/components/schemas/ExecutionArtifact'
+        - type: object
+          required: [duplicate]
+          properties:
+            duplicate:
+              type: boolean
+              description: True when this file was already published, so the first id is returned
+
+    WorkspaceExecutionPolicy:
+      type: object
+      required: [workspaceId, telemetry, uploadRetentionDays]
+      properties:
+        workspaceId: { type: string, format: uuid }
+        telemetry: { $ref: '#/components/schemas/TelemetryMode' }
+        uploadRetentionDays:
+          type: integer
+          description: How long a run's output and transcript are kept. The timeline outlives them.
+
+    SetWorkspaceExecutionPolicyRequest:
+      type: object
+      required: [telemetry, uploadRetentionDays]
+      properties:
+        telemetry: { $ref: '#/components/schemas/TelemetryMode' }
+        uploadRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
+
     ExecutionProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -7381,6 +7817,7 @@ components:
                 - execution_unfinished
                 - execution_not_reviewable
                 - execution_no_runner
+                - execution_chunk_conflict
 
     CodebaseProblem:
       allOf:

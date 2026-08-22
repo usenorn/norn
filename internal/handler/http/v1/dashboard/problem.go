@@ -507,6 +507,22 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrExecutionNoRunner):
 		return executionConflictProblem(api.ExecutionNoRunner, err), true
 
+	case errors.Is(err, entity.ErrExecutionChunkConflict):
+		return executionConflictProblem(api.ExecutionChunkConflict, err), true
+
+	case errors.Is(err, entity.ErrExecutionUploadTooLarge),
+		errors.Is(err, entity.ErrExecutionUploadExhausted):
+		return newProblem(http.StatusRequestEntityTooLarge, err.Error()), true
+
+	case errors.Is(err, entity.ErrExecutionUploadEmpty),
+		errors.Is(err, entity.ErrExecutionUploadCrowded),
+		errors.Is(err, entity.ErrExecutionSequenceInvalid),
+		errors.Is(err, entity.ErrExecutionTelemetryMinimal):
+		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
+
+	case errors.Is(err, entity.ErrExecutionArtifactNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
 	case errors.Is(err, entity.ErrRunnerKeyMalformed):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
@@ -2306,5 +2322,45 @@ func (r problemResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWr
 }
 
 func (r problemResponse) VisitApproveWorkspaceExecutionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUploadExecutionLogsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUploadExecutionArtifactResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetExecutionStreamsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceExecutionLogsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceExecutionTranscriptResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceExecutionArtifactsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDownloadWorkspaceExecutionArtifactResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

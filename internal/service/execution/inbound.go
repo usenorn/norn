@@ -35,6 +35,14 @@ func (s *executionsService) held(
 	return execution, nil
 }
 
+func (s *executionsService) Held(
+	ctx context.Context,
+	runner entity.Runner,
+	executionID string,
+) (entity.Execution, error) {
+	return s.held(ctx, runner, executionID)
+}
+
 func (s *executionsService) Accepted(
 	ctx context.Context,
 	runner entity.Runner,

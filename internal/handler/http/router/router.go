@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -122,7 +123,7 @@ func New(
 
 	strict := api.NewStrictHandlerWithOptions(dashboard, nil, api.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			middleware.WriteProblem(w, r, http.StatusBadRequest, err.Error())
+			middleware.WriteProblem(w, r, refusalStatus(err), err.Error())
 		},
 		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			logging.From(r.Context()).ErrorContext(r.Context(), "request failed", "error", err.Error())
@@ -135,14 +136,27 @@ func New(
 		BaseRouter: base,
 		Middlewares: []api.MiddlewareFunc{
 			maxRequestBytes(cfg.MaxRequestBytes),
+			middleware.Decompress(cfg.MaxRequestBytes),
 			chimiddleware.Timeout(cfg.RequestTimeout),
 			middleware.BearerToken(tokens, runners),
 			middleware.Session(sessions, sessionCfg),
 		},
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			middleware.WriteProblem(w, r, http.StatusBadRequest, err.Error())
+			middleware.WriteProblem(w, r, refusalStatus(err), err.Error())
 		},
 	})
+}
+
+// refusalStatus separates a body the server refused to read from one it could not understand: a
+// request cut off at the byte cap arrives as a decode failure, and calling that a bad request
+// tells a caller its payload was malformed when in fact it was only too big.
+func refusalStatus(err error) int {
+	var oversized *http.MaxBytesError
+	if errors.As(err, &oversized) {
+		return http.StatusRequestEntityTooLarge
+	}
+
+	return http.StatusBadRequest
 }
 
 func maxRequestBytes(limit int64) func(http.Handler) http.Handler {

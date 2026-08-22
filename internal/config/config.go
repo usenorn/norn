@@ -69,7 +69,13 @@ type OIDC struct {
 }
 
 type Executions struct {
-	LeaseSweepSchedule string `mapstructure:"lease_sweep_schedule"`
+	LeaseSweepSchedule string        `mapstructure:"lease_sweep_schedule"`
+	MaxChunkBytes      int64         `mapstructure:"max_chunk_bytes"`
+	MaxArtifactBytes   int64         `mapstructure:"max_artifact_bytes"`
+	MaxUploadBytes     int64         `mapstructure:"max_upload_bytes"`
+	UploadRetention    time.Duration `mapstructure:"upload_retention"`
+	RetentionSchedule  string        `mapstructure:"retention_schedule"`
+	RetentionBatch     int           `mapstructure:"retention_batch"`
 }
 
 type Runner struct {
