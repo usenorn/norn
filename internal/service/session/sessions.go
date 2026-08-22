@@ -21,7 +21,11 @@ type sessionsService struct {
 	memberships repository.Membership
 	geoLocator  repository.GeoLocator
 	throttle    repository.SignInThrottle
+	challenges  repository.SignInChallenge
+	mailer      repository.Mailer
+	producer    repository.JobProducer
 	cfg         config.Session
+	app         config.App
 	authorizer  service.Authorizer
 	audit       service.Audit
 }
@@ -32,7 +36,11 @@ func New(
 	memberships repository.Membership,
 	geoLocator repository.GeoLocator,
 	throttle repository.SignInThrottle,
+	challenges repository.SignInChallenge,
+	mailer repository.Mailer,
+	producer repository.JobProducer,
 	cfg config.Session,
+	app config.App,
 	authorizer service.Authorizer,
 	audit service.Audit,
 ) service.Sessions {
@@ -42,7 +50,11 @@ func New(
 		memberships: memberships,
 		geoLocator:  geoLocator,
 		throttle:    throttle,
+		challenges:  challenges,
+		mailer:      mailer,
+		producer:    producer,
 		cfg:         cfg,
+		app:         app,
 		authorizer:  authorizer,
 		audit:       audit,
 	}
@@ -75,7 +87,121 @@ func (s *sessionsService) rehashIfStale(ctx context.Context, account entity.Acco
 	}
 }
 
-func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput) (service.IssuedSession, error) {
+func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput) (service.IssuedChallenge, error) {
+	attempts, err := s.throttle.RecordAddressAttempt(ctx, input.Client.IP)
+	if err != nil {
+		return service.IssuedChallenge{}, err
+	}
+
+	if attempts > entity.SignInAddressMaxAttempts {
+		return service.IssuedChallenge{}, entity.ErrSignInRateLimited
+	}
+
+	email := entity.NormalizeEmail(input.Email)
+	subject := entity.HashSignInSubject(email)
+
+	throttle, err := s.throttle.Get(ctx, subject)
+	if err != nil {
+		return service.IssuedChallenge{}, err
+	}
+
+	if throttle.Locked(time.Now().UTC()) {
+		return service.IssuedChallenge{}, entity.AccountLockedError{UnlocksAt: throttle.LockedUntil}
+	}
+
+	if err := pause(ctx, throttle.Delay()); err != nil {
+		return service.IssuedChallenge{}, err
+	}
+
+	account, err := s.accounts.GetByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, entity.ErrAccountNotFound) {
+			entity.BurnPasswordGuess(input.Password)
+
+			return service.IssuedChallenge{}, s.recordFailure(ctx, subject, email, uuid.Nil)
+		}
+
+		return service.IssuedChallenge{}, err
+	}
+
+	if !account.CanAuthenticate() {
+		entity.BurnPasswordGuess(input.Password)
+
+		return service.IssuedChallenge{}, s.recordFailure(ctx, subject, email, account.ID)
+	}
+
+	matches, err := entity.VerifyPassword(account.PasswordHash, input.Password)
+	if err != nil {
+		return service.IssuedChallenge{}, err
+	}
+
+	if !matches {
+		return service.IssuedChallenge{}, s.recordFailure(ctx, subject, email, account.ID)
+	}
+
+	s.rehashIfStale(ctx, account, input.Password)
+
+	if err := s.throttle.Clear(ctx, subject); err != nil {
+		return service.IssuedChallenge{}, err
+	}
+
+	return s.challenge(ctx, account, input.Client)
+}
+
+func (s *sessionsService) challenge(
+	ctx context.Context,
+	account entity.Account,
+	client entity.SessionClient,
+) (service.IssuedChallenge, error) {
+	code, codeHash, err := entity.NewSignInCode()
+	if err != nil {
+		return service.IssuedChallenge{}, err
+	}
+
+	id, err := entity.NewSessionSlot()
+	if err != nil {
+		return service.IssuedChallenge{}, err
+	}
+
+	now := time.Now().UTC()
+	expiresAt := now.Add(entity.SignInChallengeTTL)
+
+	if err := s.challenges.Put(ctx, id, entity.SignInChallenge{
+		AccountID:   account.ID,
+		Email:       account.Email,
+		DisplayName: account.DisplayName,
+		CodeHash:    codeHash,
+		IssuedAt:    now,
+		ExpiresAt:   expiresAt,
+		Client:      client,
+	}); err != nil {
+		return service.IssuedChallenge{}, err
+	}
+
+	if err := s.producer.EnqueueSignInCode(ctx, entity.SignInCodePayload{
+		ChallengeID: id,
+		Code:        code,
+	}); err != nil {
+		return service.IssuedChallenge{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		Action:       entity.AuditSignInCodeSent,
+		Outcome:      entity.AuditSucceeded,
+		Actor:        entity.AuditActor{AccountID: account.ID, AuthMethod: entity.SessionAuthMethodPassword},
+		ResourceKind: string(entity.ResourceAccount),
+		ResourceID:   account.ID,
+		SourceIP:     client.IP,
+		UserAgent:    entity.TruncateUserAgent(client.UserAgent),
+	})
+
+	return service.IssuedChallenge{ID: id, Email: account.Email, ExpiresAt: expiresAt}, nil
+}
+
+func (s *sessionsService) VerifySignInCode(
+	ctx context.Context,
+	input service.VerifySignInCodeInput,
+) (service.IssuedSession, error) {
 	attempts, err := s.throttle.RecordAddressAttempt(ctx, input.Client.IP)
 	if err != nil {
 		return service.IssuedSession{}, err
@@ -85,55 +211,46 @@ func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput)
 		return service.IssuedSession{}, entity.ErrSignInRateLimited
 	}
 
-	email := entity.NormalizeEmail(input.Email)
-	subject := entity.HashSignInSubject(email)
-
-	throttle, err := s.throttle.Get(ctx, subject)
+	challenge, err := s.challenges.Get(ctx, input.ChallengeID)
 	if err != nil {
 		return service.IssuedSession{}, err
 	}
 
-	if throttle.Locked(time.Now().UTC()) {
-		return service.IssuedSession{}, entity.AccountLockedError{UnlocksAt: throttle.LockedUntil}
+	if challenge.ExpiredAt(time.Now().UTC()) {
+		return service.IssuedSession{}, s.abandon(ctx, input.ChallengeID, entity.ErrSignInChallengeNotFound)
 	}
 
-	if err := pause(ctx, throttle.Delay()); err != nil {
-		return service.IssuedSession{}, err
+	if challenge.Exhausted() {
+		return service.IssuedSession{}, s.abandon(ctx, input.ChallengeID, entity.ErrSignInCodeExhausted)
 	}
 
-	account, err := s.accounts.GetByEmail(ctx, email)
-	if err != nil {
-		if errors.Is(err, entity.ErrAccountNotFound) {
-			entity.BurnPasswordGuess(input.Password)
+	if !challenge.Answers(input.Code) {
+		challenge.Attempts++
 
-			return service.IssuedSession{}, s.recordFailure(ctx, subject, email, uuid.Nil)
+		if err := s.challenges.Put(ctx, input.ChallengeID, challenge); err != nil {
+			return service.IssuedSession{}, err
 		}
 
+		if challenge.Exhausted() {
+			return service.IssuedSession{}, s.abandon(ctx, input.ChallengeID, entity.ErrSignInCodeExhausted)
+		}
+
+		return service.IssuedSession{}, entity.SignInCodeIncorrectError{AttemptsLeft: challenge.AttemptsLeft()}
+	}
+
+	if err := s.challenges.Delete(ctx, input.ChallengeID); err != nil {
 		return service.IssuedSession{}, err
 	}
 
-	if !account.CanAuthenticate() {
-		entity.BurnPasswordGuess(input.Password)
+	return s.issue(ctx, challenge.AccountID, uuid.Nil, entity.SessionAuthMethodPassword, challenge.Client)
+}
 
-		return service.IssuedSession{}, s.recordFailure(ctx, subject, email, account.ID)
+func (s *sessionsService) abandon(ctx context.Context, id string, reason error) error {
+	if err := s.challenges.Delete(ctx, id); err != nil {
+		return err
 	}
 
-	matches, err := entity.VerifyPassword(account.PasswordHash, input.Password)
-	if err != nil {
-		return service.IssuedSession{}, err
-	}
-
-	if !matches {
-		return service.IssuedSession{}, s.recordFailure(ctx, subject, email, account.ID)
-	}
-
-	s.rehashIfStale(ctx, account, input.Password)
-
-	if err := s.throttle.Clear(ctx, subject); err != nil {
-		return service.IssuedSession{}, err
-	}
-
-	return s.issue(ctx, account.ID, uuid.Nil, entity.SessionAuthMethodPassword, input.Client)
+	return reason
 }
 
 func (s *sessionsService) Start(ctx context.Context, input service.StartSessionInput) (service.IssuedSession, error) {

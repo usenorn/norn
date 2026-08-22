@@ -6,13 +6,11 @@
 
 	let {
 		preferences,
-		emailEnabled,
 		disabled = false,
 		idPrefix,
 		onchange,
 	}: {
 		preferences: NotificationPreferences;
-		emailEnabled: boolean;
 		disabled?: boolean;
 		idPrefix: string;
 		onchange: (next: NotificationPreferences) => void;
@@ -62,7 +60,7 @@
 					<td class="py-2.5 text-center">
 						<Checkbox
 							id="{idPrefix}-{row.key}-email"
-							disabled={disabled || !emailEnabled}
+							{disabled}
 							checked={preferences[row.key].email}
 							onCheckedChange={(on) => toggle(row.key, "email", on === true)}
 							aria-label="{row.label} by email"
@@ -95,7 +93,7 @@
 				<td class="py-2.5 text-center">
 					<Checkbox
 						id="{idPrefix}-agents-email"
-						disabled={disabled || !emailEnabled}
+						{disabled}
 						checked={preferences.agents.email}
 						onCheckedChange={(on) => toggle("agents", "email", on === true)}
 						aria-label="Agent activity by email"

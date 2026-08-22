@@ -1,0 +1,7 @@
+{{ define "content" }}
+<p>Hi {{ .DisplayName }},</p>
+<p>Type this code on the page that asked for it:</p>
+{{ row "Code" .Code }}
+{{ row "Lasts" .Expiry }}
+<p>The code works once. If you did not just sign in, somebody else knows your password — change it and tell an admin.</p>
+{{ end }}

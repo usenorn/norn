@@ -122,7 +122,7 @@ func TestSigningUpStoresAPendingRowAndCreatesNoAccount(t *testing.T) {
 	}
 }
 
-func TestSigningUpWithSMTPMailsTheLinkAndWithholdsItFromTheResponse(t *testing.T) {
+func TestTheEnqueuedSignUpTokenMatchesTheStoredHash(t *testing.T) {
 	h := newHarness(t)
 
 	var (
@@ -142,17 +142,8 @@ func TestSigningUpWithSMTPMailsTheLinkAndWithholdsItFromTheResponse(t *testing.T
 			return nil
 		})
 
-	requested, err := h.service.RequestSignUp(context.Background(), signUpInput())
-	if err != nil {
+	if _, err := h.service.RequestSignUp(context.Background(), signUpInput()); err != nil {
 		t.Fatalf("RequestSignUp: %v", err)
-	}
-
-	if requested.Delivery != entity.SignUpDeliveryMailed {
-		t.Fatalf("delivery = %q, want %q", requested.Delivery, entity.SignUpDeliveryMailed)
-	}
-
-	if requested.URL != "" {
-		t.Fatalf("a mailed link was disclosed in the response as %q", requested.URL)
 	}
 
 	if payload.SignUpID != stored.ID {
@@ -161,31 +152,6 @@ func TestSigningUpWithSMTPMailsTheLinkAndWithholdsItFromTheResponse(t *testing.T
 
 	if !bytes.Equal(entity.HashSignUpToken(payload.Token), stored.TokenHash) {
 		t.Fatal("the enqueued token does not hash to the stored token hash")
-	}
-}
-
-func TestSigningUpWithoutSMTPReturnsAUsableLinkInsteadOfMailing(t *testing.T) {
-	h := newHarness(t)
-	svc := newServiceWithSMTP(h, config.SMTP{})
-
-	var stored entity.SignUp
-
-	h.expectAddressAllowed()
-	h.expectAddressFree()
-	h.breaches.EXPECT().Compromised(gomock.Any(), signUpPassword).Return(false, nil)
-	h.expectSignUpStored(&stored)
-
-	requested, err := svc.RequestSignUp(context.Background(), signUpInput())
-	if err != nil {
-		t.Fatalf("RequestSignUp: %v", err)
-	}
-
-	if requested.Delivery != entity.SignUpDeliveryLinkOnly {
-		t.Fatalf("delivery = %q, want %q", requested.Delivery, entity.SignUpDeliveryLinkOnly)
-	}
-
-	if !strings.HasPrefix(requested.URL, baseURL) || !strings.Contains(requested.URL, "token=") {
-		t.Fatalf("link = %q, want a %s link carrying a token", requested.URL, baseURL)
 	}
 }
 

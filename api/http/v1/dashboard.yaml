@@ -113,7 +113,7 @@ paths:
     post:
       tags: [auth]
       operationId: signIn
-      summary: Exchange credentials for a session cookie
+      summary: Answer a password with a code sent to the address it belongs to
       security: []
       requestBody:
         required: true
@@ -121,13 +121,35 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/SignInRequest' }
       responses:
+        '202':
+          description: The password was accepted and a code is on its way
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SignInChallenge' }
+        '401': { $ref: '#/components/responses/SignInRejected' }
+        '423': { $ref: '#/components/responses/AccountLocked' }
+        '429': { $ref: '#/components/responses/TooManyAttempts' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /auth/login/verify:
+    post:
+      tags: [auth]
+      operationId: verifySignInCode
+      summary: Finish a sign-in with the code that was sent
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VerifySignInCodeRequest' }
+      responses:
         '200':
           description: A session cookie was issued
           content:
             application/json:
               schema: { $ref: '#/components/schemas/IssuedSession' }
-        '401': { $ref: '#/components/responses/SignInRejected' }
-        '423': { $ref: '#/components/responses/AccountLocked' }
+        '401': { $ref: '#/components/responses/SignInCodeRejected' }
+        '409': { $ref: '#/components/responses/Problem' }
         '429': { $ref: '#/components/responses/TooManyAttempts' }
         '500': { $ref: '#/components/responses/Problem' }
 
@@ -150,7 +172,6 @@ paths:
               schema: { $ref: '#/components/schemas/PasswordResetRequested' }
         '422': { $ref: '#/components/responses/Problem' }
         '429': { $ref: '#/components/responses/TooManyAttempts' }
-        '503': { $ref: '#/components/responses/MailUnavailable' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /auth/password-reset/confirm:
@@ -6125,6 +6146,12 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/InvalidCredentialsProblem' }
 
+    SignInCodeRejected:
+      description: The code did not match the one that was sent
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/SignInCodeIncorrectProblem' }
+
     AccountLocked:
       description: Consecutive failures locked the account
       content:
@@ -6345,12 +6372,6 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/ImportSigningUnavailableProblem' }
-    MailUnavailable:
-      description: The instance is not configured to send mail
-      content:
-        application/problem+json:
-          schema: { $ref: '#/components/schemas/MailUnavailableProblem' }
-
     BreachCheckUnavailable:
       description: The password breach check could not be completed
       content:
@@ -7853,6 +7874,7 @@ components:
       enum:
         - session.signed_in
         - session.sign_in_failed
+        - session.sign_in_code_sent
         - session.signed_out
         - session.revoked
         - account.password_changed
@@ -9752,14 +9774,6 @@ components:
           properties:
             code: { type: string, enum: [webhook_signing_unavailable] }
 
-    MailUnavailableProblem:
-      allOf:
-        - $ref: '#/components/schemas/Problem'
-        - type: object
-          required: [code]
-          properties:
-            code: { type: string, enum: [mail_unavailable] }
-
     BreachCheckUnavailableProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -10283,19 +10297,13 @@ components:
         timezone: { type: string }
         password: { type: string }
 
-    SignUpDelivery:
-      type: string
-      enum: [mailed, link_only]
-
     SignUpRequested:
       type: object
-      required: [email, delivery, requestedAt, expiresAt]
+      required: [email, requestedAt, expiresAt]
       properties:
         email: { type: string }
-        delivery: { $ref: '#/components/schemas/SignUpDelivery' }
         requestedAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
-        url: { type: string }
 
     ConfirmSignUpRequest:
       type: object
@@ -10309,6 +10317,34 @@ components:
       properties:
         email: { type: string }
         password: { type: string }
+
+    SignInChallenge:
+      type: object
+      required: [challengeId, email, expiresAt]
+      properties:
+        challengeId:
+          type: string
+          description: Name this when answering with the code. It is single use.
+        email:
+          type: string
+          description: The address the code went to.
+        expiresAt: { type: string, format: date-time }
+
+    VerifySignInCodeRequest:
+      type: object
+      required: [challengeId, code]
+      properties:
+        challengeId: { type: string }
+        code: { type: string }
+
+    SignInCodeIncorrectProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code, attemptsLeft]
+          properties:
+            code: { type: string, enum: [sign_in_code_incorrect] }
+            attemptsLeft: { type: integer, format: int32 }
 
     UpdateProfileRequest:
       type: object
@@ -10375,7 +10411,7 @@ components:
 
     InvitationDelivery:
       type: string
-      enum: [pending, sent, failed, link_only]
+      enum: [pending, sent, failed]
 
     InvitationOutcome:
       type: string
@@ -10423,7 +10459,6 @@ components:
         email: { type: string }
         outcome: { $ref: '#/components/schemas/InvitationOutcome' }
         invitation: { $ref: '#/components/schemas/Invitation' }
-        url: { type: string }
 
     InvitationBatch:
       type: object
@@ -10435,10 +10470,9 @@ components:
 
     IssuedInvitation:
       type: object
-      required: [invitation, url]
+      required: [invitation]
       properties:
         invitation: { $ref: '#/components/schemas/Invitation' }
-        url: { type: string }
 
     PreviewInvitationRequest:
       type: object
@@ -10584,12 +10618,11 @@ components:
 
     NotificationSettings:
       type: object
-      required: [preferences, workspace, overridden, emailEnabled]
+      required: [preferences, workspace, overridden]
       properties:
         preferences: { $ref: '#/components/schemas/NotificationPreferences' }
         workspace: { $ref: '#/components/schemas/NotificationPreferences' }
         overridden: { type: boolean }
-        emailEnabled: { type: boolean }
 
     NotificationPreferences:
       type: object

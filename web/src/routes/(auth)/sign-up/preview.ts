@@ -124,22 +124,6 @@ export const signUpPreviewStates: Record<string, SignUpPreview> = import.meta.en
 				},
 				resend: "unavailable",
 			},
-			linkonly: {
-				form: {
-					name: "Rae Okafor",
-					email: "rae@northwind.co",
-					password: "northwind-cycle-24",
-					passwordConfirm: "northwind-cycle-24",
-					terms: true,
-				},
-				outcome: {
-					kind: "link_only",
-					email: "rae@northwind.co",
-					requestedAt: "2026-08-05T14:22:00Z",
-					expiresAt: "2026-08-05T15:22:00Z",
-					url: "https://norn.northwind.internal/sign-up/confirm?token=zk4p9w2m",
-				},
-			},
 			taken: {
 				form: {
 					name: "Rae Okafor",

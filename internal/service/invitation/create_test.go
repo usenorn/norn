@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
-	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
 )
@@ -26,7 +24,7 @@ func TestCreateReportsOneOutcomePerAddressInTheOrderRequested(t *testing.T) {
 	h.expectAccountWithMembership(workspace.ID, existing)
 	h.expectNoAccount("ada@northwind.co")
 	h.captureCreatedInvitations()
-	h.captureEnqueued()
+	enqueued := h.captureEnqueued()
 
 	results, err := h.service.Create(actingAs(actor), service.CreateInvitationsInput{
 		WorkspaceID: workspace.ID,
@@ -52,12 +50,12 @@ func TestCreateReportsOneOutcomePerAddressInTheOrderRequested(t *testing.T) {
 		}
 	}
 
-	if results[1].URL != "" {
-		t.Error("a malformed address must not produce an invitation link")
-	}
-
-	if results[0].URL != "" {
-		t.Error("an existing member must not produce an invitation link")
+	if len(*enqueued) != 1 {
+		t.Errorf(
+			"%d invitations were sent for three recipients, want 1. Only the third address was "+
+				"invitable; an existing member and a malformed address must not be mailed.",
+			len(*enqueued),
+		)
 	}
 }
 
@@ -70,7 +68,7 @@ func TestCreateIssuesADistinctLinkPerInvitationAndStoresOnlyItsHash(t *testing.T
 	h.expectNoAccount("jun@northwind.co")
 	h.expectNoAccount("ada@northwind.co")
 	created := h.captureCreatedInvitations()
-	h.captureEnqueued()
+	enqueued := h.captureEnqueued()
 
 	results, err := h.service.Create(actingAs(actor), service.CreateInvitationsInput{
 		WorkspaceID: workspace.ID,
@@ -80,16 +78,16 @@ func TestCreateIssuesADistinctLinkPerInvitationAndStoresOnlyItsHash(t *testing.T
 		t.Fatalf("Create: %v", err)
 	}
 
-	if results[0].URL == results[1].URL {
-		t.Fatal("two invitations share the same link")
+	if len(*enqueued) != len(results) {
+		t.Fatalf("%d invitations were sent for %d recipients", len(*enqueued), len(results))
 	}
 
-	for i, result := range results {
-		if !strings.HasPrefix(result.URL, baseURL+"/accept-invitation?token=") {
-			t.Fatalf("results[%d].URL = %q, want an accept-invitation link", i, result.URL)
-		}
+	if (*enqueued)[0].Token == (*enqueued)[1].Token {
+		t.Fatal("two invitations share the same token")
+	}
 
-		token := strings.TrimPrefix(result.URL, baseURL+"/accept-invitation?token=")
+	for i := range results {
+		token := (*enqueued)[i].Token
 
 		if !bytes.Equal((*created)[i].TokenHash, entity.HashInvitationToken(token)) {
 			t.Errorf("results[%d] stored a hash that does not match its issued token", i)
@@ -198,36 +196,6 @@ func TestCreateSupersedesAPendingInvitationForTheSameAddress(t *testing.T) {
 		Recipients:  recipients("ada@northwind.co"),
 	}); err != nil {
 		t.Fatalf("Create: %v", err)
-	}
-}
-
-func TestCreateWithoutMailConfiguredStillYieldsAUsableLink(t *testing.T) {
-	h := newHarnessWithSMTP(t, config.SMTP{})
-	workspace := workspaceFixture()
-	actor := uuid.New()
-
-	h.expectAdminActor(workspace.ID, actor, entity.ActionManage)
-	h.expectNoAccount("ada@northwind.co")
-	created := h.captureCreatedInvitations()
-
-	results, err := h.service.Create(actingAs(actor), service.CreateInvitationsInput{
-		WorkspaceID: workspace.ID,
-		Recipients:  recipients("ada@northwind.co"),
-	})
-	if err != nil {
-		t.Fatalf("Create with no mail configured must succeed, got %v", err)
-	}
-
-	if results[0].Outcome != entity.InvitationOutcomeCreated {
-		t.Fatalf("outcome = %q, want created", results[0].Outcome)
-	}
-
-	if results[0].URL == "" {
-		t.Fatal("an instance without mail must still hand back a link to distribute")
-	}
-
-	if (*created)[0].Delivery != entity.InvitationDeliveryLinkOnly {
-		t.Errorf("delivery = %q, want link_only", (*created)[0].Delivery)
 	}
 }
 

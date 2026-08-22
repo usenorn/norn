@@ -30,7 +30,6 @@ type invitationsService struct {
 	registration service.Accounts
 	sessions     service.Sessions
 	app          config.App
-	smtp         config.SMTP
 	audit        service.Audit
 }
 
@@ -49,7 +48,6 @@ func New(
 	registration service.Accounts,
 	sessions service.Sessions,
 	app config.App,
-	smtp config.SMTP,
 	audit service.Audit,
 ) service.Invitations {
 	return &invitationsService{
@@ -67,7 +65,6 @@ func New(
 		registration: registration,
 		sessions:     sessions,
 		app:          app,
-		smtp:         smtp,
 		audit:        audit,
 	}
 }
@@ -90,11 +87,10 @@ func (s *invitationsService) Create(ctx context.Context, input service.CreateInv
 	}
 
 	actor, _ := identity.From(ctx)
-	delivery := s.initialDelivery()
 	results := make([]service.InvitationResult, 0, len(input.Recipients))
 
 	for _, recipient := range input.Recipients {
-		result, token, err := s.invite(ctx, input.WorkspaceID, actor, recipient, delivery)
+		result, token, err := s.invite(ctx, input.WorkspaceID, actor, recipient)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +114,6 @@ func (s *invitationsService) invite(
 	ctx context.Context,
 	workspaceID, actor uuid.UUID,
 	recipient service.InvitationRecipient,
-	delivery entity.InvitationDelivery,
 ) (service.InvitationResult, string, error) {
 	email := entity.NormalizeEmail(recipient.Email)
 
@@ -154,7 +149,7 @@ func (s *invitationsService) invite(
 		Role:        recipient.Role,
 		TeamIDs:     recipient.TeamIDs,
 		Status:      entity.InvitationStatusPending,
-		Delivery:    delivery,
+		Delivery:    entity.InvitationDeliveryPending,
 		TokenHash:   tokenHash,
 		InvitedAt:   now,
 		ExpiresAt:   now.Add(entity.InvitationTokenTTL),
@@ -193,18 +188,11 @@ func (s *invitationsService) invite(
 		Detail:       map[string]string{"role": string(recipient.Role)},
 	})
 
-	result := service.InvitationResult{
+	return service.InvitationResult{
 		Email:      email,
 		Outcome:    entity.InvitationOutcomeCreated,
 		Invitation: created,
-		URL:        s.invitationURL(token),
-	}
-
-	if delivery == entity.InvitationDeliveryLinkOnly {
-		return result, "", nil
-	}
-
-	return result, token, nil
+	}, token, nil
 }
 
 func (s *invitationsService) alreadyMember(ctx context.Context, workspaceID uuid.UUID, email string) (bool, error) {
@@ -273,24 +261,21 @@ func (s *invitationsService) Resend(ctx context.Context, workspaceID, invitation
 		return service.IssuedInvitation{}, err
 	}
 
-	delivery := s.initialDelivery()
 	expiresAt := time.Now().UTC().Add(entity.InvitationTokenTTL)
 
-	refreshed, err := s.invitations.Refresh(ctx, invitation.ID, tokenHash, expiresAt, delivery)
+	refreshed, err := s.invitations.Refresh(ctx, invitation.ID, tokenHash, expiresAt, entity.InvitationDeliveryPending)
 	if err != nil {
 		return service.IssuedInvitation{}, err
 	}
 
-	if delivery != entity.InvitationDeliveryLinkOnly {
-		if err := s.producer.EnqueueInvitation(ctx, entity.InvitationPayload{
-			InvitationID: refreshed.ID,
-			Token:        token,
-		}); err != nil {
-			return service.IssuedInvitation{}, err
-		}
+	if err := s.producer.EnqueueInvitation(ctx, entity.InvitationPayload{
+		InvitationID: refreshed.ID,
+		Token:        token,
+	}); err != nil {
+		return service.IssuedInvitation{}, err
 	}
 
-	return service.IssuedInvitation{Invitation: refreshed, URL: s.invitationURL(token)}, nil
+	return service.IssuedInvitation{Invitation: refreshed}, nil
 }
 
 func (s *invitationsService) Revoke(ctx context.Context, workspaceID, invitationID uuid.UUID) error {
@@ -451,10 +436,10 @@ func (s *invitationsService) Accept(ctx context.Context, input service.AcceptInv
 		return service.AcceptedInvitation{}, err
 	}
 
-	issued, err := s.sessions.SignIn(ctx, service.SignInInput{
-		Email:    invitation.Email,
-		Password: input.Password,
-		Client:   input.Client,
+	issued, err := s.sessions.Start(ctx, service.StartSessionInput{
+		AccountID:  account.ID,
+		AuthMethod: entity.SessionAuthMethodPassword,
+		Client:     input.Client,
 	})
 	if err != nil {
 		return service.AcceptedInvitation{}, err
@@ -593,14 +578,6 @@ func (s *invitationsService) scopedInvitation(ctx context.Context, workspaceID, 
 	}
 
 	return invitation, nil
-}
-
-func (s *invitationsService) initialDelivery() entity.InvitationDelivery {
-	if s.smtp.Configured() {
-		return entity.InvitationDeliveryPending
-	}
-
-	return entity.InvitationDeliveryLinkOnly
 }
 
 func (s *invitationsService) validateTeams(ctx context.Context, workspaceID uuid.UUID, recipients []service.InvitationRecipient) error {

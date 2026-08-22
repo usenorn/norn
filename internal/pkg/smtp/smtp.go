@@ -13,14 +13,9 @@ type Client struct {
 
 	fromAddress string
 	fromName    string
-	configured  bool
 }
 
 func New(cfg config.SMTP) (*Client, func(), error) {
-	if !cfg.Configured() {
-		return &Client{}, func() {}, nil
-	}
-
 	policy, err := tlsPolicy(cfg.TLSPolicy)
 	if err != nil {
 		return nil, nil, err
@@ -58,12 +53,7 @@ func New(cfg config.SMTP) (*Client, func(), error) {
 		Client:      client,
 		fromAddress: cfg.FromAddress,
 		fromName:    cfg.FromName,
-		configured:  true,
 	}, cleanup, nil
-}
-
-func (c *Client) Configured() bool {
-	return c.configured
 }
 
 func (c *Client) FromAddress() string {

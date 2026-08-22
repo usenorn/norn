@@ -87,6 +87,7 @@ import (
 	scmappstaterepo "github.com/usenorn/norn/internal/repository/scmappstate"
 	searchrepo "github.com/usenorn/norn/internal/repository/search"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
+	signinchallengerepo "github.com/usenorn/norn/internal/repository/signinchallenge"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	signuprepo "github.com/usenorn/norn/internal/repository/signup"
 	ssoconnectionrepo "github.com/usenorn/norn/internal/repository/ssoconnection"
@@ -223,6 +224,7 @@ var baseSet = wire.NewSet(
 	samlrequestrepo.Set,
 	samlreplayrepo.Set,
 	oidcstaterepo.Set,
+	signinchallengerepo.Set,
 	scmappstaterepo.Set,
 	oidcproviderrepo.Set,
 	mcpthrottlerepo.Set,

@@ -269,7 +269,6 @@ func invitationResultDTO(result service.InvitationResult) api.InvitationResult {
 	if result.Outcome == entity.InvitationOutcomeCreated {
 		invitation := invitationDTO(result.Invitation)
 		dto.Invitation = &invitation
-		dto.Url = &result.URL
 	}
 
 	return dto
@@ -315,18 +314,11 @@ func invitationPreviewDTO(preview service.InvitationPreview) api.InvitationPrevi
 }
 
 func signUpRequestedDTO(requested service.RequestedSignUp) api.SignUpRequested {
-	dto := api.SignUpRequested{
+	return api.SignUpRequested{
 		Email:       requested.Email,
-		Delivery:    api.SignUpDelivery(requested.Delivery),
 		RequestedAt: requested.RequestedAt,
 		ExpiresAt:   requested.ExpiresAt,
 	}
-
-	if requested.URL != "" {
-		dto.Url = &requested.URL
-	}
-
-	return dto
 }
 
 func issueDTO(issue entity.Issue) api.Issue {
@@ -1420,10 +1412,9 @@ func issueFollowDTO(follower entity.IssueFollower) api.IssueFollow {
 
 func notificationSettingsDTO(view service.NotificationSettingsView) api.NotificationSettings {
 	return api.NotificationSettings{
-		Preferences:  notificationPreferencesDTO(view.Team),
-		Workspace:    notificationPreferencesDTO(view.Global),
-		Overridden:   view.TeamOverridden,
-		EmailEnabled: view.EmailEnabled,
+		Preferences: notificationPreferencesDTO(view.Team),
+		Workspace:   notificationPreferencesDTO(view.Global),
+		Overridden:  view.TeamOverridden,
 	}
 }
 

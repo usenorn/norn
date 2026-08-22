@@ -402,6 +402,7 @@ const (
 	AuditActionRunnerEnrolled               AuditAction = "runner.enrolled"
 	AuditActionRunnerRevoked                AuditAction = "runner.revoked"
 	AuditActionSessionRevoked               AuditAction = "session.revoked"
+	AuditActionSessionSignInCodeSent        AuditAction = "session.sign_in_code_sent"
 	AuditActionSessionSignInFailed          AuditAction = "session.sign_in_failed"
 	AuditActionSessionSignedIn              AuditAction = "session.signed_in"
 	AuditActionSessionSignedOut             AuditAction = "session.signed_out"
@@ -479,6 +480,8 @@ func (e AuditAction) Valid() bool {
 	case AuditActionRunnerRevoked:
 		return true
 	case AuditActionSessionRevoked:
+		return true
+	case AuditActionSessionSignInCodeSent:
 		return true
 	case AuditActionSessionSignInFailed:
 		return true
@@ -1601,18 +1604,15 @@ func (e InvalidCredentialsProblemCode) Valid() bool {
 
 // Defines values for InvitationDelivery.
 const (
-	InvitationDeliveryFailed   InvitationDelivery = "failed"
-	InvitationDeliveryLinkOnly InvitationDelivery = "link_only"
-	InvitationDeliveryPending  InvitationDelivery = "pending"
-	InvitationDeliverySent     InvitationDelivery = "sent"
+	InvitationDeliveryFailed  InvitationDelivery = "failed"
+	InvitationDeliveryPending InvitationDelivery = "pending"
+	InvitationDeliverySent    InvitationDelivery = "sent"
 )
 
 // Valid indicates whether the value is a known member of the InvitationDelivery enum.
 func (e InvitationDelivery) Valid() bool {
 	switch e {
 	case InvitationDeliveryFailed:
-		return true
-	case InvitationDeliveryLinkOnly:
 		return true
 	case InvitationDeliveryPending:
 		return true
@@ -2196,21 +2196,6 @@ func (e LicenceStatus) Valid() bool {
 	}
 }
 
-// Defines values for MailUnavailableProblemCode.
-const (
-	MailUnavailableProblemCodeMailUnavailable MailUnavailableProblemCode = "mail_unavailable"
-)
-
-// Valid indicates whether the value is a known member of the MailUnavailableProblemCode enum.
-func (e MailUnavailableProblemCode) Valid() bool {
-	switch e {
-	case MailUnavailableProblemCodeMailUnavailable:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for MembershipConflictProblemCode.
 const (
 	MembershipConflictProblemCodeDirectoryManaged MembershipConflictProblemCode = "directory_managed"
@@ -2724,6 +2709,21 @@ func (e SessionAuthMethod) Valid() bool {
 	}
 }
 
+// Defines values for SignInCodeIncorrectProblemCode.
+const (
+	SignInCodeIncorrect SignInCodeIncorrectProblemCode = "sign_in_code_incorrect"
+)
+
+// Valid indicates whether the value is a known member of the SignInCodeIncorrectProblemCode enum.
+func (e SignInCodeIncorrectProblemCode) Valid() bool {
+	switch e {
+	case SignInCodeIncorrect:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SignUpClosedProblemCode.
 const (
 	SignUpClosed SignUpClosedProblemCode = "sign_up_closed"
@@ -2733,24 +2733,6 @@ const (
 func (e SignUpClosedProblemCode) Valid() bool {
 	switch e {
 	case SignUpClosed:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SignUpDelivery.
-const (
-	SignUpDeliveryLinkOnly SignUpDelivery = "link_only"
-	SignUpDeliveryMailed   SignUpDelivery = "mailed"
-)
-
-// Valid indicates whether the value is a known member of the SignUpDelivery enum.
-func (e SignUpDelivery) Valid() bool {
-	switch e {
-	case SignUpDeliveryLinkOnly:
-		return true
-	case SignUpDeliveryMailed:
 		return true
 	default:
 		return false
@@ -5251,7 +5233,6 @@ type InvitationResult struct {
 	Email      string            `json:"email"`
 	Invitation *Invitation       `json:"invitation,omitempty"`
 	Outcome    InvitationOutcome `json:"outcome"`
-	Url        *string           `json:"url,omitempty"`
 }
 
 // InvitationStatus defines model for InvitationStatus.
@@ -5611,7 +5592,6 @@ type IssueStatus string
 // IssuedInvitation defines model for IssuedInvitation.
 type IssuedInvitation struct {
 	Invitation Invitation `json:"invitation"`
-	Url        string     `json:"url"`
 }
 
 // IssuedSession defines model for IssuedSession.
@@ -5688,20 +5668,6 @@ type LicenceStatus string
 type LinkIssueCodeRequest struct {
 	Url string `json:"url"`
 }
-
-// MailUnavailableProblem defines model for MailUnavailableProblem.
-type MailUnavailableProblem struct {
-	Code     MailUnavailableProblemCode `json:"code"`
-	Detail   *string                    `json:"detail,omitempty"`
-	Errors   *[]FieldError              `json:"errors,omitempty"`
-	Instance *string                    `json:"instance,omitempty"`
-	Status   int32                      `json:"status"`
-	Title    string                     `json:"title"`
-	Type     string                     `json:"type"`
-}
-
-// MailUnavailableProblemCode defines model for MailUnavailableProblem.Code.
-type MailUnavailableProblemCode string
 
 // MapSCMIdentityRequest defines model for MapSCMIdentityRequest.
 type MapSCMIdentityRequest struct {
@@ -5896,10 +5862,9 @@ type NotificationReason string
 
 // NotificationSettings defines model for NotificationSettings.
 type NotificationSettings struct {
-	EmailEnabled bool                    `json:"emailEnabled"`
-	Overridden   bool                    `json:"overridden"`
-	Preferences  NotificationPreferences `json:"preferences"`
-	Workspace    NotificationPreferences `json:"workspace"`
+	Overridden  bool                    `json:"overridden"`
+	Preferences NotificationPreferences `json:"preferences"`
+	Workspace   NotificationPreferences `json:"workspace"`
 }
 
 // NotificationSubjectKind defines model for NotificationSubjectKind.
@@ -6452,6 +6417,31 @@ type SetWorkspaceSamlConnectionRequest struct {
 	Provisioning      *bool                 `json:"provisioning,omitempty"`
 }
 
+// SignInChallenge defines model for SignInChallenge.
+type SignInChallenge struct {
+	// ChallengeId Name this when answering with the code. It is single use.
+	ChallengeId string `json:"challengeId"`
+
+	// Email The address the code went to.
+	Email     string    `json:"email"`
+	ExpiresAt time.Time `json:"expiresAt"`
+}
+
+// SignInCodeIncorrectProblem defines model for SignInCodeIncorrectProblem.
+type SignInCodeIncorrectProblem struct {
+	AttemptsLeft int32                          `json:"attemptsLeft"`
+	Code         SignInCodeIncorrectProblemCode `json:"code"`
+	Detail       *string                        `json:"detail,omitempty"`
+	Errors       *[]FieldError                  `json:"errors,omitempty"`
+	Instance     *string                        `json:"instance,omitempty"`
+	Status       int32                          `json:"status"`
+	Title        string                         `json:"title"`
+	Type         string                         `json:"type"`
+}
+
+// SignInCodeIncorrectProblemCode defines model for SignInCodeIncorrectProblem.Code.
+type SignInCodeIncorrectProblemCode string
+
 // SignInRequest defines model for SignInRequest.
 type SignInRequest struct {
 	Email    string `json:"email"`
@@ -6472,9 +6462,6 @@ type SignUpClosedProblem struct {
 // SignUpClosedProblemCode defines model for SignUpClosedProblem.Code.
 type SignUpClosedProblemCode string
 
-// SignUpDelivery defines model for SignUpDelivery.
-type SignUpDelivery string
-
 // SignUpExpiredProblem defines model for SignUpExpiredProblem.
 type SignUpExpiredProblem struct {
 	Code     SignUpExpiredProblemCode `json:"code"`
@@ -6491,11 +6478,9 @@ type SignUpExpiredProblemCode string
 
 // SignUpRequested defines model for SignUpRequested.
 type SignUpRequested struct {
-	Delivery    SignUpDelivery `json:"delivery"`
-	Email       string         `json:"email"`
-	ExpiresAt   time.Time      `json:"expiresAt"`
-	RequestedAt time.Time      `json:"requestedAt"`
-	Url         *string        `json:"url,omitempty"`
+	Email       string    `json:"email"`
+	ExpiresAt   time.Time `json:"expiresAt"`
+	RequestedAt time.Time `json:"requestedAt"`
 }
 
 // SignUpUnavailableProblem defines model for SignUpUnavailableProblem.
@@ -6983,6 +6968,12 @@ type UpdateWorkspaceRequest struct {
 	Timezone      *string             `json:"timezone,omitempty"`
 }
 
+// VerifySignInCodeRequest defines model for VerifySignInCodeRequest.
+type VerifySignInCodeRequest struct {
+	ChallengeId string `json:"challengeId"`
+	Code        string `json:"code"`
+}
+
 // Webhook defines model for Webhook.
 type Webhook struct {
 	CreatedAt       time.Time             `json:"createdAt"`
@@ -7448,9 +7439,6 @@ type IssueConflict = IssueConflictProblem
 // LabelConflict defines model for LabelConflict.
 type LabelConflict = LabelConflictProblem
 
-// MailUnavailable defines model for MailUnavailable.
-type MailUnavailable = MailUnavailableProblem
-
 // MembershipConflict defines model for MembershipConflict.
 type MembershipConflict = MembershipConflictProblem
 
@@ -7471,6 +7459,9 @@ type RunnerCredential = RunnerProblem
 
 // SavedViewConflict defines model for SavedViewConflict.
 type SavedViewConflict = SavedViewConflictProblem
+
+// SignInCodeRejected defines model for SignInCodeRejected.
+type SignInCodeRejected = SignInCodeIncorrectProblem
 
 // SignInRejected defines model for SignInRejected.
 type SignInRejected = InvalidCredentialsProblem
@@ -7766,6 +7757,9 @@ type ChangePasswordJSONRequestBody = ChangePasswordRequest
 
 // SignInJSONRequestBody defines body for SignIn for application/json ContentType.
 type SignInJSONRequestBody = SignInRequest
+
+// VerifySignInCodeJSONRequestBody defines body for VerifySignInCode for application/json ContentType.
+type VerifySignInCodeJSONRequestBody = VerifySignInCodeRequest
 
 // RequestPasswordResetJSONRequestBody defines body for RequestPasswordReset for application/json ContentType.
 type RequestPasswordResetJSONRequestBody = RequestPasswordResetRequest
@@ -8238,19 +8232,33 @@ type ClientInterface interface {
 	// Corresponds with GET /accounts/{accountId}/avatar (the `DownloadAccountAvatar` operationId).
 	DownloadAccountAvatar(ctx context.Context, accountId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SignInWithBody Exchange credentials for a session cookie
+	// SignInWithBody Answer a password with a code sent to the address it belongs to
 	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /auth/login (the `SignIn` operationId).
 	SignInWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SignIn Exchange credentials for a session cookie
+	// SignIn Answer a password with a code sent to the address it belongs to
 	//
 	// Takes a body of the `application/json` content type.
 	//
 	// Corresponds with POST /auth/login (the `SignIn` operationId).
 	SignIn(ctx context.Context, body SignInJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// VerifySignInCodeWithBody Finish a sign-in with the code that was sent
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /auth/login/verify (the `VerifySignInCode` operationId).
+	VerifySignInCodeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// VerifySignInCode Finish a sign-in with the code that was sent
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /auth/login/verify (the `VerifySignInCode` operationId).
+	VerifySignInCode(ctx context.Context, body VerifySignInCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SignOut Discard the current session
 	//
@@ -10750,7 +10758,7 @@ func (c *Client) DownloadAccountAvatar(ctx context.Context, accountId openapi_ty
 	return c.Client.Do(req)
 }
 
-// SignInWithBody Exchange credentials for a session cookie
+// SignInWithBody Answer a password with a code sent to the address it belongs to
 //
 // Takes any type of body and a specified content type.
 //
@@ -10767,13 +10775,47 @@ func (c *Client) SignInWithBody(ctx context.Context, contentType string, body io
 	return c.Client.Do(req)
 }
 
-// SignIn Exchange credentials for a session cookie
+// SignIn Answer a password with a code sent to the address it belongs to
 //
 // Takes a body of the `application/json` content type.
 //
 // Corresponds with POST /auth/login (the `SignIn` operationId).
 func (c *Client) SignIn(ctx context.Context, body SignInJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSignInRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// VerifySignInCodeWithBody Finish a sign-in with the code that was sent
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /auth/login/verify (the `VerifySignInCode` operationId).
+func (c *Client) VerifySignInCodeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVerifySignInCodeRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// VerifySignInCode Finish a sign-in with the code that was sent
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /auth/login/verify (the `VerifySignInCode` operationId).
+func (c *Client) VerifySignInCode(ctx context.Context, body VerifySignInCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVerifySignInCodeRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -17003,6 +17045,46 @@ func NewSignInRequestWithBody(server string, contentType string, body io.Reader)
 	}
 
 	operationPath := fmt.Sprintf("/auth/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewVerifySignInCodeRequest calls the generic VerifySignInCode builder with application/json body
+func NewVerifySignInCodeRequest(server string, body VerifySignInCodeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewVerifySignInCodeRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewVerifySignInCodeRequestWithBody constructs an http.Request for the VerifySignInCode method, with any body, and a specified content type
+func NewVerifySignInCodeRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/login/verify")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -29716,19 +29798,33 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /accounts/{accountId}/avatar (the `DownloadAccountAvatar` operationId).
 	DownloadAccountAvatarWithResponse(ctx context.Context, accountId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadAccountAvatarResponse, error)
 
-	// SignInWithBodyWithResponse Exchange credentials for a session cookie
+	// SignInWithBodyWithResponse Answer a password with a code sent to the address it belongs to
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /auth/login (the `SignIn` operationId).
 	SignInWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SignInResponse, error)
 
-	// SignInWithResponse Exchange credentials for a session cookie
+	// SignInWithResponse Answer a password with a code sent to the address it belongs to
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /auth/login (the `SignIn` operationId).
 	SignInWithResponse(ctx context.Context, body SignInJSONRequestBody, reqEditors ...RequestEditorFn) (*SignInResponse, error)
+
+	// VerifySignInCodeWithBodyWithResponse Finish a sign-in with the code that was sent
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /auth/login/verify (the `VerifySignInCode` operationId).
+	VerifySignInCodeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VerifySignInCodeResponse, error)
+
+	// VerifySignInCodeWithResponse Finish a sign-in with the code that was sent
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /auth/login/verify (the `VerifySignInCode` operationId).
+	VerifySignInCodeWithResponse(ctx context.Context, body VerifySignInCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*VerifySignInCodeResponse, error)
 
 	// SignOutWithResponse Discard the current session
 	//
@@ -33133,8 +33229,8 @@ type SignInResponse429Headers struct {
 type SignInResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *IssuedSession
+	// JSON202 the response for an HTTP 202 `application/json` response
+	JSON202 *SignInChallenge
 	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
 	ApplicationproblemJSON401 *SignInRejected
 	// ApplicationproblemJSON423 the response for an HTTP 423 `application/problem+json` response
@@ -33147,9 +33243,9 @@ type SignInResponse struct {
 	Headers429 *SignInResponse429Headers
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r SignInResponse) GetJSON200() *IssuedSession {
-	return r.JSON200
+// GetJSON202 returns the response for an HTTP 202 `application/json` response
+func (r SignInResponse) GetJSON202() *SignInChallenge {
+	return r.JSON202
 }
 
 // GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
@@ -33195,6 +33291,82 @@ func (r SignInResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SignInResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// VerifySignInCodeResponse429Headers the declared response headers of an HTTP 429 response for VerifySignInCode
+type VerifySignInCodeResponse429Headers struct {
+	RetryAfter *int32
+}
+
+type VerifySignInCodeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *IssuedSession
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *SignInCodeRejected
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *Problem
+	// ApplicationproblemJSON429 the response for an HTTP 429 `application/problem+json` response
+	ApplicationproblemJSON429 *TooManyAttempts
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// Headers429 the parsed response headers for an HTTP 429 response
+	Headers429 *VerifySignInCodeResponse429Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r VerifySignInCodeResponse) GetJSON200() *IssuedSession {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r VerifySignInCodeResponse) GetApplicationproblemJSON401() *SignInCodeRejected {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r VerifySignInCodeResponse) GetApplicationproblemJSON409() *Problem {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON429 returns the response for an HTTP 429 `application/problem+json` response
+func (r VerifySignInCodeResponse) GetApplicationproblemJSON429() *TooManyAttempts {
+	return r.ApplicationproblemJSON429
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r VerifySignInCodeResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r VerifySignInCodeResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r VerifySignInCodeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r VerifySignInCodeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r VerifySignInCodeResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -33265,8 +33437,6 @@ type RequestPasswordResetResponse struct {
 	ApplicationproblemJSON429 *TooManyAttempts
 	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
 	ApplicationproblemJSON500 *Problem
-	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
-	ApplicationproblemJSON503 *MailUnavailable
 	// Headers429 the parsed response headers for an HTTP 429 response
 	Headers429 *RequestPasswordResetResponse429Headers
 }
@@ -33289,11 +33459,6 @@ func (r RequestPasswordResetResponse) GetApplicationproblemJSON429() *TooManyAtt
 // GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
 func (r RequestPasswordResetResponse) GetApplicationproblemJSON500() *Problem {
 	return r.ApplicationproblemJSON500
-}
-
-// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
-func (r RequestPasswordResetResponse) GetApplicationproblemJSON503() *MailUnavailable {
-	return r.ApplicationproblemJSON503
 }
 
 // GetBody returns the raw response body bytes
@@ -52522,7 +52687,7 @@ func (c *ClientWithResponses) DownloadAccountAvatarWithResponse(ctx context.Cont
 	return ParseDownloadAccountAvatarResponse(rsp)
 }
 
-// SignInWithBodyWithResponse Exchange credentials for a session cookie
+// SignInWithBodyWithResponse Answer a password with a code sent to the address it belongs to
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -52535,7 +52700,7 @@ func (c *ClientWithResponses) SignInWithBodyWithResponse(ctx context.Context, co
 	return ParseSignInResponse(rsp)
 }
 
-// SignInWithResponse Exchange credentials for a session cookie
+// SignInWithResponse Answer a password with a code sent to the address it belongs to
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -52546,6 +52711,32 @@ func (c *ClientWithResponses) SignInWithResponse(ctx context.Context, body SignI
 		return nil, err
 	}
 	return ParseSignInResponse(rsp)
+}
+
+// VerifySignInCodeWithBodyWithResponse Finish a sign-in with the code that was sent
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /auth/login/verify (the `VerifySignInCode` operationId).
+func (c *ClientWithResponses) VerifySignInCodeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VerifySignInCodeResponse, error) {
+	rsp, err := c.VerifySignInCodeWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseVerifySignInCodeResponse(rsp)
+}
+
+// VerifySignInCodeWithResponse Finish a sign-in with the code that was sent
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /auth/login/verify (the `VerifySignInCode` operationId).
+func (c *ClientWithResponses) VerifySignInCodeWithResponse(ctx context.Context, body VerifySignInCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*VerifySignInCodeResponse, error) {
+	rsp, err := c.VerifySignInCode(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseVerifySignInCodeResponse(rsp)
 }
 
 // SignOutWithResponse Discard the current session
@@ -57909,12 +58100,12 @@ func ParseSignInResponse(rsp *http.Response) (*SignInResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest IssuedSession
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest SignInChallenge
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON202 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest SignInRejected
@@ -57949,6 +58140,73 @@ func ParseSignInResponse(rsp *http.Response) (*SignInResponse, error) {
 	switch {
 	case rsp.StatusCode == 429:
 		var headers SignInResponse429Headers
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int32
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		response.Headers429 = &headers
+	}
+
+	return response, nil
+}
+
+// ParseVerifySignInCodeResponse parses an HTTP response from a VerifySignInCodeWithResponse call
+func ParseVerifySignInCodeResponse(rsp *http.Response) (*VerifySignInCodeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &VerifySignInCodeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest IssuedSession
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest SignInCodeRejected
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyAttempts
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 429:
+		var headers VerifySignInCodeResponse429Headers
 		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
 			var value int32
 			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: "int32"}); err != nil {
@@ -58039,13 +58297,6 @@ func ParseRequestPasswordResetResponse(rsp *http.Response) (*RequestPasswordRese
 			return nil, err
 		}
 		response.ApplicationproblemJSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest MailUnavailable
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON503 = &dest
 
 	}
 
@@ -73269,9 +73520,12 @@ type ServerInterface interface {
 	// DownloadAccountAvatar Trade a session for a short-lived link to an avatar
 	// (GET /accounts/{accountId}/avatar)
 	DownloadAccountAvatar(w http.ResponseWriter, r *http.Request, accountId openapi_types.UUID)
-	// SignIn Exchange credentials for a session cookie
+	// SignIn Answer a password with a code sent to the address it belongs to
 	// (POST /auth/login)
 	SignIn(w http.ResponseWriter, r *http.Request)
+	// VerifySignInCode Finish a sign-in with the code that was sent
+	// (POST /auth/login/verify)
+	VerifySignInCode(w http.ResponseWriter, r *http.Request)
 	// SignOut Discard the current session
 	// (POST /auth/logout)
 	SignOut(w http.ResponseWriter, r *http.Request)
@@ -74157,9 +74411,15 @@ func (_ Unimplemented) DownloadAccountAvatar(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// SignIn Exchange credentials for a session cookie
+// SignIn Answer a password with a code sent to the address it belongs to
 // (POST /auth/login)
 func (_ Unimplemented) SignIn(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// VerifySignInCode Finish a sign-in with the code that was sent
+// (POST /auth/login/verify)
+func (_ Unimplemented) VerifySignInCode(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -75975,6 +76235,20 @@ func (siw *ServerInterfaceWrapper) SignIn(w http.ResponseWriter, r *http.Request
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SignIn(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// VerifySignInCode operation middleware
+func (siw *ServerInterfaceWrapper) VerifySignInCode(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.VerifySignInCode(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -85330,6 +85604,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auth/login", wrapper.SignIn)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/login/verify", wrapper.VerifySignInCode)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/password-reset", wrapper.RequestPasswordReset)
 	})
 	r.Group(func(r chi.Router) {
@@ -86207,8 +86484,6 @@ type IssueConflictApplicationProblemPlusJSONResponse IssueConflictProblem
 
 type LabelConflictApplicationProblemPlusJSONResponse LabelConflictProblem
 
-type MailUnavailableApplicationProblemPlusJSONResponse MailUnavailableProblem
-
 type MembershipConflictApplicationProblemPlusJSONResponse MembershipConflictProblem
 
 type PasswordResetLinkExpiredApplicationProblemPlusJSONResponse ResetLinkExpiredProblem
@@ -86224,6 +86499,8 @@ type RunnerConflictApplicationProblemPlusJSONResponse RunnerProblem
 type RunnerCredentialApplicationProblemPlusJSONResponse RunnerProblem
 
 type SavedViewConflictApplicationProblemPlusJSONResponse SavedViewConflictProblem
+
+type SignInCodeRejectedApplicationProblemPlusJSONResponse SignInCodeIncorrectProblem
 
 type SignInRejectedApplicationProblemPlusJSONResponse InvalidCredentialsProblem
 
@@ -87223,16 +87500,16 @@ type SignInResponseObject interface {
 	VisitSignInResponse(w http.ResponseWriter) error
 }
 
-type SignIn200JSONResponse IssuedSession
+type SignIn202JSONResponse SignInChallenge
 
-func (response SignIn200JSONResponse) VisitSignInResponse(w http.ResponseWriter) error {
+func (response SignIn202JSONResponse) VisitSignInResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(202)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -87293,6 +87570,93 @@ type SignIn500ApplicationProblemPlusJSONResponse struct {
 }
 
 func (response SignIn500ApplicationProblemPlusJSONResponse) VisitSignInResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifySignInCodeRequestObject struct {
+	Body *VerifySignInCodeJSONRequestBody
+}
+
+type VerifySignInCodeResponseObject interface {
+	VisitVerifySignInCodeResponse(w http.ResponseWriter) error
+}
+
+type VerifySignInCode200JSONResponse IssuedSession
+
+func (response VerifySignInCode200JSONResponse) VisitVerifySignInCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifySignInCode401ApplicationProblemPlusJSONResponse struct {
+	SignInCodeRejectedApplicationProblemPlusJSONResponse
+}
+
+func (response VerifySignInCode401ApplicationProblemPlusJSONResponse) VisitVerifySignInCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifySignInCode409ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response VerifySignInCode409ApplicationProblemPlusJSONResponse) VisitVerifySignInCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifySignInCode429ApplicationProblemPlusJSONResponse struct {
+	TooManyAttemptsApplicationProblemPlusJSONResponse
+}
+
+func (response VerifySignInCode429ApplicationProblemPlusJSONResponse) VisitVerifySignInCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifySignInCode500ApplicationProblemPlusJSONResponse Problem
+
+func (response VerifySignInCode500ApplicationProblemPlusJSONResponse) VisitVerifySignInCodeResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -87416,22 +87780,6 @@ func (response RequestPasswordReset500ApplicationProblemPlusJSONResponse) VisitR
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RequestPasswordReset503ApplicationProblemPlusJSONResponse struct {
-	MailUnavailableApplicationProblemPlusJSONResponse
-}
-
-func (response RequestPasswordReset503ApplicationProblemPlusJSONResponse) VisitRequestPasswordResetResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(503)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -111396,9 +111744,12 @@ type StrictServerInterface interface {
 	// DownloadAccountAvatar Trade a session for a short-lived link to an avatar
 	// (GET /accounts/{accountId}/avatar)
 	DownloadAccountAvatar(ctx context.Context, request DownloadAccountAvatarRequestObject) (DownloadAccountAvatarResponseObject, error)
-	// SignIn Exchange credentials for a session cookie
+	// SignIn Answer a password with a code sent to the address it belongs to
 	// (POST /auth/login)
 	SignIn(ctx context.Context, request SignInRequestObject) (SignInResponseObject, error)
+	// VerifySignInCode Finish a sign-in with the code that was sent
+	// (POST /auth/login/verify)
+	VerifySignInCode(ctx context.Context, request VerifySignInCodeRequestObject) (VerifySignInCodeResponseObject, error)
 	// SignOut Discard the current session
 	// (POST /auth/logout)
 	SignOut(ctx context.Context, request SignOutRequestObject) (SignOutResponseObject, error)
@@ -112639,6 +112990,37 @@ func (sh *strictHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SignInResponseObject); ok {
 		if err := validResponse.VisitSignInResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// VerifySignInCode operation middleware
+func (sh *strictHandler) VerifySignInCode(w http.ResponseWriter, r *http.Request) {
+	var request VerifySignInCodeRequestObject
+
+	var body VerifySignInCodeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.VerifySignInCode(ctx, request.(VerifySignInCodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VerifySignInCode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(VerifySignInCodeResponseObject); ok {
+		if err := validResponse.VisitVerifySignInCodeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

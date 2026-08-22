@@ -20,10 +20,6 @@ func New(client *smtp.Client) repository.Mailer {
 }
 
 func (r *mailerRepository) Send(ctx context.Context, message entity.Mail) error {
-	if !r.client.Configured() {
-		return entity.ErrMailDeliveryNotConfigured
-	}
-
 	envelope := mail.NewMsg()
 
 	if err := envelope.FromFormat(r.client.FromName(), r.client.FromAddress()); err != nil {

@@ -5,15 +5,14 @@ import type { PasswordReset } from "./types";
 type RequestResponses = operations["requestPasswordReset"]["responses"];
 type ConfirmResponses = operations["confirmPasswordReset"]["responses"];
 
-type CodedRequestProblem =
-	RequestResponses[429 | 503]["content"]["application/problem+json"];
+type CodedRequestProblem = RequestResponses[429]["content"]["application/problem+json"];
 type CodedConfirmProblem =
 	ConfirmResponses[400 | 409 | 429 | 503]["content"]["application/problem+json"];
 
 export type ResetRequestAccepted = RequestResponses[202]["content"]["application/json"];
 
 export type ResetRequestProblem =
-	RequestResponses[422 | 429 | 500 | 503]["content"]["application/problem+json"];
+	RequestResponses[422 | 429 | 500]["content"]["application/problem+json"];
 
 export type ResetConfirmProblem =
 	ConfirmResponses[400 | 409 | 422 | 429 | 500 | 503]["content"]["application/problem+json"];
@@ -45,8 +44,6 @@ export function resetRequestFailure(problem: ResetRequestProblem): PasswordReset
 	if (!codedRequest(problem)) return null;
 
 	switch (problem.code) {
-		case "mail_unavailable":
-			return { kind: "mail_unavailable" };
 		case "rate_limited":
 			return { kind: "unavailable" };
 	}

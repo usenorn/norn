@@ -14,7 +14,6 @@ export const resetPasswordPreviewStates: Record<string, ResetPasswordPreview> = 
 			expired: { reset: { kind: "link_expired" } },
 			used: { reset: { kind: "link_used" } },
 			done: { reset: { kind: "changed" } },
-			nomail: { reset: { kind: "mail_unavailable" } },
 			unavailable: { reset: { kind: "unavailable" } },
 			sso: {
 				auth: { password: false, sso: { name: "Okta" } },

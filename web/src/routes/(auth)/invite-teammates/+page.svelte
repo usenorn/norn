@@ -6,9 +6,6 @@
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import Copy from "@lucide/svelte/icons/copy";
-	import ExternalLink from "@lucide/svelte/icons/external-link";
-	import Link from "@lucide/svelte/icons/link";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import Users from "@lucide/svelte/icons/users";
 	import X from "@lucide/svelte/icons/x";
@@ -50,7 +47,6 @@
 	let removed = $state<string[]>([]);
 	let sent = $state<Invite[] | null>(null);
 	let settling = $state(false);
-	let copied = $state(false);
 	let unavailable = $state(false);
 
 	const workspace = $derived(data.target.name);
@@ -152,7 +148,7 @@
 			sent =
 				sent?.map((current) =>
 					current.invitationId === row.invitationId
-						? { ...current, status: issued.invitation.delivery as InviteStatus, url: issued.url }
+						? { ...current, status: issued.invitation.delivery as InviteStatus }
 						: current
 				) ?? null;
 		}
@@ -162,18 +158,9 @@
 		await settle();
 	}
 
-	async function copyLinks() {
-		const links = rows.map((row) => row.url).filter((url): url is string => Boolean(url));
-		if (links.length === 0) return;
-
-		await navigator.clipboard.writeText(links.join("\n"));
-		copied = true;
-	}
-
 	function inviteMore() {
 		sent = null;
 		removed = [];
-		copied = false;
 		formData.update((current) => ({ ...current, addresses: "" }), { taint: false });
 	}
 
@@ -233,7 +220,6 @@
 	const counts = $derived({
 		total: rows.length,
 		sendable: rows.filter((row) => row.status === "pending").length,
-		linkOnly: rows.filter((row) => row.status === "link_only").length,
 		invalid: rows.filter((row) => row.status === "invalid").length,
 		attention: rows.filter(
 			(row) => row.status === "invalid" || row.status === "existing_member"
@@ -245,10 +231,9 @@
 	const working = $derived($submitting || settling);
 	const sending = $derived(preview?.sending ?? (working && counts.total > 0));
 	const busy = $derived(working || sending);
-	const emailConfigured = $derived(preview?.emailConfigured ?? counts.linkOnly === 0);
 
 	const allSent = $derived(
-		counts.sent > 0 && counts.sendable === 0 && counts.linkOnly === 0 && counts.failed === 0
+		counts.sent > 0 && counts.sendable === 0 && counts.failed === 0
 	);
 	const composing = $derived(!sending && counts.sent === 0 && counts.failed === 0);
 
@@ -297,16 +282,6 @@
 				icon: CircleX,
 				title: "Could not send those invitations",
 				body: "We couldn't reach the server just now. Nothing was created — wait a moment and try again.",
-				action: null,
-			};
-		}
-		if (!emailConfigured) {
-			return {
-				variant: "destructive" as const,
-				icon: CircleX,
-				title: "Email delivery isn't configured",
-				body: "This instance can't send anything until SMTP is set. Until then, copy each single-use link and share it yourself — they expire in seven days.",
-				action: `Copy ${counted(counts.linkOnly, "invite link", "invite links")}`,
 			};
 		}
 		if (counts.failed > 0) {
@@ -315,7 +290,6 @@
 				icon: TriangleAlert,
 				title: `${counted(counts.failed, "invitation", "invitations")} didn't send`,
 				body: bounced,
-				action: null,
 			};
 		}
 		return null;
@@ -325,8 +299,6 @@
 		if (sending) return "Sending";
 		if (counts.failed > 0) return `Retry the ${counts.failed} that failed`;
 		if (allSent) return "Continue";
-		if (!emailConfigured && counts.linkOnly > 0)
-			return `Copy ${counted(counts.linkOnly, "invite link", "invite links")}`;
 		if (counts.sendable > 0) return `Send ${counted(counts.sendable, "invitation", "invitations")}`;
 		return "Send invitations";
 	});
@@ -347,7 +319,6 @@
 		existing_member: CircleCheck,
 		sent: Check,
 		failed: TriangleAlert,
-		link_only: Link,
 	};
 	const rowGlyphTone = {
 		pending: "text-muted-foreground",
@@ -355,7 +326,6 @@
 		existing_member: "text-muted-foreground",
 		sent: "text-success",
 		failed: "text-warning",
-		link_only: "text-muted-foreground",
 	};
 	const rowTone = {
 		pending: "text-ink-900",
@@ -363,7 +333,6 @@
 		existing_member: "text-muted-foreground",
 		sent: "text-ink-600",
 		failed: "text-ink-900",
-		link_only: "text-ink-900",
 	};
 	const rowNote: Record<InviteStatus, string | null> = {
 		pending: null,
@@ -371,7 +340,6 @@
 		existing_member: "already a member",
 		sent: "sent",
 		failed: "mailbox not found",
-		link_only: "link only",
 	};
 	const rowNoteTone = {
 		pending: "text-muted-foreground",
@@ -379,10 +347,9 @@
 		existing_member: "text-muted-foreground",
 		sent: "text-muted-foreground",
 		failed: "text-warning",
-		link_only: "text-muted-foreground",
 	};
 
-	const pendable = (status: InviteStatus) => status === "pending" || status === "link_only";
+	const pendable = (status: InviteStatus) => status === "pending";
 	const editable = (row: Invite) => !row.invitationId && pendable(row.status);
 	const removable = (row: Invite) => pendable(row.status) || row.status === "invalid";
 </script>
@@ -406,18 +373,6 @@
 					<NoticeIcon aria-hidden="true" />
 					<Alert.Title>{notice.title}</Alert.Title>
 					<Alert.Description>{notice.body}</Alert.Description>
-					{#if notice.action}
-						<Alert.Action placement="below">
-							<Button variant="secondary" size="sm" disabled={busy} onclick={copyLinks}>
-								<Copy aria-hidden="true" />
-								{copied ? "Copied" : notice.action}
-							</Button>
-							<Button variant="ghost" size="sm" href="/settings/instance/mail">
-								Configure SMTP
-								<ExternalLink aria-hidden="true" />
-							</Button>
-						</Alert.Action>
-					{/if}
 				</Alert.Root>
 			{/if}
 
@@ -561,8 +516,6 @@
 					<Button href={`/${data.target.slug}`}>{cta}</Button>
 				{:else if counts.failed > 0}
 					<Button disabled={busy} onclick={retryFailed}>{cta}</Button>
-				{:else if !emailConfigured && counts.linkOnly > 0}
-					<Button disabled={busy} onclick={copyLinks}>{copied ? "Copied" : cta}</Button>
 				{:else}
 					<Button type="submit" form={formId} disabled={busy || counts.sendable === 0}>
 						{cta}

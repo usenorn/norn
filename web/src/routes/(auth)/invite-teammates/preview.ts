@@ -3,7 +3,6 @@ import type { Invite } from "$lib/workspace/invites";
 export type InvitePreview = {
 	text?: string;
 	rows?: Invite[];
-	emailConfigured?: boolean;
 	sending?: boolean;
 };
 
@@ -52,40 +51,6 @@ export const invitePreviewStates: Record<string, InvitePreview> = import.meta.en
 					{ email: "milo@northwind.co", role: "member", teamIds: ["00000000-0000-4000-8000-000000000101"], status: "failed" },
 					{ email: "ada@northwind.co", role: "admin", teamIds: ["00000000-0000-4000-8000-000000000101"], status: "sent" },
 					{ email: "sana@northwind.co", role: "member", teamIds: ["00000000-0000-4000-8000-000000000101"], status: "failed" },
-				],
-			},
-			nomail: {
-				text: "jun@northwind.co, milo@northwind.co\nada@northwind.co, sana@northwind.co",
-				emailConfigured: false,
-				rows: [
-					{
-						email: "jun@northwind.co",
-						role: "member",
-						teamIds: ["00000000-0000-4000-8000-000000000101"],
-						status: "link_only",
-						url: "https://norn.northwind.internal/accept-invitation?token=preview-jun",
-					},
-					{
-						email: "milo@northwind.co",
-						role: "member",
-						teamIds: ["00000000-0000-4000-8000-000000000101"],
-						status: "link_only",
-						url: "https://norn.northwind.internal/accept-invitation?token=preview-milo",
-					},
-					{
-						email: "ada@northwind.co",
-						role: "admin",
-						teamIds: ["00000000-0000-4000-8000-000000000101"],
-						status: "link_only",
-						url: "https://norn.northwind.internal/accept-invitation?token=preview-ada",
-					},
-					{
-						email: "sana@northwind.co",
-						role: "member",
-						teamIds: ["00000000-0000-4000-8000-000000000101"],
-						status: "link_only",
-						url: "https://norn.northwind.internal/accept-invitation?token=preview-sana",
-					},
 				],
 			},
 		}

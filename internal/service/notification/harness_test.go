@@ -46,7 +46,7 @@ type harness struct {
 	readerID    uuid.UUID
 }
 
-func newHarness(t *testing.T, smtp config.SMTP) *harness {
+func newHarness(t *testing.T) *harness {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
@@ -72,7 +72,7 @@ func newHarness(t *testing.T, smtp config.SMTP) *harness {
 
 	h.service = notificationsvc.New(
 		h.notifications, h.events, h.followers, h.settings, h.issues, h.comments,
-		h.teamMembers, h.workspaces, h.mailer, h.broadcast, h.authorizer, smtp, config.App{BaseURL: "https://norn.test"},
+		h.teamMembers, h.workspaces, h.mailer, h.broadcast, h.authorizer, config.App{BaseURL: "https://norn.test"},
 	)
 
 	h.broadcast.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()

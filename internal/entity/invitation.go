@@ -45,15 +45,14 @@ func (s InvitationStatus) Valid() bool {
 type InvitationDelivery string
 
 const (
-	InvitationDeliveryPending  InvitationDelivery = "pending"
-	InvitationDeliverySent     InvitationDelivery = "sent"
-	InvitationDeliveryFailed   InvitationDelivery = "failed"
-	InvitationDeliveryLinkOnly InvitationDelivery = "link_only"
+	InvitationDeliveryPending InvitationDelivery = "pending"
+	InvitationDeliverySent    InvitationDelivery = "sent"
+	InvitationDeliveryFailed  InvitationDelivery = "failed"
 )
 
 func (d InvitationDelivery) Valid() bool {
 	switch d {
-	case InvitationDeliveryPending, InvitationDeliverySent, InvitationDeliveryFailed, InvitationDeliveryLinkOnly:
+	case InvitationDeliveryPending, InvitationDeliverySent, InvitationDeliveryFailed:
 		return true
 	default:
 		return false

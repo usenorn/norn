@@ -6,8 +6,7 @@ export type InviteStatus =
 	| "invalid"
 	| "existing_member"
 	| "sent"
-	| "failed"
-	| "link_only";
+	| "failed";
 
 export type Invite = {
 	email: string;
@@ -15,7 +14,6 @@ export type Invite = {
 	teamIds: string[];
 	status: InviteStatus;
 	invitationId?: string;
-	url?: string;
 };
 
 export type InviteBatch =
@@ -30,7 +28,6 @@ const deliveryStatus: Record<InvitationDelivery, InviteStatus> = {
 	pending: "pending",
 	sent: "sent",
 	failed: "failed",
-	link_only: "link_only",
 };
 
 export function inviteFromResult(
@@ -52,7 +49,6 @@ export function inviteFromResult(
 		teamIds: result.invitation?.teamIds ?? teamIds,
 		status: result.invitation ? deliveryStatus[result.invitation.delivery] : "pending",
 		invitationId: result.invitation?.id,
-		url: result.url,
 	};
 }
 

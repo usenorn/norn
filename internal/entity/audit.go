@@ -26,6 +26,7 @@ type AuditAction string
 const (
 	AuditSignedIn        AuditAction = "session.signed_in"
 	AuditSignInFailed    AuditAction = "session.sign_in_failed"
+	AuditSignInCodeSent  AuditAction = "session.sign_in_code_sent"
 	AuditSignedOut       AuditAction = "session.signed_out"
 	AuditSessionRevoked  AuditAction = "session.revoked"
 	AuditPasswordChanged AuditAction = "account.password_changed"
@@ -95,7 +96,7 @@ const (
 
 func AuditActions() []AuditAction {
 	return []AuditAction{
-		AuditSignedIn, AuditSignInFailed, AuditSignedOut, AuditSessionRevoked,
+		AuditSignedIn, AuditSignInFailed, AuditSignInCodeSent, AuditSignedOut, AuditSessionRevoked,
 		AuditPasswordChanged, AuditPasswordReset, AuditEmailChanged,
 		AuditAccountDisabled, AuditAccountDeleted,
 		AuditMemberAdded, AuditMemberRoleChanged, AuditMemberRemoved, AuditAuditAccess,

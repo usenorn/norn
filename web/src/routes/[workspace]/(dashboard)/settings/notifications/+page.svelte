@@ -4,7 +4,6 @@
 	import { page } from "$app/state";
 	import Bell from "@lucide/svelte/icons/bell";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import MailWarning from "@lucide/svelte/icons/mail-warning";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
@@ -32,7 +31,6 @@
 	const slug = $derived(data.workspace.slug);
 	const stored = $derived(panel.kind === "ready" ? panel.settings.preferences : null);
 	const preferences = $derived(draft ?? stored);
-	const emailEnabled = $derived(panel.kind === "ready" ? panel.settings.emailEnabled : false);
 	const dirty = $derived(draft !== null && JSON.stringify(draft) !== JSON.stringify(stored));
 
 	async function save() {
@@ -98,20 +96,8 @@
 					try again.
 				</p>
 			{:else if preferences}
-				{#if !emailEnabled}
-					<Alert.Root>
-						<MailWarning aria-hidden="true" />
-						<Alert.Title>Email is not configured on this instance</Alert.Title>
-						<Alert.Description>
-							Your inbox works as normal. Nothing will be sent by email until an administrator
-							configures a mail server.
-						</Alert.Description>
-					</Alert.Root>
-				{/if}
-
 				<PreferenceGrid
 					{preferences}
-					{emailEnabled}
 					disabled={saving}
 					idPrefix="workspace"
 					onchange={(next) => (draft = next)}

@@ -30,7 +30,6 @@
 		import.meta.env.DEV ? signUpPreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
-	let copied = $state(false);
 	let heading = $state<HTMLHeadingElement | null>(null);
 	let sent = $state<SignUpOutcome | null>(null);
 	let timezone = $state("UTC");
@@ -68,22 +67,13 @@
 	const blocked = $derived(personalEmail($formData.email));
 	const valid = $derived(!blocked && signUpSchema.safeParse($formData).success);
 
-	const verification = $derived(
-		outcome?.kind === "verification_sent" || outcome?.kind === "link_only" ? outcome : null
-	);
-	const linkOnly = $derived(outcome?.kind === "link_only" ? outcome : null);
+	const verification = $derived(outcome?.kind === "verification_sent" ? outcome : null);
 	const ssoDomain = $derived(outcome?.kind === "domain_uses_sso" ? outcome : null);
 	const closed = $derived(!auth.signupsOpen || outcome?.kind === "closed");
 	const showForm = $derived(!closed && !verification && !ssoDomain);
 	const passwordMismatch = $derived(
 		$formData.passwordConfirm.length > 0 && $formData.password !== $formData.passwordConfirm
 	);
-
-	async function copyLink() {
-		if (!linkOnly) return;
-		await navigator.clipboard.writeText(linkOnly.url);
-		copied = true;
-	}
 
 	$effect(() => {
 		if (!outcome) return;
@@ -105,17 +95,15 @@
 	);
 
 	const lede = $derived(
-		linkOnly
-			? "This instance cannot send mail, so open the link below to finish."
-			: verification
-				? "A confirmation link is on its way. It works once and lasts an hour."
-				: closed
-					? "This instance does not create accounts from the sign-up form."
-					: ssoDomain
-						? "Your domain is already set up with an identity provider."
-						: busy
-							? "Checking the address and reserving your workspace."
-							: "Free for up to 10 people. You name your workspace next."
+		verification
+			? "A confirmation link is on its way. It works once and lasts an hour."
+			: closed
+				? "This instance does not create accounts from the sign-up form."
+				: ssoDomain
+					? "Your domain is already set up with an identity provider."
+					: busy
+						? "Checking the address and reserving your workspace."
+						: "Free for up to 10 people. You name your workspace next."
 	);
 
 	const notice = $derived.by(() => {
@@ -219,9 +207,6 @@
 	});
 
 	const action = $derived.by(() => {
-		if (linkOnly) {
-			return { label: "Open the confirmation link", href: linkOnly.url, onclick: null };
-		}
 		if (closed) return { label: "Go to sign in", href: "/sign-in", onclick: null };
 		if (ssoDomain) {
 			return { label: `Continue with ${ssoDomain.provider}`, href: "/sso", onclick: null };
@@ -248,7 +233,6 @@
 
 	function startAgain() {
 		sent = null;
-		copied = false;
 		formData.update((current) => ({ ...current, password: "", passwordConfirm: "", terms: false }));
 	}
 
@@ -301,27 +285,6 @@
 					<Alert.Title>{notice.title}</Alert.Title>
 					<Alert.Description>{notice.body}</Alert.Description>
 				</Alert.Root>
-			{/if}
-
-			{#if linkOnly}
-				<Alert.Root variant="destructive">
-					<TriangleAlert aria-hidden="true" />
-					<Alert.Title>Email delivery isn't configured</Alert.Title>
-					<Alert.Description>
-						No message was sent. Open the link yourself, or copy it somewhere safe — it works once
-						and lasts an hour.
-					</Alert.Description>
-				</Alert.Root>
-				<div class="flex flex-col gap-2">
-					<p class="rounded-lg border border-line-strong bg-paper-0 px-3 py-2.5 font-mono text-xs break-all text-ink-600">
-						{linkOnly.url}
-					</p>
-					<div class="flex flex-wrap gap-2">
-						<Button variant="outline" size="sm" onclick={copyLink}>
-							{copied ? "Copied" : "Copy link"}
-						</Button>
-					</div>
-				</div>
 			{/if}
 
 			{#if verification}

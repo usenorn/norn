@@ -5,6 +5,7 @@ import "github.com/goforj/wire"
 var Set = wire.NewSet(
 	NewSignUpVerificationHandler,
 	NewEmailChangeConfirmationHandler,
+	NewSignInCodeHandler,
 	NewPasswordResetHandler,
 	NewPasswordResetSSONoticeHandler,
 	NewInvitationHandler,

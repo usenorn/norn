@@ -23,12 +23,10 @@ type InvitationResult struct {
 	Email      string
 	Outcome    entity.InvitationOutcome
 	Invitation entity.Invitation
-	URL        string
 }
 
 type IssuedInvitation struct {
 	Invitation entity.Invitation
-	URL        string
 }
 
 type InvitationPreview struct {

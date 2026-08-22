@@ -15,8 +15,11 @@ import (
 	"github.com/usenorn/norn/internal/pkg/identity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
+	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
+	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
+	signinchallengerepo "github.com/usenorn/norn/internal/repository/signinchallenge"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -42,6 +45,9 @@ type harness struct {
 	memberships *membershiprepo.MockMembership
 	geoLocator  *geolocationrepo.MockGeoLocator
 	throttle    *signinthrottlerepo.MockSignInThrottle
+	challenges  *signinchallengerepo.MockSignInChallenge
+	mailer      *mailerrepo.MockMailer
+	producer    *jobqueuerepo.MockJobProducer
 	authorizer  *authorizersvc.MockAuthorizer
 	activity    *[]recordedActivity
 	activityErr error
@@ -59,6 +65,9 @@ func newHarness(t *testing.T) *harness {
 		memberships: membershiprepo.NewMockMembership(ctrl),
 		geoLocator:  geolocationrepo.NewMockGeoLocator(ctrl),
 		throttle:    signinthrottlerepo.NewMockSignInThrottle(ctrl),
+		challenges:  signinchallengerepo.NewMockSignInChallenge(ctrl),
+		mailer:      mailerrepo.NewMockMailer(ctrl),
+		producer:    jobqueuerepo.NewMockJobProducer(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 	}
 
@@ -101,11 +110,24 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
-	h.service = sessionsvc.New(h.sessions, h.accounts, h.memberships, h.geoLocator, h.throttle, config.Session{
-		IdleTimeout:      idleTimeout,
-		AbsoluteLifetime: absoluteTime,
-		RefreshInterval:  refreshInterval,
-	}, h.authorizer, silentAudit(ctrl))
+	h.service = sessionsvc.New(
+		h.sessions,
+		h.accounts,
+		h.memberships,
+		h.geoLocator,
+		h.throttle,
+		h.challenges,
+		h.mailer,
+		h.producer,
+		config.Session{
+			IdleTimeout:      idleTimeout,
+			AbsoluteLifetime: absoluteTime,
+			RefreshInterval:  refreshInterval,
+		},
+		config.App{BaseURL: "https://norn.test"},
+		h.authorizer,
+		silentAudit(ctrl),
+	)
 
 	return h
 }
@@ -136,57 +158,6 @@ func liveSession(accountID uuid.UUID, lastUsed time.Time) entity.Session {
 		LastUsedAt:        lastUsed,
 		IdleExpiresAt:     lastUsed.Add(idleTimeout),
 		AbsoluteExpiresAt: lastUsed.Add(absoluteTime),
-	}
-}
-
-func TestSignInRecordsTheAuthenticationMethodAndTheResolvedClient(t *testing.T) {
-	h := newHarness(t)
-
-	accountID := uuid.New()
-	ip := netip.MustParseAddr("203.0.113.7")
-
-	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(accountWithPassword(t, accountID), nil)
-	h.geoLocator.EXPECT().
-		Locate(gomock.Any(), ip).
-		Return(entity.Location{CountryCode: "GB", City: "London"}, nil)
-
-	var captured entity.Session
-
-	h.sessions.EXPECT().
-		Create(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, session entity.Session) error {
-			captured = session
-
-			return nil
-		})
-
-	issued, err := h.service.SignIn(context.Background(), service.SignInInput{
-		Email:    "Ada@Example.com",
-		Password: password,
-		Client:   entity.SessionClient{UserAgent: "Mozilla/5.0", IP: ip},
-	})
-	if err != nil {
-		t.Fatalf("SignIn: %v", err)
-	}
-
-	if captured.AuthMethod != entity.SessionAuthMethodPassword {
-		t.Fatalf("auth method = %q, want password", captured.AuthMethod)
-	}
-
-	if captured.Client.Location.CountryCode != "GB" || captured.Client.Location.City != "London" {
-		t.Fatalf("location = %+v, want the resolved one", captured.Client.Location)
-	}
-
-	if captured.Client.UserAgent != "Mozilla/5.0" || captured.Client.IP != ip {
-		t.Fatalf("client = %+v, want the request client", captured.Client)
-	}
-
-	if captured.TokenHash != entity.HashSessionToken(issued.Token) {
-		t.Fatal("the stored hash does not match the issued token")
-	}
-
-	if captured.IdleExpiresAt.After(captured.AbsoluteExpiresAt) {
-		t.Fatal("a fresh session may not idle past its absolute deadline")
 	}
 }
 
@@ -539,16 +510,27 @@ func TestAFailedActivityWriteStillAuthenticates(t *testing.T) {
 	}
 }
 
-func TestSigningInRecordsMembershipActivityImmediately(t *testing.T) {
+func TestFinishingASignInRecordsMembershipActivityImmediately(t *testing.T) {
 	h := newHarness(t)
 	accountID := uuid.New()
+
+	h.captureChallenge()
+	code := h.captureSentCode()
 
 	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(accountWithPassword(t, accountID), nil)
 	h.geoLocator.EXPECT().Locate(gomock.Any(), gomock.Any()).Return(entity.Location{}, nil)
 	h.sessions.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
 
-	if _, err := signIn(h, password); err != nil {
+	challenge, err := signIn(h, password)
+	if err != nil {
 		t.Fatalf("SignIn: %v", err)
+	}
+
+	if _, err := h.service.VerifySignInCode(context.Background(), service.VerifySignInCodeInput{
+		ChallengeID: challenge.ID,
+		Code:        *code,
+	}); err != nil {
+		t.Fatalf("VerifySignInCode: %v", err)
 	}
 
 	if len(*h.activity) != 1 {

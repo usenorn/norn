@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
-	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
 )
@@ -155,22 +154,6 @@ func TestRequestingAResetForAnSSOOnlyAccountSendsAnExplanationInsteadOfALink(t *
 	if _, err := h.service.RequestPasswordReset(context.Background(), resetInput()); err != nil {
 		t.Fatalf("RequestPasswordReset: %v", err)
 	}
-}
-
-func TestRequestingAResetFailsLoudlyWhenMailDeliveryIsNotConfigured(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	h := newHarness(t)
-
-	h.service = newServiceWithSMTP(h, config.SMTP{})
-
-	h.expectAddressAllowed()
-
-	_, err := h.service.RequestPasswordReset(context.Background(), resetInput())
-	if !errors.Is(err, entity.ErrMailDeliveryNotConfigured) {
-		t.Fatalf("RequestPasswordReset error = %v, want ErrMailDeliveryNotConfigured", err)
-	}
-
-	ctrl.Finish()
 }
 
 func TestRequestingAResetIsRefusedOnceTheAddressLimitIsPassed(t *testing.T) {

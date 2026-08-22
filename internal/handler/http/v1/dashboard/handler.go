@@ -178,9 +178,37 @@ func (h *handler) SignIn(ctx context.Context, request api.SignInRequestObject) (
 		return nil, err
 	}
 
+	return api.SignIn202JSONResponse{
+		ChallengeId: issued.ID,
+		Email:       issued.Email,
+		ExpiresAt:   issued.ExpiresAt,
+	}, nil
+}
+
+func (h *handler) VerifySignInCode(
+	ctx context.Context,
+	request api.VerifySignInCodeRequestObject,
+) (api.VerifySignInCodeResponseObject, error) {
+	if len(identity.SignedIn(ctx)) >= entity.MaxSignedInAccounts {
+		return newProblem(http.StatusConflict, entity.ErrTooManySignedInAccounts.Error()), nil
+	}
+
+	issued, err := h.sessions.VerifySignInCode(ctx, service.VerifySignInCodeInput{
+		ChallengeID: request.Body.ChallengeId,
+		Code:        request.Body.Code,
+		Client:      middleware.ClientFrom(ctx),
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
 	httpcookie.Pending(ctx).Add(middleware.IssuedSessionCookie(h.session, issued.Session, issued.Token))
 
-	return api.SignIn200JSONResponse{Slot: issued.Session.Slot}, nil
+	return api.VerifySignInCode200JSONResponse{Slot: issued.Session.Slot}, nil
 }
 
 func (h *handler) RequestPasswordReset(ctx context.Context, request api.RequestPasswordResetRequestObject) (api.RequestPasswordResetResponseObject, error) {

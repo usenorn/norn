@@ -20,6 +20,8 @@ x-norn-service: &norn-service
     NORN_ASYNQ_DB: "1"
     NORN_STORAGE_BACKEND: filesystem
     NORN_STORAGE_ROOT: /var/lib/norn/blobs
+    NORN_SMTP_HOST: ${NORN_SMTP_HOST:?set NORN_SMTP_HOST in .env}
+    NORN_SMTP_FROM_ADDRESS: ${NORN_SMTP_FROM_ADDRESS:?set NORN_SMTP_FROM_ADDRESS in .env}
 
 services:
   postgres:

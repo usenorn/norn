@@ -1,6 +1,8 @@
 package service
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -17,6 +19,18 @@ type StartSessionInput struct {
 	WorkspaceID uuid.UUID
 	AuthMethod  entity.SessionAuthMethod
 	Client      entity.SessionClient
+}
+
+type VerifySignInCodeInput struct {
+	ChallengeID string
+	Code        string
+	Client      entity.SessionClient
+}
+
+type IssuedChallenge struct {
+	ID        string
+	Email     string
+	ExpiresAt time.Time
 }
 
 type IssuedSession struct {

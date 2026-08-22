@@ -48,12 +48,18 @@ func TestAcceptCreatesTheAccountMembershipAndSessionForSomeoneBrandNew(t *testin
 			return account, nil
 		})
 
+	var started service.StartSessionInput
+
 	h.sessions.EXPECT().
-		SignIn(gomock.Any(), gomock.Any()).
-		Return(service.IssuedSession{
-			Session: entity.Session{ID: uuid.New(), AccountID: account.ID},
-			Token:   acceptSession,
-		}, nil)
+		Start(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, input service.StartSessionInput) (service.IssuedSession, error) {
+			started = input
+
+			return service.IssuedSession{
+				Session: entity.Session{ID: uuid.New(), AccountID: account.ID},
+				Token:   acceptSession,
+			}, nil
+		})
 
 	h.invitations.EXPECT().
 		MarkAccepted(gomock.Any(), invitation.ID, account.ID, gomock.Any()).
@@ -98,6 +104,14 @@ func TestAcceptCreatesTheAccountMembershipAndSessionForSomeoneBrandNew(t *testin
 
 	if !accepted.SignedIn || accepted.Session.Token != acceptSession {
 		t.Error("a brand-new account must be signed in as it accepts")
+	}
+
+	if started.AccountID != account.ID {
+		t.Errorf("signed in %v, want the account just registered %v", started.AccountID, account.ID)
+	}
+
+	if started.AuthMethod != entity.SessionAuthMethodPassword {
+		t.Errorf("auth method = %q, want password", started.AuthMethod)
 	}
 
 	if accepted.Workspace.Slug != workspace.Slug {

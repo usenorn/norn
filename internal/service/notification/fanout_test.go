@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
-	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 )
@@ -23,7 +22,7 @@ func deliveryTo(deliveries []repository.NotificationDelivery, accountID uuid.UUI
 }
 
 func TestSomeoneWhoCannotSeeTheIssueIsNeverDeliveredTo(t *testing.T) {
-	h := newHarness(t, config.SMTP{})
+	h := newHarness(t)
 	shutOut := uuid.New()
 
 	h.expectPendingEvents(h.issueEvent(entity.NotificationKindStateChanged, entity.ActorKindUser))
@@ -52,7 +51,7 @@ func TestSomeoneWhoCannotSeeTheIssueIsNeverDeliveredTo(t *testing.T) {
 }
 
 func TestAMentionOnAnIssueTheMentionedPersonCannotSeeDeliversNothing(t *testing.T) {
-	h := newHarness(t, config.SMTP{})
+	h := newHarness(t)
 	mentioned := uuid.New()
 	commentID := uuid.New()
 
@@ -87,7 +86,7 @@ func TestAMentionOnAnIssueTheMentionedPersonCannotSeeDeliversNothing(t *testing.
 }
 
 func TestAMentionOutranksFollowingOnTheSameComment(t *testing.T) {
-	h := newHarness(t, config.SMTP{})
+	h := newHarness(t)
 	commentID := uuid.New()
 
 	event := h.issueEvent(entity.NotificationKindCommented, entity.ActorKindUser)
@@ -125,7 +124,7 @@ func TestAMentionOutranksFollowingOnTheSameComment(t *testing.T) {
 }
 
 func TestTheActorIsNeverNotifiedAboutTheirOwnChange(t *testing.T) {
-	h := newHarness(t, config.SMTP{})
+	h := newHarness(t)
 
 	h.expectPendingEvents(h.issueEvent(entity.NotificationKindStateChanged, entity.ActorKindUser))
 	h.expectIssueOnTeam()
@@ -145,7 +144,7 @@ func TestTheActorIsNeverNotifiedAboutTheirOwnChange(t *testing.T) {
 }
 
 func TestATeamOverrideSilencesOnlyThatTeam(t *testing.T) {
-	h := newHarness(t, config.SMTP{})
+	h := newHarness(t)
 
 	silenced := entity.DefaultNotificationPreferences()
 	silenced.StateChanged = entity.NotificationChannels{}
@@ -181,7 +180,7 @@ func TestATeamOverrideSilencesOnlyThatTeam(t *testing.T) {
 }
 
 func TestTurningAgentActivityOffStopsOnlyTheAgentsChanges(t *testing.T) {
-	h := newHarness(t, config.SMTP{})
+	h := newHarness(t)
 
 	withoutAgents := entity.DefaultNotificationPreferences()
 	withoutAgents.Agents = entity.NotificationChannels{}
@@ -213,7 +212,7 @@ func TestTurningAgentActivityOffStopsOnlyTheAgentsChanges(t *testing.T) {
 }
 
 func TestABulkOperationNotifiesNobody(t *testing.T) {
-	h := newHarness(t, config.SMTP{})
+	h := newHarness(t)
 
 	event := h.issueEvent(entity.NotificationKindStateChanged, entity.ActorKindUser)
 	event.BulkActionID = uuid.New()
@@ -237,7 +236,7 @@ func TestABulkOperationNotifiesNobody(t *testing.T) {
 }
 
 func TestAMutedThreadStaysQuietUntilSomeoneNamesYou(t *testing.T) {
-	h := newHarness(t, config.SMTP{})
+	h := newHarness(t)
 	commentID := uuid.New()
 
 	h.issues.EXPECT().

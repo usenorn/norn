@@ -39,10 +39,6 @@ type digestContent struct {
 }
 
 func (s *notificationsService) Digest(ctx context.Context, now time.Time) error {
-	if !s.smtp.Configured() {
-		return nil
-	}
-
 	window := entity.NotificationDigestWindowAt(now)
 
 	recipients, err := s.notifications.DigestRecipients(ctx, window)

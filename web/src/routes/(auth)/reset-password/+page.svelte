@@ -4,7 +4,6 @@
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
-	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Info from "@lucide/svelte/icons/info";
 	import { authPath } from "$lib/auth/return-to";
 	import * as Alert from "$lib/components/ui/alert/index.js";
@@ -96,8 +95,6 @@
 				return "This link was already used";
 			case "changed":
 				return "Password changed";
-			case "mail_unavailable":
-				return "This instance can't send email";
 			case "unavailable":
 				return "Something went wrong";
 		}
@@ -120,8 +117,6 @@
 				return "Each link works once. If you didn't reset your password, tell an admin.";
 			case "changed":
 				return null;
-			case "mail_unavailable":
-				return "Password recovery needs email. Ask an admin to configure it, or to reset your password for you.";
 			case "unavailable":
 				return "We couldn't finish that just now. Wait a moment and try again.";
 		}
@@ -142,14 +137,6 @@
 				icon: CircleCheck,
 				title: "Signed out everywhere else",
 				body: "Sessions on your other devices ended just now.",
-			};
-		}
-		if (reset.kind === "mail_unavailable") {
-			return {
-				variant: "destructive" as const,
-				icon: CircleX,
-				title: "Email delivery isn't configured",
-				body: "No link was sent. This instance has no mail server set up.",
 			};
 		}
 		return null;
@@ -184,7 +171,6 @@
 				};
 			case "changed":
 				return { label: "Sign in", href: "/sign-in", form: null };
-			case "mail_unavailable":
 			case "unavailable":
 				return { label: "Back to sign in", href: "/sign-in", form: null };
 		}

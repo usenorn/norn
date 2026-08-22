@@ -8,11 +8,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 )
-
-var configured = config.SMTP{Host: "localhost", FromAddress: "norn@example.test"}
 
 func (h *harness) recipient() entity.NotificationDigestClaim {
 	return entity.NotificationDigestClaim{
@@ -24,16 +21,8 @@ func (h *harness) recipient() entity.NotificationDigestClaim {
 	}
 }
 
-func TestNothingIsMailedOnAnInstanceWithNoSMTP(t *testing.T) {
-	h := newHarness(t, config.SMTP{})
-
-	if err := h.service.Digest(context.Background(), time.Now().UTC()); err != nil {
-		t.Fatalf("the digest failed rather than standing down: %v", err)
-	}
-}
-
 func TestADigestIsClaimedBeforeItIsSent(t *testing.T) {
-	h := newHarness(t, configured)
+	h := newHarness(t)
 	recipient := h.recipient()
 
 	gomock.InOrder(
@@ -62,7 +51,7 @@ func TestADigestIsClaimedBeforeItIsSent(t *testing.T) {
 }
 
 func TestARecipientAnotherWorkerAlreadyClaimedIsSkipped(t *testing.T) {
-	h := newHarness(t, configured)
+	h := newHarness(t)
 	recipient := h.recipient()
 
 	h.notifications.EXPECT().DigestRecipients(gomock.Any(), gomock.Any()).
@@ -75,7 +64,7 @@ func TestARecipientAnotherWorkerAlreadyClaimedIsSkipped(t *testing.T) {
 }
 
 func TestAFailedSendIsRecordedAndReturnedRatherThanSwallowed(t *testing.T) {
-	h := newHarness(t, configured)
+	h := newHarness(t)
 	recipient := h.recipient()
 	refused := errors.New("dial tcp: connection refused")
 
