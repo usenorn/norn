@@ -32,6 +32,8 @@ jobs:
 
     env:
       NORN_POSTGRES_DSN: postgres://norn:norn@127.0.0.1:5432/norn?sslmode=disable
+      NORN_SMTP_HOST: smtp.invalid
+      NORN_SMTP_FROM_ADDRESS: no-reply@smtp.invalid
 
     steps:
       - uses: actions/checkout@v4
