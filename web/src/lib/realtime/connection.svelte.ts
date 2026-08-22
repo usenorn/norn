@@ -19,7 +19,9 @@ export type RealtimeEventKind =
 	| "notification.arrived"
 	| "membership.changed"
 	| "execution.updated"
-	| "execution.event";
+	| "execution.event"
+	| "question.asked"
+	| "question.settled";
 
 export type RealtimeEvent = {
 	kind: RealtimeEventKind;
@@ -219,6 +221,9 @@ export function invalidatedBy(event: RealtimeEvent, workspaceId: string): string
 			return [keys.issue(event.issueId), keys.issues(workspaceId)];
 		case "execution.event":
 			return [];
+		case "question.asked":
+		case "question.settled":
+			return [keys.issue(event.issueId)];
 	}
 }
 
@@ -233,6 +238,8 @@ const eventKinds: RealtimeEventKind[] = [
 	"membership.changed",
 	"execution.updated",
 	"execution.event",
+	"question.asked",
+	"question.settled",
 ];
 
 export function provideRealtime(): RealtimeConnection {

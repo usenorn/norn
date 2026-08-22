@@ -80,6 +80,8 @@ const changeLines: Record<ActivityKind, (change: ActivityChange) => string> = {
 		`Unlinked ${codeKindNames[change.field ?? ""] ?? "a change"} ${change.toValue}`,
 	delegated: (change) => `Handed this to ${change.toValue}`,
 	recalled: (change) => `Took this back from ${change.fromValue}`,
+	question_asked: (change) => `Asked: ${change.toValue}`,
+	question_answered: (change) => `Answered “${change.fromValue}” with “${change.toValue}”`,
 	triaged: triageLine,
 	property_changed: propertyLine,
 };

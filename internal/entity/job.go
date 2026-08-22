@@ -37,6 +37,7 @@ const (
 	TaskTypeSCMResume               = "scm:resume"
 	TaskTypeExecutionLeaseSweep     = "execution:lease_sweep"
 	TaskTypeExecutionUploadSweep    = "execution:upload_sweep"
+	TaskTypeQuestionExpirySweep     = "question:expiry_sweep"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 	WebhookFanOutTaskID     = "webhook-fan-out"

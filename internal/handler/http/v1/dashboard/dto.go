@@ -1506,6 +1506,10 @@ func ExecutionEventDTO(execution entity.Execution) api.Execution {
 	return executionDTO(execution)
 }
 
+func QuestionEvent(question entity.IssueQuestion) api.IssueQuestion {
+	return issueQuestionDTO(question)
+}
+
 func ExecutionTimelineEvent(event entity.ExecutionEvent) api.ExecutionEvent {
 	return executionEventDTO(event)
 }
@@ -1676,24 +1680,68 @@ func waitingProposalDTO(waiting service.WaitingProposal) api.AgentProposal {
 
 func issueQuestionDTO(question entity.IssueQuestion) api.IssueQuestion {
 	dto := api.IssueQuestion{
-		Id:        question.ID,
-		IssueId:   question.IssueID,
-		Question:  question.Question,
-		Default:   question.DefaultAnswer,
-		Deadline:  question.Deadline,
-		Answered:  question.Answered(),
-		Expired:   question.Expired(time.Now().UTC()),
-		Standing:  question.Standing(),
-		ActorKind: api.NotificationActorKind(question.ActorKind),
-		CreatedAt: question.CreatedAt,
+		Id:            question.ID,
+		IssueId:       question.IssueID,
+		Kind:          api.IssueQuestionKind(question.Kind),
+		State:         api.IssueQuestionState(question.State),
+		Blocking:      question.Blocking,
+		AllowFreeText: question.AllowFreeText,
+		Question:      question.Question,
+		Default:       question.DefaultAnswer,
+		Deadline:      question.Deadline,
+		Answered:      question.Answered(),
+		Expired:       question.Expired(time.Now().UTC()),
+		Standing:      question.Standing(),
+		ActorKind:     api.NotificationActorKind(question.ActorKind),
+		CreatedAt:     question.CreatedAt,
 	}
 
 	dto.Answer = nilIfEmpty(question.Answer)
 	dto.AskedByName = nilIfEmpty(question.AskedByName)
 	dto.AnsweredByName = nilIfEmpty(question.AnsweredByName)
 	dto.AnsweredAt = question.AnsweredAt
+	dto.SettledByName = nilIfEmpty(question.SettledByName)
+	dto.SettledAt = question.SettledAt
+	dto.ExecutionId = nilIfEmpty(question.ExecutionID)
+
+	if len(question.Options) > 0 {
+		options := question.Options
+		dto.Options = &options
+	}
+
+	dto.Context = questionContextDTO(question.Context)
 
 	return dto
+}
+
+func questionContextDTO(held entity.QuestionContext) *api.IssueQuestionContext {
+	if held.Preview == "" && len(held.Files) == 0 && len(held.Artifacts) == 0 {
+		return nil
+	}
+
+	dto := api.IssueQuestionContext{Preview: nilIfEmpty(held.Preview)}
+
+	if len(held.Files) > 0 {
+		files := held.Files
+		dto.Files = &files
+	}
+
+	if len(held.Artifacts) > 0 {
+		artifacts := make([]uuid.UUID, 0, len(held.Artifacts))
+
+		for _, reference := range held.Artifacts {
+			parsed, err := uuid.Parse(reference)
+			if err != nil {
+				continue
+			}
+
+			artifacts = append(artifacts, parsed)
+		}
+
+		dto.Artifacts = &artifacts
+	}
+
+	return &dto
 }
 
 func issueQuestionDTOs(questions []entity.IssueQuestion) []api.IssueQuestion {

@@ -23,6 +23,7 @@ type channelsService struct {
 	runners    repository.Runner
 	machines   service.Runners
 	executions service.Executions
+	questions  service.IssueQuestions
 }
 
 func New(
@@ -31,6 +32,7 @@ func New(
 	runners repository.Runner,
 	machines service.Runners,
 	executions service.Executions,
+	questions service.IssueQuestions,
 ) service.RunnerChannels {
 	return &channelsService{
 		channels:   channels,
@@ -38,6 +40,7 @@ func New(
 		runners:    runners,
 		machines:   machines,
 		executions: executions,
+		questions:  questions,
 	}
 }
 

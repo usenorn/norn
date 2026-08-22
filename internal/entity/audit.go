@@ -71,6 +71,8 @@ const (
 
 	AuditExecutionCancelled AuditAction = "execution.cancelled"
 	AuditExecutionApproved  AuditAction = "execution.approved"
+	AuditExecutionResumed   AuditAction = "execution.resumed"
+	AuditExecutionStranded  AuditAction = "execution.stranded"
 
 	AuditWebhookRegistered AuditAction = "webhook.registered"
 	AuditWebhookRemoved    AuditAction = "webhook.removed"
@@ -109,7 +111,8 @@ func AuditActions() []AuditAction {
 		AuditAgentRegistered, AuditAgentDisabled, AuditAgentRotated, AuditAgentProposal,
 		AuditRunnerEnrolled, AuditRunnerRevoked,
 		AuditCodebaseConnected, AuditCodebaseDisconnected,
-		AuditExecutionCancelled, AuditExecutionApproved,
+		AuditExecutionCancelled, AuditExecutionApproved, AuditExecutionResumed,
+		AuditExecutionStranded,
 		AuditWebhookRegistered, AuditWebhookRemoved, AuditWebhookDisabled,
 		AuditWorkspaceUpdated, AuditWorkspaceDeletion, AuditWorkspaceRestored, AuditWorkspacePurged,
 		AuditDirectoryConnected, AuditDirectoryDisconnected, AuditDirectoryTokenRotated,

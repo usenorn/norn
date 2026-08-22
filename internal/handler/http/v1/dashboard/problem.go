@@ -520,6 +520,16 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrExecutionTelemetryMinimal):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
+	case errors.Is(err, entity.ErrIssueQuestionNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrIssueQuestionAnswered),
+		errors.Is(err, entity.ErrIssueQuestionSettled):
+		return newProblem(http.StatusConflict, err.Error()), true
+
+	case errors.Is(err, entity.ErrIssueQuestionUnanswerable):
+		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
+
 	case errors.Is(err, entity.ErrExecutionArtifactNotFound):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
@@ -2362,5 +2372,13 @@ func (r problemResponse) VisitGetWorkspaceExecutionPolicyResponse(w http.Respons
 }
 
 func (r problemResponse) VisitSetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDismissWorkspaceIssueQuestionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceExecutionQuestionsResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

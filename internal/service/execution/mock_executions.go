@@ -57,6 +57,20 @@ func (mr *MockExecutionsMockRecorder) Accepted(ctx, runner, message any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accepted", reflect.TypeOf((*MockExecutions)(nil).Accepted), ctx, runner, message)
 }
 
+// Answered mocks base method.
+func (m *MockExecutions) Answered(ctx context.Context, question entity.IssueQuestion) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Answered", ctx, question)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Answered indicates an expected call of Answered.
+func (mr *MockExecutionsMockRecorder) Answered(ctx, question any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Answered", reflect.TypeOf((*MockExecutions)(nil).Answered), ctx, question)
+}
+
 // Approve mocks base method.
 func (m *MockExecutions) Approve(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error) {
 	m.ctrl.T.Helper()
@@ -189,6 +203,20 @@ func (mr *MockExecutionsMockRecorder) OnDelegated(ctx, issue, delegation any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnDelegated", reflect.TypeOf((*MockExecutions)(nil).OnDelegated), ctx, issue, delegation)
 }
 
+// Questioned mocks base method.
+func (m *MockExecutions) Questioned(ctx context.Context, question entity.IssueQuestion) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Questioned", ctx, question)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Questioned indicates an expected call of Questioned.
+func (mr *MockExecutionsMockRecorder) Questioned(ctx, question any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Questioned", reflect.TypeOf((*MockExecutions)(nil).Questioned), ctx, question)
+}
+
 // Renew mocks base method.
 func (m *MockExecutions) Renew(ctx context.Context, runner entity.Runner) error {
 	m.ctrl.T.Helper()
@@ -274,6 +302,20 @@ func (m *MockExecutions) Timeline(ctx context.Context, workspaceID uuid.UUID, ex
 func (mr *MockExecutionsMockRecorder) Timeline(ctx, workspaceID, executionID, page any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Timeline", reflect.TypeOf((*MockExecutions)(nil).Timeline), ctx, workspaceID, executionID, page)
+}
+
+// Unanswerable mocks base method.
+func (m *MockExecutions) Unanswerable(ctx context.Context, question entity.IssueQuestion, reason string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Unanswerable", ctx, question, reason)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Unanswerable indicates an expected call of Unanswerable.
+func (mr *MockExecutionsMockRecorder) Unanswerable(ctx, question, reason any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unanswerable", reflect.TypeOf((*MockExecutions)(nil).Unanswerable), ctx, question, reason)
 }
 
 // Visible mocks base method.

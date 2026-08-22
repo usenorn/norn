@@ -33,6 +33,10 @@ type Executions interface {
 	Resume(ctx context.Context, workspaceID uuid.UUID, executionID, feedback string) (entity.Execution, error)
 	Approve(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error)
 
+	Questioned(ctx context.Context, question entity.IssueQuestion) error
+	Answered(ctx context.Context, question entity.IssueQuestion) error
+	Unanswerable(ctx context.Context, question entity.IssueQuestion, reason string) error
+
 	Accepted(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Declined(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Reported(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error

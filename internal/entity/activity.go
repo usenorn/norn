@@ -43,6 +43,8 @@ const (
 	ActivityKindCodeUnlinked      ActivityKind = "code_unlinked"
 	ActivityKindDelegated         ActivityKind = "delegated"
 	ActivityKindRecalled          ActivityKind = "recalled"
+	ActivityKindQuestionAsked     ActivityKind = "question_asked"
+	ActivityKindQuestionAnswered  ActivityKind = "question_answered"
 )
 
 func ActivityKinds() []ActivityKind {
@@ -70,6 +72,8 @@ func ActivityKinds() []ActivityKind {
 		ActivityKindCodeUnlinked,
 		ActivityKindDelegated,
 		ActivityKindRecalled,
+		ActivityKindQuestionAsked,
+		ActivityKindQuestionAnswered,
 	}
 }
 

@@ -10,6 +10,7 @@ var Set = wire.NewSet(
 	NewSAML,
 	NewRunner,
 	NewExecutions,
+	NewQuestions,
 	NewCycles,
 	NewInstance,
 	NewLicence,

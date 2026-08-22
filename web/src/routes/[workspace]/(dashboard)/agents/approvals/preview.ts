@@ -75,6 +75,10 @@ export const approvalsPreviewStates: Record<string, ApprovalsPreview> = import.m
 								{
 									id: "00000000-0000-4000-8000-000000000d01",
 									issueId: "00000000-0000-4000-8000-0000000009f9",
+									kind: "clarification" as const,
+									state: "expired" as const,
+									blocking: false,
+									allowFreeText: true,
 									question: "Does a replayed webhook count as a retry for this rule?",
 									default: "treat a replay as a retry",
 									deadline: "2026-08-05T12:40:00Z",

@@ -106,12 +106,14 @@ const (
 	EventTool       EventKind = "tool"
 	EventService    EventKind = "service"
 	EventPreview    EventKind = "preview"
+	EventQuestion   EventKind = "question"
 	EventNote       EventKind = "note"
 )
 
 func EventKinds() []EventKind {
 	return []EventKind{
-		EventTransition, EventPhase, EventCommand, EventTool, EventService, EventPreview, EventNote,
+		EventTransition, EventPhase, EventCommand, EventTool, EventService, EventPreview,
+		EventQuestion, EventNote,
 	}
 }
 

@@ -224,3 +224,23 @@ func message(id string, kind entity.ChannelMessageType, executionID string, payl
 		Payload:     body,
 	}
 }
+
+func (h *harness) moved(to entity.ExecutionState) (entity.ExecutionEvent, bool) {
+	for _, event := range h.recorded {
+		if event.Kind == entity.ExecutionEventTransition && event.ToState == to {
+			return event, true
+		}
+	}
+
+	return entity.ExecutionEvent{}, false
+}
+
+func (h *harness) entry(kind entity.ExecutionEventKind) (entity.ExecutionEvent, bool) {
+	for _, event := range h.recorded {
+		if event.Kind == kind {
+			return event, true
+		}
+	}
+
+	return entity.ExecutionEvent{}, false
+}

@@ -18,6 +18,7 @@ import (
 	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/aarondl/sqlboiler/v4/queries/qmhelper"
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/aarondl/strmangle"
 	"github.com/friendsofgo/errors"
 )
@@ -36,6 +37,16 @@ type WorkspaceIssueQuestion struct {
 	AnsweredByAccountID null.String `boil:"answered_by_account_id" json:"answered_by_account_id,omitempty" toml:"answered_by_account_id" yaml:"answered_by_account_id,omitempty"`
 	AnsweredAt          null.Time   `boil:"answered_at" json:"answered_at,omitempty" toml:"answered_at" yaml:"answered_at,omitempty"`
 	CreatedAt           time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ExecutionID         null.String `boil:"execution_id" json:"execution_id,omitempty" toml:"execution_id" yaml:"execution_id,omitempty"`
+	RunnerRef           string      `boil:"runner_ref" json:"runner_ref" toml:"runner_ref" yaml:"runner_ref"`
+	Kind                string      `boil:"kind" json:"kind" toml:"kind" yaml:"kind"`
+	Blocking            bool        `boil:"blocking" json:"blocking" toml:"blocking" yaml:"blocking"`
+	Options             types.JSON  `boil:"options" json:"options" toml:"options" yaml:"options"`
+	AllowFreeText       bool        `boil:"allow_free_text" json:"allow_free_text" toml:"allow_free_text" yaml:"allow_free_text"`
+	Context             types.JSON  `boil:"context" json:"context" toml:"context" yaml:"context"`
+	State               string      `boil:"state" json:"state" toml:"state" yaml:"state"`
+	SettledAt           null.Time   `boil:"settled_at" json:"settled_at,omitempty" toml:"settled_at" yaml:"settled_at,omitempty"`
+	SettledByAccountID  null.String `boil:"settled_by_account_id" json:"settled_by_account_id,omitempty" toml:"settled_by_account_id" yaml:"settled_by_account_id,omitempty"`
 
 	R *workspaceIssueQuestionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueQuestionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -54,6 +65,16 @@ var WorkspaceIssueQuestionColumns = struct {
 	AnsweredByAccountID string
 	AnsweredAt          string
 	CreatedAt           string
+	ExecutionID         string
+	RunnerRef           string
+	Kind                string
+	Blocking            string
+	Options             string
+	AllowFreeText       string
+	Context             string
+	State               string
+	SettledAt           string
+	SettledByAccountID  string
 }{
 	ID:                  "id",
 	WorkspaceID:         "workspace_id",
@@ -67,6 +88,16 @@ var WorkspaceIssueQuestionColumns = struct {
 	AnsweredByAccountID: "answered_by_account_id",
 	AnsweredAt:          "answered_at",
 	CreatedAt:           "created_at",
+	ExecutionID:         "execution_id",
+	RunnerRef:           "runner_ref",
+	Kind:                "kind",
+	Blocking:            "blocking",
+	Options:             "options",
+	AllowFreeText:       "allow_free_text",
+	Context:             "context",
+	State:               "state",
+	SettledAt:           "settled_at",
+	SettledByAccountID:  "settled_by_account_id",
 }
 
 var WorkspaceIssueQuestionTableColumns = struct {
@@ -82,6 +113,16 @@ var WorkspaceIssueQuestionTableColumns = struct {
 	AnsweredByAccountID string
 	AnsweredAt          string
 	CreatedAt           string
+	ExecutionID         string
+	RunnerRef           string
+	Kind                string
+	Blocking            string
+	Options             string
+	AllowFreeText       string
+	Context             string
+	State               string
+	SettledAt           string
+	SettledByAccountID  string
 }{
 	ID:                  "workspace_issue_questions.id",
 	WorkspaceID:         "workspace_issue_questions.workspace_id",
@@ -95,6 +136,16 @@ var WorkspaceIssueQuestionTableColumns = struct {
 	AnsweredByAccountID: "workspace_issue_questions.answered_by_account_id",
 	AnsweredAt:          "workspace_issue_questions.answered_at",
 	CreatedAt:           "workspace_issue_questions.created_at",
+	ExecutionID:         "workspace_issue_questions.execution_id",
+	RunnerRef:           "workspace_issue_questions.runner_ref",
+	Kind:                "workspace_issue_questions.kind",
+	Blocking:            "workspace_issue_questions.blocking",
+	Options:             "workspace_issue_questions.options",
+	AllowFreeText:       "workspace_issue_questions.allow_free_text",
+	Context:             "workspace_issue_questions.context",
+	State:               "workspace_issue_questions.state",
+	SettledAt:           "workspace_issue_questions.settled_at",
+	SettledByAccountID:  "workspace_issue_questions.settled_by_account_id",
 }
 
 // Generated where
@@ -112,6 +163,16 @@ var WorkspaceIssueQuestionWhere = struct {
 	AnsweredByAccountID whereHelpernull_String
 	AnsweredAt          whereHelpernull_Time
 	CreatedAt           whereHelpertime_Time
+	ExecutionID         whereHelpernull_String
+	RunnerRef           whereHelperstring
+	Kind                whereHelperstring
+	Blocking            whereHelperbool
+	Options             whereHelpertypes_JSON
+	AllowFreeText       whereHelperbool
+	Context             whereHelpertypes_JSON
+	State               whereHelperstring
+	SettledAt           whereHelpernull_Time
+	SettledByAccountID  whereHelpernull_String
 }{
 	ID:                  whereHelperstring{field: "\"workspace_issue_questions\".\"id\""},
 	WorkspaceID:         whereHelperstring{field: "\"workspace_issue_questions\".\"workspace_id\""},
@@ -125,16 +186,28 @@ var WorkspaceIssueQuestionWhere = struct {
 	AnsweredByAccountID: whereHelpernull_String{field: "\"workspace_issue_questions\".\"answered_by_account_id\""},
 	AnsweredAt:          whereHelpernull_Time{field: "\"workspace_issue_questions\".\"answered_at\""},
 	CreatedAt:           whereHelpertime_Time{field: "\"workspace_issue_questions\".\"created_at\""},
+	ExecutionID:         whereHelpernull_String{field: "\"workspace_issue_questions\".\"execution_id\""},
+	RunnerRef:           whereHelperstring{field: "\"workspace_issue_questions\".\"runner_ref\""},
+	Kind:                whereHelperstring{field: "\"workspace_issue_questions\".\"kind\""},
+	Blocking:            whereHelperbool{field: "\"workspace_issue_questions\".\"blocking\""},
+	Options:             whereHelpertypes_JSON{field: "\"workspace_issue_questions\".\"options\""},
+	AllowFreeText:       whereHelperbool{field: "\"workspace_issue_questions\".\"allow_free_text\""},
+	Context:             whereHelpertypes_JSON{field: "\"workspace_issue_questions\".\"context\""},
+	State:               whereHelperstring{field: "\"workspace_issue_questions\".\"state\""},
+	SettledAt:           whereHelpernull_Time{field: "\"workspace_issue_questions\".\"settled_at\""},
+	SettledByAccountID:  whereHelpernull_String{field: "\"workspace_issue_questions\".\"settled_by_account_id\""},
 }
 
 // WorkspaceIssueQuestionRels is where relationship names are stored.
 var WorkspaceIssueQuestionRels = struct {
 	AnsweredByAccount string
 	AskedByAccount    string
+	SettledByAccount  string
 	Workspace         string
 }{
 	AnsweredByAccount: "AnsweredByAccount",
 	AskedByAccount:    "AskedByAccount",
+	SettledByAccount:  "SettledByAccount",
 	Workspace:         "Workspace",
 }
 
@@ -142,6 +215,7 @@ var WorkspaceIssueQuestionRels = struct {
 type workspaceIssueQuestionR struct {
 	AnsweredByAccount *Account   `boil:"AnsweredByAccount" json:"AnsweredByAccount" toml:"AnsweredByAccount" yaml:"AnsweredByAccount"`
 	AskedByAccount    *Account   `boil:"AskedByAccount" json:"AskedByAccount" toml:"AskedByAccount" yaml:"AskedByAccount"`
+	SettledByAccount  *Account   `boil:"SettledByAccount" json:"SettledByAccount" toml:"SettledByAccount" yaml:"SettledByAccount"`
 	Workspace         *Workspace `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
 }
 
@@ -182,6 +256,22 @@ func (r *workspaceIssueQuestionR) GetAskedByAccount() *Account {
 	return r.AskedByAccount
 }
 
+func (o *WorkspaceIssueQuestion) GetSettledByAccount() *Account {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetSettledByAccount()
+}
+
+func (r *workspaceIssueQuestionR) GetSettledByAccount() *Account {
+	if r == nil {
+		return nil
+	}
+
+	return r.SettledByAccount
+}
+
 func (o *WorkspaceIssueQuestion) GetWorkspace() *Workspace {
 	if o == nil {
 		return nil
@@ -202,9 +292,9 @@ func (r *workspaceIssueQuestionR) GetWorkspace() *Workspace {
 type workspaceIssueQuestionL struct{}
 
 var (
-	workspaceIssueQuestionAllColumns            = []string{"id", "workspace_id", "issue_id", "question", "default_answer", "deadline", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at"}
+	workspaceIssueQuestionAllColumns            = []string{"id", "workspace_id", "issue_id", "question", "default_answer", "deadline", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at", "execution_id", "runner_ref", "kind", "blocking", "options", "allow_free_text", "context", "state", "settled_at", "settled_by_account_id"}
 	workspaceIssueQuestionColumnsWithoutDefault = []string{"workspace_id", "issue_id", "question", "default_answer", "deadline"}
-	workspaceIssueQuestionColumnsWithDefault    = []string{"id", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at"}
+	workspaceIssueQuestionColumnsWithDefault    = []string{"id", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at", "execution_id", "runner_ref", "kind", "blocking", "options", "allow_free_text", "context", "state", "settled_at", "settled_by_account_id"}
 	workspaceIssueQuestionPrimaryKeyColumns     = []string{"id"}
 	workspaceIssueQuestionGeneratedColumns      = []string{}
 )
@@ -536,6 +626,17 @@ func (o *WorkspaceIssueQuestion) AskedByAccount(mods ...qm.QueryMod) accountQuer
 	return Accounts(queryMods...)
 }
 
+// SettledByAccount pointed to by the foreign key.
+func (o *WorkspaceIssueQuestion) SettledByAccount(mods ...qm.QueryMod) accountQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.SettledByAccountID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Accounts(queryMods...)
+}
+
 // Workspace pointed to by the foreign key.
 func (o *WorkspaceIssueQuestion) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	queryMods := []qm.QueryMod{
@@ -787,6 +888,130 @@ func (workspaceIssueQuestionL) LoadAskedByAccount(ctx context.Context, e boil.Co
 					foreign.R = &accountR{}
 				}
 				foreign.R.AskedByAccountWorkspaceIssueQuestions = append(foreign.R.AskedByAccountWorkspaceIssueQuestions, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadSettledByAccount allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceIssueQuestionL) LoadSettledByAccount(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueQuestion any, mods queries.Applicator) error {
+	var slice []*WorkspaceIssueQuestion
+	var object *WorkspaceIssueQuestion
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceIssueQuestion.(*WorkspaceIssueQuestion)
+		if !ok {
+			object = new(WorkspaceIssueQuestion)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssueQuestion)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssueQuestion))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceIssueQuestion.(*[]*WorkspaceIssueQuestion)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssueQuestion)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssueQuestion))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceIssueQuestionR{}
+		}
+		if !queries.IsNil(object.SettledByAccountID) {
+			args[object.SettledByAccountID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceIssueQuestionR{}
+			}
+
+			if !queries.IsNil(obj.SettledByAccountID) {
+				args[obj.SettledByAccountID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`accounts`),
+		qm.WhereIn(`accounts.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Account")
+	}
+
+	var resultSlice []*Account
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Account")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for accounts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for accounts")
+	}
+
+	if len(accountAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.SettledByAccount = foreign
+		if foreign.R == nil {
+			foreign.R = &accountR{}
+		}
+		foreign.R.SettledByAccountWorkspaceIssueQuestions = append(foreign.R.SettledByAccountWorkspaceIssueQuestions, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.SettledByAccountID, foreign.ID) {
+				local.R.SettledByAccount = foreign
+				if foreign.R == nil {
+					foreign.R = &accountR{}
+				}
+				foreign.R.SettledByAccountWorkspaceIssueQuestions = append(foreign.R.SettledByAccountWorkspaceIssueQuestions, local)
 				break
 			}
 		}
@@ -1070,6 +1295,86 @@ func (o *WorkspaceIssueQuestion) RemoveAskedByAccount(ctx context.Context, exec 
 			related.R.AskedByAccountWorkspaceIssueQuestions[i] = related.R.AskedByAccountWorkspaceIssueQuestions[ln-1]
 		}
 		related.R.AskedByAccountWorkspaceIssueQuestions = related.R.AskedByAccountWorkspaceIssueQuestions[:ln-1]
+		break
+	}
+	return nil
+}
+
+// SetSettledByAccount of the workspaceIssueQuestion to the related item.
+// Sets o.R.SettledByAccount to related.
+// Adds o to related.R.SettledByAccountWorkspaceIssueQuestions.
+func (o *WorkspaceIssueQuestion) SetSettledByAccount(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Account) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_issue_questions\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"settled_by_account_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceIssueQuestionPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.SettledByAccountID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceIssueQuestionR{
+			SettledByAccount: related,
+		}
+	} else {
+		o.R.SettledByAccount = related
+	}
+
+	if related.R == nil {
+		related.R = &accountR{
+			SettledByAccountWorkspaceIssueQuestions: WorkspaceIssueQuestionSlice{o},
+		}
+	} else {
+		related.R.SettledByAccountWorkspaceIssueQuestions = append(related.R.SettledByAccountWorkspaceIssueQuestions, o)
+	}
+
+	return nil
+}
+
+// RemoveSettledByAccount relationship.
+// Sets o.R.SettledByAccount to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceIssueQuestion) RemoveSettledByAccount(ctx context.Context, exec boil.ContextExecutor, related *Account) error {
+	var err error
+
+	queries.SetScanner(&o.SettledByAccountID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("settled_by_account_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.SettledByAccount = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.SettledByAccountWorkspaceIssueQuestions {
+		if queries.Equal(o.SettledByAccountID, ri.SettledByAccountID) {
+			continue
+		}
+
+		ln := len(related.R.SettledByAccountWorkspaceIssueQuestions)
+		if ln > 1 && i < ln-1 {
+			related.R.SettledByAccountWorkspaceIssueQuestions[i] = related.R.SettledByAccountWorkspaceIssueQuestions[ln-1]
+		}
+		related.R.SettledByAccountWorkspaceIssueQuestions = related.R.SettledByAccountWorkspaceIssueQuestions[:ln-1]
 		break
 	}
 	return nil

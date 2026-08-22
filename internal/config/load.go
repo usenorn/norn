@@ -612,6 +612,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("executions.max_upload_bytes", int64(512<<20))
 	v.SetDefault("executions.upload_retention", 90*24*time.Hour)
 	v.SetDefault("executions.retention_schedule", "0 3 * * *")
+	v.SetDefault("questions.expiry_sweep_schedule", "*/15 * * * *")
 	v.SetDefault("executions.retention_batch", 200)
 	v.SetDefault("asynq.addr", "127.0.0.1:6381")
 	v.SetDefault("asynq.username", "")

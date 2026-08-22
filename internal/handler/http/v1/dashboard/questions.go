@@ -66,6 +66,42 @@ func (h *handler) AnswerWorkspaceIssueQuestion(
 	return api.AnswerWorkspaceIssueQuestion200JSONResponse(issueQuestionDTO(answered)), nil
 }
 
+func (h *handler) DismissWorkspaceIssueQuestion(
+	ctx context.Context,
+	request api.DismissWorkspaceIssueQuestionRequestObject,
+) (api.DismissWorkspaceIssueQuestionResponseObject, error) {
+	dismissed, err := h.questions.Dismiss(
+		ctx, request.WorkspaceId, request.IssueId, request.QuestionId,
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.DismissWorkspaceIssueQuestion200JSONResponse(issueQuestionDTO(dismissed)), nil
+}
+
+func (h *handler) ListWorkspaceExecutionQuestions(
+	ctx context.Context,
+	request api.ListWorkspaceExecutionQuestionsRequestObject,
+) (api.ListWorkspaceExecutionQuestionsResponseObject, error) {
+	questions, err := h.questions.ListByExecution(ctx, request.WorkspaceId, request.ExecutionId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceExecutionQuestions200JSONResponse{
+		Questions: issueQuestionDTOs(questions),
+	}, nil
+}
+
 func questionWait(seconds *int32) time.Duration {
 	if seconds == nil || *seconds == 0 {
 		return entity.QuestionWaitDefault
