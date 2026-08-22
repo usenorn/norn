@@ -2028,3 +2028,199 @@ func executionEventDTOs(events []entity.ExecutionEvent) []api.ExecutionEvent {
 
 	return dtos
 }
+
+func chunkPageOf(after *int64, limit *int) entity.ExecutionChunkPage {
+	page := entity.ExecutionChunkPage{}
+
+	if after != nil {
+		page.After = *after
+	}
+
+	if limit != nil {
+		page.Limit = *limit
+	}
+
+	return page
+}
+
+func logEntriesOf(entries []api.ExecutionLogEntry) []entity.ExecutionLogEntry {
+	held := make([]entity.ExecutionLogEntry, 0, len(entries))
+
+	for _, entry := range entries {
+		held = append(held, entity.ExecutionLogEntry{
+			At:     timeOrZero(entry.At),
+			Stream: textOf(entry.Stream),
+			Source: textOf(entry.Source),
+			Text:   entry.Text,
+		})
+	}
+
+	return held
+}
+
+func transcriptEntriesOf(entries []api.ExecutionTranscriptEntry) []entity.ExecutionTranscriptEntry {
+	held := make([]entity.ExecutionTranscriptEntry, 0, len(entries))
+
+	for _, entry := range entries {
+		held = append(held, entity.ExecutionTranscriptEntry{
+			At:      timeOrZero(entry.At),
+			Type:    entry.Type,
+			Payload: payloadOf(entry.Payload),
+		})
+	}
+
+	return held
+}
+
+func payloadOf(payload *map[string]any) map[string]any {
+	if payload == nil {
+		return nil
+	}
+
+	return *payload
+}
+
+func timeOrZero(at *time.Time) time.Time {
+	if at == nil {
+		return time.Time{}
+	}
+
+	return *at
+}
+
+func chunkReceiptDTO(receipt service.ExecutionReceipt) api.ExecutionChunkReceipt {
+	return api.ExecutionChunkReceipt{
+		Stream:     api.ExecutionStream(receipt.Chunk.Stream),
+		Sequence:   receipt.Chunk.Sequence,
+		Digest:     receipt.Chunk.Digest,
+		EntryCount: receipt.Chunk.Entries,
+		Bytes:      receipt.Chunk.Bytes,
+		Duplicate:  receipt.Duplicate,
+		ReceivedAt: receipt.Chunk.ReceivedAt,
+	}
+}
+
+func streamCursorDTOs(cursors []entity.ExecutionStreamCursor) []api.ExecutionStreamCursor {
+	dtos := make([]api.ExecutionStreamCursor, 0, len(cursors))
+
+	for _, cursor := range cursors {
+		dtos = append(dtos, api.ExecutionStreamCursor{
+			Stream:       api.ExecutionStream(cursor.Stream),
+			LastSequence: cursor.LastSequence,
+			Chunks:       cursor.Chunks,
+			EntryCount:   cursor.Entries,
+			Bytes:        cursor.Bytes,
+		})
+	}
+
+	return dtos
+}
+
+func logChunkDTOs(chunks []entity.ExecutionLogChunk) []api.ExecutionLogChunk {
+	dtos := make([]api.ExecutionLogChunk, 0, len(chunks))
+
+	for _, chunk := range chunks {
+		entries := make([]api.ExecutionLogEntry, 0, len(chunk.Entries))
+
+		for _, entry := range chunk.Entries {
+			at := entry.At
+			entries = append(entries, api.ExecutionLogEntry{
+				At:     &at,
+				Stream: nilIfEmpty(entry.Stream),
+				Source: nilIfEmpty(entry.Source),
+				Text:   entry.Text,
+			})
+		}
+
+		dtos = append(dtos, api.ExecutionLogChunk{
+			Stream:     api.ExecutionStream(chunk.Stream),
+			Sequence:   chunk.Sequence,
+			Digest:     chunk.Digest,
+			EntryCount: chunk.ExecutionChunk.Entries,
+			Bytes:      chunk.Bytes,
+			FirstAt:    chunk.FirstAt,
+			LastAt:     chunk.LastAt,
+			ReceivedAt: chunk.ReceivedAt,
+			Entries:    entries,
+		})
+	}
+
+	return dtos
+}
+
+func transcriptChunkDTOs(chunks []entity.ExecutionTranscriptChunk) []api.ExecutionTranscriptChunk {
+	dtos := make([]api.ExecutionTranscriptChunk, 0, len(chunks))
+
+	for _, chunk := range chunks {
+		entries := make([]api.ExecutionTranscriptEntry, 0, len(chunk.Entries))
+
+		for _, entry := range chunk.Entries {
+			at := entry.At
+			held := api.ExecutionTranscriptEntry{At: &at, Type: entry.Type}
+
+			if entry.Payload != nil {
+				payload := entry.Payload
+				held.Payload = &payload
+			}
+
+			entries = append(entries, held)
+		}
+
+		dtos = append(dtos, api.ExecutionTranscriptChunk{
+			Stream:     api.ExecutionStream(chunk.Stream),
+			Sequence:   chunk.Sequence,
+			Digest:     chunk.Digest,
+			EntryCount: chunk.ExecutionChunk.Entries,
+			Bytes:      chunk.Bytes,
+			FirstAt:    chunk.FirstAt,
+			LastAt:     chunk.LastAt,
+			ReceivedAt: chunk.ReceivedAt,
+			Entries:    entries,
+		})
+	}
+
+	return dtos
+}
+
+func artifactDTO(artifact entity.ExecutionArtifact) api.ExecutionArtifact {
+	return api.ExecutionArtifact{
+		Id:          artifact.ID,
+		ExecutionId: artifact.ExecutionID,
+		Name:        artifact.Name,
+		ContentType: artifact.ContentType,
+		Bytes:       artifact.Bytes,
+		Digest:      artifact.Digest,
+		CreatedAt:   artifact.CreatedAt,
+	}
+}
+
+func artifactDTOs(artifacts []entity.ExecutionArtifact) []api.ExecutionArtifact {
+	dtos := make([]api.ExecutionArtifact, 0, len(artifacts))
+
+	for _, artifact := range artifacts {
+		dtos = append(dtos, artifactDTO(artifact))
+	}
+
+	return dtos
+}
+
+func artifactReceiptDTO(receipt service.ArtifactReceipt) api.ExecutionArtifactReceipt {
+	return api.ExecutionArtifactReceipt{
+		Id:          receipt.Artifact.ID,
+		ExecutionId: receipt.Artifact.ExecutionID,
+		Name:        receipt.Artifact.Name,
+		ContentType: receipt.Artifact.ContentType,
+		Bytes:       receipt.Artifact.Bytes,
+		Digest:      receipt.Artifact.Digest,
+		CreatedAt:   receipt.Artifact.CreatedAt,
+		Duplicate:   receipt.Duplicate,
+	}
+}
+
+func executionPolicyDTO(policy entity.WorkspaceExecutionPolicy) api.WorkspaceExecutionPolicy {
+	return api.WorkspaceExecutionPolicy{
+		WorkspaceId:         policy.WorkspaceID,
+		Telemetry:           api.TelemetryMode(policy.Telemetry),
+		UploadRetentionDays: policy.UploadRetentionDays,
+	}
+}

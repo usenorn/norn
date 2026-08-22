@@ -19,6 +19,7 @@ type Executions interface {
 	OnDelegated(ctx context.Context, issue entity.Issue, delegation entity.IssueDelegation) error
 
 	Get(ctx context.Context, workspaceID uuid.UUID, executionID string) (ExecutionDetail, error)
+	Visible(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error)
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Execution, error)
 	Timeline(
 		ctx context.Context,
@@ -36,6 +37,7 @@ type Executions interface {
 	Declined(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Reported(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Observed(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
+	Held(ctx context.Context, runner entity.Runner, executionID string) (entity.Execution, error)
 	Renew(ctx context.Context, runner entity.Runner) error
 	Leased(ctx context.Context, runnerID uuid.UUID) ([]string, error)
 	SweepLeases(ctx context.Context) error

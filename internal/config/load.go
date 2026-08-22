@@ -150,6 +150,10 @@ func validate(cfg Config) error {
 		return err
 	}
 
+	if err := validateExecutions(cfg); err != nil {
+		return err
+	}
+
 	if cfg.SourceControl.MaxDeliveryBytes > cfg.HTTP.MaxRequestBytes {
 		return fmt.Errorf(
 			"source_control.max_delivery_bytes (%d) is above http.max_request_bytes (%d). A forge "+
@@ -172,6 +176,62 @@ func validate(cfg Config) error {
 	}
 
 	return validateStorage(cfg)
+}
+
+func validateExecutions(cfg Config) error {
+	if cfg.Executions.UploadRetention <= 0 {
+		return fmt.Errorf(
+			"executions.upload_retention (%s) must be positive; a run's logs and transcript always "+
+				"age out and there is no setting for keeping them forever",
+			cfg.Executions.UploadRetention,
+		)
+	}
+
+	if cfg.Executions.RetentionBatch < 1 {
+		return fmt.Errorf("executions.retention_batch (%d) must be at least 1", cfg.Executions.RetentionBatch)
+	}
+
+	if cfg.Executions.MaxUploadBytes < 1 {
+		return fmt.Errorf(
+			"executions.max_upload_bytes (%d) must be positive; it is how much one run may store "+
+				"before the server starts turning its uploads down",
+			cfg.Executions.MaxUploadBytes,
+		)
+	}
+
+	if cfg.Executions.MaxChunkBytes < 1 {
+		return fmt.Errorf("executions.max_chunk_bytes (%d) must be positive", cfg.Executions.MaxChunkBytes)
+	}
+
+	if cfg.Executions.MaxChunkBytes > cfg.HTTP.MaxRequestBytes {
+		return fmt.Errorf(
+			"executions.max_chunk_bytes (%d) is above http.max_request_bytes (%d). A runner posts "+
+				"batches over the same routes as the dashboard, so the second cuts the first off, "+
+				"and a machine told its batch may be that big would watch it refused at the "+
+				"smaller number with nothing naming which limit did it. Raise "+
+				"http.max_request_bytes to accept larger batches",
+			cfg.Executions.MaxChunkBytes, cfg.HTTP.MaxRequestBytes,
+		)
+	}
+
+	if cfg.Executions.MaxArtifactBytes < 1 {
+		return fmt.Errorf(
+			"executions.max_artifact_bytes (%d) must be positive", cfg.Executions.MaxArtifactBytes,
+		)
+	}
+
+	if cfg.Executions.MaxArtifactBytes >= cfg.HTTP.MaxRequestBytes {
+		return fmt.Errorf(
+			"executions.max_artifact_bytes (%d) must be below http.max_request_bytes (%d), not "+
+				"merely within it. An artifact arrives inside a multipart body, so the envelope "+
+				"needs room above the file; at or above the request cap it is the transport that "+
+				"cuts the upload off, and a transport has no way to say which file was too big. "+
+				"Raise http.max_request_bytes to accept larger artifacts",
+			cfg.Executions.MaxArtifactBytes, cfg.HTTP.MaxRequestBytes,
+		)
+	}
+
+	return nil
 }
 
 func validateRunner(cfg Runner) error {
@@ -547,6 +607,12 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("runner.nonce_ttl", 10*time.Minute)
 	v.SetDefault("runner.max_clock_skew", 3*time.Minute)
 	v.SetDefault("executions.lease_sweep_schedule", "@every 30s")
+	v.SetDefault("executions.max_chunk_bytes", int64(1<<20))
+	v.SetDefault("executions.max_artifact_bytes", int64(3<<20))
+	v.SetDefault("executions.max_upload_bytes", int64(512<<20))
+	v.SetDefault("executions.upload_retention", 90*24*time.Hour)
+	v.SetDefault("executions.retention_schedule", "0 3 * * *")
+	v.SetDefault("executions.retention_batch", 200)
 	v.SetDefault("asynq.addr", "127.0.0.1:6381")
 	v.SetDefault("asynq.username", "")
 	v.SetDefault("asynq.password", "")

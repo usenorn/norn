@@ -116,6 +116,21 @@ func (mr *MockExecutionsMockRecorder) Get(ctx, workspaceID, executionID any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockExecutions)(nil).Get), ctx, workspaceID, executionID)
 }
 
+// Held mocks base method.
+func (m *MockExecutions) Held(ctx context.Context, runner entity.Runner, executionID string) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Held", ctx, runner, executionID)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Held indicates an expected call of Held.
+func (mr *MockExecutionsMockRecorder) Held(ctx, runner, executionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Held", reflect.TypeOf((*MockExecutions)(nil).Held), ctx, runner, executionID)
+}
+
 // Leased mocks base method.
 func (m *MockExecutions) Leased(ctx context.Context, runnerID uuid.UUID) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -259,4 +274,19 @@ func (m *MockExecutions) Timeline(ctx context.Context, workspaceID uuid.UUID, ex
 func (mr *MockExecutionsMockRecorder) Timeline(ctx, workspaceID, executionID, page any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Timeline", reflect.TypeOf((*MockExecutions)(nil).Timeline), ctx, workspaceID, executionID, page)
+}
+
+// Visible mocks base method.
+func (m *MockExecutions) Visible(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Visible", ctx, workspaceID, executionID)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Visible indicates an expected call of Visible.
+func (mr *MockExecutionsMockRecorder) Visible(ctx, workspaceID, executionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Visible", reflect.TypeOf((*MockExecutions)(nil).Visible), ctx, workspaceID, executionID)
 }

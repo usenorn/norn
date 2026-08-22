@@ -375,6 +375,10 @@ func (s *workspacesService) Purge(ctx context.Context, workspaceID uuid.UUID) er
 			return err
 		}
 
+		if err := s.blobs.RemoveAll(ctx, entity.ExecutionBlobPrefix(workspaceID)); err != nil {
+			return err
+		}
+
 		return s.workspaces.Purge(ctx, workspaceID)
 	}); err != nil {
 		return err

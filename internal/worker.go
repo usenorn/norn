@@ -65,6 +65,7 @@ func NewServeMux(
 	scmBackfill *job.SCMBackfillHandler,
 	scmResume *job.SCMResumeHandler,
 	executionLeaseSweep *job.ExecutionLeaseSweepHandler,
+	executionUploadSweep *job.ExecutionUploadSweepHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -95,6 +96,7 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeSCMBackfill, scmBackfill)
 	mux.Handle(entity.TaskTypeSCMResume, scmResume)
 	mux.Handle(entity.TaskTypeExecutionLeaseSweep, executionLeaseSweep)
+	mux.Handle(entity.TaskTypeExecutionUploadSweep, executionUploadSweep)
 
 	return mux
 }
@@ -194,6 +196,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueDefault),
 	); err != nil {
 		return fmt.Errorf("register execution lease sweep: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.executions.RetentionSchedule,
+		asynq.NewTask(entity.TaskTypeExecutionUploadSweep, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register execution upload sweep: %w", err)
 	}
 
 	if _, err := w.scheduler.Register(
