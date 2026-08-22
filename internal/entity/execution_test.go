@@ -212,11 +212,11 @@ func TestOnlyTheThreeStatesThatMoveAnIssueResolveATargetState(t *testing.T) {
 	for _, state := range entity.ExecutionStates() {
 		target, resolved := entity.IssueStateFor(state, states)
 
-		if resolved != state.MovesTheIssue() {
+		if resolved != entity.MovesTheIssue(state) {
 			t.Errorf(
 				"%s resolves a target state=%v but reports MovesTheIssue=%v; the two disagree, so "+
 					"either an issue moves without warning or a move is silently skipped",
-				state, resolved, state.MovesTheIssue(),
+				state, resolved, entity.MovesTheIssue(state),
 			)
 		}
 

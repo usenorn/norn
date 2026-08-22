@@ -132,6 +132,20 @@ func (mr *MockRunnerMockRecorder) RecordSeen(ctx, runnerID, seenAt any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSeen", reflect.TypeOf((*MockRunner)(nil).RecordSeen), ctx, runnerID, seenAt)
 }
 
+// RecordVersion mocks base method.
+func (m *MockRunner) RecordVersion(ctx context.Context, runnerID uuid.UUID, version string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordVersion", ctx, runnerID, version)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordVersion indicates an expected call of RecordVersion.
+func (mr *MockRunnerMockRecorder) RecordVersion(ctx, runnerID, version any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordVersion", reflect.TypeOf((*MockRunner)(nil).RecordVersion), ctx, runnerID, version)
+}
+
 // Revoke mocks base method.
 func (m *MockRunner) Revoke(ctx context.Context, workspaceID, runnerID uuid.UUID, revokedAt time.Time) error {
 	m.ctrl.T.Helper()

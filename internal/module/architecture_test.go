@@ -103,7 +103,35 @@ func TestEntityDependsOnNoOtherInternalPackage(t *testing.T) {
 				continue
 			}
 
-			t.Errorf("%s imports %s; the domain layer must depend on nothing", pkg, internal(imported))
+			path := internal(imported)
+
+			if strings.HasPrefix(path, "pkg/") {
+				continue
+			}
+
+			t.Errorf("%s imports %s; the domain layer must depend on nothing", pkg, path)
+		}
+	}
+}
+
+func TestPublicPackagesDependOnNothingInsideTheServer(t *testing.T) {
+	for pkg, imports := range packagesUnder(t, "pkg") {
+		for _, imported := range imports {
+			if !strings.HasPrefix(imported, modulePath) {
+				continue
+			}
+
+			path := internal(imported)
+
+			if strings.HasPrefix(path, "pkg/") {
+				continue
+			}
+
+			t.Errorf(
+				"%s imports %s; a package another module compiles against may reach into nothing here",
+				pkg,
+				path,
+			)
 		}
 	}
 }
@@ -135,7 +163,13 @@ func TestConfigDependsOnNoOtherInternalPackage(t *testing.T) {
 				continue
 			}
 
-			t.Errorf("%s imports %s; configuration sits at the bottom of the graph", pkg, internal(imported))
+			path := internal(imported)
+
+			if strings.HasPrefix(path, "pkg/") {
+				continue
+			}
+
+			t.Errorf("%s imports %s; configuration sits at the bottom of the graph", pkg, path)
 		}
 	}
 }

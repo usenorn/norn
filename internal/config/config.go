@@ -74,6 +74,7 @@ type Executions struct {
 
 type Runner struct {
 	ChannelEnabled bool          `mapstructure:"channel_enabled"`
+	MinimumVersion string        `mapstructure:"minimum_version"`
 	AccessTTL      time.Duration `mapstructure:"access_ttl"`
 	TicketTTL      time.Duration `mapstructure:"ticket_ttl"`
 	NonceTTL       time.Duration `mapstructure:"nonce_ttl"`

@@ -11,25 +11,8 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/observability/logging"
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
-
-type reportedState struct {
-	State    string    `json:"state"`
-	Reason   string    `json:"reason"`
-	Detail   string    `json:"detail"`
-	Occurred time.Time `json:"ts"`
-}
-
-type reportedEvent struct {
-	Kind     string          `json:"kind"`
-	Reason   string          `json:"reason"`
-	Detail   json.RawMessage `json:"detail"`
-	Occurred time.Time       `json:"ts"`
-}
-
-type declinedOffer struct {
-	Reason string `json:"reason"`
-}
 
 func (s *executionsService) held(
 	ctx context.Context,
@@ -73,7 +56,7 @@ func (s *executionsService) Accepted(
 		return err
 	}
 
-	return s.tell(ctx, leased, entity.ChannelExecutionStart, executionStart{
+	return s.tell(ctx, leased, entity.ChannelExecutionStart, channelv1.Start{
 		ExecutionID:    leased.ID,
 		LeaseExpiresAt: leased.LeaseExpiresAt,
 		Params:         paramsOf(leased.Params),
@@ -90,7 +73,7 @@ func (s *executionsService) Declined(
 		return err
 	}
 
-	var declined declinedOffer
+	var declined channelv1.Decline
 	if err := decode(message.Payload, &declined); err != nil {
 		return err
 	}
@@ -117,7 +100,7 @@ func (s *executionsService) Reported(
 		return err
 	}
 
-	var reported reportedState
+	var reported channelv1.Report
 	if err := decode(message.Payload, &reported); err != nil {
 		return err
 	}
@@ -158,7 +141,7 @@ func (s *executionsService) Observed(
 		return err
 	}
 
-	var observed reportedEvent
+	var observed channelv1.Entry
 	if err := decode(message.Payload, &observed); err != nil {
 		return err
 	}
