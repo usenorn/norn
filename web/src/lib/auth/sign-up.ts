@@ -25,15 +25,12 @@ function codedConfirm(problem: SignUpConfirmProblem): problem is CodedConfirmPro
 }
 
 export function signUpSent(requested: SignUpRequested): SignUpOutcome {
-	const sent = {
+	return {
+		kind: "verification_sent",
 		email: requested.email,
 		requestedAt: requested.requestedAt,
 		expiresAt: requested.expiresAt,
 	};
-
-	return requested.delivery === "link_only" && requested.url
-		? { kind: "link_only", ...sent, url: requested.url }
-		: { kind: "verification_sent", ...sent };
 }
 
 const personalEmailProviders = new Set([

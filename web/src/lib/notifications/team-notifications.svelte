@@ -30,7 +30,6 @@
 	const ready = $derived(setting.kind === "ready" ? setting.settings : null);
 	const preferences = $derived(draft ?? ready?.preferences ?? null);
 	const overridden = $derived(ready?.overridden ?? false);
-	const emailEnabled = $derived(ready?.emailEnabled ?? false);
 	const dirty = $derived(
 		draft !== null && JSON.stringify(draft) !== JSON.stringify(ready?.preferences)
 	);
@@ -108,7 +107,6 @@
 	{:else if preferences}
 		<PreferenceGrid
 			{preferences}
-			{emailEnabled}
 			disabled={busy}
 			idPrefix="team-{team.key}"
 			onchange={(next) => (draft = next)}

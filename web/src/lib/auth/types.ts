@@ -33,7 +33,6 @@ export type SsoFailure =
 
 export type SignUpOutcome =
 	| { kind: "verification_sent"; email: string; requestedAt: string; expiresAt: string }
-	| { kind: "link_only"; email: string; requestedAt: string; expiresAt: string; url: string }
 	| { kind: "email_taken" }
 	| { kind: "domain_uses_sso"; organization: string; provider: string }
 	| { kind: "closed" }
@@ -61,7 +60,6 @@ export type PasswordReset =
 	| { kind: "link_expired" }
 	| { kind: "link_used" }
 	| { kind: "changed" }
-	| { kind: "mail_unavailable" }
 	| { kind: "unavailable" };
 
 export type SsoExchange =

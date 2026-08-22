@@ -11,7 +11,6 @@ export const notificationSettingsPreviewStates: Record<string, NotificationSetti
 				panel: {
 					kind: "ready",
 					settings: {
-						emailEnabled: true,
 						overridden: false,
 						preferences: {
 							assigned: { inbox: true, email: true },
@@ -38,7 +37,6 @@ export const notificationSettingsPreviewStates: Record<string, NotificationSetti
 				panel: {
 					kind: "ready",
 					settings: {
-						emailEnabled: false,
 						overridden: false,
 						preferences: {
 							assigned: { inbox: true, email: true },
@@ -66,7 +64,6 @@ export const notificationSettingsPreviewStates: Record<string, NotificationSetti
 				panel: {
 					kind: "ready",
 					settings: {
-						emailEnabled: true,
 						overridden: false,
 						preferences: {
 							assigned: { inbox: true, email: true },
