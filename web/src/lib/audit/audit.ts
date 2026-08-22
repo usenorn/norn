@@ -87,6 +87,7 @@ export const auditActions: AuditAction[] = [
 const actionLabels: Record<AuditAction, string> = {
 	"session.signed_in": "Signed in",
 	"session.sign_in_failed": "Sign-in failed",
+	"session.sign_in_code_sent": "Sign-in code sent",
 	"session.signed_out": "Signed out",
 	"session.revoked": "Session revoked",
 	"account.password_changed": "Password changed",

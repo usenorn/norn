@@ -31,6 +31,12 @@ export type SsoFailure =
 			reference: string;
 	  };
 
+export type SignInCodeFailure =
+	| { kind: "incorrect"; attemptsLeft: number }
+	| { kind: "spent" }
+	| { kind: "rate_limited" }
+	| { kind: "unavailable" };
+
 export type SignUpOutcome =
 	| { kind: "verification_sent"; email: string; requestedAt: string; expiresAt: string }
 	| { kind: "email_taken" }

@@ -3,8 +3,8 @@ import { message, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { signInSchema } from "$lib/auth/sign-in-schema";
 import { signInFailure } from "$lib/auth/sign-in";
+import { codeEntry } from "$lib/auth/sign-in-code";
 import { safeReturn } from "$lib/auth/return-to";
-import { withSlot } from "$lib/account/accounts";
 import { addingAccount, leaveIfSignedIn } from "$lib/auth/signed-in";
 import { reachWorkspaceSignIn, type WorkspaceEntry } from "$lib/auth/workspace-sign-in";
 import type { SignInFailure } from "$lib/auth/types";
@@ -46,8 +46,6 @@ export const actions: Actions = {
 			return message(form, failure ?? { kind: "unavailable" }, { status: 401 });
 		}
 
-		const landing = addingAccount(url) ? "/" : safeReturn(url.searchParams.get("return"));
-
-		redirect(303, withSlot(landing, data.slot));
+		redirect(303, codeEntry(data.challengeId, url));
 	},
 };
