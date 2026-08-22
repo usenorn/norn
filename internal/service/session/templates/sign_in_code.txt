@@ -1,0 +1,7 @@
+Hi {{ .DisplayName }},
+
+Your Norn sign-in code is {{ .Code }}
+
+Type it on the page that asked for it. The code lasts {{ .Minutes }} minutes and works once.
+
+If you did not just sign in, somebody else knows your password. Change it and tell an admin.

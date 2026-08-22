@@ -436,10 +436,10 @@ func (s *invitationsService) Accept(ctx context.Context, input service.AcceptInv
 		return service.AcceptedInvitation{}, err
 	}
 
-	issued, err := s.sessions.SignIn(ctx, service.SignInInput{
-		Email:    invitation.Email,
-		Password: input.Password,
-		Client:   input.Client,
+	issued, err := s.sessions.Start(ctx, service.StartSessionInput{
+		AccountID:  account.ID,
+		AuthMethod: entity.SessionAuthMethodPassword,
+		Client:     input.Client,
 	})
 	if err != nil {
 		return service.AcceptedInvitation{}, err

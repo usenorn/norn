@@ -11,7 +11,9 @@ import (
 //go:generate go tool mockgen -source=sessions.go -destination=session/mock_sessions.go -package=session -mock_names=Sessions=MockSessions
 
 type Sessions interface {
-	SignIn(ctx context.Context, input SignInInput) (IssuedSession, error)
+	SignIn(ctx context.Context, input SignInInput) (IssuedChallenge, error)
+	VerifySignInCode(ctx context.Context, input VerifySignInCodeInput) (IssuedSession, error)
+	SendSignInCode(ctx context.Context, challengeID, code string) error
 	Start(ctx context.Context, input StartSessionInput) (IssuedSession, error)
 	Validate(ctx context.Context, token string) (entity.Session, error)
 	Inspect(ctx context.Context, token string) (entity.Session, error)

@@ -252,6 +252,20 @@ func (mr *MockJobProducerMockRecorder) EnqueueSCMResume(ctx, payload any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueSCMResume", reflect.TypeOf((*MockJobProducer)(nil).EnqueueSCMResume), ctx, payload)
 }
 
+// EnqueueSignInCode mocks base method.
+func (m *MockJobProducer) EnqueueSignInCode(ctx context.Context, payload entity.SignInCodePayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueSignInCode", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueSignInCode indicates an expected call of EnqueueSignInCode.
+func (mr *MockJobProducerMockRecorder) EnqueueSignInCode(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueSignInCode", reflect.TypeOf((*MockJobProducer)(nil).EnqueueSignInCode), ctx, payload)
+}
+
 // EnqueueSignUpVerification mocks base method.
 func (m *MockJobProducer) EnqueueSignUpVerification(ctx context.Context, payload entity.SignUpVerificationPayload) error {
 	m.ctrl.T.Helper()

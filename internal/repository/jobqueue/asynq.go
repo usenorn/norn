@@ -80,6 +80,24 @@ func (c *Client) EnqueueSignUpVerification(ctx context.Context, payload entity.S
 	return nil
 }
 
+func (c *Client) EnqueueSignInCode(ctx context.Context, payload entity.SignInCodePayload) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode sign-in code payload: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeSignInCode, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueMail),
+		asynq.MaxRetry(c.maxRetry),
+	); err != nil {
+		return fmt.Errorf("enqueue sign-in code: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) EnqueuePasswordReset(ctx context.Context, payload entity.PasswordResetPayload) error {
 	encoded, err := json.Marshal(payload)
 	if err != nil {

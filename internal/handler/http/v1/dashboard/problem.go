@@ -248,6 +248,24 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	var wrongCode entity.SignInCodeIncorrectError
+	if errors.As(err, &wrongCode) {
+		base := baseProblem(http.StatusUnauthorized, wrongCode.Error())
+
+		return problemResponse{
+			status: http.StatusUnauthorized,
+			body: api.SignInCodeIncorrectProblem{
+				AttemptsLeft: int32(wrongCode.AttemptsLeft),
+				Code:         api.SignInCodeIncorrect,
+				Detail:       base.Detail,
+				Instance:     base.Instance,
+				Status:       base.Status,
+				Title:        base.Title,
+				Type:         base.Type,
+			},
+		}, true
+	}
+
 	var invalid entity.InvalidCredentialsError
 	if errors.As(err, &invalid) {
 		base := baseProblem(http.StatusUnauthorized, invalid.Error())
@@ -685,6 +703,10 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrAuditNotPermitted):
 		return newProblem(http.StatusForbidden, err.Error()), true
+
+	case errors.Is(err, entity.ErrSignInChallengeNotFound),
+		errors.Is(err, entity.ErrSignInCodeExhausted):
+		return newProblem(http.StatusConflict, err.Error()), true
 
 	case errors.Is(err, entity.ErrAuditCursorInvalid):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
@@ -1695,6 +1717,10 @@ func (r problemResponse) VisitRequestSignUpResponse(w http.ResponseWriter) error
 func (r problemResponse) VisitConfirmSignUpResponse(w http.ResponseWriter) error { return r.write(w) }
 
 func (r problemResponse) VisitSignInResponse(w http.ResponseWriter) error { return r.write(w) }
+
+func (r problemResponse) VisitVerifySignInCodeResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
 
 func (r problemResponse) VisitSignOutResponse(w http.ResponseWriter) error { return r.write(w) }
 

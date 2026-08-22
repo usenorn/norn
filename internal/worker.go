@@ -39,6 +39,7 @@ type Worker struct {
 func NewServeMux(
 	signUpVerification *job.SignUpVerificationHandler,
 	emailChangeConfirmation *job.EmailChangeConfirmationHandler,
+	signInCode *job.SignInCodeHandler,
 	passwordReset *job.PasswordResetHandler,
 	passwordResetSSONotice *job.PasswordResetSSONoticeHandler,
 	invitation *job.InvitationHandler,
@@ -68,6 +69,7 @@ func NewServeMux(
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
 	mux.Handle(entity.TaskTypeEmailChangeConfirmation, emailChangeConfirmation)
+	mux.Handle(entity.TaskTypeSignInCode, signInCode)
 	mux.Handle(entity.TaskTypePasswordReset, passwordReset)
 	mux.Handle(entity.TaskTypePasswordResetSSONotice, passwordResetSSONotice)
 	mux.Handle(entity.TaskTypeInvitation, invitation)

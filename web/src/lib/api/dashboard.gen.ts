@@ -81,8 +81,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Exchange credentials for a session cookie */
+        /** Answer a password with a code sent to the address it belongs to */
         post: operations["signIn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish a sign-in with the code that was sent */
+        post: operations["verifySignInCode"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4845,7 +4862,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -6431,6 +6448,24 @@ export interface components {
             email: string;
             password: string;
         };
+        SignInChallenge: {
+            /** @description Name this when answering with the code. It is single use. */
+            challengeId: string;
+            /** @description The address the code went to. */
+            email: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        VerifySignInCodeRequest: {
+            challengeId: string;
+            code: string;
+        };
+        SignInCodeIncorrectProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "sign_in_code_incorrect";
+            /** Format: int32 */
+            attemptsLeft: number;
+        };
         UpdateProfileRequest: {
             displayName?: string;
             timezone?: string;
@@ -6682,6 +6717,15 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["InvalidCredentialsProblem"];
+            };
+        };
+        /** @description The code did not match the one that was sent */
+        SignInCodeRejected: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["SignInCodeIncorrectProblem"];
             };
         };
         /** @description Consecutive failures locked the account */
@@ -7236,6 +7280,34 @@ export interface operations {
             };
         };
         responses: {
+            /** @description The password was accepted and a code is on its way */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignInChallenge"];
+                };
+            };
+            401: components["responses"]["SignInRejected"];
+            423: components["responses"]["AccountLocked"];
+            429: components["responses"]["TooManyAttempts"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    verifySignInCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifySignInCodeRequest"];
+            };
+        };
+        responses: {
             /** @description A session cookie was issued */
             200: {
                 headers: {
@@ -7245,8 +7317,8 @@ export interface operations {
                     "application/json": components["schemas"]["IssuedSession"];
                 };
             };
-            401: components["responses"]["SignInRejected"];
-            423: components["responses"]["AccountLocked"];
+            401: components["responses"]["SignInCodeRejected"];
+            409: components["responses"]["Problem"];
             429: components["responses"]["TooManyAttempts"];
             500: components["responses"]["Problem"];
         };

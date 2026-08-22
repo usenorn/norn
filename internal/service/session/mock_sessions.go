@@ -131,11 +131,25 @@ func (mr *MockSessionsMockRecorder) RotateAfterCredentialChange(ctx, accountID a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RotateAfterCredentialChange", reflect.TypeOf((*MockSessions)(nil).RotateAfterCredentialChange), ctx, accountID)
 }
 
+// SendSignInCode mocks base method.
+func (m *MockSessions) SendSignInCode(ctx context.Context, challengeID, code string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendSignInCode", ctx, challengeID, code)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendSignInCode indicates an expected call of SendSignInCode.
+func (mr *MockSessionsMockRecorder) SendSignInCode(ctx, challengeID, code any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendSignInCode", reflect.TypeOf((*MockSessions)(nil).SendSignInCode), ctx, challengeID, code)
+}
+
 // SignIn mocks base method.
-func (m *MockSessions) SignIn(ctx context.Context, input service.SignInInput) (service.IssuedSession, error) {
+func (m *MockSessions) SignIn(ctx context.Context, input service.SignInInput) (service.IssuedChallenge, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SignIn", ctx, input)
-	ret0, _ := ret[0].(service.IssuedSession)
+	ret0, _ := ret[0].(service.IssuedChallenge)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -202,4 +216,19 @@ func (m *MockSessions) Validate(ctx context.Context, token string) (entity.Sessi
 func (mr *MockSessionsMockRecorder) Validate(ctx, token any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockSessions)(nil).Validate), ctx, token)
+}
+
+// VerifySignInCode mocks base method.
+func (m *MockSessions) VerifySignInCode(ctx context.Context, input service.VerifySignInCodeInput) (service.IssuedSession, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifySignInCode", ctx, input)
+	ret0, _ := ret[0].(service.IssuedSession)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifySignInCode indicates an expected call of VerifySignInCode.
+func (mr *MockSessionsMockRecorder) VerifySignInCode(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifySignInCode", reflect.TypeOf((*MockSessions)(nil).VerifySignInCode), ctx, input)
 }

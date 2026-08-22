@@ -10,6 +10,7 @@ import (
 //go:generate go tool mockgen -source=jobqueue.go -destination=jobqueue/mock_jobqueue.go -package=jobqueue -mock_names=JobProducer=MockJobProducer,JobInspector=MockJobInspector
 
 type JobProducer interface {
+	EnqueueSignInCode(ctx context.Context, payload entity.SignInCodePayload) error
 	EnqueueSignUpVerification(ctx context.Context, payload entity.SignUpVerificationPayload) error
 	EnqueueEmailChangeConfirmation(ctx context.Context, payload entity.EmailChangeConfirmationPayload) error
 	EnqueuePasswordReset(ctx context.Context, payload entity.PasswordResetPayload) error

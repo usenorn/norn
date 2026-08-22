@@ -58,6 +58,18 @@ func (c SignInChallenge) Answers(code string) bool {
 	return subtle.ConstantTimeCompare(c.CodeHash, HashSignInCode(code)) == 1
 }
 
+type SignInCodeIncorrectError struct {
+	AttemptsLeft int
+}
+
+func (e SignInCodeIncorrectError) Error() string {
+	return fmt.Sprintf("that code is not the one we sent, %d attempts left", e.AttemptsLeft)
+}
+
+func (e SignInCodeIncorrectError) Unwrap() error {
+	return ErrSignInCodeIncorrect
+}
+
 func NewSignInCode() (string, []byte, error) {
 	limit := big.NewInt(1)
 

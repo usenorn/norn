@@ -13,8 +13,11 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
+	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
+	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	sessionrepo "github.com/usenorn/norn/internal/repository/session"
+	signinchallengerepo "github.com/usenorn/norn/internal/repository/signinchallenge"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	"github.com/usenorn/norn/internal/service"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
@@ -31,18 +34,37 @@ func newBareHarness(t *testing.T) *harness {
 		memberships: membershiprepo.NewMockMembership(ctrl),
 		geoLocator:  geolocationrepo.NewMockGeoLocator(ctrl),
 		throttle:    signinthrottlerepo.NewMockSignInThrottle(ctrl),
+		challenges:  signinchallengerepo.NewMockSignInChallenge(ctrl),
+		mailer:      mailerrepo.NewMockMailer(ctrl),
+		producer:    jobqueuerepo.NewMockJobProducer(ctrl),
 	}
+
+	h.challenges.EXPECT().Put(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.producer.EXPECT().EnqueueSignInCode(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	h.memberships.EXPECT().
 		RecordActivity(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
 
-	h.service = sessionsvc.New(h.sessions, h.accounts, h.memberships, h.geoLocator, h.throttle, config.Session{
-		IdleTimeout:      idleTimeout,
-		AbsoluteLifetime: absoluteTime,
-		RefreshInterval:  refreshInterval,
-	}, h.authorizer, silentAudit(ctrl))
+	h.service = sessionsvc.New(
+		h.sessions,
+		h.accounts,
+		h.memberships,
+		h.geoLocator,
+		h.throttle,
+		h.challenges,
+		h.mailer,
+		h.producer,
+		config.Session{
+			IdleTimeout:      idleTimeout,
+			AbsoluteLifetime: absoluteTime,
+			RefreshInterval:  refreshInterval,
+		},
+		config.App{BaseURL: "https://norn.test"},
+		h.authorizer,
+		silentAudit(ctrl),
+	)
 
 	return h
 }
@@ -51,7 +73,7 @@ func nowPlus(d time.Duration) time.Time {
 	return time.Now().UTC().Add(d)
 }
 
-func signIn(h *harness, password string) (service.IssuedSession, error) {
+func signIn(h *harness, password string) (service.IssuedChallenge, error) {
 	return h.service.SignIn(context.Background(), service.SignInInput{
 		Email:    "ada@example.com",
 		Password: password,
@@ -188,8 +210,6 @@ func TestASuccessfulSignInClearsTheFailureCounter(t *testing.T) {
 	h.throttle.EXPECT().Get(gomock.Any(), gomock.Any()).Return(entity.SignInThrottle{}, nil)
 	h.accounts.EXPECT().GetByEmail(gomock.Any(), "ada@example.com").Return(accountWithPassword(t, accountID), nil)
 	h.throttle.EXPECT().Clear(gomock.Any(), entity.HashSignInSubject("ada@example.com")).Return(nil)
-	h.geoLocator.EXPECT().Locate(gomock.Any(), gomock.Any()).Return(entity.Location{}, nil)
-	h.sessions.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
 
 	if _, err := signIn(h, password); err != nil {
 		t.Fatalf("SignIn: %v", err)

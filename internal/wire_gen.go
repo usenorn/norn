@@ -90,6 +90,7 @@ import (
 	"github.com/usenorn/norn/internal/repository/scmappstate"
 	"github.com/usenorn/norn/internal/repository/search"
 	"github.com/usenorn/norn/internal/repository/session"
+	"github.com/usenorn/norn/internal/repository/signinchallenge"
 	"github.com/usenorn/norn/internal/repository/signinthrottle"
 	"github.com/usenorn/norn/internal/repository/signup"
 	"github.com/usenorn/norn/internal/repository/ssoconnection"
@@ -181,9 +182,43 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	}
 	geoLocator := geolocation.New(geoipClient)
 	signInThrottle := signinthrottle.New(client)
-	casbin := config.NewCasbin(configConfig)
-	enforcer, cleanup4, err := authz.New(casbin, postgresClient, client)
+	signInChallenge := signinchallenge.New(client)
+	configSMTP := config.NewSMTP(configConfig)
+	smtpClient, cleanup4, err := smtp.New(configSMTP)
 	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	repositoryMailer := mailer.New(smtpClient)
+	asynq := config.NewAsynq(configConfig)
+	taskqueueClient, cleanup5, err := taskqueue.NewClient(asynq)
+	if err != nil {
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	inspector, cleanup6, err := taskqueue.NewInspector(asynq)
+	if err != nil {
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	configImports := config.NewImports(configConfig)
+	jobqueueClient := jobqueue.NewClient(taskqueueClient, inspector, asynq, configImports)
+	jobProducer := jobqueue.AsProducer(jobqueueClient)
+	casbin := config.NewCasbin(configConfig)
+	enforcer, cleanup7, err := authz.New(casbin, postgresClient, client)
+	if err != nil {
+		cleanup6()
+		cleanup5()
+		cleanup4()
 		cleanup3()
 		cleanup2()
 		cleanup()
@@ -196,19 +231,9 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	repositoryAudit := audit.New(postgresClient)
 	serviceAudit := audit2.NewRecorder(repositoryAudit, repositoryAccount, repositoryWorkspace)
 	serviceAuthorizer := authorizer.New(enforcer, repositoryMembership, workspaceAuthPolicy, repositoryWorkspace, repositoryTeam, repositoryAccount, agentThrottle, serviceAudit)
-	sessions := session2.New(repositorySession, repositoryAccount, repositoryMembership, geoLocator, signInThrottle, configSession, serviceAuthorizer, serviceAudit)
+	sessions := session2.New(repositorySession, repositoryAccount, repositoryMembership, geoLocator, signInThrottle, signInChallenge, repositoryMailer, jobProducer, configSession, app, serviceAuthorizer, serviceAudit)
 	apiToken := apitoken.New(postgresClient)
 	repositoryAgent := agent.New(postgresClient)
-	configSMTP := config.NewSMTP(configConfig)
-	smtpClient, cleanup5, err := smtp.New(configSMTP)
-	if err != nil {
-		cleanup4()
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	repositoryMailer := mailer.New(smtpClient)
 	apiTokens := apitoken2.New(apiToken, repositoryAccount, repositoryAgent, repositoryWorkspace, repositoryMailer, serviceAuthorizer, postgresClient, app, serviceAudit)
 	repositoryRunner := runner.New(postgresClient)
 	configRunner := config.NewRunner(configConfig)
@@ -226,25 +251,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	blobGrant := blobgrant.New(client)
 	repositoryBlob, err := blob.New(storage, attachments, blobGrant)
 	if err != nil {
-		cleanup5()
-		cleanup4()
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	asynq := config.NewAsynq(configConfig)
-	taskqueueClient, cleanup6, err := taskqueue.NewClient(asynq)
-	if err != nil {
-		cleanup5()
-		cleanup4()
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	inspector, cleanup7, err := taskqueue.NewInspector(asynq)
-	if err != nil {
+		cleanup7()
 		cleanup6()
 		cleanup5()
 		cleanup4()
@@ -253,9 +260,6 @@ func InitApp(cfgFile string) (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	configImports := config.NewImports(configConfig)
-	jobqueueClient := jobqueue.NewClient(taskqueueClient, inspector, asynq, configImports)
-	jobProducer := jobqueue.AsProducer(jobqueueClient)
 	instance := config.NewInstance(configConfig)
 	accounts := account2.New(repositoryAccount, emailChange, passwordReset, signUp, passwordHistory, repositoryMembership, repositoryWorkspace, workspaceAuthPolicy, breachCheck, signInThrottle, repositoryBlob, repositoryMailer, jobProducer, postgresClient, sessions, serviceAuthorizer, app, instance, attachments, serviceAudit)
 	teamMember := teammember.New(postgresClient)
@@ -570,6 +574,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 		return nil, nil, err
 	}
 	geoLocator := geolocation.New(geoipClient)
+	signInChallenge := signinchallenge.New(valkeyClient)
 	casbin := config.NewCasbin(configConfig)
 	enforcer, cleanup7, err := authz.New(casbin, client, valkeyClient)
 	if err != nil {
@@ -586,11 +591,12 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	repositoryAudit := audit.New(client)
 	serviceAudit := audit2.NewRecorder(repositoryAudit, repositoryAccount, repositoryWorkspace)
 	serviceAuthorizer := authorizer.New(enforcer, repositoryMembership, workspaceAuthPolicy, repositoryWorkspace, repositoryTeam, repositoryAccount, agentThrottle, serviceAudit)
-	sessions := session2.New(repositorySession, repositoryAccount, repositoryMembership, geoLocator, signInThrottle, configSession, serviceAuthorizer, serviceAudit)
+	sessions := session2.New(repositorySession, repositoryAccount, repositoryMembership, geoLocator, signInThrottle, signInChallenge, repositoryMailer, jobProducer, configSession, app, serviceAuthorizer, serviceAudit)
 	instance := config.NewInstance(configConfig)
 	accounts := account2.New(repositoryAccount, emailChange, passwordReset, signUp, passwordHistory, repositoryMembership, repositoryWorkspace, workspaceAuthPolicy, breachCheck, signInThrottle, repositoryBlob, repositoryMailer, jobProducer, client, sessions, serviceAuthorizer, app, instance, attachments, serviceAudit)
 	signUpVerificationHandler := job.NewSignUpVerificationHandler(accounts)
 	emailChangeConfirmationHandler := job.NewEmailChangeConfirmationHandler(accounts)
+	signInCodeHandler := job.NewSignInCodeHandler(sessions)
 	passwordResetHandler := job.NewPasswordResetHandler(accounts)
 	passwordResetSSONoticeHandler := job.NewPasswordResetSSONoticeHandler(accounts)
 	repositoryInvitation := invitation.New(client)
@@ -782,7 +788,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	runnerChannel := runnerchannel.New(valkeyClient, readClient)
 	serviceExecutions := execution2.New(repositoryExecution, repositoryRunner, repositoryIssue, workflowState, runnerChannel, issues, serviceEvents, serviceAuthorizer, serviceAudit, client)
 	executionLeaseSweepHandler := job.NewExecutionLeaseSweepHandler(serviceExecutions)
-	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler, importStageHandler, importExecuteHandler, importRevertHandler, importRescueHandler, scmDeliveryHandler, scmReconcileHandler, scmBackfillHandler, scmResumeHandler, executionLeaseSweepHandler)
+	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, signInCodeHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler, importStageHandler, importExecuteHandler, importRevertHandler, importRescueHandler, scmDeliveryHandler, scmReconcileHandler, scmBackfillHandler, scmResumeHandler, executionLeaseSweepHandler)
 	internalWorker := NewWorker(worker, saml, cycles, attachments, notifications, apiTokens, configAudit, webhooks, configImports, sourceControl, executions, server, scheduler, inspector, serveMux, logger)
 	return internalWorker, func() {
 		cleanup8()
@@ -898,7 +904,7 @@ func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuedelegation.Set, issuequestion.Set, runner.Set, codebase.Set, execution.Set, runnerchannel.Set, runnersession.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, scmappstate.Set, oidcprovider2.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, delegation.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, issuequestion2.Set, runner2.Set, codebase2.Set, execution2.Set, runnerchannel2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitea.Set, gitlab.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, runnerchannel3.Set, auditexport.Set, scim.Set, sourcecontrol.Set, mcpserver.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuedelegation.Set, issuequestion.Set, runner.Set, codebase.Set, execution.Set, runnerchannel.Set, runnersession.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, signinchallenge.Set, scmappstate.Set, oidcprovider2.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, delegation.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, issuequestion2.Set, runner2.Set, codebase2.Set, execution2.Set, runnerchannel2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitea.Set, gitlab.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, runnerchannel3.Set, auditexport.Set, scim.Set, sourcecontrol.Set, mcpserver.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

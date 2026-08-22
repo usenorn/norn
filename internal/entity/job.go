@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	TaskTypeSignInCode              = "session:sign_in_code"
 	TaskTypeSignUpVerification      = "account:sign_up_verification"
 	TaskTypeEmailChangeConfirmation = "account:email_change_confirmation"
 	TaskTypePasswordReset           = "account:password_reset"
@@ -60,6 +61,11 @@ type SignUpVerificationPayload struct {
 type EmailChangeConfirmationPayload struct {
 	EmailChangeID uuid.UUID
 	Token         string
+}
+
+type SignInCodePayload struct {
+	ChallengeID string
+	Code        string
 }
 
 type PasswordResetPayload struct {
