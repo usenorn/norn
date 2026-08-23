@@ -357,3 +357,40 @@ func containsAll(text string, wanted ...string) bool {
 
 	return true
 }
+
+func TestAServiceThatStopsKeepsTheProbeItWasCheckedBy(t *testing.T) {
+	h := newHarness(t)
+	h.holding()
+
+	healthy := h.message(channelv1.Service{
+		Name:     "api",
+		State:    channelv1.ServiceHealthy,
+		Probe:    channelv1.ProbeLog,
+		Port:     4310,
+		Occurred: at(0),
+	})
+	if err := h.service.Reported(context.Background(), h.runner, healthy); err != nil {
+		t.Fatalf("record the healthy report: %v", err)
+	}
+
+	stopped := h.message(channelv1.Service{
+		Name:     "api",
+		State:    channelv1.ServiceStopped,
+		Reason:   "the run was given back",
+		Occurred: at(60),
+	})
+	if err := h.service.Reported(context.Background(), h.runner, stopped); err != nil {
+		t.Fatalf("record the stopped report: %v", err)
+	}
+
+	api, _ := h.known("api")
+
+	if api.Probe != entity.ExecutionServiceProbeLog {
+		t.Fatalf(
+			"the probe came back as %q after the service stopped. Teardown reports no probe "+
+				"because it is working from what was written down, so an empty one must not "+
+				"erase how the service was checked",
+			api.Probe,
+		)
+	}
+}

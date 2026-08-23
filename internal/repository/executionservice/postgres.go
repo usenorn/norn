@@ -33,7 +33,9 @@ WITH upserted AS (
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     ON CONFLICT (execution_id, name) DO UPDATE
     SET state       = excluded.state,
-        probe       = excluded.probe,
+        probe       = CASE WHEN excluded.probe <> ''
+                           THEN excluded.probe
+                           ELSE workspace_execution_services.probe END,
         port        = CASE WHEN excluded.port > 0
                            THEN excluded.port
                            ELSE workspace_execution_services.port END,

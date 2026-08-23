@@ -111,6 +111,10 @@ func (h *harness) expectStore() {
 					reporting.Port = known.Port
 				}
 
+				if reporting.Probe == "" {
+					reporting.Probe = known.Probe
+				}
+
 				reporting.ID = known.ID
 				h.held[index] = reporting
 
