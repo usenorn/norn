@@ -126,7 +126,13 @@ func (s *executionsService) Ready(ctx context.Context, runner entity.Runner) err
 	}
 
 	for _, execution := range queued {
-		if execution.RunnerID != uuid.Nil || !runner.Reaches(execution.TeamID) {
+		offered := execution.RunnerID
+
+		if offered != uuid.Nil && offered != runner.ID {
+			continue
+		}
+
+		if !runner.Reaches(execution.TeamID) {
 			continue
 		}
 

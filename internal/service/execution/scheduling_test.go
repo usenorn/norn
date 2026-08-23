@@ -444,3 +444,28 @@ func TestPlacementSaysWhichMachinesAreThereAndHowMuchRoomTheyHave(t *testing.T) 
 		t.Fatal("a machine with no channel was reported as connected")
 	}
 }
+
+func TestAnOfferAMachineNeverAnsweredIsPutBackInFrontOfIt(t *testing.T) {
+	h := newHarness(t)
+
+	unanswered := h.execution(entity.ExecutionQueued)
+
+	h.live(h.runner, 2, 0)
+	h.binding()
+
+	h.executions.EXPECT().
+		ListQueuedByAgent(gomock.Any(), h.runner.AgentID, gomock.Any()).
+		Return([]entity.Execution{unanswered}, nil)
+
+	if err := h.service.Ready(context.Background(), h.runner); err != nil {
+		t.Fatalf("heartbeat: %v", err)
+	}
+
+	if _, sent := h.sent(entity.ChannelExecutionOffer); !sent {
+		t.Fatal(
+			"a machine that was offered work and died before saying yes or no was never asked " +
+				"again. The run holds no lease while it is queued, so the sweep never sees it " +
+				"and it waits for somebody to notice by hand",
+		)
+	}
+}
