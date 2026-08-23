@@ -14,6 +14,8 @@ import (
 )
 
 const (
+	PreviewGatewayConfiguredName = "configured"
+
 	PreviewGatewaySecretPrefix = "ngr_"
 	PreviewGatewayAccessPrefix = "nga_"
 	PreviewGatewaySecretBytes  = 32

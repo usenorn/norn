@@ -37,6 +37,19 @@ WITH created AS (
 SELECT` + gatewayColumns + `
 FROM created`
 
+const adoptGatewayQuery = `
+WITH adopted AS (
+    INSERT INTO preview_gateways (name, secret_hash, status)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (lower(name)) DO UPDATE
+        SET secret_hash = excluded.secret_hash,
+            status      = excluded.status,
+            updated_at  = now()
+    RETURNING *
+)
+SELECT` + gatewayColumns + `
+FROM adopted`
+
 const gatewayByCredentialQuery = `
 SELECT` + gatewayColumns + `
 FROM preview_gateways
@@ -95,6 +108,21 @@ func (r *gatewayRepository) Create(
 	}
 
 	return created, nil
+}
+
+func (r *gatewayRepository) Adopt(
+	ctx context.Context,
+	name string,
+	secretHash []byte,
+) (entity.PreviewGateway, error) {
+	adopted, err := scanGateway(r.db.Querier(ctx).QueryRowContext(
+		ctx, adoptGatewayQuery, name, secretHash, string(entity.PreviewGatewayActive),
+	))
+	if err != nil {
+		return entity.PreviewGateway{}, fmt.Errorf("adopt a preview gateway: %w", err)
+	}
+
+	return adopted, nil
 }
 
 func (r *gatewayRepository) ByCredential(

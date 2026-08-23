@@ -40,8 +40,12 @@ func granted() entity.PreviewGrantReply {
 }
 
 func cookieOn(response *http.Response) *http.Cookie {
+	return namedCookieOn(response, entity.PreviewGrantCookie)
+}
+
+func namedCookieOn(response *http.Response, name string) *http.Cookie {
 	for _, cookie := range response.Cookies() {
-		if cookie.Name == entity.PreviewGrantCookie {
+		if cookie.Name == name {
 			return cookie
 		}
 	}
@@ -188,5 +192,47 @@ func TestTooManyWrongPasscodesStopsTheLinkRatherThanTheViewer(t *testing.T) {
 
 	if response.StatusCode != http.StatusTooManyRequests {
 		t.Fatalf("a link that has been guessed at answered %d, want 429", response.StatusCode)
+	}
+}
+
+func TestUnderHTTPSTheGrantCookieIsOneNoSiblingPreviewCanShadow(t *testing.T) {
+	h := newHarnessOn(t, "https")
+	h.hands(granted(), nil)
+
+	response := h.get(entity.PreviewSessionPath+"?ticket=one-shot", false)
+
+	secure := entity.PreviewGrantCookieName(true)
+
+	cookie := namedCookieOn(response, secure)
+	if cookie == nil {
+		t.Fatalf(
+			"the hand-off set no %q cookie; every preview shares one registrable domain, so "+
+				"without the __Host- prefix a preview serving hostile code can set this name for "+
+				"the whole domain and shadow a neighbour's session",
+			secure,
+		)
+	}
+
+	if cookie.Domain != "" || cookie.Path != "/" || !cookie.Secure {
+		t.Fatalf(
+			"the grant cookie is domain=%q path=%q secure=%t; a __Host- cookie a browser will "+
+				"refuse to store is worse than one that was never prefixed",
+			cookie.Domain, cookie.Path, cookie.Secure,
+		)
+	}
+}
+
+func TestTheGatewayReadsTheGrantBackUnderTheNameItSetIt(t *testing.T) {
+	h := newHarnessOn(t, "https")
+	h.answers(h.allowed())
+
+	h.get("/", true)
+
+	if h.grantAsked() != testGrant {
+		t.Fatalf(
+			"the gateway asked norn about grant %q, want %q; setting the cookie under one name "+
+				"and reading it under another sends every viewer round the sign-in loop for ever",
+			h.grantAsked(), testGrant,
+		)
 	}
 }

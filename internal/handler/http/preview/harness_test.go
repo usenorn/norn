@@ -48,17 +48,26 @@ type harness struct {
 	served   func(http.ResponseWriter, *http.Request)
 	streams  chan channelv1.StreamOpen
 
-	mu   sync.Mutex
-	host string
+	mu     sync.Mutex
+	host   string
+	grant  string
+	scheme string
 }
 
 func newHarness(t *testing.T) *harness {
+	t.Helper()
+
+	return newHarnessOn(t, "http")
+}
+
+func newHarnessOn(t *testing.T, scheme string) *harness {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 
 	h := &harness{
 		t:        t,
+		scheme:   scheme,
 		norn:     nornapi.NewMockNorn(ctrl),
 		runnerID: uuid.New(),
 		streams:  make(chan channelv1.StreamOpen, 8),
@@ -79,7 +88,7 @@ func newHarness(t *testing.T) *harness {
 		RetryMax:            time.Second,
 	}
 
-	previews := config.Previews{BaseDomain: testDomain, Scheme: "http"}
+	previews := config.Previews{BaseDomain: testDomain, Scheme: scheme}
 
 	h.norn.EXPECT().
 		Exchange(gomock.Any(), "ngr_secret").
@@ -143,6 +152,7 @@ func (h *harness) answers(reply entity.PreviewReply) {
 		) (entity.PreviewReply, error) {
 			h.mu.Lock()
 			h.host = ask.Host
+			h.grant = ask.Grant
 			h.mu.Unlock()
 
 			return reply, nil
@@ -268,7 +278,9 @@ func (h *harness) get(path string, carrying bool) *http.Response {
 	request.Host = testHost()
 
 	if carrying {
-		request.AddCookie(&http.Cookie{Name: entity.PreviewGrantCookie, Value: testGrant})
+		request.AddCookie(&http.Cookie{
+			Name: entity.PreviewGrantCookieName(h.scheme == "https"), Value: testGrant,
+		})
 	}
 
 	response, err := h.client.Do(request)
@@ -279,6 +291,13 @@ func (h *harness) get(path string, carrying bool) *http.Response {
 	h.t.Cleanup(func() { _ = response.Body.Close() })
 
 	return response
+}
+
+func (h *harness) grantAsked() string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	return h.grant
 }
 
 func (h *harness) opened() <-chan channelv1.StreamOpen {

@@ -17,6 +17,7 @@ type PreviewGateway interface {
 		gateway entity.PreviewGateway,
 		secretHash []byte,
 	) (entity.PreviewGateway, error)
+	Adopt(ctx context.Context, name string, secretHash []byte) (entity.PreviewGateway, error)
 	ByCredential(ctx context.Context, secretHash []byte) (entity.PreviewGateway, error)
 	List(ctx context.Context) ([]entity.PreviewGateway, error)
 	Revoke(ctx context.Context, gatewayID uuid.UUID) (entity.PreviewGateway, error)

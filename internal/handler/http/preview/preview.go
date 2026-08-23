@@ -92,7 +92,7 @@ func (e *Edge) route(
 
 	reply, err := e.proxies.Route(r.Context(), entity.PreviewAsk{
 		Host:      host,
-		Grant:     grantOf(r),
+		Grant:     e.grantOf(r),
 		IP:        client.IP,
 		UserAgent: client.UserAgent,
 	})
@@ -213,13 +213,17 @@ func bare(host string) string {
 	return strings.Trim(host, "[]")
 }
 
-func grantOf(r *http.Request) string {
-	cookie, err := r.Cookie(entity.PreviewGrantCookie)
+func (e *Edge) grantOf(r *http.Request) string {
+	cookie, err := r.Cookie(entity.PreviewGrantCookieName(e.secure()))
 	if err != nil {
 		return ""
 	}
 
 	return cookie.Value
+}
+
+func (e *Edge) secure() bool {
+	return e.previews.Scheme == "https"
 }
 
 func landing(reply entity.PreviewGrantReply, asked string) string {
@@ -236,12 +240,12 @@ func landing(reply entity.PreviewGrantReply, asked string) string {
 
 func (e *Edge) admit(w http.ResponseWriter, r *http.Request, reply entity.PreviewGrantReply) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     entity.PreviewGrantCookie,
+		Name:     entity.PreviewGrantCookieName(e.secure()),
 		Value:    reply.Grant,
 		Path:     "/",
 		Expires:  reply.ExpiresAt,
 		HttpOnly: true,
-		Secure:   e.previews.Scheme == "https",
+		Secure:   e.secure(),
 		SameSite: http.SameSiteLaxMode,
 	})
 

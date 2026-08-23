@@ -907,6 +907,11 @@ func InitSeeder(cfgFile string) (*Seeder, func(), error) {
 	repositoryAudit := audit.New(client)
 	serviceAudit := audit2.NewRecorder(repositoryAudit, repositoryAccount, repositoryWorkspace)
 	serviceAuthorizer := authorizer.New(enforcer, repositoryMembership, workspaceAuthPolicy, repositoryWorkspace, repositoryTeam, repositoryAccount, agentThrottle, serviceAudit)
+	previewGateway := previewgateway.New(client)
+	previewGrant := previewgrant.New(valkeyClient)
+	previews := config.NewPreviews(configConfig)
+	previewGateways := previewgateway2.New(previewGateway, previewGrant, previews)
+	gateway := config.NewGateway(configConfig)
 	app := config.NewApp(configConfig)
 	logger, err := logging.New(app)
 	if err != nil {
@@ -915,7 +920,7 @@ func InitSeeder(cfgFile string) (*Seeder, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	seeder := NewSeeder(serviceAuthorizer, logger)
+	seeder := NewSeeder(serviceAuthorizer, previewGateways, gateway, logger)
 	return seeder, func() {
 		cleanup3()
 		cleanup2()

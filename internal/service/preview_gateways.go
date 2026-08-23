@@ -17,6 +17,7 @@ type PreviewGatewayAccess struct {
 }
 
 type PreviewGateways interface {
+	Adopt(ctx context.Context, name, secret string) (entity.PreviewGateway, error)
 	Enrol(ctx context.Context, name string) (entity.PreviewGateway, string, error)
 	Exchange(ctx context.Context, secret string) (PreviewGatewayAccess, error)
 	Authenticate(ctx context.Context, token string) (entity.PreviewGateway, error)

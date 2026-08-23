@@ -2,10 +2,17 @@ package preview_test
 
 import (
 	"context"
+	"errors"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
+	"go.uber.org/mock/gomock"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/identity"
 	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
@@ -330,4 +337,122 @@ func sessionFor(t *testing.T, h *harness, name string) string {
 	}
 
 	return session.Token
+}
+
+func holdingSessions(ctx context.Context, accountIDs ...uuid.UUID) context.Context {
+	held := make([]entity.Session, 0, len(accountIDs))
+
+	for index, accountID := range accountIDs {
+		held = append(held, entity.Session{
+			ID:        uuid.New(),
+			Slot:      strconv.Itoa(index),
+			AccountID: accountID,
+			IssuedAt:  time.Now().UTC().Add(time.Duration(index) * time.Minute),
+		})
+	}
+
+	return identity.WithSignedIn(ctx, held)
+}
+
+func (h *harness) visibleOnlyTo(accountID uuid.UUID) {
+	h.runs.EXPECT().
+		Visible(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			ctx context.Context, _ uuid.UUID, _ string,
+		) (entity.Execution, error) {
+			actor, signedIn := identity.Actor(ctx)
+			if !signedIn || actor.AccountID != accountID {
+				return entity.Execution{}, entity.AccessDeniedError{
+					Reason: entity.DenyReasonNotAMember,
+				}
+			}
+
+			return h.execution, nil
+		}).
+		AnyTimes()
+}
+
+func TestAViewerHoldingTwoAccountsIsLetInAsTheOneThatCanSeeTheRun(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+	h.reported(t, "web", channelv1.PreviewOpen)
+
+	outsider := uuid.New()
+
+	h.visibleOnlyTo(h.caller)
+
+	access, err := h.service.Authorize(
+		holdingSessions(context.Background(), outsider, h.caller), hostFor("web"), "/",
+	)
+	if err != nil {
+		t.Fatalf("authorize a browser holding two accounts: %v", err)
+	}
+
+	if access.Verdict != entity.PreviewAllowed {
+		t.Fatalf(
+			"a viewer holding an account that can see the run was answered %q; a second account "+
+				"signed in elsewhere in the browser must not cost them the preview",
+			access.Verdict,
+		)
+	}
+
+	grant, found := h.tickets[ticketFrom(t, access.Redirect)]
+	if !found {
+		t.Fatalf("no ticket was issued for %q", access.Redirect)
+	}
+
+	if grant.AccountID != h.caller {
+		t.Fatalf(
+			"the grant was issued to %s, want %s; it has to name the account that can actually "+
+				"see the run, not whichever session happened to be first",
+			grant.AccountID, h.caller,
+		)
+	}
+}
+
+func TestAViewerWhoseAccountsCannotSeeTheRunIsStillSentToSignIn(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+	h.reported(t, "web", channelv1.PreviewOpen)
+	h.visibleOnlyTo(uuid.New())
+
+	access, err := h.service.Authorize(
+		holdingSessions(context.Background(), uuid.New(), uuid.New()), hostFor("web"), "/",
+	)
+	if err != nil {
+		t.Fatalf("authorize a browser holding only outsiders: %v", err)
+	}
+
+	if access.Verdict != entity.PreviewSignIn {
+		t.Fatalf(
+			"a viewer whose accounts cannot see the run was answered %q, want sign_in; electing "+
+				"an account must never widen who gets in",
+			access.Verdict,
+		)
+	}
+}
+
+func TestATroubleReadingTheRunIsNotMistakenForTheWrongAccount(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+	h.reported(t, "web", channelv1.PreviewOpen)
+
+	broken := errors.New("the database is unreachable")
+
+	h.runs.EXPECT().
+		Visible(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(entity.Execution{}, broken).
+		AnyTimes()
+
+	_, err := h.service.Authorize(
+		holdingSessions(context.Background(), h.caller), hostFor("web"), "/",
+	)
+
+	if !errors.Is(err, broken) {
+		t.Fatalf(
+			"a failure reading the run surfaced as %v; reading it as \"not this account\" would "+
+				"send somebody round the sign-in loop instead of saying what broke",
+			err,
+		)
+	}
 }

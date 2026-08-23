@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -24,8 +25,12 @@ func (s *previewsService) Authorize(
 		return entity.PreviewAccess{}, err
 	}
 
-	actor, signedIn := identity.Actor(ctx)
-	if !signedIn {
+	ctx, actor, err := s.acting(ctx, preview)
+	if err != nil {
+		return entity.PreviewAccess{}, err
+	}
+
+	if actor.Anonymous() {
 		return entity.PreviewAccess{
 			Verdict:  entity.PreviewSignIn,
 			Preview:  preview,
@@ -55,6 +60,46 @@ func (s *previewsService) Authorize(
 		Preview:  preview,
 		Redirect: handover(preview, s.settings.Scheme, ticket, returnTo),
 	}, nil
+}
+
+func (s *previewsService) acting(
+	ctx context.Context,
+	preview entity.PreviewSession,
+) (context.Context, entity.Actor, error) {
+	if actor, ok := identity.Actor(ctx); ok {
+		return ctx, actor, nil
+	}
+
+	held := slices.Clone(identity.SignedIn(ctx))
+	slices.SortStableFunc(held, func(a, b entity.Session) int {
+		return a.IssuedAt.Compare(b.IssuedAt)
+	})
+
+	for _, session := range held {
+		candidate := identity.WithSession(ctx, session)
+
+		if _, err := s.runs.Visible(
+			candidate, preview.WorkspaceID, preview.ExecutionID,
+		); err != nil {
+			if refusedFor(err) {
+				continue
+			}
+
+			return ctx, entity.Actor{}, err
+		}
+
+		actor, _ := identity.Actor(candidate)
+
+		return candidate, actor, nil
+	}
+
+	return ctx, entity.Actor{}, nil
+}
+
+func refusedFor(err error) bool {
+	var denied entity.AccessDeniedError
+
+	return errors.As(err, &denied) || errors.Is(err, entity.ErrExecutionNotFound)
 }
 
 func (s *previewsService) Introspect(
