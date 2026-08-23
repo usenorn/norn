@@ -14,6 +14,7 @@ import (
 	changesetrepo "github.com/usenorn/norn/internal/repository/changeset"
 	codebaserepo "github.com/usenorn/norn/internal/repository/codebase"
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
+	executionservicerepo "github.com/usenorn/norn/internal/repository/executionservice"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	previewrepo "github.com/usenorn/norn/internal/repository/preview"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
@@ -32,6 +33,7 @@ type harness struct {
 	executions *executionrepo.MockExecution
 	changesets *changesetrepo.MockChangeSet
 	previews   *previewrepo.MockPreview
+	services   *executionservicerepo.MockExecutionService
 	runners    *runnerrepo.MockRunner
 	codebases  *codebaserepo.MockCodebase
 	issues     *issuerepo.MockIssue
@@ -67,6 +69,7 @@ func newHarness(t *testing.T) *harness {
 		executions:  executionrepo.NewMockExecution(ctrl),
 		changesets:  changesetrepo.NewMockChangeSet(ctrl),
 		previews:    previewrepo.NewMockPreview(ctrl),
+		services:    executionservicerepo.NewMockExecutionService(ctrl),
 		runners:     runnerrepo.NewMockRunner(ctrl),
 		codebases:   codebaserepo.NewMockCodebase(ctrl),
 		codebase:    uuid.New(),
@@ -170,7 +173,8 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = executionsvc.New(
-		h.executions, h.changesets, h.previews, h.runners, h.codebases, h.issues, h.states,
+		h.executions, h.changesets, h.previews, h.services, h.runners, h.codebases, h.issues,
+		h.states,
 		h.channels, h.writer, h.events, h.authorizer, h.audit, transactor,
 	)
 

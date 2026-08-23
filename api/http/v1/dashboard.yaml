@@ -5957,6 +5957,30 @@ paths:
         '409': { $ref: '#/components/responses/ExecutionConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/executions/{executionId}/services:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [executions]
+      operationId: listWorkspaceExecutionServices
+      summary: What this run is running, on which ports, and how it is
+      description: >-
+        A service exists here because the machine reported one. What it printed is in the run's
+        output under the service's own name.
+      responses:
+        '200':
+          description: The services on record for this run
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExecutionService' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/executions/{executionId}/previews:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7788,6 +7812,27 @@ components:
           description: >-
             How much of a run this machine's workspace keeps. On minimal the server declines full
             transcripts, so a machine reads this to send summaries instead of having them refused.
+        load:
+          allOf:
+            - $ref: '#/components/schemas/RunnerLoad'
+          description: >-
+            What this machine last said about itself. Absent shape until it is connected, because
+            capacity is the machine's own count and nothing else knows it.
+
+    RunnerLoad:
+      type: object
+      description: >-
+        How much room a machine has. The machine is the authority on its own slots, so these are
+        the figures it reported on its last heartbeat rather than anything norn counted.
+      required: [connected, capacity, used, free, diskPressure]
+      properties:
+        connected:
+          type: boolean
+          description: Whether the machine is holding a channel right now
+        capacity: { type: integer, format: int32 }
+        used: { type: integer, format: int32 }
+        free: { type: integer, format: int32 }
+        diskPressure: { type: boolean }
 
     EnrolRunnerRequest:
       type: object
@@ -8031,7 +8076,17 @@ components:
         agentId: { type: string, format: uuid }
         agentName: { type: string }
         runnerId: { type: string, format: uuid }
+        runnerName:
+          type: string
+          maxLength: 200
+          description: >-
+            The machine that took this run, named here so watching a run needs no right to list
+            every machine in the workspace.
         codebaseId: { type: string, format: uuid }
+        codebaseName:
+          type: string
+          maxLength: 200
+          description: The folder the run was taken from, named for the same reason
         attempt: { type: integer, minimum: 1 }
         state: { $ref: '#/components/schemas/ExecutionState' }
         reason: { type: string, maxLength: 4000 }
@@ -8086,6 +8141,57 @@ components:
         previews:
           type: array
           items: { $ref: '#/components/schemas/ExecutionPreview' }
+        services:
+          type: array
+          items: { $ref: '#/components/schemas/ExecutionService' }
+        runner:
+          allOf:
+            - $ref: '#/components/schemas/ExecutionRunner'
+          description: >-
+            The machine holding this run and how much room it has. Absent while no machine has
+            taken it.
+
+    ExecutionRunner:
+      type: object
+      required: [id, name, load]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 200 }
+        pausedAt: { type: string, format: date-time }
+        load: { $ref: '#/components/schemas/RunnerLoad' }
+
+    ExecutionServiceState:
+      type: string
+      description: >-
+        A service with no probe is not healthy the moment it is spawned; it is healthy once it has
+        stayed up long enough to be checked.
+      enum: [starting, healthy, unhealthy, stopped]
+
+    ExecutionServiceProbe:
+      type: string
+      description: How the machine checks this service. Empty when nothing checks it.
+      enum: ['', http, tcp, log]
+
+    ExecutionService:
+      type: object
+      required: [id, executionId, name, state, probe, port, reportedAt]
+      properties:
+        id: { type: string, format: uuid }
+        executionId: { type: string, maxLength: 64 }
+        name: { type: string, maxLength: 32 }
+        state: { $ref: '#/components/schemas/ExecutionServiceState' }
+        probe: { $ref: '#/components/schemas/ExecutionServiceProbe' }
+        port:
+          type: integer
+          format: int32
+          description: >-
+            The port this run reserved for the service. Held by the run rather than the process, so
+            it survives a restart. Zero while nothing has been reserved.
+        reason:
+          type: string
+          maxLength: 1000
+          description: Why the service is in this state, in the machine's own words
+        reportedAt: { type: string, format: date-time }
 
     ExecutionPreview:
       type: object

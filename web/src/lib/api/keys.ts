@@ -2,6 +2,7 @@ export const keys = {
 	page: (routeId: string | null) => `norn:page:${routeId ?? ""}`,
 	workspaceScope: (workspaceId: string) => `norn:workspace:${workspaceId}`,
 	issue: (issueId: string) => `norn:issue:${issueId}`,
+	execution: (executionId: string) => `norn:execution:${executionId}`,
 	issues: (workspaceId: string) => `norn:issues:${workspaceId}`,
 	inbox: (workspaceId: string) => `norn:inbox:${workspaceId}`,
 	triage: (workspaceId: string) => `norn:triage:${workspaceId}`,

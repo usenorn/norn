@@ -16,6 +16,8 @@ type ExecutionDetail struct {
 	Timeline  []entity.ExecutionEvent
 	ChangeSet entity.ExecutionChangeSet
 	Previews  []entity.PreviewSession
+	Services  []entity.ExecutionService
+	Machine   *RunnerState
 }
 
 type RunnerReadiness struct {

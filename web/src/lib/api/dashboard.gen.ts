@@ -3955,6 +3955,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/executions/{executionId}/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * What this run is running, on which ports, and how it is
+         * @description A service exists here because the machine reported one. What it printed is in the run's output under the service's own name.
+         */
+        get: operations["listWorkspaceExecutionServices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/executions/{executionId}/previews": {
         parameters: {
             query?: never;
@@ -4888,6 +4911,20 @@ export interface components {
             revokedAt?: string;
             /** @description How much of a run this machine's workspace keeps. On minimal the server declines full transcripts, so a machine reads this to send summaries instead of having them refused. */
             telemetry?: components["schemas"]["TelemetryMode"];
+            /** @description What this machine last said about itself. Absent shape until it is connected, because capacity is the machine's own count and nothing else knows it. */
+            load?: components["schemas"]["RunnerLoad"];
+        };
+        /** @description How much room a machine has. The machine is the authority on its own slots, so these are the figures it reported on its last heartbeat rather than anything norn counted. */
+        RunnerLoad: {
+            /** @description Whether the machine is holding a channel right now */
+            connected: boolean;
+            /** Format: int32 */
+            capacity: number;
+            /** Format: int32 */
+            used: number;
+            /** Format: int32 */
+            free: number;
+            diskPressure: boolean;
         };
         EnrolRunnerRequest: {
             /** @description What to call this machine. Defaults to its hostname. */
@@ -5047,8 +5084,12 @@ export interface components {
             agentName?: string;
             /** Format: uuid */
             runnerId?: string;
+            /** @description The machine that took this run, named here so watching a run needs no right to list every machine in the workspace. */
+            runnerName?: string;
             /** Format: uuid */
             codebaseId?: string;
+            /** @description The folder the run was taken from, named for the same reason */
+            codebaseName?: string;
             attempt: number;
             state: components["schemas"]["ExecutionState"];
             reason?: string;
@@ -5095,6 +5136,44 @@ export interface components {
             /** @description What this run changed. Absent until the machine has reported anything. */
             changeset?: components["schemas"]["ExecutionChangeSet"];
             previews?: components["schemas"]["ExecutionPreview"][];
+            services?: components["schemas"]["ExecutionService"][];
+            /** @description The machine holding this run and how much room it has. Absent while no machine has taken it. */
+            runner?: components["schemas"]["ExecutionRunner"];
+        };
+        ExecutionRunner: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date-time */
+            pausedAt?: string;
+            load: components["schemas"]["RunnerLoad"];
+        };
+        /**
+         * @description A service with no probe is not healthy the moment it is spawned; it is healthy once it has stayed up long enough to be checked.
+         * @enum {string}
+         */
+        ExecutionServiceState: "starting" | "healthy" | "unhealthy" | "stopped";
+        /**
+         * @description How the machine checks this service. Empty when nothing checks it.
+         * @enum {string}
+         */
+        ExecutionServiceProbe: "" | "http" | "tcp" | "log";
+        ExecutionService: {
+            /** Format: uuid */
+            id: string;
+            executionId: string;
+            name: string;
+            state: components["schemas"]["ExecutionServiceState"];
+            probe: components["schemas"]["ExecutionServiceProbe"];
+            /**
+             * Format: int32
+             * @description The port this run reserved for the service. Held by the run rather than the process, so it survives a restart. Zero while nothing has been reserved.
+             */
+            port: number;
+            /** @description Why the service is in this state, in the machine's own words */
+            reason?: string;
+            /** Format: date-time */
+            reportedAt: string;
         };
         ExecutionPreview: {
             /** Format: uuid */
@@ -16095,6 +16174,33 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["ExecutionConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceExecutionServices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The services on record for this run */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionService"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

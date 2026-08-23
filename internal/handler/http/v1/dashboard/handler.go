@@ -29,6 +29,7 @@ type handler struct {
 	runners           service.Runners
 	codebases         service.Codebases
 	executions        service.Executions
+	executionServices service.ExecutionServices
 	executionUploads  service.ExecutionUploads
 	changesets        service.ChangeSets
 	previews          service.Previews
@@ -76,6 +77,7 @@ func New(
 	runners service.Runners,
 	codebases service.Codebases,
 	executions service.Executions,
+	executionServices service.ExecutionServices,
 	executionUploads service.ExecutionUploads,
 	changesets service.ChangeSets,
 	previews service.Previews,
@@ -122,6 +124,7 @@ func New(
 		runners:           runners,
 		codebases:         codebases,
 		executions:        executions,
+		executionServices: executionServices,
 		executionUploads:  executionUploads,
 		changesets:        changesets,
 		previews:          previews,

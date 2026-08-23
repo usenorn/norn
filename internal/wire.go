@@ -59,6 +59,7 @@ import (
 	eventstreamrepo "github.com/usenorn/norn/internal/repository/eventstream"
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
 	executionpolicyrepo "github.com/usenorn/norn/internal/repository/executionpolicy"
+	executionservicerepo "github.com/usenorn/norn/internal/repository/executionservice"
 	executionuploadrepo "github.com/usenorn/norn/internal/repository/executionupload"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
 	importsrepo "github.com/usenorn/norn/internal/repository/imports"
@@ -128,6 +129,7 @@ import (
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	executionsvc "github.com/usenorn/norn/internal/service/execution"
+	executionservicesvc "github.com/usenorn/norn/internal/service/executionservice"
 	executionuploadsvc "github.com/usenorn/norn/internal/service/executionupload"
 	importssvc "github.com/usenorn/norn/internal/service/imports"
 	csvfilesvc "github.com/usenorn/norn/internal/service/imports/csvfile"
@@ -202,6 +204,7 @@ var baseSet = wire.NewSet(
 	runnerrepo.Set,
 	codebaserepo.Set,
 	executionrepo.Set,
+	executionservicerepo.Set,
 	executionpolicyrepo.Set,
 	executionuploadrepo.Set,
 	changesetrepo.Set,
@@ -274,6 +277,7 @@ var baseSet = wire.NewSet(
 	runnersvc.Set,
 	codebasesvc.Set,
 	executionsvc.Set,
+	executionservicesvc.Set,
 	executionuploadsvc.Set,
 	changesetsvc.Set,
 	previewsvc.Set,

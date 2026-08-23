@@ -1269,6 +1269,54 @@ func (e ExecutionQueuedReason) Valid() bool {
 	}
 }
 
+// Defines values for ExecutionServiceProbe.
+const (
+	ExecutionServiceProbeEmpty ExecutionServiceProbe = ""
+	ExecutionServiceProbeHttp  ExecutionServiceProbe = "http"
+	ExecutionServiceProbeLog   ExecutionServiceProbe = "log"
+	ExecutionServiceProbeTcp   ExecutionServiceProbe = "tcp"
+)
+
+// Valid indicates whether the value is a known member of the ExecutionServiceProbe enum.
+func (e ExecutionServiceProbe) Valid() bool {
+	switch e {
+	case ExecutionServiceProbeEmpty:
+		return true
+	case ExecutionServiceProbeHttp:
+		return true
+	case ExecutionServiceProbeLog:
+		return true
+	case ExecutionServiceProbeTcp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ExecutionServiceState.
+const (
+	Healthy   ExecutionServiceState = "healthy"
+	Starting  ExecutionServiceState = "starting"
+	Stopped   ExecutionServiceState = "stopped"
+	Unhealthy ExecutionServiceState = "unhealthy"
+)
+
+// Valid indicates whether the value is a known member of the ExecutionServiceState enum.
+func (e ExecutionServiceState) Valid() bool {
+	switch e {
+	case Healthy:
+		return true
+	case Starting:
+		return true
+	case Stopped:
+		return true
+	case Unhealthy:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ExecutionState.
 const (
 	ExecutionStateApproved        ExecutionState = "approved"
@@ -2810,16 +2858,16 @@ func (e RunnerProblemCode) Valid() bool {
 
 // Defines values for RunnerSessionPreviewScheme.
 const (
-	Http  RunnerSessionPreviewScheme = "http"
-	Https RunnerSessionPreviewScheme = "https"
+	RunnerSessionPreviewSchemeHttp  RunnerSessionPreviewScheme = "http"
+	RunnerSessionPreviewSchemeHttps RunnerSessionPreviewScheme = "https"
 )
 
 // Valid indicates whether the value is a known member of the RunnerSessionPreviewScheme enum.
 func (e RunnerSessionPreviewScheme) Valid() bool {
 	switch e {
-	case Http:
+	case RunnerSessionPreviewSchemeHttp:
 		return true
-	case Https:
+	case RunnerSessionPreviewSchemeHttps:
 		return true
 	default:
 		return false
@@ -5125,10 +5173,13 @@ type ExecuteImportRequest struct {
 
 // Execution defines model for Execution.
 type Execution struct {
-	AgentId        *openapi_types.UUID `json:"agentId,omitempty"`
-	AgentName      *string             `json:"agentName,omitempty"`
-	Attempt        int                 `json:"attempt"`
-	CodebaseId     *openapi_types.UUID `json:"codebaseId,omitempty"`
+	AgentId    *openapi_types.UUID `json:"agentId,omitempty"`
+	AgentName  *string             `json:"agentName,omitempty"`
+	Attempt    int                 `json:"attempt"`
+	CodebaseId *openapi_types.UUID `json:"codebaseId,omitempty"`
+
+	// CodebaseName The folder the run was taken from, named for the same reason
+	CodebaseName   *string             `json:"codebaseName,omitempty"`
 	DelegationId   *openapi_types.UUID `json:"delegationId,omitempty"`
 	FinishedAt     *time.Time          `json:"finishedAt,omitempty"`
 	Id             string              `json:"id"`
@@ -5150,6 +5201,9 @@ type Execution struct {
 	// Restartable Whether this run can be offered again as a fresh attempt
 	Restartable *bool               `json:"restartable,omitempty"`
 	RunnerId    *openapi_types.UUID `json:"runnerId,omitempty"`
+
+	// RunnerName The machine that took this run, named here so watching a run needs no right to list every machine in the workspace.
+	RunnerName  *string             `json:"runnerName,omitempty"`
 	StartedAt   *time.Time          `json:"startedAt,omitempty"`
 	State       ExecutionState      `json:"state"`
 	TeamId      *openapi_types.UUID `json:"teamId,omitempty"`
@@ -5236,7 +5290,11 @@ type ExecutionDetail struct {
 	Changeset *ExecutionChangeSet `json:"changeset,omitempty"`
 	Execution Execution           `json:"execution"`
 	Previews  *[]ExecutionPreview `json:"previews,omitempty"`
-	Timeline  []ExecutionEvent    `json:"timeline"`
+
+	// Runner The machine holding this run and how much room it has. Absent while no machine has taken it.
+	Runner   *ExecutionRunner    `json:"runner,omitempty"`
+	Services *[]ExecutionService `json:"services,omitempty"`
+	Timeline []ExecutionEvent    `json:"timeline"`
 }
 
 // ExecutionEvent defines model for ExecutionEvent.
@@ -5364,6 +5422,42 @@ type ExecutionRepositoryChange struct {
 	ReportedAt     time.Time           `json:"reportedAt"`
 	Repository     string              `json:"repository"`
 }
+
+// ExecutionRunner defines model for ExecutionRunner.
+type ExecutionRunner struct {
+	Id openapi_types.UUID `json:"id"`
+
+	// Load How much room a machine has. The machine is the authority on its own slots, so these are the figures it reported on its last heartbeat rather than anything norn counted.
+	Load     RunnerLoad `json:"load"`
+	Name     string     `json:"name"`
+	PausedAt *time.Time `json:"pausedAt,omitempty"`
+}
+
+// ExecutionService defines model for ExecutionService.
+type ExecutionService struct {
+	ExecutionId string             `json:"executionId"`
+	Id          openapi_types.UUID `json:"id"`
+	Name        string             `json:"name"`
+
+	// Port The port this run reserved for the service. Held by the run rather than the process, so it survives a restart. Zero while nothing has been reserved.
+	Port int32 `json:"port"`
+
+	// Probe How the machine checks this service. Empty when nothing checks it.
+	Probe ExecutionServiceProbe `json:"probe"`
+
+	// Reason Why the service is in this state, in the machine's own words
+	Reason     *string   `json:"reason,omitempty"`
+	ReportedAt time.Time `json:"reportedAt"`
+
+	// State A service with no probe is not healthy the moment it is spawned; it is healthy once it has stayed up long enough to be checked.
+	State ExecutionServiceState `json:"state"`
+}
+
+// ExecutionServiceProbe How the machine checks this service. Empty when nothing checks it.
+type ExecutionServiceProbe string
+
+// ExecutionServiceState A service with no probe is not healthy the moment it is spawned; it is healthy once it has stayed up long enough to be checked.
+type ExecutionServiceState string
 
 // ExecutionState defines model for ExecutionState.
 type ExecutionState string
@@ -6786,7 +6880,10 @@ type Runner struct {
 	Host       RunnerHost         `json:"host"`
 	Id         openapi_types.UUID `json:"id"`
 	LastSeenAt *time.Time         `json:"lastSeenAt,omitempty"`
-	Name       string             `json:"name"`
+
+	// Load What this machine last said about itself. Absent shape until it is connected, because capacity is the machine's own count and nothing else knows it.
+	Load *RunnerLoad `json:"load,omitempty"`
+	Name string      `json:"name"`
 
 	// PausedAt Set while an administrator has stopped this machine being offered work
 	PausedAt  *time.Time   `json:"pausedAt,omitempty"`
@@ -6804,6 +6901,17 @@ type RunnerHost struct {
 	Hostname string `json:"hostname"`
 	Os       string `json:"os"`
 	Version  string `json:"version"`
+}
+
+// RunnerLoad How much room a machine has. The machine is the authority on its own slots, so these are the figures it reported on its last heartbeat rather than anything norn counted.
+type RunnerLoad struct {
+	Capacity int32 `json:"capacity"`
+
+	// Connected Whether the machine is holding a channel right now
+	Connected    bool  `json:"connected"`
+	DiskPressure bool  `json:"diskPressure"`
+	Free         int32 `json:"free"`
+	Used         int32 `json:"used"`
 }
 
 // RunnerProblem defines model for RunnerProblem.
@@ -9769,6 +9877,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
 	RetainWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceExecutionServices What this run is running, on which ports, and how it is
+	//
+	// A service exists here because the machine reported one. What it printed is in the run's output under the service's own name.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/services (the `ListWorkspaceExecutionServices` operationId).
+	ListWorkspaceExecutionServices(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceExecutionTimeline What happened during this run, oldest first
 	//
@@ -13594,6 +13709,23 @@ func (c *Client) RetainWorkspaceExecutionWithBody(ctx context.Context, workspace
 // Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
 func (c *Client) RetainWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRetainWorkspaceExecutionRequest(c.Server, workspaceId, executionId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceExecutionServices What this run is running, on which ports, and how it is
+//
+// A service exists here because the machine reported one. What it printed is in the run's output under the service's own name.
+//
+// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/services (the `ListWorkspaceExecutionServices` operationId).
+func (c *Client) ListWorkspaceExecutionServices(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceExecutionServicesRequest(c.Server, workspaceId, executionId)
 	if err != nil {
 		return nil, err
 	}
@@ -22131,6 +22263,47 @@ func NewRetainWorkspaceExecutionRequestWithBody(server string, workspaceId Works
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListWorkspaceExecutionServicesRequest constructs an http.Request for the ListWorkspaceExecutionServices method
+func NewListWorkspaceExecutionServicesRequest(server string, workspaceId WorkspaceId, executionId ExecutionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/services", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -33125,6 +33298,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
 	RetainWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*RetainWorkspaceExecutionResponse, error)
 
+	// ListWorkspaceExecutionServicesWithResponse What this run is running, on which ports, and how it is
+	//
+	// A service exists here because the machine reported one. What it printed is in the run's output under the service's own name.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/services (the `ListWorkspaceExecutionServices` operationId).
+	ListWorkspaceExecutionServicesWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionServicesResponse, error)
+
 	// ListWorkspaceExecutionTimelineWithResponse What happened during this run, oldest first
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -41791,6 +41973,75 @@ func (r RetainWorkspaceExecutionResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RetainWorkspaceExecutionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceExecutionServicesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]ExecutionService
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceExecutionServicesResponse) GetJSON200() *[]ExecutionService {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceExecutionServicesResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceExecutionServicesResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceExecutionServicesResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceExecutionServicesResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceExecutionServicesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceExecutionServicesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceExecutionServicesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceExecutionServicesResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -58453,6 +58704,21 @@ func (c *ClientWithResponses) RetainWorkspaceExecutionWithResponse(ctx context.C
 	return ParseRetainWorkspaceExecutionResponse(rsp)
 }
 
+// ListWorkspaceExecutionServicesWithResponse What this run is running, on which ports, and how it is
+//
+// A service exists here because the machine reported one. What it printed is in the run's output under the service's own name.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/services (the `ListWorkspaceExecutionServices` operationId).
+func (c *ClientWithResponses) ListWorkspaceExecutionServicesWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionServicesResponse, error) {
+	rsp, err := c.ListWorkspaceExecutionServices(ctx, workspaceId, executionId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceExecutionServicesResponse(rsp)
+}
+
 // ListWorkspaceExecutionTimelineWithResponse What happened during this run, oldest first
 //
 // Returns a wrapper object for the known response body format(s).
@@ -67426,6 +67692,60 @@ func ParseRetainWorkspaceExecutionResponse(rsp *http.Response) (*RetainWorkspace
 			return nil, err
 		}
 		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWorkspaceExecutionServicesResponse parses an HTTP response from a ListWorkspaceExecutionServicesWithResponse call
+func ParseListWorkspaceExecutionServicesResponse(rsp *http.Response) (*ListWorkspaceExecutionServicesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceExecutionServicesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ExecutionService
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -79669,6 +79989,9 @@ type ServerInterface interface {
 	// RetainWorkspaceExecution Keep this run's workspace and previews for longer
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/retain)
 	RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
+	// ListWorkspaceExecutionServices What this run is running, on which ports, and how it is
+	// (GET /workspaces/{workspaceId}/executions/{executionId}/services)
+	ListWorkspaceExecutionServices(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
 	// ListWorkspaceExecutionTimeline What happened during this run, oldest first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/timeline)
 	ListWorkspaceExecutionTimeline(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionTimelineParams)
@@ -80872,6 +81195,12 @@ func (_ Unimplemented) ResumeWorkspaceExecution(w http.ResponseWriter, r *http.R
 // RetainWorkspaceExecution Keep this run's workspace and previews for longer
 // (POST /workspaces/{workspaceId}/executions/{executionId}/retain)
 func (_ Unimplemented) RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceExecutionServices What this run is running, on which ports, and how it is
+// (GET /workspaces/{workspaceId}/executions/{executionId}/services)
+func (_ Unimplemented) ListWorkspaceExecutionServices(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -84797,6 +85126,41 @@ func (siw *ServerInterfaceWrapper) RetainWorkspaceExecution(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RetainWorkspaceExecution(w, r, workspaceId, executionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceExecutionServices operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceExecutionServices(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceExecutionServices(w, r, workspaceId, executionId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -93344,6 +93708,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/approve", wrapper.ApproveWorkspaceExecution)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/services", wrapper.ListWorkspaceExecutionServices)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/previews", wrapper.ListWorkspaceExecutionPreviews)
 	})
 	r.Group(func(r chi.Router) {
@@ -101588,6 +101955,89 @@ func (response RetainWorkspaceExecution422ApplicationProblemPlusJSONResponse) Vi
 type RetainWorkspaceExecution500ApplicationProblemPlusJSONResponse Problem
 
 func (response RetainWorkspaceExecution500ApplicationProblemPlusJSONResponse) VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionServicesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+}
+
+type ListWorkspaceExecutionServicesResponseObject interface {
+	VisitListWorkspaceExecutionServicesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceExecutionServices200JSONResponse []ExecutionService
+
+func (response ListWorkspaceExecutionServices200JSONResponse) VisitListWorkspaceExecutionServicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionServices401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceExecutionServices401ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionServicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionServices403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceExecutionServices403ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionServicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionServices404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceExecutionServices404ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionServicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionServices500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceExecutionServices500ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionServicesResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -120936,6 +121386,9 @@ type StrictServerInterface interface {
 	// RetainWorkspaceExecution Keep this run's workspace and previews for longer
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/retain)
 	RetainWorkspaceExecution(ctx context.Context, request RetainWorkspaceExecutionRequestObject) (RetainWorkspaceExecutionResponseObject, error)
+	// ListWorkspaceExecutionServices What this run is running, on which ports, and how it is
+	// (GET /workspaces/{workspaceId}/executions/{executionId}/services)
+	ListWorkspaceExecutionServices(ctx context.Context, request ListWorkspaceExecutionServicesRequestObject) (ListWorkspaceExecutionServicesResponseObject, error)
 	// ListWorkspaceExecutionTimeline What happened during this run, oldest first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/timeline)
 	ListWorkspaceExecutionTimeline(ctx context.Context, request ListWorkspaceExecutionTimelineRequestObject) (ListWorkspaceExecutionTimelineResponseObject, error)
@@ -124338,6 +124791,33 @@ func (sh *strictHandler) RetainWorkspaceExecution(w http.ResponseWriter, r *http
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RetainWorkspaceExecutionResponseObject); ok {
 		if err := validResponse.VisitRetainWorkspaceExecutionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceExecutionServices operation middleware
+func (sh *strictHandler) ListWorkspaceExecutionServices(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	var request ListWorkspaceExecutionServicesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceExecutionServices(ctx, request.(ListWorkspaceExecutionServicesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceExecutionServices")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceExecutionServicesResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceExecutionServicesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -128,7 +128,7 @@ func (h *handler) ListWorkspaceRunners(
 		return nil, err
 	}
 
-	return api.ListWorkspaceRunners200JSONResponse(runnerDTOs(runners)), nil
+	return api.ListWorkspaceRunners200JSONResponse(runnerStateDTOs(runners)), nil
 }
 
 func (h *handler) PauseWorkspaceRunner(

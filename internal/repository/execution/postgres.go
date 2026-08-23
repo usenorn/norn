@@ -39,6 +39,8 @@ const executionColumns = `
        a.name,
        coalesce(e.runner_id::text, ''),
        coalesce(e.codebase_id::text, ''),
+       coalesce(r.name, ''),
+       coalesce(c.name, ''),
        e.attempt,
        e.state,
        e.reason,
@@ -50,10 +52,14 @@ const executionColumns = `
        e.finished_at,
        e.updated_at`
 
-const executionJoins = `
-FROM workspace_executions e
+const executionNames = `
 JOIN workspace_issues i ON i.id = e.issue_id
-JOIN workspace_agents a ON a.id = e.agent_id`
+JOIN workspace_agents a ON a.id = e.agent_id
+LEFT JOIN workspace_runners r ON r.id = e.runner_id
+LEFT JOIN workspace_codebases c ON c.id = e.codebase_id`
+
+const executionJoins = `
+FROM workspace_executions e` + executionNames
 
 const insertExecutionQuery = `
 WITH inserted AS (
@@ -65,9 +71,7 @@ WITH inserted AS (
     RETURNING *
 )
 SELECT` + executionColumns + `
-FROM inserted e
-JOIN workspace_issues i ON i.id = e.issue_id
-JOIN workspace_agents a ON a.id = e.agent_id`
+FROM inserted e` + executionNames
 
 const executionByIDQuery = `
 SELECT` + executionColumns + executionJoins + `
@@ -101,9 +105,7 @@ WITH updated AS (
     RETURNING *
 )
 SELECT` + executionColumns + `
-FROM updated e
-JOIN workspace_issues i ON i.id = e.issue_id
-JOIN workspace_agents a ON a.id = e.agent_id`
+FROM updated e` + executionNames
 
 const bindExecutionQuery = `
 WITH bound AS (
@@ -116,9 +118,7 @@ WITH bound AS (
     RETURNING *
 )
 SELECT` + executionColumns + `
-FROM bound e
-JOIN workspace_issues i ON i.id = e.issue_id
-JOIN workspace_agents a ON a.id = e.agent_id`
+FROM bound e` + executionNames
 
 const queuedExecutionsByAgentQuery = `
 SELECT` + executionColumns + executionJoins + `
@@ -281,6 +281,8 @@ func scanExecution(row scanner) (entity.Execution, error) {
 		&execution.AgentName,
 		&runnerID,
 		&codebaseID,
+		&execution.RunnerName,
+		&execution.CodebaseName,
 		&execution.Attempt,
 		&state,
 		&execution.Reason,

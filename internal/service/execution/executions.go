@@ -20,6 +20,7 @@ type executionsService struct {
 	executions repository.Execution
 	changesets repository.ChangeSet
 	previews   repository.Preview
+	services   repository.ExecutionService
 	runners    repository.Runner
 	codebases  repository.Codebase
 	issues     repository.Issue
@@ -36,6 +37,7 @@ func New(
 	executions repository.Execution,
 	changesets repository.ChangeSet,
 	previews repository.Preview,
+	services repository.ExecutionService,
 	runners repository.Runner,
 	codebases repository.Codebase,
 	issues repository.Issue,
@@ -51,6 +53,7 @@ func New(
 		executions: executions,
 		changesets: changesets,
 		previews:   previews,
+		services:   services,
 		runners:    runners,
 		codebases:  codebases,
 		issues:     issues,
@@ -157,12 +160,49 @@ func (s *executionsService) Get(
 		return service.ExecutionDetail{}, err
 	}
 
+	services, err := s.services.ByExecution(ctx, execution.ID)
+	if err != nil {
+		return service.ExecutionDetail{}, err
+	}
+
+	machine, err := s.machine(ctx, execution)
+	if err != nil {
+		return service.ExecutionDetail{}, err
+	}
+
 	return service.ExecutionDetail{
 		Execution: execution,
 		Timeline:  timeline,
 		ChangeSet: changeset,
 		Previews:  previews,
+		Services:  services,
+		Machine:   machine,
 	}, nil
+}
+
+func (s *executionsService) machine(
+	ctx context.Context,
+	execution entity.Execution,
+) (*service.RunnerState, error) {
+	if execution.RunnerID == uuid.Nil {
+		return nil, nil
+	}
+
+	held, err := s.runners.GetByID(ctx, execution.RunnerID)
+	if errors.Is(err, entity.ErrRunnerNotFound) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	presence, err := s.channels.Presence(ctx, held.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &service.RunnerState{Runner: held, Load: service.LoadOf(presence)}, nil
 }
 
 func (s *executionsService) ListByIssue(

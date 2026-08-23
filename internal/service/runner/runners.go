@@ -61,12 +61,34 @@ func (s *runnersService) decide(
 	})
 }
 
-func (s *runnersService) List(ctx context.Context, workspaceID uuid.UUID) ([]entity.Runner, error) {
+func (s *runnersService) List(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+) ([]service.RunnerState, error) {
 	if _, err := s.decide(ctx, workspaceID, entity.ActionRead); err != nil {
 		return nil, err
 	}
 
-	return s.runners.ListByWorkspaceID(ctx, workspaceID)
+	enrolled, err := s.runners.ListByWorkspaceID(ctx, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	states := make([]service.RunnerState, 0, len(enrolled))
+
+	for _, machine := range enrolled {
+		presence, err := s.channels.Presence(ctx, machine.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		states = append(states, service.RunnerState{
+			Runner: machine,
+			Load:   service.LoadOf(presence),
+		})
+	}
+
+	return states, nil
 }
 
 func (s *runnersService) Pause(
