@@ -13,6 +13,7 @@ import (
 type ExecutionDetail struct {
 	Execution entity.Execution
 	Timeline  []entity.ExecutionEvent
+	ChangeSet entity.ExecutionChangeSet
 }
 
 type Executions interface {

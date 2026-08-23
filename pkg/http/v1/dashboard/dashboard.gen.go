@@ -3411,6 +3411,27 @@ func (e UpdateProjectRequestClear) Valid() bool {
 	}
 }
 
+// Defines values for ValidationStatus.
+const (
+	ValidationStatusFailed  ValidationStatus = "failed"
+	ValidationStatusPassed  ValidationStatus = "passed"
+	ValidationStatusSkipped ValidationStatus = "skipped"
+)
+
+// Valid indicates whether the value is a known member of the ValidationStatus enum.
+func (e ValidationStatus) Valid() bool {
+	switch e {
+	case ValidationStatusFailed:
+		return true
+	case ValidationStatusPassed:
+		return true
+	case ValidationStatusSkipped:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for WebhookAttemptOutcome.
 const (
 	WebhookAttemptOutcomeFailed    WebhookAttemptOutcome = "failed"
@@ -4937,6 +4958,17 @@ type ExecutionArtifactReceipt struct {
 	Name        string             `json:"name"`
 }
 
+// ExecutionChangeSet What one run changed. Built up as the work lands and settled when the run reports its result.
+type ExecutionChangeSet struct {
+	ExecutionId  string                      `json:"executionId"`
+	ReportedAt   *time.Time                  `json:"reportedAt,omitempty"`
+	Repositories []ExecutionRepositoryChange `json:"repositories"`
+
+	// Summary What the machine said it did. Empty until the run reports its result.
+	Summary    *string               `json:"summary,omitempty"`
+	Validation []ExecutionValidation `json:"validation"`
+}
+
 // ExecutionChunk defines model for ExecutionChunk.
 type ExecutionChunk struct {
 	Bytes      int64           `json:"bytes"`
@@ -4967,8 +4999,10 @@ type ExecutionChunkReceipt struct {
 
 // ExecutionDetail defines model for ExecutionDetail.
 type ExecutionDetail struct {
-	Execution Execution        `json:"execution"`
-	Timeline  []ExecutionEvent `json:"timeline"`
+	// Changeset What this run changed. Absent until the machine has reported anything.
+	Changeset *ExecutionChangeSet `json:"changeset,omitempty"`
+	Execution Execution           `json:"execution"`
+	Timeline  []ExecutionEvent    `json:"timeline"`
 }
 
 // ExecutionEvent defines model for ExecutionEvent.
@@ -5042,6 +5076,26 @@ type ExecutionProblem struct {
 // ExecutionProblemCode defines model for ExecutionProblem.Code.
 type ExecutionProblemCode string
 
+// ExecutionRepositoryChange One repository this run touched. The pull request is carried as the address the machine reported plus, when norn follows that repository, the code link whose state, checks and reviewers stay current on their own.
+type ExecutionRepositoryChange struct {
+	Additions int     `json:"additions"`
+	BaseSha   *string `json:"baseSha,omitempty"`
+	Branch    *string `json:"branch,omitempty"`
+
+	// CodeLinkId The code link this pull request became. Absent when norn does not follow the repository, in which case the address is all there is.
+	CodeLinkId *openapi_types.UUID `json:"codeLinkId,omitempty"`
+	Commits    int                 `json:"commits"`
+	Deletions  int                 `json:"deletions"`
+
+	// DiffArtifactId The full diff, uploaded as an artifact of this run
+	DiffArtifactId *openapi_types.UUID `json:"diffArtifactId,omitempty"`
+	FilesChanged   int                 `json:"filesChanged"`
+	HeadSha        *string             `json:"headSha,omitempty"`
+	PullRequestUrl *string             `json:"pullRequestUrl,omitempty"`
+	ReportedAt     time.Time           `json:"reportedAt"`
+	Repository     string              `json:"repository"`
+}
+
 // ExecutionState defines model for ExecutionState.
 type ExecutionState string
 
@@ -5079,6 +5133,15 @@ type ExecutionTranscriptEntry struct {
 
 	// Type The normalised event kind, such as message, tool_call, tool_result or usage
 	Type string `json:"type"`
+}
+
+// ExecutionValidation defines model for ExecutionValidation.
+type ExecutionValidation struct {
+	ArtifactId *openapi_types.UUID `json:"artifactId,omitempty"`
+	Check      string              `json:"check"`
+	Detail     *string             `json:"detail,omitempty"`
+	ReportedAt time.Time           `json:"reportedAt"`
+	Status     ValidationStatus    `json:"status"`
 }
 
 // FieldError defines model for FieldError.
@@ -5516,6 +5579,12 @@ type IssueBranchName struct {
 	Branch string `json:"branch"`
 }
 
+// IssueChangeSet defines model for IssueChangeSet.
+type IssueChangeSet struct {
+	IssueId      openapi_types.UUID      `json:"issueId"`
+	Repositories []IssueRepositoryChange `json:"repositories"`
+}
+
 // IssueChildren defines model for IssueChildren.
 type IssueChildren struct {
 	Issues   []Issue       `json:"issues"`
@@ -5802,6 +5871,30 @@ type IssueRelationGroups struct {
 
 // IssueRelationKind A relation as seen from the issue you are looking at
 type IssueRelationKind string
+
+// IssueRepositoryChange defines model for IssueRepositoryChange.
+type IssueRepositoryChange struct {
+	Additions int `json:"additions"`
+
+	// Attempt Which run of this issue this repository's state came from
+	Attempt int     `json:"attempt"`
+	BaseSha *string `json:"baseSha,omitempty"`
+	Branch  *string `json:"branch,omitempty"`
+
+	// CodeLinkId The code link this pull request became. Absent when norn does not follow the repository, in which case the address is all there is.
+	CodeLinkId *openapi_types.UUID `json:"codeLinkId,omitempty"`
+	Commits    int                 `json:"commits"`
+	Deletions  int                 `json:"deletions"`
+
+	// DiffArtifactId The full diff, uploaded as an artifact of this run
+	DiffArtifactId *openapi_types.UUID `json:"diffArtifactId,omitempty"`
+	ExecutionId    string              `json:"executionId"`
+	FilesChanged   int                 `json:"filesChanged"`
+	HeadSha        *string             `json:"headSha,omitempty"`
+	PullRequestUrl *string             `json:"pullRequestUrl,omitempty"`
+	ReportedAt     time.Time           `json:"reportedAt"`
+	Repository     string              `json:"repository"`
+}
 
 // IssueShipping Where this issue's work has reached. Reflection only: Norn reads what the platform says and never triggers a deployment or owns a release process.
 type IssueShipping struct {
@@ -7237,6 +7330,9 @@ type UploadExecutionTranscriptRequest struct {
 	// Sequence Where this chunk sits in the stream. A position may be filled once.
 	Sequence int64 `json:"sequence"`
 }
+
+// ValidationStatus defines model for ValidationStatus.
+type ValidationStatus string
 
 // VerifySignInCodeRequest defines model for VerifySignInCodeRequest.
 type VerifySignInCodeRequest struct {
@@ -9485,6 +9581,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/branch-name (the `GetWorkspaceIssueBranchName` operationId).
 	GetWorkspaceIssueBranchName(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceIssueChangeSet What the runs on this issue changed, as one result
+	//
+	// One row per repository across every attempt, each carrying what the most recent run to touch it did. A re-run amends this rather than starting a second result beside it.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/changeset (the `GetWorkspaceIssueChangeSet` operationId).
+	GetWorkspaceIssueChangeSet(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	//
@@ -13603,6 +13706,23 @@ func (c *Client) FinalizeWorkspaceIssueAttachment(ctx context.Context, workspace
 // Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/branch-name (the `GetWorkspaceIssueBranchName` operationId).
 func (c *Client) GetWorkspaceIssueBranchName(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetWorkspaceIssueBranchNameRequest(c.Server, workspaceId, issueId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceIssueChangeSet What the runs on this issue changed, as one result
+//
+// One row per repository across every attempt, each carrying what the most recent run to touch it did. A re-run amends this rather than starting a second result beside it.
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/changeset (the `GetWorkspaceIssueChangeSet` operationId).
+func (c *Client) GetWorkspaceIssueChangeSet(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceIssueChangeSetRequest(c.Server, workspaceId, issueId)
 	if err != nil {
 		return nil, err
 	}
@@ -22904,6 +23024,47 @@ func NewGetWorkspaceIssueBranchNameRequest(server string, workspaceId WorkspaceI
 	return req, nil
 }
 
+// NewGetWorkspaceIssueChangeSetRequest constructs an http.Request for the GetWorkspaceIssueChangeSet method
+func NewGetWorkspaceIssueChangeSetRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/changeset", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListWorkspaceIssueChildrenRequest constructs an http.Request for the ListWorkspaceIssueChildren method
 func NewListWorkspaceIssueChildrenRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
 	var err error
@@ -32156,6 +32317,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/branch-name (the `GetWorkspaceIssueBranchName` operationId).
 	GetWorkspaceIssueBranchNameWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*GetWorkspaceIssueBranchNameResponse, error)
+
+	// GetWorkspaceIssueChangeSetWithResponse What the runs on this issue changed, as one result
+	//
+	// One row per repository across every attempt, each carrying what the most recent run to touch it did. A re-run amends this rather than starting a second result beside it.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/changeset (the `GetWorkspaceIssueChangeSet` operationId).
+	GetWorkspaceIssueChangeSetWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*GetWorkspaceIssueChangeSetResponse, error)
 
 	// ListWorkspaceIssueChildrenWithResponse List an issue's children and how far through them the work is
 	//
@@ -42661,6 +42831,75 @@ func (r GetWorkspaceIssueBranchNameResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetWorkspaceIssueBranchNameResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceIssueChangeSetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *IssueChangeSet
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceIssueChangeSetResponse) GetJSON200() *IssueChangeSet {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceIssueChangeSetResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceIssueChangeSetResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceIssueChangeSetResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceIssueChangeSetResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceIssueChangeSetResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceIssueChangeSetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceIssueChangeSetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceIssueChangeSetResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -56959,6 +57198,21 @@ func (c *ClientWithResponses) GetWorkspaceIssueBranchNameWithResponse(ctx contex
 	return ParseGetWorkspaceIssueBranchNameResponse(rsp)
 }
 
+// GetWorkspaceIssueChangeSetWithResponse What the runs on this issue changed, as one result
+//
+// One row per repository across every attempt, each carrying what the most recent run to touch it did. A re-run amends this rather than starting a second result beside it.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/changeset (the `GetWorkspaceIssueChangeSet` operationId).
+func (c *ClientWithResponses) GetWorkspaceIssueChangeSetWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*GetWorkspaceIssueChangeSetResponse, error) {
+	rsp, err := c.GetWorkspaceIssueChangeSet(ctx, workspaceId, issueId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceIssueChangeSetResponse(rsp)
+}
+
 // ListWorkspaceIssueChildrenWithResponse List an issue's children and how far through them the work is
 //
 // Returns a wrapper object for the known response body format(s).
@@ -67054,6 +67308,60 @@ func ParseGetWorkspaceIssueBranchNameResponse(rsp *http.Response) (*GetWorkspace
 	return response, nil
 }
 
+// ParseGetWorkspaceIssueChangeSetResponse parses an HTTP response from a GetWorkspaceIssueChangeSetWithResponse call
+func ParseGetWorkspaceIssueChangeSetResponse(rsp *http.Response) (*GetWorkspaceIssueChangeSetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceIssueChangeSetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest IssueChangeSet
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceIssueChildrenResponse parses an HTTP response from a ListWorkspaceIssueChildrenWithResponse call
 func ParseListWorkspaceIssueChildrenResponse(rsp *http.Response) (*ListWorkspaceIssueChildrenResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -77090,6 +77398,9 @@ type ServerInterface interface {
 	// GetWorkspaceIssueBranchName Get the branch name to start work on this issue
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/branch-name)
 	GetWorkspaceIssueBranchName(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// GetWorkspaceIssueChangeSet What the runs on this issue changed, as one result
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/changeset)
+	GetWorkspaceIssueChangeSet(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 	ListWorkspaceIssueChildren(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -78353,6 +78664,12 @@ func (_ Unimplemented) FinalizeWorkspaceIssueAttachment(w http.ResponseWriter, r
 // GetWorkspaceIssueBranchName Get the branch name to start work on this issue
 // (GET /workspaces/{workspaceId}/issues/{issueId}/branch-name)
 func (_ Unimplemented) GetWorkspaceIssueBranchName(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceIssueChangeSet What the runs on this issue changed, as one result
+// (GET /workspaces/{workspaceId}/issues/{issueId}/changeset)
+func (_ Unimplemented) GetWorkspaceIssueChangeSet(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -83223,6 +83540,41 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceIssueBranchName(w http.ResponseWr
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWorkspaceIssueBranchName(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceIssueChangeSet operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceIssueChangeSet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceIssueChangeSet(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -90196,6 +90548,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/executions", wrapper.ListWorkspaceIssueExecutions)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/changeset", wrapper.GetWorkspaceIssueChangeSet)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}", wrapper.GetWorkspaceExecution)
@@ -101233,6 +101588,89 @@ func (response GetWorkspaceIssueBranchName404ApplicationProblemPlusJSONResponse)
 type GetWorkspaceIssueBranchName500ApplicationProblemPlusJSONResponse Problem
 
 func (response GetWorkspaceIssueBranchName500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueBranchNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueChangeSetRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type GetWorkspaceIssueChangeSetResponseObject interface {
+	VisitGetWorkspaceIssueChangeSetResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceIssueChangeSet200JSONResponse IssueChangeSet
+
+func (response GetWorkspaceIssueChangeSet200JSONResponse) VisitGetWorkspaceIssueChangeSetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueChangeSet401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueChangeSet401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueChangeSetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueChangeSet403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueChangeSet403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueChangeSetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueChangeSet404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueChangeSet404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueChangeSetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueChangeSet500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueChangeSet500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueChangeSetResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -117036,6 +117474,9 @@ type StrictServerInterface interface {
 	// GetWorkspaceIssueBranchName Get the branch name to start work on this issue
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/branch-name)
 	GetWorkspaceIssueBranchName(ctx context.Context, request GetWorkspaceIssueBranchNameRequestObject) (GetWorkspaceIssueBranchNameResponseObject, error)
+	// GetWorkspaceIssueChangeSet What the runs on this issue changed, as one result
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/changeset)
+	GetWorkspaceIssueChangeSet(ctx context.Context, request GetWorkspaceIssueChangeSetRequestObject) (GetWorkspaceIssueChangeSetResponseObject, error)
 	// ListWorkspaceIssueChildren List an issue's children and how far through them the work is
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/children)
 	ListWorkspaceIssueChildren(ctx context.Context, request ListWorkspaceIssueChildrenRequestObject) (ListWorkspaceIssueChildrenResponseObject, error)
@@ -121164,6 +121605,33 @@ func (sh *strictHandler) GetWorkspaceIssueBranchName(w http.ResponseWriter, r *h
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceIssueBranchNameResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceIssueBranchNameResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceIssueChangeSet operation middleware
+func (sh *strictHandler) GetWorkspaceIssueChangeSet(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request GetWorkspaceIssueChangeSetRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceIssueChangeSet(ctx, request.(GetWorkspaceIssueChangeSetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceIssueChangeSet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceIssueChangeSetResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceIssueChangeSetResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

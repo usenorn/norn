@@ -47,6 +47,7 @@ import (
 	breachcheckrepo "github.com/usenorn/norn/internal/repository/breachcheck"
 	breakglassrepo "github.com/usenorn/norn/internal/repository/breakglass"
 	bulkactionrepo "github.com/usenorn/norn/internal/repository/bulkaction"
+	changesetrepo "github.com/usenorn/norn/internal/repository/changeset"
 	codebaserepo "github.com/usenorn/norn/internal/repository/codebase"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	directoryrepo "github.com/usenorn/norn/internal/repository/directory"
@@ -110,6 +111,7 @@ import (
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	bulkoperationsvc "github.com/usenorn/norn/internal/service/bulkoperation"
+	changesetsvc "github.com/usenorn/norn/internal/service/changeset"
 	codebasesvc "github.com/usenorn/norn/internal/service/codebase"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	delegationsvc "github.com/usenorn/norn/internal/service/delegation"
@@ -189,6 +191,7 @@ var baseSet = wire.NewSet(
 	executionrepo.Set,
 	executionpolicyrepo.Set,
 	executionuploadrepo.Set,
+	changesetrepo.Set,
 	runnerchannelrepo.Set,
 	runnersessionrepo.Set,
 	issuerelationrepo.Set,
@@ -255,6 +258,7 @@ var baseSet = wire.NewSet(
 	codebasesvc.Set,
 	executionsvc.Set,
 	executionuploadsvc.Set,
+	changesetsvc.Set,
 	runnerchannelsvc.Set,
 	notificationsvc.Set,
 	savedviewsvc.Set,

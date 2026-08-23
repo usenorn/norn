@@ -26,6 +26,7 @@ import (
 	attachmentsvc "github.com/usenorn/norn/internal/service/attachment"
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	bulkoperationsvc "github.com/usenorn/norn/internal/service/bulkoperation"
+	changesetsvc "github.com/usenorn/norn/internal/service/changeset"
 	codebasesvc "github.com/usenorn/norn/internal/service/codebase"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	delegationsvc "github.com/usenorn/norn/internal/service/delegation"
@@ -90,6 +91,7 @@ func newImportHarness(t *testing.T) *importHarness {
 		codebasesvc.NewMockCodebases(ctrl),
 		executionsvc.NewMockExecutions(ctrl),
 		executionuploadsvc.NewMockExecutionUploads(ctrl),
+		changesetsvc.NewMockChangeSets(ctrl),
 		attachmentsvc.NewMockAttachments(ctrl),
 		bulkoperationsvc.NewMockBulkOperations(ctrl),
 		workflowstatesvc.NewMockWorkflowStates(ctrl),

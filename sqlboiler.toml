@@ -25,6 +25,9 @@ blacklist = [
   "workspace_execution_chunks",
   "workspace_execution_artifacts",
   "workspace_execution_policies",
+  "workspace_execution_results",
+  "workspace_execution_changes",
+  "workspace_execution_validations",
 ]
 host = "127.0.0.1"
 port = 5433

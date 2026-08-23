@@ -2272,3 +2272,100 @@ func executionPolicyDTO(policy entity.WorkspaceExecutionPolicy) api.WorkspaceExe
 		UploadRetentionDays: policy.UploadRetentionDays,
 	}
 }
+
+func changeSetDTO(executionID string, changeset entity.ExecutionChangeSet) api.ExecutionChangeSet {
+	dto := api.ExecutionChangeSet{
+		ExecutionId:  executionID,
+		Repositories: repositoryChangeDTOs(changeset.Changes),
+		Validation:   validationDTOs(changeset.Validations),
+	}
+
+	if changeset.Result.ExecutionID != "" {
+		dto.Summary = nilIfEmpty(changeset.Result.Summary)
+		dto.ReportedAt = &changeset.Result.ReportedAt
+	}
+
+	return dto
+}
+
+func repositoryChangeDTO(change entity.ExecutionChange) api.ExecutionRepositoryChange {
+	return api.ExecutionRepositoryChange{
+		Repository:     change.Repository,
+		Branch:         nilIfEmpty(change.Branch),
+		BaseSha:        nilIfEmpty(change.BaseSHA),
+		HeadSha:        nilIfEmpty(change.HeadSHA),
+		Commits:        change.Commits,
+		Additions:      change.Additions,
+		Deletions:      change.Deletions,
+		FilesChanged:   change.FilesChanged,
+		DiffArtifactId: nilIfNoID(change.DiffArtifactID),
+		PullRequestUrl: nilIfEmpty(change.PullRequestURL),
+		CodeLinkId:     nilIfNoID(change.CodeLinkID),
+		ReportedAt:     change.ReportedAt,
+	}
+}
+
+func repositoryChangeDTOs(changes []entity.ExecutionChange) []api.ExecutionRepositoryChange {
+	dtos := make([]api.ExecutionRepositoryChange, 0, len(changes))
+
+	for _, change := range changes {
+		dtos = append(dtos, repositoryChangeDTO(change))
+	}
+
+	return dtos
+}
+
+func validationDTO(validation entity.ExecutionValidation) api.ExecutionValidation {
+	return api.ExecutionValidation{
+		Check:      validation.Check,
+		Status:     api.ValidationStatus(validation.Status),
+		Detail:     nilIfEmpty(validation.Detail),
+		ArtifactId: nilIfNoID(validation.ArtifactID),
+		ReportedAt: validation.ReportedAt,
+	}
+}
+
+func validationDTOs(validations []entity.ExecutionValidation) []api.ExecutionValidation {
+	dtos := make([]api.ExecutionValidation, 0, len(validations))
+
+	for _, validation := range validations {
+		dtos = append(dtos, validationDTO(validation))
+	}
+
+	return dtos
+}
+
+func issueChangeSetDTO(changeset entity.IssueChangeSet) api.IssueChangeSet {
+	repositories := make([]api.IssueRepositoryChange, 0, len(changeset.Changes))
+
+	for _, change := range changeset.Changes {
+		one := repositoryChangeDTO(change.ExecutionChange)
+
+		repositories = append(repositories, api.IssueRepositoryChange{
+			Repository:     one.Repository,
+			Branch:         one.Branch,
+			BaseSha:        one.BaseSha,
+			HeadSha:        one.HeadSha,
+			Commits:        one.Commits,
+			Additions:      one.Additions,
+			Deletions:      one.Deletions,
+			FilesChanged:   one.FilesChanged,
+			DiffArtifactId: one.DiffArtifactId,
+			PullRequestUrl: one.PullRequestUrl,
+			CodeLinkId:     one.CodeLinkId,
+			ReportedAt:     one.ReportedAt,
+			ExecutionId:    change.ExecutionID,
+			Attempt:        change.Attempt,
+		})
+	}
+
+	return api.IssueChangeSet{IssueId: changeset.IssueID, Repositories: repositories}
+}
+
+func nilIfNoID(id uuid.UUID) *uuid.UUID {
+	if id == uuid.Nil {
+		return nil
+	}
+
+	return &id
+}

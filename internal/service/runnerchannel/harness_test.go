@@ -12,6 +12,7 @@ import (
 	channelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
 	sessionrepo "github.com/usenorn/norn/internal/repository/runnersession"
 	"github.com/usenorn/norn/internal/service"
+	changesetsvc "github.com/usenorn/norn/internal/service/changeset"
 	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	questionsvc "github.com/usenorn/norn/internal/service/issuequestion"
 	runnersvc "github.com/usenorn/norn/internal/service/runner"
@@ -25,6 +26,7 @@ type harness struct {
 	machines   *runnersvc.MockRunners
 	executions *executionsvc.MockExecutions
 	questions  *questionsvc.MockIssueQuestions
+	changesets *changesetsvc.MockChangeSets
 	service    service.RunnerChannels
 
 	runner entity.Runner
@@ -47,6 +49,7 @@ func newHarness(t *testing.T) *harness {
 		machines:   runnersvc.NewMockRunners(ctrl),
 		executions: executionsvc.NewMockExecutions(ctrl),
 		questions:  questionsvc.NewMockIssueQuestions(ctrl),
+		changesets: changesetsvc.NewMockChangeSets(ctrl),
 		runner: entity.Runner{
 			ID:          runnerID,
 			WorkspaceID: workspaceID,
@@ -65,7 +68,7 @@ func newHarness(t *testing.T) *harness {
 	h.executions.EXPECT().Renew(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	h.service = channelsvc.New(
-		h.channels, h.sessions, h.runners, h.machines, h.executions, h.questions,
+		h.channels, h.sessions, h.runners, h.machines, h.executions, h.questions, h.changesets,
 	)
 
 	return h
