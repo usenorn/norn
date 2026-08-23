@@ -13,7 +13,16 @@ const (
 	PreviewSharePath     = "/__norn/share/"
 	PreviewAuthorizePath = "/v1/previews/authorize"
 	PreviewGrantCookie   = "norn_preview"
+	HostCookiePrefix     = "__Host-"
 )
+
+func PreviewGrantCookieName(secure bool) string {
+	if secure {
+		return HostCookiePrefix + PreviewGrantCookie
+	}
+
+	return PreviewGrantCookie
+}
 
 var ErrPreviewGrantNotFound = errors.New("this preview session has expired")
 

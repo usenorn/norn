@@ -2,6 +2,7 @@ package previewgateway_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -165,4 +166,88 @@ func TestRevokingAGatewayThatWasNeverEnrolledSaysSo(t *testing.T) {
 	_, err := h.service.Revoke(context.Background(), uuid.New())
 
 	refusedWith(t, err, entity.ErrPreviewGatewayNotFound)
+}
+
+func TestAConfiguredSecretOpensTheDoorWithoutAnybodyMintingOne(t *testing.T) {
+	h := newHarness(t)
+
+	secret := "ngr_" + strings.Repeat("a", 43)
+
+	if _, err := h.service.Adopt(
+		context.Background(), entity.PreviewGatewayConfiguredName, secret,
+	); err != nil {
+		t.Fatalf("adopt a configured secret: %v", err)
+	}
+
+	if _, err := h.service.Exchange(context.Background(), secret); err != nil {
+		t.Fatalf(
+			"a secret the operator configured could not be traded for an access token: %v; a "+
+				"deployment that cannot authenticate its own gateway needs a person to fix it",
+			err,
+		)
+	}
+}
+
+func TestAdoptingTheSameSecretTwiceLeavesOneGatewayNotTwo(t *testing.T) {
+	h := newHarness(t)
+
+	secret := "ngr_" + strings.Repeat("b", 43)
+	ctx := context.Background()
+
+	first, err := h.service.Adopt(ctx, entity.PreviewGatewayConfiguredName, secret)
+	if err != nil {
+		t.Fatalf("adopt: %v", err)
+	}
+
+	second, err := h.service.Adopt(ctx, entity.PreviewGatewayConfiguredName, secret)
+	if err != nil {
+		t.Fatalf(
+			"adopting the same secret again failed with %v; seed runs on every deploy, so this "+
+				"has to be a no-op rather than a broken release", err,
+		)
+	}
+
+	if first.ID != second.ID {
+		t.Fatalf(
+			"adopting twice produced gateways %s and %s; two rows would both open the door and "+
+				"revoking one would look like it had worked", first.ID, second.ID,
+		)
+	}
+}
+
+func TestRotatingTheConfiguredSecretShutsTheOldOneOut(t *testing.T) {
+	h := newHarness(t)
+
+	ctx := context.Background()
+	was := "ngr_" + strings.Repeat("c", 43)
+	now := "ngr_" + strings.Repeat("d", 43)
+
+	if _, err := h.service.Adopt(ctx, entity.PreviewGatewayConfiguredName, was); err != nil {
+		t.Fatalf("adopt the first secret: %v", err)
+	}
+
+	if _, err := h.service.Adopt(ctx, entity.PreviewGatewayConfiguredName, now); err != nil {
+		t.Fatalf("adopt the replacement: %v", err)
+	}
+
+	if _, err := h.service.Exchange(ctx, was); err == nil {
+		t.Fatal(
+			"the secret that was replaced still opens the door, so rotating one is only a " +
+				"suggestion until somebody notices",
+		)
+	}
+
+	if _, err := h.service.Exchange(ctx, now); err != nil {
+		t.Fatalf("the replacement secret does not work: %v", err)
+	}
+}
+
+func TestSomethingThatIsNotAGatewaySecretIsNotAdopted(t *testing.T) {
+	h := newHarness(t)
+
+	_, err := h.service.Adopt(
+		context.Background(), entity.PreviewGatewayConfiguredName, "nrn_an-api-token",
+	)
+
+	refusedWith(t, err, entity.ErrPreviewGatewayCredentialInvalid)
 }

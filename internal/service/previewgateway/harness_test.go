@@ -63,6 +63,41 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.gateways.EXPECT().
+		Adopt(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, name string, hash []byte,
+		) (entity.PreviewGateway, error) {
+			for id, held := range h.stored {
+				if held.Name != name {
+					continue
+				}
+
+				for secret, owner := range h.secrets {
+					if owner == id {
+						delete(h.secrets, secret)
+					}
+				}
+
+				held.Status = entity.PreviewGatewayActive
+				h.stored[id] = held
+				h.secrets[string(hash)] = id
+
+				return held, nil
+			}
+
+			adopted := entity.PreviewGateway{
+				ID:     uuid.New(),
+				Name:   name,
+				Status: entity.PreviewGatewayActive,
+			}
+			h.stored[adopted.ID] = adopted
+			h.secrets[string(hash)] = adopted.ID
+
+			return adopted, nil
+		}).
+		AnyTimes()
+
+	h.gateways.EXPECT().
 		ByCredential(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, hash []byte) (entity.PreviewGateway, error) {
 			id, known := h.secrets[string(hash)]

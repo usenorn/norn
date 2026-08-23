@@ -28,6 +28,25 @@ func New(
 	return &gatewaysService{gateways: gateways, grants: grants, previews: previews}
 }
 
+func (s *gatewaysService) Adopt(
+	ctx context.Context,
+	name, secret string,
+) (entity.PreviewGateway, error) {
+	if err := entity.NewValidationError(
+		entity.ValidatePreviewGatewayName("name", name),
+	); err != nil {
+		return entity.PreviewGateway{}, err
+	}
+
+	if !strings.HasPrefix(secret, entity.PreviewGatewaySecretPrefix) {
+		return entity.PreviewGateway{}, entity.ErrPreviewGatewayCredentialInvalid
+	}
+
+	return s.gateways.Adopt(
+		ctx, strings.TrimSpace(name), entity.HashPreviewGatewaySecret(secret),
+	)
+}
+
 func (s *gatewaysService) Enrol(
 	ctx context.Context,
 	name string,

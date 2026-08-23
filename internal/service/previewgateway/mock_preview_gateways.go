@@ -43,6 +43,21 @@ func (m *MockPreviewGateways) EXPECT() *MockPreviewGatewaysMockRecorder {
 	return m.recorder
 }
 
+// Adopt mocks base method.
+func (m *MockPreviewGateways) Adopt(ctx context.Context, name, secret string) (entity.PreviewGateway, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Adopt", ctx, name, secret)
+	ret0, _ := ret[0].(entity.PreviewGateway)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Adopt indicates an expected call of Adopt.
+func (mr *MockPreviewGatewaysMockRecorder) Adopt(ctx, name, secret any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Adopt", reflect.TypeOf((*MockPreviewGateways)(nil).Adopt), ctx, name, secret)
+}
+
 // Authenticate mocks base method.
 func (m *MockPreviewGateways) Authenticate(ctx context.Context, token string) (entity.PreviewGateway, error) {
 	m.ctrl.T.Helper()
