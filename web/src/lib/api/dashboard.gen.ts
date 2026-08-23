@@ -3895,6 +3895,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/executions/{executionId}/previews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The previews this run has opened, and who they are shared with
+         * @description A preview exists because the machine reported one. Nothing else creates one, so an address this list does not carry is an address the gateway will not route.
+         */
+        get: operations["listWorkspaceExecutionPreviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                previewName: components["parameters"]["PreviewName"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mint a link that lets somebody outside the workspace look
+         * @description The link is answered once and never again; norn keeps only its hash. Give it a passcode when the address alone should not be enough.
+         */
+        post: operations["sharePreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                previewName: components["parameters"]["PreviewName"];
+                shareLinkId: components["parameters"]["ShareLinkId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw a share link, and everyone it has already let in */
+        delete: operations["revokePreviewShareLink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/retain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep this run's workspace and previews for longer
+         * @description The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
+         */
+        post: operations["retainWorkspaceExecution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/previews/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Trade a session for one short-lived look at a preview
+         * @description Where the gateway sends a browser that has no preview session yet. A signed-out browser is sent into sign-in and returns here; a signed-in one is sent back to the preview carrying a single-use ticket the gateway exchanges for the session.
+         */
+        get: operations["authorizePreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runners/me/executions/{executionId}/logs": {
         parameters: {
             query?: never;
@@ -4830,6 +4942,62 @@ export interface components {
             timeline: components["schemas"]["ExecutionEvent"][];
             /** @description What this run changed. Absent until the machine has reported anything. */
             changeset?: components["schemas"]["ExecutionChangeSet"];
+            previews?: components["schemas"]["ExecutionPreview"][];
+        };
+        ExecutionPreview: {
+            /** Format: uuid */
+            id: string;
+            executionId: string;
+            name: string;
+            service: string;
+            path?: string;
+            /** @enum {string} */
+            mode: "subdomain" | "path";
+            host?: string;
+            /** @description Empty while this server serves no preview domain, because there is then no address that reaches anybody. */
+            url: string;
+            /** @enum {string} */
+            state: "open" | "closed";
+            /** Format: date-time */
+            openedAt: string;
+            /** Format: date-time */
+            closedAt?: string | null;
+        };
+        ExecutionPreviewDetail: {
+            preview: components["schemas"]["ExecutionPreview"];
+            shareLinks: components["schemas"]["PreviewShareLink"][];
+        };
+        PreviewShareLink: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            previewId: string;
+            /** Format: uuid */
+            createdBy?: string | null;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            revokedAt?: string | null;
+            /** Format: date-time */
+            lastUsedAt?: string | null;
+            needsPasscode: boolean;
+            uses: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PreviewShareLinkMinted: {
+            link: components["schemas"]["PreviewShareLink"];
+            /** @description The only time norn answers with this address. It keeps only the hash. */
+            url: string;
+        };
+        SharePreviewRequest: {
+            /** @description How long the link lives. Left out, it lives for the instance default. */
+            lifetimeSeconds?: number;
+            passcode?: string;
+        };
+        RetainExecutionRequest: {
+            /** @description How much longer the machine holds this run's workspace and previews. */
+            longerSeconds: number;
         };
         /** @enum {string} */
         ValidationStatus: "passed" | "failed" | "skipped";
@@ -5013,6 +5181,10 @@ export interface components {
         ExecutionProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_no_runner" | "execution_chunk_conflict";
+        };
+        PreviewProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "preview_closed" | "preview_not_routable" | "preview_crowded" | "preview_share_expired" | "preview_share_revoked" | "preview_share_crowded";
         };
         CodebaseProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -7330,6 +7502,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["ExecutionProblem"];
             };
         };
+        /** @description The preview or its share link refuses the request */
+        PreviewConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["PreviewProblem"];
+            };
+        };
         /** @description The cycle refuses the change, or needs a decision first */
         CycleConflict: {
             headers: {
@@ -7584,6 +7765,8 @@ export interface components {
         CodebaseId: string;
         ArtifactId: string;
         ExecutionId: string;
+        PreviewName: string;
+        ShareLinkId: string;
         RunnerId: string;
         ProposalId: string;
         StateId: string;
@@ -15676,6 +15859,157 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["ExecutionConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceExecutionPreviews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The previews on record for this run */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionPreviewDetail"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    sharePreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                previewName: components["parameters"]["PreviewName"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SharePreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description The link, and the only time its address is answered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewShareLinkMinted"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["PreviewConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    revokePreviewShareLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                previewName: components["parameters"]["PreviewName"];
+                shareLinkId: components["parameters"]["ShareLinkId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The link is withdrawn */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    retainWorkspaceExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetainExecutionRequest"];
+            };
+        };
+        responses: {
+            /** @description The execution as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    authorizePreview: {
+        parameters: {
+            query: {
+                /** @description The preview host the browser asked for */
+                host: string;
+                /** @description The path inside the preview to land on */
+                return?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Follow this link. It is single use, and it expires in a minute. */
+            303: {
+                headers: {
+                    Location?: string;
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["PreviewConflict"];
             500: components["responses"]["Problem"];
         };
     };

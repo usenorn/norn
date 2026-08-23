@@ -25,6 +25,7 @@ const (
 	ExecutionResume  MessageType = "execution.resume"
 	ExecutionCancel  MessageType = "execution.cancel"
 	QuestionAnswered MessageType = "question.answered"
+	ExecutionRetain  MessageType = "execution.retain"
 	RunnerPause      MessageType = "runner.pause"
 	RunnerResume     MessageType = "runner.resume"
 	RunnerConfigure  MessageType = "runner.update_config"
@@ -48,7 +49,7 @@ const (
 func ServerMessages() []MessageType {
 	return []MessageType{
 		Sync, ExecutionOffer, ExecutionStart, ExecutionResume, ExecutionCancel, QuestionAnswered,
-		RunnerPause, RunnerResume, RunnerConfigure,
+		ExecutionRetain, RunnerPause, RunnerResume, RunnerConfigure,
 	}
 }
 

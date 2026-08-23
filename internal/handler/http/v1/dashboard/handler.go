@@ -31,6 +31,7 @@ type handler struct {
 	executions        service.Executions
 	executionUploads  service.ExecutionUploads
 	changesets        service.ChangeSets
+	previews          service.Previews
 	attachments       service.Attachments
 	bulkOperations    service.BulkOperations
 	workflowStates    service.WorkflowStates
@@ -59,6 +60,7 @@ type handler struct {
 	password          config.Password
 	session           config.Session
 	importing         config.Imports
+	previewCfg        config.Previews
 }
 
 func New(
@@ -76,6 +78,7 @@ func New(
 	executions service.Executions,
 	executionUploads service.ExecutionUploads,
 	changesets service.ChangeSets,
+	previews service.Previews,
 	attachments service.Attachments,
 	bulkOperations service.BulkOperations,
 	workflowStates service.WorkflowStates,
@@ -104,6 +107,7 @@ func New(
 	password config.Password,
 	session config.Session,
 	importing config.Imports,
+	previewCfg config.Previews,
 ) api.StrictServerInterface {
 	return &handler{
 		accounts:          accounts,
@@ -120,6 +124,7 @@ func New(
 		executions:        executions,
 		executionUploads:  executionUploads,
 		changesets:        changesets,
+		previews:          previews,
 		attachments:       attachments,
 		bulkOperations:    bulkOperations,
 		workflowStates:    workflowStates,
@@ -148,6 +153,7 @@ func New(
 		password:          password,
 		session:           session,
 		importing:         importing,
+		previewCfg:        previewCfg,
 	}
 }
 

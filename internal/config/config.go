@@ -42,6 +42,7 @@ type Config struct {
 	Runner        Runner        `mapstructure:"runner"`
 	Executions    Executions    `mapstructure:"executions"`
 	Questions     Questions     `mapstructure:"questions"`
+	Previews      Previews      `mapstructure:"previews"`
 }
 
 type Licence struct {
@@ -81,6 +82,21 @@ type Executions struct {
 
 type Questions struct {
 	ExpirySweepSchedule string `mapstructure:"expiry_sweep_schedule"`
+}
+
+type Previews struct {
+	BaseDomain       string        `mapstructure:"base_domain"`
+	Scheme           string        `mapstructure:"scheme"`
+	SessionTTL       time.Duration `mapstructure:"session_ttl"`
+	TicketTTL        time.Duration `mapstructure:"ticket_ttl"`
+	GatewayAccessTTL time.Duration `mapstructure:"gateway_access_ttl"`
+	ShareDefaultTTL  time.Duration `mapstructure:"share_default_ttl"`
+	ShareMaxTTL      time.Duration `mapstructure:"share_max_ttl"`
+	AuditWindow      time.Duration `mapstructure:"audit_window"`
+}
+
+func (c Previews) Routable() bool {
+	return c.BaseDomain != ""
 }
 
 type Runner struct {

@@ -9,6 +9,7 @@ import (
 	auditexportedge "github.com/usenorn/norn/internal/handler/http/auditexport"
 	blobedge "github.com/usenorn/norn/internal/handler/http/blob"
 	eventsedge "github.com/usenorn/norn/internal/handler/http/events"
+	previewedge "github.com/usenorn/norn/internal/handler/http/previewgateway"
 	"github.com/usenorn/norn/internal/handler/http/router"
 	runnerchanneledge "github.com/usenorn/norn/internal/handler/http/runnerchannel"
 	scimedge "github.com/usenorn/norn/internal/handler/http/scim"
@@ -79,6 +80,10 @@ import (
 	oidcstaterepo "github.com/usenorn/norn/internal/repository/oidcstate"
 	passwordhistoryrepo "github.com/usenorn/norn/internal/repository/passwordhistory"
 	passwordresetrepo "github.com/usenorn/norn/internal/repository/passwordreset"
+	previewrepo "github.com/usenorn/norn/internal/repository/preview"
+	previewgatewayrepo "github.com/usenorn/norn/internal/repository/previewgateway"
+	previewgrantrepo "github.com/usenorn/norn/internal/repository/previewgrant"
+	previewsharerepo "github.com/usenorn/norn/internal/repository/previewshare"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
 	runnerchannelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
@@ -131,6 +136,8 @@ import (
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
+	previewsvc "github.com/usenorn/norn/internal/service/preview"
+	previewgatewaysvc "github.com/usenorn/norn/internal/service/previewgateway"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	runnersvc "github.com/usenorn/norn/internal/service/runner"
 	runnerchannelsvc "github.com/usenorn/norn/internal/service/runnerchannel"
@@ -192,6 +199,10 @@ var baseSet = wire.NewSet(
 	executionpolicyrepo.Set,
 	executionuploadrepo.Set,
 	changesetrepo.Set,
+	previewrepo.Set,
+	previewsharerepo.Set,
+	previewgrantrepo.Set,
+	previewgatewayrepo.Set,
 	runnerchannelrepo.Set,
 	runnersessionrepo.Set,
 	issuerelationrepo.Set,
@@ -259,6 +270,9 @@ var baseSet = wire.NewSet(
 	executionsvc.Set,
 	executionuploadsvc.Set,
 	changesetsvc.Set,
+	previewsvc.Set,
+	previewgatewaysvc.Set,
+	previewedge.Set,
 	runnerchannelsvc.Set,
 	notificationsvc.Set,
 	savedviewsvc.Set,
@@ -304,6 +318,7 @@ var baseSet = wire.NewSet(
 	NewMigrator,
 	NewSeeder,
 	NewJobsAdmin,
+	NewGatewaysAdmin,
 )
 
 func InitApp(cfgFile string) (*App, func(), error) {
@@ -331,6 +346,12 @@ func InitSeeder(cfgFile string) (*Seeder, func(), error) {
 }
 
 func InitJobsAdmin(cfgFile string) (*JobsAdmin, func(), error) {
+	wire.Build(baseSet)
+
+	return nil, nil, nil
+}
+
+func InitGatewaysAdmin(cfgFile string) (*GatewaysAdmin, func(), error) {
 	wire.Build(baseSet)
 
 	return nil, nil, nil

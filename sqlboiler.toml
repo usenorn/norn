@@ -28,6 +28,9 @@ blacklist = [
   "workspace_execution_results",
   "workspace_execution_changes",
   "workspace_execution_validations",
+  "workspace_execution_previews",
+  "workspace_execution_preview_links",
+  "preview_gateways",
 ]
 host = "127.0.0.1"
 port = 5433

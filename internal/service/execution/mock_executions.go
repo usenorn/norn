@@ -12,6 +12,7 @@ package execution
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
@@ -175,6 +176,21 @@ func (mr *MockExecutionsMockRecorder) ListByIssue(ctx, workspaceID, issueID any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByIssue", reflect.TypeOf((*MockExecutions)(nil).ListByIssue), ctx, workspaceID, issueID)
 }
 
+// Manageable mocks base method.
+func (m *MockExecutions) Manageable(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Manageable", ctx, workspaceID, executionID)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Manageable indicates an expected call of Manageable.
+func (mr *MockExecutionsMockRecorder) Manageable(ctx, workspaceID, executionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Manageable", reflect.TypeOf((*MockExecutions)(nil).Manageable), ctx, workspaceID, executionID)
+}
+
 // Observed mocks base method.
 func (m *MockExecutions) Observed(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error {
 	m.ctrl.T.Helper()
@@ -273,6 +289,21 @@ func (m *MockExecutions) Resume(ctx context.Context, workspaceID uuid.UUID, exec
 func (mr *MockExecutionsMockRecorder) Resume(ctx, workspaceID, executionID, feedback any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resume", reflect.TypeOf((*MockExecutions)(nil).Resume), ctx, workspaceID, executionID, feedback)
+}
+
+// Retain mocks base method.
+func (m *MockExecutions) Retain(ctx context.Context, workspaceID uuid.UUID, executionID string, longer time.Duration) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Retain", ctx, workspaceID, executionID, longer)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Retain indicates an expected call of Retain.
+func (mr *MockExecutionsMockRecorder) Retain(ctx, workspaceID, executionID, longer any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Retain", reflect.TypeOf((*MockExecutions)(nil).Retain), ctx, workspaceID, executionID, longer)
 }
 
 // SweepLeases mocks base method.

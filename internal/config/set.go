@@ -11,6 +11,7 @@ var Set = wire.NewSet(
 	NewRunner,
 	NewExecutions,
 	NewQuestions,
+	NewPreviews,
 	NewCycles,
 	NewInstance,
 	NewLicence,

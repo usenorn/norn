@@ -42,6 +42,7 @@ import (
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
+	previewsvc "github.com/usenorn/norn/internal/service/preview"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	runnersvc "github.com/usenorn/norn/internal/service/runner"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
@@ -92,6 +93,7 @@ func newImportHarness(t *testing.T) *importHarness {
 		executionsvc.NewMockExecutions(ctrl),
 		executionuploadsvc.NewMockExecutionUploads(ctrl),
 		changesetsvc.NewMockChangeSets(ctrl),
+		previewsvc.NewMockPreviews(ctrl),
 		attachmentsvc.NewMockAttachments(ctrl),
 		bulkoperationsvc.NewMockBulkOperations(ctrl),
 		workflowstatesvc.NewMockWorkflowStates(ctrl),
@@ -120,6 +122,7 @@ func newImportHarness(t *testing.T) *importHarness {
 		config.Password{},
 		config.Session{},
 		config.Imports{MaxUploadBytes: testMaxUploadBytes},
+		config.Previews{Scheme: "https"},
 	)
 
 	h.routes = api.Handler(api.NewStrictHandler(edge, nil))

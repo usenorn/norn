@@ -2028,6 +2028,64 @@ func executionActorDTO(actor entity.ExecutionActor) api.ExecutionActor {
 	}
 }
 
+func previewDTO(preview entity.PreviewSession, scheme string) api.ExecutionPreview {
+	return api.ExecutionPreview{
+		Id:          preview.ID,
+		ExecutionId: preview.ExecutionID,
+		Name:        preview.Name,
+		Service:     preview.Service,
+		Path:        nilIfEmpty(preview.Path),
+		Mode:        api.ExecutionPreviewMode(preview.Mode),
+		Host:        nilIfEmpty(preview.Host),
+		Url:         preview.URL(scheme),
+		State:       api.ExecutionPreviewState(preview.State),
+		OpenedAt:    preview.OpenedAt,
+		ClosedAt:    nilIfZeroTime(preview.ClosedAt),
+	}
+}
+
+func previewDTOs(previews []entity.PreviewSession, scheme string) []api.ExecutionPreview {
+	dtos := make([]api.ExecutionPreview, 0, len(previews))
+
+	for _, preview := range previews {
+		dtos = append(dtos, previewDTO(preview, scheme))
+	}
+
+	return dtos
+}
+
+func previewShareLinkDTO(link entity.PreviewShareLink) api.PreviewShareLink {
+	return api.PreviewShareLink{
+		Id:            link.ID,
+		PreviewId:     link.PreviewID,
+		CreatedBy:     nilIfNilID(link.CreatedBy),
+		ExpiresAt:     link.ExpiresAt,
+		RevokedAt:     nilIfZeroTime(link.RevokedAt),
+		LastUsedAt:    nilIfZeroTime(link.LastUsedAt),
+		NeedsPasscode: link.NeedsPasscode(),
+		Uses:          link.Uses,
+		CreatedAt:     link.CreatedAt,
+	}
+}
+
+func previewShareLinkDTOs(links []entity.PreviewShareLink) []api.PreviewShareLink {
+	dtos := make([]api.PreviewShareLink, 0, len(links))
+
+	for _, link := range links {
+		dtos = append(dtos, previewShareLinkDTO(link))
+	}
+
+	return dtos
+}
+
+func nilIfZeroTime(at time.Time) *time.Time {
+	if at.IsZero() {
+		return nil
+	}
+
+	return &at
+}
+
 func executionEventDTO(event entity.ExecutionEvent) api.ExecutionEvent {
 	dto := api.ExecutionEvent{
 		Id:          event.ID,

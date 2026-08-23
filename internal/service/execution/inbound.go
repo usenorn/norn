@@ -219,6 +219,10 @@ func (s *executionsService) SweepLeases(ctx context.Context) error {
 			return err
 		}
 
+		if err := s.previews.CloseByExecution(ctx, execution.ID, now); err != nil {
+			return err
+		}
+
 		logging.From(ctx).InfoContext(
 			ctx,
 			"an execution was interrupted because its runner stopped reporting",

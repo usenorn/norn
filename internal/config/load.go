@@ -154,6 +154,10 @@ func validate(cfg Config) error {
 		return err
 	}
 
+	if err := validatePreviews(cfg.App, cfg.Previews); err != nil {
+		return err
+	}
+
 	if cfg.SourceControl.MaxDeliveryBytes > cfg.HTTP.MaxRequestBytes {
 		return fmt.Errorf(
 			"source_control.max_delivery_bytes (%d) is above http.max_request_bytes (%d). A forge "+
@@ -520,6 +524,66 @@ func storageOrigin(cfg Storage) string {
 	return cfg.Endpoint
 }
 
+func validatePreviews(app App, cfg Previews) error {
+	if cfg.SessionTTL <= 0 || cfg.TicketTTL <= 0 || cfg.GatewayAccessTTL <= 0 {
+		return fmt.Errorf(
+			"previews.session_ttl, previews.ticket_ttl and previews.gateway_access_ttl must be " +
+				"positive",
+		)
+	}
+
+	if cfg.ShareDefaultTTL <= 0 || cfg.ShareMaxTTL <= 0 {
+		return fmt.Errorf("previews.share_default_ttl and previews.share_max_ttl must be positive")
+	}
+
+	if cfg.ShareDefaultTTL > cfg.ShareMaxTTL {
+		return fmt.Errorf(
+			"previews.share_default_ttl (%s) is longer than previews.share_max_ttl (%s), so the "+
+				"link a person gets without naming a lifetime would already be past the longest "+
+				"one they are allowed to ask for",
+			cfg.ShareDefaultTTL, cfg.ShareMaxTTL,
+		)
+	}
+
+	if cfg.AuditWindow <= 0 {
+		return fmt.Errorf("previews.audit_window must be positive")
+	}
+
+	if !cfg.Routable() {
+		return nil
+	}
+
+	if cfg.Scheme != "https" && cfg.Scheme != "http" {
+		return fmt.Errorf("previews.scheme (%q) must be http or https", cfg.Scheme)
+	}
+
+	return separateDomains(app.Host(), cfg.BaseDomain)
+}
+
+func separateDomains(app, previews string) error {
+	host, _, found := strings.Cut(app, ":")
+	if !found {
+		host = app
+	}
+
+	if host == "" || previews == "" {
+		return nil
+	}
+
+	if host == previews ||
+		strings.HasSuffix(host, "."+previews) ||
+		strings.HasSuffix(previews, "."+host) {
+		return fmt.Errorf(
+			"previews.base_domain (%s) must not share a domain with app.base_url (%s); a preview "+
+				"runs code norn did not write, and a browser sends the session cookie to any host "+
+				"underneath the domain that set it",
+			previews, host,
+		)
+	}
+
+	return nil
+}
+
 func separateOrigins(app, storage string) error {
 	appURL, err := url.Parse(app)
 	if err != nil {
@@ -613,6 +677,15 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("executions.upload_retention", 90*24*time.Hour)
 	v.SetDefault("executions.retention_schedule", "0 3 * * *")
 	v.SetDefault("questions.expiry_sweep_schedule", "*/15 * * * *")
+
+	v.SetDefault("previews.base_domain", "")
+	v.SetDefault("previews.scheme", "https")
+	v.SetDefault("previews.session_ttl", 15*time.Minute)
+	v.SetDefault("previews.ticket_ttl", time.Minute)
+	v.SetDefault("previews.gateway_access_ttl", 15*time.Minute)
+	v.SetDefault("previews.share_default_ttl", 24*time.Hour)
+	v.SetDefault("previews.share_max_ttl", 7*24*time.Hour)
+	v.SetDefault("previews.audit_window", time.Hour)
 	v.SetDefault("executions.retention_batch", 200)
 	v.SetDefault("asynq.addr", "127.0.0.1:6381")
 	v.SetDefault("asynq.username", "")

@@ -25,6 +25,7 @@ type channelsService struct {
 	executions service.Executions
 	questions  service.IssueQuestions
 	changesets service.ChangeSets
+	previews   service.Previews
 }
 
 func New(
@@ -35,6 +36,7 @@ func New(
 	executions service.Executions,
 	questions service.IssueQuestions,
 	changesets service.ChangeSets,
+	previews service.Previews,
 ) service.RunnerChannels {
 	return &channelsService{
 		channels:   channels,
@@ -44,6 +46,7 @@ func New(
 		executions: executions,
 		questions:  questions,
 		changesets: changesets,
+		previews:   previews,
 	}
 }
 
