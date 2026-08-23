@@ -256,3 +256,42 @@ func TestAMessageIsOnlyEverSeenOnce(t *testing.T) {
 		t.Fatalf("a redelivered message was not recognised, so it would be handled twice")
 	}
 }
+
+func TestWhatAMachineReportsAboutItselfSurvivesTheNextHeartbeat(t *testing.T) {
+	channel, runnerID := newChannel(t)
+	ctx := context.Background()
+
+	now := time.Now().UTC()
+
+	if err := channel.Attach(ctx, runnerID, "epoch", now); err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+
+	load := entity.RunnerLoad{Capacity: 4, Used: 3, DiskPressure: true}
+
+	if err := channel.Renew(ctx, runnerID, "epoch", load, now); err != nil {
+		t.Fatalf("renew: %v", err)
+	}
+
+	held, err := channel.Presence(ctx, runnerID)
+	if err != nil {
+		t.Fatalf("presence: %v", err)
+	}
+
+	if held.Load != load {
+		t.Fatalf(
+			"the machine reported %+v and presence reads %+v. Routing reads this to decide "+
+				"where work goes, so a figure that does not survive the write sends work to a "+
+				"machine that is already full",
+			load, held.Load,
+		)
+	}
+
+	if held.Free() != 1 || held.Available() {
+		t.Fatalf(
+			"a machine with one slot left but no disk reads free=%d available=%v; disk "+
+				"pressure is exactly the case where a free slot is not an invitation",
+			held.Free(), held.Available(),
+		)
+	}
+}
