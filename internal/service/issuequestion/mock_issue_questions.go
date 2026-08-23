@@ -73,6 +73,35 @@ func (mr *MockIssueQuestionsMockRecorder) Ask(ctx, workspaceID, issueID, input a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ask", reflect.TypeOf((*MockIssueQuestions)(nil).Ask), ctx, workspaceID, issueID, input)
 }
 
+// Asked mocks base method.
+func (m *MockIssueQuestions) Asked(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Asked", ctx, runner, message)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Asked indicates an expected call of Asked.
+func (mr *MockIssueQuestionsMockRecorder) Asked(ctx, runner, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Asked", reflect.TypeOf((*MockIssueQuestions)(nil).Asked), ctx, runner, message)
+}
+
+// Dismiss mocks base method.
+func (m *MockIssueQuestions) Dismiss(ctx context.Context, workspaceID, issueID, questionID uuid.UUID) (entity.IssueQuestion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Dismiss", ctx, workspaceID, issueID, questionID)
+	ret0, _ := ret[0].(entity.IssueQuestion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Dismiss indicates an expected call of Dismiss.
+func (mr *MockIssueQuestionsMockRecorder) Dismiss(ctx, workspaceID, issueID, questionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Dismiss", reflect.TypeOf((*MockIssueQuestions)(nil).Dismiss), ctx, workspaceID, issueID, questionID)
+}
+
 // List mocks base method.
 func (m *MockIssueQuestions) List(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.IssueQuestion, error) {
 	m.ctrl.T.Helper()
@@ -86,4 +115,33 @@ func (m *MockIssueQuestions) List(ctx context.Context, workspaceID, issueID uuid
 func (mr *MockIssueQuestionsMockRecorder) List(ctx, workspaceID, issueID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockIssueQuestions)(nil).List), ctx, workspaceID, issueID)
+}
+
+// ListByExecution mocks base method.
+func (m *MockIssueQuestions) ListByExecution(ctx context.Context, workspaceID uuid.UUID, executionID string) ([]entity.IssueQuestion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByExecution", ctx, workspaceID, executionID)
+	ret0, _ := ret[0].([]entity.IssueQuestion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByExecution indicates an expected call of ListByExecution.
+func (mr *MockIssueQuestionsMockRecorder) ListByExecution(ctx, workspaceID, executionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByExecution", reflect.TypeOf((*MockIssueQuestions)(nil).ListByExecution), ctx, workspaceID, executionID)
+}
+
+// SweepExpired mocks base method.
+func (m *MockIssueQuestions) SweepExpired(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SweepExpired", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SweepExpired indicates an expected call of SweepExpired.
+func (mr *MockIssueQuestionsMockRecorder) SweepExpired(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SweepExpired", reflect.TypeOf((*MockIssueQuestions)(nil).SweepExpired), ctx)
 }

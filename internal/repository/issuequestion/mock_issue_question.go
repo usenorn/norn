@@ -12,6 +12,7 @@ package issuequestion
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
@@ -88,6 +89,36 @@ func (mr *MockIssueQuestionMockRecorder) GetByID(ctx, workspaceID, questionID an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockIssueQuestion)(nil).GetByID), ctx, workspaceID, questionID)
 }
 
+// Lapsed mocks base method.
+func (m *MockIssueQuestion) Lapsed(ctx context.Context, now time.Time, limit int) ([]entity.IssueQuestion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Lapsed", ctx, now, limit)
+	ret0, _ := ret[0].([]entity.IssueQuestion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Lapsed indicates an expected call of Lapsed.
+func (mr *MockIssueQuestionMockRecorder) Lapsed(ctx, now, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lapsed", reflect.TypeOf((*MockIssueQuestion)(nil).Lapsed), ctx, now, limit)
+}
+
+// ListByExecution mocks base method.
+func (m *MockIssueQuestion) ListByExecution(ctx context.Context, workspaceID uuid.UUID, executionID string) ([]entity.IssueQuestion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByExecution", ctx, workspaceID, executionID)
+	ret0, _ := ret[0].([]entity.IssueQuestion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByExecution indicates an expected call of ListByExecution.
+func (mr *MockIssueQuestionMockRecorder) ListByExecution(ctx, workspaceID, executionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByExecution", reflect.TypeOf((*MockIssueQuestion)(nil).ListByExecution), ctx, workspaceID, executionID)
+}
+
 // ListByIssue mocks base method.
 func (m *MockIssueQuestion) ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.IssueQuestion, error) {
 	m.ctrl.T.Helper()
@@ -101,4 +132,19 @@ func (m *MockIssueQuestion) ListByIssue(ctx context.Context, workspaceID, issueI
 func (mr *MockIssueQuestionMockRecorder) ListByIssue(ctx, workspaceID, issueID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByIssue", reflect.TypeOf((*MockIssueQuestion)(nil).ListByIssue), ctx, workspaceID, issueID)
+}
+
+// Settle mocks base method.
+func (m *MockIssueQuestion) Settle(ctx context.Context, workspaceID uuid.UUID, settlement repository.QuestionSettlement) (entity.IssueQuestion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Settle", ctx, workspaceID, settlement)
+	ret0, _ := ret[0].(entity.IssueQuestion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Settle indicates an expected call of Settle.
+func (mr *MockIssueQuestionMockRecorder) Settle(ctx, workspaceID, settlement any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Settle", reflect.TypeOf((*MockIssueQuestion)(nil).Settle), ctx, workspaceID, settlement)
 }

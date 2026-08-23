@@ -2568,6 +2568,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                questionId: components["parameters"]["QuestionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close a question nobody is going to answer
+         * @description A run that stopped for this question cannot go anywhere without an answer, so dismissing one stops that run rather than leaving it waiting for the deadline.
+         */
+        post: operations["dismissWorkspaceIssueQuestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/delegation": {
         parameters: {
             query?: never;
@@ -3936,6 +3960,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/executions/{executionId}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        /** What this run stopped to ask, and what came back */
+        get: operations["listWorkspaceExecutionQuestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/executions/{executionId}/logs": {
         parameters: {
             query?: never;
@@ -4223,11 +4267,32 @@ export interface components {
         IssueQuestionList: {
             questions: components["schemas"]["IssueQuestion"][];
         };
+        /** @enum {string} */
+        IssueQuestionKind: "decision" | "clarification" | "approval";
+        /** @enum {string} */
+        IssueQuestionState: "asked" | "answered" | "dismissed" | "expired";
+        /** @description What the agent was looking at when it stopped to ask. */
+        IssueQuestionContext: {
+            preview?: string;
+            files?: string[];
+            artifacts?: string[];
+        };
         IssueQuestion: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             issueId: string;
+            /** @description The run that asked, when a run did. Absent when a person or a tool did. */
+            executionId?: string;
+            kind: components["schemas"]["IssueQuestionKind"];
+            state: components["schemas"]["IssueQuestionState"];
+            /** @description True when the run stopped for this and is waiting on an answer to go anywhere. */
+            blocking: boolean;
+            /** @description The answers the agent offered. Empty when it asked an open question. */
+            options?: string[];
+            /** @description False when only one of the offered options will do. */
+            allowFreeText: boolean;
+            context?: components["schemas"]["IssueQuestionContext"];
             question: string;
             /** @description What the agent said it would do if nobody answered before the deadline. */
             default: string;
@@ -4244,6 +4309,10 @@ export interface components {
             answeredByName?: string;
             /** Format: date-time */
             answeredAt?: string;
+            /** @description Who decided this question, however they decided it. */
+            settledByName?: string;
+            /** Format: date-time */
+            settledAt?: string;
             /** Format: date-time */
             createdAt: string;
         };
@@ -4657,7 +4726,7 @@ export interface components {
         /** @enum {string} */
         ExecutionState: "queued" | "leased" | "preparing" | "running" | "waiting_for_input" | "queued_for_resume" | "finalizing" | "awaiting_review" | "approved" | "completed" | "failed" | "cancelled" | "interrupted";
         /** @enum {string} */
-        ExecutionEventKind: "transition" | "phase" | "command" | "tool" | "service" | "preview" | "note";
+        ExecutionEventKind: "transition" | "phase" | "command" | "tool" | "service" | "preview" | "question" | "note";
         /** @description How this run was asked for. What is not set is the machine's own default. */
         ExecutionParams: {
             tool?: string;
@@ -5102,7 +5171,7 @@ export interface components {
             version?: number;
         };
         /** @enum {string} */
-        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled";
+        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled" | "question_asked" | "question_answered";
         /** @enum {string} */
         LicenceStatus: "absent" | "active" | "grace" | "expired";
         LicenceFeature: {
@@ -12852,6 +12921,35 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
+    dismissWorkspaceIssueQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                questionId: components["parameters"]["QuestionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The question as it now stands, closed without an answer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueQuestion"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
     listWorkspaceIssueDelegations: {
         parameters: {
             query?: never;
@@ -15594,6 +15692,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExecutionStreamCursor"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceExecutionQuestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every question this run asked, in the order it asked them */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueQuestionList"];
                 };
             };
             401: components["responses"]["Problem"];

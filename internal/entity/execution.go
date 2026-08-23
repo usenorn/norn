@@ -174,6 +174,7 @@ const (
 	ExecutionEventTool       = channelv1.EventTool
 	ExecutionEventService    = channelv1.EventService
 	ExecutionEventPreview    = channelv1.EventPreview
+	ExecutionEventQuestion   = channelv1.EventQuestion
 	ExecutionEventNote       = channelv1.EventNote
 )
 

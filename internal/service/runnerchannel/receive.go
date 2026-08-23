@@ -80,6 +80,8 @@ func (s *channelsService) Receive(
 		return s.executions.Reported(ctx, session.Runner, message)
 	case entity.ChannelExecutionEvent:
 		return s.executions.Observed(ctx, session.Runner, message)
+	case entity.ChannelQuestionAsked:
+		return s.questions.Asked(ctx, session.Runner, message)
 	default:
 		logging.From(ctx).InfoContext(
 			ctx,

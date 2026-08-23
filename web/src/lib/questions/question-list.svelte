@@ -4,7 +4,7 @@
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { onDateAndTime } from "$lib/time";
-	import type { IssueQuestion } from "./questions";
+	import { standingLine, statusLine, type IssueQuestion } from "./questions";
 
 	let {
 		questions,
@@ -12,12 +12,14 @@
 		canAnswer,
 		working,
 		onanswer,
+		ondismiss,
 	}: {
 		questions: IssueQuestion[];
 		timezone: string;
 		canAnswer: boolean;
 		working: boolean;
 		onanswer: (question: IssueQuestion, answer: string) => void;
+		ondismiss: (question: IssueQuestion) => void;
 	} = $props();
 
 	let answering = $state("");
@@ -25,11 +27,11 @@
 
 	function open(question: IssueQuestion) {
 		answering = question.id;
-		draft = question.standing;
+		draft = question.allowFreeText ? question.standing : "";
 	}
 
-	function send(question: IssueQuestion) {
-		onanswer(question, draft);
+	function send(question: IssueQuestion, answer: string) {
+		onanswer(question, answer);
 		answering = "";
 		draft = "";
 	}
@@ -37,6 +39,7 @@
 
 <ul class="flex min-w-0 flex-col divide-y divide-line-subtle">
 	{#each questions as question (question.id)}
+		{@const open_ = question.state === "asked" && !question.expired}
 		<li class="flex min-w-0 flex-col gap-1.5 py-2">
 			<div class="flex min-w-0 items-start gap-2">
 				<span class="mt-0.5 text-muted-foreground">
@@ -48,26 +51,25 @@
 						<span class="min-w-0 flex-1 text-sm leading-normal text-ink-900 text-pretty">
 							{question.question}
 						</span>
-						{#if question.answered}
-							<span class="text-xs text-muted-foreground">Answered</span>
-						{:else if question.expired}
-							<span class="text-xs text-amber-700 dark:text-amber-400">Working on the default</span>
-						{:else}
-							<span class="text-xs text-muted-foreground">Waiting on you</span>
-						{/if}
+						<span
+							class="text-xs {open_ && question.blocking
+								? 'text-amber-700 dark:text-amber-400'
+								: 'text-muted-foreground'}"
+						>
+							{statusLine(question)}
+						</span>
 					</div>
 
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						{#if question.answered}
-							{question.answeredByName ?? "Someone"} answered: {question.answer}
-						{:else}
-							Working on the default meanwhile: {question.default}
-						{/if}
+						{standingLine(question)}
 					</p>
 
 					<div class="flex flex-wrap items-center gap-1.5">
 						{#if question.askedByName}
 							<Tag name="{question.askedByName} asked" />
+						{/if}
+						{#if question.executionId}
+							<Tag name="while running" />
 						{/if}
 						<span class="font-mono text-xs text-muted-foreground">
 							{question.answered && question.answeredAt
@@ -76,7 +78,22 @@
 						</span>
 					</div>
 
-					{#if canAnswer && !question.answered}
+					{#if canAnswer && open_}
+						{#if question.options && question.options.length > 0}
+							<div class="flex flex-wrap gap-1.5">
+								{#each question.options as option (option)}
+									<Button
+										variant="secondary"
+										size="sm"
+										disabled={working}
+										onclick={() => send(question, option)}
+									>
+										{option}
+									</Button>
+								{/each}
+							</div>
+						{/if}
+
 						{#if answering === question.id}
 							<div class="flex min-w-0 flex-col gap-1.5">
 								<Textarea
@@ -89,7 +106,7 @@
 									<Button
 										size="sm"
 										disabled={working || draft.trim() === ""}
-										onclick={() => send(question)}
+										onclick={() => send(question, draft)}
 									>
 										Answer
 									</Button>
@@ -99,9 +116,28 @@
 								</div>
 							</div>
 						{:else}
-							<Button variant="secondary" size="sm" class="w-max" onclick={() => open(question)}>
-								Answer this
-							</Button>
+							<div class="flex flex-wrap gap-1.5">
+								{#if question.allowFreeText}
+									<Button
+										variant={question.options?.length ? "ghost" : "secondary"}
+										size="sm"
+										class="w-max"
+										disabled={working}
+										onclick={() => open(question)}
+									>
+										{question.options?.length ? "Say something else" : "Answer this"}
+									</Button>
+								{/if}
+								<Button
+									variant="ghost"
+									size="sm"
+									class="w-max"
+									disabled={working}
+									onclick={() => ondismiss(question)}
+								>
+									Dismiss
+								</Button>
+							</div>
 						{/if}
 					{/if}
 				</div>

@@ -620,6 +620,36 @@
 		}
 	}
 
+	async function dismissQuestion(question: IssueQuestion): Promise<void> {
+		if (!issue) return;
+
+		working = true;
+		questionFailed = false;
+
+		try {
+			const { error } = await api.POST(
+				"/workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/dismiss",
+				{
+					params: {
+						path: {
+							workspaceId: data.workspace.id,
+							issueId: issue.id,
+							questionId: question.id,
+						},
+					},
+				}
+			);
+
+			questionFailed = Boolean(error);
+
+			await invalidate(keys.page(page.route.id));
+		} catch {
+			questionFailed = true;
+		} finally {
+			working = false;
+		}
+	}
+
 	async function setPriority(priority: IssuePriority) {
 		if (!issue || issue.priority === priority) return;
 
@@ -1836,6 +1866,7 @@
 								canAnswer={canEdit}
 								{working}
 								onanswer={answerQuestion}
+								ondismiss={dismissQuestion}
 							/>
 						</section>
 					{/if}

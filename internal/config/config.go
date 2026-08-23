@@ -41,6 +41,7 @@ type Config struct {
 	Cycles        Cycles        `mapstructure:"cycles"`
 	Runner        Runner        `mapstructure:"runner"`
 	Executions    Executions    `mapstructure:"executions"`
+	Questions     Questions     `mapstructure:"questions"`
 }
 
 type Licence struct {
@@ -76,6 +77,10 @@ type Executions struct {
 	UploadRetention    time.Duration `mapstructure:"upload_retention"`
 	RetentionSchedule  string        `mapstructure:"retention_schedule"`
 	RetentionBatch     int           `mapstructure:"retention_batch"`
+}
+
+type Questions struct {
+	ExpirySweepSchedule string `mapstructure:"expiry_sweep_schedule"`
 }
 
 type Runner struct {

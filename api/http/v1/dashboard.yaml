@@ -3924,6 +3924,30 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/dismiss:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+      - $ref: '#/components/parameters/QuestionId'
+    post:
+      tags: [questions]
+      operationId: dismissWorkspaceIssueQuestion
+      summary: Close a question nobody is going to answer
+      description: >-
+        A run that stopped for this question cannot go anywhere without an answer, so dismissing
+        one stops that run rather than leaving it waiting for the deadline.
+      responses:
+        '200':
+          description: The question as it now stands, closed without an answer
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueQuestion' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/delegation:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -5965,6 +5989,25 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/executions/{executionId}/questions:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [questions]
+      operationId: listWorkspaceExecutionQuestions
+      summary: What this run stopped to ask, and what came back
+      responses:
+        '200':
+          description: Every question this run asked, in the order it asked them
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueQuestionList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/executions/{executionId}/logs:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -6912,13 +6955,51 @@ components:
           type: array
           items: { $ref: '#/components/schemas/IssueQuestion' }
 
+    IssueQuestionKind:
+      type: string
+      enum: [decision, clarification, approval]
+
+    IssueQuestionState:
+      type: string
+      enum: [asked, answered, dismissed, expired]
+
+    IssueQuestionContext:
+      type: object
+      description: What the agent was looking at when it stopped to ask.
+      properties:
+        preview: { type: string }
+        files:
+          type: array
+          items: { type: string }
+        artifacts:
+          type: array
+          items: { type: string, format: uuid }
+
     IssueQuestion:
       type: object
-      required: [id, issueId, question, default, deadline, answered, expired, standing, actorKind,
-                 createdAt]
+      required: [id, issueId, kind, state, blocking, allowFreeText, question, default, deadline,
+                 answered, expired, standing, actorKind, createdAt]
       properties:
         id: { type: string, format: uuid }
         issueId: { type: string, format: uuid }
+        executionId:
+          type: string
+          maxLength: 64
+          description: The run that asked, when a run did. Absent when a person or a tool did.
+        kind: { $ref: '#/components/schemas/IssueQuestionKind' }
+        state: { $ref: '#/components/schemas/IssueQuestionState' }
+        blocking:
+          type: boolean
+          description: >-
+            True when the run stopped for this and is waiting on an answer to go anywhere.
+        options:
+          type: array
+          description: The answers the agent offered. Empty when it asked an open question.
+          items: { type: string }
+        allowFreeText:
+          type: boolean
+          description: False when only one of the offered options will do.
+        context: { $ref: '#/components/schemas/IssueQuestionContext' }
         question: { type: string }
         default:
           type: string
@@ -6936,6 +7017,10 @@ components:
         actorKind: { $ref: '#/components/schemas/NotificationActorKind' }
         answeredByName: { type: string }
         answeredAt: { type: string, format: date-time }
+        settledByName:
+          type: string
+          description: Who decided this question, however they decided it.
+        settledAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
 
     AskIssueQuestionRequest:
@@ -7545,7 +7630,7 @@ components:
 
     ExecutionEventKind:
       type: string
-      enum: [transition, phase, command, tool, service, preview, note]
+      enum: [transition, phase, command, tool, service, preview, question, note]
 
     ExecutionParams:
       type: object
@@ -8201,6 +8286,8 @@ components:
         - code_unlinked
         - delegated
         - recalled
+        - question_asked
+        - question_answered
 
     LicenceStatus:
       type: string

@@ -29,6 +29,7 @@ type Worker struct {
 	imports       config.Imports
 	sourceControl config.SourceControl
 	executions    config.Executions
+	questions     config.Questions
 	server        *taskqueue.Server
 	scheduler     *taskqueue.Scheduler
 	inspector     *taskqueue.Inspector
@@ -66,6 +67,7 @@ func NewServeMux(
 	scmResume *job.SCMResumeHandler,
 	executionLeaseSweep *job.ExecutionLeaseSweepHandler,
 	executionUploadSweep *job.ExecutionUploadSweepHandler,
+	questionExpirySweep *job.QuestionExpirySweepHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -97,6 +99,7 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeSCMResume, scmResume)
 	mux.Handle(entity.TaskTypeExecutionLeaseSweep, executionLeaseSweep)
 	mux.Handle(entity.TaskTypeExecutionUploadSweep, executionUploadSweep)
+	mux.Handle(entity.TaskTypeQuestionExpirySweep, questionExpirySweep)
 
 	return mux
 }
@@ -113,6 +116,7 @@ func NewWorker(
 	imports config.Imports,
 	sourceControl config.SourceControl,
 	executions config.Executions,
+	questions config.Questions,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	inspector *taskqueue.Inspector,
@@ -131,6 +135,7 @@ func NewWorker(
 		imports:       imports,
 		sourceControl: sourceControl,
 		executions:    executions,
+		questions:     questions,
 		server:        server,
 		scheduler:     scheduler,
 		inspector:     inspector,
@@ -204,6 +209,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueDefault),
 	); err != nil {
 		return fmt.Errorf("register execution upload sweep: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.questions.ExpirySweepSchedule,
+		asynq.NewTask(entity.TaskTypeQuestionExpirySweep, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register question expiry sweep: %w", err)
 	}
 
 	if _, err := w.scheduler.Register(

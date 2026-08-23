@@ -8,6 +8,13 @@ import (
 const (
 	ResumeApproved = "approved"
 	ResumeFeedback = "review_feedback"
+	ResumeAnswer   = "answer"
+)
+
+const (
+	QuestionDecision      = "decision"
+	QuestionClarification = "clarification"
+	QuestionApproval      = "approval"
 )
 
 const (
@@ -52,6 +59,35 @@ type Cancellation struct {
 type Instruction struct {
 	Reason      string `json:"reason"`
 	Instruction string `json:"instruction,omitempty"`
+	QuestionID  string `json:"question_id,omitempty"`
+	QuestionRef string `json:"question_ref,omitempty"`
+}
+
+type QuestionContext struct {
+	Preview   string   `json:"preview,omitempty"`
+	Files     []string `json:"files,omitempty"`
+	Artifacts []string `json:"artifact_refs,omitempty"`
+}
+
+type Question struct {
+	Ref           string          `json:"ref"`
+	Kind          string          `json:"kind"`
+	Blocking      bool            `json:"blocking"`
+	Message       string          `json:"message"`
+	Options       []string        `json:"options,omitempty"`
+	AllowFreeText bool            `json:"allow_free_text"`
+	Default       string          `json:"default,omitempty"`
+	Wait          int             `json:"wait_seconds,omitempty"`
+	Context       QuestionContext `json:"context,omitempty"`
+	Asked         time.Time       `json:"ts"`
+}
+
+type Answer struct {
+	QuestionID string    `json:"question_id"`
+	Ref        string    `json:"ref"`
+	Answer     string    `json:"answer"`
+	AnsweredBy string    `json:"answered_by"`
+	AnsweredAt time.Time `json:"ts"`
 }
 
 type Leased struct {
