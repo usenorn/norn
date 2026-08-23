@@ -77,9 +77,12 @@ func (s *delegationsService) Delegate(
 		})
 	}
 
-	if err := entity.NewValidationError(
-		entity.ValidateIssueBrief("brief", input.Brief),
-	); err != nil {
+	fields := append(
+		[]entity.FieldError{entity.ValidateIssueBrief("brief", input.Brief)},
+		entity.ValidateDelegationParams("params", input.Params)...,
+	)
+
+	if err := entity.NewValidationError(fields...); err != nil {
 		return entity.IssueDelegation{}, err
 	}
 
@@ -112,6 +115,7 @@ func (s *delegationsService) Delegate(
 			IssueID:              issue.ID,
 			AgentID:              agent.ID,
 			Brief:                strings.TrimSpace(input.Brief),
+			Params:               input.Params,
 			DelegatedByAccountID: decision.Actor.AccountID,
 			DelegatedAt:          time.Now().UTC(),
 		})
@@ -142,6 +146,44 @@ func (s *delegationsService) Delegate(
 	}
 
 	return delegated, nil
+}
+
+func (s *delegationsService) Targets(
+	ctx context.Context,
+	workspaceID, issueID, agentAccountID uuid.UUID,
+) (service.DelegationTargets, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
+	if err != nil {
+		return service.DelegationTargets{}, err
+	}
+
+	if agentAccountID == uuid.Nil {
+		return service.DelegationTargets{}, entity.NewValidationError(entity.FieldError{
+			Field: "agentAccountId",
+			Code:  entity.ValidationCodeRequired,
+		})
+	}
+
+	issue, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
+	if err != nil {
+		return service.DelegationTargets{}, err
+	}
+
+	agent, err := s.agents.GetByAccountID(ctx, agentAccountID)
+	if err != nil {
+		return service.DelegationTargets{}, err
+	}
+
+	if agent.WorkspaceID != workspaceID {
+		return service.DelegationTargets{}, entity.ErrAgentNotFound
+	}
+
+	placement, err := s.executions.Placement(ctx, issue, agent.ID)
+	if err != nil {
+		return service.DelegationTargets{}, err
+	}
+
+	return service.DelegationTargets{Agent: agent, Placement: placement}, nil
 }
 
 func (s *delegationsService) Recall(

@@ -86,16 +86,57 @@ func (s *executionsService) Declined(
 		return err
 	}
 
-	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+	if execution.State != entity.ExecutionQueued {
+		return nil
+	}
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		return s.remember(ctx, execution, entity.ExecutionEvent{
 			ExecutionID: execution.ID,
 			Kind:        entity.ExecutionEventNote,
 			Actor:       runnerActor(runner),
-			Reason:      declined.Reason,
+			Reason:      turnedDown(declined),
 			SourceID:    message.ID,
 			OccurredAt:  occurredAt(message),
 		})
-	})
+	}); err != nil {
+		return err
+	}
+
+	elsewhere, err := s.route(
+		ctx, execution.AgentID, execution.TeamID, []uuid.UUID{runner.ID},
+	)
+	if err != nil {
+		return err
+	}
+
+	if !elsewhere.found() {
+		return s.park(ctx, execution, waitingAfter(declined, elsewhere.waiting))
+	}
+
+	return s.hand(ctx, execution, elsewhere)
+}
+
+func turnedDown(declined channelv1.Decline) string {
+	if declined.Detail == "" {
+		return declined.Code
+	}
+
+	return declined.Code + ": " + declined.Detail
+}
+
+func waitingAfter(
+	declined channelv1.Decline,
+	elsewhere entity.ExecutionQueuedReason,
+) entity.ExecutionQueuedReason {
+	switch declined.Code {
+	case channelv1.DeclinePaused:
+		return entity.QueuedRunnersPaused
+	case channelv1.DeclineAtCapacity, channelv1.DeclineDiskPressure:
+		return entity.QueuedRunnersBusy
+	default:
+		return elsewhere
+	}
 }
 
 func (s *executionsService) Reported(

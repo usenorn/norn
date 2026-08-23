@@ -12,6 +12,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	changesetrepo "github.com/usenorn/norn/internal/repository/changeset"
+	codebaserepo "github.com/usenorn/norn/internal/repository/codebase"
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	previewrepo "github.com/usenorn/norn/internal/repository/preview"
@@ -32,6 +33,7 @@ type harness struct {
 	changesets *changesetrepo.MockChangeSet
 	previews   *previewrepo.MockPreview
 	runners    *runnerrepo.MockRunner
+	codebases  *codebaserepo.MockCodebase
 	issues     *issuerepo.MockIssue
 	states     *statesrepo.MockWorkflowState
 	channels   *channelrepo.MockRunnerChannel
@@ -46,7 +48,9 @@ type harness struct {
 	runner      entity.Runner
 	caller      uuid.UUID
 	callerAgent *uuid.UUID
+	codebase    uuid.UUID
 	spooled     []entity.ChannelMessage
+	bound       []entity.Execution
 	recorded    []entity.ExecutionEvent
 }
 
@@ -64,6 +68,8 @@ func newHarness(t *testing.T) *harness {
 		changesets:  changesetrepo.NewMockChangeSet(ctrl),
 		previews:    previewrepo.NewMockPreview(ctrl),
 		runners:     runnerrepo.NewMockRunner(ctrl),
+		codebases:   codebaserepo.NewMockCodebase(ctrl),
+		codebase:    uuid.New(),
 		issues:      issuerepo.NewMockIssue(ctrl),
 		states:      statesrepo.NewMockWorkflowState(ctrl),
 		channels:    channelrepo.NewMockRunnerChannel(ctrl),
@@ -164,8 +170,8 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = executionsvc.New(
-		h.executions, h.changesets, h.previews, h.runners, h.issues, h.states, h.channels,
-		h.writer, h.events, h.authorizer, h.audit, transactor,
+		h.executions, h.changesets, h.previews, h.runners, h.codebases, h.issues, h.states,
+		h.channels, h.writer, h.events, h.authorizer, h.audit, transactor,
 	)
 
 	return h
@@ -185,6 +191,86 @@ func (h *harness) execution(state entity.ExecutionState) entity.Execution {
 		State:          state,
 		QueuedAt:       time.Now().UTC(),
 	}
+}
+
+func (h *harness) live(machine entity.Runner, capacity, used int) {
+	h.channels.EXPECT().
+		Presence(gomock.Any(), machine.ID).
+		Return(entity.RunnerPresence{
+			RunnerID: machine.ID,
+			Epoch:    "live",
+			Load:     entity.RunnerLoad{Capacity: capacity, Used: used},
+		}, nil).
+		AnyTimes()
+
+	h.executions.EXPECT().
+		CountHeldSlots(gomock.Any(), machine.ID).
+		Return(used, nil).
+		AnyTimes()
+
+	h.codebases.EXPECT().
+		ListByRunnerID(gomock.Any(), machine.ID).
+		Return([]entity.Codebase{{
+			ID:       h.codebase,
+			RunnerID: machine.ID,
+			State:    entity.CodebaseStateActive,
+		}}, nil).
+		AnyTimes()
+}
+
+func (h *harness) offline(machine entity.Runner) {
+	h.channels.EXPECT().
+		Presence(gomock.Any(), machine.ID).
+		Return(entity.RunnerPresence{RunnerID: machine.ID}, nil).
+		AnyTimes()
+
+	h.executions.EXPECT().
+		CountHeldSlots(gomock.Any(), machine.ID).
+		Return(0, nil).
+		AnyTimes()
+}
+
+func (h *harness) binding() {
+	h.executions.EXPECT().
+		Bind(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, id string, binding repository.ExecutionBinding,
+		) (entity.Execution, error) {
+			bound := h.execution(entity.ExecutionQueued)
+			bound.ID = id
+			bound.RunnerID = binding.RunnerID
+			bound.CodebaseID = binding.CodebaseID
+			bound.QueuedReason = binding.QueuedReason
+			h.bound = append(h.bound, bound)
+
+			return bound, nil
+		}).
+		AnyTimes()
+}
+
+func (h *harness) opening(attempt int) *repository.NewExecution {
+	created := &repository.NewExecution{}
+
+	h.executions.EXPECT().NextAttempt(gomock.Any(), h.issue.ID).Return(attempt, nil)
+
+	h.executions.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, request repository.NewExecution,
+		) (entity.Execution, error) {
+			*created = request
+			opened := h.execution(entity.ExecutionQueued)
+			opened.ID = request.ID
+			opened.Attempt = request.Attempt
+			opened.Params = request.Params
+			opened.RunnerID = request.RunnerID
+			opened.CodebaseID = request.CodebaseID
+			opened.QueuedReason = request.QueuedReason
+
+			return opened, nil
+		})
+
+	return created
 }
 
 func (h *harness) holding(execution entity.Execution) {

@@ -87,3 +87,18 @@ func (mr *MockDelegationsMockRecorder) Recall(ctx, workspaceID, issueID any) *go
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recall", reflect.TypeOf((*MockDelegations)(nil).Recall), ctx, workspaceID, issueID)
 }
+
+// Targets mocks base method.
+func (m *MockDelegations) Targets(ctx context.Context, workspaceID, issueID, agentAccountID uuid.UUID) (service.DelegationTargets, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Targets", ctx, workspaceID, issueID, agentAccountID)
+	ret0, _ := ret[0].(service.DelegationTargets)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Targets indicates an expected call of Targets.
+func (mr *MockDelegationsMockRecorder) Targets(ctx, workspaceID, issueID, agentAccountID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Targets", reflect.TypeOf((*MockDelegations)(nil).Targets), ctx, workspaceID, issueID, agentAccountID)
+}

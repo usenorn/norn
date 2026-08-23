@@ -16,7 +16,7 @@ func (s *channelsService) greet(
 	ctx context.Context,
 	session service.ChannelSession,
 	message entity.ChannelMessage,
-) {
+) entity.RunnerLoad {
 	var hello channelv1.Hello
 
 	if err := json.Unmarshal(message.Payload, &hello); err != nil {
@@ -27,22 +27,43 @@ func (s *channelsService) greet(
 			slog.String("error", err.Error()),
 		)
 
-		return
+		return entity.RunnerLoad{}
 	}
 
-	if hello.Version == "" || hello.Version == session.Runner.Host.Version {
-		return
+	if hello.Version != "" && hello.Version != session.Runner.Host.Version {
+		if err := s.runners.RecordVersion(ctx, session.Runner.ID, hello.Version); err != nil {
+			logging.From(ctx).WarnContext(
+				ctx,
+				"a runner named a new version this server could not record",
+				slog.String("runner_id", session.Runner.ID.String()),
+				slog.String("version", hello.Version),
+				slog.String("error", err.Error()),
+			)
+		}
 	}
 
-	if err := s.runners.RecordVersion(ctx, session.Runner.ID, hello.Version); err != nil {
+	return entity.RunnerLoad{Capacity: hello.Capacity, Used: len(hello.Executions)}
+}
+
+func (s *channelsService) pulse(
+	ctx context.Context,
+	session service.ChannelSession,
+	message entity.ChannelMessage,
+) entity.RunnerLoad {
+	var reported channelv1.Pulse
+
+	if err := json.Unmarshal(message.Payload, &reported); err != nil {
 		logging.From(ctx).WarnContext(
 			ctx,
-			"a runner named a new version this server could not record",
+			"a runner sent a heartbeat this server could not read",
 			slog.String("runner_id", session.Runner.ID.String()),
-			slog.String("version", hello.Version),
 			slog.String("error", err.Error()),
 		)
+
+		return entity.RunnerLoad{}
 	}
+
+	return entity.RunnerLoadOf(reported)
 }
 
 func (s *channelsService) Receive(
@@ -67,11 +88,9 @@ func (s *channelsService) Receive(
 
 	switch message.Type {
 	case entity.ChannelRunnerHello:
-		s.greet(ctx, session, message)
-
-		return s.Heartbeat(ctx, session)
+		return s.Heartbeat(ctx, session, s.greet(ctx, session, message))
 	case entity.ChannelRunnerHeartbeat:
-		return s.Heartbeat(ctx, session)
+		return s.Heartbeat(ctx, session, s.pulse(ctx, session, message))
 	case entity.ChannelExecutionAccepted:
 		return s.executions.Accepted(ctx, session.Runner, message)
 	case entity.ChannelExecutionDeclined:

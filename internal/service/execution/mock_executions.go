@@ -219,6 +219,21 @@ func (mr *MockExecutionsMockRecorder) OnDelegated(ctx, issue, delegation any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnDelegated", reflect.TypeOf((*MockExecutions)(nil).OnDelegated), ctx, issue, delegation)
 }
 
+// Placement mocks base method.
+func (m *MockExecutions) Placement(ctx context.Context, issue entity.Issue, agentID uuid.UUID) (service.ExecutionPlacement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Placement", ctx, issue, agentID)
+	ret0, _ := ret[0].(service.ExecutionPlacement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Placement indicates an expected call of Placement.
+func (mr *MockExecutionsMockRecorder) Placement(ctx, issue, agentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Placement", reflect.TypeOf((*MockExecutions)(nil).Placement), ctx, issue, agentID)
+}
+
 // Questioned mocks base method.
 func (m *MockExecutions) Questioned(ctx context.Context, question entity.IssueQuestion) error {
 	m.ctrl.T.Helper()
@@ -231,6 +246,20 @@ func (m *MockExecutions) Questioned(ctx context.Context, question entity.IssueQu
 func (mr *MockExecutionsMockRecorder) Questioned(ctx, question any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Questioned", reflect.TypeOf((*MockExecutions)(nil).Questioned), ctx, question)
+}
+
+// Ready mocks base method.
+func (m *MockExecutions) Ready(ctx context.Context, runner entity.Runner) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ready", ctx, runner)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Ready indicates an expected call of Ready.
+func (mr *MockExecutionsMockRecorder) Ready(ctx, runner any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockExecutions)(nil).Ready), ctx, runner)
 }
 
 // Renew mocks base method.

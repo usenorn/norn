@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
@@ -81,14 +82,14 @@ func TestAHeartbeatHoldsTheChannelAndNoticesRevocation(t *testing.T) {
 	session := h.session()
 
 	h.channels.EXPECT().
-		Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any()).
+		Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).
 		Return(nil).
 		Times(2)
 
 	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
 	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
 
-	if err := h.service.Heartbeat(context.Background(), session); err != nil {
+	if err := h.service.Heartbeat(context.Background(), session, entity.RunnerLoad{}); err != nil {
 		t.Fatalf("heartbeat: %v", err)
 	}
 
@@ -97,7 +98,7 @@ func TestAHeartbeatHoldsTheChannelAndNoticesRevocation(t *testing.T) {
 
 	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(revoked, nil)
 
-	if err := h.service.Heartbeat(context.Background(), session); !errors.Is(err, entity.ErrRunnerRevoked) {
+	if err := h.service.Heartbeat(context.Background(), session, entity.RunnerLoad{}); !errors.Is(err, entity.ErrRunnerRevoked) {
 		t.Fatalf(
 			"a runner revoked while its socket was open kept heartbeating and got %v; revoking "+
 				"must drop the connection",
@@ -111,10 +112,10 @@ func TestADisplacedConnectionStopsHoldingTheChannel(t *testing.T) {
 	session := h.session()
 
 	h.channels.EXPECT().
-		Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any()).
+		Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).
 		Return(entity.ErrChannelDisplaced)
 
-	if err := h.service.Heartbeat(context.Background(), session); !errors.Is(err, entity.ErrChannelDisplaced) {
+	if err := h.service.Heartbeat(context.Background(), session, entity.RunnerLoad{}); !errors.Is(err, entity.ErrChannelDisplaced) {
 		t.Fatalf("a displaced connection kept its lease and got %v", err)
 	}
 }
@@ -126,7 +127,7 @@ func TestARedeliveredMessageIsNotActedOnTwice(t *testing.T) {
 	message := h.freshMessage("01ABC", entity.ChannelRunnerHeartbeat)
 
 	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
-	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any()).Return(nil)
+	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).Return(nil)
 	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
 	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
 
@@ -149,7 +150,7 @@ func TestSayingHelloTellsTheServerWhichBuildIsNowOnTheMachine(t *testing.T) {
 	message.Payload = []byte(`{"version":"1.4.0","protocol":1,"capacity":2}`)
 
 	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
-	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any()).Return(nil)
+	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).Return(nil)
 	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
 	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
 	h.runners.EXPECT().RecordVersion(gomock.Any(), h.runner.ID, "1.4.0").Return(nil)
@@ -168,7 +169,7 @@ func TestAHelloThatNamesTheVersionAlreadyOnRecordChangesNothing(t *testing.T) {
 	message.Payload = []byte(`{"version":"1.4.0","protocol":1}`)
 
 	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
-	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any()).Return(nil)
+	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).Return(nil)
 	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
 	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
 
@@ -318,5 +319,73 @@ func TestARunnerRevokedMidConnectionFailsVerification(t *testing.T) {
 
 	if err := h.service.Verify(context.Background(), session); !errors.Is(err, entity.ErrRunnerRevoked) {
 		t.Fatalf("a revoked runner passed verification and got %v", err)
+	}
+}
+
+func TestAHeartbeatCarriesWhatTheMachineHasRoomForIntoThePresenceRecord(t *testing.T) {
+	h := newHarness(t)
+	session := h.session()
+
+	message := h.freshMessage("01BEAT", entity.ChannelRunnerHeartbeat)
+	message.Payload = []byte(
+		`{"capacity":4,"used":1,"paused":false,"disk_pressure":true,"cpu_pressure":false}`,
+	)
+
+	var recorded entity.RunnerLoad
+
+	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().
+		Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ uuid.UUID, _ string, load entity.RunnerLoad, _ time.Time,
+		) error {
+			recorded = load
+
+			return nil
+		})
+	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
+	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
+
+	if err := h.service.Receive(context.Background(), session, message); err != nil {
+		t.Fatalf("heartbeat: %v", err)
+	}
+
+	want := entity.RunnerLoad{Capacity: 4, Used: 1, DiskPressure: true}
+
+	if recorded != want {
+		t.Fatalf(
+			"the heartbeat was recorded as %+v, want %+v. Every 15 seconds the machine says how "+
+				"much room it has; dropping it leaves routing guessing and work goes to a "+
+				"machine that is already full",
+			recorded, want,
+		)
+	}
+}
+
+func TestAMachineComingBackIsAskedWhetherItCanTakeWhatIsWaiting(t *testing.T) {
+	h := newHarness(t)
+	session := h.session()
+
+	message := h.freshMessage("01HELLO", entity.ChannelRunnerHello)
+	message.Payload = []byte(`{"version":"1.4.0","protocol":1,"capacity":2}`)
+
+	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().
+		Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).
+		Return(nil)
+	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
+	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
+	h.runners.EXPECT().RecordVersion(gomock.Any(), h.runner.ID, "1.4.0").Return(nil)
+
+	if err := h.service.Receive(context.Background(), session, message); err != nil {
+		t.Fatalf("saying hello: %v", err)
+	}
+
+	if len(h.readied) != 1 || h.readied[0].ID != h.runner.ID {
+		t.Fatal(
+			"a machine reconnected and nothing looked at the work queued for its agent. " +
+				"Delegations made while it was switched off would wait for somebody to " +
+				"delegate again",
+		)
 	}
 }

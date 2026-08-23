@@ -59,6 +59,36 @@ func (mr *MockExecutionMockRecorder) AppendEvent(ctx, event any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppendEvent", reflect.TypeOf((*MockExecution)(nil).AppendEvent), ctx, event)
 }
 
+// Bind mocks base method.
+func (m *MockExecution) Bind(ctx context.Context, executionID string, binding repository.ExecutionBinding) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Bind", ctx, executionID, binding)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Bind indicates an expected call of Bind.
+func (mr *MockExecutionMockRecorder) Bind(ctx, executionID, binding any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bind", reflect.TypeOf((*MockExecution)(nil).Bind), ctx, executionID, binding)
+}
+
+// CountHeldSlots mocks base method.
+func (m *MockExecution) CountHeldSlots(ctx context.Context, runnerID uuid.UUID) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountHeldSlots", ctx, runnerID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountHeldSlots indicates an expected call of CountHeldSlots.
+func (mr *MockExecutionMockRecorder) CountHeldSlots(ctx, runnerID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountHeldSlots", reflect.TypeOf((*MockExecution)(nil).CountHeldSlots), ctx, runnerID)
+}
+
 // Create mocks base method.
 func (m *MockExecution) Create(ctx context.Context, execution repository.NewExecution) (entity.Execution, error) {
 	m.ctrl.T.Helper()
@@ -147,6 +177,36 @@ func (m *MockExecution) ListLiveByRunner(ctx context.Context, runnerID uuid.UUID
 func (mr *MockExecutionMockRecorder) ListLiveByRunner(ctx, runnerID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLiveByRunner", reflect.TypeOf((*MockExecution)(nil).ListLiveByRunner), ctx, runnerID)
+}
+
+// ListQueuedByAgent mocks base method.
+func (m *MockExecution) ListQueuedByAgent(ctx context.Context, agentID uuid.UUID, limit int) ([]entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListQueuedByAgent", ctx, agentID, limit)
+	ret0, _ := ret[0].([]entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListQueuedByAgent indicates an expected call of ListQueuedByAgent.
+func (mr *MockExecutionMockRecorder) ListQueuedByAgent(ctx, agentID, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListQueuedByAgent", reflect.TypeOf((*MockExecution)(nil).ListQueuedByAgent), ctx, agentID, limit)
+}
+
+// ListSharingRepositories mocks base method.
+func (m *MockExecution) ListSharingRepositories(ctx context.Context, workspaceID uuid.UUID, executionID string, codebaseID uuid.UUID, limit int) ([]entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSharingRepositories", ctx, workspaceID, executionID, codebaseID, limit)
+	ret0, _ := ret[0].([]entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSharingRepositories indicates an expected call of ListSharingRepositories.
+func (mr *MockExecutionMockRecorder) ListSharingRepositories(ctx, workspaceID, executionID, codebaseID, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSharingRepositories", reflect.TypeOf((*MockExecution)(nil).ListSharingRepositories), ctx, workspaceID, executionID, codebaseID, limit)
 }
 
 // Move mocks base method.

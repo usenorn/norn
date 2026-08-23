@@ -15,6 +15,7 @@ import (
 
 type runnersService struct {
 	runners    repository.Runner
+	channels   repository.RunnerChannel
 	sessions   repository.RunnerSession
 	agents     repository.Agent
 	authorizer service.Authorizer
@@ -26,6 +27,7 @@ type runnersService struct {
 
 func New(
 	runners repository.Runner,
+	channels repository.RunnerChannel,
 	sessions repository.RunnerSession,
 	agents repository.Agent,
 	authorizer service.Authorizer,
@@ -36,6 +38,7 @@ func New(
 ) service.Runners {
 	return &runnersService{
 		runners:    runners,
+		channels:   channels,
 		sessions:   sessions,
 		agents:     agents,
 		authorizer: authorizer,
@@ -64,6 +67,77 @@ func (s *runnersService) List(ctx context.Context, workspaceID uuid.UUID) ([]ent
 	}
 
 	return s.runners.ListByWorkspaceID(ctx, workspaceID)
+}
+
+func (s *runnersService) Pause(
+	ctx context.Context,
+	workspaceID, runnerID uuid.UUID,
+) (entity.Runner, error) {
+	paused := time.Now().UTC()
+
+	return s.standby(ctx, workspaceID, runnerID, &paused)
+}
+
+func (s *runnersService) Resume(
+	ctx context.Context,
+	workspaceID, runnerID uuid.UUID,
+) (entity.Runner, error) {
+	return s.standby(ctx, workspaceID, runnerID, nil)
+}
+
+func (s *runnersService) standby(
+	ctx context.Context,
+	workspaceID, runnerID uuid.UUID,
+	pausedAt *time.Time,
+) (entity.Runner, error) {
+	if _, err := s.decide(ctx, workspaceID, entity.ActionManage); err != nil {
+		return entity.Runner{}, err
+	}
+
+	held, err := s.runners.GetByID(ctx, runnerID)
+	if err != nil {
+		return entity.Runner{}, err
+	}
+
+	if held.WorkspaceID != workspaceID {
+		return entity.Runner{}, entity.ErrRunnerNotFound
+	}
+
+	if held.Paused() == (pausedAt != nil) {
+		return held, nil
+	}
+
+	settled, err := s.runners.SetPaused(ctx, workspaceID, runnerID, pausedAt)
+	if err != nil {
+		return entity.Runner{}, err
+	}
+
+	told := entity.ChannelRunnerResume
+	action := entity.AuditRunnerResumed
+
+	if pausedAt != nil {
+		told = entity.ChannelRunnerPause
+		action = entity.AuditRunnerPaused
+	}
+
+	message, err := entity.NewServerMessage(told, "", nil, time.Now().UTC())
+	if err != nil {
+		return entity.Runner{}, err
+	}
+
+	if _, err := s.channels.Append(ctx, runnerID, message); err != nil {
+		return entity.Runner{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       action,
+		ResourceKind: string(entity.ResourceRunner),
+		ResourceID:   runnerID,
+		ResourceName: settled.Name,
+	})
+
+	return settled, nil
 }
 
 func (s *runnersService) Revoke(ctx context.Context, workspaceID, runnerID uuid.UUID) error {

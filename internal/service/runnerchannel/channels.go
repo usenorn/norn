@@ -102,8 +102,14 @@ func (s *channelsService) Acknowledge(
 	return s.channels.Acknowledge(ctx, session.Runner.ID, cursor)
 }
 
-func (s *channelsService) Heartbeat(ctx context.Context, session service.ChannelSession) error {
-	if err := s.channels.Renew(ctx, session.Runner.ID, session.Epoch, time.Now().UTC()); err != nil {
+func (s *channelsService) Heartbeat(
+	ctx context.Context,
+	session service.ChannelSession,
+	load entity.RunnerLoad,
+) error {
+	now := time.Now().UTC()
+
+	if err := s.channels.Renew(ctx, session.Runner.ID, session.Epoch, load, now); err != nil {
 		return err
 	}
 
@@ -116,11 +122,15 @@ func (s *channelsService) Heartbeat(ctx context.Context, session service.Channel
 		return entity.ErrRunnerRevoked
 	}
 
-	if err := s.executions.Renew(ctx, session.Runner); err != nil {
+	if err := s.executions.Renew(ctx, held); err != nil {
 		return err
 	}
 
-	return s.runners.RecordSeen(ctx, session.Runner.ID, time.Now().UTC())
+	if err := s.runners.RecordSeen(ctx, held.ID, now); err != nil {
+		return err
+	}
+
+	return s.executions.Ready(ctx, held)
 }
 
 func (s *channelsService) Verify(ctx context.Context, session service.ChannelSession) error {

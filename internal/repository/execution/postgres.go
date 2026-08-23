@@ -20,7 +20,10 @@ const (
 	uniqueViolationCode = "23505"
 	sourceUniqueIndex   = "workspace_execution_events_source_key"
 	attemptUniqueIndex  = "workspace_executions_attempt_key"
+	liveDelegationIndex = "workspace_executions_live_delegation_key"
 )
+
+const queuedStates = `('queued', 'queued_for_resume')`
 
 const terminalStates = `('completed', 'failed', 'cancelled', 'interrupted')`
 
@@ -39,6 +42,7 @@ const executionColumns = `
        e.attempt,
        e.state,
        e.reason,
+       e.queued_reason,
        e.params,
        e.lease_expires_at,
        e.queued_at,
@@ -55,9 +59,9 @@ const insertExecutionQuery = `
 WITH inserted AS (
     INSERT INTO workspace_executions
         (id, workspace_id, issue_id, delegation_id, agent_id, runner_id, codebase_id,
-         attempt, state, params, queued_at, updated_at)
+         attempt, state, queued_reason, params, queued_at, updated_at)
     VALUES ($1, $2, $3, $4, $5, nullif($6, '')::uuid, nullif($7, '')::uuid,
-            $8, $9, $10::jsonb, $11, $11)
+            $8, $9, $10, $11::jsonb, $12, $12)
     RETURNING *
 )
 SELECT` + executionColumns + `
@@ -87,6 +91,7 @@ WITH updated AS (
     UPDATE workspace_executions
     SET state            = $3,
         reason           = $4,
+        queued_reason    = CASE WHEN $3 IN ` + queuedStates + ` THEN queued_reason ELSE '' END,
         runner_id        = coalesce(nullif($5, '')::uuid, runner_id),
         lease_expires_at = $6::timestamptz,
         started_at       = coalesce(started_at, CASE WHEN $3 = 'preparing' THEN $7::timestamptz END),
@@ -99,6 +104,49 @@ SELECT` + executionColumns + `
 FROM updated e
 JOIN workspace_issues i ON i.id = e.issue_id
 JOIN workspace_agents a ON a.id = e.agent_id`
+
+const bindExecutionQuery = `
+WITH bound AS (
+    UPDATE workspace_executions
+    SET runner_id     = nullif($2, '')::uuid,
+        codebase_id   = nullif($3, '')::uuid,
+        queued_reason = $4,
+        updated_at    = $5::timestamptz
+    WHERE id = $1 AND state IN ` + queuedStates + `
+    RETURNING *
+)
+SELECT` + executionColumns + `
+FROM bound e
+JOIN workspace_issues i ON i.id = e.issue_id
+JOIN workspace_agents a ON a.id = e.agent_id`
+
+const queuedExecutionsByAgentQuery = `
+SELECT` + executionColumns + executionJoins + `
+WHERE e.agent_id = $1 AND e.state = 'queued'
+ORDER BY e.queued_at, e.id
+LIMIT $2`
+
+const runnerHeldSlotsQuery = `
+SELECT count(*)
+FROM workspace_executions
+WHERE runner_id = $1 AND state IN ('preparing', 'running', 'finalizing')`
+
+const executionsSharingRepositoriesQuery = `
+SELECT` + executionColumns + executionJoins + `
+WHERE e.workspace_id = $1
+  AND e.id <> $2
+  AND e.state NOT IN ` + terminalStates + `
+  AND EXISTS (
+      SELECT 1
+      FROM workspace_codebase_repositories mine
+      JOIN workspace_codebase_repositories theirs
+        ON theirs.remote_hash = mine.remote_hash
+      WHERE mine.codebase_id = $3
+        AND mine.remote_hash <> ''
+        AND theirs.codebase_id = e.codebase_id
+  )
+ORDER BY e.queued_at, e.id
+LIMIT $4`
 
 const renewExecutionLeasesQuery = `
 UPDATE workspace_executions
@@ -162,18 +210,24 @@ type scanner interface {
 }
 
 type storedParams struct {
-	Tool    string `json:"tool"`
-	Model   string `json:"model"`
-	Runtime string `json:"runtime"`
-	Brief   string `json:"brief"`
+	Tool         string `json:"tool"`
+	Model        string `json:"model"`
+	Runtime      string `json:"runtime"`
+	BaseRef      string `json:"base_ref"`
+	IncludeDirty bool   `json:"include_dirty"`
+	Profile      string `json:"profile"`
+	Brief        string `json:"brief"`
 }
 
 func encodeParams(params entity.ExecutionParams) ([]byte, error) {
 	encoded, err := json.Marshal(storedParams{
-		Tool:    params.Tool,
-		Model:   params.Model,
-		Runtime: string(params.Runtime),
-		Brief:   params.Brief,
+		Tool:         params.Tool,
+		Model:        params.Model,
+		Runtime:      string(params.Runtime),
+		BaseRef:      string(params.BaseRef),
+		IncludeDirty: params.IncludeDirty,
+		Profile:      string(params.Profile),
+		Brief:        params.Brief,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("encode execution params: %w", err)
@@ -211,6 +265,7 @@ func scanExecution(row scanner) (entity.Execution, error) {
 		runnerID     string
 		codebaseID   string
 		state        string
+		queuedReason string
 		params       []byte
 	)
 
@@ -229,6 +284,7 @@ func scanExecution(row scanner) (entity.Execution, error) {
 		&execution.Attempt,
 		&state,
 		&execution.Reason,
+		&queuedReason,
 		&params,
 		&execution.LeaseExpiresAt,
 		&execution.QueuedAt,
@@ -271,6 +327,7 @@ func scanExecution(row scanner) (entity.Execution, error) {
 
 	execution.IssueReference = entity.Issue{ReferenceKey: referenceKey, Number: number}.Reference()
 	execution.State = entity.ExecutionState(state)
+	execution.QueuedReason = entity.ExecutionQueuedReason(queuedReason)
 
 	var stored storedParams
 	if err := json.Unmarshal(params, &stored); err != nil {
@@ -278,10 +335,13 @@ func scanExecution(row scanner) (entity.Execution, error) {
 	}
 
 	execution.Params = entity.ExecutionParams{
-		Tool:    stored.Tool,
-		Model:   stored.Model,
-		Runtime: entity.CodebaseRuntime(stored.Runtime),
-		Brief:   stored.Brief,
+		Tool:         stored.Tool,
+		Model:        stored.Model,
+		Runtime:      entity.CodebaseRuntime(stored.Runtime),
+		BaseRef:      entity.BaseRefPolicy(stored.BaseRef),
+		IncludeDirty: stored.IncludeDirty,
+		Profile:      entity.PermissionProfile(stored.Profile),
+		Brief:        stored.Brief,
 	}
 
 	return execution, nil
@@ -414,6 +474,7 @@ func (r *executionRepository) Create(
 		optionalID(execution.CodebaseID),
 		execution.Attempt,
 		string(entity.ExecutionQueued),
+		string(execution.QueuedReason),
 		params,
 		execution.QueuedAt,
 	))
@@ -423,6 +484,12 @@ func (r *executionRepository) Create(
 			pgErr.Code == uniqueViolationCode &&
 			pgErr.ConstraintName == attemptUniqueIndex {
 			return entity.Execution{}, entity.ErrExecutionTransition
+		}
+
+		if errors.As(err, &pgErr) &&
+			pgErr.Code == uniqueViolationCode &&
+			pgErr.ConstraintName == liveDelegationIndex {
+			return entity.Execution{}, entity.ErrExecutionAlreadyLive
 		}
 
 		return entity.Execution{}, fmt.Errorf("insert execution: %w", err)
@@ -450,6 +517,75 @@ func (r *executionRepository) ListLiveByRunner(
 	runnerID uuid.UUID,
 ) ([]entity.Execution, error) {
 	return r.list(ctx, liveExecutionsByRunnerQuery, runnerID.String())
+}
+
+func (r *executionRepository) ListQueuedByAgent(
+	ctx context.Context,
+	agentID uuid.UUID,
+	limit int,
+) ([]entity.Execution, error) {
+	return r.list(ctx, queuedExecutionsByAgentQuery, agentID.String(), limit)
+}
+
+func (r *executionRepository) ListSharingRepositories(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	executionID string,
+	codebaseID uuid.UUID,
+	limit int,
+) ([]entity.Execution, error) {
+	if codebaseID == uuid.Nil {
+		return nil, nil
+	}
+
+	return r.list(
+		ctx,
+		executionsSharingRepositoriesQuery,
+		workspaceID.String(),
+		executionID,
+		codebaseID.String(),
+		limit,
+	)
+}
+
+func (r *executionRepository) CountHeldSlots(
+	ctx context.Context,
+	runnerID uuid.UUID,
+) (int, error) {
+	var held int
+
+	if err := r.db.Querier(ctx).QueryRowContext(
+		ctx, runnerHeldSlotsQuery, runnerID.String(),
+	).Scan(&held); err != nil {
+		return 0, fmt.Errorf("count held execution slots: %w", err)
+	}
+
+	return held, nil
+}
+
+func (r *executionRepository) Bind(
+	ctx context.Context,
+	executionID string,
+	binding repository.ExecutionBinding,
+) (entity.Execution, error) {
+	bound, err := scanExecution(r.db.Querier(ctx).QueryRowContext(
+		ctx,
+		bindExecutionQuery,
+		executionID,
+		optionalID(binding.RunnerID),
+		optionalID(binding.CodebaseID),
+		string(binding.QueuedReason),
+		binding.At,
+	))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Execution{}, entity.ErrExecutionTransition
+		}
+
+		return entity.Execution{}, fmt.Errorf("bind execution to a runner: %w", err)
+	}
+
+	return bound, nil
 }
 
 func (r *executionRepository) NextAttempt(

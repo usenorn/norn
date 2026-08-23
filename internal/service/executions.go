@@ -18,8 +18,28 @@ type ExecutionDetail struct {
 	Previews  []entity.PreviewSession
 }
 
+type RunnerReadiness struct {
+	Runner       entity.Runner
+	Connected    bool
+	Reaches      bool
+	Capacity     int
+	Used         int
+	Free         int
+	DiskPressure bool
+}
+
+type ExecutionPlacement struct {
+	Runners  []RunnerReadiness
+	RunnerID uuid.UUID
+	Waiting  entity.ExecutionQueuedReason
+	Sharing  []entity.Execution
+}
+
 type Executions interface {
 	OnDelegated(ctx context.Context, issue entity.Issue, delegation entity.IssueDelegation) error
+	Placement(
+		ctx context.Context, issue entity.Issue, agentID uuid.UUID,
+	) (ExecutionPlacement, error)
 
 	Get(ctx context.Context, workspaceID uuid.UUID, executionID string) (ExecutionDetail, error)
 	Visible(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error)
@@ -51,6 +71,7 @@ type Executions interface {
 	Answered(ctx context.Context, question entity.IssueQuestion) error
 	Unanswerable(ctx context.Context, question entity.IssueQuestion, reason string) error
 
+	Ready(ctx context.Context, runner entity.Runner) error
 	Accepted(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Declined(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Reported(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error

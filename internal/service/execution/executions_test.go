@@ -18,25 +18,12 @@ import (
 func TestDelegatingAnIssueOffersTheWorkToTheAgentsMachine(t *testing.T) {
 	h := newHarness(t)
 
-	h.runners.EXPECT().ListByAgentID(gomock.Any(), h.runner.AgentID).Return([]entity.Runner{h.runner}, nil)
-	h.channels.EXPECT().
-		Presence(gomock.Any(), h.runner.ID).
-		Return(entity.RunnerPresence{RunnerID: h.runner.ID, Epoch: "live"}, nil)
-	h.executions.EXPECT().NextAttempt(gomock.Any(), h.issue.ID).Return(1, nil)
+	h.runners.EXPECT().
+		ListByAgentID(gomock.Any(), h.runner.AgentID).
+		Return([]entity.Runner{h.runner}, nil)
+	h.live(h.runner, 2, 0)
 
-	var created repository.NewExecution
-
-	h.executions.EXPECT().
-		Create(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, request repository.NewExecution) (entity.Execution, error) {
-			created = request
-			opened := h.execution(entity.ExecutionQueued)
-			opened.ID = request.ID
-			opened.Attempt = request.Attempt
-			opened.Params = request.Params
-
-			return opened, nil
-		})
+	created := h.opening(1)
 
 	delegation := entity.IssueDelegation{
 		ID:      uuid.New(),
@@ -47,6 +34,10 @@ func TestDelegatingAnIssueOffersTheWorkToTheAgentsMachine(t *testing.T) {
 
 	if err := h.service.OnDelegated(context.Background(), h.issue, delegation); err != nil {
 		t.Fatalf("delegate: %v", err)
+	}
+
+	if created.RunnerID != h.runner.ID {
+		t.Fatalf("the run was opened bound to %v, want the machine that was offered it", created.RunnerID)
 	}
 
 	if created.Params.Brief != delegation.Brief {
@@ -69,7 +60,11 @@ func TestWorkOnlyGoesToAMachineAllowedToSeeTheTeamItBelongsTo(t *testing.T) {
 	elsewhere := h.runner
 	elsewhere.Authority = entity.RequestedAuthority{TeamIDs: []uuid.UUID{uuid.New()}}
 
-	h.runners.EXPECT().ListByAgentID(gomock.Any(), h.runner.AgentID).Return([]entity.Runner{elsewhere}, nil)
+	h.runners.EXPECT().
+		ListByAgentID(gomock.Any(), h.runner.AgentID).
+		Return([]entity.Runner{elsewhere}, nil)
+
+	created := h.opening(1)
 
 	err := h.service.OnDelegated(context.Background(), h.issue, entity.IssueDelegation{
 		ID:      uuid.New(),
@@ -89,12 +84,22 @@ func TestWorkOnlyGoesToAMachineAllowedToSeeTheTeamItBelongsTo(t *testing.T) {
 			h.spooled,
 		)
 	}
+
+	if created.QueuedReason != entity.QueuedNoRunner {
+		t.Fatalf(
+			"a run nobody in scope can take is waiting for %q, want %q; the dialog has to say "+
+				"this agent has no machine that reaches the team rather than showing a spinner",
+			created.QueuedReason, entity.QueuedNoRunner,
+		)
+	}
 }
 
-func TestAnAgentWithNoMachineStillTakesTheDelegation(t *testing.T) {
+func TestAnAgentWithNoMachineQueuesTheRunInsteadOfLosingIt(t *testing.T) {
 	h := newHarness(t)
 
 	h.runners.EXPECT().ListByAgentID(gomock.Any(), h.runner.AgentID).Return(nil, nil)
+
+	created := h.opening(1)
 
 	err := h.service.OnDelegated(context.Background(), h.issue, entity.IssueDelegation{
 		ID:      uuid.New(),
@@ -111,6 +116,18 @@ func TestAnAgentWithNoMachineStillTakesTheDelegation(t *testing.T) {
 
 	if len(h.spooled) != 0 {
 		t.Fatalf("an offer was spooled for a machine that does not exist: %+v", h.spooled)
+	}
+
+	if created.RunnerID != uuid.Nil {
+		t.Fatalf("the run was bound to %v, and no machine exists to bind it to", created.RunnerID)
+	}
+
+	if created.QueuedReason != entity.QueuedNoRunner {
+		t.Fatalf(
+			"the run is waiting for %q, want %q; without a run there is nothing for the issue "+
+				"screen to show and nothing for a machine to pick up when one is connected",
+			created.QueuedReason, entity.QueuedNoRunner,
+		)
 	}
 }
 
@@ -380,21 +397,12 @@ func TestRestartingOpensTheNextAttemptAndLeavesTheOldRunAlone(t *testing.T) {
 	execution := h.execution(entity.ExecutionFailed)
 	h.holding(execution)
 
-	h.runners.EXPECT().ListByAgentID(gomock.Any(), h.runner.AgentID).Return([]entity.Runner{h.runner}, nil)
-	h.channels.EXPECT().
-		Presence(gomock.Any(), h.runner.ID).
-		Return(entity.RunnerPresence{RunnerID: h.runner.ID, Epoch: "live"}, nil)
-	h.executions.EXPECT().NextAttempt(gomock.Any(), h.issue.ID).Return(2, nil)
+	h.runners.EXPECT().
+		ListByAgentID(gomock.Any(), h.runner.AgentID).
+		Return([]entity.Runner{h.runner}, nil)
+	h.live(h.runner, 2, 0)
 
-	h.executions.EXPECT().
-		Create(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, request repository.NewExecution) (entity.Execution, error) {
-			opened := h.execution(entity.ExecutionQueued)
-			opened.ID = request.ID
-			opened.Attempt = request.Attempt
-
-			return opened, nil
-		})
+	h.opening(2)
 
 	restarted, err := h.service.Restart(context.Background(), h.workspaceID, execution.ID)
 	if err != nil {

@@ -21,6 +21,7 @@ type executionsService struct {
 	changesets repository.ChangeSet
 	previews   repository.Preview
 	runners    repository.Runner
+	codebases  repository.Codebase
 	issues     repository.Issue
 	states     repository.WorkflowState
 	channels   repository.RunnerChannel
@@ -36,6 +37,7 @@ func New(
 	changesets repository.ChangeSet,
 	previews repository.Preview,
 	runners repository.Runner,
+	codebases repository.Codebase,
 	issues repository.Issue,
 	states repository.WorkflowState,
 	channels repository.RunnerChannel,
@@ -50,6 +52,7 @@ func New(
 		changesets: changesets,
 		previews:   previews,
 		runners:    runners,
+		codebases:  codebases,
 		issues:     issues,
 		states:     states,
 		channels:   channels,
@@ -336,7 +339,7 @@ func (s *executionsService) Restart(
 		return entity.Execution{}, err
 	}
 
-	runner, err := s.runnerFor(ctx, execution.AgentID, issue.TeamID)
+	placed, err := s.route(ctx, execution.AgentID, issue.TeamID, nil)
 	if err != nil {
 		return entity.Execution{}, err
 	}
@@ -345,7 +348,7 @@ func (s *executionsService) Restart(
 		issue:        issue,
 		delegationID: execution.DelegationID,
 		agentID:      execution.AgentID,
-		runner:       runner,
+		placed:       placed,
 		params:       execution.Params,
 		actor:        entity.ExecutionActorOf(decision.Actor),
 	})

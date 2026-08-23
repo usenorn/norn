@@ -20,8 +20,16 @@ type NewExecution struct {
 	RunnerID     uuid.UUID
 	CodebaseID   uuid.UUID
 	Attempt      int
+	QueuedReason entity.ExecutionQueuedReason
 	Params       entity.ExecutionParams
 	QueuedAt     time.Time
+}
+
+type ExecutionBinding struct {
+	RunnerID     uuid.UUID
+	CodebaseID   uuid.UUID
+	QueuedReason entity.ExecutionQueuedReason
+	At           time.Time
 }
 
 type ExecutionMove struct {
@@ -38,7 +46,21 @@ type Execution interface {
 	GetByID(ctx context.Context, executionID string) (entity.Execution, error)
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Execution, error)
 	ListLiveByRunner(ctx context.Context, runnerID uuid.UUID) ([]entity.Execution, error)
+	ListQueuedByAgent(
+		ctx context.Context, agentID uuid.UUID, limit int,
+	) ([]entity.Execution, error)
+	ListSharingRepositories(
+		ctx context.Context,
+		workspaceID uuid.UUID,
+		executionID string,
+		codebaseID uuid.UUID,
+		limit int,
+	) ([]entity.Execution, error)
+	CountHeldSlots(ctx context.Context, runnerID uuid.UUID) (int, error)
 	NextAttempt(ctx context.Context, issueID uuid.UUID) (int, error)
+	Bind(
+		ctx context.Context, executionID string, binding ExecutionBinding,
+	) (entity.Execution, error)
 	Move(ctx context.Context, executionID string, move ExecutionMove) (entity.Execution, error)
 	RenewLeases(ctx context.Context, runnerID uuid.UUID, expiresAt time.Time) error
 	ExpiredLeases(ctx context.Context, now time.Time, limit int) ([]entity.Execution, error)

@@ -43,6 +43,7 @@ type WorkspaceRunner struct {
 	LastSeenAt    null.Time         `boil:"last_seen_at" json:"last_seen_at,omitempty" toml:"last_seen_at" yaml:"last_seen_at,omitempty"`
 	RevokedAt     null.Time         `boil:"revoked_at" json:"revoked_at,omitempty" toml:"revoked_at" yaml:"revoked_at,omitempty"`
 	UpdatedAt     time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	PausedAt      null.Time         `boil:"paused_at" json:"paused_at,omitempty" toml:"paused_at" yaml:"paused_at,omitempty"`
 
 	R *workspaceRunnerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceRunnerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -67,6 +68,7 @@ var WorkspaceRunnerColumns = struct {
 	LastSeenAt    string
 	RevokedAt     string
 	UpdatedAt     string
+	PausedAt      string
 }{
 	ID:            "id",
 	WorkspaceID:   "workspace_id",
@@ -86,6 +88,7 @@ var WorkspaceRunnerColumns = struct {
 	LastSeenAt:    "last_seen_at",
 	RevokedAt:     "revoked_at",
 	UpdatedAt:     "updated_at",
+	PausedAt:      "paused_at",
 }
 
 var WorkspaceRunnerTableColumns = struct {
@@ -107,6 +110,7 @@ var WorkspaceRunnerTableColumns = struct {
 	LastSeenAt    string
 	RevokedAt     string
 	UpdatedAt     string
+	PausedAt      string
 }{
 	ID:            "workspace_runners.id",
 	WorkspaceID:   "workspace_runners.workspace_id",
@@ -126,6 +130,7 @@ var WorkspaceRunnerTableColumns = struct {
 	LastSeenAt:    "workspace_runners.last_seen_at",
 	RevokedAt:     "workspace_runners.revoked_at",
 	UpdatedAt:     "workspace_runners.updated_at",
+	PausedAt:      "workspace_runners.paused_at",
 }
 
 // Generated where
@@ -149,6 +154,7 @@ var WorkspaceRunnerWhere = struct {
 	LastSeenAt    whereHelpernull_Time
 	RevokedAt     whereHelpernull_Time
 	UpdatedAt     whereHelpertime_Time
+	PausedAt      whereHelpernull_Time
 }{
 	ID:            whereHelperstring{field: "\"workspace_runners\".\"id\""},
 	WorkspaceID:   whereHelperstring{field: "\"workspace_runners\".\"workspace_id\""},
@@ -168,6 +174,7 @@ var WorkspaceRunnerWhere = struct {
 	LastSeenAt:    whereHelpernull_Time{field: "\"workspace_runners\".\"last_seen_at\""},
 	RevokedAt:     whereHelpernull_Time{field: "\"workspace_runners\".\"revoked_at\""},
 	UpdatedAt:     whereHelpertime_Time{field: "\"workspace_runners\".\"updated_at\""},
+	PausedAt:      whereHelpernull_Time{field: "\"workspace_runners\".\"paused_at\""},
 }
 
 // WorkspaceRunnerRels is where relationship names are stored.
@@ -226,9 +233,9 @@ func (r *workspaceRunnerR) GetWorkspace() *Workspace {
 type workspaceRunnerL struct{}
 
 var (
-	workspaceRunnerAllColumns            = []string{"id", "workspace_id", "agent_id", "name", "hostname", "os", "arch", "runner_version", "all_teams", "team_ids", "scopes", "public_key", "refresh_hash", "status", "enrolled_at", "last_seen_at", "revoked_at", "updated_at"}
+	workspaceRunnerAllColumns            = []string{"id", "workspace_id", "agent_id", "name", "hostname", "os", "arch", "runner_version", "all_teams", "team_ids", "scopes", "public_key", "refresh_hash", "status", "enrolled_at", "last_seen_at", "revoked_at", "updated_at", "paused_at"}
 	workspaceRunnerColumnsWithoutDefault = []string{"workspace_id", "agent_id", "name", "hostname", "os", "arch", "runner_version", "scopes", "public_key", "refresh_hash"}
-	workspaceRunnerColumnsWithDefault    = []string{"id", "all_teams", "team_ids", "status", "enrolled_at", "last_seen_at", "revoked_at", "updated_at"}
+	workspaceRunnerColumnsWithDefault    = []string{"id", "all_teams", "team_ids", "status", "enrolled_at", "last_seen_at", "revoked_at", "updated_at", "paused_at"}
 	workspaceRunnerPrimaryKeyColumns     = []string{"id"}
 	workspaceRunnerGeneratedColumns      = []string{}
 )

@@ -1,6 +1,7 @@
 package runnerchannel_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -31,8 +32,9 @@ type harness struct {
 	previews   *previewsvc.MockPreviews
 	service    service.RunnerChannels
 
-	runner entity.Runner
-	actor  entity.Actor
+	runner  entity.Runner
+	actor   entity.Actor
+	readied []entity.Runner
 }
 
 func newHarness(t *testing.T) *harness {
@@ -69,6 +71,14 @@ func newHarness(t *testing.T) *harness {
 	}
 
 	h.executions.EXPECT().Renew(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.executions.EXPECT().
+		Ready(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, machine entity.Runner) error {
+			h.readied = append(h.readied, machine)
+
+			return nil
+		}).
+		AnyTimes()
 
 	h.service = channelsvc.New(
 		h.channels, h.sessions, h.runners, h.machines, h.executions, h.questions, h.changesets,

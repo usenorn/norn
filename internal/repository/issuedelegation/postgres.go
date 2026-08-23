@@ -22,6 +22,7 @@ const (
 
 const delegationColumns = `
 	d.id, d.workspace_id, d.issue_id, d.agent_id, a.name, a.account_id, d.brief,
+	d.tool, d.model, d.runtime, d.base_ref, d.include_dirty, d.permission_profile,
 	coalesce(d.delegated_by_account_id::text, ''), d.delegated_at,
 	coalesce(d.recalled_by_account_id::text, ''), d.recalled_at`
 
@@ -31,9 +32,10 @@ JOIN workspace_agents a ON a.id = d.agent_id`
 
 const insertDelegationQuery = `
 INSERT INTO workspace_issue_delegations (
-    id, workspace_id, issue_id, agent_id, brief, delegated_by_account_id, delegated_at
+    id, workspace_id, issue_id, agent_id, brief, tool, model, runtime, base_ref, include_dirty,
+    permission_profile, delegated_by_account_id, delegated_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)`
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
 
 const openDelegationQuery = `
 SELECT` + delegationColumns + delegationJoins + `
@@ -76,6 +78,9 @@ func scanDelegation(row scanner) (entity.IssueDelegation, error) {
 		agentAccount string
 		delegatedBy  string
 		recalledBy   string
+		runtime      string
+		baseRef      string
+		profile      string
 		recalledAt   sql.NullTime
 	)
 
@@ -87,6 +92,12 @@ func scanDelegation(row scanner) (entity.IssueDelegation, error) {
 		&delegation.AgentName,
 		&agentAccount,
 		&delegation.Brief,
+		&delegation.Params.Tool,
+		&delegation.Params.Model,
+		&runtime,
+		&baseRef,
+		&delegation.Params.IncludeDirty,
+		&profile,
 		&delegatedBy,
 		&delegation.DelegatedAt,
 		&recalledBy,
@@ -94,6 +105,10 @@ func scanDelegation(row scanner) (entity.IssueDelegation, error) {
 	); err != nil {
 		return entity.IssueDelegation{}, err
 	}
+
+	delegation.Params.Runtime = entity.RuntimeChoice(runtime)
+	delegation.Params.BaseRef = entity.BaseRefPolicy(baseRef)
+	delegation.Params.Profile = entity.PermissionProfile(profile)
 
 	if recalledAt.Valid {
 		delegation.RecalledAt = &recalledAt.Time
@@ -218,6 +233,12 @@ func (r *delegationRepository) Delegate(
 		delegation.IssueID.String(),
 		delegation.AgentID.String(),
 		delegation.Brief,
+		delegation.Params.Tool,
+		delegation.Params.Model,
+		string(delegation.Params.Runtime),
+		string(delegation.Params.BaseRef),
+		delegation.Params.IncludeDirty,
+		string(delegation.Params.Profile),
 		author,
 		delegation.DelegatedAt,
 	); err != nil {

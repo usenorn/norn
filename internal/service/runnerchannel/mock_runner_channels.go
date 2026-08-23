@@ -85,17 +85,17 @@ func (mr *MockRunnerChannelsMockRecorder) Deliver(ctx, session, cursor any) *gom
 }
 
 // Heartbeat mocks base method.
-func (m *MockRunnerChannels) Heartbeat(ctx context.Context, session service.ChannelSession) error {
+func (m *MockRunnerChannels) Heartbeat(ctx context.Context, session service.ChannelSession, load entity.RunnerLoad) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Heartbeat", ctx, session)
+	ret := m.ctrl.Call(m, "Heartbeat", ctx, session, load)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Heartbeat indicates an expected call of Heartbeat.
-func (mr *MockRunnerChannelsMockRecorder) Heartbeat(ctx, session any) *gomock.Call {
+func (mr *MockRunnerChannelsMockRecorder) Heartbeat(ctx, session, load any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Heartbeat", reflect.TypeOf((*MockRunnerChannels)(nil).Heartbeat), ctx, session)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Heartbeat", reflect.TypeOf((*MockRunnerChannels)(nil).Heartbeat), ctx, session, load)
 }
 
 // Open mocks base method.

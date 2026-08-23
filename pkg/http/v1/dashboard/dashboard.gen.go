@@ -621,6 +621,24 @@ func (e AuthEnforcement) Valid() bool {
 	}
 }
 
+// Defines values for BaseRefPolicy.
+const (
+	Head          BaseRefPolicy = "head"
+	Origindefault BaseRefPolicy = "origin/default"
+)
+
+// Valid indicates whether the value is a known member of the BaseRefPolicy enum.
+func (e BaseRefPolicy) Valid() bool {
+	switch e {
+	case Head:
+		return true
+	case Origindefault:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BreachCheckUnavailableProblemCode.
 const (
 	BreachCheckUnavailableProblemCodeBreachCheckUnavailable BreachCheckUnavailableProblemCode = "breach_check_unavailable"
@@ -794,19 +812,19 @@ func (e CodebaseProblemCode) Valid() bool {
 
 // Defines values for CodebaseRuntime.
 const (
-	Docker  CodebaseRuntime = "docker"
-	Kvm     CodebaseRuntime = "kvm"
-	Process CodebaseRuntime = "process"
+	CodebaseRuntimeDocker  CodebaseRuntime = "docker"
+	CodebaseRuntimeKvm     CodebaseRuntime = "kvm"
+	CodebaseRuntimeProcess CodebaseRuntime = "process"
 )
 
 // Valid indicates whether the value is a known member of the CodebaseRuntime enum.
 func (e CodebaseRuntime) Valid() bool {
 	switch e {
-	case Docker:
+	case CodebaseRuntimeDocker:
 		return true
-	case Kvm:
+	case CodebaseRuntimeKvm:
 		return true
-	case Process:
+	case CodebaseRuntimeProcess:
 		return true
 	default:
 		return false
@@ -1221,6 +1239,30 @@ func (e ExecutionProblemCode) Valid() bool {
 	case ExecutionTransition:
 		return true
 	case ExecutionUnfinished:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ExecutionQueuedReason.
+const (
+	NoRunner       ExecutionQueuedReason = "no_runner"
+	RunnersBusy    ExecutionQueuedReason = "runners_busy"
+	RunnersOffline ExecutionQueuedReason = "runners_offline"
+	RunnersPaused  ExecutionQueuedReason = "runners_paused"
+)
+
+// Valid indicates whether the value is a known member of the ExecutionQueuedReason enum.
+func (e ExecutionQueuedReason) Valid() bool {
+	switch e {
+	case NoRunner:
+		return true
+	case RunnersBusy:
+		return true
+	case RunnersOffline:
+		return true
+	case RunnersPaused:
 		return true
 	default:
 		return false
@@ -2532,6 +2574,27 @@ func (e NotificationSubjectKind) Valid() bool {
 	}
 }
 
+// Defines values for PermissionProfile.
+const (
+	Standard     PermissionProfile = "standard"
+	Strict       PermissionProfile = "strict"
+	Unrestricted PermissionProfile = "unrestricted"
+)
+
+// Valid indicates whether the value is a known member of the PermissionProfile enum.
+func (e PermissionProfile) Valid() bool {
+	switch e {
+	case Standard:
+		return true
+	case Strict:
+		return true
+	case Unrestricted:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PreviewProblemCode.
 const (
 	PreviewClosed       PreviewProblemCode = "preview_closed"
@@ -2775,6 +2838,27 @@ func (e RunnerStatus) Valid() bool {
 	case RunnerStatusActive:
 		return true
 	case RunnerStatusRevoked:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RuntimeChoice.
+const (
+	RuntimeChoiceAuto    RuntimeChoice = "auto"
+	RuntimeChoiceDocker  RuntimeChoice = "docker"
+	RuntimeChoiceProcess RuntimeChoice = "process"
+)
+
+// Valid indicates whether the value is a known member of the RuntimeChoice enum.
+func (e RuntimeChoice) Valid() bool {
+	switch e {
+	case RuntimeChoiceAuto:
+		return true
+	case RuntimeChoiceDocker:
+		return true
+	case RuntimeChoiceProcess:
 		return true
 	default:
 		return false
@@ -4364,6 +4448,9 @@ type AvailableSourceControlRepository struct {
 	Private       *bool   `json:"private,omitempty"`
 }
 
+// BaseRefPolicy defines model for BaseRefPolicy.
+type BaseRefPolicy string
+
 // BeginOidcLoginRequest defines model for BeginOidcLoginRequest.
 type BeginOidcLoginRequest struct {
 	ReturnTo  *string `json:"returnTo,omitempty"`
@@ -4858,6 +4945,38 @@ type DelegateIssueRequest struct {
 	// AgentAccountId The account the agent writes as, which is how it appears in the member list. Listing the agents themselves is an administrator's view, so this is what an ordinary member has to hand.
 	AgentAccountId openapi_types.UUID `json:"agentAccountId"`
 	Brief          *string            `json:"brief,omitempty"`
+
+	// Params What the delegation asked for. Every attempt against it inherits these, and what is left unset is the machine's own setting rather than a default this server invents.
+	Params *DelegationParams `json:"params,omitempty"`
+}
+
+// DelegationParams What the delegation asked for. Every attempt against it inherits these, and what is left unset is the machine's own setting rather than a default this server invents.
+type DelegationParams struct {
+	BaseRef *BaseRefPolicy `json:"baseRef,omitempty"`
+
+	// IncludeDirty Carry the folder's uncommitted work into the run as one commit
+	IncludeDirty      *bool              `json:"includeDirty,omitempty"`
+	Model             *string            `json:"model,omitempty"`
+	PermissionProfile *PermissionProfile `json:"permissionProfile,omitempty"`
+	Runtime           *RuntimeChoice     `json:"runtime,omitempty"`
+	Tool              *string            `json:"tool,omitempty"`
+}
+
+// DelegationTargets defines model for DelegationTargets.
+type DelegationTargets struct {
+	AgentAccountId openapi_types.UUID `json:"agentAccountId"`
+	AgentId        openapi_types.UUID `json:"agentId"`
+	AgentName      string             `json:"agentName"`
+
+	// RunnerId The machine the work would land on. Absent when it would wait instead.
+	RunnerId *openapi_types.UUID `json:"runnerId,omitempty"`
+	Runners  []RunnerReadiness   `json:"runners"`
+
+	// Waiting Why it would wait. Absent when a machine would take it straight away.
+	Waiting *ExecutionQueuedReason `json:"waiting,omitempty"`
+
+	// Warnings Active runs already touching a repository this one would touch. Worth saying, never a reason to refuse.
+	Warnings []SharedRepositoryWarning `json:"warnings"`
 }
 
 // DirectoryAbsentPolicy defines model for DirectoryAbsentPolicy.
@@ -5020,7 +5139,10 @@ type Execution struct {
 	// Params How this run was asked for. What is not set is the machine's own default.
 	Params   ExecutionParams `json:"params"`
 	QueuedAt time.Time       `json:"queuedAt"`
-	Reason   *string         `json:"reason,omitempty"`
+
+	// QueuedReason Why this run is still waiting. Absent once a machine has taken it.
+	QueuedReason *ExecutionQueuedReason `json:"queuedReason,omitempty"`
+	Reason       *string                `json:"reason,omitempty"`
 
 	// Reference The issue reference, suffixed with the attempt from the second run on
 	Reference string `json:"reference"`
@@ -5168,10 +5290,13 @@ type ExecutionLogEntry struct {
 
 // ExecutionParams How this run was asked for. What is not set is the machine's own default.
 type ExecutionParams struct {
-	Brief   *string          `json:"brief,omitempty"`
-	Model   *string          `json:"model,omitempty"`
-	Runtime *CodebaseRuntime `json:"runtime,omitempty"`
-	Tool    *string          `json:"tool,omitempty"`
+	BaseRef           *BaseRefPolicy     `json:"baseRef,omitempty"`
+	Brief             *string            `json:"brief,omitempty"`
+	IncludeDirty      *bool              `json:"includeDirty,omitempty"`
+	Model             *string            `json:"model,omitempty"`
+	PermissionProfile *PermissionProfile `json:"permissionProfile,omitempty"`
+	Runtime           *CodebaseRuntime   `json:"runtime,omitempty"`
+	Tool              *string            `json:"tool,omitempty"`
 }
 
 // ExecutionPreview defines model for ExecutionPreview.
@@ -5216,6 +5341,9 @@ type ExecutionProblem struct {
 
 // ExecutionProblemCode defines model for ExecutionProblem.Code.
 type ExecutionProblemCode string
+
+// ExecutionQueuedReason Why a queued run has not started. The three the delegate dialog has to phrase differently are an agent with no machine at all, machines that are all offline, and machines that are all busy.
+type ExecutionQueuedReason string
 
 // ExecutionRepositoryChange One repository this run touched. The pull request is carried as the address the machine reported plus, when norn follows that repository, the code link whose state, checks and reviewers stay current on their own.
 type ExecutionRepositoryChange struct {
@@ -5793,6 +5921,9 @@ type IssueDelegation struct {
 	Id                   openapi_types.UUID  `json:"id"`
 	IssueId              openapi_types.UUID  `json:"issueId"`
 
+	// Params What the delegation asked for. Every attempt against it inherits these, and what is left unset is the machine's own setting rather than a default this server invents.
+	Params *DelegationParams `json:"params,omitempty"`
+
 	// RecalledAt Absent while the delegation is open
 	RecalledAt          *time.Time          `json:"recalledAt,omitempty"`
 	RecalledByAccountId *openapi_types.UUID `json:"recalledByAccountId,omitempty"`
@@ -6368,6 +6499,9 @@ type PasswordResetRequested struct {
 	ExpiresAt time.Time `json:"expiresAt"`
 }
 
+// PermissionProfile defines model for PermissionProfile.
+type PermissionProfile string
+
 // PostCommentRequest defines model for PostCommentRequest.
 type PostCommentRequest struct {
 	AttachmentIds   *[]openapi_types.UUID `json:"attachmentIds,omitempty"`
@@ -6653,8 +6787,11 @@ type Runner struct {
 	Id         openapi_types.UUID `json:"id"`
 	LastSeenAt *time.Time         `json:"lastSeenAt,omitempty"`
 	Name       string             `json:"name"`
-	RevokedAt  *time.Time         `json:"revokedAt,omitempty"`
-	Status     RunnerStatus       `json:"status"`
+
+	// PausedAt Set while an administrator has stopped this machine being offered work
+	PausedAt  *time.Time   `json:"pausedAt,omitempty"`
+	RevokedAt *time.Time   `json:"revokedAt,omitempty"`
+	Status    RunnerStatus `json:"status"`
 
 	// Telemetry How much of a run this machine's workspace keeps. On minimal the server declines full transcripts, so a machine reads this to send summaries instead of having them refused.
 	Telemetry   *TelemetryMode     `json:"telemetry,omitempty"`
@@ -6682,6 +6819,23 @@ type RunnerProblem struct {
 
 // RunnerProblemCode defines model for RunnerProblem.Code.
 type RunnerProblemCode string
+
+// RunnerReadiness defines model for RunnerReadiness.
+type RunnerReadiness struct {
+	Capacity int32 `json:"capacity"`
+
+	// Connected Whether the machine is holding a channel right now
+	Connected    bool   `json:"connected"`
+	DiskPressure bool   `json:"diskPressure"`
+	Free         int32  `json:"free"`
+	Name         string `json:"name"`
+	Paused       bool   `json:"paused"`
+
+	// Reaches Whether this machine's team scope covers the issue's team
+	Reaches  bool               `json:"reaches"`
+	RunnerId openapi_types.UUID `json:"runnerId"`
+	Used     int32              `json:"used"`
+}
 
 // RunnerSession defines model for RunnerSession.
 type RunnerSession struct {
@@ -6714,6 +6868,9 @@ type RunnerSessionPreviewScheme string
 
 // RunnerStatus defines model for RunnerStatus.
 type RunnerStatus string
+
+// RuntimeChoice defines model for RuntimeChoice.
+type RuntimeChoice string
 
 // SCMDeployment defines model for SCMDeployment.
 type SCMDeployment struct {
@@ -6967,6 +7124,13 @@ type SharePreviewRequest struct {
 	// LifetimeSeconds How long the link lives. Left out, it lives for the instance default.
 	LifetimeSeconds *int    `json:"lifetimeSeconds,omitempty"`
 	Passcode        *string `json:"passcode,omitempty"`
+}
+
+// SharedRepositoryWarning defines model for SharedRepositoryWarning.
+type SharedRepositoryWarning struct {
+	ExecutionId string         `json:"executionId"`
+	Reference   string         `json:"reference"`
+	State       ExecutionState `json:"state"`
 }
 
 // SignInChallenge defines model for SignInChallenge.
@@ -8253,6 +8417,11 @@ type ListWorkspaceIssueCommentsParams struct {
 	Around *openapi_types.UUID `form:"around,omitempty" json:"around,omitempty"`
 	Limit  *int32              `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *string             `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// GetWorkspaceIssueDelegationTargetsParams defines parameters for GetWorkspaceIssueDelegationTargets.
+type GetWorkspaceIssueDelegationTargetsParams struct {
+	AgentAccountId openapi_types.UUID `form:"agentAccountId" json:"agentAccountId"`
 }
 
 // RemoveWorkspaceLabelParams defines parameters for RemoveWorkspaceLabel.
@@ -9991,6 +10160,11 @@ type ClientInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/delegation (the `DelegateWorkspaceIssue` operationId).
 	DelegateWorkspaceIssue(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, body DelegateWorkspaceIssueJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets (the `GetWorkspaceIssueDelegationTargets` operationId).
+	GetWorkspaceIssueDelegationTargets(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *GetWorkspaceIssueDelegationTargetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/executions (the `ListWorkspaceIssueExecutions` operationId).
@@ -10489,6 +10663,16 @@ type ClientInterface interface {
 	//
 	// Corresponds with DELETE /workspaces/{workspaceId}/runners/{runnerId} (the `RevokeWorkspaceRunner` operationId).
 	RevokeWorkspaceRunner(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PauseWorkspaceRunner Stop offering this machine new work, leaving what it is running alone
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/runners/{runnerId}/pause (the `PauseWorkspaceRunner` operationId).
+	PauseWorkspaceRunner(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ResumeWorkspaceRunner Let this machine take work again
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/runners/{runnerId}/resume (the `ResumeWorkspaceRunner` operationId).
+	ResumeWorkspaceRunner(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceSavedViews The saved views this caller can see, in the order they arranged them
 	//
@@ -14450,6 +14634,21 @@ func (c *Client) DelegateWorkspaceIssue(ctx context.Context, workspaceId Workspa
 	return c.Client.Do(req)
 }
 
+// GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets (the `GetWorkspaceIssueDelegationTargets` operationId).
+func (c *Client) GetWorkspaceIssueDelegationTargets(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *GetWorkspaceIssueDelegationTargetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceIssueDelegationTargetsRequest(c.Server, workspaceId, issueId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 //
 // Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/executions (the `ListWorkspaceIssueExecutions` operationId).
@@ -15749,6 +15948,36 @@ func (c *Client) ListWorkspaceRunners(ctx context.Context, workspaceId Workspace
 // Corresponds with DELETE /workspaces/{workspaceId}/runners/{runnerId} (the `RevokeWorkspaceRunner` operationId).
 func (c *Client) RevokeWorkspaceRunner(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRevokeWorkspaceRunnerRequest(c.Server, workspaceId, runnerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PauseWorkspaceRunner Stop offering this machine new work, leaving what it is running alone
+//
+// Corresponds with POST /workspaces/{workspaceId}/runners/{runnerId}/pause (the `PauseWorkspaceRunner` operationId).
+func (c *Client) PauseWorkspaceRunner(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPauseWorkspaceRunnerRequest(c.Server, workspaceId, runnerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ResumeWorkspaceRunner Let this machine take work again
+//
+// Corresponds with POST /workspaces/{workspaceId}/runners/{runnerId}/resume (the `ResumeWorkspaceRunner` operationId).
+func (c *Client) ResumeWorkspaceRunner(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResumeWorkspaceRunnerRequest(c.Server, workspaceId, runnerId)
 	if err != nil {
 		return nil, err
 	}
@@ -24489,6 +24718,70 @@ func NewDelegateWorkspaceIssueRequestWithBody(server string, workspaceId Workspa
 	return req, nil
 }
 
+// NewGetWorkspaceIssueDelegationTargetsRequest constructs an http.Request for the GetWorkspaceIssueDelegationTargets method
+func NewGetWorkspaceIssueDelegationTargetsRequest(server string, workspaceId WorkspaceId, issueId IssueId, params *GetWorkspaceIssueDelegationTargetsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/delegation/targets", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "agentAccountId", params.AgentAccountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListWorkspaceIssueExecutionsRequest constructs an http.Request for the ListWorkspaceIssueExecutions method
 func NewListWorkspaceIssueExecutionsRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
 	var err error
@@ -27364,6 +27657,88 @@ func NewRevokeWorkspaceRunnerRequest(server string, workspaceId WorkspaceId, run
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPauseWorkspaceRunnerRequest constructs an http.Request for the PauseWorkspaceRunner method
+func NewPauseWorkspaceRunnerRequest(server string, workspaceId WorkspaceId, runnerId RunnerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "runnerId", runnerId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/runners/%s/pause", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewResumeWorkspaceRunnerRequest constructs an http.Request for the ResumeWorkspaceRunner method
+func NewResumeWorkspaceRunnerRequest(server string, workspaceId WorkspaceId, runnerId RunnerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "runnerId", runnerId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/runners/%s/resume", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -33206,6 +33581,13 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/delegation (the `DelegateWorkspaceIssue` operationId).
 	DelegateWorkspaceIssueWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, body DelegateWorkspaceIssueJSONRequestBody, reqEditors ...RequestEditorFn) (*DelegateWorkspaceIssueResponse, error)
 
+	// GetWorkspaceIssueDelegationTargetsWithResponse Where delegating this issue to an agent would run, before anyone commits to it
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets (the `GetWorkspaceIssueDelegationTargets` operationId).
+	GetWorkspaceIssueDelegationTargetsWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *GetWorkspaceIssueDelegationTargetsParams, reqEditors ...RequestEditorFn) (*GetWorkspaceIssueDelegationTargetsResponse, error)
+
 	// ListWorkspaceIssueExecutionsWithResponse Every run this issue has had, newest attempt first
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -33774,6 +34156,20 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with DELETE /workspaces/{workspaceId}/runners/{runnerId} (the `RevokeWorkspaceRunner` operationId).
 	RevokeWorkspaceRunnerWithResponse(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*RevokeWorkspaceRunnerResponse, error)
+
+	// PauseWorkspaceRunnerWithResponse Stop offering this machine new work, leaving what it is running alone
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/runners/{runnerId}/pause (the `PauseWorkspaceRunner` operationId).
+	PauseWorkspaceRunnerWithResponse(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*PauseWorkspaceRunnerResponse, error)
+
+	// ResumeWorkspaceRunnerWithResponse Let this machine take work again
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/runners/{runnerId}/resume (the `ResumeWorkspaceRunner` operationId).
+	ResumeWorkspaceRunnerWithResponse(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*ResumeWorkspaceRunnerResponse, error)
 
 	// ListWorkspaceSavedViewsWithResponse The saved views this caller can see, in the order they arranged them
 	//
@@ -45069,6 +45465,82 @@ func (r DelegateWorkspaceIssueResponse) ContentType() string {
 	return ""
 }
 
+type GetWorkspaceIssueDelegationTargetsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DelegationTargets
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceIssueDelegationTargetsResponse) GetJSON200() *DelegationTargets {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceIssueDelegationTargetsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceIssueDelegationTargetsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceIssueDelegationTargetsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r GetWorkspaceIssueDelegationTargetsResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceIssueDelegationTargetsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceIssueDelegationTargetsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceIssueDelegationTargetsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceIssueDelegationTargetsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceIssueDelegationTargetsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListWorkspaceIssueExecutionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -49303,6 +49775,144 @@ func (r RevokeWorkspaceRunnerResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RevokeWorkspaceRunnerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type PauseWorkspaceRunnerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Runner
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r PauseWorkspaceRunnerResponse) GetJSON200() *Runner {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r PauseWorkspaceRunnerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r PauseWorkspaceRunnerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r PauseWorkspaceRunnerResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r PauseWorkspaceRunnerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r PauseWorkspaceRunnerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r PauseWorkspaceRunnerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PauseWorkspaceRunnerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PauseWorkspaceRunnerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ResumeWorkspaceRunnerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Runner
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ResumeWorkspaceRunnerResponse) GetJSON200() *Runner {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ResumeWorkspaceRunnerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ResumeWorkspaceRunnerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ResumeWorkspaceRunnerResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ResumeWorkspaceRunnerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ResumeWorkspaceRunnerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ResumeWorkspaceRunnerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResumeWorkspaceRunnerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ResumeWorkspaceRunnerResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -58683,6 +59293,19 @@ func (c *ClientWithResponses) DelegateWorkspaceIssueWithResponse(ctx context.Con
 	return ParseDelegateWorkspaceIssueResponse(rsp)
 }
 
+// GetWorkspaceIssueDelegationTargetsWithResponse Where delegating this issue to an agent would run, before anyone commits to it
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets (the `GetWorkspaceIssueDelegationTargets` operationId).
+func (c *ClientWithResponses) GetWorkspaceIssueDelegationTargetsWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *GetWorkspaceIssueDelegationTargetsParams, reqEditors ...RequestEditorFn) (*GetWorkspaceIssueDelegationTargetsResponse, error) {
+	rsp, err := c.GetWorkspaceIssueDelegationTargets(ctx, workspaceId, issueId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceIssueDelegationTargetsResponse(rsp)
+}
+
 // ListWorkspaceIssueExecutionsWithResponse Every run this issue has had, newest attempt first
 //
 // Returns a wrapper object for the known response body format(s).
@@ -59736,6 +60359,32 @@ func (c *ClientWithResponses) RevokeWorkspaceRunnerWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseRevokeWorkspaceRunnerResponse(rsp)
+}
+
+// PauseWorkspaceRunnerWithResponse Stop offering this machine new work, leaving what it is running alone
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/runners/{runnerId}/pause (the `PauseWorkspaceRunner` operationId).
+func (c *ClientWithResponses) PauseWorkspaceRunnerWithResponse(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*PauseWorkspaceRunnerResponse, error) {
+	rsp, err := c.PauseWorkspaceRunner(ctx, workspaceId, runnerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePauseWorkspaceRunnerResponse(rsp)
+}
+
+// ResumeWorkspaceRunnerWithResponse Let this machine take work again
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/runners/{runnerId}/resume (the `ResumeWorkspaceRunner` operationId).
+func (c *ClientWithResponses) ResumeWorkspaceRunnerWithResponse(ctx context.Context, workspaceId WorkspaceId, runnerId RunnerId, reqEditors ...RequestEditorFn) (*ResumeWorkspaceRunnerResponse, error) {
+	rsp, err := c.ResumeWorkspaceRunner(ctx, workspaceId, runnerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResumeWorkspaceRunnerResponse(rsp)
 }
 
 // ListWorkspaceSavedViewsWithResponse The saved views this caller can see, in the order they arranged them
@@ -69744,6 +70393,67 @@ func ParseDelegateWorkspaceIssueResponse(rsp *http.Response) (*DelegateWorkspace
 	return response, nil
 }
 
+// ParseGetWorkspaceIssueDelegationTargetsResponse parses an HTTP response from a GetWorkspaceIssueDelegationTargetsWithResponse call
+func ParseGetWorkspaceIssueDelegationTargetsResponse(rsp *http.Response) (*GetWorkspaceIssueDelegationTargetsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceIssueDelegationTargetsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DelegationTargets
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceIssueExecutionsResponse parses an HTTP response from a ListWorkspaceIssueExecutionsWithResponse call
 func ParseListWorkspaceIssueExecutionsResponse(rsp *http.Response) (*ListWorkspaceIssueExecutionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -73113,6 +73823,114 @@ func ParseRevokeWorkspaceRunnerResponse(rsp *http.Response) (*RevokeWorkspaceRun
 	switch {
 	case rsp.StatusCode == 204:
 		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePauseWorkspaceRunnerResponse parses an HTTP response from a PauseWorkspaceRunnerWithResponse call
+func ParsePauseWorkspaceRunnerResponse(rsp *http.Response) (*PauseWorkspaceRunnerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PauseWorkspaceRunnerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Runner
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseResumeWorkspaceRunnerResponse parses an HTTP response from a ResumeWorkspaceRunnerWithResponse call
+func ParseResumeWorkspaceRunnerResponse(rsp *http.Response) (*ResumeWorkspaceRunnerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResumeWorkspaceRunnerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Runner
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest Problem
@@ -78998,6 +79816,9 @@ type ServerInterface interface {
 	// DelegateWorkspaceIssue Hand this issue to an agent, and tell anything listening that work has begun
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/delegation)
 	DelegateWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets)
+	GetWorkspaceIssueDelegationTargets(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params GetWorkspaceIssueDelegationTargetsParams)
 	// ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/executions)
 	ListWorkspaceIssueExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -79172,6 +79993,12 @@ type ServerInterface interface {
 	// RevokeWorkspaceRunner Cut this machine off, leaving its agent working everywhere else
 	// (DELETE /workspaces/{workspaceId}/runners/{runnerId})
 	RevokeWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId)
+	// PauseWorkspaceRunner Stop offering this machine new work, leaving what it is running alone
+	// (POST /workspaces/{workspaceId}/runners/{runnerId}/pause)
+	PauseWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId)
+	// ResumeWorkspaceRunner Let this machine take work again
+	// (POST /workspaces/{workspaceId}/runners/{runnerId}/resume)
+	ResumeWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId)
 	// ListWorkspaceSavedViews The saved views this caller can see, in the order they arranged them
 	// (GET /workspaces/{workspaceId}/saved-views)
 	ListWorkspaceSavedViews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -80342,6 +81169,12 @@ func (_ Unimplemented) DelegateWorkspaceIssue(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
+// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets)
+func (_ Unimplemented) GetWorkspaceIssueDelegationTargets(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params GetWorkspaceIssueDelegationTargetsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 // (GET /workspaces/{workspaceId}/issues/{issueId}/executions)
 func (_ Unimplemented) ListWorkspaceIssueExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
@@ -80687,6 +81520,18 @@ func (_ Unimplemented) ListWorkspaceRunners(w http.ResponseWriter, r *http.Reque
 // RevokeWorkspaceRunner Cut this machine off, leaving its agent working everywhere else
 // (DELETE /workspaces/{workspaceId}/runners/{runnerId})
 func (_ Unimplemented) RevokeWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PauseWorkspaceRunner Stop offering this machine new work, leaving what it is running alone
+// (POST /workspaces/{workspaceId}/runners/{runnerId}/pause)
+func (_ Unimplemented) PauseWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ResumeWorkspaceRunner Let this machine take work again
+// (POST /workspaces/{workspaceId}/runners/{runnerId}/resume)
+func (_ Unimplemented) ResumeWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -85977,6 +86822,57 @@ func (siw *ServerInterfaceWrapper) DelegateWorkspaceIssue(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// GetWorkspaceIssueDelegationTargets operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceIssueDelegationTargets(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetWorkspaceIssueDelegationTargetsParams
+
+	// ------------- Required query parameter "agentAccountId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "agentAccountId", r.URL.Query(), &params.AgentAccountId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "agentAccountId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentAccountId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceIssueDelegationTargets(w, r, workspaceId, issueId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceIssueExecutions operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceIssueExecutions(w http.ResponseWriter, r *http.Request) {
 
@@ -88135,6 +89031,76 @@ func (siw *ServerInterfaceWrapper) RevokeWorkspaceRunner(w http.ResponseWriter, 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RevokeWorkspaceRunner(w, r, workspaceId, runnerId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PauseWorkspaceRunner operation middleware
+func (siw *ServerInterfaceWrapper) PauseWorkspaceRunner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "runnerId" -------------
+	var runnerId RunnerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "runnerId", chi.URLParam(r, "runnerId"), &runnerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runnerId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PauseWorkspaceRunner(w, r, workspaceId, runnerId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResumeWorkspaceRunner operation middleware
+func (siw *ServerInterfaceWrapper) ResumeWorkspaceRunner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "runnerId" -------------
+	var runnerId RunnerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "runnerId", chi.URLParam(r, "runnerId"), &runnerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runnerId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResumeWorkspaceRunner(w, r, workspaceId, runnerId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -92099,6 +93065,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/delegation", wrapper.DelegateWorkspaceIssue)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/delegation/targets", wrapper.GetWorkspaceIssueDelegationTargets)
+	})
+	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/labels", wrapper.SetWorkspaceIssueLabels)
 	})
 	r.Group(func(r chi.Router) {
@@ -92328,6 +93297,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/runners/{runnerId}", wrapper.RevokeWorkspaceRunner)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/runners/{runnerId}/pause", wrapper.PauseWorkspaceRunner)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/runners/{runnerId}/resume", wrapper.ResumeWorkspaceRunner)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/runners/me/codebases", wrapper.ListCurrentRunnerCodebases)
@@ -105359,6 +106334,104 @@ func (response DelegateWorkspaceIssue500ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type GetWorkspaceIssueDelegationTargetsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Params      GetWorkspaceIssueDelegationTargetsParams
+}
+
+type GetWorkspaceIssueDelegationTargetsResponseObject interface {
+	VisitGetWorkspaceIssueDelegationTargetsResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceIssueDelegationTargets200JSONResponse DelegationTargets
+
+func (response GetWorkspaceIssueDelegationTargets200JSONResponse) VisitGetWorkspaceIssueDelegationTargetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDelegationTargets401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueDelegationTargets401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDelegationTargetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDelegationTargets403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueDelegationTargets403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDelegationTargetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDelegationTargets404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueDelegationTargets404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDelegationTargetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDelegationTargets422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueDelegationTargets422ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDelegationTargetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDelegationTargets500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueDelegationTargets500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDelegationTargetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceIssueExecutionsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	IssueId     IssueId     `json:"issueId"`
@@ -110792,6 +111865,172 @@ func (response RevokeWorkspaceRunner404ApplicationProblemPlusJSONResponse) Visit
 type RevokeWorkspaceRunner500ApplicationProblemPlusJSONResponse Problem
 
 func (response RevokeWorkspaceRunner500ApplicationProblemPlusJSONResponse) VisitRevokeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseWorkspaceRunnerRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	RunnerId    RunnerId    `json:"runnerId"`
+}
+
+type PauseWorkspaceRunnerResponseObject interface {
+	VisitPauseWorkspaceRunnerResponse(w http.ResponseWriter) error
+}
+
+type PauseWorkspaceRunner200JSONResponse Runner
+
+func (response PauseWorkspaceRunner200JSONResponse) VisitPauseWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseWorkspaceRunner401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PauseWorkspaceRunner401ApplicationProblemPlusJSONResponse) VisitPauseWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseWorkspaceRunner403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response PauseWorkspaceRunner403ApplicationProblemPlusJSONResponse) VisitPauseWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseWorkspaceRunner404ApplicationProblemPlusJSONResponse Problem
+
+func (response PauseWorkspaceRunner404ApplicationProblemPlusJSONResponse) VisitPauseWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseWorkspaceRunner500ApplicationProblemPlusJSONResponse Problem
+
+func (response PauseWorkspaceRunner500ApplicationProblemPlusJSONResponse) VisitPauseWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResumeWorkspaceRunnerRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	RunnerId    RunnerId    `json:"runnerId"`
+}
+
+type ResumeWorkspaceRunnerResponseObject interface {
+	VisitResumeWorkspaceRunnerResponse(w http.ResponseWriter) error
+}
+
+type ResumeWorkspaceRunner200JSONResponse Runner
+
+func (response ResumeWorkspaceRunner200JSONResponse) VisitResumeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResumeWorkspaceRunner401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ResumeWorkspaceRunner401ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResumeWorkspaceRunner403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ResumeWorkspaceRunner403ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResumeWorkspaceRunner404ApplicationProblemPlusJSONResponse Problem
+
+func (response ResumeWorkspaceRunner404ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceRunnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResumeWorkspaceRunner500ApplicationProblemPlusJSONResponse Problem
+
+func (response ResumeWorkspaceRunner500ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceRunnerResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -119844,6 +121083,9 @@ type StrictServerInterface interface {
 	// DelegateWorkspaceIssue Hand this issue to an agent, and tell anything listening that work has begun
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/delegation)
 	DelegateWorkspaceIssue(ctx context.Context, request DelegateWorkspaceIssueRequestObject) (DelegateWorkspaceIssueResponseObject, error)
+	// GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets)
+	GetWorkspaceIssueDelegationTargets(ctx context.Context, request GetWorkspaceIssueDelegationTargetsRequestObject) (GetWorkspaceIssueDelegationTargetsResponseObject, error)
 	// ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/executions)
 	ListWorkspaceIssueExecutions(ctx context.Context, request ListWorkspaceIssueExecutionsRequestObject) (ListWorkspaceIssueExecutionsResponseObject, error)
@@ -120018,6 +121260,12 @@ type StrictServerInterface interface {
 	// RevokeWorkspaceRunner Cut this machine off, leaving its agent working everywhere else
 	// (DELETE /workspaces/{workspaceId}/runners/{runnerId})
 	RevokeWorkspaceRunner(ctx context.Context, request RevokeWorkspaceRunnerRequestObject) (RevokeWorkspaceRunnerResponseObject, error)
+	// PauseWorkspaceRunner Stop offering this machine new work, leaving what it is running alone
+	// (POST /workspaces/{workspaceId}/runners/{runnerId}/pause)
+	PauseWorkspaceRunner(ctx context.Context, request PauseWorkspaceRunnerRequestObject) (PauseWorkspaceRunnerResponseObject, error)
+	// ResumeWorkspaceRunner Let this machine take work again
+	// (POST /workspaces/{workspaceId}/runners/{runnerId}/resume)
+	ResumeWorkspaceRunner(ctx context.Context, request ResumeWorkspaceRunnerRequestObject) (ResumeWorkspaceRunnerResponseObject, error)
 	// ListWorkspaceSavedViews The saved views this caller can see, in the order they arranged them
 	// (GET /workspaces/{workspaceId}/saved-views)
 	ListWorkspaceSavedViews(ctx context.Context, request ListWorkspaceSavedViewsRequestObject) (ListWorkspaceSavedViewsResponseObject, error)
@@ -124539,6 +125787,34 @@ func (sh *strictHandler) DelegateWorkspaceIssue(w http.ResponseWriter, r *http.R
 	}
 }
 
+// GetWorkspaceIssueDelegationTargets operation middleware
+func (sh *strictHandler) GetWorkspaceIssueDelegationTargets(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params GetWorkspaceIssueDelegationTargetsParams) {
+	var request GetWorkspaceIssueDelegationTargetsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceIssueDelegationTargets(ctx, request.(GetWorkspaceIssueDelegationTargetsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceIssueDelegationTargets")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceIssueDelegationTargetsResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceIssueDelegationTargetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListWorkspaceIssueExecutions operation middleware
 func (sh *strictHandler) ListWorkspaceIssueExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	var request ListWorkspaceIssueExecutionsRequestObject
@@ -126258,6 +127534,60 @@ func (sh *strictHandler) RevokeWorkspaceRunner(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RevokeWorkspaceRunnerResponseObject); ok {
 		if err := validResponse.VisitRevokeWorkspaceRunnerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PauseWorkspaceRunner operation middleware
+func (sh *strictHandler) PauseWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId) {
+	var request PauseWorkspaceRunnerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.RunnerId = runnerId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PauseWorkspaceRunner(ctx, request.(PauseWorkspaceRunnerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PauseWorkspaceRunner")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PauseWorkspaceRunnerResponseObject); ok {
+		if err := validResponse.VisitPauseWorkspaceRunnerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResumeWorkspaceRunner operation middleware
+func (sh *strictHandler) ResumeWorkspaceRunner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, runnerId RunnerId) {
+	var request ResumeWorkspaceRunnerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.RunnerId = runnerId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResumeWorkspaceRunner(ctx, request.(ResumeWorkspaceRunnerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResumeWorkspaceRunner")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResumeWorkspaceRunnerResponseObject); ok {
+		if err := validResponse.VisitResumeWorkspaceRunnerResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

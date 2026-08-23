@@ -20,7 +20,13 @@ type RunnerChannel interface {
 	Acknowledge(ctx context.Context, runnerID uuid.UUID, cursor string) error
 
 	Attach(ctx context.Context, runnerID uuid.UUID, epoch string, seenAt time.Time) error
-	Renew(ctx context.Context, runnerID uuid.UUID, epoch string, seenAt time.Time) error
+	Renew(
+		ctx context.Context,
+		runnerID uuid.UUID,
+		epoch string,
+		load entity.RunnerLoad,
+		seenAt time.Time,
+	) error
 	Detach(ctx context.Context, runnerID uuid.UUID, epoch string) error
 	Presence(ctx context.Context, runnerID uuid.UUID) (entity.RunnerPresence, error)
 

@@ -173,7 +173,7 @@ func TestTheNewestConnectionHoldsTheChannel(t *testing.T) {
 		t.Fatalf("attach first: %v", err)
 	}
 
-	if err := channel.Renew(ctx, runnerID, "first", now); err != nil {
+	if err := channel.Renew(ctx, runnerID, "first", entity.RunnerLoad{}, now); err != nil {
 		t.Fatalf("the only connection could not renew: %v", err)
 	}
 
@@ -181,11 +181,11 @@ func TestTheNewestConnectionHoldsTheChannel(t *testing.T) {
 		t.Fatalf("attach second: %v", err)
 	}
 
-	if err := channel.Renew(ctx, runnerID, "first", now); err == nil {
+	if err := channel.Renew(ctx, runnerID, "first", entity.RunnerLoad{}, now); err == nil {
 		t.Fatalf("a displaced connection renewed its hold; both would stay open")
 	}
 
-	if err := channel.Renew(ctx, runnerID, "second", now); err != nil {
+	if err := channel.Renew(ctx, runnerID, "second", entity.RunnerLoad{}, now); err != nil {
 		t.Fatalf("the newest connection could not renew: %v", err)
 	}
 

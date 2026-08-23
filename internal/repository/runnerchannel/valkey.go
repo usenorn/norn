@@ -34,8 +34,13 @@ const (
 )
 
 type presenceRecord struct {
-	Epoch  string    `json:"epoch"`
-	SeenAt time.Time `json:"seenAt"`
+	Epoch        string    `json:"epoch"`
+	SeenAt       time.Time `json:"seenAt"`
+	Capacity     int       `json:"capacity,omitempty"`
+	Used         int       `json:"used,omitempty"`
+	Paused       bool      `json:"paused,omitempty"`
+	DiskPressure bool      `json:"diskPressure,omitempty"`
+	CPUPressure  bool      `json:"cpuPressure,omitempty"`
 }
 
 type channelRepository struct {
@@ -150,13 +155,14 @@ func (r *channelRepository) Attach(
 	epoch string,
 	seenAt time.Time,
 ) error {
-	return r.hold(ctx, runnerID, epoch, seenAt)
+	return r.hold(ctx, runnerID, epoch, entity.RunnerLoad{}, seenAt)
 }
 
 func (r *channelRepository) Renew(
 	ctx context.Context,
 	runnerID uuid.UUID,
 	epoch string,
+	load entity.RunnerLoad,
 	seenAt time.Time,
 ) error {
 	held, err := r.Presence(ctx, runnerID)
@@ -168,7 +174,7 @@ func (r *channelRepository) Renew(
 		return entity.ErrChannelDisplaced
 	}
 
-	return r.hold(ctx, runnerID, epoch, seenAt)
+	return r.hold(ctx, runnerID, epoch, load, seenAt)
 }
 
 func (r *channelRepository) Detach(ctx context.Context, runnerID uuid.UUID, epoch string) error {
@@ -211,6 +217,13 @@ func (r *channelRepository) Presence(
 		RunnerID: runnerID,
 		Epoch:    record.Epoch,
 		SeenAt:   record.SeenAt,
+		Load: entity.RunnerLoad{
+			Capacity:     record.Capacity,
+			Used:         record.Used,
+			Paused:       record.Paused,
+			DiskPressure: record.DiskPressure,
+			CPUPressure:  record.CPUPressure,
+		},
 	}, nil
 }
 
@@ -238,9 +251,18 @@ func (r *channelRepository) hold(
 	ctx context.Context,
 	runnerID uuid.UUID,
 	epoch string,
+	load entity.RunnerLoad,
 	seenAt time.Time,
 ) error {
-	record, err := json.Marshal(presenceRecord{Epoch: epoch, SeenAt: seenAt.UTC()})
+	record, err := json.Marshal(presenceRecord{
+		Epoch:        epoch,
+		SeenAt:       seenAt.UTC(),
+		Capacity:     load.Capacity,
+		Used:         load.Used,
+		Paused:       load.Paused,
+		DiskPressure: load.DiskPressure,
+		CPUPressure:  load.CPUPressure,
+	})
 	if err != nil {
 		return fmt.Errorf("encode the runner channel holder: %w", err)
 	}

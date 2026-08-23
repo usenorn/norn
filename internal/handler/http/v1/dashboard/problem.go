@@ -1522,6 +1522,12 @@ func (r problemResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWrit
 	return r.write(w)
 }
 
+func (r problemResponse) VisitGetWorkspaceIssueDelegationTargetsResponse(
+	w http.ResponseWriter,
+) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitRecallWorkspaceIssueResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
@@ -2126,6 +2132,14 @@ func (r problemResponse) VisitGetCurrentRunnerResponse(w http.ResponseWriter) er
 }
 
 func (r problemResponse) VisitListWorkspaceRunnersResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitPauseWorkspaceRunnerResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitResumeWorkspaceRunnerResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 
