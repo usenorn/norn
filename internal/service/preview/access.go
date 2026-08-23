@@ -62,7 +62,7 @@ func (s *previewsService) Introspect(
 	host, grant string,
 	client entity.SessionClient,
 ) (entity.PreviewAccess, error) {
-	preview, err := s.previews.ByHost(ctx, host)
+	route, err := s.previews.RouteByHost(ctx, host)
 	if err != nil {
 		if errors.Is(err, entity.ErrPreviewNotFound) {
 			return refused(entity.PreviewSession{}, entity.ErrPreviewNotFound), nil
@@ -70,6 +70,8 @@ func (s *previewsService) Introspect(
 
 		return entity.PreviewAccess{}, err
 	}
+
+	preview := route.Preview
 
 	if !preview.Open() {
 		return refused(preview, entity.ErrPreviewClosed), nil
@@ -99,6 +101,8 @@ func (s *previewsService) Introspect(
 	return entity.PreviewAccess{
 		Verdict:   entity.PreviewAllowed,
 		Preview:   preview,
+		RunnerID:  route.RunnerID,
+		Path:      preview.Path,
 		ExpiresAt: held.ExpiresAt,
 	}, nil
 }
@@ -126,6 +130,7 @@ func (s *previewsService) RedeemTicket(
 	return entity.PreviewAccess{
 		Verdict:   entity.PreviewAllowed,
 		Token:     token,
+		Path:      held.Path,
 		ExpiresAt: held.ExpiresAt,
 	}, nil
 }

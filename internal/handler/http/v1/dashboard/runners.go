@@ -55,13 +55,35 @@ func (h *handler) ExchangeRunnerToken(
 		return nil, err
 	}
 
-	return api.ExchangeRunnerToken200JSONResponse{
+	return api.ExchangeRunnerToken200JSONResponse(runnerSessionDTO(session)), nil
+}
+
+func runnerSessionDTO(session service.RunnerSession) api.RunnerSession {
+	dto := api.RunnerSession{
 		Runner:          runnerDTO(session.Runner),
 		AccessToken:     session.AccessToken,
 		ExpiresIn:       int32(session.AccessTTL.Seconds()),
 		Ticket:          session.Ticket,
 		TicketExpiresIn: int32(session.TicketTTL.Seconds()),
-	}, nil
+	}
+
+	if session.Gateway == "" {
+		return dto
+	}
+
+	tunnelTicket := session.TunnelTicket
+	tunnelExpires := int32(session.TunnelTTL.Seconds())
+	gateway := session.Gateway
+	domain := session.PreviewDomain
+	scheme := api.RunnerSessionPreviewScheme(session.PreviewScheme)
+
+	dto.TunnelTicket = &tunnelTicket
+	dto.TunnelTicketExpiresIn = &tunnelExpires
+	dto.PreviewGateway = &gateway
+	dto.PreviewDomain = &domain
+	dto.PreviewScheme = &scheme
+
+	return dto
 }
 
 func (h *handler) GetCurrentRunner(

@@ -11,12 +11,13 @@ import (
 //go:generate go tool mockgen -source=codebases.go -destination=codebase/mock_codebases.go -package=codebase -mock_names=Codebases=MockCodebases
 
 type ConnectCodebaseInput struct {
-	Name         string
-	RootPath     string
-	Repositories []entity.CodebaseRepository
-	SharedFiles  []string
-	Runtimes     []entity.CodebaseRuntime
-	Tools        []entity.CodingTool
+	Name           string
+	RootPath       string
+	Repositories   []entity.CodebaseRepository
+	SharedFiles    []string
+	Runtimes       []entity.CodebaseRuntime
+	Tools          []entity.CodingTool
+	PreviewGateway entity.GatewayReach
 }
 
 type Codebases interface {

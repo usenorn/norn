@@ -25,6 +25,7 @@ func newRootCommand() *cobra.Command {
 		newSeedCommand(),
 		newJobsCommand(),
 		newPreviewGatewayCommand(),
+		newGatewayCommand(),
 	)
 
 	return root

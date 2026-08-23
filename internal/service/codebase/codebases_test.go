@@ -262,3 +262,50 @@ func TestAnInventoryTheRunnerCannotDescribeIsRefusedBeforeItIsStored(t *testing.
 		t.Fatalf("a repository with no name returned %v, want a validation error", err)
 	}
 }
+
+func TestWhatTheMachineSaysAboutTheGatewayIsKeptWithTheFolder(t *testing.T) {
+	for name, reported := range map[string]entity.GatewayReach{
+		"a machine that reached it":     entity.GatewayReachable,
+		"a machine that could not":      entity.GatewayUnreachable,
+		"an instance serving no domain": entity.GatewayUnconfigured,
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := newHarness(t)
+			api := repositoryAt("api", "api")
+
+			h.codebases.EXPECT().
+				GetLiveByRoot(gomock.Any(), h.runner.ID, gomock.Any()).
+				Return(entity.Codebase{}, entity.ErrCodebaseNotFound)
+
+			var captured repository.CodebaseInventory
+
+			h.codebases.EXPECT().
+				Connect(gomock.Any(), h.runner.ID, gomock.Any(), gomock.Any()).
+				DoAndReturn(func(
+					_ context.Context,
+					_ uuid.UUID,
+					inventory repository.CodebaseInventory,
+					_ time.Time,
+				) (entity.Codebase, error) {
+					captured = inventory
+
+					return h.live(entity.CodebaseStateActive, inventory.Repositories...), nil
+				})
+
+			input := h.connecting(api)
+			input.PreviewGateway = reported
+
+			if _, err := h.service.Connect(h.asRunner(), input); err != nil {
+				t.Fatalf("connect the codebase: %v", err)
+			}
+
+			if captured.PreviewGateway != reported {
+				t.Fatalf(
+					"the machine said %q and %q was stored; a probe nobody keeps is a probe "+
+						"nobody can read when a preview link will not open",
+					reported, captured.PreviewGateway,
+				)
+			}
+		})
+	}
+}

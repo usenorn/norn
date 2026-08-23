@@ -7693,6 +7693,28 @@ components:
           type: string
           description: Single use, spent when opening the runner channel
         ticketExpiresIn: { type: integer, format: int32 }
+        tunnelTicket:
+          type: string
+          description: >-
+            Single use, spent when opening the preview tunnel. Separate from the channel ticket so
+            neither one opens the other's door. Empty when this server serves no preview domain.
+        tunnelTicketExpiresIn: { type: integer, format: int32 }
+        previewGateway:
+          type: string
+          maxLength: 512
+          description: >-
+            Where the machine opens its preview tunnel. Empty when this server serves no preview
+            domain, and a machine that reads it empty knows not to try.
+        previewDomain:
+          type: string
+          maxLength: 255
+          description: >-
+            The domain preview addresses are composed under, so the machine can say where a preview
+            reaches rather than only naming its own loopback port.
+        previewScheme:
+          type: string
+          enum: [http, https]
+          description: The scheme those addresses carry.
 
     CodebaseState:
       type: string
@@ -7701,6 +7723,13 @@ components:
     CodebaseRuntime:
       type: string
       enum: [process, docker, kvm]
+
+    GatewayReach:
+      type: string
+      description: >-
+        Whether this machine can open a preview tunnel. unconfigured means this server serves no
+        preview domain, so there was nothing to reach and nothing is wrong.
+      enum: [reachable, unreachable, unconfigured]
 
     RemoteFingerprint:
       type: object
@@ -7757,6 +7786,7 @@ components:
           type: array
           description: Coding agents installed on the machine, with the versions detected
           items: { $ref: '#/components/schemas/CodingTool' }
+        previewGateway: { $ref: '#/components/schemas/GatewayReach' }
         connectedAt: { type: string, format: date-time }
         lastSeenAt: { type: string, format: date-time }
         disconnectedAt: { type: string, format: date-time }
@@ -7785,6 +7815,7 @@ components:
           type: array
           maxItems: 32
           items: { $ref: '#/components/schemas/CodingTool' }
+        previewGateway: { $ref: '#/components/schemas/GatewayReach' }
 
     ExecutionState:
       type: string

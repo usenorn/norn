@@ -1943,10 +1943,21 @@ func codebaseDTO(codebase entity.Codebase) api.Codebase {
 		SharedFiles:    shared,
 		Runtimes:       runtimes,
 		Tools:          tools,
+		PreviewGateway: previewGatewayOf(codebase.PreviewGateway),
 		ConnectedAt:    codebase.ConnectedAt,
 		LastSeenAt:     codebase.LastSeenAt,
 		DisconnectedAt: codebase.DisconnectedAt,
 	}
+}
+
+func previewGatewayOf(reach entity.GatewayReach) *api.GatewayReach {
+	if !reach.Valid() {
+		return nil
+	}
+
+	answered := api.GatewayReach(reach)
+
+	return &answered
 }
 
 func codebaseDTOs(codebases []entity.Codebase) []api.Codebase {

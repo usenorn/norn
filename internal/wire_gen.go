@@ -12,7 +12,10 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/auditexport"
 	blob2 "github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
+	"github.com/usenorn/norn/internal/handler/http/gatewayrouter"
+	preview3 "github.com/usenorn/norn/internal/handler/http/preview"
 	previewgateway3 "github.com/usenorn/norn/internal/handler/http/previewgateway"
+	"github.com/usenorn/norn/internal/handler/http/previewtunnel"
 	"github.com/usenorn/norn/internal/handler/http/router"
 	runnerchannel3 "github.com/usenorn/norn/internal/handler/http/runnerchannel"
 	"github.com/usenorn/norn/internal/handler/http/scim"
@@ -76,6 +79,7 @@ import (
 	"github.com/usenorn/norn/internal/repository/mailer"
 	"github.com/usenorn/norn/internal/repository/mcpthrottle"
 	"github.com/usenorn/norn/internal/repository/membership"
+	"github.com/usenorn/norn/internal/repository/nornapi"
 	"github.com/usenorn/norn/internal/repository/notification"
 	"github.com/usenorn/norn/internal/repository/notificationevent"
 	"github.com/usenorn/norn/internal/repository/notificationsetting"
@@ -106,6 +110,7 @@ import (
 	"github.com/usenorn/norn/internal/repository/team"
 	"github.com/usenorn/norn/internal/repository/teammember"
 	"github.com/usenorn/norn/internal/repository/triage"
+	"github.com/usenorn/norn/internal/repository/tunnel"
 	"github.com/usenorn/norn/internal/repository/webhook"
 	"github.com/usenorn/norn/internal/repository/webhooksender"
 	"github.com/usenorn/norn/internal/repository/workflowstate"
@@ -141,6 +146,7 @@ import (
 	notification2 "github.com/usenorn/norn/internal/service/notification"
 	preview2 "github.com/usenorn/norn/internal/service/preview"
 	previewgateway2 "github.com/usenorn/norn/internal/service/previewgateway"
+	"github.com/usenorn/norn/internal/service/previewproxy"
 	project2 "github.com/usenorn/norn/internal/service/project"
 	runner2 "github.com/usenorn/norn/internal/service/runner"
 	runnerchannel2 "github.com/usenorn/norn/internal/service/runnerchannel"
@@ -250,7 +256,9 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	repositoryRunner := runner.New(postgresClient)
 	configRunner := config.NewRunner(configConfig)
 	runnerSession := runnersession.New(client, configRunner)
-	runners := runner2.New(repositoryRunner, runnerSession, repositoryAgent, serviceAuthorizer, serviceAudit, configRunner)
+	gateway := config.NewGateway(configConfig)
+	previews := config.NewPreviews(configConfig)
+	runners := runner2.New(repositoryRunner, runnerSession, repositoryAgent, serviceAuthorizer, serviceAudit, configRunner, gateway, previews)
 	mcpThrottle := mcpthrottle.New(client, mcp)
 	emailChange := emailchange.New(postgresClient)
 	passwordReset := passwordreset.New(postgresClient)
@@ -394,7 +402,6 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	changeSets := changeset2.New(changeSet, repositoryIssue, executions, serviceSourceControl, serviceEvents, serviceAuthorizer, postgresClient)
 	previewShare := previewshare.New(postgresClient)
 	previewGrant := previewgrant.New(client)
-	previews := config.NewPreviews(configConfig)
 	servicePreviews := preview2.New(repositoryPreview, previewShare, previewGrant, repositoryExecution, executions, serviceEvents, serviceAuthorizer, serviceAudit, postgresClient, app, previews)
 	serviceAttachments := attachment2.New(repositoryAttachment, repositoryActivity, repositoryIssue, repositoryBlob, jobProducer, serviceAuthorizer, postgresClient, attachments)
 	bulkAction := bulkaction.New(postgresClient)
@@ -479,7 +486,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	runnerchannelEdge := runnerchannel3.New(runnerChannels, configRunner)
 	previewGateway := previewgateway.New(postgresClient)
 	previewGateways := previewgateway2.New(previewGateway, previewGrant, previews)
-	previewgatewayEdge := previewgateway3.New(servicePreviews, previewGateways)
+	previewgatewayEdge := previewgateway3.New(servicePreviews, previewGateways, runners)
 	handler := router.New(http, configSession, attachments, app, mcp, sessions, apiTokens, runners, mcpThrottle, strictServerInterface, callback, ssoSAML, edge, eventsEdge, auditexportEdge, scimEdge, sourcecontrolEdge, appEdge, mcpserverEdge, runnerchannelEdge, previewgatewayEdge)
 	logger, err := logging.New(app)
 	if err != nil {
@@ -821,7 +828,9 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	executionPolicy := executionpolicy.New(client)
 	configRunner := config.NewRunner(configConfig)
 	runnerSession := runnersession.New(valkeyClient, configRunner)
-	runners := runner2.New(repositoryRunner, runnerSession, repositoryAgent, serviceAuthorizer, serviceAudit, configRunner)
+	gateway := config.NewGateway(configConfig)
+	previews := config.NewPreviews(configConfig)
+	runners := runner2.New(repositoryRunner, runnerSession, repositoryAgent, serviceAuthorizer, serviceAudit, configRunner, gateway, previews)
 	executionUploads := executionupload2.New(executionUpload, executionPolicy, repositoryBlob, runners, serviceExecutions, serviceAuthorizer, executions, attachments)
 	executionUploadSweepHandler := job.NewExecutionUploadSweepHandler(executionUploads)
 	issueQuestions := issuequestion2.New(issueQuestion, repositoryIssue, issueDelegation, repositoryActivity, notificationEvent, serviceExecutions, serviceEvents, client, serviceAuthorizer)
@@ -967,6 +976,29 @@ func InitGatewaysAdmin(cfgFile string) (*GatewaysAdmin, func(), error) {
 	}, nil
 }
 
+func InitGateway(cfgFile string) (*Gateway, error) {
+	configConfig, err := config.New(cfgFile)
+	if err != nil {
+		return nil, err
+	}
+	gateway := config.NewGateway(configConfig)
+	previews := config.NewPreviews(configConfig)
+	http := config.NewHTTP(configConfig)
+	norn := nornapi.New(gateway)
+	repositoryTunnel := tunnel.New(gateway)
+	previewProxy := previewproxy.New(norn, repositoryTunnel, gateway)
+	edge := preview3.New(previewProxy, previews, gateway)
+	previewtunnelEdge := previewtunnel.New(previewProxy, gateway)
+	handler := gatewayrouter.New(gateway, http, previews, edge, previewtunnelEdge)
+	app := config.NewApp(configConfig)
+	logger, err := logging.New(app)
+	if err != nil {
+		return nil, err
+	}
+	internalGateway := NewGateway(gateway, previews, handler, previewProxy, logger)
+	return internalGateway, nil
+}
+
 // wire.go:
 
 var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuedelegation.Set, issuequestion.Set, runner.Set, codebase.Set, execution.Set, executionpolicy.Set, executionupload.Set, changeset.Set, preview.Set, previewshare.Set, previewgrant.Set, previewgateway.Set, runnerchannel.Set, runnersession.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, signinchallenge.Set, scmappstate.Set, oidcprovider2.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, delegation.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, issuequestion2.Set, runner2.Set, codebase2.Set, execution2.Set, executionupload2.Set, changeset2.Set, preview2.Set, previewgateway2.Set, previewgateway3.Set, runnerchannel2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitea.Set, gitlab.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, runnerchannel3.Set, auditexport.Set, scim.Set, sourcecontrol.Set, mcpserver.Set, router.Set, job.Set, NewApp,
@@ -977,3 +1009,5 @@ var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, tas
 	NewJobsAdmin,
 	NewGatewaysAdmin,
 )
+
+var gatewaySet = wire.NewSet(config.Set, logging.Set, nornapi.Set, tunnel.Set, previewproxy.Set, preview3.Set, previewtunnel.Set, gatewayrouter.Set, NewGateway)

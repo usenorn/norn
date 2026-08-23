@@ -22,7 +22,11 @@ import (
 	runnersvc "github.com/usenorn/norn/internal/service/runner"
 )
 
-const testClockSkew = 3 * time.Minute
+const (
+	testClockSkew     = 3 * time.Minute
+	testTunnelHost    = "tunnel.norn.ink"
+	testPreviewDomain = "norn.ink"
+)
 
 type harness struct {
 	runners    *runnerrepo.MockRunner
@@ -89,6 +93,8 @@ func newHarness(t *testing.T) *harness {
 			NonceTTL:     10 * time.Minute,
 			MaxClockSkew: testClockSkew,
 		},
+		config.Gateway{TunnelHost: testTunnelHost},
+		config.Previews{BaseDomain: testPreviewDomain, Scheme: "https"},
 	)
 
 	return h

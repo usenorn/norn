@@ -15,4 +15,6 @@ type RunnerSession interface {
 	Resolve(ctx context.Context, tokenHash []byte) (uuid.UUID, error)
 	IssueTicket(ctx context.Context, ticketHash []byte, runnerID uuid.UUID, ttl time.Duration) error
 	RedeemTicket(ctx context.Context, ticketHash []byte) (uuid.UUID, error)
+	IssueTunnelTicket(ctx context.Context, ticketHash []byte, runnerID uuid.UUID, ttl time.Duration) error
+	RedeemTunnelTicket(ctx context.Context, ticketHash []byte) (uuid.UUID, error)
 }

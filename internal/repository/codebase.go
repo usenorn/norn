@@ -12,12 +12,13 @@ import (
 //go:generate go tool mockgen -source=codebase.go -destination=codebase/mock_codebase.go -package=codebase -mock_names=Codebase=MockCodebase
 
 type CodebaseInventory struct {
-	Name         string
-	RootPath     string
-	Repositories []entity.CodebaseRepository
-	SharedFiles  []string
-	Runtimes     []entity.CodebaseRuntime
-	Tools        []entity.CodingTool
+	Name           string
+	RootPath       string
+	Repositories   []entity.CodebaseRepository
+	SharedFiles    []string
+	Runtimes       []entity.CodebaseRuntime
+	Tools          []entity.CodingTool
+	PreviewGateway entity.GatewayReach
 }
 
 type Codebase interface {

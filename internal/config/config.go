@@ -43,6 +43,7 @@ type Config struct {
 	Executions    Executions    `mapstructure:"executions"`
 	Questions     Questions     `mapstructure:"questions"`
 	Previews      Previews      `mapstructure:"previews"`
+	Gateway       Gateway       `mapstructure:"gateway"`
 }
 
 type Licence struct {
@@ -97,6 +98,35 @@ type Previews struct {
 
 func (c Previews) Routable() bool {
 	return c.BaseDomain != ""
+}
+
+type Gateway struct {
+	Listen              string        `mapstructure:"listen"`
+	Server              string        `mapstructure:"server"`
+	Secret              string        `mapstructure:"secret"`
+	TunnelHost          string        `mapstructure:"tunnel_host"`
+	MaxStreamsPerRunner int           `mapstructure:"max_streams_per_runner"`
+	RequestTimeout      time.Duration `mapstructure:"request_timeout"`
+	StreamOpenTimeout   time.Duration `mapstructure:"stream_open_timeout"`
+	HandshakeTimeout    time.Duration `mapstructure:"handshake_timeout"`
+	Heartbeat           time.Duration `mapstructure:"heartbeat"`
+	ReadHeaderTimeout   time.Duration `mapstructure:"read_header_timeout"`
+	ShutdownTimeout     time.Duration `mapstructure:"shutdown_timeout"`
+	RefreshLead         time.Duration `mapstructure:"refresh_lead"`
+	RetryMin            time.Duration `mapstructure:"retry_min"`
+	RetryMax            time.Duration `mapstructure:"retry_max"`
+}
+
+func (c Gateway) TunnelAddress(previews Previews) string {
+	if c.TunnelHost != "" {
+		return c.TunnelHost
+	}
+
+	if !previews.Routable() {
+		return ""
+	}
+
+	return "tunnel." + previews.BaseDomain
 }
 
 type Runner struct {

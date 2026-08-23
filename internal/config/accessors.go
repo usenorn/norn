@@ -16,6 +16,8 @@ func NewQuestions(cfg Config) Questions { return cfg.Questions }
 
 func NewPreviews(cfg Config) Previews { return cfg.Previews }
 
+func NewGateway(cfg Config) Gateway { return cfg.Gateway }
+
 func NewCycles(cfg Config) Cycles { return cfg.Cycles }
 
 func NewInstance(cfg Config) Instance { return cfg.Instance }

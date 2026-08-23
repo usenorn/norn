@@ -274,6 +274,19 @@ func (h *harness) expectStore() {
 		AnyTimes()
 
 	h.previews.EXPECT().
+		RouteByHost(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, host string) (entity.PreviewRoute, error) {
+			for _, held := range h.stored {
+				if held.Host != "" && held.Host == host {
+					return entity.PreviewRoute{Preview: held, RunnerID: h.runner.ID}, nil
+				}
+			}
+
+			return entity.PreviewRoute{}, entity.ErrPreviewNotFound
+		}).
+		AnyTimes()
+
+	h.previews.EXPECT().
 		ByExecution(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ string) ([]entity.PreviewSession, error) {
 			held := make([]entity.PreviewSession, 0, len(h.stored))

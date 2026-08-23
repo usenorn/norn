@@ -94,6 +94,11 @@ func (s *runnersService) Exchange(
 		return service.RunnerSession{}, err
 	}
 
+	tunnel, tunnelHash, err := entity.NewRunnerSecret(entity.RunnerTunnelPrefix)
+	if err != nil {
+		return service.RunnerSession{}, err
+	}
+
 	if err := s.sessions.Grant(ctx, accessHash, held.ID, s.cfg.AccessTTL); err != nil {
 		return service.RunnerSession{}, err
 	}
@@ -102,17 +107,64 @@ func (s *runnersService) Exchange(
 		return service.RunnerSession{}, err
 	}
 
+	gateway := s.previewGateway()
+
+	if gateway != "" {
+		if err := s.sessions.IssueTunnelTicket(ctx, tunnelHash, held.ID, s.cfg.TicketTTL); err != nil {
+			return service.RunnerSession{}, err
+		}
+	} else {
+		tunnel = ""
+	}
+
 	if err := s.runners.RecordSeen(ctx, held.ID, now); err != nil {
 		return service.RunnerSession{}, err
 	}
 
-	return service.RunnerSession{
+	session := service.RunnerSession{
 		Runner:      held,
 		AccessToken: access,
 		AccessTTL:   s.cfg.AccessTTL,
 		Ticket:      ticket,
 		TicketTTL:   s.cfg.TicketTTL,
-	}, nil
+	}
+
+	if gateway != "" {
+		session.TunnelTicket = tunnel
+		session.TunnelTTL = s.cfg.TicketTTL
+		session.Gateway = gateway
+		session.PreviewDomain = s.previews.BaseDomain
+		session.PreviewScheme = s.previews.Scheme
+	}
+
+	return session, nil
+}
+
+func (s *runnersService) previewGateway() string {
+	host := s.gateway.TunnelAddress(s.previews)
+	if host == "" {
+		return ""
+	}
+
+	return s.previews.Scheme + "://" + host
+}
+
+func (s *runnersService) AcceptTunnel(
+	ctx context.Context,
+	ticket string,
+) (entity.Runner, error) {
+	if !strings.HasPrefix(ticket, entity.RunnerTunnelPrefix) {
+		return entity.Runner{}, entity.ErrRunnerCredentialInvalid
+	}
+
+	runnerID, err := s.sessions.RedeemTunnelTicket(ctx, entity.HashRunnerSecret(ticket))
+	if err != nil {
+		return entity.Runner{}, err
+	}
+
+	_, held, err := s.ActorFor(ctx, runnerID)
+
+	return held, err
 }
 
 func (s *runnersService) Authenticate(ctx context.Context, token string) (entity.Actor, error) {

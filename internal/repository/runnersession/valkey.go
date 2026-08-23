@@ -20,6 +20,7 @@ const (
 	noncePrefix  = "runner-nonce:"
 	accessPrefix = "runner-access:"
 	ticketPrefix = "runner-ticket:"
+	tunnelPrefix = "runner-tunnel:"
 
 	claimed = "1"
 )
@@ -93,6 +94,26 @@ func (r *sessionRepository) IssueTicket(
 
 func (r *sessionRepository) RedeemTicket(ctx context.Context, ticketHash []byte) (uuid.UUID, error) {
 	return r.read(ctx, secretKey(ticketPrefix, ticketHash), true)
+}
+
+func (r *sessionRepository) IssueTunnelTicket(
+	ctx context.Context,
+	ticketHash []byte,
+	runnerID uuid.UUID,
+	ttl time.Duration,
+) error {
+	if err := r.client.Set(ctx, secretKey(tunnelPrefix, ticketHash), runnerID.String(), ttl).Err(); err != nil {
+		return fmt.Errorf("issue runner tunnel ticket: %w", err)
+	}
+
+	return nil
+}
+
+func (r *sessionRepository) RedeemTunnelTicket(
+	ctx context.Context,
+	ticketHash []byte,
+) (uuid.UUID, error) {
+	return r.read(ctx, secretKey(tunnelPrefix, ticketHash), true)
 }
 
 func (r *sessionRepository) read(ctx context.Context, key string, spend bool) (uuid.UUID, error) {

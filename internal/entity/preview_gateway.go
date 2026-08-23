@@ -18,6 +18,13 @@ const (
 	PreviewGatewayAccessPrefix = "nga_"
 	PreviewGatewaySecretBytes  = 32
 	PreviewGatewayNameMaxLen   = 200
+
+	PreviewGatewayBasePath       = "/v1/preview-gateway"
+	PreviewGatewayTokenPath      = PreviewGatewayBasePath + "/token"
+	PreviewGatewayIntrospectPath = PreviewGatewayBasePath + "/introspect"
+	PreviewGatewaySessionPath    = PreviewGatewayBasePath + "/session"
+	PreviewGatewaySharePath      = PreviewGatewayBasePath + "/share"
+	PreviewGatewayTunnelPath     = PreviewGatewayBasePath + "/tunnel"
 )
 
 var (

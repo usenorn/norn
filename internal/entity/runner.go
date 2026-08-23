@@ -19,6 +19,7 @@ const (
 	RunnerAccessPrefix  = "nrs_"
 	RunnerRefreshPrefix = "nrr_"
 	RunnerTicketPrefix  = "nrt_"
+	RunnerTunnelPrefix  = "nru_"
 	RunnerSecretBytes   = 32
 
 	RunnerNameMaxLen     = 200

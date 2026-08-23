@@ -116,6 +116,21 @@ func (mr *MockPreviewMockRecorder) Count(ctx, executionID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockPreview)(nil).Count), ctx, executionID)
 }
 
+// RouteByHost mocks base method.
+func (m *MockPreview) RouteByHost(ctx context.Context, host string) (entity.PreviewRoute, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RouteByHost", ctx, host)
+	ret0, _ := ret[0].(entity.PreviewRoute)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RouteByHost indicates an expected call of RouteByHost.
+func (mr *MockPreviewMockRecorder) RouteByHost(ctx, host any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RouteByHost", reflect.TypeOf((*MockPreview)(nil).RouteByHost), ctx, host)
+}
+
 // Save mocks base method.
 func (m *MockPreview) Save(ctx context.Context, preview entity.PreviewSession) (entity.PreviewSession, error) {
 	m.ctrl.T.Helper()

@@ -98,6 +98,7 @@ type Codebase struct {
 	SharedFiles    []string
 	Runtimes       []CodebaseRuntime
 	Tools          []CodingTool
+	PreviewGateway GatewayReach
 	ConnectedAt    time.Time
 	LastSeenAt     *time.Time
 	DisconnectedAt *time.Time
