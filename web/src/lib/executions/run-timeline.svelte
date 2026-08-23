@@ -38,7 +38,7 @@
 					<span class="w-16 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
 						{eventLabel(event.kind)}
 					</span>
-					<span class="min-w-0 flex-1 text-xs leading-normal text-ink-900 text-pretty">
+					<span class="min-w-0 flex-1 text-xs leading-normal break-words text-ink-900 text-pretty">
 						{eventLine(event)}
 					</span>
 					<span class="hidden flex-none text-2xs text-muted-foreground sm:inline">

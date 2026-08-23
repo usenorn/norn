@@ -336,7 +336,18 @@ export function eventLabel(kind: ExecutionEventKind): string {
 	}
 }
 
+const queuedReasons: string[] = [
+	"no_runner",
+	"runners_offline",
+	"runners_paused",
+	"runners_busy",
+];
+
 export function eventLine(event: ExecutionEvent): string {
+	if (event.toState === "queued" && event.reason && queuedReasons.includes(event.reason)) {
+		return waitingLine(event.reason as ExecutionQueuedReason);
+	}
+
 	if (event.reason) return event.reason;
 
 	if (event.kind === "transition" && event.toState) {

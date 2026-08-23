@@ -54,7 +54,7 @@
 		{/if}
 	</div>
 
-	<p class="max-w-prose text-sm leading-normal text-ink-900 text-pretty">
+	<p class="max-w-prose text-sm leading-normal break-words text-ink-900 text-pretty">
 		{standingLine(execution)}
 	</p>
 
