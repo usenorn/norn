@@ -83,6 +83,32 @@ func TestRevokingAShareLinkAlsoShutsOutEverybodyItAlreadyLetIn(t *testing.T) {
 	}
 }
 
+func TestOpeningThePasscodePageIsNotAGuessAtThePasscode(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+	h.visible(nil)
+	h.reported(t, "web", channelv1.PreviewOpen)
+
+	minted := h.shared(t, "web", "open-sesame")
+	token := tokenFrom(t, minted.URL)
+
+	for range entity.PreviewShareMaxAttempts * 2 {
+		_, err := h.service.Redeem(context.Background(), hostFor("web"), token, "")
+
+		refusedWith(t, err, entity.ErrPreviewSharePasscodeNeeded)
+	}
+
+	if _, err := h.service.Redeem(
+		context.Background(), hostFor("web"), token, "open-sesame",
+	); err != nil {
+		t.Fatalf(
+			"asking for the passcode form counted as a guess (%v), so anybody holding the link "+
+				"could lock everybody else out of it just by loading the page",
+			err,
+		)
+	}
+}
+
 func TestAShareLinkWithAPasscodeOpensNothingWithoutIt(t *testing.T) {
 	h := newHarness(t)
 	h.holds()
@@ -96,14 +122,19 @@ func TestAShareLinkWithAPasscodeOpensNothingWithoutIt(t *testing.T) {
 		t.Fatal("a link minted with a passcode does not say it needs one")
 	}
 
-	for name, given := range map[string]string{
-		"with no passcode at all": "",
-		"with the wrong one":      "not-it",
+	for name, expected := range map[string]struct {
+		given  string
+		refuse error
+	}{
+		"with no passcode at all": {given: "", refuse: entity.ErrPreviewSharePasscodeNeeded},
+		"with the wrong one":      {given: "not-it", refuse: entity.ErrPreviewSharePasscode},
 	} {
 		t.Run(name, func(t *testing.T) {
-			_, err := h.service.Redeem(context.Background(), hostFor("web"), token, given)
+			_, err := h.service.Redeem(
+				context.Background(), hostFor("web"), token, expected.given,
+			)
 
-			refusedWith(t, err, entity.ErrPreviewSharePasscode)
+			refusedWith(t, err, expected.refuse)
 		})
 	}
 

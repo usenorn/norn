@@ -37,6 +37,7 @@ type storedGrant struct {
 	ExecutionID string    `json:"execution_id"`
 	WorkspaceID string    `json:"workspace_id"`
 	PreviewID   string    `json:"preview_id"`
+	Path        string    `json:"path,omitempty"`
 	AccountID   string    `json:"account_id"`
 	LinkID      string    `json:"link_id"`
 	IssuedAt    time.Time `json:"issued_at"`
@@ -220,6 +221,7 @@ func store(grant entity.PreviewGrant) storedGrant {
 		ExecutionID: grant.ExecutionID,
 		WorkspaceID: grant.WorkspaceID.String(),
 		PreviewID:   grant.PreviewID.String(),
+		Path:        grant.Path,
 		AccountID:   grant.AccountID.String(),
 		LinkID:      grant.LinkID.String(),
 		IssuedAt:    grant.IssuedAt,
@@ -259,6 +261,7 @@ func restore(payload []byte) (entity.PreviewGrant, error) {
 		ExecutionID: stored.ExecutionID,
 		WorkspaceID: workspaceID,
 		PreviewID:   previewID,
+		Path:        stored.Path,
 		AccountID:   accountID,
 		LinkID:      linkID,
 		IssuedAt:    stored.IssuedAt,

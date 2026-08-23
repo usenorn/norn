@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"net/netip"
 	"net/url"
 	"strings"
@@ -155,6 +156,10 @@ func validate(cfg Config) error {
 	}
 
 	if err := validatePreviews(cfg.App, cfg.Previews); err != nil {
+		return err
+	}
+
+	if err := validateGateway(cfg.Gateway); err != nil {
 		return err
 	}
 
@@ -561,10 +566,8 @@ func validatePreviews(app App, cfg Previews) error {
 }
 
 func separateDomains(app, previews string) error {
-	host, _, found := strings.Cut(app, ":")
-	if !found {
-		host = app
-	}
+	host := bareHost(app)
+	previews = bareHost(previews)
 
 	if host == "" || previews == "" {
 		return nil
@@ -582,6 +585,63 @@ func separateDomains(app, previews string) error {
 	}
 
 	return nil
+}
+
+func validateGateway(cfg Gateway) error {
+	if cfg.Listen == "" {
+		return fmt.Errorf("gateway.listen must be set")
+	}
+
+	if cfg.MaxStreamsPerRunner <= 0 {
+		return fmt.Errorf("gateway.max_streams_per_runner must be positive")
+	}
+
+	positive := map[string]time.Duration{
+		"gateway.request_timeout":     cfg.RequestTimeout,
+		"gateway.stream_open_timeout": cfg.StreamOpenTimeout,
+		"gateway.handshake_timeout":   cfg.HandshakeTimeout,
+		"gateway.heartbeat":           cfg.Heartbeat,
+		"gateway.read_header_timeout": cfg.ReadHeaderTimeout,
+		"gateway.shutdown_timeout":    cfg.ShutdownTimeout,
+		"gateway.refresh_lead":        cfg.RefreshLead,
+		"gateway.retry_min":           cfg.RetryMin,
+		"gateway.retry_max":           cfg.RetryMax,
+	}
+
+	for name, value := range positive {
+		if value <= 0 {
+			return fmt.Errorf("%s must be positive", name)
+		}
+	}
+
+	if cfg.RetryMin > cfg.RetryMax {
+		return fmt.Errorf(
+			"gateway.retry_min (%s) is longer than gateway.retry_max (%s)",
+			cfg.RetryMin, cfg.RetryMax,
+		)
+	}
+
+	if cfg.Server == "" {
+		return nil
+	}
+
+	parsed, err := url.Parse(cfg.Server)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return fmt.Errorf(
+			"gateway.server (%q) must be an absolute url such as https://app.example.com",
+			cfg.Server,
+		)
+	}
+
+	return nil
+}
+
+func bareHost(address string) string {
+	if host, _, err := net.SplitHostPort(address); err == nil {
+		return host
+	}
+
+	return strings.Trim(address, "[]")
 }
 
 func separateOrigins(app, storage string) error {
@@ -686,6 +746,20 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("previews.share_default_ttl", 24*time.Hour)
 	v.SetDefault("previews.share_max_ttl", 7*24*time.Hour)
 	v.SetDefault("previews.audit_window", time.Hour)
+	v.SetDefault("gateway.listen", ":8091")
+	v.SetDefault("gateway.server", "")
+	v.SetDefault("gateway.secret", "")
+	v.SetDefault("gateway.tunnel_host", "")
+	v.SetDefault("gateway.max_streams_per_runner", 256)
+	v.SetDefault("gateway.request_timeout", 30*time.Second)
+	v.SetDefault("gateway.stream_open_timeout", 10*time.Second)
+	v.SetDefault("gateway.handshake_timeout", 10*time.Second)
+	v.SetDefault("gateway.heartbeat", 15*time.Second)
+	v.SetDefault("gateway.read_header_timeout", 10*time.Second)
+	v.SetDefault("gateway.shutdown_timeout", 30*time.Second)
+	v.SetDefault("gateway.refresh_lead", 2*time.Minute)
+	v.SetDefault("gateway.retry_min", 2*time.Second)
+	v.SetDefault("gateway.retry_max", time.Minute)
 	v.SetDefault("executions.retention_batch", 200)
 	v.SetDefault("asynq.addr", "127.0.0.1:6381")
 	v.SetDefault("asynq.username", "")

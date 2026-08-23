@@ -28,10 +28,17 @@ const (
 type PreviewAccess struct {
 	Verdict   PreviewVerdict
 	Preview   PreviewSession
+	RunnerID  uuid.UUID
 	Token     string
+	Path      string
 	ExpiresAt time.Time
 	Reason    string
 	Redirect  string
+}
+
+type PreviewRoute struct {
+	Preview  PreviewSession
+	RunnerID uuid.UUID
 }
 
 type PreviewGrant struct {
@@ -39,6 +46,7 @@ type PreviewGrant struct {
 	ExecutionID string
 	WorkspaceID uuid.UUID
 	PreviewID   uuid.UUID
+	Path        string
 	AccountID   uuid.UUID
 	LinkID      uuid.UUID
 	IssuedAt    time.Time
@@ -51,6 +59,7 @@ func NewPreviewGrant(preview PreviewSession, accountID, linkID uuid.UUID, issued
 		ExecutionID: preview.ExecutionID,
 		WorkspaceID: preview.WorkspaceID,
 		PreviewID:   preview.ID,
+		Path:        preview.Path,
 		AccountID:   accountID,
 		LinkID:      linkID,
 		IssuedAt:    issued,

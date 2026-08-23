@@ -108,12 +108,13 @@ func inventoryOf(input service.ConnectCodebaseInput) repository.CodebaseInventor
 	}
 
 	return repository.CodebaseInventory{
-		Name:         strings.TrimSpace(input.Name),
-		RootPath:     strings.TrimSpace(input.RootPath),
-		Repositories: repositories,
-		SharedFiles:  shared,
-		Runtimes:     runtimes,
-		Tools:        tools,
+		Name:           strings.TrimSpace(input.Name),
+		RootPath:       strings.TrimSpace(input.RootPath),
+		Repositories:   repositories,
+		SharedFiles:    shared,
+		Runtimes:       runtimes,
+		Tools:          tools,
+		PreviewGateway: input.PreviewGateway,
 	}
 }
 

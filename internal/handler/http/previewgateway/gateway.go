@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/observability/logging"
@@ -15,11 +17,12 @@ import (
 )
 
 const (
-	BasePath       = "/v1/preview-gateway"
-	TokenPath      = BasePath + "/token"
-	IntrospectPath = BasePath + "/introspect"
-	SessionPath    = BasePath + "/session"
-	SharePath      = BasePath + "/share"
+	BasePath       = entity.PreviewGatewayBasePath
+	TokenPath      = entity.PreviewGatewayTokenPath
+	IntrospectPath = entity.PreviewGatewayIntrospectPath
+	SessionPath    = entity.PreviewGatewaySessionPath
+	SharePath      = entity.PreviewGatewaySharePath
+	TunnelPath     = entity.PreviewGatewayTunnelPath
 
 	bearer = "Bearer "
 )
@@ -27,10 +30,15 @@ const (
 type Edge struct {
 	previews service.Previews
 	gateways service.PreviewGateways
+	runners  service.Runners
 }
 
-func New(previews service.Previews, gateways service.PreviewGateways) *Edge {
-	return &Edge{previews: previews, gateways: gateways}
+func New(
+	previews service.Previews,
+	gateways service.PreviewGateways,
+	runners service.Runners,
+) *Edge {
+	return &Edge{previews: previews, gateways: gateways, runners: runners}
 }
 
 type tokenResponse struct {
@@ -48,7 +56,9 @@ type introspectRequest struct {
 type introspectResponse struct {
 	Verdict     string     `json:"verdict"`
 	ExecutionID string     `json:"executionId,omitempty"`
+	RunnerID    string     `json:"runnerId,omitempty"`
 	Preview     string     `json:"preview,omitempty"`
+	Mode        string     `json:"mode,omitempty"`
 	Path        string     `json:"path,omitempty"`
 	Reason      string     `json:"reason,omitempty"`
 	Redirect    string     `json:"redirect,omitempty"`
@@ -57,6 +67,16 @@ type introspectResponse struct {
 
 type sessionRequest struct {
 	Ticket string `json:"ticket"`
+}
+
+type tunnelRequest struct {
+	Ticket string `json:"ticket"`
+}
+
+type tunnelResponse struct {
+	RunnerID    string `json:"runnerId"`
+	WorkspaceID string `json:"workspaceId"`
+	Runner      string `json:"runner"`
 }
 
 type shareRequest struct {
@@ -123,9 +143,14 @@ func (e *Edge) Introspect(w http.ResponseWriter, r *http.Request) {
 		Verdict:     string(access.Verdict),
 		ExecutionID: access.Preview.ExecutionID,
 		Preview:     access.Preview.Name,
+		Mode:        string(access.Preview.Mode),
 		Path:        access.Preview.Path,
 		Reason:      access.Reason,
 		Redirect:    access.Redirect,
+	}
+
+	if access.RunnerID != uuid.Nil {
+		answered.RunnerID = access.RunnerID.String()
 	}
 
 	if !access.ExpiresAt.IsZero() {
@@ -159,6 +184,40 @@ func (e *Edge) Session(w http.ResponseWriter, r *http.Request) {
 	}
 
 	answer(w, r, http.StatusCreated, granted(access))
+}
+
+func (e *Edge) Tunnel(w http.ResponseWriter, r *http.Request) {
+	if _, ok := e.calling(w, r); !ok {
+		return
+	}
+
+	var asked tunnelRequest
+	if !read(w, r, &asked) {
+		return
+	}
+
+	runner, err := e.runners.AcceptTunnel(r.Context(), strings.TrimSpace(asked.Ticket))
+	if err != nil {
+		switch {
+		case errors.Is(err, entity.ErrRunnerCredentialInvalid),
+			errors.Is(err, entity.ErrRunnerNotFound):
+			middleware.WriteProblem(
+				w, r, http.StatusUnauthorized, entity.ErrRunnerCredentialInvalid.Error(),
+			)
+		case errors.Is(err, entity.ErrRunnerRevoked), errors.Is(err, entity.ErrAgentDisabled):
+			middleware.WriteProblem(w, r, http.StatusForbidden, err.Error())
+		default:
+			e.fail(w, r, err)
+		}
+
+		return
+	}
+
+	answer(w, r, http.StatusCreated, tunnelResponse{
+		RunnerID:    runner.ID.String(),
+		WorkspaceID: runner.WorkspaceID.String(),
+		Runner:      runner.Name,
+	})
 }
 
 func (e *Edge) Share(w http.ResponseWriter, r *http.Request) {
@@ -206,6 +265,8 @@ func (e *Edge) refused(w http.ResponseWriter, r *http.Request, err error) {
 		errors.Is(err, entity.ErrPreviewShareExpired),
 		errors.Is(err, entity.ErrPreviewShareRevoked):
 		middleware.WriteProblem(w, r, http.StatusGone, err.Error())
+	case errors.Is(err, entity.ErrPreviewSharePasscodeNeeded):
+		middleware.WriteProblem(w, r, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, entity.ErrPreviewSharePasscode):
 		middleware.WriteProblem(w, r, http.StatusForbidden, err.Error())
 	case errors.Is(err, entity.ErrPreviewShareGuessed):
@@ -228,7 +289,7 @@ func granted(access entity.PreviewAccess) grantResponse {
 		Grant:     access.Token,
 		ExpiresAt: access.ExpiresAt,
 		Cookie:    entity.PreviewGrantCookie,
-		Path:      access.Preview.Path,
+		Path:      access.Path,
 	}
 }
 

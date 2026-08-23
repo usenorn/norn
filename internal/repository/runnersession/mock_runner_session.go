@@ -85,6 +85,20 @@ func (mr *MockRunnerSessionMockRecorder) IssueTicket(ctx, ticketHash, runnerID, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueTicket", reflect.TypeOf((*MockRunnerSession)(nil).IssueTicket), ctx, ticketHash, runnerID, ttl)
 }
 
+// IssueTunnelTicket mocks base method.
+func (m *MockRunnerSession) IssueTunnelTicket(ctx context.Context, ticketHash []byte, runnerID uuid.UUID, ttl time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IssueTunnelTicket", ctx, ticketHash, runnerID, ttl)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IssueTunnelTicket indicates an expected call of IssueTunnelTicket.
+func (mr *MockRunnerSessionMockRecorder) IssueTunnelTicket(ctx, ticketHash, runnerID, ttl any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueTunnelTicket", reflect.TypeOf((*MockRunnerSession)(nil).IssueTunnelTicket), ctx, ticketHash, runnerID, ttl)
+}
+
 // RedeemTicket mocks base method.
 func (m *MockRunnerSession) RedeemTicket(ctx context.Context, ticketHash []byte) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
@@ -98,6 +112,21 @@ func (m *MockRunnerSession) RedeemTicket(ctx context.Context, ticketHash []byte)
 func (mr *MockRunnerSessionMockRecorder) RedeemTicket(ctx, ticketHash any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RedeemTicket", reflect.TypeOf((*MockRunnerSession)(nil).RedeemTicket), ctx, ticketHash)
+}
+
+// RedeemTunnelTicket mocks base method.
+func (m *MockRunnerSession) RedeemTunnelTicket(ctx context.Context, ticketHash []byte) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RedeemTunnelTicket", ctx, ticketHash)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RedeemTunnelTicket indicates an expected call of RedeemTunnelTicket.
+func (mr *MockRunnerSessionMockRecorder) RedeemTunnelTicket(ctx, ticketHash any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RedeemTunnelTicket", reflect.TypeOf((*MockRunnerSession)(nil).RedeemTunnelTicket), ctx, ticketHash)
 }
 
 // Resolve mocks base method.

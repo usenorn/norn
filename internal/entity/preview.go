@@ -52,8 +52,8 @@ func (s PreviewState) Valid() bool {
 type PreviewMode string
 
 const (
-	PreviewBySubdomain PreviewMode = "subdomain"
-	PreviewByPath      PreviewMode = "path"
+	PreviewBySubdomain PreviewMode = channelv1.PreviewBySubdomain
+	PreviewByPath      PreviewMode = channelv1.PreviewByPath
 )
 
 func PreviewModes() []PreviewMode {
@@ -99,15 +99,7 @@ func (p PreviewSession) URL(scheme string) string {
 }
 
 func PreviewHost(name, executionID string, mode PreviewMode, domain string) string {
-	if domain == "" {
-		return ""
-	}
-
-	if mode == PreviewByPath {
-		return strings.ToLower(executionID + "." + domain)
-	}
-
-	return strings.ToLower(name + "-" + executionID + "." + domain)
+	return channelv1.PreviewHost(name, executionID, string(mode), domain)
 }
 
 func ValidatePreviewName(field, name string) FieldError {

@@ -26,11 +26,12 @@ const (
 )
 
 var (
-	ErrPreviewShareNotFound = errors.New("this share link is not one norn minted")
-	ErrPreviewShareExpired  = errors.New("this share link has expired")
-	ErrPreviewShareRevoked  = errors.New("this share link has been revoked")
-	ErrPreviewSharePasscode = errors.New("that is not the passcode on this share link")
-	ErrPreviewShareCrowded  = errors.New(
+	ErrPreviewShareNotFound       = errors.New("this share link is not one norn minted")
+	ErrPreviewShareExpired        = errors.New("this share link has expired")
+	ErrPreviewShareRevoked        = errors.New("this share link has been revoked")
+	ErrPreviewSharePasscode       = errors.New("that is not the passcode on this share link")
+	ErrPreviewSharePasscodeNeeded = errors.New("this share link needs its passcode")
+	ErrPreviewShareCrowded        = errors.New(
 		"this preview already has as many share links as it may",
 	)
 	ErrPreviewShareGuessed = errors.New(

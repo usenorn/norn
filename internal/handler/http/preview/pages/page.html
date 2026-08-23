@@ -1,0 +1,98 @@
+{{define "page"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{.Title}}</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ground: #ffffff;
+  --ink: #18181b;
+  --quiet: #71717a;
+  --edge: #e4e4e7;
+  --field: #ffffff;
+  --accent: #18181b;
+  --accent-ink: #fafafa;
+  --wrong: #b91c1c;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #09090b;
+    --ink: #fafafa;
+    --quiet: #a1a1aa;
+    --edge: #27272a;
+    --field: #18181b;
+    --accent: #fafafa;
+    --accent-ink: #18181b;
+    --wrong: #f87171;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  background: var(--ground);
+  color: var(--ink);
+  font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: 24px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+main { margin: auto; width: 100%; max-width: 26rem; }
+h1 { font-size: 1.375rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.5rem; }
+p { margin: 0 0 1rem; color: var(--quiet); }
+p.wrong { color: var(--wrong); }
+code {
+  display: block;
+  font: 0.8125rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--field);
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  padding: 0.375rem 0.5rem;
+  overflow-wrap: anywhere;
+}
+form { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
+label { font-size: 0.875rem; font-weight: 500; color: var(--ink); }
+input {
+  width: 100%;
+  font: inherit;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+}
+input:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+button {
+  font: inherit;
+  font-weight: 500;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: 0;
+  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<main>
+<h1>{{.Title}}</h1>
+{{range .Lines}}<p>{{.}}</p>{{end}}
+{{if .Host}}<p><code>{{.Host}}</code></p>{{end}}
+{{if .Form}}
+<form method="POST" action="{{.Form}}">
+{{if .Wrong}}<p class="wrong">{{.Wrong}}</p>{{end}}
+<label for="passcode">Passcode</label>
+<input id="passcode" name="passcode" type="password" autocomplete="off" autofocus required>
+<button type="submit">Open the preview</button>
+</form>
+{{end}}
+</main>
+</body>
+</html>{{end}}

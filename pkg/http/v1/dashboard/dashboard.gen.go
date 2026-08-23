@@ -1356,6 +1356,27 @@ func (e ForbiddenProblemReason) Valid() bool {
 	}
 }
 
+// Defines values for GatewayReach.
+const (
+	Reachable    GatewayReach = "reachable"
+	Unconfigured GatewayReach = "unconfigured"
+	Unreachable  GatewayReach = "unreachable"
+)
+
+// Valid indicates whether the value is a known member of the GatewayReach enum.
+func (e GatewayReach) Valid() bool {
+	switch e {
+	case Reachable:
+		return true
+	case Unconfigured:
+		return true
+	case Unreachable:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HealthStatus.
 const (
 	Ok HealthStatus = "ok"
@@ -2718,6 +2739,24 @@ func (e RunnerProblemCode) Valid() bool {
 	case RunnerProblemCodeRunnerOutdated:
 		return true
 	case RunnerProblemCodeRunnerRevoked:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RunnerSessionPreviewScheme.
+const (
+	Http  RunnerSessionPreviewScheme = "http"
+	Https RunnerSessionPreviewScheme = "https"
+)
+
+// Valid indicates whether the value is a known member of the RunnerSessionPreviewScheme enum.
+func (e RunnerSessionPreviewScheme) Valid() bool {
+	switch e {
+	case Http:
+		return true
+	case Https:
 		return true
 	default:
 		return false
@@ -4469,12 +4508,15 @@ type CodeReviewer struct {
 
 // Codebase defines model for Codebase.
 type Codebase struct {
-	AgentId        openapi_types.UUID   `json:"agentId"`
-	ConnectedAt    time.Time            `json:"connectedAt"`
-	DisconnectedAt *time.Time           `json:"disconnectedAt,omitempty"`
-	Id             openapi_types.UUID   `json:"id"`
-	LastSeenAt     *time.Time           `json:"lastSeenAt,omitempty"`
-	Name           string               `json:"name"`
+	AgentId        openapi_types.UUID `json:"agentId"`
+	ConnectedAt    time.Time          `json:"connectedAt"`
+	DisconnectedAt *time.Time         `json:"disconnectedAt,omitempty"`
+	Id             openapi_types.UUID `json:"id"`
+	LastSeenAt     *time.Time         `json:"lastSeenAt,omitempty"`
+	Name           string             `json:"name"`
+
+	// PreviewGateway Whether this machine can open a preview tunnel. unconfigured means this server serves no preview domain, so there was nothing to reach and nothing is wrong.
+	PreviewGateway *GatewayReach        `json:"previewGateway,omitempty"`
 	Repositories   []CodebaseRepository `json:"repositories"`
 	RootPath       string               `json:"rootPath"`
 	RunnerId       openapi_types.UUID   `json:"runnerId"`
@@ -4607,12 +4649,15 @@ type ConfirmedSignUp struct {
 // ConnectCodebaseRequest defines model for ConnectCodebaseRequest.
 type ConnectCodebaseRequest struct {
 	// Name What to call this folder. Defaults to its root path.
-	Name         *string               `json:"name,omitempty"`
-	Repositories *[]CodebaseRepository `json:"repositories,omitempty"`
-	RootPath     string                `json:"rootPath"`
-	Runtimes     *[]CodebaseRuntime    `json:"runtimes,omitempty"`
-	SharedFiles  *[]string             `json:"sharedFiles,omitempty"`
-	Tools        *[]CodingTool         `json:"tools,omitempty"`
+	Name *string `json:"name,omitempty"`
+
+	// PreviewGateway Whether this machine can open a preview tunnel. unconfigured means this server serves no preview domain, so there was nothing to reach and nothing is wrong.
+	PreviewGateway *GatewayReach         `json:"previewGateway,omitempty"`
+	Repositories   *[]CodebaseRepository `json:"repositories,omitempty"`
+	RootPath       string                `json:"rootPath"`
+	Runtimes       *[]CodebaseRuntime    `json:"runtimes,omitempty"`
+	SharedFiles    *[]string             `json:"sharedFiles,omitempty"`
+	Tools          *[]CodingTool         `json:"tools,omitempty"`
 }
 
 // ConnectSourceControlRequest allowPrivateAddress is a deliberate exception an administrator grants this one connection so it may reach a forge on their own network. It is not an instance-wide relaxation, and it never opens loopback or the link-local range a cloud provider answers on.
@@ -5266,6 +5311,9 @@ type ForbiddenProblemCode string
 
 // ForbiddenProblemReason defines model for ForbiddenProblem.Reason.
 type ForbiddenProblemReason string
+
+// GatewayReach Whether this machine can open a preview tunnel. unconfigured means this server serves no preview domain, so there was nothing to reach and nothing is wrong.
+type GatewayReach string
 
 // Health defines model for Health.
 type Health struct {
@@ -6640,13 +6688,29 @@ type RunnerSession struct {
 	AccessToken string `json:"accessToken"`
 
 	// ExpiresIn Seconds the access token stays usable
-	ExpiresIn int32  `json:"expiresIn"`
-	Runner    Runner `json:"runner"`
+	ExpiresIn int32 `json:"expiresIn"`
+
+	// PreviewDomain The domain preview addresses are composed under, so the machine can say where a preview reaches rather than only naming its own loopback port.
+	PreviewDomain *string `json:"previewDomain,omitempty"`
+
+	// PreviewGateway Where the machine opens its preview tunnel. Empty when this server serves no preview domain, and a machine that reads it empty knows not to try.
+	PreviewGateway *string `json:"previewGateway,omitempty"`
+
+	// PreviewScheme The scheme those addresses carry.
+	PreviewScheme *RunnerSessionPreviewScheme `json:"previewScheme,omitempty"`
+	Runner        Runner                      `json:"runner"`
 
 	// Ticket Single use, spent when opening the runner channel
 	Ticket          string `json:"ticket"`
 	TicketExpiresIn int32  `json:"ticketExpiresIn"`
+
+	// TunnelTicket Single use, spent when opening the preview tunnel. Separate from the channel ticket so neither one opens the other's door. Empty when this server serves no preview domain.
+	TunnelTicket          *string `json:"tunnelTicket,omitempty"`
+	TunnelTicketExpiresIn *int32  `json:"tunnelTicketExpiresIn,omitempty"`
 }
+
+// RunnerSessionPreviewScheme The scheme those addresses carry.
+type RunnerSessionPreviewScheme string
 
 // RunnerStatus defines model for RunnerStatus.
 type RunnerStatus string

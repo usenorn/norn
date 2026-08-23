@@ -33,6 +33,7 @@ const codebaseColumns = `
        c.shared_files,
        c.runtimes,
        c.tools,
+       c.preview_gateway,
        c.connected_at,
        c.last_seen_at,
        c.disconnected_at,
@@ -45,8 +46,9 @@ JOIN workspace_runners r ON r.id = c.runner_id`
 const insertCodebaseQuery = `
 WITH inserted AS (
     INSERT INTO workspace_codebases
-        (runner_id, name, root_path, state, shared_files, runtimes, tools, connected_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $8)
+        (runner_id, name, root_path, state, shared_files, runtimes, tools, preview_gateway,
+         connected_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $9)
     RETURNING *
 )
 SELECT` + codebaseColumns + `
@@ -74,13 +76,14 @@ ORDER BY c.connected_at DESC, c.id`
 const replaceCodebaseQuery = `
 WITH updated AS (
     UPDATE workspace_codebases
-    SET name         = $2,
-        shared_files = $3,
-        runtimes     = $4,
-        tools        = $5::jsonb,
-        state        = $6,
-        last_seen_at = $7,
-        updated_at   = $7
+    SET name            = $2,
+        shared_files    = $3,
+        runtimes        = $4,
+        tools           = $5::jsonb,
+        preview_gateway = $8,
+        state           = $6,
+        last_seen_at    = $7,
+        updated_at      = $7
     WHERE id = $1 AND state <> 'disconnected'
     RETURNING *
 )
@@ -150,6 +153,7 @@ func scanCodebase(row scanner) (entity.Codebase, error) {
 		shared    types.StringArray
 		runtimes  types.StringArray
 		tools     []byte
+		gateway   string
 	)
 
 	if err := row.Scan(
@@ -163,6 +167,7 @@ func scanCodebase(row scanner) (entity.Codebase, error) {
 		&shared,
 		&runtimes,
 		&tools,
+		&gateway,
 		&codebase.ConnectedAt,
 		&codebase.LastSeenAt,
 		&codebase.DisconnectedAt,
@@ -192,6 +197,7 @@ func scanCodebase(row scanner) (entity.Codebase, error) {
 
 	codebase.State = entity.CodebaseState(state)
 	codebase.SharedFiles = []string(shared)
+	codebase.PreviewGateway = entity.GatewayReach(gateway)
 	codebase.Repositories = make([]entity.CodebaseRepository, 0)
 
 	codebase.Runtimes = make([]entity.CodebaseRuntime, 0, len(runtimes))
@@ -229,6 +235,14 @@ func encodeTools(tools []entity.CodingTool) ([]byte, error) {
 	}
 
 	return encoded, nil
+}
+
+func gatewayOf(inventory repository.CodebaseInventory) entity.GatewayReach {
+	if !inventory.PreviewGateway.Valid() {
+		return entity.GatewayUnconfigured
+	}
+
+	return inventory.PreviewGateway
 }
 
 func runtimeStrings(runtimes []entity.CodebaseRuntime) types.StringArray {
@@ -401,6 +415,7 @@ func (r *codebaseRepository) Connect(
 		types.StringArray(inventory.SharedFiles),
 		runtimeStrings(inventory.Runtimes),
 		tools,
+		string(gatewayOf(inventory)),
 		connectedAt,
 	))
 	if err != nil {
@@ -474,6 +489,7 @@ func (r *codebaseRepository) Replace(
 		tools,
 		string(state),
 		at,
+		string(gatewayOf(inventory)),
 	))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

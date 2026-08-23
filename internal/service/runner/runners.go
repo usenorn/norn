@@ -20,6 +20,8 @@ type runnersService struct {
 	authorizer service.Authorizer
 	audit      service.Audit
 	cfg        config.Runner
+	gateway    config.Gateway
+	previews   config.Previews
 }
 
 func New(
@@ -29,6 +31,8 @@ func New(
 	authorizer service.Authorizer,
 	audit service.Audit,
 	cfg config.Runner,
+	gateway config.Gateway,
+	previews config.Previews,
 ) service.Runners {
 	return &runnersService{
 		runners:    runners,
@@ -37,6 +41,8 @@ func New(
 		authorizer: authorizer,
 		audit:      audit,
 		cfg:        cfg,
+		gateway:    gateway,
+		previews:   previews,
 	}
 }
 

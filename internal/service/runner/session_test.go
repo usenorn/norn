@@ -1,8 +1,10 @@
 package runner_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -52,6 +54,10 @@ func TestAnExchangeReturnsAnAccessTokenAndATicketAndMarksTheMachineSeen(t *testi
 
 			return nil
 		})
+
+	h.sessions.EXPECT().
+		IssueTunnelTicket(gomock.Any(), gomock.Any(), gomock.Any(), time.Minute).
+		Return(nil)
 
 	h.runners.EXPECT().RecordSeen(gomock.Any(), runner.ID, gomock.Any()).Return(nil)
 
@@ -366,6 +372,9 @@ func TestAnExchangeNamesTheAgentSoTheMachineNeedsNoSecondCall(t *testing.T) {
 
 	h.sessions.EXPECT().Grant(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	h.sessions.EXPECT().IssueTicket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.sessions.EXPECT().
+		IssueTunnelTicket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
 	h.runners.EXPECT().RecordSeen(gomock.Any(), runner.ID, gomock.Any()).Return(nil)
 
 	session, err := h.service.Exchange(context.Background(), h.exchanging(runner, refresh, d))
@@ -377,6 +386,104 @@ func TestAnExchangeNamesTheAgentSoTheMachineNeedsNoSecondCall(t *testing.T) {
 		t.Fatalf(
 			"the session named the agent %q, want %q so a runner can say who it acts as",
 			session.Runner.AgentName, h.agent.Name,
+		)
+	}
+}
+
+func TestATicketForTheChannelDoesNotOpenTheTunnel(t *testing.T) {
+	h := newHarness(t)
+	h.expectAgent()
+
+	d := newDevice(t)
+
+	const refresh = "nrr_secret"
+
+	runner := h.enrolled(d, refresh)
+
+	h.expectRunnerByRefresh(runner, refresh)
+	h.expectFreshNonce()
+
+	var channelTicket, tunnelTicket []byte
+
+	h.sessions.EXPECT().Grant(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.sessions.EXPECT().
+		IssueTicket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, hash []byte, _ uuid.UUID, _ time.Duration) error {
+			channelTicket = hash
+
+			return nil
+		})
+	h.sessions.EXPECT().
+		IssueTunnelTicket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, hash []byte, _ uuid.UUID, _ time.Duration) error {
+			tunnelTicket = hash
+
+			return nil
+		})
+	h.runners.EXPECT().RecordSeen(gomock.Any(), runner.ID, gomock.Any()).Return(nil)
+
+	session, err := h.service.Exchange(context.Background(), h.exchanging(runner, refresh, d))
+	if err != nil {
+		t.Fatalf("exchange: %v", err)
+	}
+
+	if session.Ticket == session.TunnelTicket || session.TunnelTicket == "" {
+		t.Fatalf(
+			"the channel ticket and the tunnel ticket are %q and %q; one ticket that opens "+
+				"either door is not a scope, and the gateway would be able to take over a "+
+				"machine's control channel",
+			session.Ticket, session.TunnelTicket,
+		)
+	}
+
+	if !strings.HasPrefix(session.TunnelTicket, entity.RunnerTunnelPrefix) {
+		t.Fatalf(
+			"the tunnel ticket %q does not carry its own prefix, so nothing tells the two "+
+				"apart before they are looked up",
+			session.TunnelTicket,
+		)
+	}
+
+	if bytes.Equal(channelTicket, tunnelTicket) {
+		t.Fatal("both tickets were stored under the same hash, so either redeems either")
+	}
+}
+
+func TestOnlyATunnelTicketIsAcceptedForATunnel(t *testing.T) {
+	h := newHarness(t)
+	runner := h.enrolled(newDevice(t), "nrr_secret")
+
+	h.sessions.EXPECT().RedeemTunnelTicket(gomock.Any(), gomock.Any()).Times(0)
+
+	if _, err := h.service.AcceptTunnel(
+		context.Background(), entity.RunnerTicketPrefix+"a-channel-ticket",
+	); !errors.Is(err, entity.ErrRunnerCredentialInvalid) {
+		t.Fatalf(
+			"a channel ticket presented at the tunnel answered %v, want %v",
+			err, entity.ErrRunnerCredentialInvalid,
+		)
+	}
+
+	h.sessions.EXPECT().
+		RedeemTunnelTicket(gomock.Any(), gomock.Any()).
+		Return(runner.ID, nil)
+	h.runners.EXPECT().GetByID(gomock.Any(), runner.ID).Return(runner, nil)
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), runner.WorkspaceID, runner.AgentID).
+		Return(h.agent, nil)
+
+	accepted, err := h.service.AcceptTunnel(
+		context.Background(), entity.RunnerTunnelPrefix+"a-tunnel-ticket",
+	)
+	if err != nil {
+		t.Fatalf("accept a tunnel ticket: %v", err)
+	}
+
+	if accepted.ID != runner.ID {
+		t.Fatalf(
+			"the tunnel was opened for %s, want %s; a gateway told the wrong machine would "+
+				"route a preview to somebody else's laptop",
+			accepted.ID, runner.ID,
 		)
 	}
 }

@@ -187,3 +187,41 @@ func TestGeneratedPersistenceModelsAreReachedOnlyByRepositories(t *testing.T) {
 		}
 	}
 }
+
+func TestThePreviewGatewayCanReachNoStoreOfItsOwn(t *testing.T) {
+	edge := []string{
+		"internal/repository/nornapi",
+		"internal/repository/tunnel",
+		"internal/service/previewproxy",
+		"internal/handler/http/preview",
+		"internal/handler/http/previewtunnel",
+		"internal/handler/http/gatewayrouter",
+	}
+
+	forbidden := []string{
+		"internal/db",
+		"internal/pkg/postgres",
+		"internal/pkg/valkey",
+		"internal/pkg/taskqueue",
+		"internal/pkg/authz",
+		"internal/pkg/crypter",
+	}
+
+	for _, root := range edge {
+		for pkg, imports := range packagesUnder(t, root) {
+			for _, imported := range imports {
+				path := internal(imported)
+
+				for _, banned := range forbidden {
+					if path == banned || strings.HasPrefix(path, banned+"/") {
+						t.Errorf(
+							"%s imports %s; the gateway serves code norn did not write and must "+
+								"reach norn's own data only by asking the server over HTTP",
+							pkg, path,
+						)
+					}
+				}
+			}
+		}
+	}
+}

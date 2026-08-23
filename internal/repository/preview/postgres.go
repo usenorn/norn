@@ -67,6 +67,26 @@ SELECT` + previewColumns + `
 FROM workspace_execution_previews
 WHERE host = $1 AND host <> ''`
 
+const previewRouteByHostQuery = `
+SELECT p.id,
+       p.execution_id,
+       p.workspace_id,
+       p.name,
+       p.service,
+       p.path,
+       p.mode,
+       p.host,
+       p.state,
+       p.opened_at,
+       p.closed_at,
+       p.reported_at,
+       p.created_at,
+       p.updated_at,
+       coalesce(e.runner_id, '00000000-0000-0000-0000-000000000000'::uuid)
+FROM workspace_execution_previews p
+         JOIN workspace_executions e ON e.id = p.execution_id
+WHERE p.host = $1 AND p.host <> ''`
+
 const previewsQuery = `
 SELECT` + previewColumns + `
 FROM workspace_execution_previews
@@ -162,6 +182,23 @@ func (r *previewRepository) ByHost(
 	return stored, nil
 }
 
+func (r *previewRepository) RouteByHost(
+	ctx context.Context,
+	host string,
+) (entity.PreviewRoute, error) {
+	route, err := scanRoute(r.db.Querier(ctx).QueryRowContext(ctx, previewRouteByHostQuery, host))
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return entity.PreviewRoute{}, entity.ErrPreviewNotFound
+	}
+
+	if err != nil {
+		return entity.PreviewRoute{}, fmt.Errorf("read preview route by host: %w", err)
+	}
+
+	return route, nil
+}
+
 func (r *previewRepository) ByExecution(
 	ctx context.Context,
 	executionID string,
@@ -217,7 +254,33 @@ func (r *previewRepository) CloseByExecution(
 	return nil
 }
 
+func scanRoute(row scanner) (entity.PreviewRoute, error) {
+	var (
+		route    entity.PreviewRoute
+		runnerID string
+	)
+
+	preview, err := scanPreviewWith(row, &runnerID)
+	if err != nil {
+		return entity.PreviewRoute{}, err
+	}
+
+	parsedRunner, err := uuid.Parse(runnerID)
+	if err != nil {
+		return entity.PreviewRoute{}, fmt.Errorf("parse runner id: %w", err)
+	}
+
+	route.Preview = preview
+	route.RunnerID = parsedRunner
+
+	return route, nil
+}
+
 func scanPreview(row scanner) (entity.PreviewSession, error) {
+	return scanPreviewWith(row)
+}
+
+func scanPreviewWith(row scanner, extra ...any) (entity.PreviewSession, error) {
 	var (
 		preview     entity.PreviewSession
 		id          string
@@ -227,7 +290,7 @@ func scanPreview(row scanner) (entity.PreviewSession, error) {
 		closedAt    sql.NullTime
 	)
 
-	if err := row.Scan(
+	into := []any{
 		&id,
 		&preview.ExecutionID,
 		&workspaceID,
@@ -242,7 +305,9 @@ func scanPreview(row scanner) (entity.PreviewSession, error) {
 		&preview.ReportedAt,
 		&preview.CreatedAt,
 		&preview.UpdatedAt,
-	); err != nil {
+	}
+
+	if err := row.Scan(append(into, extra...)...); err != nil {
 		return entity.PreviewSession{}, err
 	}
 

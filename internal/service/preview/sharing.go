@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -134,6 +135,10 @@ func (s *previewsService) Redeem(
 		return entity.PreviewAccess{}, err
 	}
 
+	if link.NeedsPasscode() && strings.TrimSpace(passcode) == "" {
+		return entity.PreviewAccess{}, entity.ErrPreviewSharePasscodeNeeded
+	}
+
 	if err := s.guessed(ctx, link); err != nil {
 		return entity.PreviewAccess{}, err
 	}
@@ -164,6 +169,7 @@ func (s *previewsService) Redeem(
 		Verdict:   entity.PreviewAllowed,
 		Preview:   preview,
 		Token:     granted,
+		Path:      preview.Path,
 		ExpiresAt: expires,
 	}, nil
 }

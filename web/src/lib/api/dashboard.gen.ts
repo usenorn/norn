@@ -4802,11 +4802,29 @@ export interface components {
             ticket: string;
             /** Format: int32 */
             ticketExpiresIn: number;
+            /** @description Single use, spent when opening the preview tunnel. Separate from the channel ticket so neither one opens the other's door. Empty when this server serves no preview domain. */
+            tunnelTicket?: string;
+            /** Format: int32 */
+            tunnelTicketExpiresIn?: number;
+            /** @description Where the machine opens its preview tunnel. Empty when this server serves no preview domain, and a machine that reads it empty knows not to try. */
+            previewGateway?: string;
+            /** @description The domain preview addresses are composed under, so the machine can say where a preview reaches rather than only naming its own loopback port. */
+            previewDomain?: string;
+            /**
+             * @description The scheme those addresses carry.
+             * @enum {string}
+             */
+            previewScheme?: "http" | "https";
         };
         /** @enum {string} */
         CodebaseState: "active" | "drift" | "disconnected";
         /** @enum {string} */
         CodebaseRuntime: "process" | "docker" | "kvm";
+        /**
+         * @description Whether this machine can open a preview tunnel. unconfigured means this server serves no preview domain, so there was nothing to reach and nothing is wrong.
+         * @enum {string}
+         */
+        GatewayReach: "reachable" | "unreachable" | "unconfigured";
         /** @description What a repository's remote is, without saying where it is. The hash identifies the remote well enough to recognise the same one on another machine; the host and path tail are for a person reading the screen. The full URL never leaves the machine. */
         RemoteFingerprint: {
             hash?: string;
@@ -4842,6 +4860,7 @@ export interface components {
             runtimes: components["schemas"]["CodebaseRuntime"][];
             /** @description Coding agents installed on the machine, with the versions detected */
             tools: components["schemas"]["CodingTool"][];
+            previewGateway?: components["schemas"]["GatewayReach"];
             /** Format: date-time */
             connectedAt: string;
             /** Format: date-time */
@@ -4857,6 +4876,7 @@ export interface components {
             sharedFiles?: string[];
             runtimes?: components["schemas"]["CodebaseRuntime"][];
             tools?: components["schemas"]["CodingTool"][];
+            previewGateway?: components["schemas"]["GatewayReach"];
         };
         /** @enum {string} */
         ExecutionState: "queued" | "leased" | "preparing" | "running" | "waiting_for_input" | "queued_for_resume" | "finalizing" | "awaiting_review" | "approved" | "completed" | "failed" | "cancelled" | "interrupted";

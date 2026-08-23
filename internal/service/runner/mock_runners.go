@@ -43,6 +43,21 @@ func (m *MockRunners) EXPECT() *MockRunnersMockRecorder {
 	return m.recorder
 }
 
+// AcceptTunnel mocks base method.
+func (m *MockRunners) AcceptTunnel(ctx context.Context, ticket string) (entity.Runner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AcceptTunnel", ctx, ticket)
+	ret0, _ := ret[0].(entity.Runner)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AcceptTunnel indicates an expected call of AcceptTunnel.
+func (mr *MockRunnersMockRecorder) AcceptTunnel(ctx, ticket any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptTunnel", reflect.TypeOf((*MockRunners)(nil).AcceptTunnel), ctx, ticket)
+}
+
 // ActorFor mocks base method.
 func (m *MockRunners) ActorFor(ctx context.Context, runnerID uuid.UUID) (entity.Actor, entity.Runner, error) {
 	m.ctrl.T.Helper()

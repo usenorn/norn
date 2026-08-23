@@ -104,6 +104,7 @@ func New(
 	gateway.Post(previewgateway.IntrospectPath, previewGateway.Introspect)
 	gateway.Post(previewgateway.SessionPath, previewGateway.Session)
 	gateway.Post(previewgateway.SharePath, previewGateway.Share)
+	gateway.Post(previewgateway.TunnelPath, previewGateway.Tunnel)
 
 	exports := base.With(
 		middleware.BearerToken(tokens, runners),

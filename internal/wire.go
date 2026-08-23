@@ -9,7 +9,10 @@ import (
 	auditexportedge "github.com/usenorn/norn/internal/handler/http/auditexport"
 	blobedge "github.com/usenorn/norn/internal/handler/http/blob"
 	eventsedge "github.com/usenorn/norn/internal/handler/http/events"
+	gatewayrouteredge "github.com/usenorn/norn/internal/handler/http/gatewayrouter"
+	previewbrowseredge "github.com/usenorn/norn/internal/handler/http/preview"
 	previewedge "github.com/usenorn/norn/internal/handler/http/previewgateway"
+	previewtunneledge "github.com/usenorn/norn/internal/handler/http/previewtunnel"
 	"github.com/usenorn/norn/internal/handler/http/router"
 	runnerchanneledge "github.com/usenorn/norn/internal/handler/http/runnerchannel"
 	scimedge "github.com/usenorn/norn/internal/handler/http/scim"
@@ -73,6 +76,7 @@ import (
 	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
 	mcpthrottlerepo "github.com/usenorn/norn/internal/repository/mcpthrottle"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	nornapirepo "github.com/usenorn/norn/internal/repository/nornapi"
 	notificationrepo "github.com/usenorn/norn/internal/repository/notification"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	notificationsettingrepo "github.com/usenorn/norn/internal/repository/notificationsetting"
@@ -103,6 +107,7 @@ import (
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
+	tunnelrepo "github.com/usenorn/norn/internal/repository/tunnel"
 	webhookrepo "github.com/usenorn/norn/internal/repository/webhook"
 	webhooksenderrepo "github.com/usenorn/norn/internal/repository/webhooksender"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
@@ -138,6 +143,7 @@ import (
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	previewsvc "github.com/usenorn/norn/internal/service/preview"
 	previewgatewaysvc "github.com/usenorn/norn/internal/service/previewgateway"
+	previewproxysvc "github.com/usenorn/norn/internal/service/previewproxy"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	runnersvc "github.com/usenorn/norn/internal/service/runner"
 	runnerchannelsvc "github.com/usenorn/norn/internal/service/runnerchannel"
@@ -355,4 +361,25 @@ func InitGatewaysAdmin(cfgFile string) (*GatewaysAdmin, func(), error) {
 	wire.Build(baseSet)
 
 	return nil, nil, nil
+}
+
+var gatewaySet = wire.NewSet(
+	config.Set,
+	logging.Set,
+
+	nornapirepo.Set,
+	tunnelrepo.Set,
+	previewproxysvc.Set,
+
+	previewbrowseredge.Set,
+	previewtunneledge.Set,
+	gatewayrouteredge.Set,
+
+	NewGateway,
+)
+
+func InitGateway(cfgFile string) (*Gateway, error) {
+	wire.Build(gatewaySet)
+
+	return nil, nil
 }

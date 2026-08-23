@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 
+	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
@@ -17,6 +18,10 @@ func (h *handler) ConnectCodebase(
 		SharedFiles:  sharedFilesOf(request.Body.SharedFiles),
 		Runtimes:     codebaseRuntimesOf(request.Body.Runtimes),
 		Tools:        codingToolsOf(request.Body.Tools),
+	}
+
+	if request.Body.PreviewGateway != nil {
+		input.PreviewGateway = entity.GatewayReach(*request.Body.PreviewGateway)
 	}
 
 	if request.Body.Name != nil {

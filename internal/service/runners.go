@@ -32,17 +32,23 @@ type ExchangeRunnerTokenInput struct {
 }
 
 type RunnerSession struct {
-	Runner      entity.Runner
-	AccessToken string
-	AccessTTL   time.Duration
-	Ticket      string
-	TicketTTL   time.Duration
+	Runner        entity.Runner
+	AccessToken   string
+	AccessTTL     time.Duration
+	Ticket        string
+	TicketTTL     time.Duration
+	TunnelTicket  string
+	TunnelTTL     time.Duration
+	Gateway       string
+	PreviewDomain string
+	PreviewScheme string
 }
 
 type Runners interface {
 	Enrol(ctx context.Context, input EnrolRunnerInput) (EnrolledRunner, error)
 	Exchange(ctx context.Context, input ExchangeRunnerTokenInput) (RunnerSession, error)
 	Authenticate(ctx context.Context, token string) (entity.Actor, error)
+	AcceptTunnel(ctx context.Context, ticket string) (entity.Runner, error)
 	ActorFor(ctx context.Context, runnerID uuid.UUID) (entity.Actor, entity.Runner, error)
 	Self(ctx context.Context) (entity.Runner, error)
 	List(ctx context.Context, workspaceID uuid.UUID) ([]entity.Runner, error)
