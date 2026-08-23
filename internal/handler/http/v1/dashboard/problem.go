@@ -510,6 +510,38 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrExecutionChunkConflict):
 		return executionConflictProblem(api.ExecutionChunkConflict, err), true
 
+	case errors.Is(err, entity.ErrPreviewNotFound),
+		errors.Is(err, entity.ErrPreviewShareNotFound),
+		errors.Is(err, entity.ErrPreviewGrantNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrPreviewClosed):
+		return previewConflictProblem(api.PreviewClosed, err), true
+
+	case errors.Is(err, entity.ErrPreviewNotRoutable):
+		return previewConflictProblem(api.PreviewNotRoutable, err), true
+
+	case errors.Is(err, entity.ErrPreviewCrowded):
+		return previewConflictProblem(api.PreviewCrowded, err), true
+
+	case errors.Is(err, entity.ErrPreviewShareExpired):
+		return previewConflictProblem(api.PreviewShareExpired, err), true
+
+	case errors.Is(err, entity.ErrPreviewShareRevoked):
+		return previewConflictProblem(api.PreviewShareRevoked, err), true
+
+	case errors.Is(err, entity.ErrPreviewShareCrowded):
+		return previewConflictProblem(api.PreviewShareCrowded, err), true
+
+	case errors.Is(err, entity.ErrPreviewSharePasscode):
+		return newProblem(http.StatusForbidden, err.Error()), true
+
+	case errors.Is(err, entity.ErrPreviewShareGuessed):
+		return newProblem(http.StatusTooManyRequests, err.Error()), true
+
+	case errors.Is(err, entity.ErrPreviewNotExtendable):
+		return executionConflictProblem(api.ExecutionNotReviewable, err), true
+
 	case errors.Is(err, entity.ErrExecutionUploadTooLarge),
 		errors.Is(err, entity.ErrExecutionUploadExhausted):
 		return newProblem(http.StatusRequestEntityTooLarge, err.Error()), true
@@ -2025,6 +2057,22 @@ func codebaseConflictProblem(code api.CodebaseProblemCode, err error) problemRes
 	}
 }
 
+func previewConflictProblem(code api.PreviewProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.PreviewProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
 func executionConflictProblem(code api.ExecutionProblemCode, err error) problemResponse {
 	base := baseProblem(http.StatusConflict, err.Error())
 
@@ -2376,6 +2424,26 @@ func (r problemResponse) VisitGetWorkspaceExecutionPolicyResponse(w http.Respons
 }
 
 func (r problemResponse) VisitSetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceExecutionPreviewsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSharePreviewResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRevokePreviewShareLinkResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAuthorizePreviewResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

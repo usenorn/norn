@@ -46,6 +46,7 @@ const (
 	ChannelExecutionResume  = channelv1.ExecutionResume
 	ChannelExecutionCancel  = channelv1.ExecutionCancel
 	ChannelQuestionAnswered = channelv1.QuestionAnswered
+	ChannelExecutionRetain  = channelv1.ExecutionRetain
 	ChannelRunnerPause      = channelv1.RunnerPause
 	ChannelRunnerResume     = channelv1.RunnerResume
 	ChannelRunnerConfigure  = channelv1.RunnerConfigure

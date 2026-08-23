@@ -13,6 +13,7 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 	changesetrepo "github.com/usenorn/norn/internal/repository/changeset"
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
+	previewrepo "github.com/usenorn/norn/internal/repository/preview"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
 	channelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
@@ -29,6 +30,7 @@ import (
 type harness struct {
 	executions *executionrepo.MockExecution
 	changesets *changesetrepo.MockChangeSet
+	previews   *previewrepo.MockPreview
 	runners    *runnerrepo.MockRunner
 	issues     *issuerepo.MockIssue
 	states     *statesrepo.MockWorkflowState
@@ -60,6 +62,7 @@ func newHarness(t *testing.T) *harness {
 	h := &harness{
 		executions:  executionrepo.NewMockExecution(ctrl),
 		changesets:  changesetrepo.NewMockChangeSet(ctrl),
+		previews:    previewrepo.NewMockPreview(ctrl),
 		runners:     runnerrepo.NewMockRunner(ctrl),
 		issues:      issuerepo.NewMockIssue(ctrl),
 		states:      statesrepo.NewMockWorkflowState(ctrl),
@@ -150,9 +153,19 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.previews.EXPECT().
+		ByExecution(gomock.Any(), gomock.Any()).
+		Return([]entity.PreviewSession{}, nil).
+		AnyTimes()
+
+	h.previews.EXPECT().
+		CloseByExecution(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
 	h.service = executionsvc.New(
-		h.executions, h.changesets, h.runners, h.issues, h.states, h.channels, h.writer, h.events,
-		h.authorizer, h.audit, transactor,
+		h.executions, h.changesets, h.previews, h.runners, h.issues, h.states, h.channels,
+		h.writer, h.events, h.authorizer, h.audit, transactor,
 	)
 
 	return h

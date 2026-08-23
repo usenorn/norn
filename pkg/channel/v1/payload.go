@@ -90,6 +90,23 @@ type Answer struct {
 	AnsweredAt time.Time `json:"ts"`
 }
 
+const (
+	PreviewOpen   = "open"
+	PreviewClosed = "closed"
+)
+
+type Preview struct {
+	Name     string    `json:"name"`
+	Service  string    `json:"service"`
+	Path     string    `json:"path,omitempty"`
+	State    string    `json:"state"`
+	Occurred time.Time `json:"ts"`
+}
+
+type Retention struct {
+	KeepUntil time.Time `json:"keep_until"`
+}
+
 type Leased struct {
 	Executions []string `json:"executions"`
 }

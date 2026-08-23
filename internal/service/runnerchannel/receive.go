@@ -86,6 +86,8 @@ func (s *channelsService) Receive(
 		return s.changesets.Updated(ctx, session.Runner, message)
 	case entity.ChannelExecutionResult:
 		return s.changesets.Resulted(ctx, session.Runner, message)
+	case entity.ChannelPreviewState:
+		return s.previews.Reported(ctx, session.Runner, message)
 	default:
 		logging.From(ctx).InfoContext(
 			ctx,

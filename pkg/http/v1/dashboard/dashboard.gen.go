@@ -1161,6 +1161,42 @@ func (e ExecutionEventKind) Valid() bool {
 	}
 }
 
+// Defines values for ExecutionPreviewMode.
+const (
+	Path      ExecutionPreviewMode = "path"
+	Subdomain ExecutionPreviewMode = "subdomain"
+)
+
+// Valid indicates whether the value is a known member of the ExecutionPreviewMode enum.
+func (e ExecutionPreviewMode) Valid() bool {
+	switch e {
+	case Path:
+		return true
+	case Subdomain:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ExecutionPreviewState.
+const (
+	ExecutionPreviewStateClosed ExecutionPreviewState = "closed"
+	ExecutionPreviewStateOpen   ExecutionPreviewState = "open"
+)
+
+// Valid indicates whether the value is a known member of the ExecutionPreviewState enum.
+func (e ExecutionPreviewState) Valid() bool {
+	switch e {
+	case ExecutionPreviewStateClosed:
+		return true
+	case ExecutionPreviewStateOpen:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ExecutionProblemCode.
 const (
 	ExecutionChunkConflict ExecutionProblemCode = "execution_chunk_conflict"
@@ -2469,6 +2505,36 @@ func (e NotificationSubjectKind) Valid() bool {
 	case NotificationSubjectKindProject:
 		return true
 	case NotificationSubjectKindTeam:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PreviewProblemCode.
+const (
+	PreviewClosed       PreviewProblemCode = "preview_closed"
+	PreviewCrowded      PreviewProblemCode = "preview_crowded"
+	PreviewNotRoutable  PreviewProblemCode = "preview_not_routable"
+	PreviewShareCrowded PreviewProblemCode = "preview_share_crowded"
+	PreviewShareExpired PreviewProblemCode = "preview_share_expired"
+	PreviewShareRevoked PreviewProblemCode = "preview_share_revoked"
+)
+
+// Valid indicates whether the value is a known member of the PreviewProblemCode enum.
+func (e PreviewProblemCode) Valid() bool {
+	switch e {
+	case PreviewClosed:
+		return true
+	case PreviewCrowded:
+		return true
+	case PreviewNotRoutable:
+		return true
+	case PreviewShareCrowded:
+		return true
+	case PreviewShareExpired:
+		return true
+	case PreviewShareRevoked:
 		return true
 	default:
 		return false
@@ -5002,6 +5068,7 @@ type ExecutionDetail struct {
 	// Changeset What this run changed. Absent until the machine has reported anything.
 	Changeset *ExecutionChangeSet `json:"changeset,omitempty"`
 	Execution Execution           `json:"execution"`
+	Previews  *[]ExecutionPreview `json:"previews,omitempty"`
 	Timeline  []ExecutionEvent    `json:"timeline"`
 }
 
@@ -5060,6 +5127,35 @@ type ExecutionParams struct {
 	Model   *string          `json:"model,omitempty"`
 	Runtime *CodebaseRuntime `json:"runtime,omitempty"`
 	Tool    *string          `json:"tool,omitempty"`
+}
+
+// ExecutionPreview defines model for ExecutionPreview.
+type ExecutionPreview struct {
+	ClosedAt    *time.Time            `json:"closedAt,omitempty"`
+	ExecutionId string                `json:"executionId"`
+	Host        *string               `json:"host,omitempty"`
+	Id          openapi_types.UUID    `json:"id"`
+	Mode        ExecutionPreviewMode  `json:"mode"`
+	Name        string                `json:"name"`
+	OpenedAt    time.Time             `json:"openedAt"`
+	Path        *string               `json:"path,omitempty"`
+	Service     string                `json:"service"`
+	State       ExecutionPreviewState `json:"state"`
+
+	// Url Empty while this server serves no preview domain, because there is then no address that reaches anybody.
+	Url string `json:"url"`
+}
+
+// ExecutionPreviewMode defines model for ExecutionPreview.Mode.
+type ExecutionPreviewMode string
+
+// ExecutionPreviewState defines model for ExecutionPreview.State.
+type ExecutionPreviewState string
+
+// ExecutionPreviewDetail defines model for ExecutionPreviewDetail.
+type ExecutionPreviewDetail struct {
+	Preview    ExecutionPreview   `json:"preview"`
+	ShareLinks []PreviewShareLink `json:"shareLinks"`
 }
 
 // ExecutionProblem defines model for ExecutionProblem.
@@ -6252,6 +6348,41 @@ type PreviewInvitationRequest struct {
 	Token string `json:"token"`
 }
 
+// PreviewProblem defines model for PreviewProblem.
+type PreviewProblem struct {
+	Code     PreviewProblemCode `json:"code"`
+	Detail   *string            `json:"detail,omitempty"`
+	Errors   *[]FieldError      `json:"errors,omitempty"`
+	Instance *string            `json:"instance,omitempty"`
+	Status   int32              `json:"status"`
+	Title    string             `json:"title"`
+	Type     string             `json:"type"`
+}
+
+// PreviewProblemCode defines model for PreviewProblem.Code.
+type PreviewProblemCode string
+
+// PreviewShareLink defines model for PreviewShareLink.
+type PreviewShareLink struct {
+	CreatedAt     time.Time           `json:"createdAt"`
+	CreatedBy     *openapi_types.UUID `json:"createdBy,omitempty"`
+	ExpiresAt     time.Time           `json:"expiresAt"`
+	Id            openapi_types.UUID  `json:"id"`
+	LastUsedAt    *time.Time          `json:"lastUsedAt,omitempty"`
+	NeedsPasscode bool                `json:"needsPasscode"`
+	PreviewId     openapi_types.UUID  `json:"previewId"`
+	RevokedAt     *time.Time          `json:"revokedAt,omitempty"`
+	Uses          int                 `json:"uses"`
+}
+
+// PreviewShareLinkMinted defines model for PreviewShareLinkMinted.
+type PreviewShareLinkMinted struct {
+	Link PreviewShareLink `json:"link"`
+
+	// Url The only time norn answers with this address. It keeps only the hash.
+	Url string `json:"url"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	Detail   *string       `json:"detail,omitempty"`
@@ -6452,6 +6583,12 @@ type ResetLinkUsedProblemCode string
 type ResumeExecutionRequest struct {
 	// Feedback Handed to the coding agent verbatim
 	Feedback string `json:"feedback"`
+}
+
+// RetainExecutionRequest defines model for RetainExecutionRequest.
+type RetainExecutionRequest struct {
+	// LongerSeconds How much longer the machine holds this run's workspace and previews.
+	LongerSeconds int `json:"longerSeconds"`
 }
 
 // ReviewVerdict defines model for ReviewVerdict.
@@ -6759,6 +6896,13 @@ type SetWorkspaceSamlConnectionRequest struct {
 	Metadata          *string               `json:"metadata,omitempty"`
 	MetadataUrl       *string               `json:"metadataUrl,omitempty"`
 	Provisioning      *bool                 `json:"provisioning,omitempty"`
+}
+
+// SharePreviewRequest defines model for SharePreviewRequest.
+type SharePreviewRequest struct {
+	// LifetimeSeconds How long the link lives. Left out, it lives for the instance default.
+	LifetimeSeconds *int    `json:"lifetimeSeconds,omitempty"`
+	Passcode        *string `json:"passcode,omitempty"`
 }
 
 // SignInChallenge defines model for SignInChallenge.
@@ -7697,6 +7841,9 @@ type LabelId = openapi_types.UUID
 // NotificationSubjectId defines model for NotificationSubjectId.
 type NotificationSubjectId = openapi_types.UUID
 
+// PreviewName defines model for PreviewName.
+type PreviewName = string
+
 // ProjectId defines model for ProjectId.
 type ProjectId = openapi_types.UUID
 
@@ -7717,6 +7864,9 @@ type RunnerId = openapi_types.UUID
 
 // SavedViewId defines model for SavedViewId.
 type SavedViewId = openapi_types.UUID
+
+// ShareLinkId defines model for ShareLinkId.
+type ShareLinkId = openapi_types.UUID
 
 // SourceControlConnectionId defines model for SourceControlConnectionId.
 type SourceControlConnectionId = openapi_types.UUID
@@ -7826,6 +7976,9 @@ type PasswordResetLinkExpired = ResetLinkExpiredProblem
 // PasswordResetLinkUsed defines model for PasswordResetLinkUsed.
 type PasswordResetLinkUsed = ResetLinkUsedProblem
 
+// PreviewConflict defines model for PreviewConflict.
+type PreviewConflict = PreviewProblem
+
 // ProjectConflict defines model for ProjectConflict.
 type ProjectConflict = ProjectConflictProblem
 
@@ -7907,6 +8060,15 @@ type ListInstanceAuditParams struct {
 	ResourceId   *AuditResourceId   `form:"resourceId,omitempty" json:"resourceId,omitempty"`
 	From         *AuditFrom         `form:"from,omitempty" json:"from,omitempty"`
 	To           *AuditTo           `form:"to,omitempty" json:"to,omitempty"`
+}
+
+// AuthorizePreviewParams defines parameters for AuthorizePreview.
+type AuthorizePreviewParams struct {
+	// Host The preview host the browser asked for
+	Host string `form:"host" json:"host"`
+
+	// Return The path inside the preview to land on
+	Return *string `form:"return,omitempty" json:"return,omitempty"`
 }
 
 // UploadExecutionArtifactMultipartBody defines parameters for UploadExecutionArtifact.
@@ -8230,8 +8392,14 @@ type SetWorkspaceExecutionPolicyJSONRequestBody = SetWorkspaceExecutionPolicyReq
 // CancelWorkspaceExecutionJSONRequestBody defines body for CancelWorkspaceExecution for application/json ContentType.
 type CancelWorkspaceExecutionJSONRequestBody = CancelExecutionRequest
 
+// SharePreviewJSONRequestBody defines body for SharePreview for application/json ContentType.
+type SharePreviewJSONRequestBody = SharePreviewRequest
+
 // ResumeWorkspaceExecutionJSONRequestBody defines body for ResumeWorkspaceExecution for application/json ContentType.
 type ResumeWorkspaceExecutionJSONRequestBody = ResumeExecutionRequest
+
+// RetainWorkspaceExecutionJSONRequestBody defines body for RetainWorkspaceExecution for application/json ContentType.
+type RetainWorkspaceExecutionJSONRequestBody = RetainExecutionRequest
 
 // CreateWorkspaceImportJSONRequestBody defines body for CreateWorkspaceImport for application/json ContentType.
 type CreateWorkspaceImportJSONRequestBody = CreateImportRequest
@@ -8778,6 +8946,13 @@ type ClientInterface interface {
 	// Corresponds with POST /invitations/preview (the `PreviewInvitation` operationId).
 	PreviewInvitation(ctx context.Context, body PreviewInvitationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AuthorizePreview Trade a session for one short-lived look at a preview
+	//
+	// Where the gateway sends a browser that has no preview session yet. A signed-out browser is sent into sign-in and returns here; a signed-in one is sent back to the preview carrying a single-use ticket the gateway exchanges for the session.
+	//
+	// Corresponds with GET /previews/authorize (the `AuthorizePreview` operationId).
+	AuthorizePreview(ctx context.Context, params *AuthorizePreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// EnrolRunnerWithBody Bind this machine to the agent whose token authorises the call
 	//
 	// The bearer token is an ordinary agent API token, the same one an MCP client uses. It says which agent this machine may act as and is read once: it is never stored, and it is not what the machine keeps. What comes back is a refresh secret bound to the device key, shown here and never again.
@@ -9284,6 +9459,36 @@ type ClientInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/logs (the `ListWorkspaceExecutionLogs` operationId).
 	ListWorkspaceExecutionLogs(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListWorkspaceExecutionPreviews The previews this run has opened, and who they are shared with
+	//
+	// A preview exists because the machine reported one. Nothing else creates one, so an address this list does not carry is an address the gateway will not route.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/previews (the `ListWorkspaceExecutionPreviews` operationId).
+	ListWorkspaceExecutionPreviews(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SharePreviewWithBody Mint a link that lets somebody outside the workspace look
+	//
+	// The link is answered once and never again; norn keeps only its hash. Give it a passcode when the address alone should not be enough.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share (the `SharePreview` operationId).
+	SharePreviewWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SharePreview Mint a link that lets somebody outside the workspace look
+	//
+	// The link is answered once and never again; norn keeps only its hash. Give it a passcode when the address alone should not be enough.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share (the `SharePreview` operationId).
+	SharePreview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, body SharePreviewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokePreviewShareLink Withdraw a share link, and everyone it has already let in
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId} (the `RevokePreviewShareLink` operationId).
+	RevokePreviewShareLink(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListWorkspaceExecutionQuestions What this run stopped to ask, and what came back
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/questions (the `ListWorkspaceExecutionQuestions` operationId).
@@ -9313,6 +9518,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
 	ResumeWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body ResumeWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RetainWorkspaceExecutionWithBody Keep this run's workspace and previews for longer
+	//
+	// The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
+	RetainWorkspaceExecutionWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RetainWorkspaceExecution Keep this run's workspace and previews for longer
+	//
+	// The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
+	RetainWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceExecutionTimeline What happened during this run, oldest first
 	//
@@ -11632,6 +11855,23 @@ func (c *Client) PreviewInvitation(ctx context.Context, body PreviewInvitationJS
 	return c.Client.Do(req)
 }
 
+// AuthorizePreview Trade a session for one short-lived look at a preview
+//
+// Where the gateway sends a browser that has no preview session yet. A signed-out browser is sent into sign-in and returns here; a signed-in one is sent back to the preview carrying a single-use ticket the gateway exchanges for the session.
+//
+// Corresponds with GET /previews/authorize (the `AuthorizePreview` operationId).
+func (c *Client) AuthorizePreview(ctx context.Context, params *AuthorizePreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthorizePreviewRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // EnrolRunnerWithBody Bind this machine to the agent whose token authorises the call
 //
 // The bearer token is an ordinary agent API token, the same one an MCP client uses. It says which agent this machine may act as and is read once: it is never stored, and it is not what the machine keeps. What comes back is a refresh secret bound to the device key, shown here and never again.
@@ -12938,6 +13178,76 @@ func (c *Client) ListWorkspaceExecutionLogs(ctx context.Context, workspaceId Wor
 	return c.Client.Do(req)
 }
 
+// ListWorkspaceExecutionPreviews The previews this run has opened, and who they are shared with
+//
+// A preview exists because the machine reported one. Nothing else creates one, so an address this list does not carry is an address the gateway will not route.
+//
+// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/previews (the `ListWorkspaceExecutionPreviews` operationId).
+func (c *Client) ListWorkspaceExecutionPreviews(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceExecutionPreviewsRequest(c.Server, workspaceId, executionId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SharePreviewWithBody Mint a link that lets somebody outside the workspace look
+//
+// The link is answered once and never again; norn keeps only its hash. Give it a passcode when the address alone should not be enough.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share (the `SharePreview` operationId).
+func (c *Client) SharePreviewWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSharePreviewRequestWithBody(c.Server, workspaceId, executionId, previewName, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SharePreview Mint a link that lets somebody outside the workspace look
+//
+// The link is answered once and never again; norn keeps only its hash. Give it a passcode when the address alone should not be enough.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share (the `SharePreview` operationId).
+func (c *Client) SharePreview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, body SharePreviewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSharePreviewRequest(c.Server, workspaceId, executionId, previewName, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RevokePreviewShareLink Withdraw a share link, and everyone it has already let in
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId} (the `RevokePreviewShareLink` operationId).
+func (c *Client) RevokePreviewShareLink(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokePreviewShareLinkRequest(c.Server, workspaceId, executionId, previewName, shareLinkId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListWorkspaceExecutionQuestions What this run stopped to ask, and what came back
 //
 // Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/questions (the `ListWorkspaceExecutionQuestions` operationId).
@@ -12998,6 +13308,44 @@ func (c *Client) ResumeWorkspaceExecutionWithBody(ctx context.Context, workspace
 // Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
 func (c *Client) ResumeWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body ResumeWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewResumeWorkspaceExecutionRequest(c.Server, workspaceId, executionId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RetainWorkspaceExecutionWithBody Keep this run's workspace and previews for longer
+//
+// The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
+func (c *Client) RetainWorkspaceExecutionWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRetainWorkspaceExecutionRequestWithBody(c.Server, workspaceId, executionId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RetainWorkspaceExecution Keep this run's workspace and previews for longer
+//
+// The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
+func (c *Client) RetainWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRetainWorkspaceExecutionRequest(c.Server, workspaceId, executionId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -18395,6 +18743,68 @@ func NewPreviewInvitationRequestWithBody(server string, contentType string, body
 	return req, nil
 }
 
+// NewAuthorizePreviewRequest constructs an http.Request for the AuthorizePreview method
+func NewAuthorizePreviewRequest(server string, params *AuthorizePreviewParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/previews/authorize")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "host", params.Host, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if params.Return != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "return", *params.Return, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewEnrolRunnerRequest calls the generic EnrolRunner builder with application/json body
 func NewEnrolRunnerRequest(server string, body EnrolRunnerJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -21085,6 +21495,163 @@ func NewListWorkspaceExecutionLogsRequest(server string, workspaceId WorkspaceId
 	return req, nil
 }
 
+// NewListWorkspaceExecutionPreviewsRequest constructs an http.Request for the ListWorkspaceExecutionPreviews method
+func NewListWorkspaceExecutionPreviewsRequest(server string, workspaceId WorkspaceId, executionId ExecutionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/previews", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSharePreviewRequest calls the generic SharePreview builder with application/json body
+func NewSharePreviewRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, body SharePreviewJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSharePreviewRequestWithBody(server, workspaceId, executionId, previewName, "application/json", bodyReader)
+}
+
+// NewSharePreviewRequestWithBody constructs an http.Request for the SharePreview method, with any body, and a specified content type
+func NewSharePreviewRequestWithBody(server string, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "previewName", previewName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/previews/%s/share", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRevokePreviewShareLinkRequest constructs an http.Request for the RevokePreviewShareLink method
+func NewRevokePreviewShareLinkRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "previewName", previewName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "shareLinkId", shareLinkId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/previews/%s/share/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListWorkspaceExecutionQuestionsRequest constructs an http.Request for the ListWorkspaceExecutionQuestions method
 func NewListWorkspaceExecutionQuestionsRequest(server string, workspaceId WorkspaceId, executionId ExecutionId) (*http.Request, error) {
 	var err error
@@ -21202,6 +21769,60 @@ func NewResumeWorkspaceExecutionRequestWithBody(server string, workspaceId Works
 	}
 
 	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/resume", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRetainWorkspaceExecutionRequest calls the generic RetainWorkspaceExecution builder with application/json body
+func NewRetainWorkspaceExecutionRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRetainWorkspaceExecutionRequestWithBody(server, workspaceId, executionId, "application/json", bodyReader)
+}
+
+// NewRetainWorkspaceExecutionRequestWithBody constructs an http.Request for the RetainWorkspaceExecution method, with any body, and a specified content type
+func NewRetainWorkspaceExecutionRequestWithBody(server string, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/retain", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -31374,6 +31995,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /invitations/preview (the `PreviewInvitation` operationId).
 	PreviewInvitationWithResponse(ctx context.Context, body PreviewInvitationJSONRequestBody, reqEditors ...RequestEditorFn) (*PreviewInvitationResponse, error)
 
+	// AuthorizePreviewWithResponse Trade a session for one short-lived look at a preview
+	//
+	// Where the gateway sends a browser that has no preview session yet. A signed-out browser is sent into sign-in and returns here; a signed-in one is sent back to the preview carrying a single-use ticket the gateway exchanges for the session.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /previews/authorize (the `AuthorizePreview` operationId).
+	AuthorizePreviewWithResponse(ctx context.Context, params *AuthorizePreviewParams, reqEditors ...RequestEditorFn) (*AuthorizePreviewResponse, error)
+
 	// EnrolRunnerWithBodyWithResponse Bind this machine to the agent whose token authorises the call
 	//
 	// The bearer token is an ordinary agent API token, the same one an MCP client uses. It says which agent this machine may act as and is read once: it is never stored, and it is not what the machine keeps. What comes back is a refresh secret bound to the device key, shown here and never again.
@@ -31970,6 +32600,40 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/logs (the `ListWorkspaceExecutionLogs` operationId).
 	ListWorkspaceExecutionLogsWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionLogsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionLogsResponse, error)
 
+	// ListWorkspaceExecutionPreviewsWithResponse The previews this run has opened, and who they are shared with
+	//
+	// A preview exists because the machine reported one. Nothing else creates one, so an address this list does not carry is an address the gateway will not route.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/previews (the `ListWorkspaceExecutionPreviews` operationId).
+	ListWorkspaceExecutionPreviewsWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionPreviewsResponse, error)
+
+	// SharePreviewWithBodyWithResponse Mint a link that lets somebody outside the workspace look
+	//
+	// The link is answered once and never again; norn keeps only its hash. Give it a passcode when the address alone should not be enough.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share (the `SharePreview` operationId).
+	SharePreviewWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SharePreviewResponse, error)
+
+	// SharePreviewWithResponse Mint a link that lets somebody outside the workspace look
+	//
+	// The link is answered once and never again; norn keeps only its hash. Give it a passcode when the address alone should not be enough.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share (the `SharePreview` operationId).
+	SharePreviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, body SharePreviewJSONRequestBody, reqEditors ...RequestEditorFn) (*SharePreviewResponse, error)
+
+	// RevokePreviewShareLinkWithResponse Withdraw a share link, and everyone it has already let in
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId} (the `RevokePreviewShareLink` operationId).
+	RevokePreviewShareLinkWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId, reqEditors ...RequestEditorFn) (*RevokePreviewShareLinkResponse, error)
+
 	// ListWorkspaceExecutionQuestionsWithResponse What this run stopped to ask, and what came back
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -32003,6 +32667,24 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
 	ResumeWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body ResumeWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*ResumeWorkspaceExecutionResponse, error)
+
+	// RetainWorkspaceExecutionWithBodyWithResponse Keep this run's workspace and previews for longer
+	//
+	// The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
+	RetainWorkspaceExecutionWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RetainWorkspaceExecutionResponse, error)
+
+	// RetainWorkspaceExecutionWithResponse Keep this run's workspace and previews for longer
+	//
+	// The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
+	RetainWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*RetainWorkspaceExecutionResponse, error)
 
 	// ListWorkspaceExecutionTimelineWithResponse What happened during this run, oldest first
 	//
@@ -35677,6 +36359,83 @@ func (r PreviewInvitationResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r PreviewInvitationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// AuthorizePreviewResponse303Headers the declared response headers of an HTTP 303 response for AuthorizePreview
+type AuthorizePreviewResponse303Headers struct {
+	CacheControl *string
+	Location     *string
+}
+
+type AuthorizePreviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *PreviewConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// Headers303 the parsed response headers for an HTTP 303 response
+	Headers303 *AuthorizePreviewResponse303Headers
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r AuthorizePreviewResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r AuthorizePreviewResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r AuthorizePreviewResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r AuthorizePreviewResponse) GetApplicationproblemJSON409() *PreviewConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r AuthorizePreviewResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r AuthorizePreviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AuthorizePreviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AuthorizePreviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AuthorizePreviewResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -40053,6 +40812,220 @@ func (r ListWorkspaceExecutionLogsResponse) ContentType() string {
 	return ""
 }
 
+type ListWorkspaceExecutionPreviewsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]ExecutionPreviewDetail
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceExecutionPreviewsResponse) GetJSON200() *[]ExecutionPreviewDetail {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceExecutionPreviewsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceExecutionPreviewsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceExecutionPreviewsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceExecutionPreviewsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceExecutionPreviewsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceExecutionPreviewsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceExecutionPreviewsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceExecutionPreviewsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SharePreviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *PreviewShareLinkMinted
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *PreviewConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r SharePreviewResponse) GetJSON201() *PreviewShareLinkMinted {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SharePreviewResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SharePreviewResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r SharePreviewResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r SharePreviewResponse) GetApplicationproblemJSON409() *PreviewConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SharePreviewResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SharePreviewResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SharePreviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SharePreviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SharePreviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SharePreviewResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RevokePreviewShareLinkResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RevokePreviewShareLinkResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RevokePreviewShareLinkResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RevokePreviewShareLinkResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RevokePreviewShareLinkResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RevokePreviewShareLinkResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokePreviewShareLinkResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokePreviewShareLinkResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RevokePreviewShareLinkResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListWorkspaceExecutionQuestionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -40275,6 +41248,89 @@ func (r ResumeWorkspaceExecutionResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ResumeWorkspaceExecutionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RetainWorkspaceExecutionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Execution
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *ExecutionConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RetainWorkspaceExecutionResponse) GetJSON200() *Execution {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RetainWorkspaceExecutionResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RetainWorkspaceExecutionResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RetainWorkspaceExecutionResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r RetainWorkspaceExecutionResponse) GetApplicationproblemJSON409() *ExecutionConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r RetainWorkspaceExecutionResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RetainWorkspaceExecutionResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RetainWorkspaceExecutionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RetainWorkspaceExecutionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RetainWorkspaceExecutionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RetainWorkspaceExecutionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -55486,6 +56542,21 @@ func (c *ClientWithResponses) PreviewInvitationWithResponse(ctx context.Context,
 	return ParsePreviewInvitationResponse(rsp)
 }
 
+// AuthorizePreviewWithResponse Trade a session for one short-lived look at a preview
+//
+// Where the gateway sends a browser that has no preview session yet. A signed-out browser is sent into sign-in and returns here; a signed-in one is sent back to the preview carrying a single-use ticket the gateway exchanges for the session.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /previews/authorize (the `AuthorizePreview` operationId).
+func (c *ClientWithResponses) AuthorizePreviewWithResponse(ctx context.Context, params *AuthorizePreviewParams, reqEditors ...RequestEditorFn) (*AuthorizePreviewResponse, error) {
+	rsp, err := c.AuthorizePreview(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthorizePreviewResponse(rsp)
+}
+
 // EnrolRunnerWithBodyWithResponse Bind this machine to the agent whose token authorises the call
 //
 // The bearer token is an ordinary agent API token, the same one an MCP client uses. It says which agent this machine may act as and is read once: it is never stored, and it is not what the machine keeps. What comes back is a refresh secret bound to the device key, shown here and never again.
@@ -56562,6 +57633,64 @@ func (c *ClientWithResponses) ListWorkspaceExecutionLogsWithResponse(ctx context
 	return ParseListWorkspaceExecutionLogsResponse(rsp)
 }
 
+// ListWorkspaceExecutionPreviewsWithResponse The previews this run has opened, and who they are shared with
+//
+// A preview exists because the machine reported one. Nothing else creates one, so an address this list does not carry is an address the gateway will not route.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/previews (the `ListWorkspaceExecutionPreviews` operationId).
+func (c *ClientWithResponses) ListWorkspaceExecutionPreviewsWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionPreviewsResponse, error) {
+	rsp, err := c.ListWorkspaceExecutionPreviews(ctx, workspaceId, executionId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceExecutionPreviewsResponse(rsp)
+}
+
+// SharePreviewWithBodyWithResponse Mint a link that lets somebody outside the workspace look
+//
+// The link is answered once and never again; norn keeps only its hash. Give it a passcode when the address alone should not be enough.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share (the `SharePreview` operationId).
+func (c *ClientWithResponses) SharePreviewWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SharePreviewResponse, error) {
+	rsp, err := c.SharePreviewWithBody(ctx, workspaceId, executionId, previewName, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSharePreviewResponse(rsp)
+}
+
+// SharePreviewWithResponse Mint a link that lets somebody outside the workspace look
+//
+// The link is answered once and never again; norn keeps only its hash. Give it a passcode when the address alone should not be enough.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share (the `SharePreview` operationId).
+func (c *ClientWithResponses) SharePreviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, body SharePreviewJSONRequestBody, reqEditors ...RequestEditorFn) (*SharePreviewResponse, error) {
+	rsp, err := c.SharePreview(ctx, workspaceId, executionId, previewName, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSharePreviewResponse(rsp)
+}
+
+// RevokePreviewShareLinkWithResponse Withdraw a share link, and everyone it has already let in
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId} (the `RevokePreviewShareLink` operationId).
+func (c *ClientWithResponses) RevokePreviewShareLinkWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId, reqEditors ...RequestEditorFn) (*RevokePreviewShareLinkResponse, error) {
+	rsp, err := c.RevokePreviewShareLink(ctx, workspaceId, executionId, previewName, shareLinkId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokePreviewShareLinkResponse(rsp)
+}
+
 // ListWorkspaceExecutionQuestionsWithResponse What this run stopped to ask, and what came back
 //
 // Returns a wrapper object for the known response body format(s).
@@ -56618,6 +57747,36 @@ func (c *ClientWithResponses) ResumeWorkspaceExecutionWithResponse(ctx context.C
 		return nil, err
 	}
 	return ParseResumeWorkspaceExecutionResponse(rsp)
+}
+
+// RetainWorkspaceExecutionWithBodyWithResponse Keep this run's workspace and previews for longer
+//
+// The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
+func (c *ClientWithResponses) RetainWorkspaceExecutionWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RetainWorkspaceExecutionResponse, error) {
+	rsp, err := c.RetainWorkspaceExecutionWithBody(ctx, workspaceId, executionId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRetainWorkspaceExecutionResponse(rsp)
+}
+
+// RetainWorkspaceExecutionWithResponse Keep this run's workspace and previews for longer
+//
+// The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
+func (c *ClientWithResponses) RetainWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*RetainWorkspaceExecutionResponse, error) {
+	rsp, err := c.RetainWorkspaceExecution(ctx, workspaceId, executionId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRetainWorkspaceExecutionResponse(rsp)
 }
 
 // ListWorkspaceExecutionTimelineWithResponse What happened during this run, oldest first
@@ -61588,6 +62747,83 @@ func ParsePreviewInvitationResponse(rsp *http.Response) (*PreviewInvitationRespo
 	return response, nil
 }
 
+// ParseAuthorizePreviewResponse parses an HTTP response from a AuthorizePreviewWithResponse call
+func ParseAuthorizePreviewResponse(rsp *http.Response) (*AuthorizePreviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AuthorizePreviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 303:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest PreviewConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 303:
+		var headers AuthorizePreviewResponse303Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Location"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Location", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.Location = &value
+		}
+		response.Headers303 = &headers
+	}
+
+	return response, nil
+}
+
 // ParseEnrolRunnerResponse parses an HTTP response from a EnrolRunnerWithResponse call
 func ParseEnrolRunnerResponse(rsp *http.Response) (*EnrolRunnerResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -65067,6 +66303,178 @@ func ParseListWorkspaceExecutionLogsResponse(rsp *http.Response) (*ListWorkspace
 	return response, nil
 }
 
+// ParseListWorkspaceExecutionPreviewsResponse parses an HTTP response from a ListWorkspaceExecutionPreviewsWithResponse call
+func ParseListWorkspaceExecutionPreviewsResponse(rsp *http.Response) (*ListWorkspaceExecutionPreviewsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceExecutionPreviewsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ExecutionPreviewDetail
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSharePreviewResponse parses an HTTP response from a SharePreviewWithResponse call
+func ParseSharePreviewResponse(rsp *http.Response) (*SharePreviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SharePreviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest PreviewShareLinkMinted
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest PreviewConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRevokePreviewShareLinkResponse parses an HTTP response from a RevokePreviewShareLinkWithResponse call
+func ParseRevokePreviewShareLinkResponse(rsp *http.Response) (*RevokePreviewShareLinkResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokePreviewShareLinkResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceExecutionQuestionsResponse parses an HTTP response from a ListWorkspaceExecutionQuestionsWithResponse call
 func ParseListWorkspaceExecutionQuestionsResponse(rsp *http.Response) (*ListWorkspaceExecutionQuestionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -65191,6 +66599,74 @@ func ParseResumeWorkspaceExecutionResponse(rsp *http.Response) (*ResumeWorkspace
 	}
 
 	response := &ResumeWorkspaceExecutionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Execution
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ExecutionConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRetainWorkspaceExecutionResponse parses an HTTP response from a RetainWorkspaceExecutionWithResponse call
+func ParseRetainWorkspaceExecutionResponse(rsp *http.Response) (*RetainWorkspaceExecutionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RetainWorkspaceExecutionResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -77098,6 +78574,9 @@ type ServerInterface interface {
 	// PreviewInvitation Describe an invitation link before anyone acts on it
 	// (POST /invitations/preview)
 	PreviewInvitation(w http.ResponseWriter, r *http.Request)
+	// AuthorizePreview Trade a session for one short-lived look at a preview
+	// (GET /previews/authorize)
+	AuthorizePreview(w http.ResponseWriter, r *http.Request, params AuthorizePreviewParams)
 	// EnrolRunner Bind this machine to the agent whose token authorises the call
 	// (POST /runners)
 	EnrolRunner(w http.ResponseWriter, r *http.Request)
@@ -77287,6 +78766,15 @@ type ServerInterface interface {
 	// ListWorkspaceExecutionLogs What this run printed, oldest batch first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/logs)
 	ListWorkspaceExecutionLogs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionLogsParams)
+	// ListWorkspaceExecutionPreviews The previews this run has opened, and who they are shared with
+	// (GET /workspaces/{workspaceId}/executions/{executionId}/previews)
+	ListWorkspaceExecutionPreviews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
+	// SharePreview Mint a link that lets somebody outside the workspace look
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share)
+	SharePreview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName)
+	// RevokePreviewShareLink Withdraw a share link, and everyone it has already let in
+	// (DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId})
+	RevokePreviewShareLink(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId)
 	// ListWorkspaceExecutionQuestions What this run stopped to ask, and what came back
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/questions)
 	ListWorkspaceExecutionQuestions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
@@ -77296,6 +78784,9 @@ type ServerInterface interface {
 	// ResumeWorkspaceExecution Send this run back to work with feedback
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/resume)
 	ResumeWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
+	// RetainWorkspaceExecution Keep this run's workspace and previews for longer
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/retain)
+	RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
 	// ListWorkspaceExecutionTimeline What happened during this run, oldest first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/timeline)
 	ListWorkspaceExecutionTimeline(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionTimelineParams)
@@ -78067,6 +79558,12 @@ func (_ Unimplemented) PreviewInvitation(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// AuthorizePreview Trade a session for one short-lived look at a preview
+// (GET /previews/authorize)
+func (_ Unimplemented) AuthorizePreview(w http.ResponseWriter, r *http.Request, params AuthorizePreviewParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // EnrolRunner Bind this machine to the agent whose token authorises the call
 // (POST /runners)
 func (_ Unimplemented) EnrolRunner(w http.ResponseWriter, r *http.Request) {
@@ -78445,6 +79942,24 @@ func (_ Unimplemented) ListWorkspaceExecutionLogs(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListWorkspaceExecutionPreviews The previews this run has opened, and who they are shared with
+// (GET /workspaces/{workspaceId}/executions/{executionId}/previews)
+func (_ Unimplemented) ListWorkspaceExecutionPreviews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SharePreview Mint a link that lets somebody outside the workspace look
+// (POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share)
+func (_ Unimplemented) SharePreview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RevokePreviewShareLink Withdraw a share link, and everyone it has already let in
+// (DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId})
+func (_ Unimplemented) RevokePreviewShareLink(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceExecutionQuestions What this run stopped to ask, and what came back
 // (GET /workspaces/{workspaceId}/executions/{executionId}/questions)
 func (_ Unimplemented) ListWorkspaceExecutionQuestions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
@@ -78460,6 +79975,12 @@ func (_ Unimplemented) RestartWorkspaceExecution(w http.ResponseWriter, r *http.
 // ResumeWorkspaceExecution Send this run back to work with feedback
 // (POST /workspaces/{workspaceId}/executions/{executionId}/resume)
 func (_ Unimplemented) ResumeWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RetainWorkspaceExecution Keep this run's workspace and previews for longer
+// (POST /workspaces/{workspaceId}/executions/{executionId}/retain)
+func (_ Unimplemented) RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -80169,6 +81690,52 @@ func (siw *ServerInterfaceWrapper) PreviewInvitation(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PreviewInvitation(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AuthorizePreview operation middleware
+func (siw *ServerInterfaceWrapper) AuthorizePreview(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AuthorizePreviewParams
+
+	// ------------- Required query parameter "host" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "host", r.URL.Query(), &params.Host, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "host"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "host", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "return" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "return", r.URL.Query(), &params.Return, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "return"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "return", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AuthorizePreview(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -82058,6 +83625,138 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceExecutionLogs(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceExecutionPreviews operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceExecutionPreviews(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceExecutionPreviews(w, r, workspaceId, executionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SharePreview operation middleware
+func (siw *ServerInterfaceWrapper) SharePreview(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "previewName" -------------
+	var previewName PreviewName
+
+	err = runtime.BindStyledParameterWithOptions("simple", "previewName", chi.URLParam(r, "previewName"), &previewName, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "previewName", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SharePreview(w, r, workspaceId, executionId, previewName)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokePreviewShareLink operation middleware
+func (siw *ServerInterfaceWrapper) RevokePreviewShareLink(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "previewName" -------------
+	var previewName PreviewName
+
+	err = runtime.BindStyledParameterWithOptions("simple", "previewName", chi.URLParam(r, "previewName"), &previewName, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "previewName", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shareLinkId" -------------
+	var shareLinkId ShareLinkId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shareLinkId", chi.URLParam(r, "shareLinkId"), &shareLinkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shareLinkId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokePreviewShareLink(w, r, workspaceId, executionId, previewName, shareLinkId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceExecutionQuestions operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceExecutionQuestions(w http.ResponseWriter, r *http.Request) {
 
@@ -82154,6 +83853,41 @@ func (siw *ServerInterfaceWrapper) ResumeWorkspaceExecution(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ResumeWorkspaceExecution(w, r, workspaceId, executionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RetainWorkspaceExecution operation middleware
+func (siw *ServerInterfaceWrapper) RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RetainWorkspaceExecution(w, r, workspaceId, executionId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -90571,6 +92305,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/approve", wrapper.ApproveWorkspaceExecution)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/previews", wrapper.ListWorkspaceExecutionPreviews)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share", wrapper.SharePreview)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId}", wrapper.RevokePreviewShareLink)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/retain", wrapper.RetainWorkspaceExecution)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/previews/authorize", wrapper.AuthorizePreview)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/runners/me/executions/{executionId}/logs", wrapper.UploadExecutionLogs)
 	})
 	r.Group(func(r chi.Router) {
@@ -90661,6 +92410,8 @@ type MembershipConflictApplicationProblemPlusJSONResponse MembershipConflictProb
 type PasswordResetLinkExpiredApplicationProblemPlusJSONResponse ResetLinkExpiredProblem
 
 type PasswordResetLinkUsedApplicationProblemPlusJSONResponse ResetLinkUsedProblem
+
+type PreviewConflictApplicationProblemPlusJSONResponse PreviewProblem
 
 type ProblemApplicationProblemPlusJSONResponse Problem
 
@@ -92687,6 +94438,110 @@ func (response PreviewInvitation409ApplicationProblemPlusJSONResponse) VisitPrev
 type PreviewInvitation500ApplicationProblemPlusJSONResponse Problem
 
 func (response PreviewInvitation500ApplicationProblemPlusJSONResponse) VisitPreviewInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AuthorizePreviewRequestObject struct {
+	Params AuthorizePreviewParams
+}
+
+type AuthorizePreviewResponseObject interface {
+	VisitAuthorizePreviewResponse(w http.ResponseWriter) error
+}
+
+type AuthorizePreview303ResponseHeaders struct {
+	CacheControl *string
+	Location     *string
+}
+
+type AuthorizePreview303Response struct {
+	Headers AuthorizePreview303ResponseHeaders
+}
+
+func (response AuthorizePreview303Response) VisitAuthorizePreviewResponse(w http.ResponseWriter) error {
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(303)
+	return nil
+}
+
+type AuthorizePreview401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AuthorizePreview401ApplicationProblemPlusJSONResponse) VisitAuthorizePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AuthorizePreview403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AuthorizePreview403ApplicationProblemPlusJSONResponse) VisitAuthorizePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AuthorizePreview404ApplicationProblemPlusJSONResponse Problem
+
+func (response AuthorizePreview404ApplicationProblemPlusJSONResponse) VisitAuthorizePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AuthorizePreview409ApplicationProblemPlusJSONResponse struct {
+	PreviewConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AuthorizePreview409ApplicationProblemPlusJSONResponse) VisitAuthorizePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AuthorizePreview500ApplicationProblemPlusJSONResponse Problem
+
+func (response AuthorizePreview500ApplicationProblemPlusJSONResponse) VisitAuthorizePreviewResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -98018,6 +99873,283 @@ func (response ListWorkspaceExecutionLogs500ApplicationProblemPlusJSONResponse) 
 	return err
 }
 
+type ListWorkspaceExecutionPreviewsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+}
+
+type ListWorkspaceExecutionPreviewsResponseObject interface {
+	VisitListWorkspaceExecutionPreviewsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceExecutionPreviews200JSONResponse []ExecutionPreviewDetail
+
+func (response ListWorkspaceExecutionPreviews200JSONResponse) VisitListWorkspaceExecutionPreviewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionPreviews401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceExecutionPreviews401ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionPreviewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionPreviews403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceExecutionPreviews403ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionPreviewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionPreviews404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceExecutionPreviews404ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionPreviewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionPreviews500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceExecutionPreviews500ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionPreviewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SharePreviewRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+	PreviewName PreviewName `json:"previewName"`
+	Body        *SharePreviewJSONRequestBody
+}
+
+type SharePreviewResponseObject interface {
+	VisitSharePreviewResponse(w http.ResponseWriter) error
+}
+
+type SharePreview201JSONResponse PreviewShareLinkMinted
+
+func (response SharePreview201JSONResponse) VisitSharePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SharePreview401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SharePreview401ApplicationProblemPlusJSONResponse) VisitSharePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SharePreview403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SharePreview403ApplicationProblemPlusJSONResponse) VisitSharePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SharePreview404ApplicationProblemPlusJSONResponse Problem
+
+func (response SharePreview404ApplicationProblemPlusJSONResponse) VisitSharePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SharePreview409ApplicationProblemPlusJSONResponse struct {
+	PreviewConflictApplicationProblemPlusJSONResponse
+}
+
+func (response SharePreview409ApplicationProblemPlusJSONResponse) VisitSharePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SharePreview422ApplicationProblemPlusJSONResponse Problem
+
+func (response SharePreview422ApplicationProblemPlusJSONResponse) VisitSharePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SharePreview500ApplicationProblemPlusJSONResponse Problem
+
+func (response SharePreview500ApplicationProblemPlusJSONResponse) VisitSharePreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokePreviewShareLinkRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+	PreviewName PreviewName `json:"previewName"`
+	ShareLinkId ShareLinkId `json:"shareLinkId"`
+}
+
+type RevokePreviewShareLinkResponseObject interface {
+	VisitRevokePreviewShareLinkResponse(w http.ResponseWriter) error
+}
+
+type RevokePreviewShareLink204Response struct {
+}
+
+func (response RevokePreviewShareLink204Response) VisitRevokePreviewShareLinkResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokePreviewShareLink401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RevokePreviewShareLink401ApplicationProblemPlusJSONResponse) VisitRevokePreviewShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokePreviewShareLink403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RevokePreviewShareLink403ApplicationProblemPlusJSONResponse) VisitRevokePreviewShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokePreviewShareLink404ApplicationProblemPlusJSONResponse Problem
+
+func (response RevokePreviewShareLink404ApplicationProblemPlusJSONResponse) VisitRevokePreviewShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokePreviewShareLink500ApplicationProblemPlusJSONResponse Problem
+
+func (response RevokePreviewShareLink500ApplicationProblemPlusJSONResponse) VisitRevokePreviewShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceExecutionQuestionsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	ExecutionId ExecutionId `json:"executionId"`
@@ -98303,6 +100435,120 @@ func (response ResumeWorkspaceExecution422ApplicationProblemPlusJSONResponse) Vi
 type ResumeWorkspaceExecution500ApplicationProblemPlusJSONResponse Problem
 
 func (response ResumeWorkspaceExecution500ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetainWorkspaceExecutionRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+	Body        *RetainWorkspaceExecutionJSONRequestBody
+}
+
+type RetainWorkspaceExecutionResponseObject interface {
+	VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error
+}
+
+type RetainWorkspaceExecution200JSONResponse Execution
+
+func (response RetainWorkspaceExecution200JSONResponse) VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetainWorkspaceExecution401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RetainWorkspaceExecution401ApplicationProblemPlusJSONResponse) VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetainWorkspaceExecution403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RetainWorkspaceExecution403ApplicationProblemPlusJSONResponse) VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetainWorkspaceExecution404ApplicationProblemPlusJSONResponse Problem
+
+func (response RetainWorkspaceExecution404ApplicationProblemPlusJSONResponse) VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetainWorkspaceExecution409ApplicationProblemPlusJSONResponse struct {
+	ExecutionConflictApplicationProblemPlusJSONResponse
+}
+
+func (response RetainWorkspaceExecution409ApplicationProblemPlusJSONResponse) VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetainWorkspaceExecution422ApplicationProblemPlusJSONResponse Problem
+
+func (response RetainWorkspaceExecution422ApplicationProblemPlusJSONResponse) VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetainWorkspaceExecution500ApplicationProblemPlusJSONResponse Problem
+
+func (response RetainWorkspaceExecution500ApplicationProblemPlusJSONResponse) VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -117174,6 +119420,9 @@ type StrictServerInterface interface {
 	// PreviewInvitation Describe an invitation link before anyone acts on it
 	// (POST /invitations/preview)
 	PreviewInvitation(ctx context.Context, request PreviewInvitationRequestObject) (PreviewInvitationResponseObject, error)
+	// AuthorizePreview Trade a session for one short-lived look at a preview
+	// (GET /previews/authorize)
+	AuthorizePreview(ctx context.Context, request AuthorizePreviewRequestObject) (AuthorizePreviewResponseObject, error)
 	// EnrolRunner Bind this machine to the agent whose token authorises the call
 	// (POST /runners)
 	EnrolRunner(ctx context.Context, request EnrolRunnerRequestObject) (EnrolRunnerResponseObject, error)
@@ -117363,6 +119612,15 @@ type StrictServerInterface interface {
 	// ListWorkspaceExecutionLogs What this run printed, oldest batch first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/logs)
 	ListWorkspaceExecutionLogs(ctx context.Context, request ListWorkspaceExecutionLogsRequestObject) (ListWorkspaceExecutionLogsResponseObject, error)
+	// ListWorkspaceExecutionPreviews The previews this run has opened, and who they are shared with
+	// (GET /workspaces/{workspaceId}/executions/{executionId}/previews)
+	ListWorkspaceExecutionPreviews(ctx context.Context, request ListWorkspaceExecutionPreviewsRequestObject) (ListWorkspaceExecutionPreviewsResponseObject, error)
+	// SharePreview Mint a link that lets somebody outside the workspace look
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share)
+	SharePreview(ctx context.Context, request SharePreviewRequestObject) (SharePreviewResponseObject, error)
+	// RevokePreviewShareLink Withdraw a share link, and everyone it has already let in
+	// (DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId})
+	RevokePreviewShareLink(ctx context.Context, request RevokePreviewShareLinkRequestObject) (RevokePreviewShareLinkResponseObject, error)
 	// ListWorkspaceExecutionQuestions What this run stopped to ask, and what came back
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/questions)
 	ListWorkspaceExecutionQuestions(ctx context.Context, request ListWorkspaceExecutionQuestionsRequestObject) (ListWorkspaceExecutionQuestionsResponseObject, error)
@@ -117372,6 +119630,9 @@ type StrictServerInterface interface {
 	// ResumeWorkspaceExecution Send this run back to work with feedback
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/resume)
 	ResumeWorkspaceExecution(ctx context.Context, request ResumeWorkspaceExecutionRequestObject) (ResumeWorkspaceExecutionResponseObject, error)
+	// RetainWorkspaceExecution Keep this run's workspace and previews for longer
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/retain)
+	RetainWorkspaceExecution(ctx context.Context, request RetainWorkspaceExecutionRequestObject) (RetainWorkspaceExecutionResponseObject, error)
 	// ListWorkspaceExecutionTimeline What happened during this run, oldest first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/timeline)
 	ListWorkspaceExecutionTimeline(ctx context.Context, request ListWorkspaceExecutionTimelineRequestObject) (ListWorkspaceExecutionTimelineResponseObject, error)
@@ -118759,6 +121020,32 @@ func (sh *strictHandler) PreviewInvitation(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PreviewInvitationResponseObject); ok {
 		if err := validResponse.VisitPreviewInvitationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AuthorizePreview operation middleware
+func (sh *strictHandler) AuthorizePreview(w http.ResponseWriter, r *http.Request, params AuthorizePreviewParams) {
+	var request AuthorizePreviewRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthorizePreview(ctx, request.(AuthorizePreviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthorizePreview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AuthorizePreviewResponseObject); ok {
+		if err := validResponse.VisitAuthorizePreviewResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -120530,6 +122817,100 @@ func (sh *strictHandler) ListWorkspaceExecutionLogs(w http.ResponseWriter, r *ht
 	}
 }
 
+// ListWorkspaceExecutionPreviews operation middleware
+func (sh *strictHandler) ListWorkspaceExecutionPreviews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	var request ListWorkspaceExecutionPreviewsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceExecutionPreviews(ctx, request.(ListWorkspaceExecutionPreviewsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceExecutionPreviews")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceExecutionPreviewsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceExecutionPreviewsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SharePreview operation middleware
+func (sh *strictHandler) SharePreview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName) {
+	var request SharePreviewRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+	request.PreviewName = previewName
+
+	var body SharePreviewJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SharePreview(ctx, request.(SharePreviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SharePreview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SharePreviewResponseObject); ok {
+		if err := validResponse.VisitSharePreviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokePreviewShareLink operation middleware
+func (sh *strictHandler) RevokePreviewShareLink(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId) {
+	var request RevokePreviewShareLinkRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+	request.PreviewName = previewName
+	request.ShareLinkId = shareLinkId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokePreviewShareLink(ctx, request.(RevokePreviewShareLinkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokePreviewShareLink")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokePreviewShareLinkResponseObject); ok {
+		if err := validResponse.VisitRevokePreviewShareLinkResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListWorkspaceExecutionQuestions operation middleware
 func (sh *strictHandler) ListWorkspaceExecutionQuestions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
 	var request ListWorkspaceExecutionQuestionsRequestObject
@@ -120611,6 +122992,40 @@ func (sh *strictHandler) ResumeWorkspaceExecution(w http.ResponseWriter, r *http
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ResumeWorkspaceExecutionResponseObject); ok {
 		if err := validResponse.VisitResumeWorkspaceExecutionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RetainWorkspaceExecution operation middleware
+func (sh *strictHandler) RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	var request RetainWorkspaceExecutionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+
+	var body RetainWorkspaceExecutionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RetainWorkspaceExecution(ctx, request.(RetainWorkspaceExecutionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RetainWorkspaceExecution")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RetainWorkspaceExecutionResponseObject); ok {
+		if err := validResponse.VisitRetainWorkspaceExecutionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

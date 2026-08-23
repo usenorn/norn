@@ -36,10 +36,13 @@ func (h *handler) GetWorkspaceExecution(
 		return nil, err
 	}
 
+	previews := previewDTOs(detail.Previews, h.previewCfg.Scheme)
+
 	return api.GetWorkspaceExecution200JSONResponse(api.ExecutionDetail{
 		Execution: executionDTO(detail.Execution),
 		Timeline:  executionEventDTOs(detail.Timeline),
 		Changeset: changeSetOrNothing(detail.Execution.ID, detail.ChangeSet),
+		Previews:  &previews,
 	}), nil
 }
 

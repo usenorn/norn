@@ -12,6 +12,7 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
+	"github.com/usenorn/norn/internal/handler/http/previewgateway"
 	"github.com/usenorn/norn/internal/handler/http/runnerchannel"
 	"github.com/usenorn/norn/internal/handler/http/scim"
 	"github.com/usenorn/norn/internal/handler/http/sourcecontrol"
@@ -46,6 +47,7 @@ func New(
 	sourceControlApps *sourcecontrol.AppEdge,
 	mcpEdge *mcpserver.Edge,
 	runnerChannel *runnerchannel.Edge,
+	previewGateway *previewgateway.Edge,
 ) http.Handler {
 	base := chi.NewRouter()
 	base.Use(
@@ -93,6 +95,15 @@ func New(
 	streams.Get(events.Path, eventsEdge.Serve)
 
 	base.Get(runnerchannel.Path, runnerChannel.Serve)
+
+	gateway := base.With(
+		chimiddleware.Timeout(cfg.RequestTimeout),
+		maxRequestBytes(cfg.MaxRequestBytes),
+	)
+	gateway.Post(previewgateway.TokenPath, previewGateway.Exchange)
+	gateway.Post(previewgateway.IntrospectPath, previewGateway.Introspect)
+	gateway.Post(previewgateway.SessionPath, previewGateway.Session)
+	gateway.Post(previewgateway.SharePath, previewGateway.Share)
 
 	exports := base.With(
 		middleware.BearerToken(tokens, runners),

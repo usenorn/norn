@@ -19,6 +19,7 @@ const sweepBatch = 200
 type executionsService struct {
 	executions repository.Execution
 	changesets repository.ChangeSet
+	previews   repository.Preview
 	runners    repository.Runner
 	issues     repository.Issue
 	states     repository.WorkflowState
@@ -33,6 +34,7 @@ type executionsService struct {
 func New(
 	executions repository.Execution,
 	changesets repository.ChangeSet,
+	previews repository.Preview,
 	runners repository.Runner,
 	issues repository.Issue,
 	states repository.WorkflowState,
@@ -46,6 +48,7 @@ func New(
 	return &executionsService{
 		executions: executions,
 		changesets: changesets,
+		previews:   previews,
 		runners:    runners,
 		issues:     issues,
 		states:     states,
@@ -114,6 +117,16 @@ func (s *executionsService) Visible(
 	return execution, err
 }
 
+func (s *executionsService) Manageable(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	executionID string,
+) (entity.Execution, error) {
+	_, execution, err := s.visible(ctx, workspaceID, executionID, entity.ActionManage)
+
+	return execution, err
+}
+
 func (s *executionsService) Get(
 	ctx context.Context,
 	workspaceID uuid.UUID,
@@ -136,10 +149,16 @@ func (s *executionsService) Get(
 		return service.ExecutionDetail{}, err
 	}
 
+	previews, err := s.previews.ByExecution(ctx, execution.ID)
+	if err != nil {
+		return service.ExecutionDetail{}, err
+	}
+
 	return service.ExecutionDetail{
 		Execution: execution,
 		Timeline:  timeline,
 		ChangeSet: changeset,
+		Previews:  previews,
 	}, nil
 }
 

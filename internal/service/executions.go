@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -14,6 +15,7 @@ type ExecutionDetail struct {
 	Execution entity.Execution
 	Timeline  []entity.ExecutionEvent
 	ChangeSet entity.ExecutionChangeSet
+	Previews  []entity.PreviewSession
 }
 
 type Executions interface {
@@ -21,6 +23,11 @@ type Executions interface {
 
 	Get(ctx context.Context, workspaceID uuid.UUID, executionID string) (ExecutionDetail, error)
 	Visible(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error)
+	Manageable(
+		ctx context.Context,
+		workspaceID uuid.UUID,
+		executionID string,
+	) (entity.Execution, error)
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Execution, error)
 	Timeline(
 		ctx context.Context,
@@ -33,6 +40,12 @@ type Executions interface {
 	Restart(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error)
 	Resume(ctx context.Context, workspaceID uuid.UUID, executionID, feedback string) (entity.Execution, error)
 	Approve(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error)
+	Retain(
+		ctx context.Context,
+		workspaceID uuid.UUID,
+		executionID string,
+		longer time.Duration,
+	) (entity.Execution, error)
 
 	Questioned(ctx context.Context, question entity.IssueQuestion) error
 	Answered(ctx context.Context, question entity.IssueQuestion) error

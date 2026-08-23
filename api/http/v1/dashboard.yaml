@@ -35,6 +35,7 @@ tags:
   - name: runners
   - name: codebases
   - name: executions
+  - name: previews
 
 paths:
   /health:
@@ -5893,6 +5894,140 @@ paths:
         '409': { $ref: '#/components/responses/ExecutionConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/executions/{executionId}/previews:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [previews]
+      operationId: listWorkspaceExecutionPreviews
+      summary: The previews this run has opened, and who they are shared with
+      description: >-
+        A preview exists because the machine reported one. Nothing else creates one, so an address
+        this list does not carry is an address the gateway will not route.
+      responses:
+        '200':
+          description: The previews on record for this run
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExecutionPreviewDetail' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+      - $ref: '#/components/parameters/PreviewName'
+    post:
+      tags: [previews]
+      operationId: sharePreview
+      summary: Mint a link that lets somebody outside the workspace look
+      description: >-
+        The link is answered once and never again; norn keeps only its hash. Give it a passcode
+        when the address alone should not be enough.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SharePreviewRequest' }
+      responses:
+        '201':
+          description: The link, and the only time its address is answered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PreviewShareLinkMinted' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/PreviewConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+      - $ref: '#/components/parameters/PreviewName'
+      - $ref: '#/components/parameters/ShareLinkId'
+    delete:
+      tags: [previews]
+      operationId: revokePreviewShareLink
+      summary: Withdraw a share link, and everyone it has already let in
+      responses:
+        '204':
+          description: The link is withdrawn
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/retain:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [previews]
+      operationId: retainWorkspaceExecution
+      summary: Keep this run's workspace and previews for longer
+      description: >-
+        The machine owns the clock, so this asks it to hold what it is holding until later. It is
+        offered while a run is waiting for review, which is when somebody is still looking.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetainExecutionRequest' }
+      responses:
+        '200':
+          description: The execution as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Execution' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /previews/authorize:
+    get:
+      tags: [previews]
+      operationId: authorizePreview
+      summary: Trade a session for one short-lived look at a preview
+      description: >-
+        Where the gateway sends a browser that has no preview session yet. A signed-out browser is
+        sent into sign-in and returns here; a signed-in one is sent back to the preview carrying a
+        single-use ticket the gateway exchanges for the session.
+      parameters:
+        - name: host
+          in: query
+          required: true
+          description: The preview host the browser asked for
+          schema: { type: string, maxLength: 255 }
+        - name: return
+          in: query
+          description: The path inside the preview to land on
+          schema: { type: string, maxLength: 2048 }
+      responses:
+        '303':
+          description: Follow this link. It is single use, and it expires in a minute.
+          headers:
+            Location:
+              schema: { type: string }
+            Cache-Control:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/PreviewConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /runners/me/executions/{executionId}/logs:
     parameters:
       - $ref: '#/components/parameters/ExecutionId'
@@ -6233,6 +6368,18 @@ components:
       in: path
       required: true
       schema: { type: string, maxLength: 64 }
+
+    PreviewName:
+      name: previewName
+      in: path
+      required: true
+      schema: { type: string, maxLength: 30 }
+
+    ShareLinkId:
+      name: shareLinkId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
 
     RunnerId:
       name: runnerId
@@ -6575,6 +6722,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/ExecutionProblem' }
+
+    PreviewConflict:
+      description: The preview or its share link refuses the request
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/PreviewProblem' }
 
     CycleConflict:
       description: The cycle refuses the change, or needs a decision first
@@ -7737,6 +7890,82 @@ components:
             - $ref: '#/components/schemas/ExecutionChangeSet'
           description: >-
             What this run changed. Absent until the machine has reported anything.
+        previews:
+          type: array
+          items: { $ref: '#/components/schemas/ExecutionPreview' }
+
+    ExecutionPreview:
+      type: object
+      required: [id, executionId, name, service, mode, state, url, openedAt]
+      properties:
+        id: { type: string, format: uuid }
+        executionId: { type: string }
+        name: { type: string }
+        service: { type: string }
+        path: { type: string }
+        mode: { type: string, enum: [subdomain, path] }
+        host: { type: string }
+        url:
+          type: string
+          description: >-
+            Empty while this server serves no preview domain, because there is then no address
+            that reaches anybody.
+        state: { type: string, enum: [open, closed] }
+        openedAt: { type: string, format: date-time }
+        closedAt: { type: string, format: date-time, nullable: true }
+
+    ExecutionPreviewDetail:
+      type: object
+      required: [preview, shareLinks]
+      properties:
+        preview: { $ref: '#/components/schemas/ExecutionPreview' }
+        shareLinks:
+          type: array
+          items: { $ref: '#/components/schemas/PreviewShareLink' }
+
+    PreviewShareLink:
+      type: object
+      required: [id, previewId, expiresAt, needsPasscode, uses, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        previewId: { type: string, format: uuid }
+        createdBy: { type: string, format: uuid, nullable: true }
+        expiresAt: { type: string, format: date-time }
+        revokedAt: { type: string, format: date-time, nullable: true }
+        lastUsedAt: { type: string, format: date-time, nullable: true }
+        needsPasscode: { type: boolean }
+        uses: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    PreviewShareLinkMinted:
+      type: object
+      required: [link, url]
+      properties:
+        link: { $ref: '#/components/schemas/PreviewShareLink' }
+        url:
+          type: string
+          description: The only time norn answers with this address. It keeps only the hash.
+
+    SharePreviewRequest:
+      type: object
+      properties:
+        lifetimeSeconds:
+          type: integer
+          minimum: 60
+          description: How long the link lives. Left out, it lives for the instance default.
+        passcode:
+          type: string
+          minLength: 6
+          maxLength: 128
+
+    RetainExecutionRequest:
+      type: object
+      required: [longerSeconds]
+      properties:
+        longerSeconds:
+          type: integer
+          minimum: 60
+          description: How much longer the machine holds this run's workspace and previews.
 
     ValidationStatus:
       type: string
@@ -8014,6 +8243,22 @@ components:
                 - execution_not_reviewable
                 - execution_no_runner
                 - execution_chunk_conflict
+
+    PreviewProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - preview_closed
+                - preview_not_routable
+                - preview_crowded
+                - preview_share_expired
+                - preview_share_revoked
+                - preview_share_crowded
 
     CodebaseProblem:
       allOf:
