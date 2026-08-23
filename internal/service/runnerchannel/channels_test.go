@@ -180,7 +180,7 @@ func TestAHelloThatNamesTheVersionAlreadyOnRecordChangesNothing(t *testing.T) {
 func TestAMessageForSomethingTheServerCannotDoYetIsStillAccepted(t *testing.T) {
 	h := newHarness(t)
 
-	message := h.freshMessage("01DEF", entity.ChannelChangeSetUpdated)
+	message := h.freshMessage("01DEF", entity.ChannelTranscriptRef)
 
 	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
 
@@ -206,6 +206,12 @@ func TestWhatARunnerReportsAboutAnExecutionReachesTheExecution(t *testing.T) {
 		},
 		entity.ChannelExecutionEvent: func(h *harness) *gomock.Call {
 			return h.executions.EXPECT().Observed(gomock.Any(), h.runner, gomock.Any())
+		},
+		entity.ChannelChangeSetUpdated: func(h *harness) *gomock.Call {
+			return h.changesets.EXPECT().Updated(gomock.Any(), h.runner, gomock.Any())
+		},
+		entity.ChannelExecutionResult: func(h *harness) *gomock.Call {
+			return h.changesets.EXPECT().Resulted(gomock.Any(), h.runner, gomock.Any())
 		},
 	}
 

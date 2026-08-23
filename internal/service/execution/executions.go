@@ -18,6 +18,7 @@ const sweepBatch = 200
 
 type executionsService struct {
 	executions repository.Execution
+	changesets repository.ChangeSet
 	runners    repository.Runner
 	issues     repository.Issue
 	states     repository.WorkflowState
@@ -31,6 +32,7 @@ type executionsService struct {
 
 func New(
 	executions repository.Execution,
+	changesets repository.ChangeSet,
 	runners repository.Runner,
 	issues repository.Issue,
 	states repository.WorkflowState,
@@ -43,6 +45,7 @@ func New(
 ) service.Executions {
 	return &executionsService{
 		executions: executions,
+		changesets: changesets,
 		runners:    runners,
 		issues:     issues,
 		states:     states,
@@ -128,7 +131,16 @@ func (s *executionsService) Get(
 		return service.ExecutionDetail{}, err
 	}
 
-	return service.ExecutionDetail{Execution: execution, Timeline: timeline}, nil
+	changeset, err := s.changesets.Get(ctx, execution.ID)
+	if err != nil {
+		return service.ExecutionDetail{}, err
+	}
+
+	return service.ExecutionDetail{
+		Execution: execution,
+		Timeline:  timeline,
+		ChangeSet: changeset,
+	}, nil
 }
 
 func (s *executionsService) ListByIssue(

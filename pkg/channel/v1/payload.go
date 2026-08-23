@@ -137,3 +137,40 @@ type Pulse struct {
 type Configuration struct {
 	Capacity *int `json:"capacity,omitempty"`
 }
+
+const (
+	ValidationPassed  = "passed"
+	ValidationFailed  = "failed"
+	ValidationSkipped = "skipped"
+)
+
+type RepoChange struct {
+	Repository  string `json:"repo"`
+	Branch      string `json:"branch,omitempty"`
+	BaseSHA     string `json:"base_sha,omitempty"`
+	HeadSHA     string `json:"head_sha,omitempty"`
+	Commits     int    `json:"commits,omitempty"`
+	Additions   int    `json:"additions,omitempty"`
+	Deletions   int    `json:"deletions,omitempty"`
+	Files       int    `json:"files_changed,omitempty"`
+	Diff        string `json:"diff_artifact_id,omitempty"`
+	PullRequest string `json:"pull_request_url,omitempty"`
+}
+
+type Validation struct {
+	Check    string `json:"check"`
+	Status   string `json:"status"`
+	Detail   string `json:"detail,omitempty"`
+	Artifact string `json:"artifact_id,omitempty"`
+}
+
+type ChangeSet struct {
+	Repos      []RepoChange `json:"repos,omitempty"`
+	Validation []Validation `json:"validation,omitempty"`
+}
+
+type Result struct {
+	Summary   string    `json:"summary,omitempty"`
+	ChangeSet ChangeSet `json:"changeset"`
+	Reported  time.Time `json:"ts"`
+}

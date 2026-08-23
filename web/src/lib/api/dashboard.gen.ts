@@ -3743,6 +3743,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/changeset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * What the runs on this issue changed, as one result
+         * @description One row per repository across every attempt, each carrying what the most recent run to touch it did. A re-run amends this rather than starting a second result beside it.
+         */
+        get: operations["getWorkspaceIssueChangeSet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/executions/{executionId}": {
         parameters: {
             query?: never;
@@ -4805,6 +4828,63 @@ export interface components {
         ExecutionDetail: {
             execution: components["schemas"]["Execution"];
             timeline: components["schemas"]["ExecutionEvent"][];
+            /** @description What this run changed. Absent until the machine has reported anything. */
+            changeset?: components["schemas"]["ExecutionChangeSet"];
+        };
+        /** @enum {string} */
+        ValidationStatus: "passed" | "failed" | "skipped";
+        /** @description One repository this run touched. The pull request is carried as the address the machine reported plus, when norn follows that repository, the code link whose state, checks and reviewers stay current on their own. */
+        ExecutionRepositoryChange: {
+            repository: string;
+            branch?: string;
+            baseSha?: string;
+            headSha?: string;
+            commits: number;
+            additions: number;
+            deletions: number;
+            filesChanged: number;
+            /**
+             * Format: uuid
+             * @description The full diff, uploaded as an artifact of this run
+             */
+            diffArtifactId?: string;
+            pullRequestUrl?: string;
+            /**
+             * Format: uuid
+             * @description The code link this pull request became. Absent when norn does not follow the repository, in which case the address is all there is.
+             */
+            codeLinkId?: string;
+            /** Format: date-time */
+            reportedAt: string;
+        };
+        ExecutionValidation: {
+            check: string;
+            status: components["schemas"]["ValidationStatus"];
+            detail?: string;
+            /** Format: uuid */
+            artifactId?: string;
+            /** Format: date-time */
+            reportedAt: string;
+        };
+        /** @description What one run changed. Built up as the work lands and settled when the run reports its result. */
+        ExecutionChangeSet: {
+            executionId: string;
+            /** @description What the machine said it did. Empty until the run reports its result. */
+            summary?: string;
+            /** Format: date-time */
+            reportedAt?: string;
+            repositories: components["schemas"]["ExecutionRepositoryChange"][];
+            validation: components["schemas"]["ExecutionValidation"][];
+        };
+        IssueRepositoryChange: components["schemas"]["ExecutionRepositoryChange"] & {
+            executionId: string;
+            /** @description Which run of this issue this repository's state came from */
+            attempt: number;
+        };
+        IssueChangeSet: {
+            /** Format: uuid */
+            issueId: string;
+            repositories: components["schemas"]["IssueRepositoryChange"][];
         };
         CancelExecutionRequest: {
             reason?: string;
@@ -15384,6 +15464,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Execution"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceIssueChangeSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The changes on record for this issue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueChangeSet"];
                 };
             };
             401: components["responses"]["Problem"];

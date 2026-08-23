@@ -118,7 +118,7 @@ func (s *connections) Link(
 		Number:         parsed.number,
 		URL:            input.URL,
 		State:          entity.CodeChangeOpen,
-		DetectedIn:     "a person linked it",
+		DetectedIn:     detectedIn(input),
 	})
 	if err != nil {
 		return entity.CodeLink{}, err
@@ -127,6 +127,14 @@ func (s *connections) Link(
 	s.recordLinked(ctx, workspaceID, issue, link, decision)
 
 	return link, nil
+}
+
+func detectedIn(input service.LinkIssueCodeInput) string {
+	if input.DetectedIn != "" {
+		return input.DetectedIn
+	}
+
+	return "a person linked it"
 }
 
 func (s *connections) Unlink(ctx context.Context, workspaceID, issueID, linkID uuid.UUID) error {

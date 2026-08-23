@@ -280,7 +280,8 @@ type TeamTransitionRule struct {
 }
 
 type LinkIssueCodeInput struct {
-	URL string
+	URL        string
+	DetectedIn string
 }
 
 type MirrorIssueInput struct {

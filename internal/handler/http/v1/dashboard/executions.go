@@ -39,7 +39,37 @@ func (h *handler) GetWorkspaceExecution(
 	return api.GetWorkspaceExecution200JSONResponse(api.ExecutionDetail{
 		Execution: executionDTO(detail.Execution),
 		Timeline:  executionEventDTOs(detail.Timeline),
+		Changeset: changeSetOrNothing(detail.Execution.ID, detail.ChangeSet),
 	}), nil
+}
+
+func changeSetOrNothing(
+	executionID string,
+	changeset entity.ExecutionChangeSet,
+) *api.ExecutionChangeSet {
+	if changeset.Empty() {
+		return nil
+	}
+
+	dto := changeSetDTO(executionID, changeset)
+
+	return &dto
+}
+
+func (h *handler) GetWorkspaceIssueChangeSet(
+	ctx context.Context,
+	request api.GetWorkspaceIssueChangeSetRequestObject,
+) (api.GetWorkspaceIssueChangeSetResponseObject, error) {
+	changeset, err := h.changesets.ForIssue(ctx, request.WorkspaceId, request.IssueId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetWorkspaceIssueChangeSet200JSONResponse(issueChangeSetDTO(changeset)), nil
 }
 
 func (h *handler) ListWorkspaceExecutionTimeline(

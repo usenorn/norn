@@ -5722,6 +5722,28 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/changeset:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [executions]
+      operationId: getWorkspaceIssueChangeSet
+      summary: What the runs on this issue changed, as one result
+      description: >-
+        One row per repository across every attempt, each carrying what the most recent run to
+        touch it did. A re-run amends this rather than starting a second result beside it.
+      responses:
+        '200':
+          description: The changes on record for this issue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueChangeSet' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/executions/{executionId}:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7710,6 +7732,95 @@ components:
         timeline:
           type: array
           items: { $ref: '#/components/schemas/ExecutionEvent' }
+        changeset:
+          allOf:
+            - $ref: '#/components/schemas/ExecutionChangeSet'
+          description: >-
+            What this run changed. Absent until the machine has reported anything.
+
+    ValidationStatus:
+      type: string
+      enum: [passed, failed, skipped]
+
+    ExecutionRepositoryChange:
+      type: object
+      description: >-
+        One repository this run touched. The pull request is carried as the address the machine
+        reported plus, when norn follows that repository, the code link whose state, checks and
+        reviewers stay current on their own.
+      required: [repository, commits, additions, deletions, filesChanged, reportedAt]
+      properties:
+        repository: { type: string, maxLength: 200 }
+        branch: { type: string, maxLength: 255 }
+        baseSha: { type: string, maxLength: 64 }
+        headSha: { type: string, maxLength: 64 }
+        commits: { type: integer, minimum: 0 }
+        additions: { type: integer, minimum: 0 }
+        deletions: { type: integer, minimum: 0 }
+        filesChanged: { type: integer, minimum: 0 }
+        diffArtifactId:
+          type: string
+          format: uuid
+          description: The full diff, uploaded as an artifact of this run
+        pullRequestUrl: { type: string, maxLength: 2000 }
+        codeLinkId:
+          type: string
+          format: uuid
+          description: >-
+            The code link this pull request became. Absent when norn does not follow the
+            repository, in which case the address is all there is.
+        reportedAt: { type: string, format: date-time }
+
+    ExecutionValidation:
+      type: object
+      required: [check, status, reportedAt]
+      properties:
+        check: { type: string, maxLength: 200 }
+        status: { $ref: '#/components/schemas/ValidationStatus' }
+        detail: { type: string, maxLength: 4000 }
+        artifactId: { type: string, format: uuid }
+        reportedAt: { type: string, format: date-time }
+
+    ExecutionChangeSet:
+      type: object
+      description: >-
+        What one run changed. Built up as the work lands and settled when the run reports its
+        result.
+      required: [executionId, repositories, validation]
+      properties:
+        executionId: { type: string, maxLength: 64 }
+        summary:
+          type: string
+          maxLength: 16000
+          description: What the machine said it did. Empty until the run reports its result.
+        reportedAt: { type: string, format: date-time }
+        repositories:
+          type: array
+          items: { $ref: '#/components/schemas/ExecutionRepositoryChange' }
+        validation:
+          type: array
+          items: { $ref: '#/components/schemas/ExecutionValidation' }
+
+    IssueRepositoryChange:
+      allOf:
+        - $ref: '#/components/schemas/ExecutionRepositoryChange'
+        - type: object
+          required: [executionId, attempt]
+          properties:
+            executionId: { type: string, maxLength: 64 }
+            attempt:
+              type: integer
+              minimum: 1
+              description: Which run of this issue this repository's state came from
+
+    IssueChangeSet:
+      type: object
+      required: [issueId, repositories]
+      properties:
+        issueId: { type: string, format: uuid }
+        repositories:
+          type: array
+          items: { $ref: '#/components/schemas/IssueRepositoryChange' }
 
     CancelExecutionRequest:
       type: object

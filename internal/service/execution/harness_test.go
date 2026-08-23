@@ -11,6 +11,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
+	changesetrepo "github.com/usenorn/norn/internal/repository/changeset"
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
@@ -27,6 +28,7 @@ import (
 
 type harness struct {
 	executions *executionrepo.MockExecution
+	changesets *changesetrepo.MockChangeSet
 	runners    *runnerrepo.MockRunner
 	issues     *issuerepo.MockIssue
 	states     *statesrepo.MockWorkflowState
@@ -57,6 +59,7 @@ func newHarness(t *testing.T) *harness {
 
 	h := &harness{
 		executions:  executionrepo.NewMockExecution(ctrl),
+		changesets:  changesetrepo.NewMockChangeSet(ctrl),
 		runners:     runnerrepo.NewMockRunner(ctrl),
 		issues:      issuerepo.NewMockIssue(ctrl),
 		states:      statesrepo.NewMockWorkflowState(ctrl),
@@ -148,7 +151,7 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = executionsvc.New(
-		h.executions, h.runners, h.issues, h.states, h.channels, h.writer, h.events,
+		h.executions, h.changesets, h.runners, h.issues, h.states, h.channels, h.writer, h.events,
 		h.authorizer, h.audit, transactor,
 	)
 

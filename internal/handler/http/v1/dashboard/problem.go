@@ -2315,6 +2315,10 @@ func (r problemResponse) VisitGetWorkspaceExecutionResponse(w http.ResponseWrite
 	return r.write(w)
 }
 
+func (r problemResponse) VisitGetWorkspaceIssueChangeSetResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitListWorkspaceExecutionTimelineResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
