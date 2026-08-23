@@ -85,12 +85,26 @@ type Runner struct {
 	Status      RunnerStatus
 	EnrolledAt  time.Time
 	LastSeenAt  *time.Time
+	PausedAt    *time.Time
 	RevokedAt   *time.Time
 	UpdatedAt   time.Time
 }
 
 func (r Runner) Revoked() bool {
 	return r.Status == RunnerStatusRevoked
+}
+
+func (r Runner) Paused() bool {
+	return r.PausedAt != nil
+}
+
+func (r Runner) Scope(workspaceID uuid.UUID) TeamScope {
+	return TeamScope{
+		WorkspaceID:    workspaceID,
+		AllTeams:       r.Authority.AllTeams,
+		IncludePrivate: true,
+		TeamIDs:        r.Authority.TeamIDs,
+	}
 }
 
 func (r Runner) Reaches(teamID uuid.UUID) bool {

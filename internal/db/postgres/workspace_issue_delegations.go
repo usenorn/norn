@@ -33,6 +33,12 @@ type WorkspaceIssueDelegation struct {
 	DelegatedAt          time.Time   `boil:"delegated_at" json:"delegated_at" toml:"delegated_at" yaml:"delegated_at"`
 	RecalledByAccountID  null.String `boil:"recalled_by_account_id" json:"recalled_by_account_id,omitempty" toml:"recalled_by_account_id" yaml:"recalled_by_account_id,omitempty"`
 	RecalledAt           null.Time   `boil:"recalled_at" json:"recalled_at,omitempty" toml:"recalled_at" yaml:"recalled_at,omitempty"`
+	Tool                 string      `boil:"tool" json:"tool" toml:"tool" yaml:"tool"`
+	Model                string      `boil:"model" json:"model" toml:"model" yaml:"model"`
+	Runtime              string      `boil:"runtime" json:"runtime" toml:"runtime" yaml:"runtime"`
+	BaseRef              string      `boil:"base_ref" json:"base_ref" toml:"base_ref" yaml:"base_ref"`
+	IncludeDirty         bool        `boil:"include_dirty" json:"include_dirty" toml:"include_dirty" yaml:"include_dirty"`
+	PermissionProfile    string      `boil:"permission_profile" json:"permission_profile" toml:"permission_profile" yaml:"permission_profile"`
 
 	R *workspaceIssueDelegationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueDelegationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -48,6 +54,12 @@ var WorkspaceIssueDelegationColumns = struct {
 	DelegatedAt          string
 	RecalledByAccountID  string
 	RecalledAt           string
+	Tool                 string
+	Model                string
+	Runtime              string
+	BaseRef              string
+	IncludeDirty         string
+	PermissionProfile    string
 }{
 	ID:                   "id",
 	WorkspaceID:          "workspace_id",
@@ -58,6 +70,12 @@ var WorkspaceIssueDelegationColumns = struct {
 	DelegatedAt:          "delegated_at",
 	RecalledByAccountID:  "recalled_by_account_id",
 	RecalledAt:           "recalled_at",
+	Tool:                 "tool",
+	Model:                "model",
+	Runtime:              "runtime",
+	BaseRef:              "base_ref",
+	IncludeDirty:         "include_dirty",
+	PermissionProfile:    "permission_profile",
 }
 
 var WorkspaceIssueDelegationTableColumns = struct {
@@ -70,6 +88,12 @@ var WorkspaceIssueDelegationTableColumns = struct {
 	DelegatedAt          string
 	RecalledByAccountID  string
 	RecalledAt           string
+	Tool                 string
+	Model                string
+	Runtime              string
+	BaseRef              string
+	IncludeDirty         string
+	PermissionProfile    string
 }{
 	ID:                   "workspace_issue_delegations.id",
 	WorkspaceID:          "workspace_issue_delegations.workspace_id",
@@ -80,6 +104,12 @@ var WorkspaceIssueDelegationTableColumns = struct {
 	DelegatedAt:          "workspace_issue_delegations.delegated_at",
 	RecalledByAccountID:  "workspace_issue_delegations.recalled_by_account_id",
 	RecalledAt:           "workspace_issue_delegations.recalled_at",
+	Tool:                 "workspace_issue_delegations.tool",
+	Model:                "workspace_issue_delegations.model",
+	Runtime:              "workspace_issue_delegations.runtime",
+	BaseRef:              "workspace_issue_delegations.base_ref",
+	IncludeDirty:         "workspace_issue_delegations.include_dirty",
+	PermissionProfile:    "workspace_issue_delegations.permission_profile",
 }
 
 // Generated where
@@ -94,6 +124,12 @@ var WorkspaceIssueDelegationWhere = struct {
 	DelegatedAt          whereHelpertime_Time
 	RecalledByAccountID  whereHelpernull_String
 	RecalledAt           whereHelpernull_Time
+	Tool                 whereHelperstring
+	Model                whereHelperstring
+	Runtime              whereHelperstring
+	BaseRef              whereHelperstring
+	IncludeDirty         whereHelperbool
+	PermissionProfile    whereHelperstring
 }{
 	ID:                   whereHelperstring{field: "\"workspace_issue_delegations\".\"id\""},
 	WorkspaceID:          whereHelperstring{field: "\"workspace_issue_delegations\".\"workspace_id\""},
@@ -104,6 +140,12 @@ var WorkspaceIssueDelegationWhere = struct {
 	DelegatedAt:          whereHelpertime_Time{field: "\"workspace_issue_delegations\".\"delegated_at\""},
 	RecalledByAccountID:  whereHelpernull_String{field: "\"workspace_issue_delegations\".\"recalled_by_account_id\""},
 	RecalledAt:           whereHelpernull_Time{field: "\"workspace_issue_delegations\".\"recalled_at\""},
+	Tool:                 whereHelperstring{field: "\"workspace_issue_delegations\".\"tool\""},
+	Model:                whereHelperstring{field: "\"workspace_issue_delegations\".\"model\""},
+	Runtime:              whereHelperstring{field: "\"workspace_issue_delegations\".\"runtime\""},
+	BaseRef:              whereHelperstring{field: "\"workspace_issue_delegations\".\"base_ref\""},
+	IncludeDirty:         whereHelperbool{field: "\"workspace_issue_delegations\".\"include_dirty\""},
+	PermissionProfile:    whereHelperstring{field: "\"workspace_issue_delegations\".\"permission_profile\""},
 }
 
 // WorkspaceIssueDelegationRels is where relationship names are stored.
@@ -200,9 +242,9 @@ func (r *workspaceIssueDelegationR) GetWorkspace() *Workspace {
 type workspaceIssueDelegationL struct{}
 
 var (
-	workspaceIssueDelegationAllColumns            = []string{"id", "workspace_id", "issue_id", "agent_id", "brief", "delegated_by_account_id", "delegated_at", "recalled_by_account_id", "recalled_at"}
+	workspaceIssueDelegationAllColumns            = []string{"id", "workspace_id", "issue_id", "agent_id", "brief", "delegated_by_account_id", "delegated_at", "recalled_by_account_id", "recalled_at", "tool", "model", "runtime", "base_ref", "include_dirty", "permission_profile"}
 	workspaceIssueDelegationColumnsWithoutDefault = []string{"workspace_id", "issue_id", "agent_id"}
-	workspaceIssueDelegationColumnsWithDefault    = []string{"id", "brief", "delegated_by_account_id", "delegated_at", "recalled_by_account_id", "recalled_at"}
+	workspaceIssueDelegationColumnsWithDefault    = []string{"id", "brief", "delegated_by_account_id", "delegated_at", "recalled_by_account_id", "recalled_at", "tool", "model", "runtime", "base_ref", "include_dirty", "permission_profile"}
 	workspaceIssueDelegationPrimaryKeyColumns     = []string{"id"}
 	workspaceIssueDelegationGeneratedColumns      = []string{}
 )

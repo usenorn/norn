@@ -167,3 +167,77 @@ func TestRecallingDoesNotAnnounceItselfToSubscribers(t *testing.T) {
 		t.Fatal("a recalled delegation still reads as open")
 	}
 }
+
+func TestWhatWasAskedForIsStoredOnTheDelegationAndNotOnlyOnTheRun(t *testing.T) {
+	h := newHarness(t)
+	issue := h.issue()
+	agent := h.agent()
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+
+	asked := entity.DelegationParams{
+		Tool:         "claude",
+		Model:        "opus",
+		Runtime:      entity.RuntimeChoiceDocker,
+		BaseRef:      entity.BaseRefHead,
+		IncludeDirty: true,
+		Profile:      entity.ProfileStrict,
+	}
+
+	var held entity.IssueDelegation
+
+	h.delegations.EXPECT().
+		Delegate(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, delegation entity.IssueDelegation,
+		) (entity.IssueDelegation, error) {
+			held = delegation
+
+			return delegation, nil
+		})
+
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil)
+	h.emitter.EXPECT().Emit(gomock.Any(), gomock.Any()).Return(nil)
+
+	if _, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID, service.DelegateIssueInput{
+			AgentAccountID: agent.AccountID,
+			Params:         asked,
+		},
+	); err != nil {
+		t.Fatalf("delegate: %v", err)
+	}
+
+	if held.Params != asked {
+		t.Fatalf(
+			"the delegation kept %+v, want %+v. Every re-run is a fresh attempt against this "+
+				"same delegation, so parameters that live only on the first run are lost the "+
+				"moment somebody restarts it",
+			held.Params, asked,
+		)
+	}
+}
+
+func TestADelegationCannotAskForARuntimeNoMachineHas(t *testing.T) {
+	h := newHarness(t)
+	issue := h.issue()
+	agent := h.agent()
+
+	_, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID, service.DelegateIssueInput{
+			AgentAccountID: agent.AccountID,
+			Params:         entity.DelegationParams{Runtime: "kvm"},
+		},
+	)
+
+	var invalid entity.ValidationError
+	if !errors.As(err, &invalid) {
+		t.Fatalf(
+			"asking for a runtime the delegate dialog never offers was accepted with %v; it "+
+				"reaches the machine, which cannot honour it, and the run comes out on "+
+				"something other than what was asked for",
+			err,
+		)
+	}
+}

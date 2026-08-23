@@ -23,10 +23,24 @@ const (
 	DeclinePaused       = "paused"
 )
 
+const (
+	ProfileStrict       = "strict"
+	ProfileStandard     = "standard"
+	ProfileUnrestricted = "unrestricted"
+)
+
+const (
+	BaseRefOriginDefault = "origin/default"
+	BaseRefHead          = "head"
+)
+
 type Params struct {
-	Tool    string `json:"tool,omitempty"`
-	Model   string `json:"model,omitempty"`
-	Runtime string `json:"runtime,omitempty"`
+	Tool         string `json:"tool,omitempty"`
+	Model        string `json:"model,omitempty"`
+	Runtime      string `json:"runtime,omitempty"`
+	BaseRef      string `json:"base_ref,omitempty"`
+	IncludeDirty bool   `json:"include_dirty,omitempty"`
+	Profile      string `json:"profile,omitempty"`
 }
 
 type Issue struct {
@@ -112,7 +126,8 @@ type Leased struct {
 }
 
 type Decline struct {
-	Reason string `json:"reason"`
+	Code   string `json:"code"`
+	Detail string `json:"detail,omitempty"`
 }
 
 type Report struct {

@@ -19,5 +19,8 @@ type Runner interface {
 	ListByAgentID(ctx context.Context, agentID uuid.UUID) ([]entity.Runner, error)
 	Revoke(ctx context.Context, workspaceID, runnerID uuid.UUID, revokedAt time.Time) error
 	RecordSeen(ctx context.Context, runnerID uuid.UUID, seenAt time.Time) error
+	SetPaused(
+		ctx context.Context, workspaceID, runnerID uuid.UUID, pausedAt *time.Time,
+	) (entity.Runner, error)
 	RecordVersion(ctx context.Context, runnerID uuid.UUID, version string) error
 }

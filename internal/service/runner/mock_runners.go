@@ -134,6 +134,36 @@ func (mr *MockRunnersMockRecorder) List(ctx, workspaceID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRunners)(nil).List), ctx, workspaceID)
 }
 
+// Pause mocks base method.
+func (m *MockRunners) Pause(ctx context.Context, workspaceID, runnerID uuid.UUID) (entity.Runner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Pause", ctx, workspaceID, runnerID)
+	ret0, _ := ret[0].(entity.Runner)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Pause indicates an expected call of Pause.
+func (mr *MockRunnersMockRecorder) Pause(ctx, workspaceID, runnerID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Pause", reflect.TypeOf((*MockRunners)(nil).Pause), ctx, workspaceID, runnerID)
+}
+
+// Resume mocks base method.
+func (m *MockRunners) Resume(ctx context.Context, workspaceID, runnerID uuid.UUID) (entity.Runner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Resume", ctx, workspaceID, runnerID)
+	ret0, _ := ret[0].(entity.Runner)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Resume indicates an expected call of Resume.
+func (mr *MockRunnersMockRecorder) Resume(ctx, workspaceID, runnerID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resume", reflect.TypeOf((*MockRunners)(nil).Resume), ctx, workspaceID, runnerID)
+}
+
 // Revoke mocks base method.
 func (m *MockRunners) Revoke(ctx context.Context, workspaceID, runnerID uuid.UUID) error {
 	m.ctrl.T.Helper()

@@ -4005,6 +4005,31 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/delegation/targets:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [issues]
+      operationId: getWorkspaceIssueDelegationTargets
+      summary: Where delegating this issue to an agent would run, before anyone commits to it
+      parameters:
+        - name: agentAccountId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: The agent's machines, where the work would land, and anything worth saying first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DelegationTargets' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/labels:
     put:
       tags: [issues]
@@ -5596,6 +5621,44 @@ paths:
       summary: Cut this machine off, leaving its agent working everywhere else
       responses:
         '204': { description: The runner was revoked }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/runners/{runnerId}/pause:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/RunnerId'
+    post:
+      tags: [runners]
+      operationId: pauseWorkspaceRunner
+      summary: Stop offering this machine new work, leaving what it is running alone
+      responses:
+        '200':
+          description: The runner as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Runner' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/runners/{runnerId}/resume:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/RunnerId'
+    post:
+      tags: [runners]
+      operationId: resumeWorkspaceRunner
+      summary: Let this machine take work again
+      responses:
+        '200':
+          description: The runner as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Runner' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -7230,6 +7293,7 @@ components:
         brief:
           type: string
           description: What the agent was asked to do, carried to whatever runtime picks the work up
+        params: { $ref: '#/components/schemas/DelegationParams' }
         delegatedByAccountId: { type: string, format: uuid }
         delegatedAt: { type: string, format: date-time }
         recalledByAccountId: { type: string, format: uuid }
@@ -7237,6 +7301,33 @@ components:
           type: string
           format: date-time
           description: Absent while the delegation is open
+
+    PermissionProfile:
+      type: string
+      enum: [strict, standard, unrestricted]
+
+    BaseRefPolicy:
+      type: string
+      enum: [origin/default, head]
+
+    RuntimeChoice:
+      type: string
+      enum: [auto, process, docker]
+
+    DelegationParams:
+      type: object
+      description: >-
+        What the delegation asked for. Every attempt against it inherits these, and what is left
+        unset is the machine's own setting rather than a default this server invents.
+      properties:
+        tool: { type: string, maxLength: 64 }
+        model: { type: string, maxLength: 128 }
+        runtime: { $ref: '#/components/schemas/RuntimeChoice' }
+        baseRef: { $ref: '#/components/schemas/BaseRefPolicy' }
+        includeDirty:
+          type: boolean
+          description: Carry the folder's uncommitted work into the run as one commit
+        permissionProfile: { $ref: '#/components/schemas/PermissionProfile' }
 
     DelegateIssueRequest:
       type: object
@@ -7250,6 +7341,58 @@ components:
             the agents themselves is an administrator's view, so this is what an ordinary member
             has to hand.
         brief: { type: string, maxLength: 4000 }
+        params: { $ref: '#/components/schemas/DelegationParams' }
+
+    RunnerReadiness:
+      type: object
+      required: [runnerId, name, connected, reaches, paused, capacity, used, free, diskPressure]
+      properties:
+        runnerId: { type: string, format: uuid }
+        name: { type: string }
+        connected:
+          type: boolean
+          description: Whether the machine is holding a channel right now
+        reaches:
+          type: boolean
+          description: Whether this machine's team scope covers the issue's team
+        paused: { type: boolean }
+        capacity: { type: integer, format: int32 }
+        used: { type: integer, format: int32 }
+        free: { type: integer, format: int32 }
+        diskPressure: { type: boolean }
+
+    SharedRepositoryWarning:
+      type: object
+      required: [executionId, reference, state]
+      properties:
+        executionId: { type: string }
+        reference: { type: string }
+        state: { $ref: '#/components/schemas/ExecutionState' }
+
+    DelegationTargets:
+      type: object
+      required: [agentId, agentAccountId, agentName, runners, warnings]
+      properties:
+        agentId: { type: string, format: uuid }
+        agentAccountId: { type: string, format: uuid }
+        agentName: { type: string }
+        runners:
+          type: array
+          items: { $ref: '#/components/schemas/RunnerReadiness' }
+        runnerId:
+          type: string
+          format: uuid
+          description: The machine the work would land on. Absent when it would wait instead.
+        waiting:
+          allOf:
+            - $ref: '#/components/schemas/ExecutionQueuedReason'
+          description: Why it would wait. Absent when a machine would take it straight away.
+        warnings:
+          type: array
+          description: >-
+            Active runs already touching a repository this one would touch. Worth saying, never a
+            reason to refuse.
+          items: { $ref: '#/components/schemas/SharedRepositoryWarning' }
 
     MoveIssueRequest:
       type: object
@@ -7634,6 +7777,10 @@ components:
         status: { $ref: '#/components/schemas/RunnerStatus' }
         enrolledAt: { type: string, format: date-time }
         lastSeenAt: { type: string, format: date-time }
+        pausedAt:
+          type: string
+          format: date-time
+          description: Set while an administrator has stopped this machine being offered work
         revokedAt: { type: string, format: date-time }
         telemetry:
           allOf:
@@ -7838,6 +7985,14 @@ components:
       type: string
       enum: [transition, phase, command, tool, service, preview, question, note]
 
+    ExecutionQueuedReason:
+      type: string
+      description: >-
+        Why a queued run has not started. The three the delegate dialog has to phrase differently
+        are an agent with no machine at all, machines that are all offline, and machines that are
+        all busy.
+      enum: [no_runner, runners_offline, runners_paused, runners_busy]
+
     ExecutionParams:
       type: object
       description: How this run was asked for. What is not set is the machine's own default.
@@ -7845,6 +8000,9 @@ components:
         tool: { type: string, maxLength: 64 }
         model: { type: string, maxLength: 128 }
         runtime: { $ref: '#/components/schemas/CodebaseRuntime' }
+        baseRef: { $ref: '#/components/schemas/BaseRefPolicy' }
+        includeDirty: { type: boolean }
+        permissionProfile: { $ref: '#/components/schemas/PermissionProfile' }
         brief: { type: string, maxLength: 4000 }
 
     ExecutionActor:
@@ -7877,6 +8035,10 @@ components:
         attempt: { type: integer, minimum: 1 }
         state: { $ref: '#/components/schemas/ExecutionState' }
         reason: { type: string, maxLength: 4000 }
+        queuedReason:
+          allOf:
+            - $ref: '#/components/schemas/ExecutionQueuedReason'
+          description: Why this run is still waiting. Absent once a machine has taken it.
         params: { $ref: '#/components/schemas/ExecutionParams' }
         restartable:
           type: boolean

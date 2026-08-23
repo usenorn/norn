@@ -82,14 +82,46 @@ type SpooledMessage struct {
 	Message ChannelMessage
 }
 
+type RunnerLoad struct {
+	Capacity     int
+	Used         int
+	Paused       bool
+	DiskPressure bool
+	CPUPressure  bool
+}
+
+func RunnerLoadOf(pulse channelv1.Pulse) RunnerLoad {
+	return RunnerLoad{
+		Capacity:     pulse.Capacity,
+		Used:         pulse.Used,
+		Paused:       pulse.Paused,
+		DiskPressure: pulse.DiskPressure,
+		CPUPressure:  pulse.CPUPressure,
+	}
+}
+
 type RunnerPresence struct {
 	RunnerID uuid.UUID
 	Epoch    string
 	SeenAt   time.Time
+	Load     RunnerLoad
 }
 
 func (p RunnerPresence) Live() bool {
 	return p.Epoch != ""
+}
+
+func (p RunnerPresence) Free() int {
+	free := p.Load.Capacity - p.Load.Used
+	if free < 0 {
+		return 0
+	}
+
+	return free
+}
+
+func (p RunnerPresence) Available() bool {
+	return p.Live() && !p.Load.Paused && !p.Load.DiskPressure && p.Free() > 0
 }
 
 func NewServerMessage(

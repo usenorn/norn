@@ -131,6 +131,38 @@ func (h *handler) ListWorkspaceRunners(
 	return api.ListWorkspaceRunners200JSONResponse(runnerDTOs(runners)), nil
 }
 
+func (h *handler) PauseWorkspaceRunner(
+	ctx context.Context,
+	request api.PauseWorkspaceRunnerRequestObject,
+) (api.PauseWorkspaceRunnerResponseObject, error) {
+	paused, err := h.runners.Pause(ctx, request.WorkspaceId, request.RunnerId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.PauseWorkspaceRunner200JSONResponse(runnerDTO(paused)), nil
+}
+
+func (h *handler) ResumeWorkspaceRunner(
+	ctx context.Context,
+	request api.ResumeWorkspaceRunnerRequestObject,
+) (api.ResumeWorkspaceRunnerResponseObject, error) {
+	resumed, err := h.runners.Resume(ctx, request.WorkspaceId, request.RunnerId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ResumeWorkspaceRunner200JSONResponse(runnerDTO(resumed)), nil
+}
+
 func (h *handler) RevokeWorkspaceRunner(
 	ctx context.Context,
 	request api.RevokeWorkspaceRunnerRequestObject,

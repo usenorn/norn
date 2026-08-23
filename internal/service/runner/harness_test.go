@@ -15,6 +15,7 @@ import (
 	"github.com/usenorn/norn/internal/pkg/identity"
 	agentrepo "github.com/usenorn/norn/internal/repository/agent"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
+	channelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
 	runnersessionrepo "github.com/usenorn/norn/internal/repository/runnersession"
 	"github.com/usenorn/norn/internal/service"
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
@@ -30,6 +31,7 @@ const (
 
 type harness struct {
 	runners    *runnerrepo.MockRunner
+	channels   *channelrepo.MockRunnerChannel
 	sessions   *runnersessionrepo.MockRunnerSession
 	agents     *agentrepo.MockAgent
 	authorizer *authorizersvc.MockAuthorizer
@@ -50,6 +52,7 @@ func newHarness(t *testing.T) *harness {
 
 	h := &harness{
 		runners:     runnerrepo.NewMockRunner(ctrl),
+		channels:    channelrepo.NewMockRunnerChannel(ctrl),
 		sessions:    runnersessionrepo.NewMockRunnerSession(ctrl),
 		agents:      agentrepo.NewMockAgent(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
@@ -83,6 +86,7 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = runnersvc.New(
 		h.runners,
+		h.channels,
 		h.sessions,
 		h.agents,
 		h.authorizer,

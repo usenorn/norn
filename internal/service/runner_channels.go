@@ -22,7 +22,7 @@ type RunnerChannels interface {
 	) ([]entity.SpooledMessage, string, error)
 	Receive(ctx context.Context, session ChannelSession, message entity.ChannelMessage) error
 	Acknowledge(ctx context.Context, session ChannelSession, cursor string) error
-	Heartbeat(ctx context.Context, session ChannelSession) error
+	Heartbeat(ctx context.Context, session ChannelSession, load entity.RunnerLoad) error
 	Verify(ctx context.Context, session ChannelSession) error
 	Close(ctx context.Context, session ChannelSession)
 }

@@ -23,7 +23,7 @@ type opening struct {
 	issue        entity.Issue
 	delegationID uuid.UUID
 	agentID      uuid.UUID
-	runner       entity.Runner
+	placed       placement
 	params       entity.ExecutionParams
 	actor        entity.ExecutionActor
 }
@@ -40,9 +40,12 @@ type move struct {
 
 func paramsOf(params entity.ExecutionParams) channelv1.Params {
 	return channelv1.Params{
-		Tool:    params.Tool,
-		Model:   params.Model,
-		Runtime: string(params.Runtime),
+		Tool:         params.Tool,
+		Model:        params.Model,
+		Runtime:      string(params.Runtime),
+		BaseRef:      string(params.BaseRef),
+		IncludeDirty: params.IncludeDirty,
+		Profile:      string(params.Profile),
 	}
 }
 
@@ -68,19 +71,8 @@ func (s *executionsService) OnDelegated(
 	issue entity.Issue,
 	delegation entity.IssueDelegation,
 ) error {
-	runner, err := s.runnerFor(ctx, delegation.AgentID, issue.TeamID)
+	placed, err := s.route(ctx, delegation.AgentID, issue.TeamID, nil)
 	if err != nil {
-		if errors.Is(err, entity.ErrExecutionNoRunner) {
-			logging.From(ctx).InfoContext(
-				ctx,
-				"an issue was delegated to an agent with no machine to run it on",
-				slog.String("issue_id", issue.ID.String()),
-				slog.String("agent_id", delegation.AgentID.String()),
-			)
-
-			return nil
-		}
-
 		return err
 	}
 
@@ -89,51 +81,126 @@ func (s *executionsService) OnDelegated(
 		actor = entity.ExecutionActorOf(acting)
 	}
 
+	params := delegation.Params.Asked()
+	params.Brief = delegation.Brief
+
 	_, err = s.open(ctx, opening{
 		issue:        issue,
 		delegationID: delegation.ID,
 		agentID:      delegation.AgentID,
-		runner:       runner,
-		params:       entity.ExecutionParams{Brief: delegation.Brief},
+		placed:       placed,
+		params:       params,
 		actor:        actor,
 	})
 
 	return err
 }
 
-func (s *executionsService) runnerFor(
-	ctx context.Context,
-	agentID, teamID uuid.UUID,
-) (entity.Runner, error) {
-	machines, err := s.runners.ListByAgentID(ctx, agentID)
+func (s *executionsService) Ready(ctx context.Context, runner entity.Runner) error {
+	presence, err := s.channels.Presence(ctx, runner.ID)
 	if err != nil {
-		return entity.Runner{}, err
+		return err
 	}
 
-	reaching := make([]entity.Runner, 0, len(machines))
+	if runner.Paused() || !presence.Available() {
+		return nil
+	}
 
-	for _, machine := range machines {
-		if machine.Reaches(teamID) {
-			reaching = append(reaching, machine)
+	free, err := s.freeSlots(ctx, runner, presence)
+	if err != nil {
+		return err
+	}
+
+	if free <= 0 {
+		return nil
+	}
+
+	queued, err := s.executions.ListQueuedByAgent(ctx, runner.AgentID, queuedBatch)
+	if err != nil {
+		return err
+	}
+
+	codebase, err := s.codebaseFor(ctx, runner)
+	if err != nil {
+		return err
+	}
+
+	for _, execution := range queued {
+		offered := execution.RunnerID
+
+		if offered != uuid.Nil && offered != runner.ID {
+			continue
 		}
-	}
 
-	if len(reaching) == 0 {
-		return entity.Runner{}, entity.ErrExecutionNoRunner
-	}
-
-	for _, machine := range reaching {
-		presence, err := s.channels.Presence(ctx, machine.ID)
-		if err != nil {
-			return entity.Runner{}, err
+		if !runner.Reaches(execution.TeamID) {
+			continue
 		}
 
-		if presence.Live() {
-			return machine, nil
-		}
+		return s.hand(ctx, execution, placement{runner: runner, codebase: codebase, free: free})
 	}
 
-	return reaching[0], nil
+	return nil
+}
+
+func (s *executionsService) hand(
+	ctx context.Context,
+	execution entity.Execution,
+	placed placement,
+) error {
+	issue, err := s.issues.GetVisible(
+		ctx,
+		execution.WorkspaceID,
+		execution.IssueID,
+		placed.runner.Scope(execution.WorkspaceID),
+	)
+	if err != nil {
+		return err
+	}
+
+	bound, err := s.executions.Bind(ctx, execution.ID, repository.ExecutionBinding{
+		RunnerID:   placed.runner.ID,
+		CodebaseID: placed.codebase,
+		At:         time.Now().UTC(),
+	})
+	if err != nil {
+		if errors.Is(err, entity.ErrExecutionTransition) {
+			return nil
+		}
+
+		return err
+	}
+
+	if err := s.tell(
+		ctx, bound, entity.ChannelExecutionOffer, offerOf(bound, issue),
+	); err != nil {
+		return err
+	}
+
+	s.broadcast(ctx, bound)
+
+	return nil
+}
+
+func (s *executionsService) park(
+	ctx context.Context,
+	execution entity.Execution,
+	waiting entity.ExecutionQueuedReason,
+) error {
+	parked, err := s.executions.Bind(ctx, execution.ID, repository.ExecutionBinding{
+		QueuedReason: waiting,
+		At:           time.Now().UTC(),
+	})
+	if err != nil {
+		if errors.Is(err, entity.ErrExecutionTransition) {
+			return nil
+		}
+
+		return err
+	}
+
+	s.broadcast(ctx, parked)
+
+	return nil
 }
 
 func (s *executionsService) open(
@@ -156,8 +223,10 @@ func (s *executionsService) open(
 			IssueID:      request.issue.ID,
 			DelegationID: request.delegationID,
 			AgentID:      request.agentID,
-			RunnerID:     request.runner.ID,
+			RunnerID:     request.placed.runner.ID,
+			CodebaseID:   request.placed.codebase,
 			Attempt:      attempt,
+			QueuedReason: request.placed.waiting,
 			Params:       request.params,
 			QueuedAt:     now,
 		})
@@ -170,6 +239,7 @@ func (s *executionsService) open(
 			Kind:        entity.ExecutionEventTransition,
 			ToState:     entity.ExecutionQueued,
 			Actor:       request.actor,
+			Reason:      string(request.placed.waiting),
 			OccurredAt:  now,
 		}); err != nil {
 			return err
@@ -181,6 +251,18 @@ func (s *executionsService) open(
 	})
 	if err != nil {
 		return entity.Execution{}, err
+	}
+
+	if !request.placed.found() {
+		logging.From(ctx).InfoContext(
+			ctx,
+			"a delegated issue is waiting for a machine",
+			slog.String("execution_id", opened.ID),
+			slog.String("agent_id", request.agentID.String()),
+			slog.String("waiting", string(request.placed.waiting)),
+		)
+
+		return opened, nil
 	}
 
 	if err := s.tell(

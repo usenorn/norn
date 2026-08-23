@@ -159,3 +159,18 @@ func (mr *MockRunnerMockRecorder) Revoke(ctx, workspaceID, runnerID, revokedAt a
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockRunner)(nil).Revoke), ctx, workspaceID, runnerID, revokedAt)
 }
+
+// SetPaused mocks base method.
+func (m *MockRunner) SetPaused(ctx context.Context, workspaceID, runnerID uuid.UUID, pausedAt *time.Time) (entity.Runner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetPaused", ctx, workspaceID, runnerID, pausedAt)
+	ret0, _ := ret[0].(entity.Runner)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetPaused indicates an expected call of SetPaused.
+func (mr *MockRunnerMockRecorder) SetPaused(ctx, workspaceID, runnerID, pausedAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPaused", reflect.TypeOf((*MockRunner)(nil).SetPaused), ctx, workspaceID, runnerID, pausedAt)
+}

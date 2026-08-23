@@ -2614,6 +2614,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/delegation/targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Where delegating this issue to an agent would run, before anyone commits to it */
+        get: operations["getWorkspaceIssueDelegationTargets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/labels": {
         parameters: {
             query?: never;
@@ -3659,6 +3679,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/runners/{runnerId}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                runnerId: components["parameters"]["RunnerId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop offering this machine new work, leaving what it is running alone */
+        post: operations["pauseWorkspaceRunner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/runners/{runnerId}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                runnerId: components["parameters"]["RunnerId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Let this machine take work again */
+        post: operations["resumeWorkspaceRunner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runners/me/codebases": {
         parameters: {
             query?: never;
@@ -4478,6 +4538,7 @@ export interface components {
             agentAccountId: string;
             /** @description What the agent was asked to do, carried to whatever runtime picks the work up */
             brief?: string;
+            params?: components["schemas"]["DelegationParams"];
             /** Format: uuid */
             delegatedByAccountId?: string;
             /** Format: date-time */
@@ -4490,6 +4551,22 @@ export interface components {
              */
             recalledAt?: string;
         };
+        /** @enum {string} */
+        PermissionProfile: "strict" | "standard" | "unrestricted";
+        /** @enum {string} */
+        BaseRefPolicy: "origin/default" | "head";
+        /** @enum {string} */
+        RuntimeChoice: "auto" | "process" | "docker";
+        /** @description What the delegation asked for. Every attempt against it inherits these, and what is left unset is the machine's own setting rather than a default this server invents. */
+        DelegationParams: {
+            tool?: string;
+            model?: string;
+            runtime?: components["schemas"]["RuntimeChoice"];
+            baseRef?: components["schemas"]["BaseRefPolicy"];
+            /** @description Carry the folder's uncommitted work into the run as one commit */
+            includeDirty?: boolean;
+            permissionProfile?: components["schemas"]["PermissionProfile"];
+        };
         DelegateIssueRequest: {
             /**
              * Format: uuid
@@ -4497,6 +4574,46 @@ export interface components {
              */
             agentAccountId: string;
             brief?: string;
+            params?: components["schemas"]["DelegationParams"];
+        };
+        RunnerReadiness: {
+            /** Format: uuid */
+            runnerId: string;
+            name: string;
+            /** @description Whether the machine is holding a channel right now */
+            connected: boolean;
+            /** @description Whether this machine's team scope covers the issue's team */
+            reaches: boolean;
+            paused: boolean;
+            /** Format: int32 */
+            capacity: number;
+            /** Format: int32 */
+            used: number;
+            /** Format: int32 */
+            free: number;
+            diskPressure: boolean;
+        };
+        SharedRepositoryWarning: {
+            executionId: string;
+            reference: string;
+            state: components["schemas"]["ExecutionState"];
+        };
+        DelegationTargets: {
+            /** Format: uuid */
+            agentId: string;
+            /** Format: uuid */
+            agentAccountId: string;
+            agentName: string;
+            runners: components["schemas"]["RunnerReadiness"][];
+            /**
+             * Format: uuid
+             * @description The machine the work would land on. Absent when it would wait instead.
+             */
+            runnerId?: string;
+            /** @description Why it would wait. Absent when a machine would take it straight away. */
+            waiting?: components["schemas"]["ExecutionQueuedReason"];
+            /** @description Active runs already touching a repository this one would touch. Worth saying, never a reason to refuse. */
+            warnings: components["schemas"]["SharedRepositoryWarning"][];
         };
         MoveIssueRequest: {
             /** Format: uuid */
@@ -4762,6 +4879,11 @@ export interface components {
             enrolledAt: string;
             /** Format: date-time */
             lastSeenAt?: string;
+            /**
+             * Format: date-time
+             * @description Set while an administrator has stopped this machine being offered work
+             */
+            pausedAt?: string;
             /** Format: date-time */
             revokedAt?: string;
             /** @description How much of a run this machine's workspace keeps. On minimal the server declines full transcripts, so a machine reads this to send summaries instead of having them refused. */
@@ -4882,11 +5004,19 @@ export interface components {
         ExecutionState: "queued" | "leased" | "preparing" | "running" | "waiting_for_input" | "queued_for_resume" | "finalizing" | "awaiting_review" | "approved" | "completed" | "failed" | "cancelled" | "interrupted";
         /** @enum {string} */
         ExecutionEventKind: "transition" | "phase" | "command" | "tool" | "service" | "preview" | "question" | "note";
+        /**
+         * @description Why a queued run has not started. The three the delegate dialog has to phrase differently are an agent with no machine at all, machines that are all offline, and machines that are all busy.
+         * @enum {string}
+         */
+        ExecutionQueuedReason: "no_runner" | "runners_offline" | "runners_paused" | "runners_busy";
         /** @description How this run was asked for. What is not set is the machine's own default. */
         ExecutionParams: {
             tool?: string;
             model?: string;
             runtime?: components["schemas"]["CodebaseRuntime"];
+            baseRef?: components["schemas"]["BaseRefPolicy"];
+            includeDirty?: boolean;
+            permissionProfile?: components["schemas"]["PermissionProfile"];
             brief?: string;
         };
         /** @description Who caused an entry. A machine reports as the agent it is bound to. */
@@ -4922,6 +5052,8 @@ export interface components {
             attempt: number;
             state: components["schemas"]["ExecutionState"];
             reason?: string;
+            /** @description Why this run is still waiting. Absent once a machine has taken it. */
+            queuedReason?: components["schemas"]["ExecutionQueuedReason"];
             params: components["schemas"]["ExecutionParams"];
             /** @description Whether this run can be offered again as a fresh attempt */
             restartable?: boolean;
@@ -13320,6 +13452,36 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
+    getWorkspaceIssueDelegationTargets: {
+        parameters: {
+            query: {
+                agentAccountId: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agent's machines, where the work would land, and anything worth saying first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationTargets"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
     setWorkspaceIssueLabels: {
         parameters: {
             query?: never;
@@ -15508,6 +15670,60 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    pauseWorkspaceRunner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                runnerId: components["parameters"]["RunnerId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The runner as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Runner"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    resumeWorkspaceRunner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                runnerId: components["parameters"]["RunnerId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The runner as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Runner"];
+                };
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];

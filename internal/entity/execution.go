@@ -2,6 +2,7 @@ package entity
 
 import (
 	"errors"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -34,6 +35,7 @@ var (
 	ErrExecutionNotReviewable   = errors.New("this execution is not waiting to be reviewed")
 	ErrExecutionSelfApproval    = errors.New("an agent may not approve its own work")
 	ErrExecutionNoRunner        = errors.New("this agent has no runner to hand the work to")
+	ErrExecutionAlreadyLive     = errors.New("this delegation already has a run in flight")
 	ErrExecutionNotDelegated    = errors.New("this issue is not delegated to an agent")
 	ErrExecutionEventRecorded   = errors.New("this timeline entry has already been recorded")
 	ErrExecutionLeaseLapsed     = errors.New("the runner stopped reporting and its lease lapsed")
@@ -87,11 +89,33 @@ func IssueStateFor(state ExecutionState, states []WorkflowState) (WorkflowState,
 	}
 }
 
+type ExecutionQueuedReason string
+
+const (
+	QueuedNoRunner       ExecutionQueuedReason = "no_runner"
+	QueuedRunnersOffline ExecutionQueuedReason = "runners_offline"
+	QueuedRunnersPaused  ExecutionQueuedReason = "runners_paused"
+	QueuedRunnersBusy    ExecutionQueuedReason = "runners_busy"
+)
+
+func ExecutionQueuedReasons() []ExecutionQueuedReason {
+	return []ExecutionQueuedReason{
+		QueuedNoRunner, QueuedRunnersOffline, QueuedRunnersPaused, QueuedRunnersBusy,
+	}
+}
+
+func (r ExecutionQueuedReason) Valid() bool {
+	return slices.Contains(ExecutionQueuedReasons(), r)
+}
+
 type ExecutionParams struct {
-	Tool    string
-	Model   string
-	Runtime CodebaseRuntime
-	Brief   string
+	Tool         string
+	Model        string
+	Runtime      CodebaseRuntime
+	BaseRef      BaseRefPolicy
+	IncludeDirty bool
+	Profile      PermissionProfile
+	Brief        string
 }
 
 type Execution struct {
@@ -108,6 +132,7 @@ type Execution struct {
 	Attempt        int
 	State          ExecutionState
 	Reason         string
+	QueuedReason   ExecutionQueuedReason
 	Params         ExecutionParams
 	LeaseExpiresAt *time.Time
 	QueuedAt       time.Time

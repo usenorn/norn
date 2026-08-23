@@ -1566,6 +1566,7 @@ func issueDelegationDTO(delegation entity.IssueDelegation) api.IssueDelegation {
 		AgentName:      delegation.AgentName,
 		AgentAccountId: delegation.AgentAccountID,
 		Brief:          nilIfEmpty(delegation.Brief),
+		Params:         delegationParamsDTO(delegation.Params),
 		DelegatedAt:    delegation.DelegatedAt,
 		RecalledAt:     delegation.RecalledAt,
 	}
@@ -1819,6 +1820,7 @@ func runnerDTO(runner entity.Runner) api.Runner {
 		Status:     api.RunnerStatus(runner.Status),
 		EnrolledAt: runner.EnrolledAt,
 		LastSeenAt: runner.LastSeenAt,
+		PausedAt:   runner.PausedAt,
 		RevokedAt:  runner.RevokedAt,
 	}
 }
@@ -1996,6 +1998,7 @@ func executionDTO(execution entity.Execution) api.Execution {
 		Attempt:        execution.Attempt,
 		State:          api.ExecutionState(execution.State),
 		Reason:         nilIfEmpty(execution.Reason),
+		QueuedReason:   executionQueuedReasonDTO(execution.QueuedReason),
 		Params:         executionParamsDTO(execution.Params),
 		Restartable:    &restartable,
 		LeaseExpiresAt: execution.LeaseExpiresAt,
@@ -2015,16 +2018,150 @@ func executionDTOs(executions []entity.Execution) []api.Execution {
 	return dtos
 }
 
+func executionQueuedReasonDTO(
+	waiting entity.ExecutionQueuedReason,
+) *api.ExecutionQueuedReason {
+	if waiting == "" {
+		return nil
+	}
+
+	reason := api.ExecutionQueuedReason(waiting)
+
+	return &reason
+}
+
 func executionParamsDTO(params entity.ExecutionParams) api.ExecutionParams {
 	dto := api.ExecutionParams{
-		Tool:  nilIfEmpty(params.Tool),
-		Model: nilIfEmpty(params.Model),
-		Brief: nilIfEmpty(params.Brief),
+		Tool:         nilIfEmpty(params.Tool),
+		Model:        nilIfEmpty(params.Model),
+		Brief:        nilIfEmpty(params.Brief),
+		IncludeDirty: nilIfFalse(params.IncludeDirty),
 	}
 
 	if params.Runtime != "" {
 		runtime := api.CodebaseRuntime(params.Runtime)
 		dto.Runtime = &runtime
+	}
+
+	if params.BaseRef != "" {
+		baseRef := api.BaseRefPolicy(params.BaseRef)
+		dto.BaseRef = &baseRef
+	}
+
+	if params.Profile != "" {
+		profile := api.PermissionProfile(params.Profile)
+		dto.PermissionProfile = &profile
+	}
+
+	return dto
+}
+
+func nilIfFalse(value bool) *bool {
+	if !value {
+		return nil
+	}
+
+	return &value
+}
+
+func delegationParamsDTO(params entity.DelegationParams) *api.DelegationParams {
+	dto := api.DelegationParams{
+		Tool:         nilIfEmpty(params.Tool),
+		Model:        nilIfEmpty(params.Model),
+		IncludeDirty: nilIfFalse(params.IncludeDirty),
+	}
+
+	if params.Runtime != "" {
+		runtime := api.RuntimeChoice(params.Runtime)
+		dto.Runtime = &runtime
+	}
+
+	if params.BaseRef != "" {
+		baseRef := api.BaseRefPolicy(params.BaseRef)
+		dto.BaseRef = &baseRef
+	}
+
+	if params.Profile != "" {
+		profile := api.PermissionProfile(params.Profile)
+		dto.PermissionProfile = &profile
+	}
+
+	if dto == (api.DelegationParams{}) {
+		return nil
+	}
+
+	return &dto
+}
+
+func delegationParamsOf(params *api.DelegationParams) entity.DelegationParams {
+	if params == nil {
+		return entity.DelegationParams{}
+	}
+
+	asked := entity.DelegationParams{}
+
+	if params.Tool != nil {
+		asked.Tool = *params.Tool
+	}
+
+	if params.Model != nil {
+		asked.Model = *params.Model
+	}
+
+	if params.Runtime != nil {
+		asked.Runtime = entity.RuntimeChoice(*params.Runtime)
+	}
+
+	if params.BaseRef != nil {
+		asked.BaseRef = entity.BaseRefPolicy(*params.BaseRef)
+	}
+
+	if params.IncludeDirty != nil {
+		asked.IncludeDirty = *params.IncludeDirty
+	}
+
+	if params.PermissionProfile != nil {
+		asked.Profile = entity.PermissionProfile(*params.PermissionProfile)
+	}
+
+	return asked
+}
+
+func delegationTargetsDTO(targets service.DelegationTargets) api.DelegationTargets {
+	dto := api.DelegationTargets{
+		AgentId:        targets.Agent.ID,
+		AgentAccountId: targets.Agent.AccountID,
+		AgentName:      targets.Agent.Name,
+		Runners:        make([]api.RunnerReadiness, 0, len(targets.Placement.Runners)),
+		RunnerId:       nilIfNilID(targets.Placement.RunnerID),
+		Warnings:       make([]api.SharedRepositoryWarning, 0, len(targets.Placement.Sharing)),
+	}
+
+	if targets.Placement.Waiting != "" {
+		waiting := api.ExecutionQueuedReason(targets.Placement.Waiting)
+		dto.Waiting = &waiting
+	}
+
+	for _, readiness := range targets.Placement.Runners {
+		dto.Runners = append(dto.Runners, api.RunnerReadiness{
+			RunnerId:     readiness.Runner.ID,
+			Name:         readiness.Runner.Name,
+			Connected:    readiness.Connected,
+			Reaches:      readiness.Reaches,
+			Paused:       readiness.Runner.Paused(),
+			Capacity:     int32(readiness.Capacity),
+			Used:         int32(readiness.Used),
+			Free:         int32(readiness.Free),
+			DiskPressure: readiness.DiskPressure,
+		})
+	}
+
+	for _, sharing := range targets.Placement.Sharing {
+		dto.Warnings = append(dto.Warnings, api.SharedRepositoryWarning{
+			ExecutionId: sharing.ID,
+			Reference:   sharing.Reference(),
+			State:       api.ExecutionState(sharing.State),
+		})
 	}
 
 	return dto

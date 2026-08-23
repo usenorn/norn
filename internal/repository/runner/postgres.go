@@ -69,6 +69,11 @@ func toEntity(model *dbpostgres.WorkspaceRunner) (entity.Runner, error) {
 		runner.LastSeenAt = &seen
 	}
 
+	if model.PausedAt.Valid {
+		paused := model.PausedAt.Time
+		runner.PausedAt = &paused
+	}
+
 	if model.RevokedAt.Valid {
 		revoked := model.RevokedAt.Time
 		runner.RevokedAt = &revoked
@@ -99,6 +104,10 @@ func toModel(runner entity.Runner) *dbpostgres.WorkspaceRunner {
 
 	if runner.LastSeenAt != nil {
 		model.LastSeenAt = null.TimeFrom(*runner.LastSeenAt)
+	}
+
+	if runner.PausedAt != nil {
+		model.PausedAt = null.TimeFrom(*runner.PausedAt)
 	}
 
 	if runner.RevokedAt != nil {
@@ -240,6 +249,38 @@ func (r *runnerRepository) Revoke(
 	}
 
 	return nil
+}
+
+func (r *runnerRepository) SetPaused(
+	ctx context.Context,
+	workspaceID, runnerID uuid.UUID,
+	pausedAt *time.Time,
+) (entity.Runner, error) {
+	paused := null.Time{}
+	at := time.Now().UTC()
+
+	if pausedAt != nil {
+		paused = null.TimeFrom(*pausedAt)
+		at = *pausedAt
+	}
+
+	affected, err := dbpostgres.WorkspaceRunners(
+		dbpostgres.WorkspaceRunnerWhere.ID.EQ(runnerID.String()),
+		dbpostgres.WorkspaceRunnerWhere.WorkspaceID.EQ(workspaceID.String()),
+		dbpostgres.WorkspaceRunnerWhere.Status.EQ(string(entity.RunnerStatusActive)),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceRunnerColumns.PausedAt:  paused,
+		dbpostgres.WorkspaceRunnerColumns.UpdatedAt: at,
+	})
+	if err != nil {
+		return entity.Runner{}, fmt.Errorf("pause runner: %w", err)
+	}
+
+	if affected == 0 {
+		return entity.Runner{}, entity.ErrRunnerNotFound
+	}
+
+	return r.GetByID(ctx, runnerID)
 }
 
 func (r *runnerRepository) RecordVersion(

@@ -79,7 +79,9 @@ func redacted(dsn string) string {
 	return scheme + "://" + host
 }
 
-func TestEveryStatementMatchesTheSchemaItRunsAgainst(t *testing.T) {
+func schemaDatabase(t *testing.T) *sql.DB {
+	t.Helper()
+
 	dsn := strings.TrimSpace(os.Getenv("NORN_POSTGRES_DSN"))
 	if dsn == "" {
 		t.Skip("NORN_POSTGRES_DSN is unset, so there is no schema to check the statements against")
@@ -95,6 +97,12 @@ func TestEveryStatementMatchesTheSchemaItRunsAgainst(t *testing.T) {
 	if err := db.Ping(); err != nil {
 		t.Skipf("no database at %s: %v", redacted(dsn), err)
 	}
+
+	return db
+}
+
+func TestEveryStatementMatchesTheSchemaItRunsAgainst(t *testing.T) {
+	db := schemaDatabase(t)
 
 	for name, statement := range statements() {
 		t.Run(name, func(t *testing.T) {
@@ -150,15 +158,113 @@ func contains(values []string, wanted string) bool {
 
 func statements() map[string]string {
 	return map[string]string{
-		"insertExecutionQuery":        insertExecutionQuery,
-		"executionByIDQuery":          executionByIDQuery,
-		"executionsByIssueQuery":      executionsByIssueQuery,
-		"liveExecutionsByRunnerQuery": liveExecutionsByRunnerQuery,
-		"nextExecutionAttemptQuery":   nextExecutionAttemptQuery,
-		"moveExecutionQuery":          moveExecutionQuery,
-		"renewExecutionLeasesQuery":   renewExecutionLeasesQuery,
-		"expiredExecutionLeasesQuery": expiredExecutionLeasesQuery,
-		"appendExecutionEventQuery":   appendExecutionEventQuery,
-		"executionEventsQuery":        executionEventsQuery,
+		"insertExecutionQuery":               insertExecutionQuery,
+		"executionByIDQuery":                 executionByIDQuery,
+		"executionsByIssueQuery":             executionsByIssueQuery,
+		"liveExecutionsByRunnerQuery":        liveExecutionsByRunnerQuery,
+		"queuedExecutionsByAgentQuery":       queuedExecutionsByAgentQuery,
+		"executionsSharingRepositoriesQuery": executionsSharingRepositoriesQuery,
+		"runnerHeldSlotsQuery":               runnerHeldSlotsQuery,
+		"nextExecutionAttemptQuery":          nextExecutionAttemptQuery,
+		"bindExecutionQuery":                 bindExecutionQuery,
+		"moveExecutionQuery":                 moveExecutionQuery,
+		"renewExecutionLeasesQuery":          renewExecutionLeasesQuery,
+		"expiredExecutionLeasesQuery":        expiredExecutionLeasesQuery,
+		"appendExecutionEventQuery":          appendExecutionEventQuery,
+		"executionEventsQuery":               executionEventsQuery,
 	}
 }
+
+func TestOneDelegationCannotHaveTwoRunsInFlightAtOnce(t *testing.T) {
+	db := schemaDatabase(t)
+
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+
+	t.Cleanup(func() { _ = tx.Rollback() })
+
+	var delegationID, workspaceID, issueID, agentID string
+
+	if err := tx.QueryRow(delegationFixture).Scan(
+		&workspaceID, &issueID, &agentID, &delegationID,
+	); err != nil {
+		t.Fatalf("build a delegation to run against: %v", err)
+	}
+
+	insert := `
+INSERT INTO workspace_executions (id, workspace_id, issue_id, delegation_id, agent_id, attempt)
+VALUES ($1, $2, $3, $4, $5, $6)`
+
+	if _, err := tx.Exec(insert, "exec-first", workspaceID, issueID, delegationID, agentID, 1); err != nil {
+		t.Fatalf("open the first run: %v", err)
+	}
+
+	if _, err := tx.Exec(`SAVEPOINT before_second`); err != nil {
+		t.Fatalf("savepoint: %v", err)
+	}
+
+	if _, err := tx.Exec(insert, "exec-second", workspaceID, issueID, delegationID, agentID, 2); err == nil {
+		t.Fatal(
+			"a second run opened against a delegation whose first run is still going. Two " +
+				"machines would then work the same issue from the same brief, and whichever " +
+				"finished last would overwrite the other's branch",
+		)
+	}
+
+	if _, err := tx.Exec(`ROLLBACK TO SAVEPOINT before_second`); err != nil {
+		t.Fatalf("roll back to savepoint: %v", err)
+	}
+
+	if _, err := tx.Exec(
+		`UPDATE workspace_executions SET state = 'failed', finished_at = now() WHERE id = $1`,
+		"exec-first",
+	); err != nil {
+		t.Fatalf("finish the first run: %v", err)
+	}
+
+	if _, err := tx.Exec(insert, "exec-second", workspaceID, issueID, delegationID, agentID, 2); err != nil {
+		t.Fatalf(
+			"restarting a finished run was refused: %v. A re-run is a new attempt against the "+
+				"same delegation, so the rule has to be about runs in flight and not about the "+
+				"delegation ever having been run",
+			err,
+		)
+	}
+}
+
+const delegationFixture = `
+WITH workspace AS (
+    INSERT INTO workspaces (slug, name) VALUES ('scheduling-check', 'Scheduling check')
+    RETURNING id
+), team AS (
+    INSERT INTO workspace_teams (workspace_id, key, name)
+    SELECT id, 'SCH', 'Scheduling' FROM workspace
+    RETURNING id, workspace_id
+), state AS (
+    INSERT INTO workspace_workflow_states (workspace_id, team_id, name, category, position)
+    SELECT workspace_id, id, 'Todo', 'not_started', 1 FROM team
+    RETURNING id
+), account AS (
+    INSERT INTO accounts (status, kind, display_name, timezone)
+    VALUES ('active', 'agent', 'scheduler', 'UTC')
+    RETURNING id
+), agent AS (
+    INSERT INTO workspace_agents (workspace_id, account_id, owner_account_id, name)
+    SELECT team.workspace_id, account.id, account.id, 'scheduler'
+    FROM team, account
+    RETURNING id, workspace_id
+), issue AS (
+    INSERT INTO workspace_issues
+        (workspace_id, team_id, number, title, state_id, reference_key, rank)
+    SELECT team.workspace_id, team.id, 1, 'run me', state.id, 'SCH', 'n'
+    FROM team, state
+    RETURNING id, workspace_id, team_id
+), delegation AS (
+    INSERT INTO workspace_issue_delegations (workspace_id, issue_id, agent_id)
+    SELECT issue.workspace_id, issue.id, agent.id FROM issue, agent
+    RETURNING id
+)
+SELECT issue.workspace_id, issue.id, agent.id, delegation.id
+FROM issue, agent, delegation`

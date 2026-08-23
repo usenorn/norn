@@ -147,17 +147,17 @@ func (mr *MockRunnerChannelMockRecorder) Read(ctx, runnerID, cursor any) *gomock
 }
 
 // Renew mocks base method.
-func (m *MockRunnerChannel) Renew(ctx context.Context, runnerID uuid.UUID, epoch string, seenAt time.Time) error {
+func (m *MockRunnerChannel) Renew(ctx context.Context, runnerID uuid.UUID, epoch string, load entity.RunnerLoad, seenAt time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Renew", ctx, runnerID, epoch, seenAt)
+	ret := m.ctrl.Call(m, "Renew", ctx, runnerID, epoch, load, seenAt)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Renew indicates an expected call of Renew.
-func (mr *MockRunnerChannelMockRecorder) Renew(ctx, runnerID, epoch, seenAt any) *gomock.Call {
+func (mr *MockRunnerChannelMockRecorder) Renew(ctx, runnerID, epoch, load, seenAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Renew", reflect.TypeOf((*MockRunnerChannel)(nil).Renew), ctx, runnerID, epoch, seenAt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Renew", reflect.TypeOf((*MockRunnerChannel)(nil).Renew), ctx, runnerID, epoch, load, seenAt)
 }
 
 // Seen mocks base method.
