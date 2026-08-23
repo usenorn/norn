@@ -87,6 +87,8 @@
 	} from "$lib/activity/activity";
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
 	import QuestionList from "$lib/questions/question-list.svelte";
+	import RunRow from "$lib/executions/run-row.svelte";
+	import type { Execution } from "$lib/executions/executions";
 	import type { IssueQuestion } from "$lib/questions/questions";
 	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
 
@@ -287,6 +289,7 @@
 		(ready?.codeLinks ?? []).filter((link) => !removedCodeLinks.includes(link.id))
 	);
 	const questions = $derived<IssueQuestion[]>(ready ? ready.questions : []);
+	const runs = $derived<Execution[]>(ready ? ready.runs : []);
 	const automationSuppressed = $derived(automationOverride ?? false);
 	const mirrorConflicts = $derived(ready?.mirrorConflicts ?? []);
 	const shipping = $derived(ready?.shipping ?? { releases: [], deployments: [] });
@@ -1845,6 +1848,27 @@
 							{/if}
 						</div>
 					</form>
+
+					{#if runs.length > 0}
+						<section class="flex min-w-0 flex-col gap-1.5">
+							<div class="flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">Runs</Eyebrow>
+								</h2>
+							</div>
+							<ul class="flex min-w-0 flex-col">
+								{#each runs as run (run.id)}
+									<li class="min-w-0">
+										<RunRow
+											execution={run}
+											href={workspacePath(data.workspace.slug, `/executions/${run.id}`)}
+											timezone={data.workspace.timezone}
+										/>
+									</li>
+								{/each}
+							</ul>
+						</section>
+					{/if}
 
 					{#if questions.length > 0}
 						<section class="flex min-w-0 flex-col gap-1.5">
