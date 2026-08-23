@@ -2441,6 +2441,10 @@ func (r problemResponse) VisitSetWorkspaceExecutionPolicyResponse(w http.Respons
 	return r.write(w)
 }
 
+func (r problemResponse) VisitListWorkspaceExecutionServicesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitListWorkspaceExecutionPreviewsResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

@@ -120,10 +120,10 @@ func (mr *MockRunnersMockRecorder) Exchange(ctx, input any) *gomock.Call {
 }
 
 // List mocks base method.
-func (m *MockRunners) List(ctx context.Context, workspaceID uuid.UUID) ([]entity.Runner, error) {
+func (m *MockRunners) List(ctx context.Context, workspaceID uuid.UUID) ([]service.RunnerState, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, workspaceID)
-	ret0, _ := ret[0].([]entity.Runner)
+	ret0, _ := ret[0].([]service.RunnerState)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

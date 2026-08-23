@@ -128,7 +128,9 @@ type Execution struct {
 	AgentID        uuid.UUID
 	AgentName      string
 	RunnerID       uuid.UUID
+	RunnerName     string
 	CodebaseID     uuid.UUID
+	CodebaseName   string
 	Attempt        int
 	State          ExecutionState
 	Reason         string

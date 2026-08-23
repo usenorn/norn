@@ -37,13 +37,36 @@ func (h *handler) GetWorkspaceExecution(
 	}
 
 	previews := previewDTOs(detail.Previews, h.previewCfg.Scheme)
+	services := executionServiceDTOs(detail.Services)
 
 	return api.GetWorkspaceExecution200JSONResponse(api.ExecutionDetail{
 		Execution: executionDTO(detail.Execution),
 		Timeline:  executionEventDTOs(detail.Timeline),
 		Changeset: changeSetOrNothing(detail.Execution.ID, detail.ChangeSet),
 		Previews:  &previews,
+		Services:  &services,
+		Runner:    executionRunnerDTO(detail.Machine),
 	}), nil
+}
+
+func (h *handler) ListWorkspaceExecutionServices(
+	ctx context.Context,
+	request api.ListWorkspaceExecutionServicesRequestObject,
+) (api.ListWorkspaceExecutionServicesResponseObject, error) {
+	services, err := h.executionServices.ForExecution(
+		ctx, request.WorkspaceId, request.ExecutionId,
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceExecutionServices200JSONResponse(
+		executionServiceDTOs(services),
+	), nil
 }
 
 func changeSetOrNothing(

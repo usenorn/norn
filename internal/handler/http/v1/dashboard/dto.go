@@ -1825,11 +1825,65 @@ func runnerDTO(runner entity.Runner) api.Runner {
 	}
 }
 
-func runnerDTOs(runners []entity.Runner) []api.Runner {
-	dtos := make([]api.Runner, 0, len(runners))
+func runnerStateDTO(state service.RunnerState) api.Runner {
+	dto := runnerDTO(state.Runner)
+	load := runnerLoadDTO(state.Load)
+	dto.Load = &load
 
-	for _, runner := range runners {
-		dtos = append(dtos, runnerDTO(runner))
+	return dto
+}
+
+func runnerStateDTOs(states []service.RunnerState) []api.Runner {
+	dtos := make([]api.Runner, 0, len(states))
+
+	for _, state := range states {
+		dtos = append(dtos, runnerStateDTO(state))
+	}
+
+	return dtos
+}
+
+func runnerLoadDTO(load service.RunnerLoad) api.RunnerLoad {
+	return api.RunnerLoad{
+		Connected:    load.Connected,
+		Capacity:     int32(load.Capacity),
+		Used:         int32(load.Used),
+		Free:         int32(load.Free),
+		DiskPressure: load.DiskPressure,
+	}
+}
+
+func executionRunnerDTO(state *service.RunnerState) *api.ExecutionRunner {
+	if state == nil {
+		return nil
+	}
+
+	return &api.ExecutionRunner{
+		Id:       state.Runner.ID,
+		Name:     state.Runner.Name,
+		PausedAt: state.Runner.PausedAt,
+		Load:     runnerLoadDTO(state.Load),
+	}
+}
+
+func executionServiceDTO(running entity.ExecutionService) api.ExecutionService {
+	return api.ExecutionService{
+		Id:          running.ID,
+		ExecutionId: running.ExecutionID,
+		Name:        running.Name,
+		State:       api.ExecutionServiceState(running.State),
+		Probe:       api.ExecutionServiceProbe(running.Probe),
+		Port:        int32(running.Port),
+		Reason:      nilIfEmpty(running.Reason),
+		ReportedAt:  running.ReportedAt,
+	}
+}
+
+func executionServiceDTOs(services []entity.ExecutionService) []api.ExecutionService {
+	dtos := make([]api.ExecutionService, 0, len(services))
+
+	for _, running := range services {
+		dtos = append(dtos, executionServiceDTO(running))
 	}
 
 	return dtos
@@ -1994,7 +2048,9 @@ func executionDTO(execution entity.Execution) api.Execution {
 		AgentId:        nilIfNilID(execution.AgentID),
 		AgentName:      nilIfEmpty(execution.AgentName),
 		RunnerId:       nilIfNilID(execution.RunnerID),
+		RunnerName:     nilIfEmpty(execution.RunnerName),
 		CodebaseId:     nilIfNilID(execution.CodebaseID),
+		CodebaseName:   nilIfEmpty(execution.CodebaseName),
 		Attempt:        execution.Attempt,
 		State:          api.ExecutionState(execution.State),
 		Reason:         nilIfEmpty(execution.Reason),

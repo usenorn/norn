@@ -117,6 +117,29 @@ type Preview struct {
 	Occurred time.Time `json:"ts"`
 }
 
+const (
+	ServiceStarting  = "starting"
+	ServiceHealthy   = "healthy"
+	ServiceUnhealthy = "unhealthy"
+	ServiceStopped   = "stopped"
+)
+
+const (
+	ProbeNone = ""
+	ProbeHTTP = "http"
+	ProbeTCP  = "tcp"
+	ProbeLog  = "log"
+)
+
+type Service struct {
+	Name     string    `json:"name"`
+	State    string    `json:"state"`
+	Probe    string    `json:"probe,omitempty"`
+	Port     int       `json:"port,omitempty"`
+	Reason   string    `json:"reason,omitempty"`
+	Occurred time.Time `json:"ts"`
+}
+
 type Retention struct {
 	KeepUntil time.Time `json:"keep_until"`
 }
