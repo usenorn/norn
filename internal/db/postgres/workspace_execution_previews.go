@@ -38,6 +38,7 @@ type WorkspaceExecutionPreview struct {
 	ReportedAt  time.Time `boil:"reported_at" json:"reported_at" toml:"reported_at" yaml:"reported_at"`
 	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Port        int       `boil:"port" json:"port" toml:"port" yaml:"port"`
 
 	R *workspaceExecutionPreviewR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceExecutionPreviewL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -58,6 +59,7 @@ var WorkspaceExecutionPreviewColumns = struct {
 	ReportedAt  string
 	CreatedAt   string
 	UpdatedAt   string
+	Port        string
 }{
 	ID:          "id",
 	ExecutionID: "execution_id",
@@ -73,6 +75,7 @@ var WorkspaceExecutionPreviewColumns = struct {
 	ReportedAt:  "reported_at",
 	CreatedAt:   "created_at",
 	UpdatedAt:   "updated_at",
+	Port:        "port",
 }
 
 var WorkspaceExecutionPreviewTableColumns = struct {
@@ -90,6 +93,7 @@ var WorkspaceExecutionPreviewTableColumns = struct {
 	ReportedAt  string
 	CreatedAt   string
 	UpdatedAt   string
+	Port        string
 }{
 	ID:          "workspace_execution_previews.id",
 	ExecutionID: "workspace_execution_previews.execution_id",
@@ -105,6 +109,7 @@ var WorkspaceExecutionPreviewTableColumns = struct {
 	ReportedAt:  "workspace_execution_previews.reported_at",
 	CreatedAt:   "workspace_execution_previews.created_at",
 	UpdatedAt:   "workspace_execution_previews.updated_at",
+	Port:        "workspace_execution_previews.port",
 }
 
 // Generated where
@@ -124,6 +129,7 @@ var WorkspaceExecutionPreviewWhere = struct {
 	ReportedAt  whereHelpertime_Time
 	CreatedAt   whereHelpertime_Time
 	UpdatedAt   whereHelpertime_Time
+	Port        whereHelperint
 }{
 	ID:          whereHelperstring{field: "\"workspace_execution_previews\".\"id\""},
 	ExecutionID: whereHelperstring{field: "\"workspace_execution_previews\".\"execution_id\""},
@@ -139,6 +145,7 @@ var WorkspaceExecutionPreviewWhere = struct {
 	ReportedAt:  whereHelpertime_Time{field: "\"workspace_execution_previews\".\"reported_at\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"workspace_execution_previews\".\"created_at\""},
 	UpdatedAt:   whereHelpertime_Time{field: "\"workspace_execution_previews\".\"updated_at\""},
+	Port:        whereHelperint{field: "\"workspace_execution_previews\".\"port\""},
 }
 
 // WorkspaceExecutionPreviewRels is where relationship names are stored.
@@ -216,8 +223,8 @@ func (r *workspaceExecutionPreviewR) GetPreviewWorkspaceExecutionPreviewLinks() 
 type workspaceExecutionPreviewL struct{}
 
 var (
-	workspaceExecutionPreviewAllColumns            = []string{"id", "execution_id", "workspace_id", "name", "service", "path", "mode", "host", "state", "opened_at", "closed_at", "reported_at", "created_at", "updated_at"}
-	workspaceExecutionPreviewColumnsWithoutDefault = []string{"execution_id", "workspace_id", "name", "service", "state", "opened_at", "reported_at"}
+	workspaceExecutionPreviewAllColumns            = []string{"id", "execution_id", "workspace_id", "name", "service", "path", "mode", "host", "state", "opened_at", "closed_at", "reported_at", "created_at", "updated_at", "port"}
+	workspaceExecutionPreviewColumnsWithoutDefault = []string{"execution_id", "workspace_id", "name", "service", "state", "opened_at", "reported_at", "port"}
 	workspaceExecutionPreviewColumnsWithDefault    = []string{"id", "path", "mode", "host", "closed_at", "created_at", "updated_at"}
 	workspaceExecutionPreviewPrimaryKeyColumns     = []string{"id"}
 	workspaceExecutionPreviewGeneratedColumns      = []string{}

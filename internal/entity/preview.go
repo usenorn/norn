@@ -4,6 +4,7 @@ import (
 	"errors"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +17,8 @@ const (
 	PreviewNameMaxLen    = 30
 	PreviewServiceMaxLen = 64
 	PreviewPathMaxLen    = 512
+	PreviewPortMin       = 1
+	PreviewPortMax       = 65535
 	PreviewsMax          = 8
 
 	PreviewRetentionLongest = 24 * time.Hour
@@ -71,6 +74,7 @@ type PreviewSession struct {
 	Name        string
 	Service     string
 	Path        string
+	Port        int
 	Mode        PreviewMode
 	Host        string
 	State       PreviewState
@@ -92,14 +96,17 @@ func (p PreviewSession) URL(scheme string) string {
 
 	address := scheme + "://" + p.Host
 	if p.Mode == PreviewByPath {
-		address += "/" + p.Name
+		address += "/" + strconv.Itoa(p.Port)
 	}
 
 	return address + p.Path
 }
 
-func PreviewHost(name, executionID string, mode PreviewMode, domain string) string {
-	return channelv1.PreviewHost(name, executionID, string(mode), domain)
+func PreviewHost(execution Execution, port int, mode PreviewMode, domain string) string {
+	return channelv1.PreviewHost(
+		execution.IssueReference, execution.IssueTitle,
+		execution.ID, port, string(mode), domain,
+	)
 }
 
 func ValidatePreviewName(field, name string) FieldError {
@@ -133,11 +140,17 @@ func ValidatePreviewSession(field string, preview PreviewSession) error {
 		path = FieldError{Field: field + ".path", Code: ValidationCodeMalformed}
 	}
 
+	port := FieldError{}
+	if preview.Port < PreviewPortMin || preview.Port > PreviewPortMax {
+		port = FieldError{Field: field + ".port", Code: ValidationCodeOutOfRange}
+	}
+
 	return NewValidationError(
 		ValidatePreviewName(field+".name", preview.Name),
 		requiredText(field+".service", preview.Service, PreviewServiceMaxLen),
 		optionalText(field+".path", preview.Path, PreviewPathMaxLen),
 		path,
+		port,
 		mode,
 		state,
 	)

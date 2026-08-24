@@ -16,6 +16,12 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 )
 
+const previewPickOrder = `(state = 'open') DESC, opened_at DESC, id`
+
+const previewRouteOrder = `
+ORDER BY (p.state = 'open') DESC, p.opened_at DESC, p.id
+LIMIT 1`
+
 const previewColumns = `
        id,
        execution_id,
@@ -23,6 +29,7 @@ const previewColumns = `
        name,
        service,
        path,
+       port,
        mode,
        host,
        state,
@@ -35,14 +42,17 @@ const previewColumns = `
 const savePreviewQuery = `
 WITH upserted AS (
     INSERT INTO workspace_execution_previews
-        (execution_id, workspace_id, name, service, path, mode, host, state,
+        (execution_id, workspace_id, name, service, path, port, mode, host, state,
          opened_at, closed_at, reported_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    ON CONFLICT (execution_id, name) DO UPDATE
-    SET service     = excluded.service,
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    ON CONFLICT (execution_id, port) DO UPDATE
+    SET name        = excluded.name,
+        service     = excluded.service,
         path        = excluded.path,
         mode        = excluded.mode,
-        host        = excluded.host,
+        host        = coalesce(
+                          nullif(workspace_execution_previews.host, ''), excluded.host
+                      ),
         state       = excluded.state,
         opened_at   = CASE WHEN excluded.state = 'open'
                             AND workspace_execution_previews.state = 'closed'
@@ -66,6 +76,7 @@ SELECT p.id,
        p.name,
        p.service,
        p.path,
+       p.port,
        p.mode,
        p.host,
        p.state,
@@ -77,7 +88,7 @@ SELECT p.id,
        coalesce(e.runner_id, '00000000-0000-0000-0000-000000000000'::uuid)
 FROM workspace_execution_previews p
          JOIN workspace_executions e ON e.id = p.execution_id
-WHERE p.host = $1 AND p.host <> ''`
+WHERE p.host = $1 AND p.host <> ''` + previewRouteOrder
 
 const previewCountQuery = `
 SELECT count(*)
@@ -111,6 +122,7 @@ func previewOf(model *dbpostgres.WorkspaceExecutionPreview) (entity.PreviewSessi
 		Name:        model.Name,
 		Service:     model.Service,
 		Path:        model.Path,
+		Port:        model.Port,
 		Mode:        entity.PreviewMode(model.Mode),
 		Host:        model.Host,
 		State:       entity.PreviewState(model.State),
@@ -164,6 +176,7 @@ func (r *previewRepository) Save(
 		preview.Name,
 		preview.Service,
 		preview.Path,
+		preview.Port,
 		string(preview.Mode),
 		preview.Host,
 		string(preview.State),
@@ -173,7 +186,7 @@ func (r *previewRepository) Save(
 	))
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return r.ByName(ctx, preview.ExecutionID, preview.Name)
+		return r.ByPort(ctx, preview.ExecutionID, preview.Port)
 	}
 
 	if err != nil {
@@ -190,6 +203,8 @@ func (r *previewRepository) ByName(
 	model, err := dbpostgres.WorkspaceExecutionPreviews(
 		dbpostgres.WorkspaceExecutionPreviewWhere.ExecutionID.EQ(executionID),
 		dbpostgres.WorkspaceExecutionPreviewWhere.Name.EQ(name),
+		qm.OrderBy(previewPickOrder),
+		qm.Limit(1),
 	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -202,6 +217,26 @@ func (r *previewRepository) ByName(
 	return previewOf(model)
 }
 
+func (r *previewRepository) ByPort(
+	ctx context.Context,
+	executionID string,
+	port int,
+) (entity.PreviewSession, error) {
+	model, err := dbpostgres.WorkspaceExecutionPreviews(
+		dbpostgres.WorkspaceExecutionPreviewWhere.ExecutionID.EQ(executionID),
+		dbpostgres.WorkspaceExecutionPreviewWhere.Port.EQ(port),
+	).One(ctx, r.db.Querier(ctx))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.PreviewSession{}, entity.ErrPreviewNotFound
+		}
+
+		return entity.PreviewSession{}, fmt.Errorf("read preview by port: %w", err)
+	}
+
+	return previewOf(model)
+}
+
 func (r *previewRepository) ByHost(
 	ctx context.Context,
 	host string,
@@ -209,6 +244,8 @@ func (r *previewRepository) ByHost(
 	model, err := dbpostgres.WorkspaceExecutionPreviews(
 		dbpostgres.WorkspaceExecutionPreviewWhere.Host.EQ(host),
 		dbpostgres.WorkspaceExecutionPreviewWhere.Host.NEQ(""),
+		qm.OrderBy(previewPickOrder),
+		qm.Limit(1),
 	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -325,6 +362,7 @@ func scanPreviewWith(row scanner, extra ...any) (entity.PreviewSession, error) {
 		&preview.Name,
 		&preview.Service,
 		&preview.Path,
+		&preview.Port,
 		&mode,
 		&preview.Host,
 		&state,

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"hash/fnv"
 	"net/netip"
 	neturl "net/url"
 	"strings"
@@ -31,8 +33,12 @@ import (
 )
 
 const (
-	previewDomain = "preview.norn.test"
-	appBaseURL    = "https://norn.test"
+	previewDomain    = "preview.norn.test"
+	appBaseURL       = "https://norn.test"
+	previewReference = "NORN-75"
+	previewTitle     = "Preview address"
+	previewExecution = "exec-01ABC"
+	previewPortBase  = 43000
 )
 
 type harness struct {
@@ -51,7 +57,7 @@ type harness struct {
 	runner      entity.Runner
 	caller      uuid.UUID
 
-	stored   map[string]entity.PreviewSession
+	stored   map[int]entity.PreviewSession
 	links    map[uuid.UUID]entity.PreviewShareLink
 	issued   map[string]entity.PreviewGrant
 	tickets  map[string]entity.PreviewGrant
@@ -93,7 +99,7 @@ func newHarnessServing(t *testing.T, domain string) *harness {
 			Name:        "vlad-mbp",
 			Status:      entity.RunnerStatusActive,
 		},
-		stored:   map[string]entity.PreviewSession{},
+		stored:   map[int]entity.PreviewSession{},
 		links:    map[uuid.UUID]entity.PreviewShareLink{},
 		issued:   map[string]entity.PreviewGrant{},
 		tickets:  map[string]entity.PreviewGrant{},
@@ -102,13 +108,15 @@ func newHarnessServing(t *testing.T, domain string) *harness {
 	}
 
 	h.execution = entity.Execution{
-		ID:          "exec-01ABC",
-		WorkspaceID: workspaceID,
-		IssueID:     uuid.New(),
-		TeamID:      teamID,
-		AgentID:     agentID,
-		RunnerID:    h.runner.ID,
-		State:       entity.ExecutionRunning,
+		ID:             previewExecution,
+		WorkspaceID:    workspaceID,
+		IssueID:        uuid.New(),
+		IssueReference: previewReference,
+		IssueTitle:     previewTitle,
+		TeamID:         teamID,
+		AgentID:        agentID,
+		RunnerID:       h.runner.ID,
+		State:          entity.ExecutionRunning,
 	}
 
 	transactor := transactorrepo.NewMockTransactor(ctrl)
@@ -228,7 +236,7 @@ func (h *harness) expectStore() {
 		DoAndReturn(func(
 			_ context.Context, preview entity.PreviewSession,
 		) (entity.PreviewSession, error) {
-			held, known := h.stored[preview.Name]
+			held, known := h.stored[preview.Port]
 			if known {
 				if preview.ReportedAt.Before(held.ReportedAt) {
 					return held, nil
@@ -236,11 +244,15 @@ func (h *harness) expectStore() {
 
 				preview.ID = held.ID
 				preview.CreatedAt = held.CreatedAt
+
+				if held.Host != "" {
+					preview.Host = held.Host
+				}
 			} else {
 				preview.ID = uuid.New()
 			}
 
-			h.stored[preview.Name] = preview
+			h.stored[preview.Port] = preview
 
 			return preview, nil
 		}).
@@ -251,7 +263,22 @@ func (h *harness) expectStore() {
 		DoAndReturn(func(
 			_ context.Context, _ string, name string,
 		) (entity.PreviewSession, error) {
-			held, known := h.stored[name]
+			for _, held := range h.stored {
+				if held.Name == name {
+					return held, nil
+				}
+			}
+
+			return entity.PreviewSession{}, entity.ErrPreviewNotFound
+		}).
+		AnyTimes()
+
+	h.previews.EXPECT().
+		ByPort(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ string, port int,
+		) (entity.PreviewSession, error) {
+			held, known := h.stored[port]
 			if !known {
 				return entity.PreviewSession{}, entity.ErrPreviewNotFound
 			}
@@ -485,13 +512,24 @@ func (h *harness) expectGrants() {
 func (h *harness) reported(t *testing.T, name, state string) entity.PreviewSession {
 	t.Helper()
 
+	return h.reportedOn(t, name, previewPort(name), state)
+}
+
+func (h *harness) reportedOn(
+	t *testing.T,
+	name string,
+	port int,
+	state string,
+) entity.PreviewSession {
+	t.Helper()
+
 	if err := h.service.Reported(
-		context.Background(), h.runner, previewMessage(name, name, state),
+		context.Background(), h.runner, previewOnPort(name, name, port, state),
 	); err != nil {
 		t.Fatalf("report the %s preview as %s: %v", name, state, err)
 	}
 
-	return h.stored[name]
+	return h.stored[port]
 }
 
 func (h *harness) shared(t *testing.T, name, passcode string) service.PreviewShareMinted {
@@ -542,9 +580,14 @@ func signedIn(ctx context.Context, accountID uuid.UUID) context.Context {
 }
 
 func previewMessage(name, service, state string) entity.ChannelMessage {
+	return previewOnPort(name, service, previewPort(name), state)
+}
+
+func previewOnPort(name, service string, port int, state string) entity.ChannelMessage {
 	payload, err := json.Marshal(channelv1.Preview{
 		Name:     name,
 		Service:  service,
+		Port:     port,
 		State:    state,
 		Occurred: time.Now().UTC(),
 	})
@@ -553,7 +596,7 @@ func previewMessage(name, service, state string) entity.ChannelMessage {
 	}
 
 	message, err := channelv1.NewRunnerMessage(
-		entity.ChannelPreviewState, "exec-01ABC", payload, time.Now().UTC(),
+		entity.ChannelPreviewState, previewExecution, payload, time.Now().UTC(),
 	)
 	if err != nil {
 		panic(err)
@@ -566,8 +609,22 @@ func viewerFrom(address string) entity.SessionClient {
 	return entity.SessionClient{IP: netip.MustParseAddr(address), UserAgent: "Firefox"}
 }
 
+func previewPort(name string) int {
+	digest := fnv.New32a()
+	_, _ = digest.Write([]byte(name))
+
+	return previewPortBase + int(digest.Sum32()%1000)
+}
+
 func hostFor(name string) string {
-	return strings.ToLower(name + "-exec-01ABC." + previewDomain)
+	return hostOnPort(previewPort(name))
+}
+
+func hostOnPort(port int) string {
+	return strings.ToLower(fmt.Sprintf(
+		"%s-preview-address-%s-%d.%s",
+		previewReference, previewExecution, port, previewDomain,
+	))
 }
 
 func tokenFrom(t *testing.T, url string) string {

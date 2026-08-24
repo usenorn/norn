@@ -240,12 +240,13 @@ func TestNobodyOutsideTheWorkspaceCanMintAShareLinkOfTheirOwn(t *testing.T) {
 	h := newHarness(t)
 	h.holds()
 	h.visible(entity.ErrExecutionNotFound)
-	h.stored["web"] = entity.PreviewSession{
+	h.stored[previewPort("web")] = entity.PreviewSession{
 		ID:          uuid.New(),
 		ExecutionID: h.execution.ID,
 		WorkspaceID: h.workspaceID,
 		Name:        "web",
 		Service:     "web",
+		Port:        previewPort("web"),
 		Mode:        entity.PreviewBySubdomain,
 		Host:        hostFor("web"),
 		State:       entity.PreviewOpen,
@@ -335,5 +336,35 @@ func TestAViewerWhoCameThroughAShareLinkIsRecordedAsHavingDoneSo(t *testing.T) {
 				"reading it cannot tell which link to withdraw",
 			last.Detail,
 		)
+	}
+}
+
+func TestAShareLinkOutlivesTheNameThePreviewWasOpenedUnder(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+	h.visible(nil)
+
+	const port = 43000
+
+	h.reportedOn(t, "issue-description", port, channelv1.PreviewOpen)
+
+	minted := h.shared(t, "issue-description", "")
+
+	h.reportedOn(t, "issue-description", port, channelv1.PreviewClosed)
+	h.reportedOn(t, "web", port, channelv1.PreviewOpen)
+
+	access, err := h.service.Redeem(
+		context.Background(), hostOnPort(port), tokenFrom(t, minted.URL), "",
+	)
+	if err != nil {
+		t.Fatalf(
+			"a link shared outside the workspace stopped working because the run re-opened "+
+				"the same port under another name: %v",
+			err,
+		)
+	}
+
+	if access.Verdict != entity.PreviewAllowed {
+		t.Fatalf("the shared link was answered %q", access.Verdict)
 	}
 }

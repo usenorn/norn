@@ -153,3 +153,93 @@ func TestARunNeverHoldsMorePreviewsThanTheMachineWouldGiveIt(t *testing.T) {
 
 	refusedWith(t, err, entity.ErrPreviewCrowded)
 }
+
+func TestThePortDecidesTheAddressSoRenamingAPreviewMovesNobody(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+
+	const port = 43000
+
+	opened := h.reportedOn(t, "issue-description", port, channelv1.PreviewOpen)
+	h.reportedOn(t, "issue-description", port, channelv1.PreviewClosed)
+	reopened := h.reportedOn(t, "web", port, channelv1.PreviewOpen)
+
+	if reopened.Host != opened.Host {
+		t.Fatalf(
+			"re-opening port %d under another name moved it from %q to %q. The address is the "+
+				"run and the port, so a link somebody already sent on has to keep working",
+			port, opened.Host, reopened.Host,
+		)
+	}
+
+	if reopened.ID != opened.ID {
+		t.Fatal(
+			"re-opening the same port made a second preview. Every share link minted against " +
+				"the first one is bound to a preview the address no longer answers as",
+		)
+	}
+
+	if reopened.Name != "web" {
+		t.Fatalf(
+			"the preview is still called %q. The name the agent chose decides nothing about "+
+				"the address, but it is what a person reads on the run",
+			reopened.Name,
+		)
+	}
+}
+
+func TestTwoPortsOnOneRunAreTwoPreviewsAtTwoAddresses(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+
+	web := h.reportedOn(t, "web", 43000, channelv1.PreviewOpen)
+	api := h.reportedOn(t, "api", 5173, channelv1.PreviewOpen)
+
+	if web.Host == api.Host {
+		t.Fatalf(
+			"both ports answer at %q, so whichever the gateway picks the other is unreachable",
+			web.Host,
+		)
+	}
+
+	if web.ID == api.ID {
+		t.Fatal("two ports were recorded as one preview")
+	}
+}
+
+func TestAPreviewWithoutAPortIsRefusedBecauseNoAddressFollowsFromIt(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+
+	err := h.service.Reported(
+		context.Background(), h.runner, previewOnPort("web", "web", 0, channelv1.PreviewOpen),
+	)
+	if err == nil {
+		t.Fatal(
+			"a preview carrying no port was accepted. The port is half of what the address is " +
+				"derived from, so the run would take an address that names nothing",
+		)
+	}
+}
+
+func TestRenamingTheIssueMidRunDoesNotMoveAnAddressAlreadyHandedOut(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+
+	const port = 43000
+
+	opened := h.reportedOn(t, "web", port, channelv1.PreviewOpen)
+
+	h.execution.IssueTitle = "Something else entirely"
+
+	again := h.reportedOn(t, "web", port, channelv1.PreviewOpen)
+
+	if again.Host != opened.Host {
+		t.Fatalf(
+			"editing the issue title moved the preview from %q to %q. The machine still names "+
+				"the address it was given at the start, so the two would stop agreeing and "+
+				"every link already shared would resolve nowhere",
+			opened.Host, again.Host,
+		)
+	}
+}
