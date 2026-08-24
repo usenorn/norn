@@ -50,7 +50,7 @@
 							</time>
 						{/if}
 					</div>
-					<p class="min-w-0 text-xs leading-normal whitespace-pre-wrap text-ink-900 text-pretty">
+					<p class="min-w-0 text-xs leading-normal break-words whitespace-pre-wrap text-ink-900 text-pretty">
 						{transcriptText(entry)}
 					</p>
 				</li>

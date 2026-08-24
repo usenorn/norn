@@ -1,4 +1,5 @@
 import type { components } from "$lib/api/dashboard.gen";
+import type { CodeLink } from "$lib/source-control/source-control";
 
 export type Execution = components["schemas"]["Execution"];
 export type ExecutionState = components["schemas"]["ExecutionState"];
@@ -11,6 +12,15 @@ export type ExecutionPreview = components["schemas"]["ExecutionPreview"];
 export type ExecutionLogEntry = components["schemas"]["ExecutionLogEntry"];
 export type ExecutionTranscriptEntry = components["schemas"]["ExecutionTranscriptEntry"];
 export type IssueQuestion = components["schemas"]["IssueQuestion"];
+export type ExecutionChangeSet = components["schemas"]["ExecutionChangeSet"];
+export type ExecutionRepositoryChange = components["schemas"]["ExecutionRepositoryChange"];
+export type ExecutionValidation = components["schemas"]["ExecutionValidation"];
+export type ExecutionPreviewDetail = components["schemas"]["ExecutionPreviewDetail"];
+export type PreviewShareLink = components["schemas"]["PreviewShareLink"];
+export type ExecutionSummary = components["schemas"]["ExecutionSummary"];
+export type ExecutionChangeSummary = components["schemas"]["ExecutionChangeSummary"];
+export type IssueChangeSet = components["schemas"]["IssueChangeSet"];
+export type IssueRepositoryChange = components["schemas"]["IssueRepositoryChange"];
 
 export type RunView =
 	| { kind: "loading" }
@@ -21,20 +31,22 @@ export type RunView =
 			execution: Execution;
 			timeline: ExecutionEvent[];
 			services: ExecutionService[];
-			previews: ExecutionPreview[];
+			previews: ExecutionPreviewDetail[];
 			runner?: ExecutionRunner;
 			questions: IssueQuestion[];
 			transcript: ExecutionTranscriptEntry[];
 			logs: ExecutionLogEntry[];
 			transcriptCursor?: number;
 			logCursor?: number;
+			changeset?: ExecutionChangeSet;
+			codeLinks: CodeLink[];
 	  };
-
-export type RunCost = { kind: "unrecorded" } | { kind: "known"; text: string };
 
 export const chunkPageSize = 8;
 
 export const timelinePageSize = 100;
+
+export const timelinePreviewSize = 50;
 
 const working: ExecutionState[] = ["preparing", "running", "finalizing"];
 
@@ -76,6 +88,21 @@ export function stateLabel(state: ExecutionState): string {
 			return "Cancelled";
 		case "interrupted":
 			return "Interrupted";
+	}
+}
+
+export function elapsedLabel(state: ExecutionState): string {
+	if (isWorking(state)) return "running for";
+	if (isSettled(state)) return "ran for";
+
+	switch (state) {
+		case "queued":
+		case "leased":
+		case "queued_for_resume":
+		case "waiting_for_input":
+			return "waiting for";
+		default:
+			return "open for";
 	}
 }
 
@@ -165,6 +192,14 @@ export function canRetain(execution: Execution): boolean {
 	return execution.state === "awaiting_review";
 }
 
+export function canApprove(execution: Execution): boolean {
+	return execution.state === "awaiting_review";
+}
+
+export function canRequestChanges(execution: Execution): boolean {
+	return execution.state === "awaiting_review";
+}
+
 export function blockingQuestion(questions: IssueQuestion[]): IssueQuestion | undefined {
 	return questions.find(
 		(question) => question.blocking && question.state === "asked" && !question.expired
@@ -176,7 +211,12 @@ export type RunFailure =
 	| { kind: "finished" }
 	| { kind: "unfinished" }
 	| { kind: "not_reviewable" }
+	| { kind: "self_approval" }
 	| { kind: "no_runner" }
+	| { kind: "preview_closed" }
+	| { kind: "preview_not_routable" }
+	| { kind: "share_crowded" }
+	| { kind: "share_gone" }
 	| { kind: "gone" }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
@@ -195,8 +235,19 @@ export function readRunFailure(error: unknown): RunFailure {
 			return { kind: "unfinished" };
 		case "execution_not_reviewable":
 			return { kind: "not_reviewable" };
+		case "execution_self_approval":
+			return { kind: "self_approval" };
 		case "execution_no_runner":
 			return { kind: "no_runner" };
+		case "preview_closed":
+			return { kind: "preview_closed" };
+		case "preview_not_routable":
+			return { kind: "preview_not_routable" };
+		case "preview_share_crowded":
+			return { kind: "share_crowded" };
+		case "preview_share_expired":
+		case "preview_share_revoked":
+			return { kind: "share_gone" };
 		default:
 			break;
 	}
@@ -217,8 +268,18 @@ export function runFailureMessage(failure: RunFailure): string {
 			return "This run has not finished, so it cannot be started again yet.";
 		case "not_reviewable":
 			return "This run is not waiting to be reviewed.";
+		case "self_approval":
+			return "A machine may not accept its own work. Somebody else has to review this run.";
 		case "no_runner":
 			return "This agent has no machine to hand the work to.";
+		case "preview_closed":
+			return "This preview has been closed, so there is nothing left to share.";
+		case "preview_not_routable":
+			return "This server serves no preview domain, so there is no address to share.";
+		case "share_crowded":
+			return "This preview already has as many share links as norn keeps. Revoke one first.";
+		case "share_gone":
+			return "That link is already gone.";
 		case "gone":
 			return "This run is no longer here.";
 		case "forbidden":
@@ -309,10 +370,6 @@ export function slotLine(runner: ExecutionRunner | undefined): string | undefine
 	if (!runner.load.connected) return "offline";
 
 	return `${runner.load.used} of ${runner.load.capacity} slots in use`;
-}
-
-export function costLine(cost: RunCost): string {
-	return cost.kind === "known" ? cost.text : "Not recorded yet";
 }
 
 export function eventLabel(kind: ExecutionEventKind): string {
@@ -407,3 +464,283 @@ export function transcriptText(entry: ExecutionTranscriptEntry): string {
 
 	return JSON.stringify(payload);
 }
+
+export type ChangeTotals = {
+	repositories: number;
+	commits: number;
+	additions: number;
+	deletions: number;
+	filesChanged: number;
+};
+
+export function changeTotals(changes: ExecutionRepositoryChange[]): ChangeTotals {
+	return changes.reduce(
+		(running, change) => ({
+			repositories: running.repositories + 1,
+			commits: running.commits + change.commits,
+			additions: running.additions + change.additions,
+			deletions: running.deletions + change.deletions,
+			filesChanged: running.filesChanged + change.filesChanged,
+		}),
+		{ repositories: 0, commits: 0, additions: 0, deletions: 0, filesChanged: 0 }
+	);
+}
+
+function counted(amount: number, one: string, many: string): string {
+	return `${amount} ${amount === 1 ? one : many}`;
+}
+
+export function diffStatLine(change: {
+	additions: number;
+	deletions: number;
+	filesChanged: number;
+}): string {
+	return `+${change.additions} −${change.deletions} · ${counted(change.filesChanged, "file", "files")}`;
+}
+
+export function changeStatLine(totals: ChangeTotals): string {
+	if (totals.repositories === 0) return "Nothing changed.";
+
+	return [
+		counted(totals.commits, "commit", "commits"),
+		`across ${counted(totals.repositories, "repository", "repositories")}`,
+		`· ${diffStatLine(totals)}`,
+	].join(" ");
+}
+
+export function noChangesLine(execution: Execution): string {
+	if (isSettled(execution.state) || execution.state === "approved") {
+		return "This run reported nothing it changed.";
+	}
+
+	if (execution.state === "awaiting_review") {
+		return "The machine reported no repository it touched.";
+	}
+
+	return "Nothing yet. What the run changed appears here once the coding agent has finished.";
+}
+
+export type PullRequestReach =
+	| { kind: "linked"; link: CodeLink }
+	| { kind: "address"; url: string }
+	| { kind: "none" };
+
+export function pullRequestReach(
+	change: ExecutionRepositoryChange,
+	links: CodeLink[]
+): PullRequestReach {
+	if (change.codeLinkId) {
+		const link = links.find((held) => held.id === change.codeLinkId);
+
+		if (link) return { kind: "linked", link };
+	}
+
+	if (change.pullRequestUrl) return { kind: "address", url: change.pullRequestUrl };
+
+	return { kind: "none" };
+}
+
+export function noPullRequestLine(change: ExecutionRepositoryChange): string {
+	if (change.branch) return `Pushed to ${change.branch}. No pull request was opened.`;
+
+	return "No pull request was opened.";
+}
+
+export type DiffReach = { kind: "available"; artifactId: string } | { kind: "absent" };
+
+export function diffReach(change: ExecutionRepositoryChange): DiffReach {
+	if (change.diffArtifactId) return { kind: "available", artifactId: change.diffArtifactId };
+
+	return { kind: "absent" };
+}
+
+export const noDiffLine =
+	"The full diff was not kept for this repository. The branch still has every commit.";
+
+export type DiffLineKind = "add" | "remove" | "context";
+
+export type DiffLine = { kind: DiffLineKind; text: string };
+
+export type DiffHunk = { header: string; lines: DiffLine[] };
+
+export type DiffFile = {
+	path: string;
+	additions: number;
+	deletions: number;
+	hunks: DiffHunk[];
+	binary: boolean;
+};
+
+export type DiffView =
+	| { kind: "idle" }
+	| { kind: "loading" }
+	| { kind: "absent" }
+	| { kind: "failed"; message: string }
+	| { kind: "ready"; files: DiffFile[]; truncated: boolean };
+
+export const diffFailedLine =
+	"The diff could not be read. It may have been swept with the rest of this run's uploads.";
+
+export const diffTruncatedLine =
+	"This is the beginning of the diff. Download it to read the rest.";
+
+function pathOfDiffHeader(line: string): string {
+	const parts = line.split(" ");
+	const named = parts.at(-1) ?? "";
+
+	return named.startsWith("b/") ? named.slice(2) : named;
+}
+
+export function parseDiff(patch: string): DiffFile[] {
+	const files: DiffFile[] = [];
+
+	let file: DiffFile | undefined;
+	let hunk: DiffHunk | undefined;
+
+	for (const line of patch.split("\n")) {
+		if (line.startsWith("diff --git ")) {
+			file = { path: pathOfDiffHeader(line), additions: 0, deletions: 0, hunks: [], binary: false };
+			hunk = undefined;
+			files.push(file);
+
+			continue;
+		}
+
+		if (!file) continue;
+
+		if (line.startsWith("Binary files ") || line.startsWith("GIT binary patch")) {
+			file.binary = true;
+
+			continue;
+		}
+
+		if (line.startsWith("+++ b/")) {
+			file.path = line.slice(6);
+
+			continue;
+		}
+
+		if (line.startsWith("@@")) {
+			hunk = { header: line, lines: [] };
+			file.hunks.push(hunk);
+
+			continue;
+		}
+
+		if (!hunk) continue;
+
+		if (line.startsWith("+")) {
+			file.additions += 1;
+			hunk.lines.push({ kind: "add", text: line.slice(1) });
+
+			continue;
+		}
+
+		if (line.startsWith("-")) {
+			file.deletions += 1;
+			hunk.lines.push({ kind: "remove", text: line.slice(1) });
+
+			continue;
+		}
+
+		if (line.startsWith("\\")) continue;
+
+		hunk.lines.push({ kind: "context", text: line.startsWith(" ") ? line.slice(1) : line });
+	}
+
+	return files;
+}
+
+export function validationLabel(status: ExecutionValidation["status"]): string {
+	switch (status) {
+		case "passed":
+			return "Passed";
+		case "failed":
+			return "Failed";
+		case "skipped":
+			return "Skipped";
+	}
+}
+
+export type RetentionClock =
+	| { kind: "deciding" }
+	| { kind: "unsaid" }
+	| { kind: "holding"; until: string }
+	| { kind: "given_back"; at: string };
+
+export function retentionClock(execution: Execution, now: string): RetentionClock {
+	if (!execution.keepUntil) {
+		return execution.state === "awaiting_review" ? { kind: "deciding" } : { kind: "unsaid" };
+	}
+
+	if (new Date(execution.keepUntil).getTime() <= new Date(now).getTime()) {
+		return { kind: "given_back", at: execution.keepUntil };
+	}
+
+	return { kind: "holding", until: execution.keepUntil };
+}
+
+export function retentionLine(clock: RetentionClock, when: string): string {
+	switch (clock.kind) {
+		case "deciding":
+			return "This machine is holding the workspace and its previews while you decide.";
+		case "unsaid":
+			return "This machine has not said when it gives the workspace and its previews back.";
+		case "holding":
+			return `The workspace and its previews go at ${when}.`;
+		case "given_back":
+			return `The workspace and its previews went at ${when}. Everything on this page stays.`;
+	}
+}
+
+export function shouldShowRetention(execution: Execution): boolean {
+	return (
+		execution.state === "awaiting_review" ||
+		execution.state === "approved" ||
+		isSettled(execution.state)
+	);
+}
+
+export type ShareStanding = "live" | "expired" | "revoked";
+
+export function shareStanding(link: PreviewShareLink, now: string): ShareStanding {
+	if (link.revokedAt) return "revoked";
+	if (new Date(link.expiresAt).getTime() <= new Date(now).getTime()) return "expired";
+
+	return "live";
+}
+
+export function shareStandingLabel(standing: ShareStanding): string {
+	switch (standing) {
+		case "live":
+			return "Live";
+		case "expired":
+			return "Expired";
+		case "revoked":
+			return "Revoked";
+	}
+}
+
+export function shareUseLine(link: PreviewShareLink): string {
+	if (link.uses === 0) return "Nobody has opened it";
+
+	return `Opened ${counted(link.uses, "time", "times")}`;
+}
+
+export const shareOnceLine =
+	"This address is answered once and never again. Norn keeps only its fingerprint.";
+
+export const noShareLinksLine = "Nobody outside the workspace can reach this preview.";
+
+export const shareLifetimes = [
+	{ label: "1 hour", seconds: 3600 },
+	{ label: "8 hours", seconds: 28_800 },
+	{ label: "1 day", seconds: 86_400 },
+	{ label: "7 days", seconds: 604_800 },
+];
+
+export const retainLongerSeconds = 3600;
+
+export const feedbackMaxLength = 4000;
+
+export const diffMaxBytes = 512 * 1024;

@@ -150,17 +150,13 @@ func contains(values []string, wanted string) bool {
 
 func statements() map[string]string {
 	return map[string]string{
-		"insertCodebaseQuery":             insertCodebaseQuery,
-		"codebaseByIDQuery":               codebaseByIDQuery,
-		"liveCodebaseByRootQuery":         liveCodebaseByRootQuery,
-		"codebasesByRunnerQuery":          codebasesByRunnerQuery,
-		"codebasesByAgentQuery":           codebasesByAgentQuery,
-		"replaceCodebaseQuery":            replaceCodebaseQuery,
-		"confirmCodebaseQuery":            confirmCodebaseQuery,
-		"disconnectCodebaseQuery":         disconnectCodebaseQuery,
-		"recordCodebaseSeenQuery":         recordCodebaseSeenQuery,
-		"deleteCodebaseRepositoriesQuery": deleteCodebaseRepositoriesQuery,
-		"insertCodebaseRepositoryQuery":   insertCodebaseRepositoryQuery,
-		"codebaseRepositoriesQuery":       codebaseRepositoriesQuery,
+		"insertCodebaseQuery":     insertCodebaseQuery,
+		"codebaseByIDQuery":       codebaseByIDQuery,
+		"liveCodebaseByRootQuery": liveCodebaseByRootQuery,
+		"codebasesByRunnerQuery":  codebasesByRunnerQuery,
+		"codebasesByAgentQuery":   codebasesByAgentQuery,
+		"replaceCodebaseQuery":    replaceCodebaseQuery,
+		"confirmCodebaseQuery":    confirmCodebaseQuery,
+		"disconnectCodebaseQuery": disconnectCodebaseQuery,
 	}
 }

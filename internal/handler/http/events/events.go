@@ -258,6 +258,14 @@ func translate(event entity.Event) json.RawMessage {
 		}
 
 		return marshal(dashboard.ExecutionTimelineEvent(entry))
+	case entity.EventExecutionChangeSet:
+		var changeset entity.ExecutionChangeSet
+
+		if err := json.Unmarshal(event.Payload, &changeset); err != nil {
+			return json.RawMessage("{}")
+		}
+
+		return marshal(dashboard.ChangeSetEvent(changeset))
 	case entity.EventQuestionAsked, entity.EventQuestionSettled:
 		var question entity.IssueQuestion
 

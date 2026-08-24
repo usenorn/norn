@@ -8,10 +8,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 
+	dbpostgres "github.com/usenorn/norn/internal/db/postgres"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
@@ -112,23 +115,6 @@ WITH updated AS (
 SELECT` + codebaseColumns + `
 FROM updated c
 JOIN workspace_runners r ON r.id = c.runner_id`
-
-const recordCodebaseSeenQuery = `
-UPDATE workspace_codebases SET last_seen_at = $2 WHERE id = $1`
-
-const deleteCodebaseRepositoriesQuery = `
-DELETE FROM workspace_codebase_repositories WHERE codebase_id = $1`
-
-const insertCodebaseRepositoryQuery = `
-INSERT INTO workspace_codebase_repositories
-    (codebase_id, ordinal, name, rel_path, default_branch, remote_hash, remote_host, remote_path_tail)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-
-const codebaseRepositoriesQuery = `
-SELECT codebase_id, name, rel_path, default_branch, remote_hash, remote_host, remote_path_tail
-FROM workspace_codebase_repositories
-WHERE codebase_id = ANY($1::uuid[])
-ORDER BY codebase_id, ordinal`
 
 type codebaseRepository struct {
 	db *postgres.Client
@@ -264,38 +250,30 @@ func (r *codebaseRepository) hydrate(ctx context.Context, codebases []entity.Cod
 		ids = append(ids, codebase.ID.String())
 	}
 
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, codebaseRepositoriesQuery, types.StringArray(ids))
+	models, err := dbpostgres.WorkspaceCodebaseRepositories(
+		dbpostgres.WorkspaceCodebaseRepositoryWhere.CodebaseID.IN(ids),
+		qm.OrderBy(
+			dbpostgres.WorkspaceCodebaseRepositoryColumns.CodebaseID+", "+
+				dbpostgres.WorkspaceCodebaseRepositoryColumns.Ordinal,
+		),
+	).All(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return fmt.Errorf("list codebase repositories: %w", err)
 	}
 
-	defer func() { _ = rows.Close() }()
-
 	held := make(map[string][]entity.CodebaseRepository, len(codebases))
 
-	for rows.Next() {
-		var (
-			codebaseID string
-			repository entity.CodebaseRepository
-		)
-
-		if err := rows.Scan(
-			&codebaseID,
-			&repository.Name,
-			&repository.RelPath,
-			&repository.DefaultBranch,
-			&repository.Remote.Hash,
-			&repository.Remote.Host,
-			&repository.Remote.PathTail,
-		); err != nil {
-			return fmt.Errorf("scan codebase repository: %w", err)
-		}
-
-		held[codebaseID] = append(held[codebaseID], repository)
-	}
-
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("iterate codebase repositories: %w", err)
+	for _, model := range models {
+		held[model.CodebaseID] = append(held[model.CodebaseID], entity.CodebaseRepository{
+			Name:          model.Name,
+			RelPath:       model.RelPath,
+			DefaultBranch: model.DefaultBranch,
+			Remote: entity.RemoteFingerprint{
+				Hash:     model.RemoteHash,
+				Host:     model.RemoteHost,
+				PathTail: model.RemotePathTail,
+			},
+		})
 	}
 
 	for index := range codebases {
@@ -312,25 +290,25 @@ func (r *codebaseRepository) writeRepositories(
 	codebaseID uuid.UUID,
 	repositories []entity.CodebaseRepository,
 ) error {
-	if _, err := r.db.Querier(ctx).ExecContext(
-		ctx, deleteCodebaseRepositoriesQuery, codebaseID.String(),
-	); err != nil {
+	if _, err := dbpostgres.WorkspaceCodebaseRepositories(
+		dbpostgres.WorkspaceCodebaseRepositoryWhere.CodebaseID.EQ(codebaseID.String()),
+	).DeleteAll(ctx, r.db.Querier(ctx)); err != nil {
 		return fmt.Errorf("clear codebase repositories: %w", err)
 	}
 
 	for ordinal, repository := range repositories {
-		if _, err := r.db.Querier(ctx).ExecContext(
-			ctx,
-			insertCodebaseRepositoryQuery,
-			codebaseID.String(),
-			ordinal,
-			repository.Name,
-			repository.RelPath,
-			repository.DefaultBranch,
-			repository.Remote.Hash,
-			repository.Remote.Host,
-			repository.Remote.PathTail,
-		); err != nil {
+		model := &dbpostgres.WorkspaceCodebaseRepository{
+			CodebaseID:     codebaseID.String(),
+			Ordinal:        ordinal,
+			Name:           repository.Name,
+			RelPath:        repository.RelPath,
+			DefaultBranch:  repository.DefaultBranch,
+			RemoteHash:     repository.Remote.Hash,
+			RemoteHost:     repository.Remote.Host,
+			RemotePathTail: repository.Remote.PathTail,
+		}
+
+		if err := model.Insert(ctx, r.db.Querier(ctx), boil.Infer()); err != nil {
 			return fmt.Errorf("insert codebase repository: %w", err)
 		}
 	}
@@ -547,9 +525,11 @@ func (r *codebaseRepository) RecordSeen(
 	codebaseID uuid.UUID,
 	seenAt time.Time,
 ) error {
-	if _, err := r.db.Querier(ctx).ExecContext(
-		ctx, recordCodebaseSeenQuery, codebaseID.String(), seenAt,
-	); err != nil {
+	if _, err := dbpostgres.WorkspaceCodebases(
+		dbpostgres.WorkspaceCodebasisWhere.ID.EQ(codebaseID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceCodebasisColumns.LastSeenAt: seenAt,
+	}); err != nil {
 		return fmt.Errorf("record codebase seen: %w", err)
 	}
 

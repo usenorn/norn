@@ -150,11 +150,7 @@ func contains(values []string, wanted string) bool {
 
 func statements() map[string]string {
 	return map[string]string{
-		"adoptGatewayQuery":        adoptGatewayQuery,
-		"createGatewayQuery":       createGatewayQuery,
-		"gatewayByCredentialQuery": gatewayByCredentialQuery,
-		"gatewaysQuery":            gatewaysQuery,
-		"revokeGatewayQuery":       revokeGatewayQuery,
-		"gatewaySeenQuery":         gatewaySeenQuery,
+		"adoptGatewayQuery":  adoptGatewayQuery,
+		"revokeGatewayQuery": revokeGatewayQuery,
 	}
 }

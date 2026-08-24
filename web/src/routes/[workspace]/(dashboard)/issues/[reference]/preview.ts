@@ -154,6 +154,36 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
+					changeset: {
+						issueId: "00000000-0000-4000-8000-000000000501",
+						repositories: [
+							{
+								executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+								attempt: 1,
+								repository: "northwind",
+								branch: "norn/DSG-14/northwind",
+								commits: 3,
+								additions: 412,
+								deletions: 77,
+								filesChanged: 9,
+								diffArtifactId: "00000000-0000-4000-8000-000000001401",
+								pullRequestUrl: "https://github.com/northwind/api/pull/231",
+								codeLinkId: "00000000-0000-4000-8000-0000000000d1",
+								reportedAt: "2026-08-23T09:40:00Z",
+							},
+							{
+								executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+								attempt: 1,
+								repository: "northwind-web",
+								branch: "norn/DSG-14/northwind-web",
+								commits: 2,
+								additions: 689,
+								deletions: 12,
+								filesChanged: 4,
+								reportedAt: "2026-08-23T09:40:00Z",
+							},
+						],
+					},
 			runs: [
 					{
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",

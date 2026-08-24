@@ -146,6 +146,20 @@ func (mr *MockExecutionsMockRecorder) Held(ctx, runner, executionID any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Held", reflect.TypeOf((*MockExecutions)(nil).Held), ctx, runner, executionID)
 }
 
+// Kept mocks base method.
+func (m *MockExecutions) Kept(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Kept", ctx, runner, message)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Kept indicates an expected call of Kept.
+func (mr *MockExecutionsMockRecorder) Kept(ctx, runner, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kept", reflect.TypeOf((*MockExecutions)(nil).Kept), ctx, runner, message)
+}
+
 // Leased mocks base method.
 func (m *MockExecutions) Leased(ctx context.Context, runnerID uuid.UUID) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -159,6 +173,21 @@ func (m *MockExecutions) Leased(ctx context.Context, runnerID uuid.UUID) ([]stri
 func (mr *MockExecutionsMockRecorder) Leased(ctx, runnerID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Leased", reflect.TypeOf((*MockExecutions)(nil).Leased), ctx, runnerID)
+}
+
+// List mocks base method.
+func (m *MockExecutions) List(ctx context.Context, workspaceID uuid.UUID, page entity.ExecutionPage) ([]entity.ExecutionListing, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", ctx, workspaceID, page)
+	ret0, _ := ret[0].([]entity.ExecutionListing)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// List indicates an expected call of List.
+func (mr *MockExecutionsMockRecorder) List(ctx, workspaceID, page any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockExecutions)(nil).List), ctx, workspaceID, page)
 }
 
 // ListByIssue mocks base method.

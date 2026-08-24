@@ -86,6 +86,7 @@ type ExecutionValidation struct {
 }
 
 type ExecutionChangeSet struct {
+	ExecutionID string
 	Result      ExecutionResult
 	Changes     []ExecutionChange
 	Validations []ExecutionValidation
@@ -93,6 +94,20 @@ type ExecutionChangeSet struct {
 
 func (c ExecutionChangeSet) Empty() bool {
 	return c.Result.ExecutionID == "" && len(c.Changes) == 0 && len(c.Validations) == 0
+}
+
+type ExecutionChangeSummary struct {
+	Repositories int
+	Commits      int
+	Additions    int
+	Deletions    int
+	FilesChanged int
+	PullRequests int
+}
+
+type ExecutionListing struct {
+	Execution Execution
+	Change    ExecutionChangeSummary
 }
 
 type IssueRepositoryChange struct {

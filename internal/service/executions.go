@@ -51,6 +51,9 @@ type Executions interface {
 		executionID string,
 	) (entity.Execution, error)
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Execution, error)
+	List(
+		ctx context.Context, workspaceID uuid.UUID, page entity.ExecutionPage,
+	) ([]entity.ExecutionListing, error)
 	Timeline(
 		ctx context.Context,
 		workspaceID uuid.UUID,
@@ -78,6 +81,7 @@ type Executions interface {
 	Declined(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Reported(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Observed(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
+	Kept(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Held(ctx context.Context, runner entity.Runner, executionID string) (entity.Execution, error)
 	Renew(ctx context.Context, runner entity.Runner) error
 	Leased(ctx context.Context, runnerID uuid.UUID) ([]string, error)

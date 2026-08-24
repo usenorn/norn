@@ -7,9 +7,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 
+	dbpostgres "github.com/usenorn/norn/internal/db/postgres"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
@@ -28,15 +31,6 @@ const gatewayColumns = `
        created_at,
        updated_at`
 
-const createGatewayQuery = `
-WITH created AS (
-    INSERT INTO preview_gateways (name, secret_hash, status)
-    VALUES ($1, $2, $3)
-    RETURNING *
-)
-SELECT` + gatewayColumns + `
-FROM created`
-
 const adoptGatewayQuery = `
 WITH adopted AS (
     INSERT INTO preview_gateways (name, secret_hash, status)
@@ -50,16 +44,6 @@ WITH adopted AS (
 SELECT` + gatewayColumns + `
 FROM adopted`
 
-const gatewayByCredentialQuery = `
-SELECT` + gatewayColumns + `
-FROM preview_gateways
-WHERE secret_hash = $1`
-
-const gatewaysQuery = `
-SELECT` + gatewayColumns + `
-FROM preview_gateways
-ORDER BY name, id`
-
 const revokeGatewayQuery = `
 WITH revoked AS (
     UPDATE preview_gateways
@@ -70,10 +54,41 @@ WITH revoked AS (
 SELECT` + gatewayColumns + `
 FROM revoked`
 
-const gatewaySeenQuery = `
-UPDATE preview_gateways
-SET last_seen_at = $2, updated_at = now()
-WHERE id = $1`
+func gatewayOf(model *dbpostgres.PreviewGateway) (entity.PreviewGateway, error) {
+	id, err := uuid.Parse(model.ID)
+	if err != nil {
+		return entity.PreviewGateway{}, fmt.Errorf("parse preview gateway id: %w", err)
+	}
+
+	gateway := entity.PreviewGateway{
+		ID:        id,
+		Name:      model.Name,
+		Status:    entity.PreviewGatewayStatus(model.Status),
+		CreatedAt: model.CreatedAt,
+		UpdatedAt: model.UpdatedAt,
+	}
+
+	if model.LastSeenAt.Valid {
+		gateway.LastSeenAt = model.LastSeenAt.Time
+	}
+
+	return gateway, nil
+}
+
+func gatewaysOf(models dbpostgres.PreviewGatewaySlice) ([]entity.PreviewGateway, error) {
+	gateways := make([]entity.PreviewGateway, 0, len(models))
+
+	for _, model := range models {
+		gateway, err := gatewayOf(model)
+		if err != nil {
+			return nil, err
+		}
+
+		gateways = append(gateways, gateway)
+	}
+
+	return gateways, nil
+}
 
 type gatewayRepository struct {
 	db *postgres.Client
@@ -92,11 +107,13 @@ func (r *gatewayRepository) Create(
 	gateway entity.PreviewGateway,
 	secretHash []byte,
 ) (entity.PreviewGateway, error) {
-	created, err := scanGateway(r.db.Querier(ctx).QueryRowContext(
-		ctx, createGatewayQuery, gateway.Name, secretHash, string(entity.PreviewGatewayActive),
-	))
+	model := &dbpostgres.PreviewGateway{
+		Name:       gateway.Name,
+		SecretHash: secretHash,
+		Status:     string(entity.PreviewGatewayActive),
+	}
 
-	if err != nil {
+	if err := model.Insert(ctx, r.db.Querier(ctx), boil.Infer()); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) &&
 			pgErr.Code == uniqueViolationCode &&
@@ -107,7 +124,7 @@ func (r *gatewayRepository) Create(
 		return entity.PreviewGateway{}, fmt.Errorf("create a preview gateway: %w", err)
 	}
 
-	return created, nil
+	return gatewayOf(model)
 }
 
 func (r *gatewayRepository) Adopt(
@@ -129,45 +146,31 @@ func (r *gatewayRepository) ByCredential(
 	ctx context.Context,
 	secretHash []byte,
 ) (entity.PreviewGateway, error) {
-	stored, err := scanGateway(r.db.Querier(ctx).QueryRowContext(
-		ctx, gatewayByCredentialQuery, secretHash,
-	))
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return entity.PreviewGateway{}, entity.ErrPreviewGatewayNotFound
-	}
-
+	model, err := dbpostgres.PreviewGateways(
+		dbpostgres.PreviewGatewayWhere.SecretHash.EQ(secretHash),
+	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.PreviewGateway{}, entity.ErrPreviewGatewayNotFound
+		}
+
 		return entity.PreviewGateway{}, fmt.Errorf("read a preview gateway: %w", err)
 	}
 
-	return stored, nil
+	return gatewayOf(model)
 }
 
 func (r *gatewayRepository) List(ctx context.Context) ([]entity.PreviewGateway, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, gatewaysQuery)
+	models, err := dbpostgres.PreviewGateways(
+		qm.OrderBy(
+			dbpostgres.PreviewGatewayColumns.Name+", "+dbpostgres.PreviewGatewayColumns.ID,
+		),
+	).All(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("list preview gateways: %w", err)
 	}
 
-	defer func() { _ = rows.Close() }()
-
-	gateways := make([]entity.PreviewGateway, 0)
-
-	for rows.Next() {
-		gateway, err := scanGateway(rows)
-		if err != nil {
-			return nil, fmt.Errorf("read a preview gateway: %w", err)
-		}
-
-		gateways = append(gateways, gateway)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("read preview gateways: %w", err)
-	}
-
-	return gateways, nil
+	return gatewaysOf(models)
 }
 
 func (r *gatewayRepository) Revoke(
@@ -194,9 +197,12 @@ func (r *gatewayRepository) Seen(
 	gatewayID uuid.UUID,
 	at time.Time,
 ) error {
-	if _, err := r.db.Querier(ctx).ExecContext(
-		ctx, gatewaySeenQuery, gatewayID.String(), at,
-	); err != nil {
+	if _, err := dbpostgres.PreviewGateways(
+		dbpostgres.PreviewGatewayWhere.ID.EQ(gatewayID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.PreviewGatewayColumns.LastSeenAt: at,
+		dbpostgres.PreviewGatewayColumns.UpdatedAt:  time.Now().UTC(),
+	}); err != nil {
 		return fmt.Errorf("record that a preview gateway called: %w", err)
 	}
 

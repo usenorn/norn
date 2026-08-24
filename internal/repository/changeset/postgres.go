@@ -5,9 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/aarondl/null/v8"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/google/uuid"
 
+	dbpostgres "github.com/usenorn/norn/internal/db/postgres"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
@@ -35,11 +39,6 @@ WITH upserted AS (
 )
 SELECT` + resultColumns + `
 FROM upserted`
-
-const resultQuery = `
-SELECT` + resultColumns + `
-FROM workspace_execution_results
-WHERE execution_id = $1`
 
 const changeColumns = `
        id,
@@ -86,22 +85,6 @@ WITH upserted AS (
 )
 SELECT` + changeColumns + `
 FROM upserted`
-
-const changeByRepositoryQuery = `
-SELECT` + changeColumns + `
-FROM workspace_execution_changes
-WHERE execution_id = $1 AND repository = $2`
-
-const changesQuery = `
-SELECT` + changeColumns + `
-FROM workspace_execution_changes
-WHERE execution_id = $1
-ORDER BY repository, id`
-
-const linkChangeQuery = `
-UPDATE workspace_execution_changes
-SET code_link_id = $2, updated_at = now()
-WHERE id = $1`
 
 const joinedChangeColumns = `
        c.id,
@@ -160,17 +143,6 @@ WITH upserted AS (
 SELECT` + validationColumns + `
 FROM upserted`
 
-const validationByCheckQuery = `
-SELECT` + validationColumns + `
-FROM workspace_execution_validations
-WHERE execution_id = $1 AND check_name = $2`
-
-const validationsQuery = `
-SELECT` + validationColumns + `
-FROM workspace_execution_validations
-WHERE execution_id = $1
-ORDER BY check_name, id`
-
 type changeSetRepository struct {
 	db *postgres.Client
 }
@@ -181,6 +153,138 @@ func New(db *postgres.Client) repository.ChangeSet {
 
 type scanner interface {
 	Scan(dest ...any) error
+}
+
+func resultOf(model *dbpostgres.WorkspaceExecutionResult) (entity.ExecutionResult, error) {
+	workspaceID, err := uuid.Parse(model.WorkspaceID)
+	if err != nil {
+		return entity.ExecutionResult{}, fmt.Errorf("parse workspace id: %w", err)
+	}
+
+	return entity.ExecutionResult{
+		ExecutionID: model.ExecutionID,
+		WorkspaceID: workspaceID,
+		Summary:     model.Summary,
+		ReportedAt:  model.ReportedAt,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
+	}, nil
+}
+
+func changeOf(model *dbpostgres.WorkspaceExecutionChange) (entity.ExecutionChange, error) {
+	id, err := uuid.Parse(model.ID)
+	if err != nil {
+		return entity.ExecutionChange{}, fmt.Errorf("parse execution change id: %w", err)
+	}
+
+	workspaceID, err := uuid.Parse(model.WorkspaceID)
+	if err != nil {
+		return entity.ExecutionChange{}, fmt.Errorf("parse workspace id: %w", err)
+	}
+
+	diffArtifactID, err := parseNullID(model.DiffArtifactID)
+	if err != nil {
+		return entity.ExecutionChange{}, fmt.Errorf("parse diff artifact id: %w", err)
+	}
+
+	codeLinkID, err := parseNullID(model.CodeLinkID)
+	if err != nil {
+		return entity.ExecutionChange{}, fmt.Errorf("parse code link id: %w", err)
+	}
+
+	return entity.ExecutionChange{
+		ID:             id,
+		ExecutionID:    model.ExecutionID,
+		WorkspaceID:    workspaceID,
+		Repository:     model.Repository,
+		Branch:         model.Branch,
+		BaseSHA:        model.BaseSha,
+		HeadSHA:        model.HeadSha,
+		Commits:        model.Commits,
+		Additions:      model.Additions,
+		Deletions:      model.Deletions,
+		FilesChanged:   model.FilesChanged,
+		DiffArtifactID: diffArtifactID,
+		PullRequestURL: model.PullRequestURL,
+		CodeLinkID:     codeLinkID,
+		ReportedAt:     model.ReportedAt,
+		CreatedAt:      model.CreatedAt,
+		UpdatedAt:      model.UpdatedAt,
+	}, nil
+}
+
+func changesOf(
+	models dbpostgres.WorkspaceExecutionChangeSlice,
+) ([]entity.ExecutionChange, error) {
+	changes := make([]entity.ExecutionChange, 0, len(models))
+
+	for _, model := range models {
+		change, err := changeOf(model)
+		if err != nil {
+			return nil, err
+		}
+
+		changes = append(changes, change)
+	}
+
+	return changes, nil
+}
+
+func validationOf(
+	model *dbpostgres.WorkspaceExecutionValidation,
+) (entity.ExecutionValidation, error) {
+	id, err := uuid.Parse(model.ID)
+	if err != nil {
+		return entity.ExecutionValidation{}, fmt.Errorf("parse execution validation id: %w", err)
+	}
+
+	workspaceID, err := uuid.Parse(model.WorkspaceID)
+	if err != nil {
+		return entity.ExecutionValidation{}, fmt.Errorf("parse workspace id: %w", err)
+	}
+
+	artifactID, err := parseNullID(model.ArtifactID)
+	if err != nil {
+		return entity.ExecutionValidation{}, fmt.Errorf("parse artifact id: %w", err)
+	}
+
+	return entity.ExecutionValidation{
+		ID:          id,
+		ExecutionID: model.ExecutionID,
+		WorkspaceID: workspaceID,
+		Check:       model.CheckName,
+		Status:      entity.ValidationStatus(model.Status),
+		Detail:      model.Detail,
+		ArtifactID:  artifactID,
+		ReportedAt:  model.ReportedAt,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
+	}, nil
+}
+
+func validationsOf(
+	models dbpostgres.WorkspaceExecutionValidationSlice,
+) ([]entity.ExecutionValidation, error) {
+	validations := make([]entity.ExecutionValidation, 0, len(models))
+
+	for _, model := range models {
+		validation, err := validationOf(model)
+		if err != nil {
+			return nil, err
+		}
+
+		validations = append(validations, validation)
+	}
+
+	return validations, nil
+}
+
+func parseNullID(value null.String) (uuid.UUID, error) {
+	if !value.Valid || value.String == "" {
+		return uuid.Nil, nil
+	}
+
+	return uuid.Parse(value.String)
 }
 
 func (r *changeSetRepository) SaveResult(
@@ -211,17 +315,16 @@ func (r *changeSetRepository) result(
 	ctx context.Context,
 	executionID string,
 ) (entity.ExecutionResult, error) {
-	stored, err := scanResult(r.db.Querier(ctx).QueryRowContext(ctx, resultQuery, executionID))
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return entity.ExecutionResult{}, entity.ErrExecutionResultNotFound
-	}
-
+	model, err := dbpostgres.FindWorkspaceExecutionResult(ctx, r.db.Querier(ctx), executionID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.ExecutionResult{}, entity.ErrExecutionResultNotFound
+		}
+
 		return entity.ExecutionResult{}, fmt.Errorf("read execution result: %w", err)
 	}
 
-	return stored, nil
+	return resultOf(model)
 }
 
 func (r *changeSetRepository) SaveChange(
@@ -261,14 +364,15 @@ func (r *changeSetRepository) change(
 	ctx context.Context,
 	executionID, repositoryName string,
 ) (entity.ExecutionChange, error) {
-	stored, err := scanChange(r.db.Querier(ctx).QueryRowContext(
-		ctx, changeByRepositoryQuery, executionID, repositoryName,
-	))
+	model, err := dbpostgres.WorkspaceExecutionChanges(
+		dbpostgres.WorkspaceExecutionChangeWhere.ExecutionID.EQ(executionID),
+		dbpostgres.WorkspaceExecutionChangeWhere.Repository.EQ(repositoryName),
+	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return entity.ExecutionChange{}, fmt.Errorf("read execution change: %w", err)
 	}
 
-	return stored, nil
+	return changeOf(model)
 }
 
 func (r *changeSetRepository) SaveValidation(
@@ -302,23 +406,27 @@ func (r *changeSetRepository) validation(
 	ctx context.Context,
 	executionID, check string,
 ) (entity.ExecutionValidation, error) {
-	stored, err := scanValidation(r.db.Querier(ctx).QueryRowContext(
-		ctx, validationByCheckQuery, executionID, check,
-	))
+	model, err := dbpostgres.WorkspaceExecutionValidations(
+		dbpostgres.WorkspaceExecutionValidationWhere.ExecutionID.EQ(executionID),
+		dbpostgres.WorkspaceExecutionValidationWhere.CheckName.EQ(check),
+	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return entity.ExecutionValidation{}, fmt.Errorf("read execution validation: %w", err)
 	}
 
-	return stored, nil
+	return validationOf(model)
 }
 
 func (r *changeSetRepository) LinkChange(
 	ctx context.Context,
 	changeID, codeLinkID uuid.UUID,
 ) error {
-	if _, err := r.db.Querier(ctx).ExecContext(
-		ctx, linkChangeQuery, changeID.String(), codeLinkID.String(),
-	); err != nil {
+	if _, err := dbpostgres.WorkspaceExecutionChanges(
+		dbpostgres.WorkspaceExecutionChangeWhere.ID.EQ(changeID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceExecutionChangeColumns.CodeLinkID: codeLinkID.String(),
+		dbpostgres.WorkspaceExecutionChangeColumns.UpdatedAt:  time.Now().UTC(),
+	}); err != nil {
 		return fmt.Errorf("attach a code link to an execution change: %w", err)
 	}
 
@@ -345,6 +453,7 @@ func (r *changeSetRepository) Get(
 	}
 
 	return entity.ExecutionChangeSet{
+		ExecutionID: executionID,
 		Result:      result,
 		Changes:     changes,
 		Validations: validations,
@@ -355,58 +464,36 @@ func (r *changeSetRepository) changes(
 	ctx context.Context,
 	executionID string,
 ) ([]entity.ExecutionChange, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, changesQuery, executionID)
+	models, err := dbpostgres.WorkspaceExecutionChanges(
+		dbpostgres.WorkspaceExecutionChangeWhere.ExecutionID.EQ(executionID),
+		qm.OrderBy(
+			dbpostgres.WorkspaceExecutionChangeColumns.Repository+", "+
+				dbpostgres.WorkspaceExecutionChangeColumns.ID,
+		),
+	).All(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("list execution changes: %w", err)
 	}
 
-	defer func() { _ = rows.Close() }()
-
-	changes := make([]entity.ExecutionChange, 0)
-
-	for rows.Next() {
-		change, err := scanChange(rows)
-		if err != nil {
-			return nil, fmt.Errorf("read an execution change: %w", err)
-		}
-
-		changes = append(changes, change)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("read execution changes: %w", err)
-	}
-
-	return changes, nil
+	return changesOf(models)
 }
 
 func (r *changeSetRepository) validations(
 	ctx context.Context,
 	executionID string,
 ) ([]entity.ExecutionValidation, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, validationsQuery, executionID)
+	models, err := dbpostgres.WorkspaceExecutionValidations(
+		dbpostgres.WorkspaceExecutionValidationWhere.ExecutionID.EQ(executionID),
+		qm.OrderBy(
+			dbpostgres.WorkspaceExecutionValidationColumns.CheckName+", "+
+				dbpostgres.WorkspaceExecutionValidationColumns.ID,
+		),
+	).All(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("list execution validations: %w", err)
 	}
 
-	defer func() { _ = rows.Close() }()
-
-	validations := make([]entity.ExecutionValidation, 0)
-
-	for rows.Next() {
-		validation, err := scanValidation(rows)
-		if err != nil {
-			return nil, fmt.Errorf("read an execution validation: %w", err)
-		}
-
-		validations = append(validations, validation)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("read execution validations: %w", err)
-	}
-
-	return validations, nil
+	return validationsOf(models)
 }
 
 func (r *changeSetRepository) ByIssue(

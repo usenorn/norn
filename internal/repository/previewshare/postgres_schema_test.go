@@ -150,11 +150,7 @@ func contains(values []string, wanted string) bool {
 
 func statements() map[string]string {
 	return map[string]string{
-		"createLinkQuery":       createLinkQuery,
-		"linkByTokenQuery":      linkByTokenQuery,
-		"linksByPreviewQuery":   linksByPreviewQuery,
-		"linksByExecutionQuery": linksByExecutionQuery,
-		"revokeLinkQuery":       revokeLinkQuery,
-		"usedLinkQuery":         usedLinkQuery,
+		"revokeLinkQuery": revokeLinkQuery,
+		"usedLinkQuery":   usedLinkQuery,
 	}
 }

@@ -235,29 +235,32 @@ var WorkspaceCodeLinkWhere = struct {
 
 // WorkspaceCodeLinkRels is where relationship names are stored.
 var WorkspaceCodeLinkRels = struct {
-	Issue                            string
-	Repository                       string
-	Workspace                        string
-	LinkWorkspaceCodeLinkReviewers   string
-	LinkWorkspaceCodeLinkTransitions string
-	LinkWorkspaceSCMReleaseLinks     string
+	Issue                             string
+	Repository                        string
+	Workspace                         string
+	LinkWorkspaceCodeLinkReviewers    string
+	LinkWorkspaceCodeLinkTransitions  string
+	CodeLinkWorkspaceExecutionChanges string
+	LinkWorkspaceSCMReleaseLinks      string
 }{
-	Issue:                            "Issue",
-	Repository:                       "Repository",
-	Workspace:                        "Workspace",
-	LinkWorkspaceCodeLinkReviewers:   "LinkWorkspaceCodeLinkReviewers",
-	LinkWorkspaceCodeLinkTransitions: "LinkWorkspaceCodeLinkTransitions",
-	LinkWorkspaceSCMReleaseLinks:     "LinkWorkspaceSCMReleaseLinks",
+	Issue:                             "Issue",
+	Repository:                        "Repository",
+	Workspace:                         "Workspace",
+	LinkWorkspaceCodeLinkReviewers:    "LinkWorkspaceCodeLinkReviewers",
+	LinkWorkspaceCodeLinkTransitions:  "LinkWorkspaceCodeLinkTransitions",
+	CodeLinkWorkspaceExecutionChanges: "CodeLinkWorkspaceExecutionChanges",
+	LinkWorkspaceSCMReleaseLinks:      "LinkWorkspaceSCMReleaseLinks",
 }
 
 // workspaceCodeLinkR is where relationships are stored.
 type workspaceCodeLinkR struct {
-	Issue                            *WorkspaceIssue                  `boil:"Issue" json:"Issue" toml:"Issue" yaml:"Issue"`
-	Repository                       *WorkspaceSCMRepository          `boil:"Repository" json:"Repository" toml:"Repository" yaml:"Repository"`
-	Workspace                        *Workspace                       `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	LinkWorkspaceCodeLinkReviewers   WorkspaceCodeLinkReviewerSlice   `boil:"LinkWorkspaceCodeLinkReviewers" json:"LinkWorkspaceCodeLinkReviewers" toml:"LinkWorkspaceCodeLinkReviewers" yaml:"LinkWorkspaceCodeLinkReviewers"`
-	LinkWorkspaceCodeLinkTransitions WorkspaceCodeLinkTransitionSlice `boil:"LinkWorkspaceCodeLinkTransitions" json:"LinkWorkspaceCodeLinkTransitions" toml:"LinkWorkspaceCodeLinkTransitions" yaml:"LinkWorkspaceCodeLinkTransitions"`
-	LinkWorkspaceSCMReleaseLinks     WorkspaceSCMReleaseLinkSlice     `boil:"LinkWorkspaceSCMReleaseLinks" json:"LinkWorkspaceSCMReleaseLinks" toml:"LinkWorkspaceSCMReleaseLinks" yaml:"LinkWorkspaceSCMReleaseLinks"`
+	Issue                             *WorkspaceIssue                  `boil:"Issue" json:"Issue" toml:"Issue" yaml:"Issue"`
+	Repository                        *WorkspaceSCMRepository          `boil:"Repository" json:"Repository" toml:"Repository" yaml:"Repository"`
+	Workspace                         *Workspace                       `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	LinkWorkspaceCodeLinkReviewers    WorkspaceCodeLinkReviewerSlice   `boil:"LinkWorkspaceCodeLinkReviewers" json:"LinkWorkspaceCodeLinkReviewers" toml:"LinkWorkspaceCodeLinkReviewers" yaml:"LinkWorkspaceCodeLinkReviewers"`
+	LinkWorkspaceCodeLinkTransitions  WorkspaceCodeLinkTransitionSlice `boil:"LinkWorkspaceCodeLinkTransitions" json:"LinkWorkspaceCodeLinkTransitions" toml:"LinkWorkspaceCodeLinkTransitions" yaml:"LinkWorkspaceCodeLinkTransitions"`
+	CodeLinkWorkspaceExecutionChanges WorkspaceExecutionChangeSlice    `boil:"CodeLinkWorkspaceExecutionChanges" json:"CodeLinkWorkspaceExecutionChanges" toml:"CodeLinkWorkspaceExecutionChanges" yaml:"CodeLinkWorkspaceExecutionChanges"`
+	LinkWorkspaceSCMReleaseLinks      WorkspaceSCMReleaseLinkSlice     `boil:"LinkWorkspaceSCMReleaseLinks" json:"LinkWorkspaceSCMReleaseLinks" toml:"LinkWorkspaceSCMReleaseLinks" yaml:"LinkWorkspaceSCMReleaseLinks"`
 }
 
 // NewStruct creates a new relationship struct
@@ -343,6 +346,22 @@ func (r *workspaceCodeLinkR) GetLinkWorkspaceCodeLinkTransitions() WorkspaceCode
 	}
 
 	return r.LinkWorkspaceCodeLinkTransitions
+}
+
+func (o *WorkspaceCodeLink) GetCodeLinkWorkspaceExecutionChanges() WorkspaceExecutionChangeSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetCodeLinkWorkspaceExecutionChanges()
+}
+
+func (r *workspaceCodeLinkR) GetCodeLinkWorkspaceExecutionChanges() WorkspaceExecutionChangeSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.CodeLinkWorkspaceExecutionChanges
 }
 
 func (o *WorkspaceCodeLink) GetLinkWorkspaceSCMReleaseLinks() WorkspaceSCMReleaseLinkSlice {
@@ -736,6 +755,20 @@ func (o *WorkspaceCodeLink) LinkWorkspaceCodeLinkTransitions(mods ...qm.QueryMod
 	)
 
 	return WorkspaceCodeLinkTransitions(queryMods...)
+}
+
+// CodeLinkWorkspaceExecutionChanges retrieves all the workspace_execution_change's WorkspaceExecutionChanges with an executor via code_link_id column.
+func (o *WorkspaceCodeLink) CodeLinkWorkspaceExecutionChanges(mods ...qm.QueryMod) workspaceExecutionChangeQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_execution_changes\".\"code_link_id\"=?", o.ID),
+	)
+
+	return WorkspaceExecutionChanges(queryMods...)
 }
 
 // LinkWorkspaceSCMReleaseLinks retrieves all the workspace_scm_release_link's WorkspaceSCMReleaseLinks with an executor via link_id column.
@@ -1342,6 +1375,119 @@ func (workspaceCodeLinkL) LoadLinkWorkspaceCodeLinkTransitions(ctx context.Conte
 	return nil
 }
 
+// LoadCodeLinkWorkspaceExecutionChanges allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceCodeLinkL) LoadCodeLinkWorkspaceExecutionChanges(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceCodeLink any, mods queries.Applicator) error {
+	var slice []*WorkspaceCodeLink
+	var object *WorkspaceCodeLink
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceCodeLink.(*WorkspaceCodeLink)
+		if !ok {
+			object = new(WorkspaceCodeLink)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceCodeLink)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceCodeLink))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceCodeLink.(*[]*WorkspaceCodeLink)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceCodeLink)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceCodeLink))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceCodeLinkR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceCodeLinkR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_execution_changes`),
+		qm.WhereIn(`workspace_execution_changes.code_link_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_execution_changes")
+	}
+
+	var resultSlice []*WorkspaceExecutionChange
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_execution_changes")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_execution_changes")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_execution_changes")
+	}
+
+	if len(workspaceExecutionChangeAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.CodeLinkWorkspaceExecutionChanges = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceExecutionChangeR{}
+			}
+			foreign.R.CodeLink = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.CodeLinkID) {
+				local.R.CodeLinkWorkspaceExecutionChanges = append(local.R.CodeLinkWorkspaceExecutionChanges, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceExecutionChangeR{}
+				}
+				foreign.R.CodeLink = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadLinkWorkspaceSCMReleaseLinks allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceCodeLinkL) LoadLinkWorkspaceSCMReleaseLinks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceCodeLink any, mods queries.Applicator) error {
@@ -1732,6 +1878,133 @@ func (o *WorkspaceCodeLink) AddLinkWorkspaceCodeLinkTransitions(ctx context.Cont
 			rel.R.Link = o
 		}
 	}
+	return nil
+}
+
+// AddCodeLinkWorkspaceExecutionChanges adds the given related objects to the existing relationships
+// of the workspace_code_link, optionally inserting them as new records.
+// Appends related to o.R.CodeLinkWorkspaceExecutionChanges.
+// Sets related.R.CodeLink appropriately.
+func (o *WorkspaceCodeLink) AddCodeLinkWorkspaceExecutionChanges(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceExecutionChange) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.CodeLinkID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_execution_changes\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"code_link_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceExecutionChangePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.CodeLinkID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceCodeLinkR{
+			CodeLinkWorkspaceExecutionChanges: related,
+		}
+	} else {
+		o.R.CodeLinkWorkspaceExecutionChanges = append(o.R.CodeLinkWorkspaceExecutionChanges, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceExecutionChangeR{
+				CodeLink: o,
+			}
+		} else {
+			rel.R.CodeLink = o
+		}
+	}
+	return nil
+}
+
+// SetCodeLinkWorkspaceExecutionChanges removes all previously related items of the
+// workspace_code_link replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.CodeLink's CodeLinkWorkspaceExecutionChanges accordingly.
+// Replaces o.R.CodeLinkWorkspaceExecutionChanges with related.
+// Sets related.R.CodeLink's CodeLinkWorkspaceExecutionChanges accordingly.
+func (o *WorkspaceCodeLink) SetCodeLinkWorkspaceExecutionChanges(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceExecutionChange) error {
+	query := "update \"workspace_execution_changes\" set \"code_link_id\" = null where \"code_link_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.CodeLinkWorkspaceExecutionChanges {
+			queries.SetScanner(&rel.CodeLinkID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.CodeLink = nil
+		}
+		o.R.CodeLinkWorkspaceExecutionChanges = nil
+	}
+
+	return o.AddCodeLinkWorkspaceExecutionChanges(ctx, exec, insert, related...)
+}
+
+// RemoveCodeLinkWorkspaceExecutionChanges relationships from objects passed in.
+// Removes related items from R.CodeLinkWorkspaceExecutionChanges (uses pointer comparison, removal does not keep order)
+// Sets related.R.CodeLink.
+func (o *WorkspaceCodeLink) RemoveCodeLinkWorkspaceExecutionChanges(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceExecutionChange) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.CodeLinkID, nil)
+		if rel.R != nil {
+			rel.R.CodeLink = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("code_link_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.CodeLinkWorkspaceExecutionChanges {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.CodeLinkWorkspaceExecutionChanges)
+			if ln > 1 && i < ln-1 {
+				o.R.CodeLinkWorkspaceExecutionChanges[i] = o.R.CodeLinkWorkspaceExecutionChanges[ln-1]
+			}
+			o.R.CodeLinkWorkspaceExecutionChanges = o.R.CodeLinkWorkspaceExecutionChanges[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

@@ -149,8 +149,5 @@ func contains(values []string, wanted string) bool {
 }
 
 func statements() map[string]string {
-	return map[string]string{
-		"executionPolicyQuery":       executionPolicyQuery,
-		"upsertExecutionPolicyQuery": upsertExecutionPolicyQuery,
-	}
+	return map[string]string{}
 }

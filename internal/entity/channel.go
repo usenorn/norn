@@ -65,6 +65,7 @@ const (
 	ChannelQuestionAsked     = channelv1.QuestionAsked
 	ChannelChangeSetUpdated  = channelv1.ChangeSetUpdated
 	ChannelExecutionResult   = channelv1.ExecutionResult
+	ChannelExecutionKept     = channelv1.ExecutionRetention
 )
 
 func ChannelServerMessages() []ChannelMessageType {

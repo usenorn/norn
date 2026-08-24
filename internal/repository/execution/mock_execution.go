@@ -134,6 +134,21 @@ func (mr *MockExecutionMockRecorder) GetByID(ctx, executionID any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockExecution)(nil).GetByID), ctx, executionID)
 }
 
+// Keep mocks base method.
+func (m *MockExecution) Keep(ctx context.Context, executionID string, keepUntil time.Time) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Keep", ctx, executionID, keepUntil)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Keep indicates an expected call of Keep.
+func (mr *MockExecutionMockRecorder) Keep(ctx, executionID, keepUntil any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Keep", reflect.TypeOf((*MockExecution)(nil).Keep), ctx, executionID, keepUntil)
+}
+
 // ListByIssue mocks base method.
 func (m *MockExecution) ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Execution, error) {
 	m.ctrl.T.Helper()
@@ -207,6 +222,21 @@ func (m *MockExecution) ListSharingRepositories(ctx context.Context, workspaceID
 func (mr *MockExecutionMockRecorder) ListSharingRepositories(ctx, workspaceID, executionID, codebaseID, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSharingRepositories", reflect.TypeOf((*MockExecution)(nil).ListSharingRepositories), ctx, workspaceID, executionID, codebaseID, limit)
+}
+
+// ListVisible mocks base method.
+func (m *MockExecution) ListVisible(ctx context.Context, scope entity.TeamScope, page entity.ExecutionPage) ([]entity.ExecutionListing, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListVisible", ctx, scope, page)
+	ret0, _ := ret[0].([]entity.ExecutionListing)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListVisible indicates an expected call of ListVisible.
+func (mr *MockExecutionMockRecorder) ListVisible(ctx, scope, page any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVisible", reflect.TypeOf((*MockExecution)(nil).ListVisible), ctx, scope, page)
 }
 
 // Move mocks base method.

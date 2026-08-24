@@ -45,6 +45,9 @@ type Execution interface {
 	Create(ctx context.Context, execution NewExecution) (entity.Execution, error)
 	GetByID(ctx context.Context, executionID string) (entity.Execution, error)
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Execution, error)
+	ListVisible(
+		ctx context.Context, scope entity.TeamScope, page entity.ExecutionPage,
+	) ([]entity.ExecutionListing, error)
 	ListLiveByRunner(ctx context.Context, runnerID uuid.UUID) ([]entity.Execution, error)
 	ListQueuedByAgent(
 		ctx context.Context, agentID uuid.UUID, limit int,
@@ -62,6 +65,7 @@ type Execution interface {
 		ctx context.Context, executionID string, binding ExecutionBinding,
 	) (entity.Execution, error)
 	Move(ctx context.Context, executionID string, move ExecutionMove) (entity.Execution, error)
+	Keep(ctx context.Context, executionID string, keepUntil time.Time) (entity.Execution, error)
 	RenewLeases(ctx context.Context, runnerID uuid.UUID, expiresAt time.Time) error
 	ExpiredLeases(ctx context.Context, now time.Time, limit int) ([]entity.Execution, error)
 	AppendEvent(ctx context.Context, event entity.ExecutionEvent) (entity.ExecutionEvent, error)

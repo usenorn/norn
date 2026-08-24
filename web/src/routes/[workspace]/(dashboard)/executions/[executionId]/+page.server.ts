@@ -32,7 +32,7 @@ export const load: PageServerLoad = async ({
 	if (detail.error?.status === 404) return { run: { kind: "not_found" } };
 	if (!detail.data) return { run: { kind: "unavailable" } };
 
-	const [questions, transcript, logs] = await Promise.all([
+	const [questions, transcript, logs, previews, links] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/questions", {
 			params: { path },
 		}),
@@ -41,6 +41,12 @@ export const load: PageServerLoad = async ({
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/logs", {
 			params: { path, query: { limit: chunkPageSize } },
+		}),
+		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/previews", {
+			params: { path },
+		}),
+		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/code-links", {
+			params: { path: { workspaceId: workspace.id, issueId: detail.data.execution.issueId } },
 		}),
 	]);
 
@@ -53,8 +59,12 @@ export const load: PageServerLoad = async ({
 			execution: detail.data.execution,
 			timeline: detail.data.timeline,
 			services: detail.data.services ?? [],
-			previews: detail.data.previews ?? [],
+			previews:
+				previews.data ??
+				(detail.data.previews ?? []).map((preview) => ({ preview, shareLinks: [] })),
 			runner: detail.data.runner,
+			changeset: detail.data.changeset,
+			codeLinks: links.data ?? [],
 			questions: questions.data?.questions ?? [],
 			transcript: transcriptChunks.flatMap((chunk) => chunk.entries),
 			logs: logChunks.flatMap((chunk) => chunk.entries),

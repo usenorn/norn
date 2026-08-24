@@ -23,6 +23,34 @@ func (h *handler) ListWorkspaceIssueExecutions(
 	return api.ListWorkspaceIssueExecutions200JSONResponse(executionDTOs(executions)), nil
 }
 
+func (h *handler) ListWorkspaceExecutions(
+	ctx context.Context,
+	request api.ListWorkspaceExecutionsRequestObject,
+) (api.ListWorkspaceExecutionsResponseObject, error) {
+	page := entity.ExecutionPage{}
+
+	if request.Params.State != nil {
+		for _, state := range *request.Params.State {
+			page.States = append(page.States, entity.ExecutionState(state))
+		}
+	}
+
+	if request.Params.Limit != nil {
+		page.Limit = *request.Params.Limit
+	}
+
+	listings, err := h.executions.List(ctx, request.WorkspaceId, page)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceExecutions200JSONResponse(executionSummaryDTOs(listings)), nil
+}
+
 func (h *handler) GetWorkspaceExecution(
 	ctx context.Context,
 	request api.GetWorkspaceExecutionRequestObject,

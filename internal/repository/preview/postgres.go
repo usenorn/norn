@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/google/uuid"
 
+	dbpostgres "github.com/usenorn/norn/internal/db/postgres"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
@@ -57,16 +59,6 @@ WITH upserted AS (
 SELECT` + previewColumns + `
 FROM upserted`
 
-const previewByNameQuery = `
-SELECT` + previewColumns + `
-FROM workspace_execution_previews
-WHERE execution_id = $1 AND name = $2`
-
-const previewByHostQuery = `
-SELECT` + previewColumns + `
-FROM workspace_execution_previews
-WHERE host = $1 AND host <> ''`
-
 const previewRouteByHostQuery = `
 SELECT p.id,
        p.execution_id,
@@ -87,12 +79,6 @@ FROM workspace_execution_previews p
          JOIN workspace_executions e ON e.id = p.execution_id
 WHERE p.host = $1 AND p.host <> ''`
 
-const previewsQuery = `
-SELECT` + previewColumns + `
-FROM workspace_execution_previews
-WHERE execution_id = $1
-ORDER BY name, id`
-
 const previewCountQuery = `
 SELECT count(*)
 FROM workspace_execution_previews
@@ -105,6 +91,57 @@ WHERE execution_id = $1 AND state = 'open'`
 
 type previewRepository struct {
 	db *postgres.Client
+}
+
+func previewOf(model *dbpostgres.WorkspaceExecutionPreview) (entity.PreviewSession, error) {
+	id, err := uuid.Parse(model.ID)
+	if err != nil {
+		return entity.PreviewSession{}, fmt.Errorf("parse preview id: %w", err)
+	}
+
+	workspaceID, err := uuid.Parse(model.WorkspaceID)
+	if err != nil {
+		return entity.PreviewSession{}, fmt.Errorf("parse workspace id: %w", err)
+	}
+
+	preview := entity.PreviewSession{
+		ID:          id,
+		ExecutionID: model.ExecutionID,
+		WorkspaceID: workspaceID,
+		Name:        model.Name,
+		Service:     model.Service,
+		Path:        model.Path,
+		Mode:        entity.PreviewMode(model.Mode),
+		Host:        model.Host,
+		State:       entity.PreviewState(model.State),
+		OpenedAt:    model.OpenedAt,
+		ReportedAt:  model.ReportedAt,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
+	}
+
+	if model.ClosedAt.Valid {
+		preview.ClosedAt = model.ClosedAt.Time
+	}
+
+	return preview, nil
+}
+
+func previewsOf(
+	models dbpostgres.WorkspaceExecutionPreviewSlice,
+) ([]entity.PreviewSession, error) {
+	previews := make([]entity.PreviewSession, 0, len(models))
+
+	for _, model := range models {
+		preview, err := previewOf(model)
+		if err != nil {
+			return nil, err
+		}
+
+		previews = append(previews, preview)
+	}
+
+	return previews, nil
 }
 
 func New(db *postgres.Client) repository.Preview {
@@ -150,36 +187,38 @@ func (r *previewRepository) ByName(
 	ctx context.Context,
 	executionID, name string,
 ) (entity.PreviewSession, error) {
-	stored, err := scanPreview(r.db.Querier(ctx).QueryRowContext(
-		ctx, previewByNameQuery, executionID, name,
-	))
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return entity.PreviewSession{}, entity.ErrPreviewNotFound
-	}
-
+	model, err := dbpostgres.WorkspaceExecutionPreviews(
+		dbpostgres.WorkspaceExecutionPreviewWhere.ExecutionID.EQ(executionID),
+		dbpostgres.WorkspaceExecutionPreviewWhere.Name.EQ(name),
+	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.PreviewSession{}, entity.ErrPreviewNotFound
+		}
+
 		return entity.PreviewSession{}, fmt.Errorf("read preview: %w", err)
 	}
 
-	return stored, nil
+	return previewOf(model)
 }
 
 func (r *previewRepository) ByHost(
 	ctx context.Context,
 	host string,
 ) (entity.PreviewSession, error) {
-	stored, err := scanPreview(r.db.Querier(ctx).QueryRowContext(ctx, previewByHostQuery, host))
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return entity.PreviewSession{}, entity.ErrPreviewNotFound
-	}
-
+	model, err := dbpostgres.WorkspaceExecutionPreviews(
+		dbpostgres.WorkspaceExecutionPreviewWhere.Host.EQ(host),
+		dbpostgres.WorkspaceExecutionPreviewWhere.Host.NEQ(""),
+	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.PreviewSession{}, entity.ErrPreviewNotFound
+		}
+
 		return entity.PreviewSession{}, fmt.Errorf("read preview by host: %w", err)
 	}
 
-	return stored, nil
+	return previewOf(model)
 }
 
 func (r *previewRepository) RouteByHost(
@@ -203,29 +242,18 @@ func (r *previewRepository) ByExecution(
 	ctx context.Context,
 	executionID string,
 ) ([]entity.PreviewSession, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, previewsQuery, executionID)
+	models, err := dbpostgres.WorkspaceExecutionPreviews(
+		dbpostgres.WorkspaceExecutionPreviewWhere.ExecutionID.EQ(executionID),
+		qm.OrderBy(
+			dbpostgres.WorkspaceExecutionPreviewColumns.Name+", "+
+				dbpostgres.WorkspaceExecutionPreviewColumns.ID,
+		),
+	).All(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("list previews: %w", err)
 	}
 
-	defer func() { _ = rows.Close() }()
-
-	previews := make([]entity.PreviewSession, 0)
-
-	for rows.Next() {
-		preview, err := scanPreview(rows)
-		if err != nil {
-			return nil, fmt.Errorf("read a preview: %w", err)
-		}
-
-		previews = append(previews, preview)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("read previews: %w", err)
-	}
-
-	return previews, nil
+	return previewsOf(models)
 }
 
 func (r *previewRepository) Count(ctx context.Context, executionID string) (int, error) {

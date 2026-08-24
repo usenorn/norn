@@ -5808,6 +5808,42 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/executions:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [executions]
+      operationId: listWorkspaceExecutions
+      summary: The runs in this workspace, most recently finished first
+      description: >-
+        Only runs on issues the caller may read. Pass state to narrow it, which is how the review
+        queue asks for the runs waiting for somebody.
+      parameters:
+        - name: state
+          in: query
+          required: false
+          description: Repeat it to ask for more than one state. Left out, every state is answered.
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/ExecutionState' }
+          style: form
+          explode: true
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200 }
+      responses:
+        '200':
+          description: The runs on record
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExecutionSummary' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/executions/{executionId}:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -8071,6 +8107,9 @@ components:
         workspaceId: { type: string, format: uuid }
         issueId: { type: string, format: uuid }
         issueReference: { type: string }
+        issueTitle:
+          type: string
+          description: The issue this run was taken from, named here so a list of runs reads
         teamId: { type: string, format: uuid }
         delegationId: { type: string, format: uuid }
         agentId: { type: string, format: uuid }
@@ -8099,6 +8138,13 @@ components:
           type: boolean
           description: Whether this run can be offered again as a fresh attempt
         leaseExpiresAt: { type: string, format: date-time }
+        keepUntil:
+          type: string
+          format: date-time
+          description: >-
+            When the machine gives this run's workspace and previews back. The machine owns the
+            clock, so this is what it reported. Absent while it is still holding them for a
+            decision, and in the past once they are gone.
         queuedAt: { type: string, format: date-time }
         startedAt: { type: string, format: date-time }
         finishedAt: { type: string, format: date-time }
@@ -8150,6 +8196,25 @@ components:
           description: >-
             The machine holding this run and how much room it has. Absent while no machine has
             taken it.
+
+    ExecutionChangeSummary:
+      type: object
+      description: What one run changed, totalled across every repository it touched.
+      required: [repositories, commits, additions, deletions, filesChanged, pullRequests]
+      properties:
+        repositories: { type: integer, minimum: 0 }
+        commits: { type: integer, minimum: 0 }
+        additions: { type: integer, minimum: 0 }
+        deletions: { type: integer, minimum: 0 }
+        filesChanged: { type: integer, minimum: 0 }
+        pullRequests: { type: integer, minimum: 0 }
+
+    ExecutionSummary:
+      type: object
+      required: [execution, change]
+      properties:
+        execution: { $ref: '#/components/schemas/Execution' }
+        change: { $ref: '#/components/schemas/ExecutionChangeSummary' }
 
     ExecutionRunner:
       type: object
@@ -8540,6 +8605,7 @@ components:
                 - execution_finished
                 - execution_unfinished
                 - execution_not_reviewable
+                - execution_self_approval
                 - execution_no_runner
                 - execution_chunk_conflict
 

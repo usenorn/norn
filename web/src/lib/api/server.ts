@@ -12,6 +12,10 @@ const hostCookiePrefix = "__Host-";
 
 const loopbackOrigin = "http://127.0.0.1:8080";
 
+export function internalOrigin(): string {
+	return env.INTERNAL_API_ORIGIN || loopbackOrigin;
+}
+
 const verbatim = { decode: (value: string) => value };
 
 export function hasSession(cookies: Cookies): boolean {
@@ -87,7 +91,7 @@ function clientAddress(event: RequestEvent): string | undefined {
 
 export function apiForEvent(event: RequestEvent, acting?: Promise<string | null>): Client<paths> {
 	return createClient<paths>({
-		baseUrl: `${env.INTERNAL_API_ORIGIN || loopbackOrigin}/v1`,
+		baseUrl: `${internalOrigin()}/v1`,
 		fetch: async (request) => {
 			const address = clientAddress(event);
 			const slot = acting ? await acting : null;

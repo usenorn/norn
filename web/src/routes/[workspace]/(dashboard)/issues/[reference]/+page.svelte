@@ -88,6 +88,12 @@
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
 	import QuestionList from "$lib/questions/question-list.svelte";
 	import RunRow from "$lib/executions/run-row.svelte";
+	import RepoChange from "$lib/executions/repo-change.svelte";
+	import {
+		changeStatLine,
+		changeTotals,
+		type IssueRepositoryChange,
+	} from "$lib/executions/executions";
 	import type { Execution } from "$lib/executions/executions";
 	import type { IssueQuestion } from "$lib/questions/questions";
 	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
@@ -290,6 +296,7 @@
 	);
 	const questions = $derived<IssueQuestion[]>(ready ? ready.questions : []);
 	const runs = $derived<Execution[]>(ready ? ready.runs : []);
+	const changed = $derived<IssueRepositoryChange[]>(ready ? (ready.changeset?.repositories ?? []) : []);
 	const automationSuppressed = $derived(automationOverride ?? false);
 	const mirrorConflicts = $derived(ready?.mirrorConflicts ?? []);
 	const shipping = $derived(ready?.shipping ?? { releases: [], deployments: [] });
@@ -1848,6 +1855,29 @@
 							{/if}
 						</div>
 					</form>
+
+					{#if changed.length > 0}
+						<section class="flex min-w-0 flex-col gap-1.5">
+							<div class="flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">What changed</Eyebrow>
+								</h2>
+							</div>
+							<p class="font-mono text-xs text-muted-foreground">
+								{changeStatLine(changeTotals(changed))}
+							</p>
+							<ul class="flex min-w-0 flex-col">
+								{#each changed as change (change.repository)}
+									<RepoChange
+										{change}
+										links={codeLinks}
+										diff={{ kind: "idle" }}
+										download={`/v1/workspaces/${data.workspace.id}/executions/${change.executionId}/artifacts/${change.diffArtifactId}/content`}
+									/>
+								{/each}
+							</ul>
+						</section>
+					{/if}
 
 					{#if runs.length > 0}
 						<section class="flex min-w-0 flex-col gap-1.5">
