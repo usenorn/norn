@@ -18,6 +18,7 @@ var (
 	ErrIssueDelegationNotFound      = errors.New("issue delegation not found")
 	ErrIssueDelegationHeld          = errors.New("this issue is already delegated")
 	ErrIssueDelegationAgentUnusable = errors.New("that agent cannot take work")
+	ErrIssueDelegationUnassigned    = errors.New("an issue nobody is assigned cannot be delegated")
 )
 
 type PermissionProfile string

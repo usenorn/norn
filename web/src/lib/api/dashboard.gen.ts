@@ -2605,7 +2605,10 @@ export interface paths {
         /** Every time this issue has been handed to an agent, newest first */
         get: operations["listWorkspaceIssueDelegations"];
         put?: never;
-        /** Hand this issue to an agent, and tell anything listening that work has begun */
+        /**
+         * Hand this issue to an agent, and tell anything listening that work has begun
+         * @description An agent takes work on behalf of the person the issue is assigned to, so an issue nobody is assigned cannot be handed over. Assign it first.
+         */
         post: operations["delegateWorkspaceIssue"];
         /** Take this issue back from the agent holding it */
         delete: operations["recallWorkspaceIssue"];
@@ -5493,7 +5496,7 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_delegation_unassigned" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];

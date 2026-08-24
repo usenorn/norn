@@ -24,6 +24,7 @@ export type AttachmentPreview = {
 
 export type DelegationPreview = {
 	panel: DelegationPanel;
+	assigned?: boolean;
 	failure?: DelegationFailure;
 	working?: boolean;
 };
@@ -1530,7 +1531,13 @@ export const delegationPreviewStates: Record<string, DelegationPreview> = import
 				},
 				working: true,
 			},
+			unassigned: { panel: { kind: "none" }, assigned: false },
 			failed: { panel: { kind: "none" }, failure: { kind: "agent_unusable" } },
+			unassigned_failed: {
+				panel: { kind: "none" },
+				assigned: false,
+				failure: { kind: "unassigned" },
+			},
 			unavailable: { panel: { kind: "unavailable" } },
 		}
 	: {};

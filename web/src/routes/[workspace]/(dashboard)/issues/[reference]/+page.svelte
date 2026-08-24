@@ -273,6 +273,7 @@
 	const people = $derived(assignees(ready?.members ?? []));
 	const delegationFailure = $derived(delegationFailed ?? delegationPreview?.failure ?? null);
 	const issue = $derived((pushed?.source === ready ? pushed.issue : null) ?? ready?.issue ?? null);
+	const assigned = $derived(delegationPreview?.assigned ?? Boolean(issue?.assigneeAccountId));
 	const following = $derived(ready?.follow === "following");
 	const labels = $derived(applied ?? issue?.labels ?? []);
 	const slug = $derived(page.params.workspace ?? "");
@@ -2267,6 +2268,7 @@
 					<DelegationField
 						panel={delegation}
 						editable={canEdit}
+						{assigned}
 						working={working || Boolean(delegationPreview?.working)}
 						timezone={data.workspace.timezone}
 						ondelegate={() => (delegating = true)}

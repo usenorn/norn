@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -100,6 +101,31 @@ func TestADisabledAgentCannotBeHandedWork(t *testing.T) {
 	if !errors.Is(err, entity.ErrIssueDelegationAgentUnusable) {
 		t.Fatalf("delegate to a disabled agent returned %v, want %v",
 			err, entity.ErrIssueDelegationAgentUnusable)
+	}
+}
+
+func TestAnIssueNobodyIsAssignedCannotBeHandedToAnAgent(t *testing.T) {
+	h := newHarness(t)
+
+	issue := h.issue()
+	issue.AssigneeAccountID = uuid.Nil
+
+	agent := h.agent()
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+
+	_, err := h.service.Delegate(context.Background(), h.workspaceID, issue.ID, service.DelegateIssueInput{
+		AgentAccountID: agent.AccountID,
+	})
+
+	if !errors.Is(err, entity.ErrIssueDelegationUnassigned) {
+		t.Fatalf(
+			"delegating an unassigned issue returned %v, want %v. An agent works under the "+
+				"authority of whoever the issue is assigned to, so with nobody assigned there "+
+				"is no authority for it to borrow",
+			err, entity.ErrIssueDelegationUnassigned,
+		)
 	}
 }
 
