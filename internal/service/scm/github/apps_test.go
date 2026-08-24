@@ -39,22 +39,56 @@ func reachable(t *testing.T, handler http.Handler) (*github.Forge, string) {
 	return github.New(client, cfg), server.URL
 }
 
-func TestOnlyInstallationsOfThisApplicationAreOffered(t *testing.T) {
-	held, address := reachable(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/user/installations" {
-			t.Errorf("the adapter asked for %q, want /user/installations", r.URL.Path)
-		}
+type signedIn struct {
+	login         string
+	installations string
+	memberships   map[string]string
+}
 
+func (s signedIn) handler(t *testing.T) http.Handler {
+	t.Helper()
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if got := r.Header.Get("Authorization"); got != "Bearer gho-the-user-token" {
-			t.Errorf("the listing was made as %q, want the signed-in person", got)
+			t.Errorf("%s was asked for as %q, want the signed-in person", r.URL.Path, got)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"installations":[
+
+		switch {
+		case r.URL.Path == "/user":
+			_, _ = w.Write([]byte(`{"login":"` + s.login + `"}`))
+
+		case r.URL.Path == "/user/installations":
+			_, _ = w.Write([]byte(s.installations))
+
+		case strings.HasPrefix(r.URL.Path, "/user/memberships/orgs/"):
+			membership, found := s.memberships[strings.TrimPrefix(r.URL.Path, "/user/memberships/orgs/")]
+			if !found {
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte(`{"message":"Not Found"}`))
+
+				return
+			}
+
+			_, _ = w.Write([]byte(membership))
+
+		default:
+			t.Errorf("the adapter asked for %q, which this test serves nothing for", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+}
+
+func TestOnlyInstallationsOfThisApplicationAreOffered(t *testing.T) {
+	held, address := reachable(t, signedIn{
+		login: "rae",
+		installations: `{"installations":[
             {"id":884411,"app_id":4711,"account":{"login":"flagroll","type":"Organization"}},
-            {"id":990022,"app_id":9999,"account":{"login":"someone-else","type":"User"}}
-        ]}`))
-	}))
+            {"id":990022,"app_id":9999,"account":{"login":"rae","type":"User"}}
+        ]}`,
+		memberships: map[string]string{"flagroll": `{"state":"active","role":"admin"}`},
+	}.handler(t))
 
 	found, err := held.Installations(
 		context.Background(),
@@ -80,6 +114,154 @@ func TestOnlyInstallationsOfThisApplicationAreOffered(t *testing.T) {
 
 	if found[0].AccountKind != "organization" {
 		t.Errorf("the account kind came back %q, want it folded to lower case", found[0].AccountKind)
+	}
+}
+
+func TestOnlyInstallationsTheSignedInPersonAdministersAreOffered(t *testing.T) {
+	cases := []struct {
+		name    string
+		account string
+		orgs    map[string]string
+	}{
+		{
+			name:    "a member of the organisation, not an owner",
+			account: `{"login":"flagroll","type":"Organization"}`,
+			orgs:    map[string]string{"flagroll": `{"state":"active","role":"member"}`},
+		},
+		{
+			name:    "an owner whose invitation is still pending",
+			account: `{"login":"flagroll","type":"Organization"}`,
+			orgs:    map[string]string{"flagroll": `{"state":"pending","role":"admin"}`},
+		},
+		{
+			name:    "an organisation they are not in at all",
+			account: `{"login":"flagroll","type":"Organization"}`,
+			orgs:    map[string]string{},
+		},
+		{
+			name:    "somebody else's personal account they collaborate on",
+			account: `{"login":"morgan","type":"User"}`,
+			orgs:    map[string]string{},
+		},
+	}
+
+	for _, held := range cases {
+		t.Run(held.name, func(t *testing.T) {
+			forgeFor, address := reachable(t, signedIn{
+				login:         "rae",
+				installations: `{"installations":[{"id":884411,"app_id":4711,"account":` + held.account + `}]}`,
+				memberships:   held.orgs,
+			}.handler(t))
+
+			found, err := forgeFor.Installations(
+				context.Background(),
+				entity.SCMApp{BaseURL: address, ExternalAppID: "4711"},
+				"gho-the-user-token",
+			)
+			if err != nil {
+				t.Fatalf("Installations: %v", err)
+			}
+
+			if len(found) != 0 {
+				t.Fatalf(
+					"%d installations were offered to somebody who administers none of them. "+
+						"One application serves this whole instance, so connecting an "+
+						"installation mints tokens for every repository it was granted — "+
+						"reading one of them is not a claim on the rest",
+					len(found),
+				)
+			}
+		})
+	}
+}
+
+func TestAnOrganisationBlockingTheApplicationDoesNotEndTheListing(t *testing.T) {
+	held, address := reachable(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		switch r.URL.Path {
+		case "/user":
+			_, _ = w.Write([]byte(`{"login":"rae"}`))
+
+		case "/user/installations":
+			_, _ = w.Write([]byte(`{"installations":[
+                {"id":884411,"app_id":4711,"account":{"login":"blocked","type":"Organization"}},
+                {"id":884412,"app_id":4711,"account":{"login":"rae","type":"User"}}
+            ]}`))
+
+		case "/user/memberships/orgs/blocked":
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(`{"message":"Resource not accessible by integration"}`))
+
+		default:
+			t.Errorf("the adapter asked for %q, which this test serves nothing for", r.URL.Path)
+		}
+	}))
+
+	found, err := held.Installations(
+		context.Background(),
+		entity.SCMApp{BaseURL: address, ExternalAppID: "4711"},
+		"gho-the-user-token",
+	)
+	if err != nil {
+		t.Fatalf(
+			"Installations: %v. One organisation refusing to answer for this application is not "+
+				"a reason to hide the installations the same person does administer",
+			err,
+		)
+	}
+
+	if len(found) != 1 || found[0].AccountLogin != "rae" {
+		t.Fatalf("the offer came back as %+v", found)
+	}
+}
+
+func TestEveryPageOfInstallationsIsRead(t *testing.T) {
+	var address string
+
+	held, base := reachable(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		switch {
+		case r.URL.Path == "/user":
+			_, _ = w.Write([]byte(`{"login":"rae"}`))
+
+		case r.URL.Path == "/user/installations" && r.URL.Query().Get("page") == "":
+			w.Header().Set("Link", `<`+address+`/user/installations?page=2>; rel="next"`)
+			_, _ = w.Write([]byte(`{"installations":[
+                {"id":884411,"app_id":4711,"account":{"login":"rae","type":"User"}}
+            ]}`))
+
+		case r.URL.Path == "/user/installations":
+			_, _ = w.Write([]byte(`{"installations":[
+                {"id":884412,"app_id":4711,"account":{"login":"flagroll","type":"Organization"}}
+            ]}`))
+
+		case r.URL.Path == "/user/memberships/orgs/flagroll":
+			_, _ = w.Write([]byte(`{"state":"active","role":"admin"}`))
+
+		default:
+			t.Errorf("the adapter asked for %q, which this test serves nothing for", r.URL.Path)
+		}
+	}))
+
+	address = base
+
+	found, err := held.Installations(
+		context.Background(),
+		entity.SCMApp{BaseURL: base, ExternalAppID: "4711"},
+		"gho-the-user-token",
+	)
+	if err != nil {
+		t.Fatalf("Installations: %v", err)
+	}
+
+	if len(found) != 2 {
+		t.Fatalf(
+			"%d installations were offered out of two pages. Somebody whose installations run "+
+				"past the first page cannot connect the ones that fell off it",
+			len(found),
+		)
 	}
 }
 

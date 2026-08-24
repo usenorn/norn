@@ -958,6 +958,7 @@ func problemFor(err error) (problemResponse, bool) {
 		return sourceControlConflict(api.SourceControlAlreadyRouted, err), true
 
 	case errors.Is(err, entity.ErrSCMRepositoryExists),
+		errors.Is(err, entity.ErrSCMInstallationConnected),
 		errors.Is(err, entity.ErrSCMConnectionExists):
 		return sourceControlConflict(api.SourceControlAlreadyConnected, err), true
 

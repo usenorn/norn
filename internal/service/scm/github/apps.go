@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -12,6 +13,14 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/forge"
+)
+
+const (
+	accountUser         = "user"
+	accountOrganization = "organization"
+
+	membershipActive = "active"
+	membershipAdmin  = "admin"
 )
 
 func (f *Forge) appTarget(app entity.SCMApp, now time.Time) (entity.SCMTarget, error) {
@@ -209,6 +218,11 @@ func (f *Forge) ExchangeCode(
 	return body.AccessToken, nil
 }
 
+// Installations offers what the signing-in person administers, not everything their account can
+// reach. The forge lists an installation to anyone who can read a single repository under it,
+// and connecting one mints tokens for every repository it was ever granted — so offering the
+// wider list lets an organisation's member attach that organisation's private code to a
+// workspace of their own.
 func (f *Forge) Installations(
 	ctx context.Context,
 	app entity.SCMApp,
@@ -221,47 +235,115 @@ func (f *Forge) Installations(
 		Trust:    app.Trust,
 	}
 
-	response, err := f.call(
-		ctx,
-		target,
-		http.MethodGet,
-		"/user/installations?per_page="+strconv.Itoa(f.pageSize),
-		nil,
-	)
+	viewer, err := f.Identity(ctx, target)
 	if err != nil {
 		return nil, err
 	}
 
-	var body struct {
-		Installations []struct {
-			ID      int64 `json:"id"`
-			AppID   int64 `json:"app_id"`
-			Account struct {
-				Login string `json:"login"`
-				Type  string `json:"type"`
-			} `json:"account"`
-		} `json:"installations"`
-	}
+	installations := make([]entity.SCMInstallation, 0)
+	path := "/user/installations?per_page=" + strconv.Itoa(f.pageSize)
 
-	if err := f.decode(response, target, &body); err != nil {
-		return nil, err
-	}
-
-	installations := make([]entity.SCMInstallation, 0, len(body.Installations))
-
-	for _, found := range body.Installations {
-		if strconv.FormatInt(found.AppID, 10) != app.ExternalAppID {
-			continue
+	for path != "" {
+		response, err := f.call(ctx, target, http.MethodGet, path, nil)
+		if err != nil {
+			return nil, err
 		}
 
-		installations = append(installations, entity.SCMInstallation{
-			ExternalID:   strconv.FormatInt(found.ID, 10),
-			AccountLogin: found.Account.Login,
-			AccountKind:  strings.ToLower(found.Account.Type),
-		})
+		var body struct {
+			Installations []struct {
+				ID      int64 `json:"id"`
+				AppID   int64 `json:"app_id"`
+				Account struct {
+					Login string `json:"login"`
+					Type  string `json:"type"`
+				} `json:"account"`
+			} `json:"installations"`
+		}
+
+		if err := f.decode(response, target, &body); err != nil {
+			return nil, err
+		}
+
+		for _, found := range body.Installations {
+			if strconv.FormatInt(found.AppID, 10) != app.ExternalAppID {
+				continue
+			}
+
+			kind := strings.ToLower(found.Account.Type)
+
+			administers, err := f.administers(ctx, target, viewer, found.Account.Login, kind)
+			if err != nil {
+				return nil, err
+			}
+
+			if !administers {
+				continue
+			}
+
+			installations = append(installations, entity.SCMInstallation{
+				ExternalID:   strconv.FormatInt(found.ID, 10),
+				AccountLogin: found.Account.Login,
+				AccountKind:  kind,
+			})
+		}
+
+		path = response.Link("next")
 	}
 
 	return installations, nil
+}
+
+func (f *Forge) administers(
+	ctx context.Context,
+	target entity.SCMTarget,
+	viewer, login, kind string,
+) (bool, error) {
+	switch kind {
+	case accountUser:
+		return strings.EqualFold(viewer, login), nil
+	case accountOrganization:
+		return f.ownsOrganization(ctx, target, login)
+	default:
+		return false, nil
+	}
+}
+
+// ownsOrganization reads the signing-in person's own membership. A 404 says they are not in the
+// organisation and a 403 says the organisation blocks this application; neither ends the
+// listing, because the token itself was accepted moments ago and the other installations on it
+// are still answerable.
+func (f *Forge) ownsOrganization(
+	ctx context.Context,
+	target entity.SCMTarget,
+	login string,
+) (bool, error) {
+	response, err := f.call(
+		ctx, target, http.MethodGet, "/user/memberships/orgs/"+url.PathEscape(login), nil,
+	)
+
+	var rejected entity.SCMCredentialsRejectedError
+	if errors.As(err, &rejected) {
+		return false, nil
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	if response.Status == http.StatusNotFound {
+		return false, nil
+	}
+
+	var body struct {
+		State string `json:"state"`
+		Role  string `json:"role"`
+	}
+
+	if err := f.decode(response, target, &body); err != nil {
+		return false, err
+	}
+
+	return body.State == membershipActive && body.Role == membershipAdmin, nil
 }
 
 func (f *Forge) InstallationRepositories(

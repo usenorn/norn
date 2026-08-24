@@ -11,14 +11,15 @@ import (
 const (
 	uniqueViolationCode = "23505"
 
-	connectionEndpointUniqueIndex = "workspace_scm_connections_endpoint_key"
-	repositoryNameUniqueIndex     = "workspace_scm_repositories_name_key"
-	routePrefixUniqueIndex        = "workspace_scm_routes_prefix_key"
-	deliveryUniqueIndex           = "workspace_scm_deliveries_external_key"
-	mirrorPairUniqueIndex         = "workspace_issue_mirrors_pair_key"
-	mirrorExternalUniqueIndex     = "workspace_issue_mirrors_external_key"
-	identityLoginUniqueIndex      = "workspace_scm_identities_login_key"
-	identityAccountUniqueIndex    = "workspace_scm_identities_account_key"
+	connectionEndpointUniqueIndex     = "workspace_scm_connections_endpoint_key"
+	connectionInstallationUniqueIndex = "workspace_scm_connections_installation_key"
+	repositoryNameUniqueIndex         = "workspace_scm_repositories_name_key"
+	routePrefixUniqueIndex            = "workspace_scm_routes_prefix_key"
+	deliveryUniqueIndex               = "workspace_scm_deliveries_external_key"
+	mirrorPairUniqueIndex             = "workspace_issue_mirrors_pair_key"
+	mirrorExternalUniqueIndex         = "workspace_issue_mirrors_external_key"
+	identityLoginUniqueIndex          = "workspace_scm_identities_login_key"
+	identityAccountUniqueIndex        = "workspace_scm_identities_account_key"
 )
 
 func violates(err error, index string) bool {

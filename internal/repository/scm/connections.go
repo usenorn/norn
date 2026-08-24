@@ -185,6 +185,10 @@ func (r *connectionRepository) Create(
 		types.StringArray(connection.Capabilities.Strings()),
 	))
 	if err != nil {
+		if violates(err, connectionInstallationUniqueIndex) {
+			return entity.SCMConnection{}, entity.ErrSCMInstallationConnected
+		}
+
 		if violates(err, connectionEndpointUniqueIndex) {
 			return entity.SCMConnection{}, entity.ErrSCMConnectionExists
 		}

@@ -23,6 +23,7 @@ var errRollback = errors.New("roll the fixture back")
 const roundtripKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
 type ground struct {
+	db          *postgres.Client
 	workspaceID uuid.UUID
 	accountID   uuid.UUID
 	appID       uuid.UUID
@@ -35,6 +36,7 @@ type ground struct {
 
 func lay(ctx context.Context, db *postgres.Client, sealer *crypter.Crypter) (ground, error) {
 	on := ground{
+		db:          db,
 		workspaceID: uuid.New(),
 		accountID:   uuid.New(),
 		appID:       uuid.New(),
@@ -280,6 +282,44 @@ func TestARepositoryWithNoWebhookSecretOfItsOwnStillReads(t *testing.T) {
 				"read it back: %w. The delivery edge reads the repository before it can verify "+
 					"anything, so a row it cannot scan drops every webhook that arrives",
 				err,
+			)
+		}
+
+		return nil
+	})
+}
+
+func TestAnInstallationCanOnlyBeConnectedOnce(t *testing.T) {
+	rolledBack(t, func(ctx context.Context, on ground) error {
+		if _, err := on.connections.Create(ctx, repository.SCMConnectionInput{
+			Connection: installationConnection(on),
+		}); err != nil {
+			return fmt.Errorf("connect the installation: %w", err)
+		}
+
+		elsewhere := uuid.New()
+
+		if _, err := on.db.Querier(ctx).ExecContext(
+			ctx,
+			`INSERT INTO workspaces (id, slug, name) VALUES ($1, $2, $2)`,
+			elsewhere,
+			"elsewhere-"+elsewhere.String()[:8],
+		); err != nil {
+			return fmt.Errorf("lay a second workspace: %w", err)
+		}
+
+		claimed := installationConnection(on)
+		claimed.WorkspaceID = elsewhere
+
+		_, err := on.connections.Create(ctx, repository.SCMConnectionInput{Connection: claimed})
+
+		if !errors.Is(err, entity.ErrSCMInstallationConnected) {
+			return fmt.Errorf(
+				"claiming a connected installation again came back with %v, want %v. One "+
+					"application serves the whole instance and deliveries are routed by "+
+					"installation, so the second claim is somebody else's workspace asking for "+
+					"the first one's events — it has to be named, not answered with a 500",
+				err, entity.ErrSCMInstallationConnected,
 			)
 		}
 

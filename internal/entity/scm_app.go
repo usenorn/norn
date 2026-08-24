@@ -15,15 +15,16 @@ const (
 )
 
 var (
-	ErrSCMAppNotFound          = errors.New("no source control application is registered")
-	ErrSCMAppExists            = errors.New("an application is already registered for that forge")
-	ErrSCMInstallationNotFound = errors.New("that installation is not available to you")
-	ErrSCMAppUnsupported       = errors.New("this platform has no application to install")
-	ErrSCMPrivateKeyInvalid    = errors.New("that is not a private key this instance can read")
-	ErrSCMAppTokenUnavailable  = errors.New("the forge issued no token for that installation")
-	ErrSCMAppTokenUnsupported  = errors.New("an installation holds no token to replace")
-	ErrSCMAppStateNotFound     = errors.New("that registration has already been used, or it expired")
-	ErrSCMAppRefused           = errors.New("the forge refused the registration")
+	ErrSCMAppNotFound           = errors.New("no source control application is registered")
+	ErrSCMAppExists             = errors.New("an application is already registered for that forge")
+	ErrSCMInstallationNotFound  = errors.New("that installation is not available to you")
+	ErrSCMInstallationConnected = errors.New("that installation is already connected on this instance")
+	ErrSCMAppUnsupported        = errors.New("this platform has no application to install")
+	ErrSCMPrivateKeyInvalid     = errors.New("that is not a private key this instance can read")
+	ErrSCMAppTokenUnavailable   = errors.New("the forge issued no token for that installation")
+	ErrSCMAppTokenUnsupported   = errors.New("an installation holds no token to replace")
+	ErrSCMAppStateNotFound      = errors.New("that registration has already been used, or it expired")
+	ErrSCMAppRefused            = errors.New("the forge refused the registration")
 )
 
 type SCMAuthKind string

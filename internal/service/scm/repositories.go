@@ -2,6 +2,7 @@ package scm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -89,7 +90,7 @@ func (s *connections) AddRepository(
 		return service.ConnectedRepository{}, err
 	}
 
-	token, err := s.credentials.token(ctx, connection)
+	token, err := s.credentials.refresh(ctx, connection)
 	if err != nil {
 		return service.ConnectedRepository{}, err
 	}
@@ -104,7 +105,13 @@ func (s *connections) AddRepository(
 
 	found, err := forge.Repository(ctx, target)
 	if err != nil {
-		s.breakOn(ctx, connection, err)
+		// A repository this connection was never granted says nothing about the credential, so
+		// only a refused one breaks the connection. Reading it the other way let one name the
+		// installation cannot reach stop every repository already connected through it.
+		var rejected entity.SCMCredentialsRejectedError
+		if errors.As(err, &rejected) {
+			s.breakOn(ctx, connection, err)
+		}
 
 		return service.ConnectedRepository{}, err
 	}
