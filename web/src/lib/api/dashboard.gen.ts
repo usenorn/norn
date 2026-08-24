@@ -5493,7 +5493,7 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_delegation_agent_not_yours" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
@@ -7151,6 +7151,11 @@ export interface components {
             readsAudit?: boolean;
             /** @description Whether this member is an agent with at least one machine connected. False for people and for an agent that is MCP-only. What lets the delegate picker say so before the work is handed over; it never blocks the delegation. */
             hasRunner?: boolean;
+            /**
+             * Format: uuid
+             * @description Who registered this member, set only when it is an agent. Absent for people. What lets the delegate picker offer somebody only the agents they own, matching the rule the server enforces.
+             */
+            ownerAccountId?: string;
             /** Format: date-time */
             deactivatedAt?: string;
         };

@@ -1893,6 +1893,7 @@ const (
 	IssueConflictProblemCodeCycleTeamMismatch            IssueConflictProblemCode = "cycle_team_mismatch"
 	IssueConflictProblemCodeIssueAlreadyOnTeam           IssueConflictProblemCode = "issue_already_on_team"
 	IssueConflictProblemCodeIssueChildrenOpen            IssueConflictProblemCode = "issue_children_open"
+	IssueConflictProblemCodeIssueDelegationAgentNotYours IssueConflictProblemCode = "issue_delegation_agent_not_yours"
 	IssueConflictProblemCodeIssueDelegationAgentUnusable IssueConflictProblemCode = "issue_delegation_agent_unusable"
 	IssueConflictProblemCodeIssueDelegationHeld          IssueConflictProblemCode = "issue_delegation_held"
 	IssueConflictProblemCodeIssueDestinationIncapable    IssueConflictProblemCode = "issue_destination_incapable"
@@ -1920,6 +1921,8 @@ func (e IssueConflictProblemCode) Valid() bool {
 	case IssueConflictProblemCodeIssueAlreadyOnTeam:
 		return true
 	case IssueConflictProblemCodeIssueChildrenOpen:
+		return true
+	case IssueConflictProblemCodeIssueDelegationAgentNotYours:
 		return true
 	case IssueConflictProblemCodeIssueDelegationAgentUnusable:
 		return true
@@ -6437,10 +6440,13 @@ type Membership struct {
 	Kind           *AccountKind       `json:"kind,omitempty"`
 	LastActiveAt   *time.Time         `json:"lastActiveAt,omitempty"`
 	LastAuthMethod *SessionAuthMethod `json:"lastAuthMethod,omitempty"`
-	ReadsAudit     *bool              `json:"readsAudit,omitempty"`
-	Role           MembershipRole     `json:"role"`
-	Source         MembershipSource   `json:"source"`
-	WorkspaceId    openapi_types.UUID `json:"workspaceId"`
+
+	// OwnerAccountId Who registered this member, set only when it is an agent. Absent for people. What lets the delegate picker offer somebody only the agents they own, matching the rule the server enforces.
+	OwnerAccountId *openapi_types.UUID `json:"ownerAccountId,omitempty"`
+	ReadsAudit     *bool               `json:"readsAudit,omitempty"`
+	Role           MembershipRole      `json:"role"`
+	Source         MembershipSource    `json:"source"`
+	WorkspaceId    openapi_types.UUID  `json:"workspaceId"`
 }
 
 // MembershipConflictProblem defines model for MembershipConflictProblem.
