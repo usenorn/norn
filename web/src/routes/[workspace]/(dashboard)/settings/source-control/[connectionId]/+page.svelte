@@ -162,240 +162,244 @@
 	</title>
 </svelte:head>
 
-<div class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6">
-	<div class="flex flex-col gap-1">
-		<Eyebrow>
-			<a href={sourceControlPath(workspace.slug)} class="hover:text-ink-900">Source control</a>
-		</Eyebrow>
-		<h1 class="text-lg font-medium tracking-snug text-ink-900">
-			{#if view.kind === "detail"}
-				{providerLabel(view.connection.provider)} · {connectionLabel(view.connection)}
-			{:else}
-				Connection
-			{/if}
-		</h1>
-	</div>
-
-	{#if view.kind === "loading"}
-		<p class="text-sm text-muted-foreground">Reading this connection…</p>
-	{:else if view.kind === "not_found"}
-		<Alert.Root>
-			<Alert.Title>That connection is gone</Alert.Title>
-			<Alert.Description>
-				It may have been removed. <a href={sourceControlPath(workspace.slug)} class="underline">
-					Back to source control
-				</a>.
-			</Alert.Description>
-		</Alert.Root>
-	{:else if view.kind === "forbidden"}
-		<Alert.Root>
-			<Alert.Title>You cannot manage connections</Alert.Title>
-			<Alert.Description>{failureMessage({ kind: "forbidden" })}</Alert.Description>
-		</Alert.Root>
-	{:else if view.kind === "unavailable"}
-		<Alert.Root variant="destructive">
-			<Alert.Title>Source control could not be reached</Alert.Title>
-			<Alert.Description>{failureMessage({ kind: "unavailable" })}</Alert.Description>
-		</Alert.Root>
-	{:else}
-		<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
-			<h2 class="text-md font-medium tracking-snug text-ink-900">Health</h2>
-
-			{#if view.connection.status === "broken"}
-				<p class="flex items-start gap-1.5 text-sm text-destructive">
-					<TriangleAlert class="mt-0.5 size-icon-row shrink-0" aria-hidden="true" />
-					<span>
-						Not working — {brokenLabel(view.connection)}.
-						{#if view.connection.brokenDetail}
-							{view.connection.brokenDetail}
-						{/if}
-					</span>
-				</p>
-			{:else}
-				<p class="flex items-center gap-1.5 text-sm text-muted-foreground">
-					<CircleCheck class="size-icon-row shrink-0 text-success" aria-hidden="true" />
-					Working.
-					{#if view.connection.verifiedAt}
-						Last proved {onDateAndTime(view.connection.verifiedAt, timezone)}.
-					{/if}
-				</p>
-			{/if}
-
-			<dl class="flex flex-col gap-2 text-sm">
-				{#if view.connection.identityLogin}
-					<div class="flex flex-col gap-0.5">
-						<dt class="text-muted-foreground">Acting as</dt>
-						<dd class="text-ink-900">{view.connection.identityLogin}</dd>
-					</div>
-				{/if}
-				{#if view.connection.authKind === "app"}
-					<div class="flex flex-col gap-0.5">
-						<dt class="text-muted-foreground">Credential</dt>
-						<dd class="text-ink-900">
-							An installation on {view.connection.accountLogin ?? "the platform"}. Norn mints a
-							short-lived token as it works; nobody's personal token is held.
-						</dd>
-					</div>
+<div class="flex-1 overflow-auto">
+	<div
+		class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
+	>
+		<div class="flex flex-col gap-1">
+			<Eyebrow>
+				<a href={sourceControlPath(workspace.slug)} class="hover:text-ink-900">Source control</a>
+			</Eyebrow>
+			<h1 class="text-lg font-medium tracking-snug text-ink-900">
+				{#if view.kind === "detail"}
+					{providerLabel(view.connection.provider)} · {connectionLabel(view.connection)}
 				{:else}
-					<div class="flex flex-col gap-0.5">
-						<dt class="text-muted-foreground">Token</dt>
-						<dd class="text-ink-900">Ending {view.connection.tokenHint}</dd>
-					</div>
+					Connection
 				{/if}
-				{#if view.connection.baseUrl}
-					<div class="flex flex-col gap-0.5">
-						<dt class="text-muted-foreground">Address</dt>
-						<dd class="font-mono text-xs break-all text-ink-900">{view.connection.baseUrl}</dd>
-					</div>
-				{/if}
-			</dl>
+			</h1>
+		</div>
 
-			{#if view.connection.allowPrivateAddress || view.connection.caCertificateSet}
-				<p class="text-xs text-muted-foreground">
-					{#if view.connection.allowPrivateAddress}
-						Reaching an address on your own network is allowed for this connection.
+		{#if view.kind === "loading"}
+			<p class="text-sm text-muted-foreground">Reading this connection…</p>
+		{:else if view.kind === "not_found"}
+			<Alert.Root>
+				<Alert.Title>That connection is gone</Alert.Title>
+				<Alert.Description>
+					It may have been removed. <a href={sourceControlPath(workspace.slug)} class="underline">
+						Back to source control
+					</a>.
+				</Alert.Description>
+			</Alert.Root>
+		{:else if view.kind === "forbidden"}
+			<Alert.Root>
+				<Alert.Title>You cannot manage connections</Alert.Title>
+				<Alert.Description>{failureMessage({ kind: "forbidden" })}</Alert.Description>
+			</Alert.Root>
+		{:else if view.kind === "unavailable"}
+			<Alert.Root variant="destructive">
+				<Alert.Title>Source control could not be reached</Alert.Title>
+				<Alert.Description>{failureMessage({ kind: "unavailable" })}</Alert.Description>
+			</Alert.Root>
+		{:else}
+			<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
+				<h2 class="text-md font-medium tracking-snug text-ink-900">Health</h2>
+
+				{#if view.connection.status === "broken"}
+					<p class="flex items-start gap-1.5 text-sm text-destructive">
+						<TriangleAlert class="mt-0.5 size-icon-row shrink-0" aria-hidden="true" />
+						<span>
+							Not working — {brokenLabel(view.connection)}.
+							{#if view.connection.brokenDetail}
+								{view.connection.brokenDetail}
+							{/if}
+						</span>
+					</p>
+				{:else}
+					<p class="flex items-center gap-1.5 text-sm text-muted-foreground">
+						<CircleCheck class="size-icon-row shrink-0 text-success" aria-hidden="true" />
+						Working.
+						{#if view.connection.verifiedAt}
+							Last proved {onDateAndTime(view.connection.verifiedAt, timezone)}.
+						{/if}
+					</p>
+				{/if}
+
+				<dl class="flex flex-col gap-2 text-sm">
+					{#if view.connection.identityLogin}
+						<div class="flex flex-col gap-0.5">
+							<dt class="text-muted-foreground">Acting as</dt>
+							<dd class="text-ink-900">{view.connection.identityLogin}</dd>
+						</div>
 					{/if}
-					{#if view.connection.caCertificateSet}
-						It trusts a certificate authority you supplied.
+					{#if view.connection.authKind === "app"}
+						<div class="flex flex-col gap-0.5">
+							<dt class="text-muted-foreground">Credential</dt>
+							<dd class="text-ink-900">
+								An installation on {view.connection.accountLogin ?? "the platform"}. Norn mints a
+								short-lived token as it works; nobody's personal token is held.
+							</dd>
+						</div>
+					{:else}
+						<div class="flex flex-col gap-0.5">
+							<dt class="text-muted-foreground">Token</dt>
+							<dd class="text-ink-900">Ending {view.connection.tokenHint}</dd>
+						</div>
 					{/if}
-				</p>
+					{#if view.connection.baseUrl}
+						<div class="flex flex-col gap-0.5">
+							<dt class="text-muted-foreground">Address</dt>
+							<dd class="font-mono text-xs break-all text-ink-900">{view.connection.baseUrl}</dd>
+						</div>
+					{/if}
+				</dl>
+
+				{#if view.connection.allowPrivateAddress || view.connection.caCertificateSet}
+					<p class="text-xs text-muted-foreground">
+						{#if view.connection.allowPrivateAddress}
+							Reaching an address on your own network is allowed for this connection.
+						{/if}
+						{#if view.connection.caCertificateSet}
+							It trusts a certificate authority you supplied.
+						{/if}
+					</p>
+				{/if}
+
+				{#if view.connection.missingCapabilities?.length}
+					<div class="flex flex-col gap-1 rounded-md border border-line-subtle p-3">
+						<p class="text-sm text-ink-900">This platform does not offer everything Norn uses</p>
+						<ul class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+							{#each view.connection.missingCapabilities as capability (capability)}
+								<li>{capabilityLabel(capability)}</li>
+							{/each}
+						</ul>
+						<p class="text-xs text-muted-foreground">
+							Everything else works as usual. Nothing here fails quietly — it is simply not
+							available on this target.
+						</p>
+					</div>
+				{/if}
+
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" onclick={verify} disabled={verifying}>
+						{verifying ? "Asking the platform…" : "Check it now"}
+					</Button>
+				</div>
+			</section>
+
+			{#if shown}
+				<Alert.Root variant="destructive">
+					<Alert.Title>That did not work</Alert.Title>
+					<Alert.Description>{failureDetail || failureMessage(shown)}</Alert.Description>
+				</Alert.Root>
 			{/if}
 
-			{#if view.connection.missingCapabilities?.length}
-				<div class="flex flex-col gap-1 rounded-md border border-line-subtle p-3">
-					<p class="text-sm text-ink-900">This platform does not offer everything Norn uses</p>
-					<ul class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-						{#each view.connection.missingCapabilities as capability (capability)}
-							<li>{capabilityLabel(capability)}</li>
+			<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
+				<h2 class="text-md font-medium tracking-snug text-ink-900">Repositories</h2>
+
+				{#if view.repositories.length === 0}
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						This credential reaches nothing yet, so every event it is sent is discarded.
+					</p>
+					<Button
+						href={sourceControlConnectPath(workspace.slug) + `?connection=${view.connection.id}`}
+						class="self-start"
+					>
+						Connect a repository
+					</Button>
+				{:else}
+					<ul class="flex flex-col gap-2">
+						{#each view.repositories as repository (repository.id)}
+							<li class="flex items-start justify-between gap-2">
+								<span class="flex min-w-0 flex-col">
+									<a
+										href={sourceControlRepositoryPath(workspace.slug, repository.id)}
+										class="truncate text-sm text-ink-900 underline-offset-2 hover:underline"
+									>
+										{repository.fullName}
+									</a>
+									<span class="text-xs text-muted-foreground">{routingLabel(repository)}</span>
+								</span>
+								{#if !repository.hookInstalled}
+									<span class="shrink-0 text-xs text-muted-foreground">no webhook</span>
+								{/if}
+							</li>
 						{/each}
 					</ul>
-					<p class="text-xs text-muted-foreground">
-						Everything else works as usual. Nothing here fails quietly — it is simply not
-						available on this target.
+				{/if}
+			</section>
+
+			{#if view.connection.authKind === "app"}
+				<section class="flex flex-col gap-2 rounded-lg border border-line-subtle p-4">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Change what this reaches</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						There is no token to replace. Widen or narrow what Norn sees by changing the
+						repositories the installation is granted, on the platform.
 					</p>
-				</div>
-			{/if}
-
-			<div class="flex flex-wrap gap-2">
-				<Button variant="secondary" onclick={verify} disabled={verifying}>
-					{verifying ? "Asking the platform…" : "Check it now"}
-				</Button>
-			</div>
-		</section>
-
-		{#if shown}
-			<Alert.Root variant="destructive">
-				<Alert.Title>That did not work</Alert.Title>
-				<Alert.Description>{failureDetail || failureMessage(shown)}</Alert.Description>
-			</Alert.Root>
-		{/if}
-
-		<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
-			<h2 class="text-md font-medium tracking-snug text-ink-900">Repositories</h2>
-
-			{#if view.repositories.length === 0}
-				<p class="text-sm leading-normal text-muted-foreground text-pretty">
-					This credential reaches nothing yet, so every event it is sent is discarded.
-				</p>
-				<Button
-					href={sourceControlConnectPath(workspace.slug) + `?connection=${view.connection.id}`}
-					class="self-start"
-				>
-					Connect a repository
-				</Button>
+					{#if data.installUrl}
+						<Button variant="secondary" href={data.installUrl} rel="external" class="self-start">
+							Change it on {providerLabel(view.connection.provider)}
+						</Button>
+					{/if}
+				</section>
 			{:else}
-				<ul class="flex flex-col gap-2">
-					{#each view.repositories as repository (repository.id)}
-						<li class="flex items-start justify-between gap-2">
-							<span class="flex min-w-0 flex-col">
-								<a
-									href={sourceControlRepositoryPath(workspace.slug, repository.id)}
-									class="truncate text-sm text-ink-900 underline-offset-2 hover:underline"
-								>
-									{repository.fullName}
-								</a>
-								<span class="text-xs text-muted-foreground">{routingLabel(repository)}</span>
-							</span>
-							{#if !repository.hookInstalled}
-								<span class="shrink-0 text-xs text-muted-foreground">no webhook</span>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</section>
-
-		{#if view.connection.authKind === "app"}
-			<section class="flex flex-col gap-2 rounded-lg border border-line-subtle p-4">
-				<h2 class="text-md font-medium tracking-snug text-ink-900">Change what this reaches</h2>
+			<form
+				method="POST"
+				use:tokenEnhance
+				class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4"
+			>
+				<h2 class="text-md font-medium tracking-snug text-ink-900">Replace the token</h2>
 				<p class="text-sm leading-normal text-muted-foreground text-pretty">
-					There is no token to replace. Widen or narrow what Norn sees by changing the
-					repositories the installation is granted, on the platform.
+					The new token is proved against the platform before the old one is discarded.
 				</p>
-				{#if data.installUrl}
-					<Button variant="secondary" href={data.installUrl} rel="external" class="self-start">
-						Change it on {providerLabel(view.connection.provider)}
+
+				<Form.Field form={tokenForm} name="token">
+					<Form.Control>
+						{#snippet children({ props })}
+							<Form.Label>Personal access token</Form.Label>
+							<Input {...props} type="password" autocomplete="off" bind:value={$tokenFields.token} />
+						{/snippet}
+					</Form.Control>
+					<Form.FieldErrors />
+				</Form.Field>
+
+				<div class="flex flex-wrap gap-2">
+					<Button type="submit" disabled={$replacing}>
+						{$replacing ? "Checking the token…" : "Replace it"}
+					</Button>
+				</div>
+			</form>
+			{/if}
+
+			<section class="flex flex-col gap-3 rounded-lg border border-destructive/40 p-4">
+				<h2 class="text-md font-medium tracking-snug text-ink-900">Stop using this credential</h2>
+				<p class="text-sm leading-normal text-muted-foreground text-pretty">
+					Every repository under it is disconnected and its webhook removed. Links and mirrors
+					already on issues stay exactly as readable.
+				</p>
+
+				{#if confirmingDisconnect}
+					<div class="flex flex-wrap gap-2">
+						<Button variant="destructive" onclick={disconnect} disabled={disconnecting}>
+							{disconnecting ? "Disconnecting…" : "Yes, disconnect"}
+						</Button>
+						<Button
+							variant="secondary"
+							onclick={() => (confirmingDisconnect = false)}
+							disabled={disconnecting}
+						>
+							Keep it
+						</Button>
+					</div>
+				{:else}
+					<Button
+						variant="secondary"
+						onclick={() => (confirmingDisconnect = true)}
+						class="self-start"
+					>
+						Disconnect
 					</Button>
 				{/if}
 			</section>
-		{:else}
-		<form
-			method="POST"
-			use:tokenEnhance
-			class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4"
-		>
-			<h2 class="text-md font-medium tracking-snug text-ink-900">Replace the token</h2>
-			<p class="text-sm leading-normal text-muted-foreground text-pretty">
-				The new token is proved against the platform before the old one is discarded.
-			</p>
-
-			<Form.Field form={tokenForm} name="token">
-				<Form.Control>
-					{#snippet children({ props })}
-						<Form.Label>Personal access token</Form.Label>
-						<Input {...props} type="password" autocomplete="off" bind:value={$tokenFields.token} />
-					{/snippet}
-				</Form.Control>
-				<Form.FieldErrors />
-			</Form.Field>
-
-			<div class="flex flex-wrap gap-2">
-				<Button type="submit" disabled={$replacing}>
-					{$replacing ? "Checking the token…" : "Replace it"}
-				</Button>
-			</div>
-		</form>
 		{/if}
-
-		<section class="flex flex-col gap-3 rounded-lg border border-destructive/40 p-4">
-			<h2 class="text-md font-medium tracking-snug text-ink-900">Stop using this credential</h2>
-			<p class="text-sm leading-normal text-muted-foreground text-pretty">
-				Every repository under it is disconnected and its webhook removed. Links and mirrors
-				already on issues stay exactly as readable.
-			</p>
-
-			{#if confirmingDisconnect}
-				<div class="flex flex-wrap gap-2">
-					<Button variant="destructive" onclick={disconnect} disabled={disconnecting}>
-						{disconnecting ? "Disconnecting…" : "Yes, disconnect"}
-					</Button>
-					<Button
-						variant="secondary"
-						onclick={() => (confirmingDisconnect = false)}
-						disabled={disconnecting}
-					>
-						Keep it
-					</Button>
-				</div>
-			{:else}
-				<Button
-					variant="secondary"
-					onclick={() => (confirmingDisconnect = true)}
-					class="self-start"
-				>
-					Disconnect
-				</Button>
-			{/if}
-		</section>
-	{/if}
+	</div>
 </div>
