@@ -565,3 +565,37 @@ func TestASyncNamesEveryRunTheMachineIsStillHolding(t *testing.T) {
 		t.Fatalf("the machine is told it holds %v, want [exec-01ABC]", held)
 	}
 }
+
+func TestARunWhoseDelegationWasTakenBackIsNotStartedAgain(t *testing.T) {
+	h := newHarness(t)
+
+	execution := h.execution(entity.ExecutionFailed)
+	h.holding(execution)
+	h.heldFails = entity.ErrIssueDelegationNotFound
+
+	_, err := h.service.Restart(context.Background(), h.workspaceID, execution.ID)
+	if !errors.Is(err, entity.ErrExecutionNotDelegated) {
+		t.Fatalf(
+			"restarting a run nobody delegates any more returned %v, want %v. A machine would "+
+				"otherwise pick up work the workspace has already taken back",
+			err, entity.ErrExecutionNotDelegated,
+		)
+	}
+}
+
+func TestARunSupersededByANewerDelegationIsNotStartedAgain(t *testing.T) {
+	h := newHarness(t)
+
+	execution := h.execution(entity.ExecutionFailed)
+	h.holding(execution)
+	h.held.ID = uuid.New()
+
+	_, err := h.service.Restart(context.Background(), h.workspaceID, execution.ID)
+	if !errors.Is(err, entity.ErrExecutionNotDelegated) {
+		t.Fatalf(
+			"restarting a run whose delegation has been handed over again returned %v, want %v. "+
+				"The issue would otherwise be worked twice from two different briefs",
+			err, entity.ErrExecutionNotDelegated,
+		)
+	}
+}

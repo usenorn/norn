@@ -1515,6 +1515,23 @@ export const delegationPreviewStates: Record<string, DelegationPreview> = import
 						delegatedByAccountId: "00000000-0000-4000-8000-0000000000a1",
 						delegatedAt: "2026-08-11T09:20:00Z",
 					},
+					running: true,
+				},
+			},
+			stopped: {
+				panel: {
+					kind: "held",
+					delegation: {
+						id: "00000000-0000-4000-8000-000000000d03",
+						issueId: "00000000-0000-4000-8000-000000000501",
+						agentId: "00000000-0000-4000-8000-000000000d11",
+						agentName: "opsy",
+						agentAccountId: "00000000-0000-4000-8000-000000000d21",
+						brief: "Chase down the duplicate charge on card retries in the Northwind sandbox.",
+						delegatedByAccountId: "00000000-0000-4000-8000-0000000000a1",
+						delegatedAt: "2026-08-11T09:20:00Z",
+					},
+					running: false,
 				},
 			},
 			working: {
@@ -1528,6 +1545,7 @@ export const delegationPreviewStates: Record<string, DelegationPreview> = import
 						agentAccountId: "00000000-0000-4000-8000-000000000d21",
 						delegatedAt: "2026-08-11T09:20:00Z",
 					},
+					running: true,
 				},
 				working: true,
 			},

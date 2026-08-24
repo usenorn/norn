@@ -43,15 +43,28 @@
 				Since {onDateAndTime(panel.delegation.delegatedAt, timezone)}
 			</span>
 			{#if editable}
-				<Button
-					variant="ghost"
-					size="sm"
-					class="-ml-1.75 w-max px-1.75 text-2xs text-muted-foreground"
-					disabled={working}
-					onclick={onrecall}
-				>
-					Take it back
-				</Button>
+				<div class="-ml-1.75 flex flex-wrap items-center">
+					<Button
+						variant="ghost"
+						size="sm"
+						class="w-max px-1.75 text-2xs text-muted-foreground"
+						disabled={working}
+						onclick={onrecall}
+					>
+						Take it back
+					</Button>
+					{#if !panel.running}
+						<Button
+							variant="ghost"
+							size="sm"
+							class="w-max px-1.75 text-2xs text-muted-foreground"
+							disabled={working}
+							onclick={ondelegate}
+						>
+							Hand it over again
+						</Button>
+					{/if}
+				</div>
 			{/if}
 		{:else if editable && !assigned}
 			<span class="py-0.5 text-md text-muted-foreground text-pretty">

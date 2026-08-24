@@ -94,6 +94,10 @@ SELECT` + executionColumns + executionJoins + `
 WHERE e.runner_id = $1 AND e.state NOT IN ` + terminalStates + `
 ORDER BY e.queued_at, e.id`
 
+const liveExecutionByDelegationQuery = `
+SELECT` + executionColumns + executionJoins + `
+WHERE e.delegation_id = $1 AND e.state NOT IN ` + terminalStates
+
 const nextExecutionAttemptQuery = `
 SELECT coalesce(max(attempt), 0) + 1 FROM workspace_executions WHERE issue_id = $1`
 
@@ -627,6 +631,13 @@ func (r *executionRepository) ListLiveByRunner(
 	runnerID uuid.UUID,
 ) ([]entity.Execution, error) {
 	return r.list(ctx, liveExecutionsByRunnerQuery, runnerID.String())
+}
+
+func (r *executionRepository) LiveByDelegation(
+	ctx context.Context,
+	delegationID uuid.UUID,
+) (entity.Execution, error) {
+	return r.find(ctx, liveExecutionByDelegationQuery, delegationID.String())
 }
 
 func (r *executionRepository) ListQueuedByAgent(

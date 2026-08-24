@@ -1217,9 +1217,11 @@ func (e ExecutionPreviewState) Valid() bool {
 
 // Defines values for ExecutionProblemCode.
 const (
+	ExecutionAlreadyLive   ExecutionProblemCode = "execution_already_live"
 	ExecutionChunkConflict ExecutionProblemCode = "execution_chunk_conflict"
 	ExecutionFinished      ExecutionProblemCode = "execution_finished"
 	ExecutionNoRunner      ExecutionProblemCode = "execution_no_runner"
+	ExecutionNotDelegated  ExecutionProblemCode = "execution_not_delegated"
 	ExecutionNotReviewable ExecutionProblemCode = "execution_not_reviewable"
 	ExecutionSelfApproval  ExecutionProblemCode = "execution_self_approval"
 	ExecutionTransition    ExecutionProblemCode = "execution_transition"
@@ -1229,11 +1231,15 @@ const (
 // Valid indicates whether the value is a known member of the ExecutionProblemCode enum.
 func (e ExecutionProblemCode) Valid() bool {
 	switch e {
+	case ExecutionAlreadyLive:
+		return true
 	case ExecutionChunkConflict:
 		return true
 	case ExecutionFinished:
 		return true
 	case ExecutionNoRunner:
+		return true
+	case ExecutionNotDelegated:
 		return true
 	case ExecutionNotReviewable:
 		return true

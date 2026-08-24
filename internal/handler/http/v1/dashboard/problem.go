@@ -510,6 +510,12 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrExecutionNoRunner):
 		return executionConflictProblem(api.ExecutionNoRunner, err), true
 
+	case errors.Is(err, entity.ErrExecutionAlreadyLive):
+		return executionConflictProblem(api.ExecutionAlreadyLive, err), true
+
+	case errors.Is(err, entity.ErrExecutionNotDelegated):
+		return executionConflictProblem(api.ExecutionNotDelegated, err), true
+
 	case errors.Is(err, entity.ErrExecutionChunkConflict):
 		return executionConflictProblem(api.ExecutionChunkConflict, err), true
 

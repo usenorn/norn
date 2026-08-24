@@ -5480,7 +5480,7 @@ export interface components {
         };
         ExecutionProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_chunk_conflict";
+            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_already_live" | "execution_not_delegated" | "execution_chunk_conflict";
         };
         PreviewProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */

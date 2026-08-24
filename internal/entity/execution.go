@@ -181,6 +181,14 @@ func (e Execution) Restartable() bool {
 	return e.State.Terminal() && e.State != ExecutionCompleted
 }
 
+func (e Execution) Stale(now time.Time) bool {
+	return e.LeaseExpiresAt != nil && e.LeaseExpiresAt.Before(now)
+}
+
+func (e Execution) Underway(now time.Time) bool {
+	return !e.Finished() && !e.Stale(now)
+}
+
 type ExecutionActor struct {
 	Kind      ActorKind
 	AccountID uuid.UUID

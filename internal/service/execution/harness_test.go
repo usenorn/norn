@@ -16,6 +16,7 @@ import (
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
 	executionservicerepo "github.com/usenorn/norn/internal/repository/executionservice"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
+	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	previewrepo "github.com/usenorn/norn/internal/repository/preview"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
 	channelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
@@ -32,6 +33,7 @@ import (
 
 type harness struct {
 	executions  *executionrepo.MockExecution
+	delegations *delegationrepo.MockIssueDelegation
 	changesets  *changesetrepo.MockChangeSet
 	previews    *previewrepo.MockPreview
 	services    *executionservicerepo.MockExecutionService
@@ -49,6 +51,8 @@ type harness struct {
 	audit       *auditsvc.MockAudit
 	service     service.Executions
 
+	held        entity.IssueDelegation
+	heldFails   error
 	workspaceID uuid.UUID
 	issue       entity.Issue
 	runner      entity.Runner
@@ -72,6 +76,7 @@ func newHarness(t *testing.T) *harness {
 
 	h := &harness{
 		executions:  executionrepo.NewMockExecution(ctrl),
+		delegations: delegationrepo.NewMockIssueDelegation(ctrl),
 		changesets:  changesetrepo.NewMockChangeSet(ctrl),
 		previews:    previewrepo.NewMockPreview(ctrl),
 		services:    executionservicerepo.NewMockExecutionService(ctrl),
@@ -87,6 +92,7 @@ func newHarness(t *testing.T) *harness {
 		events:      eventsvc.NewMockEvents(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		audit:       auditsvc.NewMockAudit(ctrl),
+		heldFails:   entity.ErrIssueDelegationNotFound,
 		workspaceID: workspaceID,
 		caller:      uuid.New(),
 		issue: entity.Issue{
@@ -191,9 +197,16 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.delegations.EXPECT().
+		Open(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) (entity.IssueDelegation, error) {
+			return h.held, h.heldFails
+		}).
+		AnyTimes()
+
 	h.service = executionsvc.New(
-		h.executions, h.changesets, h.previews, h.services, h.runners, h.codebases, h.issues,
-		h.states,
+		h.executions, h.delegations, h.changesets, h.previews, h.services, h.runners, h.codebases,
+		h.issues, h.states,
 		h.channels, h.writer, h.source, h.events, h.authorizer, h.audit, transactor,
 	)
 
@@ -298,6 +311,14 @@ func (h *harness) opening(attempt int) *repository.NewExecution {
 
 func (h *harness) holding(execution entity.Execution) {
 	h.executions.EXPECT().GetByID(gomock.Any(), execution.ID).Return(execution, nil).AnyTimes()
+
+	h.held = entity.IssueDelegation{
+		ID:          execution.DelegationID,
+		WorkspaceID: execution.WorkspaceID,
+		IssueID:     execution.IssueID,
+		AgentID:     execution.AgentID,
+	}
+	h.heldFails = nil
 }
 
 func (h *harness) moving() {

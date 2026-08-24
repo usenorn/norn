@@ -2658,7 +2658,7 @@
 		reference={issue.reference}
 		{agents}
 		ondelegated={(held) => {
-			delegated = { kind: "held", delegation: held };
+			delegated = { kind: "held", delegation: held, running: true };
 			invalidate(keys.page(page.route.id));
 		}}
 	/>

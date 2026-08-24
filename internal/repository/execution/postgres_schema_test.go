@@ -165,6 +165,7 @@ func statements() map[string]string {
 		"visibleExecutionsQuery":             visibleExecutionsQuery,
 		"keepExecutionQuery":                 keepExecutionQuery,
 		"liveExecutionsByRunnerQuery":        liveExecutionsByRunnerQuery,
+		"liveExecutionByDelegationQuery":     liveExecutionByDelegationQuery,
 		"queuedExecutionsByAgentQuery":       queuedExecutionsByAgentQuery,
 		"executionsSharingRepositoriesQuery": executionsSharingRepositoriesQuery,
 		"runnerHeldSlotsQuery":               runnerHeldSlotsQuery,

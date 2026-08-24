@@ -213,6 +213,8 @@ export type RunFailure =
 	| { kind: "not_reviewable" }
 	| { kind: "self_approval" }
 	| { kind: "no_runner" }
+	| { kind: "already_live" }
+	| { kind: "not_delegated" }
 	| { kind: "preview_closed" }
 	| { kind: "preview_not_routable" }
 	| { kind: "share_crowded" }
@@ -239,6 +241,10 @@ export function readRunFailure(error: unknown): RunFailure {
 			return { kind: "self_approval" };
 		case "execution_no_runner":
 			return { kind: "no_runner" };
+		case "execution_already_live":
+			return { kind: "already_live" };
+		case "execution_not_delegated":
+			return { kind: "not_delegated" };
 		case "preview_closed":
 			return { kind: "preview_closed" };
 		case "preview_not_routable":
@@ -272,6 +278,10 @@ export function runFailureMessage(failure: RunFailure): string {
 			return "A machine may not accept its own work. Somebody else has to review this run.";
 		case "no_runner":
 			return "This agent has no machine to hand the work to.";
+		case "already_live":
+			return "A newer attempt at this is already going. Open it rather than starting another.";
+		case "not_delegated":
+			return "Nobody is holding this issue any more. Hand it to an agent again to run it.";
 		case "preview_closed":
 			return "This preview has been closed, so there is nothing left to share.";
 		case "preview_not_routable":

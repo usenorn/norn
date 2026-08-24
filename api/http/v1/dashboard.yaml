@@ -8634,6 +8634,8 @@ components:
                 - execution_not_reviewable
                 - execution_self_approval
                 - execution_no_runner
+                - execution_already_live
+                - execution_not_delegated
                 - execution_chunk_conflict
 
     PreviewProblem:

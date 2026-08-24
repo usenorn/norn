@@ -239,6 +239,21 @@ func (mr *MockExecutionMockRecorder) ListVisible(ctx, scope, page any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVisible", reflect.TypeOf((*MockExecution)(nil).ListVisible), ctx, scope, page)
 }
 
+// LiveByDelegation mocks base method.
+func (m *MockExecution) LiveByDelegation(ctx context.Context, delegationID uuid.UUID) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LiveByDelegation", ctx, delegationID)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LiveByDelegation indicates an expected call of LiveByDelegation.
+func (mr *MockExecutionMockRecorder) LiveByDelegation(ctx, delegationID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiveByDelegation", reflect.TypeOf((*MockExecution)(nil).LiveByDelegation), ctx, delegationID)
+}
+
 // Move mocks base method.
 func (m *MockExecution) Move(ctx context.Context, executionID string, move repository.ExecutionMove) (entity.Execution, error) {
 	m.ctrl.T.Helper()

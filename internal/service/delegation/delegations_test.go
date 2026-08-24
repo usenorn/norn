@@ -12,6 +12,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 )
 
@@ -266,4 +267,143 @@ func TestADelegationCannotAskForARuntimeNoMachineHas(t *testing.T) {
 			err,
 		)
 	}
+}
+
+func TestAnIssueWhoseRunStoppedCanBeHandedOverAgainWithoutTakingItBackFirst(t *testing.T) {
+	for _, stopped := range entity.TerminalExecutionStates() {
+		t.Run(string(stopped), func(t *testing.T) {
+			h := newHarness(t)
+			issue := h.issue()
+			agent := h.agent()
+
+			h.expectIssue(issue)
+			h.expectAgent(agent)
+
+			spent := h.alreadyHeld(issue, agent)
+			h.ranAs(spent, stopped, nil)
+
+			var closed repository.RecallDelegation
+
+			h.delegations.EXPECT().
+				Recall(gomock.Any(), h.workspaceID, gomock.Any()).
+				DoAndReturn(func(
+					_ context.Context, _ uuid.UUID, recall repository.RecallDelegation,
+				) (entity.IssueDelegation, error) {
+					closed = recall
+
+					return spent, nil
+				})
+
+			h.delegations.EXPECT().
+				Delegate(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(
+					_ context.Context, held entity.IssueDelegation,
+				) (entity.IssueDelegation, error) {
+					held.ID = uuid.New()
+					held.AgentName = agent.Name
+
+					return held, nil
+				})
+
+			h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil)
+			h.emitter.EXPECT().Emit(gomock.Any(), gomock.Any()).Return(nil)
+
+			delegated, err := h.service.Delegate(
+				context.Background(), h.workspaceID, issue.ID, service.DelegateIssueInput{
+					AgentAccountID: agent.AccountID,
+				},
+			)
+			if err != nil {
+				t.Fatalf(
+					"handing over an issue whose run ended %s returned %v. Nothing is running, so "+
+						"refusing leaves the issue stuck behind a delegation nobody is acting on",
+					stopped, err,
+				)
+			}
+
+			if closed.IssueID != issue.ID || closed.AccountID != h.actorID {
+				t.Fatalf(
+					"the spent delegation was closed as %+v, want it closed on %s by %s",
+					closed, issue.ID, h.actorID,
+				)
+			}
+
+			if delegated.ID == spent.ID {
+				t.Fatal("handing it over again reused the spent delegation instead of opening a new one")
+			}
+		})
+	}
+}
+
+func TestAnIssueWithARunStillGoingIsNotHandedToASecondAgent(t *testing.T) {
+	h := newHarness(t)
+	issue := h.issue()
+	agent := h.agent()
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+
+	held := h.alreadyHeld(issue, agent)
+	h.ranAs(held, entity.ExecutionRunning, leaseFor(time.Minute))
+
+	_, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID, service.DelegateIssueInput{
+			AgentAccountID: agent.AccountID,
+		},
+	)
+
+	if !errors.Is(err, entity.ErrIssueDelegationHeld) {
+		t.Fatalf(
+			"handing over an issue a machine is still working on returned %v, want %v. Two runs "+
+				"would then write the same branch",
+			err, entity.ErrIssueDelegationHeld,
+		)
+	}
+}
+
+func TestAnIssueWhoseRunnerStoppedReportingCanBeHandedOverAgain(t *testing.T) {
+	h := newHarness(t)
+	issue := h.issue()
+	agent := h.agent()
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+
+	stale := h.alreadyHeld(issue, agent)
+	h.ranAs(stale, entity.ExecutionRunning, leaseFor(-time.Minute))
+
+	h.delegations.EXPECT().
+		Recall(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return(stale, nil)
+
+	h.delegations.EXPECT().
+		Delegate(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, held entity.IssueDelegation,
+		) (entity.IssueDelegation, error) {
+			held.ID = uuid.New()
+
+			return held, nil
+		})
+
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil)
+	h.emitter.EXPECT().Emit(gomock.Any(), gomock.Any()).Return(nil)
+
+	if _, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID, service.DelegateIssueInput{
+			AgentAccountID: agent.AccountID,
+		},
+	); err != nil {
+		t.Fatalf(
+			"handing over an issue whose run lapsed its lease returned %v. The machine stopped "+
+				"reporting, so waiting for the sweep to notice strands the issue",
+			err,
+		)
+	}
+}
+
+func leaseFor(remaining time.Duration) *time.Time {
+	expiry := time.Now().UTC().Add(remaining)
+
+	return &expiry
 }

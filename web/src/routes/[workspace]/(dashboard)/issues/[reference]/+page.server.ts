@@ -192,7 +192,7 @@ export const load: PageServerLoad = async ({
 			watchers: (watchers.data?.followers ?? []).map((watcher) => watcher.accountId),
 			codeLinks: codeLinks.data ?? [],
 			delegation: delegations.data
-				? currentDelegation(delegations.data)
+				? currentDelegation(delegations.data, runs.data ?? [])
 				: { kind: "unavailable" },
 			runs: runs.data ?? [],
 			changeset: changeset.data,

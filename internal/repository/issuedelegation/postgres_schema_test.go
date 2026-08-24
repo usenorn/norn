@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -155,5 +156,104 @@ func statements() map[string]string {
 		"delegationByIDQuery":     delegationByIDQuery,
 		"openDelegationQuery":     openDelegationQuery,
 		"recallDelegationQuery":   recallDelegationQuery,
+	}
+}
+
+const issueFixture = `
+WITH workspace AS (
+    INSERT INTO workspaces (slug, name) VALUES ('handover-check', 'Handover check')
+    RETURNING id
+), team AS (
+    INSERT INTO workspace_teams (workspace_id, key, name)
+    SELECT id, 'HND', 'Handover' FROM workspace
+    RETURNING id, workspace_id
+), state AS (
+    INSERT INTO workspace_workflow_states (workspace_id, team_id, name, category, position)
+    SELECT workspace_id, id, 'Todo', 'not_started', 1 FROM team
+    RETURNING id
+), account AS (
+    INSERT INTO accounts (status, kind, display_name, timezone)
+    VALUES ('active', 'agent', 'opsy', 'UTC')
+    RETURNING id
+), agent AS (
+    INSERT INTO workspace_agents (workspace_id, account_id, owner_account_id, name)
+    SELECT team.workspace_id, account.id, account.id, 'opsy'
+    FROM team, account
+    RETURNING id, workspace_id
+), issue AS (
+    INSERT INTO workspace_issues
+        (workspace_id, team_id, number, title, state_id, reference_key, rank)
+    SELECT team.workspace_id, team.id, 1, 'hand me over', state.id, 'HND', 'n'
+    FROM team, state
+    RETURNING id, workspace_id
+)
+SELECT issue.workspace_id, issue.id, agent.id, account.id
+FROM issue, agent, account`
+
+func TestHandingAnIssueOverAgainClosesTheSpentDelegationInTheSameBreath(t *testing.T) {
+	dsn := strings.TrimSpace(os.Getenv("NORN_POSTGRES_DSN"))
+	if dsn == "" {
+		t.Skip("NORN_POSTGRES_DSN is unset, so there is no schema to check the rule against")
+	}
+
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		t.Fatalf("open %s: %v", redacted(dsn), err)
+	}
+
+	t.Cleanup(func() { _ = db.Close() })
+
+	if err := db.Ping(); err != nil {
+		t.Skipf("no database at %s: %v", redacted(dsn), err)
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+
+	t.Cleanup(func() { _ = tx.Rollback() })
+
+	var workspaceID, issueID, agentID, accountID string
+
+	if err := tx.QueryRow(issueFixture).Scan(&workspaceID, &issueID, &agentID, &accountID); err != nil {
+		t.Fatalf("build an issue to hand over: %v", err)
+	}
+
+	insert := `
+INSERT INTO workspace_issue_delegations (workspace_id, issue_id, agent_id) VALUES ($1, $2, $3)`
+
+	if _, err := tx.Exec(insert, workspaceID, issueID, agentID); err != nil {
+		t.Fatalf("hand the issue over the first time: %v", err)
+	}
+
+	if _, err := tx.Exec(`SAVEPOINT before_second`); err != nil {
+		t.Fatalf("savepoint: %v", err)
+	}
+
+	if _, err := tx.Exec(insert, workspaceID, issueID, agentID); err == nil {
+		t.Fatal(
+			"a second open delegation was recorded for one issue. Two agents would then both " +
+				"believe they hold it",
+		)
+	}
+
+	if _, err := tx.Exec(`ROLLBACK TO SAVEPOINT before_second`); err != nil {
+		t.Fatalf("roll back to savepoint: %v", err)
+	}
+
+	if _, err := tx.Exec(
+		recallDelegationQuery, workspaceID, issueID, time.Now().UTC(), accountID,
+	); err != nil {
+		t.Fatalf("close the spent delegation: %v", err)
+	}
+
+	if _, err := tx.Exec(insert, workspaceID, issueID, agentID); err != nil {
+		t.Fatalf(
+			"closing the spent delegation and opening the next one in one transaction was "+
+				"refused: %v. Handing an issue over again after its run stopped depends on the "+
+				"index being partial and checked per statement",
+			err,
+		)
 	}
 }

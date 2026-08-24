@@ -17,25 +17,27 @@ import (
 const sweepBatch = 200
 
 type executionsService struct {
-	executions repository.Execution
-	changesets repository.ChangeSet
-	previews   repository.Preview
-	services   repository.ExecutionService
-	runners    repository.Runner
-	codebases  repository.Codebase
-	issues     repository.Issue
-	states     repository.WorkflowState
-	channels   repository.RunnerChannel
-	writer     service.Issues
-	source     service.SourceControl
-	events     service.Events
-	authorizer service.Authorizer
-	audit      service.Audit
-	transactor repository.Transactor
+	executions  repository.Execution
+	delegations repository.IssueDelegation
+	changesets  repository.ChangeSet
+	previews    repository.Preview
+	services    repository.ExecutionService
+	runners     repository.Runner
+	codebases   repository.Codebase
+	issues      repository.Issue
+	states      repository.WorkflowState
+	channels    repository.RunnerChannel
+	writer      service.Issues
+	source      service.SourceControl
+	events      service.Events
+	authorizer  service.Authorizer
+	audit       service.Audit
+	transactor  repository.Transactor
 }
 
 func New(
 	executions repository.Execution,
+	delegations repository.IssueDelegation,
 	changesets repository.ChangeSet,
 	previews repository.Preview,
 	services repository.ExecutionService,
@@ -52,21 +54,22 @@ func New(
 	transactor repository.Transactor,
 ) service.Executions {
 	return &executionsService{
-		executions: executions,
-		changesets: changesets,
-		previews:   previews,
-		services:   services,
-		runners:    runners,
-		codebases:  codebases,
-		issues:     issues,
-		states:     states,
-		channels:   channels,
-		writer:     writer,
-		source:     source,
-		events:     events,
-		authorizer: authorizer,
-		audit:      audit,
-		transactor: transactor,
+		executions:  executions,
+		delegations: delegations,
+		changesets:  changesets,
+		previews:    previews,
+		services:    services,
+		runners:     runners,
+		codebases:   codebases,
+		issues:      issues,
+		states:      states,
+		channels:    channels,
+		writer:      writer,
+		source:      source,
+		events:      events,
+		authorizer:  authorizer,
+		audit:       audit,
+		transactor:  transactor,
 	}
 }
 
@@ -377,6 +380,10 @@ func (s *executionsService) Restart(
 		return entity.Execution{}, entity.ErrExecutionUnfinished
 	}
 
+	if err := s.stillDelegated(ctx, execution); err != nil {
+		return entity.Execution{}, err
+	}
+
 	issue, err := s.issues.GetVisible(ctx, workspaceID, execution.IssueID, decision.Scope)
 	if err != nil {
 		return entity.Execution{}, err
@@ -395,6 +402,26 @@ func (s *executionsService) Restart(
 		params:       execution.Params,
 		actor:        entity.ExecutionActorOf(decision.Actor),
 	})
+}
+
+func (s *executionsService) stillDelegated(
+	ctx context.Context,
+	execution entity.Execution,
+) error {
+	held, err := s.delegations.Open(ctx, execution.WorkspaceID, execution.IssueID)
+	if err != nil {
+		if errors.Is(err, entity.ErrIssueDelegationNotFound) {
+			return entity.ErrExecutionNotDelegated
+		}
+
+		return err
+	}
+
+	if held.ID != execution.DelegationID {
+		return entity.ErrExecutionNotDelegated
+	}
+
+	return nil
 }
 
 func (s *executionsService) record(

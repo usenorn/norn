@@ -49,6 +49,7 @@ type Execution interface {
 		ctx context.Context, scope entity.TeamScope, page entity.ExecutionPage,
 	) ([]entity.ExecutionListing, error)
 	ListLiveByRunner(ctx context.Context, runnerID uuid.UUID) ([]entity.Execution, error)
+	LiveByDelegation(ctx context.Context, delegationID uuid.UUID) (entity.Execution, error)
 	ListQueuedByAgent(
 		ctx context.Context, agentID uuid.UUID, limit int,
 	) ([]entity.Execution, error)

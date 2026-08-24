@@ -2,6 +2,7 @@ package entity_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/usenorn/norn/internal/entity"
 )
@@ -198,6 +199,34 @@ func TestACompletedExecutionIsNotOfferedARestart(t *testing.T) {
 		if got := execution.Restartable(); got != want {
 			t.Errorf("a %q execution reports restartable=%v, want %v", state, got, want)
 		}
+	}
+}
+
+func TestALeaseThatHasRunOutMeansNothingIsCarryingTheRunAnyMore(t *testing.T) {
+	now := time.Date(2026, 8, 24, 12, 0, 0, 0, time.UTC)
+	lapsed := now.Add(-time.Minute)
+	holding := now.Add(time.Minute)
+
+	cases := map[string]struct {
+		state    entity.ExecutionState
+		lease    *time.Time
+		underway bool
+	}{
+		"a run holding a live lease is underway":       {entity.ExecutionRunning, &holding, true},
+		"a run whose lease ran out is not":             {entity.ExecutionRunning, &lapsed, false},
+		"a queued run holds no lease and is underway":  {entity.ExecutionQueued, nil, true},
+		"a finished run is never underway":             {entity.ExecutionFailed, nil, false},
+		"nor is one that finished holding a stale one": {entity.ExecutionCompleted, &lapsed, false},
+	}
+
+	for name, expected := range cases {
+		t.Run(name, func(t *testing.T) {
+			execution := entity.Execution{State: expected.state, LeaseExpiresAt: expected.lease}
+
+			if got := execution.Underway(now); got != expected.underway {
+				t.Fatalf("Underway = %v, want %v", got, expected.underway)
+			}
+		})
 	}
 }
 

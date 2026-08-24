@@ -1,4 +1,5 @@
 import type { components, operations } from "$lib/api/dashboard.gen";
+import { isSettled, type Execution } from "$lib/executions/executions";
 
 export type IssueDelegation = components["schemas"]["IssueDelegation"];
 export type Member = components["schemas"]["Membership"];
@@ -6,7 +7,7 @@ export type Member = components["schemas"]["Membership"];
 export type DelegationPanel =
 	| { kind: "loading" }
 	| { kind: "none" }
-	| { kind: "held"; delegation: IssueDelegation }
+	| { kind: "held"; delegation: IssueDelegation; running: boolean }
 	| { kind: "unavailable" };
 
 type DelegateResponses = operations["delegateWorkspaceIssue"]["responses"];
@@ -50,7 +51,7 @@ export function readDelegationFailure(error: unknown): DelegationFailure {
 export function delegationFailureMessage(failure: DelegationFailure): string {
 	switch (failure.kind) {
 		case "held":
-			return "Somebody handed this to an agent while you were deciding. Reload to see who has it.";
+			return "An agent is working on this right now. Take it back before handing it over again.";
 		case "agent_unusable":
 			return "That agent is disabled, so it cannot take work.";
 		case "unassigned":
@@ -66,10 +67,19 @@ export function delegationFailureMessage(failure: DelegationFailure): string {
 	}
 }
 
-export function currentDelegation(delegations: IssueDelegation[]): DelegationPanel {
+export function currentDelegation(
+	delegations: IssueDelegation[],
+	runs: Execution[]
+): DelegationPanel {
 	const held = delegations.find((delegation) => !delegation.recalledAt);
 
-	return held ? { kind: "held", delegation: held } : { kind: "none" };
+	if (!held) return { kind: "none" };
+
+	return {
+		kind: "held",
+		delegation: held,
+		running: runs.some((run) => run.delegationId === held.id && !isSettled(run.state)),
+	};
 }
 
 export function agentMembers(members: Member[]): Member[] {

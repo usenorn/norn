@@ -3,6 +3,7 @@ package delegation
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ type delegationsService struct {
 	delegations repository.IssueDelegation
 	issues      repository.Issue
 	agents      repository.Agent
+	runs        repository.Execution
 	activity    repository.Activity
 	emitter     service.WebhookEmitter
 	executions  service.Executions
@@ -29,6 +31,7 @@ func New(
 	delegations repository.IssueDelegation,
 	issues repository.Issue,
 	agents repository.Agent,
+	runs repository.Execution,
 	activity repository.Activity,
 	emitter service.WebhookEmitter,
 	executions service.Executions,
@@ -39,6 +42,7 @@ func New(
 		delegations: delegations,
 		issues:      issues,
 		agents:      agents,
+		runs:        runs,
 		activity:    activity,
 		emitter:     emitter,
 		executions:  executions,
@@ -114,6 +118,10 @@ func (s *delegationsService) Delegate(
 			return entity.ErrIssueDelegationAgentUnusable
 		}
 
+		if err := s.supersede(ctx, workspaceID, issue.ID, decision); err != nil {
+			return err
+		}
+
 		delegated, err = s.delegations.Delegate(ctx, entity.IssueDelegation{
 			WorkspaceID:          workspaceID,
 			IssueID:              issue.ID,
@@ -150,6 +158,40 @@ func (s *delegationsService) Delegate(
 	}
 
 	return delegated, nil
+}
+
+func (s *delegationsService) supersede(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	decision entity.Decision,
+) error {
+	held, err := s.delegations.Open(ctx, workspaceID, issueID)
+	if err != nil {
+		if errors.Is(err, entity.ErrIssueDelegationNotFound) {
+			return nil
+		}
+
+		return err
+	}
+
+	now := time.Now().UTC()
+
+	run, err := s.runs.LiveByDelegation(ctx, held.ID)
+
+	switch {
+	case err == nil && run.Underway(now):
+		return entity.ErrIssueDelegationHeld
+	case err != nil && !errors.Is(err, entity.ErrExecutionNotFound):
+		return err
+	}
+
+	_, err = s.delegations.Recall(ctx, workspaceID, repository.RecallDelegation{
+		IssueID:    issueID,
+		AccountID:  decision.Actor.AccountID,
+		RecalledAt: now,
+	})
+
+	return err
 }
 
 func (s *delegationsService) Targets(
