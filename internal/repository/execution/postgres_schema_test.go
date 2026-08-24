@@ -171,10 +171,7 @@ func statements() map[string]string {
 		"nextExecutionAttemptQuery":          nextExecutionAttemptQuery,
 		"bindExecutionQuery":                 bindExecutionQuery,
 		"moveExecutionQuery":                 moveExecutionQuery,
-		"renewExecutionLeasesQuery":          renewExecutionLeasesQuery,
 		"expiredExecutionLeasesQuery":        expiredExecutionLeasesQuery,
-		"appendExecutionEventQuery":          appendExecutionEventQuery,
-		"executionEventsQuery":               executionEventsQuery,
 	}
 }
 

@@ -202,21 +202,24 @@ var WorkspaceIssueQuestionWhere = struct {
 var WorkspaceIssueQuestionRels = struct {
 	AnsweredByAccount string
 	AskedByAccount    string
+	Execution         string
 	SettledByAccount  string
 	Workspace         string
 }{
 	AnsweredByAccount: "AnsweredByAccount",
 	AskedByAccount:    "AskedByAccount",
+	Execution:         "Execution",
 	SettledByAccount:  "SettledByAccount",
 	Workspace:         "Workspace",
 }
 
 // workspaceIssueQuestionR is where relationships are stored.
 type workspaceIssueQuestionR struct {
-	AnsweredByAccount *Account   `boil:"AnsweredByAccount" json:"AnsweredByAccount" toml:"AnsweredByAccount" yaml:"AnsweredByAccount"`
-	AskedByAccount    *Account   `boil:"AskedByAccount" json:"AskedByAccount" toml:"AskedByAccount" yaml:"AskedByAccount"`
-	SettledByAccount  *Account   `boil:"SettledByAccount" json:"SettledByAccount" toml:"SettledByAccount" yaml:"SettledByAccount"`
-	Workspace         *Workspace `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	AnsweredByAccount *Account            `boil:"AnsweredByAccount" json:"AnsweredByAccount" toml:"AnsweredByAccount" yaml:"AnsweredByAccount"`
+	AskedByAccount    *Account            `boil:"AskedByAccount" json:"AskedByAccount" toml:"AskedByAccount" yaml:"AskedByAccount"`
+	Execution         *WorkspaceExecution `boil:"Execution" json:"Execution" toml:"Execution" yaml:"Execution"`
+	SettledByAccount  *Account            `boil:"SettledByAccount" json:"SettledByAccount" toml:"SettledByAccount" yaml:"SettledByAccount"`
+	Workspace         *Workspace          `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
 }
 
 // NewStruct creates a new relationship struct
@@ -254,6 +257,22 @@ func (r *workspaceIssueQuestionR) GetAskedByAccount() *Account {
 	}
 
 	return r.AskedByAccount
+}
+
+func (o *WorkspaceIssueQuestion) GetExecution() *WorkspaceExecution {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetExecution()
+}
+
+func (r *workspaceIssueQuestionR) GetExecution() *WorkspaceExecution {
+	if r == nil {
+		return nil
+	}
+
+	return r.Execution
 }
 
 func (o *WorkspaceIssueQuestion) GetSettledByAccount() *Account {
@@ -626,6 +645,17 @@ func (o *WorkspaceIssueQuestion) AskedByAccount(mods ...qm.QueryMod) accountQuer
 	return Accounts(queryMods...)
 }
 
+// Execution pointed to by the foreign key.
+func (o *WorkspaceIssueQuestion) Execution(mods ...qm.QueryMod) workspaceExecutionQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.ExecutionID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceExecutions(queryMods...)
+}
+
 // SettledByAccount pointed to by the foreign key.
 func (o *WorkspaceIssueQuestion) SettledByAccount(mods ...qm.QueryMod) accountQuery {
 	queryMods := []qm.QueryMod{
@@ -888,6 +918,130 @@ func (workspaceIssueQuestionL) LoadAskedByAccount(ctx context.Context, e boil.Co
 					foreign.R = &accountR{}
 				}
 				foreign.R.AskedByAccountWorkspaceIssueQuestions = append(foreign.R.AskedByAccountWorkspaceIssueQuestions, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadExecution allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceIssueQuestionL) LoadExecution(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueQuestion any, mods queries.Applicator) error {
+	var slice []*WorkspaceIssueQuestion
+	var object *WorkspaceIssueQuestion
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceIssueQuestion.(*WorkspaceIssueQuestion)
+		if !ok {
+			object = new(WorkspaceIssueQuestion)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssueQuestion)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssueQuestion))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceIssueQuestion.(*[]*WorkspaceIssueQuestion)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssueQuestion)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssueQuestion))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceIssueQuestionR{}
+		}
+		if !queries.IsNil(object.ExecutionID) {
+			args[object.ExecutionID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceIssueQuestionR{}
+			}
+
+			if !queries.IsNil(obj.ExecutionID) {
+				args[obj.ExecutionID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_executions`),
+		qm.WhereIn(`workspace_executions.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceExecution")
+	}
+
+	var resultSlice []*WorkspaceExecution
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceExecution")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_executions")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_executions")
+	}
+
+	if len(workspaceExecutionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Execution = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceExecutionR{}
+		}
+		foreign.R.ExecutionWorkspaceIssueQuestions = append(foreign.R.ExecutionWorkspaceIssueQuestions, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.ExecutionID, foreign.ID) {
+				local.R.Execution = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceExecutionR{}
+				}
+				foreign.R.ExecutionWorkspaceIssueQuestions = append(foreign.R.ExecutionWorkspaceIssueQuestions, local)
 				break
 			}
 		}
@@ -1295,6 +1449,86 @@ func (o *WorkspaceIssueQuestion) RemoveAskedByAccount(ctx context.Context, exec 
 			related.R.AskedByAccountWorkspaceIssueQuestions[i] = related.R.AskedByAccountWorkspaceIssueQuestions[ln-1]
 		}
 		related.R.AskedByAccountWorkspaceIssueQuestions = related.R.AskedByAccountWorkspaceIssueQuestions[:ln-1]
+		break
+	}
+	return nil
+}
+
+// SetExecution of the workspaceIssueQuestion to the related item.
+// Sets o.R.Execution to related.
+// Adds o to related.R.ExecutionWorkspaceIssueQuestions.
+func (o *WorkspaceIssueQuestion) SetExecution(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceExecution) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_issue_questions\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"execution_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceIssueQuestionPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.ExecutionID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceIssueQuestionR{
+			Execution: related,
+		}
+	} else {
+		o.R.Execution = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceExecutionR{
+			ExecutionWorkspaceIssueQuestions: WorkspaceIssueQuestionSlice{o},
+		}
+	} else {
+		related.R.ExecutionWorkspaceIssueQuestions = append(related.R.ExecutionWorkspaceIssueQuestions, o)
+	}
+
+	return nil
+}
+
+// RemoveExecution relationship.
+// Sets o.R.Execution to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceIssueQuestion) RemoveExecution(ctx context.Context, exec boil.ContextExecutor, related *WorkspaceExecution) error {
+	var err error
+
+	queries.SetScanner(&o.ExecutionID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("execution_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Execution = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.ExecutionWorkspaceIssueQuestions {
+		if queries.Equal(o.ExecutionID, ri.ExecutionID) {
+			continue
+		}
+
+		ln := len(related.R.ExecutionWorkspaceIssueQuestions)
+		if ln > 1 && i < ln-1 {
+			related.R.ExecutionWorkspaceIssueQuestions[i] = related.R.ExecutionWorkspaceIssueQuestions[ln-1]
+		}
+		related.R.ExecutionWorkspaceIssueQuestions = related.R.ExecutionWorkspaceIssueQuestions[:ln-1]
 		break
 	}
 	return nil

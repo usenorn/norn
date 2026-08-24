@@ -150,16 +150,8 @@ func contains(values []string, wanted string) bool {
 
 func statements() map[string]string {
 	return map[string]string{
-		"appendChunkQuery":      appendChunkQuery,
-		"chunkByDigestQuery":    chunkByDigestQuery,
-		"chunksQuery":           chunksQuery,
-		"chunkCursorsQuery":     chunkCursorsQuery,
-		"uploadedBytesQuery":    uploadedBytesQuery,
-		"expiredChunksQuery":    expiredChunksQuery,
-		"dropChunkQuery":        dropChunkQuery,
-		"saveArtifactQuery":     saveArtifactQuery,
-		"artifactByIDQuery":     artifactByIDQuery,
-		"artifactByDigestQuery": artifactByDigestQuery,
-		"artifactsQuery":        artifactsQuery,
+		"chunkCursorsQuery":  chunkCursorsQuery,
+		"uploadedBytesQuery": uploadedBytesQuery,
+		"expiredChunksQuery": expiredChunksQuery,
 	}
 }

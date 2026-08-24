@@ -8,9 +8,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/null/v8"
+	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 
+	dbpostgres "github.com/usenorn/norn/internal/db/postgres"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
@@ -150,11 +155,6 @@ WHERE e.workspace_id = $1
 ORDER BY e.queued_at, e.id
 LIMIT $4`
 
-const renewExecutionLeasesQuery = `
-UPDATE workspace_executions
-SET lease_expires_at = $2
-WHERE runner_id = $1 AND state NOT IN ` + terminalStates + ` AND state <> 'queued'`
-
 const expiredExecutionLeasesQuery = `
 SELECT` + executionColumns + executionJoins + `
 WHERE e.lease_expires_at IS NOT NULL
@@ -197,42 +197,6 @@ WITH kept AS (
 )
 SELECT` + executionColumns + `
 FROM kept e` + executionNames
-
-const executionEventColumns = `
-       id,
-       execution_id,
-       sequence,
-       kind,
-       from_state,
-       to_state,
-       actor_kind,
-       coalesce(actor_account_id::text, ''),
-       coalesce(actor_agent_id::text, ''),
-       coalesce(actor_runner_id::text, ''),
-       reason,
-       detail,
-       source_id,
-       occurred_at,
-       recorded_at`
-
-const appendExecutionEventQuery = `
-WITH inserted AS (
-    INSERT INTO workspace_execution_events
-        (execution_id, kind, from_state, to_state, actor_kind, actor_account_id,
-         actor_agent_id, actor_runner_id, reason, detail, source_id, occurred_at, recorded_at)
-    VALUES ($1, $2, $3, $4, $5, nullif($6, '')::uuid, nullif($7, '')::uuid,
-            nullif($8, '')::uuid, $9, $10::jsonb, $11, $12, $12)
-    RETURNING *
-)
-SELECT` + executionEventColumns + `
-FROM inserted`
-
-const executionEventsQuery = `
-SELECT` + executionEventColumns + `
-FROM workspace_execution_events
-WHERE execution_id = $1 AND sequence > $2
-ORDER BY sequence
-LIMIT $3`
 
 type executionRepository struct {
 	db *postgres.Client
@@ -390,65 +354,6 @@ func scanExecution(row scanner, also ...any) (entity.Execution, error) {
 	return execution, nil
 }
 
-func scanExecutionEvent(row scanner) (entity.ExecutionEvent, error) {
-	var (
-		event     entity.ExecutionEvent
-		id        string
-		kind      string
-		fromState string
-		toState   string
-		actorKind string
-		accountID string
-		agentID   string
-		runnerID  string
-	)
-
-	if err := row.Scan(
-		&id,
-		&event.ExecutionID,
-		&event.Sequence,
-		&kind,
-		&fromState,
-		&toState,
-		&actorKind,
-		&accountID,
-		&agentID,
-		&runnerID,
-		&event.Reason,
-		&event.Detail,
-		&event.SourceID,
-		&event.OccurredAt,
-		&event.RecordedAt,
-	); err != nil {
-		return entity.ExecutionEvent{}, err
-	}
-
-	parsed, err := uuid.Parse(id)
-	if err != nil {
-		return entity.ExecutionEvent{}, fmt.Errorf("parse execution event id: %w", err)
-	}
-
-	event.ID = parsed
-	event.Kind = entity.ExecutionEventKind(kind)
-	event.FromState = entity.ExecutionState(fromState)
-	event.ToState = entity.ExecutionState(toState)
-	event.Actor.Kind = entity.ActorKind(actorKind)
-
-	if event.Actor.AccountID, err = parseOptionalID(accountID); err != nil {
-		return entity.ExecutionEvent{}, fmt.Errorf("parse execution event account id: %w", err)
-	}
-
-	if event.Actor.AgentID, err = parseOptionalID(agentID); err != nil {
-		return entity.ExecutionEvent{}, fmt.Errorf("parse execution event agent id: %w", err)
-	}
-
-	if event.Actor.RunnerID, err = parseOptionalID(runnerID); err != nil {
-		return entity.ExecutionEvent{}, fmt.Errorf("parse execution event runner id: %w", err)
-	}
-
-	return event, nil
-}
-
 func (r *executionRepository) find(
 	ctx context.Context,
 	query string,
@@ -581,6 +486,81 @@ func states(wanted []entity.ExecutionState) []string {
 	}
 
 	return named
+}
+
+func eventOf(model *dbpostgres.WorkspaceExecutionEvent) (entity.ExecutionEvent, error) {
+	id, err := uuid.Parse(model.ID)
+	if err != nil {
+		return entity.ExecutionEvent{}, fmt.Errorf("parse execution event id: %w", err)
+	}
+
+	accountID, err := parseNullID(model.ActorAccountID)
+	if err != nil {
+		return entity.ExecutionEvent{}, fmt.Errorf("parse execution event account id: %w", err)
+	}
+
+	agentID, err := parseNullID(model.ActorAgentID)
+	if err != nil {
+		return entity.ExecutionEvent{}, fmt.Errorf("parse execution event agent id: %w", err)
+	}
+
+	runnerID, err := parseNullID(model.ActorRunnerID)
+	if err != nil {
+		return entity.ExecutionEvent{}, fmt.Errorf("parse execution event runner id: %w", err)
+	}
+
+	return entity.ExecutionEvent{
+		ID:          id,
+		ExecutionID: model.ExecutionID,
+		Sequence:    model.Sequence,
+		Kind:        entity.ExecutionEventKind(model.Kind),
+		FromState:   entity.ExecutionState(model.FromState),
+		ToState:     entity.ExecutionState(model.ToState),
+		Actor: entity.ExecutionActor{
+			Kind:      entity.ActorKind(model.ActorKind),
+			AccountID: accountID,
+			AgentID:   agentID,
+			RunnerID:  runnerID,
+		},
+		Reason:     model.Reason,
+		Detail:     model.Detail,
+		SourceID:   model.SourceID,
+		OccurredAt: model.OccurredAt,
+		RecordedAt: model.RecordedAt,
+	}, nil
+}
+
+func eventsOf(
+	models dbpostgres.WorkspaceExecutionEventSlice,
+) ([]entity.ExecutionEvent, error) {
+	events := make([]entity.ExecutionEvent, 0, len(models))
+
+	for _, model := range models {
+		event, err := eventOf(model)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
+func nullID(id uuid.UUID) null.String {
+	if id == uuid.Nil {
+		return null.NewString("", false)
+	}
+
+	return null.StringFrom(id.String())
+}
+
+func parseNullID(value null.String) (uuid.UUID, error) {
+	if !value.Valid || value.String == "" {
+		return uuid.Nil, nil
+	}
+
+	return uuid.Parse(value.String)
 }
 
 func (r *executionRepository) Create(
@@ -765,9 +745,13 @@ func (r *executionRepository) RenewLeases(
 	runnerID uuid.UUID,
 	expiresAt time.Time,
 ) error {
-	if _, err := r.db.Querier(ctx).ExecContext(
-		ctx, renewExecutionLeasesQuery, runnerID.String(), expiresAt,
-	); err != nil {
+	if _, err := dbpostgres.WorkspaceExecutions(
+		dbpostgres.WorkspaceExecutionWhere.RunnerID.EQ(null.StringFrom(runnerID.String())),
+		dbpostgres.WorkspaceExecutionWhere.State.NIN(states(entity.TerminalExecutionStates())),
+		dbpostgres.WorkspaceExecutionWhere.State.NEQ(string(entity.ExecutionQueued)),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceExecutionColumns.LeaseExpiresAt: expiresAt,
+	}); err != nil {
 		return fmt.Errorf("renew execution leases: %w", err)
 	}
 
@@ -791,23 +775,23 @@ func (r *executionRepository) AppendEvent(
 		detail = []byte("{}")
 	}
 
-	appended, err := scanExecutionEvent(r.db.Querier(ctx).QueryRowContext(
-		ctx,
-		appendExecutionEventQuery,
-		event.ExecutionID,
-		string(event.Kind),
-		string(event.FromState),
-		string(event.ToState),
-		string(event.Actor.Kind),
-		optionalID(event.Actor.AccountID),
-		optionalID(event.Actor.AgentID),
-		optionalID(event.Actor.RunnerID),
-		event.Reason,
-		detail,
-		event.SourceID,
-		event.OccurredAt,
-	))
-	if err != nil {
+	model := &dbpostgres.WorkspaceExecutionEvent{
+		ExecutionID:    event.ExecutionID,
+		Kind:           string(event.Kind),
+		FromState:      string(event.FromState),
+		ToState:        string(event.ToState),
+		ActorKind:      string(event.Actor.Kind),
+		ActorAccountID: nullID(event.Actor.AccountID),
+		ActorAgentID:   nullID(event.Actor.AgentID),
+		ActorRunnerID:  nullID(event.Actor.RunnerID),
+		Reason:         event.Reason,
+		Detail:         types.JSON(detail),
+		SourceID:       event.SourceID,
+		OccurredAt:     event.OccurredAt,
+		RecordedAt:     event.OccurredAt,
+	}
+
+	if err := model.Insert(ctx, r.db.Querier(ctx), boil.Infer()); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) &&
 			pgErr.Code == uniqueViolationCode &&
@@ -818,7 +802,7 @@ func (r *executionRepository) AppendEvent(
 		return entity.ExecutionEvent{}, fmt.Errorf("append execution event: %w", err)
 	}
 
-	return appended, nil
+	return eventOf(model)
 }
 
 func (r *executionRepository) ListEvents(
@@ -828,29 +812,15 @@ func (r *executionRepository) ListEvents(
 ) ([]entity.ExecutionEvent, error) {
 	bounded := page.Normalized()
 
-	rows, err := r.db.Querier(ctx).QueryContext(
-		ctx, executionEventsQuery, executionID, bounded.After, bounded.Limit,
-	)
+	models, err := dbpostgres.WorkspaceExecutionEvents(
+		dbpostgres.WorkspaceExecutionEventWhere.ExecutionID.EQ(executionID),
+		dbpostgres.WorkspaceExecutionEventWhere.Sequence.GT(bounded.After),
+		qm.OrderBy(dbpostgres.WorkspaceExecutionEventColumns.Sequence),
+		qm.Limit(bounded.Limit),
+	).All(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("list execution events: %w", err)
 	}
 
-	defer func() { _ = rows.Close() }()
-
-	events := make([]entity.ExecutionEvent, 0)
-
-	for rows.Next() {
-		event, err := scanExecutionEvent(rows)
-		if err != nil {
-			return nil, fmt.Errorf("scan execution event: %w", err)
-		}
-
-		events = append(events, event)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate execution events: %w", err)
-	}
-
-	return events, nil
+	return eventsOf(models)
 }

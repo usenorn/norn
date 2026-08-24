@@ -17,6 +17,7 @@ var TableNames = struct {
 	DirectorySyncChanges              string
 	DirectorySyncRuns                 string
 	DirectoryUsers                    string
+	PreviewGateways                   string
 	SCMApps                           string
 	WorkspaceActivity                 string
 	WorkspaceAgentProposals           string
@@ -28,10 +29,23 @@ var TableNames = struct {
 	WorkspaceCodeLinkReviewers        string
 	WorkspaceCodeLinkTransitions      string
 	WorkspaceCodeLinks                string
+	WorkspaceCodebaseRepositories     string
+	WorkspaceCodebases                string
 	WorkspaceCommentMirrors           string
 	WorkspaceCycleScopeChanges        string
 	WorkspaceCycles                   string
 	WorkspaceDirectoryConnections     string
+	WorkspaceExecutionArtifacts       string
+	WorkspaceExecutionChanges         string
+	WorkspaceExecutionChunks          string
+	WorkspaceExecutionEvents          string
+	WorkspaceExecutionPolicies        string
+	WorkspaceExecutionPreviewLinks    string
+	WorkspaceExecutionPreviews        string
+	WorkspaceExecutionResults         string
+	WorkspaceExecutionServices        string
+	WorkspaceExecutionValidations     string
+	WorkspaceExecutions               string
 	WorkspaceInvitationTeams          string
 	WorkspaceInvitations              string
 	WorkspaceIssueAttachments         string
@@ -98,6 +112,7 @@ var TableNames = struct {
 	DirectorySyncChanges:              "directory_sync_changes",
 	DirectorySyncRuns:                 "directory_sync_runs",
 	DirectoryUsers:                    "directory_users",
+	PreviewGateways:                   "preview_gateways",
 	SCMApps:                           "scm_apps",
 	WorkspaceActivity:                 "workspace_activity",
 	WorkspaceAgentProposals:           "workspace_agent_proposals",
@@ -109,10 +124,23 @@ var TableNames = struct {
 	WorkspaceCodeLinkReviewers:        "workspace_code_link_reviewers",
 	WorkspaceCodeLinkTransitions:      "workspace_code_link_transitions",
 	WorkspaceCodeLinks:                "workspace_code_links",
+	WorkspaceCodebaseRepositories:     "workspace_codebase_repositories",
+	WorkspaceCodebases:                "workspace_codebases",
 	WorkspaceCommentMirrors:           "workspace_comment_mirrors",
 	WorkspaceCycleScopeChanges:        "workspace_cycle_scope_changes",
 	WorkspaceCycles:                   "workspace_cycles",
 	WorkspaceDirectoryConnections:     "workspace_directory_connections",
+	WorkspaceExecutionArtifacts:       "workspace_execution_artifacts",
+	WorkspaceExecutionChanges:         "workspace_execution_changes",
+	WorkspaceExecutionChunks:          "workspace_execution_chunks",
+	WorkspaceExecutionEvents:          "workspace_execution_events",
+	WorkspaceExecutionPolicies:        "workspace_execution_policies",
+	WorkspaceExecutionPreviewLinks:    "workspace_execution_preview_links",
+	WorkspaceExecutionPreviews:        "workspace_execution_previews",
+	WorkspaceExecutionResults:         "workspace_execution_results",
+	WorkspaceExecutionServices:        "workspace_execution_services",
+	WorkspaceExecutionValidations:     "workspace_execution_validations",
+	WorkspaceExecutions:               "workspace_executions",
 	WorkspaceInvitationTeams:          "workspace_invitation_teams",
 	WorkspaceInvitations:              "workspace_invitations",
 	WorkspaceIssueAttachments:         "workspace_issue_attachments",

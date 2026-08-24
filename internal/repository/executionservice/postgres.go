@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/google/uuid"
 
+	dbpostgres "github.com/usenorn/norn/internal/db/postgres"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
@@ -48,12 +50,6 @@ WITH upserted AS (
 SELECT` + serviceColumns + `
 FROM upserted`
 
-const servicesQuery = `
-SELECT` + serviceColumns + `
-FROM workspace_execution_services
-WHERE execution_id = $1
-ORDER BY name, id`
-
 const serviceCountQuery = `
 SELECT count(*)
 FROM workspace_execution_services
@@ -69,6 +65,49 @@ func New(db *postgres.Client) repository.ExecutionService {
 
 type scanner interface {
 	Scan(dest ...any) error
+}
+
+func toEntity(model *dbpostgres.WorkspaceExecutionService) (entity.ExecutionService, error) {
+	id, err := uuid.Parse(model.ID)
+	if err != nil {
+		return entity.ExecutionService{}, fmt.Errorf("parse service id: %w", err)
+	}
+
+	workspaceID, err := uuid.Parse(model.WorkspaceID)
+	if err != nil {
+		return entity.ExecutionService{}, fmt.Errorf("parse workspace id: %w", err)
+	}
+
+	return entity.ExecutionService{
+		ID:          id,
+		ExecutionID: model.ExecutionID,
+		WorkspaceID: workspaceID,
+		Name:        model.Name,
+		State:       entity.ExecutionServiceState(model.State),
+		Probe:       entity.ExecutionServiceProbe(model.Probe),
+		Port:        model.Port,
+		Reason:      model.Reason,
+		ReportedAt:  model.ReportedAt,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
+	}, nil
+}
+
+func toEntities(
+	models dbpostgres.WorkspaceExecutionServiceSlice,
+) ([]entity.ExecutionService, error) {
+	services := make([]entity.ExecutionService, 0, len(models))
+
+	for _, model := range models {
+		service, err := toEntity(model)
+		if err != nil {
+			return nil, err
+		}
+
+		services = append(services, service)
+	}
+
+	return services, nil
 }
 
 func (r *serviceRepository) Save(
@@ -103,29 +142,18 @@ func (r *serviceRepository) ByExecution(
 	ctx context.Context,
 	executionID string,
 ) ([]entity.ExecutionService, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, servicesQuery, executionID)
+	models, err := dbpostgres.WorkspaceExecutionServices(
+		dbpostgres.WorkspaceExecutionServiceWhere.ExecutionID.EQ(executionID),
+		qm.OrderBy(
+			dbpostgres.WorkspaceExecutionServiceColumns.Name+", "+
+				dbpostgres.WorkspaceExecutionServiceColumns.ID,
+		),
+	).All(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("list the services of a run: %w", err)
 	}
 
-	defer func() { _ = rows.Close() }()
-
-	services := make([]entity.ExecutionService, 0)
-
-	for rows.Next() {
-		service, err := scanService(rows)
-		if err != nil {
-			return nil, fmt.Errorf("read a service: %w", err)
-		}
-
-		services = append(services, service)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("read the services of a run: %w", err)
-	}
-
-	return services, nil
+	return toEntities(models)
 }
 
 func (r *serviceRepository) Count(ctx context.Context, executionID string) (int, error) {

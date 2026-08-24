@@ -7,9 +7,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 
+	dbpostgres "github.com/usenorn/norn/internal/db/postgres"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
@@ -21,43 +24,6 @@ const (
 	sequenceUniqueIndex = "workspace_execution_chunks_sequence_key"
 	artifactUniqueIndex = "workspace_execution_artifacts_digest_key"
 )
-
-const chunkColumns = `
-       id,
-       execution_id,
-       workspace_id,
-       stream,
-       sequence,
-       digest,
-       bytes,
-       entries,
-       object_key,
-       first_at,
-       last_at,
-       received_at`
-
-const appendChunkQuery = `
-WITH inserted AS (
-    INSERT INTO workspace_execution_chunks
-        (execution_id, workspace_id, stream, sequence, digest, bytes, entries,
-         object_key, first_at, last_at, received_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    RETURNING *
-)
-SELECT` + chunkColumns + `
-FROM inserted`
-
-const chunkByDigestQuery = `
-SELECT` + chunkColumns + `
-FROM workspace_execution_chunks
-WHERE execution_id = $1 AND stream = $2 AND digest = $3`
-
-const chunksQuery = `
-SELECT` + chunkColumns + `
-FROM workspace_execution_chunks
-WHERE execution_id = $1 AND stream = $2 AND sequence > $3
-ORDER BY sequence
-LIMIT $4`
 
 const chunkCursorsQuery = `
 SELECT stream,
@@ -96,46 +62,88 @@ WHERE c.received_at < $1::timestamptz - (coalesce(p.upload_retention_days, $2::i
 ORDER BY c.received_at
 LIMIT $3::int`
 
-const dropChunkQuery = `
-DELETE FROM workspace_execution_chunks
-WHERE id = $1`
+func chunkOf(model *dbpostgres.WorkspaceExecutionChunk) (entity.ExecutionChunk, error) {
+	id, err := uuid.Parse(model.ID)
+	if err != nil {
+		return entity.ExecutionChunk{}, fmt.Errorf("parse chunk id: %w", err)
+	}
 
-const artifactColumns = `
-       id,
-       execution_id,
-       workspace_id,
-       name,
-       content_type,
-       bytes,
-       digest,
-       object_key,
-       created_at`
+	workspaceID, err := uuid.Parse(model.WorkspaceID)
+	if err != nil {
+		return entity.ExecutionChunk{}, fmt.Errorf("parse workspace id: %w", err)
+	}
 
-const saveArtifactQuery = `
-WITH inserted AS (
-    INSERT INTO workspace_execution_artifacts
-        (id, execution_id, workspace_id, name, content_type, bytes, digest, object_key)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    RETURNING *
-)
-SELECT` + artifactColumns + `
-FROM inserted`
+	return entity.ExecutionChunk{
+		ID:          id,
+		ExecutionID: model.ExecutionID,
+		WorkspaceID: workspaceID,
+		Stream:      entity.ExecutionStream(model.Stream),
+		Sequence:    model.Sequence,
+		Digest:      model.Digest,
+		Bytes:       model.Bytes,
+		Entries:     model.Entries,
+		ObjectKey:   model.ObjectKey,
+		FirstAt:     model.FirstAt,
+		LastAt:      model.LastAt,
+		ReceivedAt:  model.ReceivedAt,
+	}, nil
+}
 
-const artifactByIDQuery = `
-SELECT` + artifactColumns + `
-FROM workspace_execution_artifacts
-WHERE execution_id = $1 AND id = $2`
+func chunksOf(models dbpostgres.WorkspaceExecutionChunkSlice) ([]entity.ExecutionChunk, error) {
+	chunks := make([]entity.ExecutionChunk, 0, len(models))
 
-const artifactByDigestQuery = `
-SELECT` + artifactColumns + `
-FROM workspace_execution_artifacts
-WHERE execution_id = $1 AND digest = $2`
+	for _, model := range models {
+		chunk, err := chunkOf(model)
+		if err != nil {
+			return nil, err
+		}
 
-const artifactsQuery = `
-SELECT` + artifactColumns + `
-FROM workspace_execution_artifacts
-WHERE execution_id = $1
-ORDER BY created_at, id`
+		chunks = append(chunks, chunk)
+	}
+
+	return chunks, nil
+}
+
+func artifactOf(model *dbpostgres.WorkspaceExecutionArtifact) (entity.ExecutionArtifact, error) {
+	id, err := uuid.Parse(model.ID)
+	if err != nil {
+		return entity.ExecutionArtifact{}, fmt.Errorf("parse artifact id: %w", err)
+	}
+
+	workspaceID, err := uuid.Parse(model.WorkspaceID)
+	if err != nil {
+		return entity.ExecutionArtifact{}, fmt.Errorf("parse workspace id: %w", err)
+	}
+
+	return entity.ExecutionArtifact{
+		ID:          id,
+		ExecutionID: model.ExecutionID,
+		WorkspaceID: workspaceID,
+		Name:        model.Name,
+		ContentType: model.ContentType,
+		Bytes:       model.Bytes,
+		Digest:      model.Digest,
+		ObjectKey:   model.ObjectKey,
+		CreatedAt:   model.CreatedAt,
+	}, nil
+}
+
+func artifactsOf(
+	models dbpostgres.WorkspaceExecutionArtifactSlice,
+) ([]entity.ExecutionArtifact, error) {
+	artifacts := make([]entity.ExecutionArtifact, 0, len(models))
+
+	for _, model := range models {
+		artifact, err := artifactOf(model)
+		if err != nil {
+			return nil, err
+		}
+
+		artifacts = append(artifacts, artifact)
+	}
+
+	return artifacts, nil
+}
 
 type executionUploadRepository struct {
 	db *postgres.Client
@@ -191,63 +199,25 @@ func scanChunk(row scanner) (entity.ExecutionChunk, error) {
 	return chunk, nil
 }
 
-func scanArtifact(row scanner) (entity.ExecutionArtifact, error) {
-	var (
-		artifact    entity.ExecutionArtifact
-		artifactID  string
-		workspaceID string
-	)
-
-	if err := row.Scan(
-		&artifactID,
-		&artifact.ExecutionID,
-		&workspaceID,
-		&artifact.Name,
-		&artifact.ContentType,
-		&artifact.Bytes,
-		&artifact.Digest,
-		&artifact.ObjectKey,
-		&artifact.CreatedAt,
-	); err != nil {
-		return entity.ExecutionArtifact{}, err
-	}
-
-	parsedID, err := uuid.Parse(artifactID)
-	if err != nil {
-		return entity.ExecutionArtifact{}, fmt.Errorf("parse artifact id: %w", err)
-	}
-
-	parsedWorkspace, err := uuid.Parse(workspaceID)
-	if err != nil {
-		return entity.ExecutionArtifact{}, fmt.Errorf("parse workspace id: %w", err)
-	}
-
-	artifact.ID = parsedID
-	artifact.WorkspaceID = parsedWorkspace
-
-	return artifact, nil
-}
-
 func (r *executionUploadRepository) AppendChunk(
 	ctx context.Context,
 	chunk entity.ExecutionChunk,
 ) (entity.ExecutionChunk, error) {
-	appended, err := scanChunk(r.db.Querier(ctx).QueryRowContext(
-		ctx,
-		appendChunkQuery,
-		chunk.ExecutionID,
-		chunk.WorkspaceID.String(),
-		string(chunk.Stream),
-		chunk.Sequence,
-		chunk.Digest,
-		chunk.Bytes,
-		chunk.Entries,
-		chunk.ObjectKey,
-		chunk.FirstAt,
-		chunk.LastAt,
-		chunk.ReceivedAt,
-	))
-	if err != nil {
+	model := &dbpostgres.WorkspaceExecutionChunk{
+		ExecutionID: chunk.ExecutionID,
+		WorkspaceID: chunk.WorkspaceID.String(),
+		Stream:      string(chunk.Stream),
+		Sequence:    chunk.Sequence,
+		Digest:      chunk.Digest,
+		Bytes:       chunk.Bytes,
+		Entries:     chunk.Entries,
+		ObjectKey:   chunk.ObjectKey,
+		FirstAt:     chunk.FirstAt,
+		LastAt:      chunk.LastAt,
+		ReceivedAt:  chunk.ReceivedAt,
+	}
+
+	if err := model.Insert(ctx, r.db.Querier(ctx), boil.Infer()); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
 			switch pgErr.ConstraintName {
@@ -261,7 +231,7 @@ func (r *executionUploadRepository) AppendChunk(
 		return entity.ExecutionChunk{}, fmt.Errorf("append execution chunk: %w", err)
 	}
 
-	return appended, nil
+	return chunkOf(model)
 }
 
 func (r *executionUploadRepository) Chunk(
@@ -270,9 +240,11 @@ func (r *executionUploadRepository) Chunk(
 	stream entity.ExecutionStream,
 	digest string,
 ) (entity.ExecutionChunk, error) {
-	chunk, err := scanChunk(r.db.Querier(ctx).QueryRowContext(
-		ctx, chunkByDigestQuery, executionID, string(stream), digest,
-	))
+	model, err := dbpostgres.WorkspaceExecutionChunks(
+		dbpostgres.WorkspaceExecutionChunkWhere.ExecutionID.EQ(executionID),
+		dbpostgres.WorkspaceExecutionChunkWhere.Stream.EQ(string(stream)),
+		dbpostgres.WorkspaceExecutionChunkWhere.Digest.EQ(digest),
+	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.ExecutionChunk{}, entity.ErrExecutionNotFound
@@ -281,7 +253,7 @@ func (r *executionUploadRepository) Chunk(
 		return entity.ExecutionChunk{}, fmt.Errorf("read execution chunk: %w", err)
 	}
 
-	return chunk, nil
+	return chunkOf(model)
 }
 
 func (r *executionUploadRepository) ListChunks(
@@ -292,31 +264,18 @@ func (r *executionUploadRepository) ListChunks(
 ) ([]entity.ExecutionChunk, error) {
 	page = page.Normalized()
 
-	rows, err := r.db.Querier(ctx).QueryContext(
-		ctx, chunksQuery, executionID, string(stream), page.After, page.Limit,
-	)
+	models, err := dbpostgres.WorkspaceExecutionChunks(
+		dbpostgres.WorkspaceExecutionChunkWhere.ExecutionID.EQ(executionID),
+		dbpostgres.WorkspaceExecutionChunkWhere.Stream.EQ(string(stream)),
+		dbpostgres.WorkspaceExecutionChunkWhere.Sequence.GT(page.After),
+		qm.OrderBy(dbpostgres.WorkspaceExecutionChunkColumns.Sequence),
+		qm.Limit(page.Limit),
+	).All(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("list execution chunks: %w", err)
 	}
 
-	defer func() { _ = rows.Close() }()
-
-	chunks := make([]entity.ExecutionChunk, 0, page.Limit)
-
-	for rows.Next() {
-		chunk, err := scanChunk(rows)
-		if err != nil {
-			return nil, fmt.Errorf("read execution chunk: %w", err)
-		}
-
-		chunks = append(chunks, chunk)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("list execution chunks: %w", err)
-	}
-
-	return chunks, nil
+	return chunksOf(models)
 }
 
 func (r *executionUploadRepository) Cursors(
@@ -401,7 +360,9 @@ func (r *executionUploadRepository) ExpiredChunks(
 }
 
 func (r *executionUploadRepository) DropChunk(ctx context.Context, chunkID uuid.UUID) error {
-	if _, err := r.db.Querier(ctx).ExecContext(ctx, dropChunkQuery, chunkID.String()); err != nil {
+	if _, err := dbpostgres.WorkspaceExecutionChunks(
+		dbpostgres.WorkspaceExecutionChunkWhere.ID.EQ(chunkID.String()),
+	).DeleteAll(ctx, r.db.Querier(ctx)); err != nil {
 		return fmt.Errorf("drop execution chunk: %w", err)
 	}
 
@@ -412,19 +373,18 @@ func (r *executionUploadRepository) SaveArtifact(
 	ctx context.Context,
 	artifact entity.ExecutionArtifact,
 ) (entity.ExecutionArtifact, error) {
-	saved, err := scanArtifact(r.db.Querier(ctx).QueryRowContext(
-		ctx,
-		saveArtifactQuery,
-		artifact.ID.String(),
-		artifact.ExecutionID,
-		artifact.WorkspaceID.String(),
-		artifact.Name,
-		artifact.ContentType,
-		artifact.Bytes,
-		artifact.Digest,
-		artifact.ObjectKey,
-	))
-	if err != nil {
+	model := &dbpostgres.WorkspaceExecutionArtifact{
+		ID:          artifact.ID.String(),
+		ExecutionID: artifact.ExecutionID,
+		WorkspaceID: artifact.WorkspaceID.String(),
+		Name:        artifact.Name,
+		ContentType: artifact.ContentType,
+		Bytes:       artifact.Bytes,
+		Digest:      artifact.Digest,
+		ObjectKey:   artifact.ObjectKey,
+	}
+
+	if err := model.Insert(ctx, r.db.Querier(ctx), boil.Infer()); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) &&
 			pgErr.Code == uniqueViolationCode &&
@@ -435,7 +395,7 @@ func (r *executionUploadRepository) SaveArtifact(
 		return entity.ExecutionArtifact{}, fmt.Errorf("save execution artifact: %w", err)
 	}
 
-	return saved, nil
+	return artifactOf(model)
 }
 
 func (r *executionUploadRepository) Artifact(
@@ -443,9 +403,10 @@ func (r *executionUploadRepository) Artifact(
 	executionID string,
 	artifactID uuid.UUID,
 ) (entity.ExecutionArtifact, error) {
-	artifact, err := scanArtifact(r.db.Querier(ctx).QueryRowContext(
-		ctx, artifactByIDQuery, executionID, artifactID.String(),
-	))
+	model, err := dbpostgres.WorkspaceExecutionArtifacts(
+		dbpostgres.WorkspaceExecutionArtifactWhere.ExecutionID.EQ(executionID),
+		dbpostgres.WorkspaceExecutionArtifactWhere.ID.EQ(artifactID.String()),
+	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.ExecutionArtifact{}, entity.ErrExecutionArtifactNotFound
@@ -454,16 +415,17 @@ func (r *executionUploadRepository) Artifact(
 		return entity.ExecutionArtifact{}, fmt.Errorf("read execution artifact: %w", err)
 	}
 
-	return artifact, nil
+	return artifactOf(model)
 }
 
 func (r *executionUploadRepository) ArtifactByDigest(
 	ctx context.Context,
 	executionID, digest string,
 ) (entity.ExecutionArtifact, error) {
-	artifact, err := scanArtifact(r.db.Querier(ctx).QueryRowContext(
-		ctx, artifactByDigestQuery, executionID, digest,
-	))
+	model, err := dbpostgres.WorkspaceExecutionArtifacts(
+		dbpostgres.WorkspaceExecutionArtifactWhere.ExecutionID.EQ(executionID),
+		dbpostgres.WorkspaceExecutionArtifactWhere.Digest.EQ(digest),
+	).One(ctx, r.db.Querier(ctx))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.ExecutionArtifact{}, entity.ErrExecutionArtifactNotFound
@@ -472,34 +434,23 @@ func (r *executionUploadRepository) ArtifactByDigest(
 		return entity.ExecutionArtifact{}, fmt.Errorf("read execution artifact: %w", err)
 	}
 
-	return artifact, nil
+	return artifactOf(model)
 }
 
 func (r *executionUploadRepository) ListArtifacts(
 	ctx context.Context,
 	executionID string,
 ) ([]entity.ExecutionArtifact, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, artifactsQuery, executionID)
+	models, err := dbpostgres.WorkspaceExecutionArtifacts(
+		dbpostgres.WorkspaceExecutionArtifactWhere.ExecutionID.EQ(executionID),
+		qm.OrderBy(
+			dbpostgres.WorkspaceExecutionArtifactColumns.CreatedAt+", "+
+				dbpostgres.WorkspaceExecutionArtifactColumns.ID,
+		),
+	).All(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("list execution artifacts: %w", err)
 	}
 
-	defer func() { _ = rows.Close() }()
-
-	artifacts := make([]entity.ExecutionArtifact, 0, 8)
-
-	for rows.Next() {
-		artifact, err := scanArtifact(rows)
-		if err != nil {
-			return nil, fmt.Errorf("read execution artifact: %w", err)
-		}
-
-		artifacts = append(artifacts, artifact)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("list execution artifacts: %w", err)
-	}
-
-	return artifacts, nil
+	return artifactsOf(models)
 }

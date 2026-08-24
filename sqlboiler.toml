@@ -18,20 +18,6 @@ blacklist = [
   "workspace_import_mappings",
   "workspace_import_ledger",
   "workspace_import_report_lines",
-  "workspace_codebases",
-  "workspace_codebase_repositories",
-  "workspace_executions",
-  "workspace_execution_events",
-  "workspace_execution_chunks",
-  "workspace_execution_artifacts",
-  "workspace_execution_policies",
-  "workspace_execution_results",
-  "workspace_execution_changes",
-  "workspace_execution_validations",
-  "workspace_execution_previews",
-  "workspace_execution_services",
-  "workspace_execution_preview_links",
-  "preview_gateways",
 ]
 host = "127.0.0.1"
 port = 5433
