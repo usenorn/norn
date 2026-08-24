@@ -19,6 +19,7 @@ export type DelegateProblem =
 export type DelegationFailure =
 	| { kind: "held" }
 	| { kind: "agent_unusable" }
+	| { kind: "unassigned" }
 	| { kind: "gone" }
 	| { kind: "invalid" }
 	| { kind: "forbidden" }
@@ -36,6 +37,7 @@ export function readDelegationFailure(error: unknown): DelegationFailure {
 	if (coded(problem)) {
 		if (problem.code === "issue_delegation_held") return { kind: "held" };
 		if (problem.code === "issue_delegation_agent_unusable") return { kind: "agent_unusable" };
+		if (problem.code === "issue_delegation_unassigned") return { kind: "unassigned" };
 	}
 
 	if (problem.errors) return { kind: "invalid" };
@@ -51,6 +53,8 @@ export function delegationFailureMessage(failure: DelegationFailure): string {
 			return "Somebody handed this to an agent while you were deciding. Reload to see who has it.";
 		case "agent_unusable":
 			return "That agent is disabled, so it cannot take work.";
+		case "unassigned":
+			return "Somebody cleared the assignee while you were deciding. Assign it again before handing it over.";
 		case "gone":
 			return "Nobody is holding this issue.";
 		case "invalid":

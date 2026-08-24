@@ -97,6 +97,10 @@ func (s *delegationsService) Delegate(
 			return err
 		}
 
+		if issue.AssigneeAccountID == uuid.Nil {
+			return entity.ErrIssueDelegationUnassigned
+		}
+
 		agent, err := s.agents.GetByAccountID(ctx, input.AgentAccountID)
 		if err != nil {
 			return err

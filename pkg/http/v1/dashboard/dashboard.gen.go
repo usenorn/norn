@@ -1895,6 +1895,7 @@ const (
 	IssueConflictProblemCodeIssueChildrenOpen            IssueConflictProblemCode = "issue_children_open"
 	IssueConflictProblemCodeIssueDelegationAgentUnusable IssueConflictProblemCode = "issue_delegation_agent_unusable"
 	IssueConflictProblemCodeIssueDelegationHeld          IssueConflictProblemCode = "issue_delegation_held"
+	IssueConflictProblemCodeIssueDelegationUnassigned    IssueConflictProblemCode = "issue_delegation_unassigned"
 	IssueConflictProblemCodeIssueDestinationIncapable    IssueConflictProblemCode = "issue_destination_incapable"
 	IssueConflictProblemCodeIssueLabelsOutOfScope        IssueConflictProblemCode = "issue_labels_out_of_scope"
 	IssueConflictProblemCodeIssueNotWaiting              IssueConflictProblemCode = "issue_not_waiting"
@@ -1924,6 +1925,8 @@ func (e IssueConflictProblemCode) Valid() bool {
 	case IssueConflictProblemCodeIssueDelegationAgentUnusable:
 		return true
 	case IssueConflictProblemCodeIssueDelegationHeld:
+		return true
+	case IssueConflictProblemCodeIssueDelegationUnassigned:
 		return true
 	case IssueConflictProblemCodeIssueDestinationIncapable:
 		return true
@@ -10310,12 +10313,16 @@ type ClientInterface interface {
 
 	// DelegateWorkspaceIssueWithBody Hand this issue to an agent, and tell anything listening that work has begun
 	//
+	// An agent takes work on behalf of the person the issue is assigned to, so an issue nobody is assigned cannot be handed over. Assign it first.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/delegation (the `DelegateWorkspaceIssue` operationId).
 	DelegateWorkspaceIssueWithBody(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DelegateWorkspaceIssue Hand this issue to an agent, and tell anything listening that work has begun
+	//
+	// An agent takes work on behalf of the person the issue is assigned to, so an issue nobody is assigned cannot be handed over. Assign it first.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -14815,6 +14822,8 @@ func (c *Client) ListWorkspaceIssueDelegations(ctx context.Context, workspaceId 
 
 // DelegateWorkspaceIssueWithBody Hand this issue to an agent, and tell anything listening that work has begun
 //
+// An agent takes work on behalf of the person the issue is assigned to, so an issue nobody is assigned cannot be handed over. Assign it first.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/delegation (the `DelegateWorkspaceIssue` operationId).
@@ -14831,6 +14840,8 @@ func (c *Client) DelegateWorkspaceIssueWithBody(ctx context.Context, workspaceId
 }
 
 // DelegateWorkspaceIssue Hand this issue to an agent, and tell anything listening that work has begun
+//
+// An agent takes work on behalf of the person the issue is assigned to, so an issue nobody is assigned cannot be handed over. Assign it first.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -33971,12 +33982,16 @@ type ClientWithResponsesInterface interface {
 
 	// DelegateWorkspaceIssueWithBodyWithResponse Hand this issue to an agent, and tell anything listening that work has begun
 	//
+	// An agent takes work on behalf of the person the issue is assigned to, so an issue nobody is assigned cannot be handed over. Assign it first.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/delegation (the `DelegateWorkspaceIssue` operationId).
 	DelegateWorkspaceIssueWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DelegateWorkspaceIssueResponse, error)
 
 	// DelegateWorkspaceIssueWithResponse Hand this issue to an agent, and tell anything listening that work has begun
+	//
+	// An agent takes work on behalf of the person the issue is assigned to, so an issue nobody is assigned cannot be handed over. Assign it first.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -59923,6 +59938,8 @@ func (c *ClientWithResponses) ListWorkspaceIssueDelegationsWithResponse(ctx cont
 
 // DelegateWorkspaceIssueWithBodyWithResponse Hand this issue to an agent, and tell anything listening that work has begun
 //
+// An agent takes work on behalf of the person the issue is assigned to, so an issue nobody is assigned cannot be handed over. Assign it first.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/delegation (the `DelegateWorkspaceIssue` operationId).
@@ -59935,6 +59952,8 @@ func (c *ClientWithResponses) DelegateWorkspaceIssueWithBodyWithResponse(ctx con
 }
 
 // DelegateWorkspaceIssueWithResponse Hand this issue to an agent, and tell anything listening that work has begun
+//
+// An agent takes work on behalf of the person the issue is assigned to, so an issue nobody is assigned cannot be handed over. Assign it first.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //

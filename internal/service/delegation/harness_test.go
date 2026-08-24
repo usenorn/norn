@@ -105,13 +105,14 @@ func (h *harness) expectAgent(agent entity.Agent) {
 
 func (h *harness) issue() entity.Issue {
 	return entity.Issue{
-		ID:          uuid.New(),
-		WorkspaceID: h.workspaceID,
-		TeamID:      uuid.New(),
-		Version:     3,
-		Status:      entity.IssueStatusActive,
-		Priority:    entity.IssuePriorityNone,
-		State:       entity.IssueState{ID: uuid.New(), Category: entity.StateCategoryActive},
+		ID:                uuid.New(),
+		WorkspaceID:       h.workspaceID,
+		TeamID:            uuid.New(),
+		AssigneeAccountID: uuid.New(),
+		Version:           3,
+		Status:            entity.IssueStatusActive,
+		Priority:          entity.IssuePriorityNone,
+		State:             entity.IssueState{ID: uuid.New(), Category: entity.StateCategoryActive},
 	}
 }
 

@@ -3973,6 +3973,9 @@ paths:
       tags: [issues]
       operationId: delegateWorkspaceIssue
       summary: Hand this issue to an agent, and tell anything listening that work has begun
+      description: >-
+        An agent takes work on behalf of the person the issue is assigned to, so an issue nobody
+        is assigned cannot be handed over. Assign it first.
       requestBody:
         required: true
         content:
@@ -8702,6 +8705,7 @@ components:
                 - issue_children_open
                 - issue_delegation_held
                 - issue_delegation_agent_unusable
+                - issue_delegation_unassigned
                 - issue_relation_exists
                 - issue_relation_self
                 - label_out_of_scope

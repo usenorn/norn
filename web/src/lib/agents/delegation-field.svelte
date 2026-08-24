@@ -7,6 +7,7 @@
 	let {
 		panel,
 		editable,
+		assigned,
 		working,
 		timezone,
 		ondelegate,
@@ -14,6 +15,7 @@
 	}: {
 		panel: DelegationPanel;
 		editable: boolean;
+		assigned: boolean;
 		working: boolean;
 		timezone: string;
 		ondelegate: () => void;
@@ -51,6 +53,10 @@
 					Take it back
 				</Button>
 			{/if}
+		{:else if editable && !assigned}
+			<span class="py-0.5 text-md text-muted-foreground text-pretty">
+				Assign it to somebody first. An agent takes this on for whoever it is assigned to.
+			</span>
 		{:else if editable}
 			<Button
 				variant="ghost"
