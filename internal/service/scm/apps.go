@@ -19,15 +19,17 @@ import (
 )
 
 type apps struct {
-	apps          repository.SCMApp
-	states        repository.SCMAppState
-	forges        service.Forges
-	authorizer    service.Authorizer
+	apps        repository.SCMApp
+	connections repository.SCMConnection
+	states      repository.SCMAppState
+	forges      service.Forges
+	authorizer  service.Authorizer
 	sourceControl config.SourceControl
 }
 
 func NewApps(
 	appRepository repository.SCMApp,
+	connections repository.SCMConnection,
 	states repository.SCMAppState,
 	forges service.Forges,
 	authorizer service.Authorizer,
@@ -35,6 +37,7 @@ func NewApps(
 ) service.SourceControlApps {
 	return &apps{
 		apps:          appRepository,
+		connections:   connections,
 		states:        states,
 		forges:        forges,
 		authorizer:    authorizer,
@@ -74,11 +77,26 @@ func (s *apps) Application(
 		return service.SCMApplication{}, err
 	}
 
-	accounts, known := s.installedOn(ctx, held)
+	appConnections, err := s.connections.ListByWorkspace(ctx, workspaceID)
+	if err != nil {
+		return service.SCMApplication{}, err
+	}
+
+	accounts := scmAppAccountLogins(appConnections)
+
+	if len(accounts) > 0 {
+		return service.SCMApplication{
+			App:       held,
+			Installed: true,
+			Accounts:  accounts,
+		}, nil
+	}
+
+	global, known := s.installedOn(ctx, held)
 
 	return service.SCMApplication{
 		App:       held,
-		Installed: !known || len(accounts) > 0,
+		Installed: !known || len(global) > 0,
 		Accounts:  accounts,
 	}, nil
 }
@@ -123,6 +141,35 @@ func (s *apps) installedOn(ctx context.Context, app entity.SCMApp) ([]string, bo
 	}
 
 	return accounts, true
+}
+
+func scmAppAccountLogins(connections []entity.SCMConnection) []string {
+	seen := make(map[string]struct{})
+	accounts := make([]string, 0)
+
+	for _, connection := range connections {
+		if !connection.UsesApp() {
+			continue
+		}
+
+		login := connection.AccountLogin
+		if login == "" {
+			login = connection.IdentityLogin
+		}
+
+		if login == "" {
+			continue
+		}
+
+		if _, found := seen[login]; found {
+			continue
+		}
+
+		seen[login] = struct{}{}
+		accounts = append(accounts, login)
+	}
+
+	return accounts
 }
 
 func (s *apps) application(

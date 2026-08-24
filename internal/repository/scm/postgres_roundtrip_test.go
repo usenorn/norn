@@ -476,7 +476,7 @@ func TestMarkingSomethingBrokenTakesTheConnectionAndNotTheRepository(t *testing.
 		}
 
 		if err := on.connections.MarkBroken(
-			ctx, created.ID, entity.SCMBrokenCredentialsRejected, "handed the wrong id", time.Now().UTC(),
+			ctx, connection.WorkspaceID, created.ID, entity.SCMBrokenCredentialsRejected, "handed the wrong id", time.Now().UTC(),
 		); !errors.Is(err, entity.ErrSCMConnectionNotFound) {
 			return fmt.Errorf(
 				"marking a repository id broken returned %v, want it refused. This matched no row "+
@@ -487,7 +487,7 @@ func TestMarkingSomethingBrokenTakesTheConnectionAndNotTheRepository(t *testing.
 		}
 
 		if err := on.connections.MarkBroken(
-			ctx, connection.ID, entity.SCMBrokenCredentialsRejected, "the token was rejected", time.Now().UTC(),
+			ctx, connection.WorkspaceID, connection.ID, entity.SCMBrokenCredentialsRejected, "the token was rejected", time.Now().UTC(),
 		); err != nil {
 			return fmt.Errorf("mark the connection broken: %w", err)
 		}

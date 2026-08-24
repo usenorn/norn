@@ -60,17 +60,17 @@ func (mr *MockSCMConnectionMockRecorder) Create(ctx, input any) *gomock.Call {
 }
 
 // Delete mocks base method.
-func (m *MockSCMConnection) Delete(ctx context.Context, connectionID uuid.UUID) error {
+func (m *MockSCMConnection) Delete(ctx context.Context, workspaceID, connectionID uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, connectionID)
+	ret := m.ctrl.Call(m, "Delete", ctx, workspaceID, connectionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockSCMConnectionMockRecorder) Delete(ctx, connectionID any) *gomock.Call {
+func (mr *MockSCMConnectionMockRecorder) Delete(ctx, workspaceID, connectionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSCMConnection)(nil).Delete), ctx, connectionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSCMConnection)(nil).Delete), ctx, workspaceID, connectionID)
 }
 
 // GetByID mocks base method.
@@ -134,45 +134,45 @@ func (mr *MockSCMConnectionMockRecorder) ListByWorkspace(ctx, workspaceID any) *
 }
 
 // MarkBroken mocks base method.
-func (m *MockSCMConnection) MarkBroken(ctx context.Context, connectionID uuid.UUID, reason entity.SCMBrokenReason, detail string, at time.Time) error {
+func (m *MockSCMConnection) MarkBroken(ctx context.Context, workspaceID, connectionID uuid.UUID, reason entity.SCMBrokenReason, detail string, at time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkBroken", ctx, connectionID, reason, detail, at)
+	ret := m.ctrl.Call(m, "MarkBroken", ctx, workspaceID, connectionID, reason, detail, at)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MarkBroken indicates an expected call of MarkBroken.
-func (mr *MockSCMConnectionMockRecorder) MarkBroken(ctx, connectionID, reason, detail, at any) *gomock.Call {
+func (mr *MockSCMConnectionMockRecorder) MarkBroken(ctx, workspaceID, connectionID, reason, detail, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBroken", reflect.TypeOf((*MockSCMConnection)(nil).MarkBroken), ctx, connectionID, reason, detail, at)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBroken", reflect.TypeOf((*MockSCMConnection)(nil).MarkBroken), ctx, workspaceID, connectionID, reason, detail, at)
 }
 
 // MarkVerified mocks base method.
-func (m *MockSCMConnection) MarkVerified(ctx context.Context, connectionID uuid.UUID, login string, capabilities entity.SCMCapabilitySet, at time.Time) error {
+func (m *MockSCMConnection) MarkVerified(ctx context.Context, workspaceID, connectionID uuid.UUID, login string, capabilities entity.SCMCapabilitySet, at time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkVerified", ctx, connectionID, login, capabilities, at)
+	ret := m.ctrl.Call(m, "MarkVerified", ctx, workspaceID, connectionID, login, capabilities, at)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MarkVerified indicates an expected call of MarkVerified.
-func (mr *MockSCMConnectionMockRecorder) MarkVerified(ctx, connectionID, login, capabilities, at any) *gomock.Call {
+func (mr *MockSCMConnectionMockRecorder) MarkVerified(ctx, workspaceID, connectionID, login, capabilities, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkVerified", reflect.TypeOf((*MockSCMConnection)(nil).MarkVerified), ctx, connectionID, login, capabilities, at)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkVerified", reflect.TypeOf((*MockSCMConnection)(nil).MarkVerified), ctx, workspaceID, connectionID, login, capabilities, at)
 }
 
 // ReplaceToken mocks base method.
-func (m *MockSCMConnection) ReplaceToken(ctx context.Context, connectionID uuid.UUID, token, hint, login string, at time.Time) error {
+func (m *MockSCMConnection) ReplaceToken(ctx context.Context, workspaceID, connectionID uuid.UUID, token, hint, login string, at time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReplaceToken", ctx, connectionID, token, hint, login, at)
+	ret := m.ctrl.Call(m, "ReplaceToken", ctx, workspaceID, connectionID, token, hint, login, at)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ReplaceToken indicates an expected call of ReplaceToken.
-func (mr *MockSCMConnectionMockRecorder) ReplaceToken(ctx, connectionID, token, hint, login, at any) *gomock.Call {
+func (mr *MockSCMConnectionMockRecorder) ReplaceToken(ctx, workspaceID, connectionID, token, hint, login, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplaceToken", reflect.TypeOf((*MockSCMConnection)(nil).ReplaceToken), ctx, connectionID, token, hint, login, at)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplaceToken", reflect.TypeOf((*MockSCMConnection)(nil).ReplaceToken), ctx, workspaceID, connectionID, token, hint, login, at)
 }
 
 // Token mocks base method.
@@ -191,18 +191,18 @@ func (mr *MockSCMConnectionMockRecorder) Token(ctx, connectionID any) *gomock.Ca
 }
 
 // UpdateLabel mocks base method.
-func (m *MockSCMConnection) UpdateLabel(ctx context.Context, connectionID uuid.UUID, label string) (entity.SCMConnection, error) {
+func (m *MockSCMConnection) UpdateLabel(ctx context.Context, workspaceID, connectionID uuid.UUID, label string) (entity.SCMConnection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateLabel", ctx, connectionID, label)
+	ret := m.ctrl.Call(m, "UpdateLabel", ctx, workspaceID, connectionID, label)
 	ret0, _ := ret[0].(entity.SCMConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateLabel indicates an expected call of UpdateLabel.
-func (mr *MockSCMConnectionMockRecorder) UpdateLabel(ctx, connectionID, label any) *gomock.Call {
+func (mr *MockSCMConnectionMockRecorder) UpdateLabel(ctx, workspaceID, connectionID, label any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLabel", reflect.TypeOf((*MockSCMConnection)(nil).UpdateLabel), ctx, connectionID, label)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLabel", reflect.TypeOf((*MockSCMConnection)(nil).UpdateLabel), ctx, workspaceID, connectionID, label)
 }
 
 // MockSCMRepository is a mock of SCMRepository interface.

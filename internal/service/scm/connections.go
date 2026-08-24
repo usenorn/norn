@@ -369,7 +369,7 @@ func (s *connections) Connect(
 	now := time.Now().UTC()
 
 	if err := s.connections.MarkVerified(
-		ctx, created.ID, login, forge.Capabilities(), now,
+		ctx, created.WorkspaceID, created.ID, login, forge.Capabilities(), now,
 	); err != nil {
 		return entity.SCMConnection{}, err
 	}
@@ -408,7 +408,7 @@ func (s *connections) UpdateConnection(
 		return entity.SCMConnection{}, entity.ValidationError{Fields: []entity.FieldError{field}}
 	}
 
-	return s.connections.UpdateLabel(ctx, connectionID, strings.TrimSpace(input.Label))
+	return s.connections.UpdateLabel(ctx, workspaceID, connectionID, strings.TrimSpace(input.Label))
 }
 
 func (s *connections) ReplaceToken(
@@ -447,6 +447,7 @@ func (s *connections) ReplaceToken(
 
 	if err := s.connections.ReplaceToken(
 		ctx,
+		workspaceID,
 		connectionID,
 		target.Token,
 		entity.SCMTokenHint(target.Token),
@@ -513,7 +514,7 @@ func (s *connections) VerifyConnection(
 	}
 
 	if err := s.connections.MarkVerified(
-		ctx, connectionID, login, forge.Capabilities(), time.Now().UTC(),
+		ctx, workspaceID, connectionID, login, forge.Capabilities(), time.Now().UTC(),
 	); err != nil {
 		return entity.SCMConnection{}, err
 	}
@@ -529,6 +530,7 @@ func (s *connections) breakOn(ctx context.Context, connection entity.SCMConnecti
 
 	if err := s.connections.MarkBroken(
 		ctx,
+		connection.WorkspaceID,
 		connection.ID,
 		reason,
 		detail,
@@ -584,7 +586,7 @@ func (s *connections) Disconnect(ctx context.Context, workspaceID, connectionID 
 			return err
 		}
 
-		return s.connections.Delete(ctx, connectionID)
+		return s.connections.Delete(ctx, workspaceID, connectionID)
 	}); err != nil {
 		return err
 	}

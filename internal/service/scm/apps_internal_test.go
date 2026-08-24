@@ -20,6 +20,7 @@ import (
 type appHarness struct {
 	service    *apps
 	registry   *scmrepo.MockSCMApp
+	conns      *scmrepo.MockSCMConnection
 	states     *statemock.MockSCMAppState
 	forgeApp   *MockForgeApp
 	authorizer *authorizermock.MockAuthorizer
@@ -36,7 +37,10 @@ func appsFor(t *testing.T, cfg config.SourceControl) *appHarness {
 	ctrl := gomock.NewController(t)
 
 	registry := scmrepo.NewMockSCMApp(ctrl)
+	conns := scmrepo.NewMockSCMConnection(ctrl)
 	states := statemock.NewMockSCMAppState(ctrl)
+
+	conns.EXPECT().ListByWorkspace(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	forgeApp := NewMockForgeApp(ctrl)
 	forges := NewMockForges(ctrl)
 	hub := NewMockForge(ctrl)
@@ -67,10 +71,11 @@ func appsFor(t *testing.T, cfg config.SourceControl) *appHarness {
 		}, nil).
 		AnyTimes()
 
-	service := NewApps(registry, states, forges, authorizer, cfg)
+	service := NewApps(registry, conns, states, forges, authorizer, cfg)
 
 	harness.service = service.(*apps)
 	harness.registry = registry
+	harness.conns = conns
 	harness.states = states
 	harness.forgeApp = forgeApp
 	harness.authorizer = authorizer

@@ -15,4 +15,6 @@ export const keys = {
 	views: (workspaceId: string) => `norn:views:${workspaceId}`,
 	account: (accountId: string) => `norn:account:${accountId}`,
 	signedIn: () => "norn:signed-in",
+	sourceControl: (workspaceId: string) => `norn:source-control:${workspaceId}`,
+	sourceControlConnect: (workspaceId: string) => `norn:source-control-connect:${workspaceId}`,
 };
