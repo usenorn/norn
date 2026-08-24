@@ -374,3 +374,24 @@ func TestAnEventThisIntegrationDoesNotActOnIsIgnoredRatherThanFailing(t *testing
 		t.Fatalf("Translate produced %d events for an unhandled kind", len(events))
 	}
 }
+
+func TestADeliveryIsRefusedWhenTheRepositoryHoldsNoSecretOfItsOwn(t *testing.T) {
+	body := []byte(`{"action":"closed"}`)
+
+	sum := hmac.New(sha256.New, nil)
+	sum.Write(body)
+
+	header := http.Header{}
+	header.Set("X-Hub-Signature-256", "sha256="+hex.EncodeToString(sum.Sum(nil)))
+	header.Set("X-GitHub-Event", "pull_request")
+	header.Set("X-GitHub-Delivery", "d-1")
+
+	if _, err := adapter().Verify("", header, body); !errors.Is(err, entity.ErrSCMSignatureInvalid) {
+		t.Fatalf(
+			"a delivery signed under an empty key was accepted (%v). A repository the application "+
+				"delivers for mints no secret, so anybody knowing its id could sign their own "+
+				"payload and have this instance act on it",
+			err,
+		)
+	}
+}

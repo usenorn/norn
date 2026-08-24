@@ -24,7 +24,14 @@ const (
 	deletedCommitSHA = "0000000000000000000000000000000000000000"
 )
 
+// Verify refuses an empty secret before it signs anything. An HMAC keyed on nothing is one
+// anybody can compute, so a repository holding no secret of its own would accept whatever it
+// was handed — and a repository the application delivers for holds exactly that.
 func (f *Forge) Verify(secret string, header http.Header, body []byte) (entity.SCMDelivery, error) {
+	if secret == "" {
+		return entity.SCMDelivery{}, entity.ErrSCMSignatureInvalid
+	}
+
 	sent := strings.TrimSpace(header.Get(signatureHeader))
 	if !strings.HasPrefix(sent, signaturePrefix) {
 		return entity.SCMDelivery{}, entity.ErrSCMSignatureInvalid

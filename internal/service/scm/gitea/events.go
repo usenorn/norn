@@ -21,11 +21,17 @@ const (
 	deliveryHeader  = "X-Gitea-Delivery"
 )
 
+// Verify refuses an empty secret before it signs anything. An HMAC keyed on nothing is one
+// anybody can compute, so a caller holding no secret would accept whatever it was handed.
 func (f *Forge) Verify(
 	secret string,
 	header http.Header,
 	body []byte,
 ) (entity.SCMDelivery, error) {
+	if secret == "" {
+		return entity.SCMDelivery{}, entity.ErrSCMSignatureInvalid
+	}
+
 	sent := strings.TrimSpace(header.Get(signatureHeader))
 	if sent == "" {
 		return entity.SCMDelivery{}, entity.ErrSCMSignatureInvalid

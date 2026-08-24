@@ -207,3 +207,33 @@ func TestADeliveryFromAnInstallationNobodyConnectedIsRefused(t *testing.T) {
 		t.Fatal("an unconnected installation was reported as forgery")
 	}
 }
+
+func TestARepositoryTheApplicationDeliversForRefusesItsOwnAddress(t *testing.T) {
+	held := appDeliveryFor(t)
+	h := held.harness
+
+	h.repositories.EXPECT().
+		GetForDelivery(gomock.Any(), held.repository.ID).
+		Return(held.repository, nil)
+
+	h.repositories.EXPECT().
+		WebhookSecret(gomock.Any(), held.repository.ID).
+		Return("", nil)
+
+	_, err := h.sync.Accept(
+		context.Background(),
+		held.repository.ID,
+		entity.SCMProviderGitHub,
+		http.Header{},
+		held.body,
+	)
+
+	if !errors.Is(err, entity.ErrSCMSignatureInvalid) {
+		t.Fatalf(
+			"a delivery to a repository holding no secret came back %v, want a refusal. Verifying "+
+				"against an empty secret signs the body under a key anybody has, so whoever knows "+
+				"the repository's id could have this instance act on a payload they wrote",
+			err,
+		)
+	}
+}

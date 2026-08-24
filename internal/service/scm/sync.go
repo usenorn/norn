@@ -169,6 +169,13 @@ func (s *sync) Accept(
 		return uuid.Nil, err
 	}
 
+	// A repository the application delivers for is sent to the application's own address and
+	// mints no secret of its own, so nothing arriving on this one can be attributed to the
+	// forge. Asking anyway signs the body under an empty key, which is a key anybody has.
+	if secret == "" {
+		return uuid.Nil, entity.ErrSCMSignatureInvalid
+	}
+
 	delivery, err := forge.Verify(secret, header, body)
 	if err != nil {
 		return uuid.Nil, entity.ErrSCMSignatureInvalid
