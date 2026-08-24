@@ -377,8 +377,8 @@ VALUES ($1, $2, $3, $4, $5, 1, 'completed', now())`,
 		t.Fatalf("open a run to hold: %v", err)
 	}
 
-	later := time.Now().UTC().Add(2 * time.Hour)
-	sooner := time.Now().UTC().Add(time.Hour)
+	later := time.Now().UTC().Add(2 * time.Hour).Truncate(time.Microsecond)
+	sooner := later.Add(-time.Hour)
 	now := time.Now().UTC()
 
 	if _, err := tx.Exec(keepExecutionQuery, "exec-kept", later, now); err != nil {
