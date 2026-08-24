@@ -2,6 +2,7 @@ package preview_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,7 +18,7 @@ func TestAPreviewExistsOnlyBecauseTheMachineHoldingTheRunSaidSo(t *testing.T) {
 	stranger := entity.Runner{ID: uuid.New(), AgentID: uuid.New()}
 
 	err := h.service.Reported(
-		context.Background(), stranger, previewMessage("web", "web", channelv1.PreviewOpen),
+		context.Background(), stranger, previewMessage("web", "web", h.portFor("web"), channelv1.PreviewOpen),
 	)
 
 	refusedWith(t, err, entity.ErrExecutionNotFound)
@@ -36,15 +37,15 @@ func TestAReportedPreviewTakesTheAddressTheGatewayWillRouteBy(t *testing.T) {
 
 	preview := h.reported(t, "web", channelv1.PreviewOpen)
 
-	if preview.Host != hostFor("web") {
+	if preview.Host != h.hostFor("web") {
 		t.Fatalf(
 			"the preview took the host %q, want %q. The runner only knows a loopback address, "+
 				"so the shared one has to be composed here or it is composed nowhere",
-			preview.Host, hostFor("web"),
+			preview.Host, h.hostFor("web"),
 		)
 	}
 
-	if preview.URL("https") != "https://"+hostFor("web") {
+	if preview.URL("https") != "https://"+h.hostFor("web") {
 		t.Fatalf("the preview answered with %q", preview.URL("https"))
 	}
 }
@@ -91,7 +92,7 @@ func TestAPreviewReportReplayedAfterAReconnectAddsNothingASecondTime(t *testing.
 	h := newHarness(t)
 	h.holds()
 
-	message := previewMessage("web", "web", channelv1.PreviewOpen)
+	message := previewMessage("web", "web", h.portFor("web"), channelv1.PreviewOpen)
 
 	for range 2 {
 		if err := h.service.Reported(context.Background(), h.runner, message); err != nil {
@@ -108,12 +109,85 @@ func TestAPreviewReportReplayedAfterAReconnectAddsNothingASecondTime(t *testing.
 	}
 }
 
+func TestOnePortOfARunKeepsOneAddressHoweverThePreviewIsRenamed(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+
+	opened := h.reported(t, "web", channelv1.PreviewOpen)
+
+	if err := h.service.Reported(
+		context.Background(), h.runner,
+		previewMessage("issue-description", "web", h.portFor("web"), channelv1.PreviewOpen),
+	); err != nil {
+		t.Fatalf("report the same port under another name: %v", err)
+	}
+
+	renamed := h.stored[h.portFor("web")]
+
+	if renamed.Host != opened.Host {
+		t.Fatalf(
+			"the address moved from %q to %q because the machine called the preview something "+
+				"else. A link already shared outside the workspace then points at a host that "+
+				"no longer exists, and nothing says why",
+			opened.Host, renamed.Host,
+		)
+	}
+
+	if renamed.Name != "issue-description" {
+		t.Fatalf(
+			"the preview is still called %q on the run screen. The name is the machine's to "+
+				"choose and is what a person reads",
+			renamed.Name,
+		)
+	}
+}
+
+func TestTwoServicesOfOneRunAreTwoAddressesRatherThanOne(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+
+	web := h.reported(t, "web", channelv1.PreviewOpen)
+	docs := h.reported(t, "docs", channelv1.PreviewOpen)
+
+	if web.Host == docs.Host {
+		t.Fatalf(
+			"both services answer on %q. A person following a link reaches whichever of them "+
+				"the gateway picked",
+			web.Host,
+		)
+	}
+
+	if len(h.stored) != 2 {
+		t.Fatalf("the run holds %d previews on record, want 2", len(h.stored))
+	}
+}
+
+func TestAPreviewCarriesTheNameTheMachineGaveItOntoTheTimeline(t *testing.T) {
+	h := newHarness(t)
+	h.holds()
+
+	h.reported(t, "issue-description", channelv1.PreviewOpen)
+
+	seen := h.previewEvents()
+	if len(seen) != 1 {
+		t.Fatalf("the run's timeline holds %d preview lines, want 1", len(seen))
+	}
+
+	if !strings.Contains(seen[0].Reason, "issue-description") {
+		t.Fatalf(
+			"the timeline says %q and never uses the name the machine gave the preview. The "+
+				"address is norn's, but the name is what a person reads",
+			seen[0].Reason,
+		)
+	}
+}
+
 func TestAPreviewNamedSomethingThatCouldNotBeAHostIsRefused(t *testing.T) {
 	h := newHarness(t)
 	h.holds()
 
 	err := h.service.Reported(
-		context.Background(), h.runner, previewMessage("Web App", "web", channelv1.PreviewOpen),
+		context.Background(), h.runner, previewMessage("Web App", "web", h.portFor("web"), channelv1.PreviewOpen),
 	)
 	if err == nil {
 		t.Fatal(
@@ -148,7 +222,7 @@ func TestARunNeverHoldsMorePreviewsThanTheMachineWouldGiveIt(t *testing.T) {
 	}
 
 	err := h.service.Reported(
-		context.Background(), h.runner, previewMessage("extra", "extra", channelv1.PreviewOpen),
+		context.Background(), h.runner, previewMessage("extra", "extra", h.portFor("extra"), channelv1.PreviewOpen),
 	)
 
 	refusedWith(t, err, entity.ErrPreviewCrowded)

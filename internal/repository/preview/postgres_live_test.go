@@ -104,17 +104,27 @@ func rolledBack(t *testing.T, client *postgres.Client, fn func(context.Context) 
 	}
 }
 
-func opened(executionID string, workspaceID uuid.UUID, name, stamp string) entity.PreviewSession {
+func opened(
+	executionID string,
+	workspaceID uuid.UUID,
+	name string,
+	port int,
+	stamp string,
+) entity.PreviewSession {
 	return entity.PreviewSession{
 		ExecutionID: executionID,
 		WorkspaceID: workspaceID,
 		Name:        name,
 		Service:     name,
+		Port:        port,
 		Mode:        entity.PreviewBySubdomain,
-		Host:        name + "-" + executionID + ".preview.example.test",
-		State:       entity.PreviewOpen,
-		OpenedAt:    at(stamp),
-		ReportedAt:  at(stamp),
+		Host: entity.PreviewHost(
+			"NORN-75", "A preview address", executionID, port,
+			entity.PreviewBySubdomain, "preview.example.test",
+		),
+		State:      entity.PreviewOpen,
+		OpenedAt:   at(stamp),
+		ReportedAt: at(stamp),
 	}
 }
 
@@ -123,11 +133,11 @@ func TestAReportThatArrivedLateNeverReopensAPreviewThatWasAlreadyClosed(t *testi
 	executionID, workspaceID := heldRun(t, client)
 
 	rolledBack(t, client, func(ctx context.Context) error {
-		if _, err := previews.Save(ctx, opened(executionID, workspaceID, "web", reportedEarly)); err != nil {
+		if _, err := previews.Save(ctx, opened(executionID, workspaceID, "web", 43111, reportedEarly)); err != nil {
 			return fmt.Errorf("open the preview: %w", err)
 		}
 
-		closing := opened(executionID, workspaceID, "web", reportedLate)
+		closing := opened(executionID, workspaceID, "web", 43111, reportedLate)
 		closing.State = entity.PreviewClosed
 		closing.ClosedAt = at(reportedLate)
 
@@ -135,7 +145,7 @@ func TestAReportThatArrivedLateNeverReopensAPreviewThatWasAlreadyClosed(t *testi
 			return fmt.Errorf("close the preview: %w", err)
 		}
 
-		late := opened(executionID, workspaceID, "web", reportedEarly)
+		late := opened(executionID, workspaceID, "web", 43111, reportedEarly)
 
 		stored, err := previews.Save(ctx, late)
 		if err != nil {
@@ -159,8 +169,9 @@ func TestClosingARunClosesEveryPreviewItStillHasOpen(t *testing.T) {
 	executionID, workspaceID := heldRun(t, client)
 
 	rolledBack(t, client, func(ctx context.Context) error {
-		for _, name := range []string{"web", "docs"} {
-			if _, err := previews.Save(ctx, opened(executionID, workspaceID, name, reportedEarly)); err != nil {
+		for port, name := range map[int]string{43111: "web", 43112: "docs"} {
+			_, err := previews.Save(ctx, opened(executionID, workspaceID, name, port, reportedEarly))
+			if err != nil {
 				return fmt.Errorf("open %s: %w", name, err)
 			}
 		}
@@ -194,13 +205,13 @@ func TestAHostIsClaimedByOnePreviewAndNoOther(t *testing.T) {
 	executionID, workspaceID := heldRun(t, client)
 
 	rolledBack(t, client, func(ctx context.Context) error {
-		first := opened(executionID, workspaceID, "web", reportedEarly)
+		first := opened(executionID, workspaceID, "web", 43111, reportedEarly)
 
 		if _, err := previews.Save(ctx, first); err != nil {
 			return fmt.Errorf("open the first preview: %w", err)
 		}
 
-		second := opened(executionID, workspaceID, "docs", reportedEarly)
+		second := opened(executionID, workspaceID, "docs", 43112, reportedEarly)
 		second.Host = first.Host
 
 		if _, err := previews.Save(ctx, second); err == nil {
@@ -208,6 +219,53 @@ func TestAHostIsClaimedByOnePreviewAndNoOther(t *testing.T) {
 				"two previews took the same host. The gateway routes by host alone, so the " +
 					"second would answer for the first",
 			)
+		}
+
+		return nil
+	})
+}
+
+func TestOnePortOfARunHoldsOneRowHoweverThePreviewIsRenamed(t *testing.T) {
+	client, previews := live(t)
+	executionID, workspaceID := heldRun(t, client)
+
+	rolledBack(t, client, func(ctx context.Context) error {
+		first := opened(executionID, workspaceID, "web", 43111, reportedEarly)
+
+		stored, err := previews.Save(ctx, first)
+		if err != nil {
+			return fmt.Errorf("open the preview: %w", err)
+		}
+
+		renamed := opened(executionID, workspaceID, "issue-description", 43111, reportedLate)
+
+		again, err := previews.Save(ctx, renamed)
+		if err != nil {
+			return fmt.Errorf("report the same port under another name: %w", err)
+		}
+
+		if again.ID != stored.ID {
+			return errors.New(
+				"a port that was already open became a second preview when the machine called " +
+					"it something else. Both would claim the one host that port composes",
+			)
+		}
+
+		if again.Name != "issue-description" || again.Host != stored.Host {
+			return fmt.Errorf(
+				"the preview came back as %s at %s, want the new name at the address the port "+
+					"already held",
+				again.Name, again.Host,
+			)
+		}
+
+		held, err := previews.ByPort(ctx, executionID, 43111)
+		if err != nil {
+			return fmt.Errorf("read the preview back by its port: %w", err)
+		}
+
+		if held.ID != stored.ID {
+			return errors.New("the run holds more than one preview on that port")
 		}
 
 		return nil

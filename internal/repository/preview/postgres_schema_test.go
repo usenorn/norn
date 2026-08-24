@@ -152,6 +152,8 @@ func statements() map[string]string {
 	return map[string]string{
 		"savePreviewQuery":        savePreviewQuery,
 		"previewRouteByHostQuery": previewRouteByHostQuery,
+		"previewByNameQuery":      previewByNameQuery,
+		"previewByPortQuery":      previewByPortQuery,
 		"previewCountQuery":       previewCountQuery,
 		"closePreviewsQuery":      closePreviewsQuery,
 	}

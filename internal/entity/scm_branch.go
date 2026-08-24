@@ -4,10 +4,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
 const (
@@ -52,26 +53,7 @@ func BranchNameFor(settings SCMTeamSettings, handle string, issue Issue, referen
 }
 
 func SlugifyBranchPart(value string) string {
-	var builder strings.Builder
-
-	dashed := false
-
-	for _, symbol := range strings.ToLower(strings.TrimSpace(value)) {
-		switch {
-		case unicode.IsLetter(symbol) || unicode.IsDigit(symbol):
-			builder.WriteRune(symbol)
-
-			dashed = false
-		case !dashed && builder.Len() > 0:
-			builder.WriteRune('-')
-
-			dashed = true
-		}
-	}
-
-	slug := builder.String()
-
-	return strings.Trim(cutAtRuneBoundary(slug, SCMBranchSlugMax), "-")
+	return channelv1.Slug(value, SCMBranchSlugMax)
 }
 
 func TrimBranchName(name string) string {

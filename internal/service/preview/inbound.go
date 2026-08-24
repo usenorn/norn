@@ -38,6 +38,7 @@ func (s *previewsService) Reported(
 		Name:        strings.TrimSpace(incoming.Name),
 		Service:     strings.TrimSpace(incoming.Service),
 		Path:        strings.TrimSpace(incoming.Path),
+		Port:        incoming.Port,
 		Mode:        entity.PreviewBySubdomain,
 		State:       entity.PreviewState(incoming.State),
 		OpenedAt:    reported,
@@ -45,7 +46,12 @@ func (s *previewsService) Reported(
 	}
 
 	preview.Host = entity.PreviewHost(
-		preview.Name, execution.ID, preview.Mode, s.settings.BaseDomain,
+		execution.IssueReference,
+		execution.IssueTitle,
+		execution.ID,
+		preview.Port,
+		preview.Mode,
+		s.settings.BaseDomain,
 	)
 
 	if preview.State == entity.PreviewClosed {
@@ -92,7 +98,7 @@ func (s *previewsService) room(ctx context.Context, preview entity.PreviewSessio
 		return nil
 	}
 
-	_, err = s.previews.ByName(ctx, preview.ExecutionID, preview.Name)
+	_, err = s.previews.ByPort(ctx, preview.ExecutionID, preview.Port)
 	if errors.Is(err, entity.ErrPreviewNotFound) {
 		return fmt.Errorf("%w: %d", entity.ErrPreviewCrowded, entity.PreviewsMax)
 	}

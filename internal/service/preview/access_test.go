@@ -43,7 +43,7 @@ func TestAViewerWithNoPreviewSessionIsSentIntoSignInAndBackToThePreview(t *testi
 	h.reported(t, "web", channelv1.PreviewOpen)
 
 	access, err := h.service.Introspect(
-		context.Background(), hostFor("web"), "", viewerFrom("203.0.113.9"),
+		context.Background(), h.hostFor("web"), "", viewerFrom("203.0.113.9"),
 	)
 	if err != nil {
 		t.Fatalf("ask about a viewer with no session: %v", err)
@@ -73,7 +73,7 @@ func TestASignedOutBrowserAtTheAuthorizeDoorIsSentToSignInRatherThanRefused(t *t
 	h.visible(nil)
 	h.reported(t, "web", channelv1.PreviewOpen)
 
-	access, err := h.service.Authorize(context.Background(), hostFor("web"), "/dashboard")
+	access, err := h.service.Authorize(context.Background(), h.hostFor("web"), "/dashboard")
 	if err != nil {
 		t.Fatalf("authorize a signed-out browser: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestAMemberOfTheWorkspaceIsLetInAndSomebodyOutsideItIsNot(t *testing.T) {
 	member.reported(t, "web", channelv1.PreviewOpen)
 
 	access, err := member.service.Authorize(
-		signedIn(context.Background(), member.caller), hostFor("web"), "/",
+		signedIn(context.Background(), member.caller), member.hostFor("web"), "/",
 	)
 	if err != nil {
 		t.Fatalf("authorize a member: %v", err)
@@ -106,7 +106,7 @@ func TestAMemberOfTheWorkspaceIsLetInAndSomebodyOutsideItIsNot(t *testing.T) {
 	stranger.reported(t, "web", channelv1.PreviewOpen)
 
 	_, err = stranger.service.Authorize(
-		signedIn(context.Background(), stranger.caller), hostFor("web"), "/",
+		signedIn(context.Background(), stranger.caller), stranger.hostFor("web"), "/",
 	)
 
 	refusedWith(t, err, entity.ErrExecutionNotFound)
@@ -119,7 +119,7 @@ func TestTheTicketAMemberCarriesBackIsSpentOnceAndBecomesTheirSession(t *testing
 	h.reported(t, "web", channelv1.PreviewOpen)
 
 	access, err := h.service.Authorize(
-		signedIn(context.Background(), h.caller), hostFor("web"), "/",
+		signedIn(context.Background(), h.caller), h.hostFor("web"), "/",
 	)
 	if err != nil {
 		t.Fatalf("authorize a member: %v", err)
@@ -152,7 +152,7 @@ func TestASessionMintedForOneRunNeverOpensAnotherRunsPreview(t *testing.T) {
 	h.reported(t, "docs", channelv1.PreviewOpen)
 
 	access, err := h.service.Authorize(
-		signedIn(context.Background(), h.caller), hostFor("web"), "/",
+		signedIn(context.Background(), h.caller), h.hostFor("web"), "/",
 	)
 	if err != nil {
 		t.Fatalf("authorize a member: %v", err)
@@ -164,7 +164,7 @@ func TestASessionMintedForOneRunNeverOpensAnotherRunsPreview(t *testing.T) {
 	}
 
 	held, err := h.service.Introspect(
-		context.Background(), hostFor("docs"), session.Token, viewerFrom("203.0.113.9"),
+		context.Background(), h.hostFor("docs"), session.Token, viewerFrom("203.0.113.9"),
 	)
 	if err != nil {
 		t.Fatalf("ask about the other preview: %v", err)
@@ -187,7 +187,7 @@ func TestAViewerHoldingASessionIsLetInUntilThePreviewCloses(t *testing.T) {
 	session := sessionFor(t, h, "web")
 
 	access, err := h.service.Introspect(
-		context.Background(), hostFor("web"), session, viewerFrom("203.0.113.9"),
+		context.Background(), h.hostFor("web"), session, viewerFrom("203.0.113.9"),
 	)
 	if err != nil {
 		t.Fatalf("ask about a viewer holding a session: %v", err)
@@ -200,7 +200,7 @@ func TestAViewerHoldingASessionIsLetInUntilThePreviewCloses(t *testing.T) {
 	h.reported(t, "web", channelv1.PreviewClosed)
 
 	closed, err := h.service.Introspect(
-		context.Background(), hostFor("web"), session, viewerFrom("203.0.113.9"),
+		context.Background(), h.hostFor("web"), session, viewerFrom("203.0.113.9"),
 	)
 	if err != nil {
 		t.Fatalf("ask about a closed preview: %v", err)
@@ -226,7 +226,7 @@ func TestOneViewerAddsOneTimelineLineHoweverManyRequestsThePageMakes(t *testing.
 
 	for range 5 {
 		if _, err := h.service.Introspect(
-			context.Background(), hostFor("web"), session, viewerFrom("203.0.113.9"),
+			context.Background(), h.hostFor("web"), session, viewerFrom("203.0.113.9"),
 		); err != nil {
 			t.Fatalf("ask about the viewer: %v", err)
 		}
@@ -253,7 +253,7 @@ func TestADifferentAddressLookingAtThePreviewIsItsOwnLineOnTheTimeline(t *testin
 
 	for _, address := range []string{"203.0.113.9", "198.51.100.4"} {
 		if _, err := h.service.Introspect(
-			context.Background(), hostFor("web"), session, viewerFrom(address),
+			context.Background(), h.hostFor("web"), session, viewerFrom(address),
 		); err != nil {
 			t.Fatalf("ask about a viewer at %s: %v", address, err)
 		}
@@ -278,7 +278,7 @@ func TestEveryLookAtAPreviewIsAlsoOnTheAuditLog(t *testing.T) {
 	session := sessionFor(t, h, "web")
 
 	if _, err := h.service.Introspect(
-		context.Background(), hostFor("web"), session, viewerFrom("203.0.113.9"),
+		context.Background(), h.hostFor("web"), session, viewerFrom("203.0.113.9"),
 	); err != nil {
 		t.Fatalf("ask about the viewer: %v", err)
 	}
@@ -297,7 +297,7 @@ func TestAViewerCarryingSomethingThatIsNotAGrantIsSentToSignInRatherThanIn(t *te
 	h.reported(t, "web", channelv1.PreviewOpen)
 
 	access, err := h.service.Introspect(
-		context.Background(), hostFor("web"), "not-a-grant", viewerFrom("203.0.113.9"),
+		context.Background(), h.hostFor("web"), "not-a-grant", viewerFrom("203.0.113.9"),
 	)
 	if err != nil {
 		t.Fatalf("ask about an unknown grant: %v", err)
@@ -315,7 +315,7 @@ func TestAServerServingNoPreviewDomainRefusesToHandOutASession(t *testing.T) {
 	h.reported(t, "web", channelv1.PreviewOpen)
 
 	_, err := h.service.Authorize(
-		signedIn(context.Background(), h.caller), hostFor("web"), "/",
+		signedIn(context.Background(), h.caller), h.hostFor("web"), "/",
 	)
 
 	refusedWith(t, err, entity.ErrPreviewNotRoutable)
@@ -325,7 +325,7 @@ func sessionFor(t *testing.T, h *harness, name string) string {
 	t.Helper()
 
 	access, err := h.service.Authorize(
-		signedIn(context.Background(), h.caller), hostFor(name), "/",
+		signedIn(context.Background(), h.caller), h.hostFor(name), "/",
 	)
 	if err != nil {
 		t.Fatalf("authorize a member for %s: %v", name, err)
@@ -382,7 +382,7 @@ func TestAViewerHoldingTwoAccountsIsLetInAsTheOneThatCanSeeTheRun(t *testing.T) 
 	h.visibleOnlyTo(h.caller)
 
 	access, err := h.service.Authorize(
-		holdingSessions(context.Background(), outsider, h.caller), hostFor("web"), "/",
+		holdingSessions(context.Background(), outsider, h.caller), h.hostFor("web"), "/",
 	)
 	if err != nil {
 		t.Fatalf("authorize a browser holding two accounts: %v", err)
@@ -417,7 +417,7 @@ func TestAViewerWhoseAccountsCannotSeeTheRunIsStillSentToSignIn(t *testing.T) {
 	h.visibleOnlyTo(uuid.New())
 
 	access, err := h.service.Authorize(
-		holdingSessions(context.Background(), uuid.New(), uuid.New()), hostFor("web"), "/",
+		holdingSessions(context.Background(), uuid.New(), uuid.New()), h.hostFor("web"), "/",
 	)
 	if err != nil {
 		t.Fatalf("authorize a browser holding only outsiders: %v", err)
@@ -445,7 +445,7 @@ func TestATroubleReadingTheRunIsNotMistakenForTheWrongAccount(t *testing.T) {
 		AnyTimes()
 
 	_, err := h.service.Authorize(
-		holdingSessions(context.Background(), h.caller), hostFor("web"), "/",
+		holdingSessions(context.Background(), h.caller), h.hostFor("web"), "/",
 	)
 
 	if !errors.Is(err, broken) {
