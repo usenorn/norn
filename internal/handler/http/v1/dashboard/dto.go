@@ -101,6 +101,12 @@ func membershipDTO(member entity.WorkspaceMember) api.Membership {
 
 	dto.ReadsAudit = &member.Membership.ReadsAudit
 	dto.HasRunner = &member.HasRunner
+
+	if member.OwnerAccountID != uuid.Nil {
+		owner := member.OwnerAccountID
+		dto.OwnerAccountId = &owner
+	}
+
 	dto.DeactivatedAt = member.Membership.DeactivatedAt
 
 	return dto

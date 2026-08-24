@@ -82,12 +82,13 @@ func (m Membership) Deactivated() bool {
 }
 
 type WorkspaceMember struct {
-	AccountKind AccountKind
-	Membership  Membership
-	DisplayName string
-	Email       string
-	SortName    string
-	HasRunner   bool
+	AccountKind    AccountKind
+	Membership     Membership
+	DisplayName    string
+	Email          string
+	SortName       string
+	HasRunner      bool
+	OwnerAccountID uuid.UUID
 }
 
 func (m WorkspaceMember) Cursor() MembershipCursor {
