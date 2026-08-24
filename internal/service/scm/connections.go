@@ -160,6 +160,7 @@ type heldCredential struct {
 
 func (s *connections) credentialFor(
 	ctx context.Context,
+	decision entity.Decision,
 	input service.ConnectSourceControlInput,
 ) (heldCredential, error) {
 	if !input.UsesApp() {
@@ -181,9 +182,12 @@ func (s *connections) credentialFor(
 		return heldCredential{}, err
 	}
 
+	// The stash lists the installations one person reached with their own forge account, so it
+	// is spendable by that person alone — a workspace they share is not a claim on it.
 	if stash.Purpose != entity.SCMAppChosen ||
 		stash.WorkspaceID != input.WorkspaceID ||
-		stash.Provider != input.Provider {
+		stash.Provider != input.Provider ||
+		stash.AccountID != decision.Actor.AccountID {
 		return heldCredential{}, entity.ErrSCMAppStateNotFound
 	}
 
@@ -295,7 +299,7 @@ func (s *connections) Connect(
 		return entity.SCMConnection{}, err
 	}
 
-	held, err := s.credentialFor(ctx, input)
+	held, err := s.credentialFor(ctx, decision, input)
 	if err != nil {
 		return entity.SCMConnection{}, err
 	}
@@ -650,7 +654,7 @@ func (s *connections) AvailableRepositories(
 		return nil, err
 	}
 
-	token, err := s.credentials.token(ctx, connection)
+	token, err := s.credentials.refresh(ctx, connection)
 	if err != nil {
 		return nil, err
 	}

@@ -58,19 +58,21 @@ export const load: PageServerLoad = async ({
 	let app: SourceControlAppState = { kind: "unsupported" };
 
 	if (held?.registered) {
-		app = {
-			kind: "registered",
-			slug: held.slug ?? "",
-			installUrl: held.installUrl ?? "",
-			installed: held.installed ?? true,
-			installedOn: held.installedOn ?? [],
-		};
+		app = { kind: "registered", slug: held.slug ?? "", installUrl: held.installUrl ?? "" };
 	} else if (held) {
 		app = { kind: "unregistered", canRegister: held.canRegister };
 	}
 
-	if (installations?.data && installations.data.length > 0) {
-		app = { kind: "choosing", handle, installations: installations.data };
+	// An answered handle with nothing in it is its own state: the person is signed in and the
+	// application reaches no account they administer. Folding it back into "registered" sent
+	// them round the same sign-in with no word on why it came back empty.
+	if (installations?.data) {
+		app = {
+			kind: "choosing",
+			handle,
+			installUrl: held?.installUrl ?? "",
+			installations: installations.data,
+		};
 	}
 
 	const notice: SourceControlAppNotice | undefined = url.searchParams.has("registered")

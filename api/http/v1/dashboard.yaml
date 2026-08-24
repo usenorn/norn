@@ -10100,7 +10100,10 @@ components:
       description: >-
         Whether this instance can act as an installed application on a forge, and where a
         person goes to install it. An instance handed an application in its own configuration
-        cannot register a second one, so canRegister is false there.
+        cannot register a second one, so canRegister is false there, and so is it once one has
+        been registered. Where the application is installed is not reported here: one
+        application serves every workspace on the instance, so its installations name other
+        tenants. Signing in answers that question for the one account asking.
       required: [provider, registered, canRegister]
       properties:
         provider: { $ref: '#/components/schemas/SourceControlProvider' }
@@ -10108,17 +10111,6 @@ components:
         canRegister: { type: boolean }
         slug: { type: string }
         installUrl: { type: string }
-        installed:
-          type: boolean
-          description: >-
-            Whether the application is installed anywhere yet. Connecting lists the
-            installations a person can reach, so with none there is nothing to choose and the
-            screen offers installing first. True when the forge could not be asked, so an
-            unreachable forge never hides a step.
-        installedOn:
-          type: array
-          description: The accounts the application is installed on, so the screen can name them.
-          items: { type: string }
         allowPrivateAddress: { type: boolean }
         caCertificateSet: { type: boolean }
 

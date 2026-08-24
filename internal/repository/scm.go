@@ -22,6 +22,7 @@ type SCMConnection interface {
 	GetForDelivery(ctx context.Context, connectionID uuid.UUID) (entity.SCMConnection, error)
 	GetByInstallation(ctx context.Context, appID uuid.UUID, installationID string) (entity.SCMConnection, error)
 	ListByWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]entity.SCMConnection, error)
+	CountByApp(ctx context.Context, appID uuid.UUID) (int, error)
 	Token(ctx context.Context, connectionID uuid.UUID) (string, error)
 	ReplaceToken(ctx context.Context, connectionID uuid.UUID, token, hint, login string, at time.Time) error
 	UpdateLabel(ctx context.Context, connectionID uuid.UUID, label string) (entity.SCMConnection, error)

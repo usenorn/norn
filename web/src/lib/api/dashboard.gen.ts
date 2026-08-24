@@ -6374,17 +6374,13 @@ export interface components {
         };
         /** @enum {string} */
         SourceControlAuthKind: "token" | "app";
-        /** @description Whether this instance can act as an installed application on a forge, and where a person goes to install it. An instance handed an application in its own configuration cannot register a second one, so canRegister is false there. */
+        /** @description Whether this instance can act as an installed application on a forge, and where a person goes to install it. An instance handed an application in its own configuration cannot register a second one, so canRegister is false there, and so is it once one has been registered. Where the application is installed is not reported here: one application serves every workspace on the instance, so its installations name other tenants. Signing in answers that question for the one account asking. */
         SourceControlApplication: {
             provider: components["schemas"]["SourceControlProvider"];
             registered: boolean;
             canRegister: boolean;
             slug?: string;
             installUrl?: string;
-            /** @description Whether the application is installed anywhere yet. Connecting lists the installations a person can reach, so with none there is nothing to choose and the screen offers installing first. True when the forge could not be asked, so an unreachable forge never hides a step. */
-            installed?: boolean;
-            /** @description The accounts the application is installed on, so the screen can name them. */
-            installedOn?: string[];
             allowPrivateAddress?: boolean;
             caCertificateSet?: boolean;
         };

@@ -110,6 +110,8 @@ func reason(err error) string {
 		return "refused"
 	case errors.Is(err, entity.ErrSCMAppNotFound):
 		return "unregistered"
+	case errors.Is(err, entity.ErrSCMAppExists):
+		return "exists"
 	default:
 		return "unavailable"
 	}

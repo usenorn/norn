@@ -276,6 +276,23 @@ func (r *connectionRepository) ListByWorkspace(
 	return connections, nil
 }
 
+const countConnectionsByAppQuery = `
+SELECT count(*)
+FROM workspace_scm_connections
+WHERE auth_kind = 'app' AND app_id = $1`
+
+func (r *connectionRepository) CountByApp(ctx context.Context, appID uuid.UUID) (int, error) {
+	var held int
+
+	if err := r.db.Querier(ctx).QueryRowContext(
+		ctx, countConnectionsByAppQuery, appID,
+	).Scan(&held); err != nil {
+		return 0, fmt.Errorf("count source control connections on an application: %w", err)
+	}
+
+	return held, nil
+}
+
 const getConnectionByInstallationQuery = `
 SELECT` + connectionColumns + `
 FROM workspace_scm_connections AS c

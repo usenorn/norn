@@ -49,6 +49,7 @@ func statements() map[string]string {
 		"listCommentMirrorsQuery":           listCommentMirrorsQuery,
 		"listConflictsQuery":                listConflictsQuery,
 		"listConnectionsQuery":              listConnectionsQuery,
+		"countConnectionsByAppQuery":        countConnectionsByAppQuery,
 		"listDeliveriesQuery":               listDeliveriesQuery,
 		"listDeploymentsQuery":              listDeploymentsQuery,
 		"listIdentitiesQuery":               listIdentitiesQuery,

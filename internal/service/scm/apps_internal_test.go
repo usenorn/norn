@@ -18,16 +18,14 @@ import (
 )
 
 type appHarness struct {
-	service    *apps
-	registry   *scmrepo.MockSCMApp
-	states     *statemock.MockSCMAppState
-	forgeApp   *MockForgeApp
-	authorizer *authorizermock.MockAuthorizer
-	workspace  uuid.UUID
-
-	installations []entity.SCMInstallation
-	installErr    error
-	askedWith     entity.SCMApp
+	service     *apps
+	registry    *scmrepo.MockSCMApp
+	connections *scmrepo.MockSCMConnection
+	states      *statemock.MockSCMAppState
+	forgeApp    *MockForgeApp
+	authorizer  *authorizermock.MockAuthorizer
+	workspace   uuid.UUID
+	actor       uuid.UUID
 }
 
 func appsFor(t *testing.T, cfg config.SourceControl) *appHarness {
@@ -36,6 +34,7 @@ func appsFor(t *testing.T, cfg config.SourceControl) *appHarness {
 	ctrl := gomock.NewController(t)
 
 	registry := scmrepo.NewMockSCMApp(ctrl)
+	connections := scmrepo.NewMockSCMConnection(ctrl)
 	states := statemock.NewMockSCMAppState(ctrl)
 	forgeApp := NewMockForgeApp(ctrl)
 	forges := NewMockForges(ctrl)
@@ -43,40 +42,33 @@ func appsFor(t *testing.T, cfg config.SourceControl) *appHarness {
 	authorizer := authorizermock.NewMockAuthorizer(ctrl)
 
 	forges.EXPECT().App(entity.SCMProviderGitHub).Return(forgeApp, nil).AnyTimes()
-	harness := &appHarness{}
-
-	forgeApp.EXPECT().
-		AppInstallations(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, app entity.SCMApp) ([]entity.SCMInstallation, error) {
-			harness.askedWith = app
-
-			return harness.installations, harness.installErr
-		}).
-		AnyTimes()
 	forges.EXPECT().Lookup(entity.SCMProviderGitHub).Return(hub, nil).AnyTimes()
 	hub.EXPECT().Endpoint().Return("https://api.github.com").AnyTimes()
 
 	workspace := uuid.New()
+	actor := uuid.New()
 
 	authorizer.EXPECT().
 		Decide(gomock.Any(), gomock.Any()).
 		Return(entity.Decision{
 			Role:      entity.MembershipRoleAdmin,
-			Actor:     entity.Actor{AccountID: uuid.New()},
+			Actor:     entity.Actor{AccountID: actor},
 			Workspace: entity.Workspace{ID: workspace, Slug: "northwind"},
 		}, nil).
 		AnyTimes()
 
-	service := NewApps(registry, states, forges, authorizer, cfg)
+	service := NewApps(registry, connections, states, forges, authorizer, cfg)
 
-	harness.service = service.(*apps)
-	harness.registry = registry
-	harness.states = states
-	harness.forgeApp = forgeApp
-	harness.authorizer = authorizer
-	harness.workspace = workspace
-
-	return harness
+	return &appHarness{
+		service:     service.(*apps),
+		registry:    registry,
+		connections: connections,
+		states:      states,
+		forgeApp:    forgeApp,
+		authorizer:  authorizer,
+		workspace:   workspace,
+		actor:       actor,
+	}
 }
 
 func cloudConfig() config.SourceControl {
@@ -128,8 +120,8 @@ func TestTheCloudApplicationIsAdoptedFromConfigurationOnce(t *testing.T) {
 			t.Fatalf("attempt %d: %v", attempt, err)
 		}
 
-		if found.App.ID != stored.ID {
-			t.Fatalf("attempt %d returned application %s, want %s", attempt, found.App.ID, stored.ID)
+		if found.ID != stored.ID {
+			t.Fatalf("attempt %d returned application %s, want %s", attempt, found.ID, stored.ID)
 		}
 	}
 }
@@ -315,7 +307,7 @@ func registerInput(workspaceID uuid.UUID) service.RegisterSCMAppInput {
 	}
 }
 
-func TestAForgeThatCannotBeAskedNeverHidesTheConnectStep(t *testing.T) {
+func TestTheApplicationScreenNamesNoInstallationAtAll(t *testing.T) {
 	held := appsFor(t, cloudConfig())
 
 	stored := entity.SCMApp{
@@ -330,9 +322,6 @@ func TestAForgeThatCannotBeAskedNeverHidesTheConnectStep(t *testing.T) {
 		Get(gomock.Any(), entity.SCMProviderGitHub, "https://api.github.com").
 		Return(stored, nil)
 
-	held.registry.EXPECT().Secrets(gomock.Any(), stored.ID).Return(stored, nil)
-	held.installErr = errors.New("github is unreachable")
-
 	found, err := held.service.Application(
 		context.Background(), held.workspace, entity.SCMProviderGitHub,
 	)
@@ -340,85 +329,116 @@ func TestAForgeThatCannotBeAskedNeverHidesTheConnectStep(t *testing.T) {
 		t.Fatalf("Application: %v", err)
 	}
 
-	if !found.Installed {
-		t.Fatal(
-			"a forge Norn could not reach was reported as not installed, so the screen would " +
-				"hide the connect step and strand somebody whose app is installed perfectly well",
+	if found.ID != stored.ID {
+		t.Fatalf("the screen was handed application %s, want %s", found.ID, stored.ID)
+	}
+}
+
+func TestASecondApplicationIsRefusedOnceOneIsRegistered(t *testing.T) {
+	held := appsFor(t, config.SourceControl{})
+	stored := entity.SCMApp{ID: uuid.New(), ExternalAppID: "4711"}
+
+	held.registry.EXPECT().
+		Get(gomock.Any(), entity.SCMProviderGitHub, "https://api.github.com").
+		Return(stored, nil)
+
+	held.connections.EXPECT().CountByApp(gomock.Any(), stored.ID).Return(2, nil)
+
+	_, err := held.service.Registration(context.Background(), registerInput(held.workspace))
+
+	if !errors.Is(err, entity.ErrSCMAppExists) {
+		t.Fatalf(
+			"registering over the instance's application returned %v. One application serves "+
+				"every workspace, so a second registration replaces the private key and the "+
+				"webhook secret the others depend on, and hands whoever registered a secret "+
+				"that verifies deliveries into any of them",
+			err,
 		)
 	}
 }
 
-func TestAnApplicationNobodyHasInstalledSaysSo(t *testing.T) {
-	held := appsFor(t, cloudConfig())
+func TestARegistrationCallbackIsRefusedOnceOneIsRegistered(t *testing.T) {
+	held := appsFor(t, config.SourceControl{})
 
-	stored := entity.SCMApp{
-		ID:            uuid.New(),
-		Provider:      entity.SCMProviderGitHub,
-		BaseURL:       "https://api.github.com",
-		Slug:          "nornbot",
-		ExternalAppID: "4711",
-	}
+	held.states.EXPECT().
+		Take(gomock.Any(), "the-state").
+		Return(entity.SCMAppState{
+			Purpose:     entity.SCMAppRegister,
+			Provider:    entity.SCMProviderGitHub,
+			WorkspaceID: held.workspace,
+		}, nil)
+
+	stored := entity.SCMApp{ID: uuid.New(), ExternalAppID: "4711"}
 
 	held.registry.EXPECT().
 		Get(gomock.Any(), entity.SCMProviderGitHub, "https://api.github.com").
 		Return(stored, nil)
 
-	held.registry.EXPECT().Secrets(gomock.Any(), stored.ID).Return(stored, nil)
-	held.installations = []entity.SCMInstallation{}
+	held.connections.EXPECT().CountByApp(gomock.Any(), stored.ID).Return(1, nil)
 
-	found, err := held.service.Application(
-		context.Background(), held.workspace, entity.SCMProviderGitHub,
-	)
-	if err != nil {
-		t.Fatalf("Application: %v", err)
-	}
+	_, err := held.service.CompleteRegistration(context.Background(), "the-code", "the-state")
 
-	if found.Installed {
-		t.Fatal(
-			"an application with no installations reported itself installed, so the screen " +
-				"offers a connect that can only come back empty",
+	if !errors.Is(err, entity.ErrSCMAppExists) {
+		t.Fatalf(
+			"the callback adopted a second application (%v). It carries no session, so a state "+
+				"minted while the instance held none can be spent after one is registered, and "+
+				"the check where the exchange begins never runs again",
+			err,
 		)
 	}
 }
 
-func TestAskingWhetherTheAppIsInstalledUsesItsOwnCredentials(t *testing.T) {
-	held := appsFor(t, cloudConfig())
-
-	stored := entity.SCMApp{
-		ID:            uuid.New(),
-		Provider:      entity.SCMProviderGitHub,
-		BaseURL:       "https://api.github.com",
-		Slug:          "nornbot",
-		ExternalAppID: "4711",
-	}
-
-	unsealed := stored
-	unsealed.PrivateKey = "-----BEGIN RSA PRIVATE KEY-----\nkey\n-----END RSA PRIVATE KEY-----"
+func TestAnApplicationNobodyIsConnectedThroughCanBeRegisteredAgain(t *testing.T) {
+	held := appsFor(t, config.SourceControl{})
+	stored := entity.SCMApp{ID: uuid.New(), ExternalAppID: "4711"}
 
 	held.registry.EXPECT().
 		Get(gomock.Any(), entity.SCMProviderGitHub, "https://api.github.com").
 		Return(stored, nil)
 
-	held.registry.EXPECT().Secrets(gomock.Any(), stored.ID).Return(unsealed, nil)
+	held.connections.EXPECT().CountByApp(gomock.Any(), stored.ID).Return(0, nil)
 
-	held.installations = []entity.SCMInstallation{{ExternalID: "1", AccountLogin: "northwind"}}
+	held.forgeApp.EXPECT().
+		ManifestTarget(gomock.Any(), gomock.Any()).
+		Return("https://github.com/settings/apps/new")
 
-	found, err := held.service.Application(
-		context.Background(), held.workspace, entity.SCMProviderGitHub,
-	)
-	if err != nil {
-		t.Fatalf("Application: %v", err)
-	}
+	held.states.EXPECT().Put(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-	if held.askedWith.PrivateKey == "" {
-		t.Fatal(
-			"the forge was handed an application with no private key, so it cannot mint the " +
-				"token that lists installations. The call fails, the screen falls back to " +
-				"assuming it is installed, and somebody is offered a connect that cannot work",
+	if _, err := held.service.Registration(
+		context.Background(), registerInput(held.workspace),
+	); err != nil {
+		t.Fatalf(
+			"registering over an application nothing is connected through returned %v. A "+
+				"registration that went wrong halfway leaves a row nobody uses, and refusing "+
+				"that one leaves the instance with no way back",
+			err,
 		)
 	}
+}
 
-	if !found.Installed {
-		t.Error("an application with an installation reported itself uninstalled")
+func TestAStashIsNotSpendableByAnotherAdministrator(t *testing.T) {
+	held := appsFor(t, cloudConfig())
+
+	held.states.EXPECT().
+		Read(gomock.Any(), "the-handle").
+		Return(entity.SCMAppState{
+			Purpose:     entity.SCMAppChosen,
+			Provider:    entity.SCMProviderGitHub,
+			WorkspaceID: held.workspace,
+			AccountID:   uuid.New(),
+			Installations: []entity.SCMInstallation{
+				{ExternalID: "884411", AccountLogin: "somebody-elses-org"},
+			},
+		}, nil)
+
+	_, err := held.service.Choice(context.Background(), held.workspace, "the-handle")
+
+	if !errors.Is(err, entity.ErrSCMAppStateNotFound) {
+		t.Fatalf(
+			"a stash minted by another administrator was read back (%v). It lists the forge "+
+				"installations one person reached with their own account, so sharing a "+
+				"workspace with them is not a claim on it",
+			err,
+		)
 	}
 }

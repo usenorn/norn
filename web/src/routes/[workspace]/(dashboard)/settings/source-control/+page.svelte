@@ -176,6 +176,7 @@
 			workspaceSlug={workspace.slug}
 			application={shownApplication}
 			notice={shownNotice}
+			installedOn={githubConnection?.accountLogin || null}
 			connectedTo={githubConnection ? connectionLabel(githubConnection) : null}
 			repositoryCount={repositories.length}
 			connectHref={sourceControlConnectPath(workspace.slug)}

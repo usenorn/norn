@@ -13,13 +13,13 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
-	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 )
 
 type apps struct {
 	apps          repository.SCMApp
+	connections   repository.SCMConnection
 	states        repository.SCMAppState
 	forges        service.Forges
 	authorizer    service.Authorizer
@@ -28,6 +28,7 @@ type apps struct {
 
 func NewApps(
 	appRepository repository.SCMApp,
+	connections repository.SCMConnection,
 	states repository.SCMAppState,
 	forges service.Forges,
 	authorizer service.Authorizer,
@@ -35,6 +36,7 @@ func NewApps(
 ) service.SourceControlApps {
 	return &apps{
 		apps:          appRepository,
+		connections:   connections,
 		states:        states,
 		forges:        forges,
 		authorizer:    authorizer,
@@ -60,69 +62,20 @@ func (s *apps) administers(ctx context.Context, workspaceID uuid.UUID) (entity.D
 	return decision, nil
 }
 
+// Application answers only for the forge application this instance holds, never for where it
+// happens to be installed. That question is answered per account by the sign-in below: the
+// forge's own list spans every workspace on the instance, so reading it here named one
+// tenant's organisations on another tenant's screen and ticked a step they had not taken.
 func (s *apps) Application(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	provider entity.SCMProvider,
-) (service.SCMApplication, error) {
+) (entity.SCMApp, error) {
 	if _, err := s.administers(ctx, workspaceID); err != nil {
-		return service.SCMApplication{}, err
+		return entity.SCMApp{}, err
 	}
 
-	held, err := s.application(ctx, provider)
-	if err != nil {
-		return service.SCMApplication{}, err
-	}
-
-	accounts, known := s.installedOn(ctx, held)
-
-	return service.SCMApplication{
-		App:       held,
-		Installed: !known || len(accounts) > 0,
-		Accounts:  accounts,
-	}, nil
-}
-
-func (s *apps) installedOn(ctx context.Context, app entity.SCMApp) ([]string, bool) {
-	forgeApp, err := s.forges.App(app.Provider)
-	if err != nil {
-		return nil, false
-	}
-
-	secrets, err := s.apps.Secrets(ctx, app.ID)
-	if err != nil {
-		logging.From(ctx).WarnContext(
-			ctx,
-			"reading the application's own credentials failed, so whether it is installed is unknown",
-			"provider", string(app.Provider),
-			"error", err.Error(),
-		)
-
-		return nil, false
-	}
-
-	installations, err := forgeApp.AppInstallations(ctx, secrets)
-	if err != nil {
-		logging.From(ctx).WarnContext(
-			ctx,
-			"asking the forge whether the application is installed failed, so the screen offers "+
-				"both steps rather than hiding one",
-			"provider", string(app.Provider),
-			"error", err.Error(),
-		)
-
-		return nil, false
-	}
-
-	accounts := make([]string, 0, len(installations))
-
-	for _, installation := range installations {
-		if installation.AccountLogin != "" {
-			accounts = append(accounts, installation.AccountLogin)
-		}
-	}
-
-	return accounts, true
+	return s.application(ctx, provider)
 }
 
 func (s *apps) application(
@@ -167,6 +120,40 @@ func (s *apps) endpoint(provider entity.SCMProvider) string {
 	return forge.Endpoint()
 }
 
+// registrable refuses to register over an application anybody is connected through. One row per
+// provider and base URL serves the whole instance, so replacing it swaps the private key, the
+// client secret and the webhook secret every other workspace's connections already depend on —
+// breaking theirs, and handing whoever registered a secret that verifies deliveries into any of
+// them. A row nothing is connected through is nobody's, so a registration that went wrong can
+// still be started again. The callback that finishes a registration carries no session, so this
+// is asked there too rather than only where the exchange begins.
+func (s *apps) registrable(ctx context.Context, provider entity.SCMProvider) error {
+	if s.sourceControl.GitHubAppConfigured() {
+		return entity.ErrSCMAppExists
+	}
+
+	held, err := s.apps.Get(ctx, provider, s.endpoint(provider))
+
+	if errors.Is(err, entity.ErrSCMAppNotFound) {
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	connected, err := s.connections.CountByApp(ctx, held.ID)
+	if err != nil {
+		return err
+	}
+
+	if connected > 0 {
+		return entity.ErrSCMAppExists
+	}
+
+	return nil
+}
+
 func (s *apps) Registration(
 	ctx context.Context,
 	input service.RegisterSCMAppInput,
@@ -176,8 +163,8 @@ func (s *apps) Registration(
 		return entity.SCMAppRegistration{}, err
 	}
 
-	if s.sourceControl.GitHubAppConfigured() {
-		return entity.SCMAppRegistration{}, entity.ErrSCMAppExists
+	if err := s.registrable(ctx, entity.SCMProviderGitHub); err != nil {
+		return entity.SCMAppRegistration{}, err
 	}
 
 	forgeApp, err := s.forges.App(entity.SCMProviderGitHub)
@@ -234,6 +221,10 @@ func (s *apps) CompleteRegistration(
 
 	if attempt.Purpose != entity.SCMAppRegister {
 		return entity.SCMAppState{}, entity.ErrSCMAppStateNotFound
+	}
+
+	if err := s.registrable(ctx, attempt.Provider); err != nil {
+		return attempt, err
 	}
 
 	forgeApp, err := s.forges.App(attempt.Provider)
@@ -379,7 +370,8 @@ func (s *apps) Choice(
 	workspaceID uuid.UUID,
 	handle string,
 ) (service.SCMAppChoice, error) {
-	if _, err := s.administers(ctx, workspaceID); err != nil {
+	decision, err := s.administers(ctx, workspaceID)
+	if err != nil {
 		return service.SCMAppChoice{}, err
 	}
 
@@ -388,7 +380,11 @@ func (s *apps) Choice(
 		return service.SCMAppChoice{}, err
 	}
 
-	if held.Purpose != entity.SCMAppChosen || held.WorkspaceID != workspaceID {
+	// What is stashed is one person's own forge installations, not the workspace's, so sharing
+	// an administrator's workspace is not enough to read it.
+	if held.Purpose != entity.SCMAppChosen ||
+		held.WorkspaceID != workspaceID ||
+		held.AccountID != decision.Actor.AccountID {
 		return service.SCMAppChoice{}, entity.ErrSCMAppStateNotFound
 	}
 

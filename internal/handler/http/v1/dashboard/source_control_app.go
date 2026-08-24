@@ -24,24 +24,17 @@ func (h *handler) GetWorkspaceSourceControlApplication(
 		CanRegister: !h.sourceControlCfg.GitHubAppConfigured(),
 	}
 
-	registered, err := h.sourceControlApps.Application(
+	app, err := h.sourceControlApps.Application(
 		ctx, request.WorkspaceId, entity.SCMProviderGitHub,
 	)
 
 	switch {
 	case err == nil:
-		app := registered.App
-
 		dto.Registered = app.Registered()
+		dto.CanRegister = dto.CanRegister && !dto.Registered
 		dto.Slug = &app.Slug
 		dto.AllowPrivateAddress = pointer(app.Trust.AllowPrivateAddress)
 		dto.CaCertificateSet = pointer(app.Trust.CACertificate != "")
-		dto.Installed = pointer(registered.Installed)
-
-		if len(registered.Accounts) > 0 {
-			accounts := registered.Accounts
-			dto.InstalledOn = &accounts
-		}
 
 		install := app.InstallURL()
 		dto.InstallUrl = &install

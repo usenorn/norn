@@ -25,6 +25,7 @@
 		workspaceSlug,
 		application,
 		notice,
+		installedOn = null,
 		connectedTo = null,
 		repositoryCount = 0,
 		connectHref = "",
@@ -32,6 +33,12 @@
 		workspaceId: string;
 		workspaceSlug: string;
 		application: SourceControlAppState;
+		/**
+		 * The account this workspace's own connection installs through. One application serves
+		 * every workspace on the instance, so where else it is installed is not this screen's
+		 * to know or to name.
+		 */
+		installedOn?: string | null;
 		connectedTo?: string | null;
 		/** How many repositories the workspace watches. Nothing works until this is above zero. */
 		repositoryCount?: number;
@@ -155,7 +162,18 @@
 		</Alert.Root>
 	{/if}
 
-	{#if application.kind === "choosing"}
+	{#if application.kind === "choosing" && application.installations.length === 0}
+		<p class="text-sm leading-normal text-muted-foreground text-pretty">
+			You are signed in to GitHub, but the application is installed on no account you
+			administer, so there is nothing to choose. Install it, then connect again.
+		</p>
+
+		{#if application.installUrl}
+			<Button href={application.installUrl} rel="external" class="w-max">
+				Install on GitHub
+			</Button>
+		{/if}
+	{:else if application.kind === "choosing"}
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			Choose which installation Norn acts through. Only the repositories you granted it are
 			reachable, and you can change that on GitHub at any time.
@@ -193,32 +211,30 @@
 		<ol class="flex flex-col gap-4">
 			<li class="flex min-w-0 gap-3">
 				<span
-					class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-2xs {application.installed
+					class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-2xs {installedOn
 						? 'border-success/40 text-success'
 						: 'border-line-strong text-ink-900'}"
 					aria-hidden="true"
 				>
-					{application.installed ? "✓" : "1"}
+					{installedOn ? "✓" : "1"}
 				</span>
 				<div class="flex min-w-0 flex-1 flex-col gap-1.5">
 					<p class="text-sm leading-normal text-ink-900 text-pretty">
-						{#if application.installed && application.installedOn.length > 0}
-							Installed on {application.installedOn.join(", ")}.
-						{:else if application.installed}
-							Installed on GitHub.
+						{#if installedOn}
+							Installed on {installedOn}.
 						{:else}
 							Install it on the organisation and repositories you want watched.
 						{/if}
 					</p>
 					{#if application.installUrl}
 						<Button
-							variant={application.installed ? "secondary" : "default"}
+							variant={installedOn ? "secondary" : "default"}
 							size="sm"
 							class="w-max"
 							href={application.installUrl}
 							rel="external"
 						>
-							{application.installed ? "Change permissions" : "Install on GitHub"}
+							{installedOn ? "Change permissions" : "Install on GitHub"}
 						</Button>
 					{/if}
 				</div>
@@ -228,29 +244,20 @@
 				<span
 					class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-2xs {connectedTo
 						? 'border-success/40 text-success'
-						: application.installed
-							? 'border-line-strong text-ink-900'
-							: 'border-line-subtle text-muted-foreground'}"
+						: 'border-line-strong text-ink-900'}"
 					aria-hidden="true"
 				>
 					{connectedTo ? "✓" : "2"}
 				</span>
 				<div class="flex min-w-0 flex-1 flex-col gap-1.5">
-					<p
-						class="text-sm leading-normal text-pretty {application.installed || connectedTo
-							? 'text-ink-900'
-							: 'text-muted-foreground'}"
-					>
+					<p class="text-sm leading-normal text-ink-900 text-pretty">
 						{#if connectedTo}
 							Connected as {connectedTo}.
-						{:else if application.installed}
-							Sign in to GitHub and choose which installation Norn acts through.
 						{:else}
-							Then sign in to choose which installation Norn acts through. There is nothing
-							to choose until it is installed.
+							Sign in to GitHub and choose which installation Norn acts through.
 						{/if}
 					</p>
-					{#if application.installed && !connectedTo}
+					{#if !connectedTo}
 						<Button size="sm" class="w-max" disabled={working} onclick={signIn}>
 							{working ? "Opening GitHub…" : "Connect GitHub"}
 						</Button>

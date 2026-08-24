@@ -44,6 +44,21 @@ func (m *MockSCMConnection) EXPECT() *MockSCMConnectionMockRecorder {
 	return m.recorder
 }
 
+// CountByApp mocks base method.
+func (m *MockSCMConnection) CountByApp(ctx context.Context, appID uuid.UUID) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountByApp", ctx, appID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountByApp indicates an expected call of CountByApp.
+func (mr *MockSCMConnectionMockRecorder) CountByApp(ctx, appID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountByApp", reflect.TypeOf((*MockSCMConnection)(nil).CountByApp), ctx, appID)
+}
+
 // Create mocks base method.
 func (m *MockSCMConnection) Create(ctx context.Context, input repository.SCMConnectionInput) (entity.SCMConnection, error) {
 	m.ctrl.T.Helper()

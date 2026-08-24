@@ -7400,18 +7400,12 @@ type SourceControlAppRegistration struct {
 	Target   string `json:"target"`
 }
 
-// SourceControlApplication Whether this instance can act as an installed application on a forge, and where a person goes to install it. An instance handed an application in its own configuration cannot register a second one, so canRegister is false there.
+// SourceControlApplication Whether this instance can act as an installed application on a forge, and where a person goes to install it. An instance handed an application in its own configuration cannot register a second one, so canRegister is false there, and so is it once one has been registered. Where the application is installed is not reported here: one application serves every workspace on the instance, so its installations name other tenants. Signing in answers that question for the one account asking.
 type SourceControlApplication struct {
 	AllowPrivateAddress *bool   `json:"allowPrivateAddress,omitempty"`
 	CaCertificateSet    *bool   `json:"caCertificateSet,omitempty"`
 	CanRegister         bool    `json:"canRegister"`
 	InstallUrl          *string `json:"installUrl,omitempty"`
-
-	// Installed Whether the application is installed anywhere yet. Connecting lists the installations a person can reach, so with none there is nothing to choose and the screen offers installing first. True when the forge could not be asked, so an unreachable forge never hides a step.
-	Installed *bool `json:"installed,omitempty"`
-
-	// InstalledOn The accounts the application is installed on, so the screen can name them.
-	InstalledOn *[]string `json:"installedOn,omitempty"`
 
 	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
 	Provider   SourceControlProvider `json:"provider"`

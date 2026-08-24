@@ -209,51 +209,6 @@ func (f *Forge) ExchangeCode(
 	return body.AccessToken, nil
 }
 
-func (f *Forge) AppInstallations(
-	ctx context.Context,
-	app entity.SCMApp,
-) ([]entity.SCMInstallation, error) {
-	target, err := f.appTarget(app, time.Now())
-	if err != nil {
-		return nil, err
-	}
-
-	response, err := f.call(
-		ctx,
-		target,
-		http.MethodGet,
-		"/app/installations?per_page="+strconv.Itoa(f.pageSize),
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	var body []struct {
-		ID      int64 `json:"id"`
-		Account struct {
-			Login string `json:"login"`
-			Type  string `json:"type"`
-		} `json:"account"`
-	}
-
-	if err := f.decode(response, target, &body); err != nil {
-		return nil, err
-	}
-
-	installations := make([]entity.SCMInstallation, 0, len(body))
-
-	for _, found := range body {
-		installations = append(installations, entity.SCMInstallation{
-			ExternalID:   strconv.FormatInt(found.ID, 10),
-			AccountLogin: found.Account.Login,
-			AccountKind:  strings.ToLower(found.Account.Type),
-		})
-	}
-
-	return installations, nil
-}
-
 func (f *Forge) Installations(
 	ctx context.Context,
 	app entity.SCMApp,

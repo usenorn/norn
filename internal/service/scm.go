@@ -167,12 +167,6 @@ type Forge interface {
 	PostChangeComment(ctx context.Context, target entity.SCMTarget, number int, body string) error
 }
 
-type SCMApplication struct {
-	App       entity.SCMApp
-	Installed bool
-	Accounts  []string
-}
-
 type ForgeApp interface {
 	MintInstallationToken(
 		ctx context.Context,
@@ -188,7 +182,6 @@ type ForgeApp interface {
 	AuthorizeURL(app entity.SCMApp, state, redirect string) string
 	ExchangeCode(ctx context.Context, app entity.SCMApp, code, redirect string) (string, error)
 
-	AppInstallations(ctx context.Context, app entity.SCMApp) ([]entity.SCMInstallation, error)
 	Installations(
 		ctx context.Context,
 		app entity.SCMApp,
@@ -309,7 +302,7 @@ type RegisterSCMAppInput struct {
 }
 
 type SourceControlApps interface {
-	Application(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider) (SCMApplication, error)
+	Application(ctx context.Context, workspaceID uuid.UUID, provider entity.SCMProvider) (entity.SCMApp, error)
 	Registration(ctx context.Context, input RegisterSCMAppInput) (entity.SCMAppRegistration, error)
 	CompleteRegistration(ctx context.Context, code, state string) (entity.SCMAppState, error)
 	Authorization(ctx context.Context, workspaceID uuid.UUID, callbackURL string) (string, error)

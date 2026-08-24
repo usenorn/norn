@@ -96,6 +96,28 @@ func (c *credentials) token(
 		return held, nil
 	}
 
+	return c.mint(ctx, connection)
+}
+
+// refresh spends a new installation token even when a usable one is held. An installation token
+// carries the repositories the installation reached when it was minted, so a repository granted
+// afterwards stays invisible to it for the rest of its hour — which is exactly the moment
+// somebody comes here to connect the repository they have just granted.
+func (c *credentials) refresh(
+	ctx context.Context,
+	connection entity.SCMConnection,
+) (string, error) {
+	if !connection.UsesApp() {
+		return c.connections.Token(ctx, connection.ID)
+	}
+
+	return c.mint(ctx, connection)
+}
+
+func (c *credentials) mint(
+	ctx context.Context,
+	connection entity.SCMConnection,
+) (string, error) {
 	if connection.AppID == uuid.Nil || connection.InstallationID == "" {
 		return "", entity.ErrSCMInstallationNotFound
 	}

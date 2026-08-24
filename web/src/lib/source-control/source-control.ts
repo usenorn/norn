@@ -88,20 +88,20 @@ export type MintedRepository = {
 export type SourceControlAppState =
 	| { kind: "unsupported" }
 	| { kind: "unregistered"; canRegister: boolean }
+	| { kind: "registered"; slug: string; installUrl: string }
 	| {
-			kind: "registered";
-			slug: string;
+			kind: "choosing";
+			handle: string;
 			installUrl: string;
-			installed: boolean;
-			installedOn: string[];
-	  }
-	| { kind: "choosing"; handle: string; installations: SourceControlInstallation[] };
+			installations: SourceControlInstallation[];
+	  };
 
 export type SourceControlAppNotice =
 	| { kind: "registered" }
 	| { kind: "expired" }
 	| { kind: "refused" }
 	| { kind: "unregistered" }
+	| { kind: "exists" }
 	| { kind: "unavailable" };
 
 export function appNoticeMessage(notice: SourceControlAppNotice): string {
@@ -114,6 +114,8 @@ export function appNoticeMessage(notice: SourceControlAppNotice): string {
 			return "GitHub refused the exchange. Nothing was stored — start again.";
 		case "unregistered":
 			return "No application is registered on this instance yet.";
+		case "exists":
+			return "This instance already holds a GitHub application, and it serves every workspace on it. Nothing was changed — the application you just created on GitHub can be deleted there.";
 		case "unavailable":
 			return "GitHub could not be reached. Nothing was changed.";
 	}
@@ -124,6 +126,7 @@ export function appNoticeFrom(value: string | null): SourceControlAppNotice | un
 		case "expired":
 		case "refused":
 		case "unregistered":
+		case "exists":
 		case "unavailable":
 			return { kind: value };
 		default:
@@ -497,12 +500,22 @@ export function sourceControlVerdict(input: {
 		};
 	}
 
-	if (application.kind === "registered" && application.installed) {
+	if (application.kind === "choosing") {
+		if (application.installations.length === 0) {
+			return {
+				stage: "install",
+				tone: "warning",
+				title: "The application is installed on no account you administer",
+				detail:
+					"You are signed in to GitHub, but there is nothing to choose. Install it on the repositories Norn should watch, then connect again.",
+			};
+		}
+
 		return {
 			stage: "authorise",
 			tone: "warning",
-			title: "The application is installed but not connected",
-			detail: "Sign in to GitHub to say which installation this workspace uses.",
+			title: "Choose the installation this workspace uses",
+			detail: "You are signed in to GitHub. Pick the account whose repositories Norn watches.",
 		};
 	}
 
@@ -510,17 +523,9 @@ export function sourceControlVerdict(input: {
 		return {
 			stage: "install",
 			tone: "warning",
-			title: "The application is not installed yet",
-			detail: "Install it on the repositories Norn should watch, then connect it here.",
-		};
-	}
-
-	if (application.kind === "choosing") {
-		return {
-			stage: "authorise",
-			tone: "warning",
-			title: "Choose the installation this workspace uses",
-			detail: "You are signed in to GitHub. Pick the account whose repositories Norn watches.",
+			title: "This workspace has not connected GitHub",
+			detail:
+				"Install the application on the repositories Norn should watch, then sign in to say which installation this workspace uses.",
 		};
 	}
 

@@ -186,3 +186,54 @@ func TestAnInstallationThatWasNeverChosenIsRefusedRatherThanReadAsEmpty(t *testi
 		)
 	}
 }
+
+func TestListingWhatAnInstallationReachesMintsAFreshToken(t *testing.T) {
+	on := resolver(t)
+	appID := uuid.New()
+	connection := installed(appID)
+
+	on.apps.EXPECT().
+		Secrets(gomock.Any(), appID).
+		Return(entity.SCMApp{ID: appID, ExternalAppID: "17"}, nil).
+		Times(2)
+
+	first := on.forgeApp.EXPECT().
+		MintInstallationToken(gomock.Any(), gomock.Any(), "884411").
+		Return(entity.SCMCredential{
+			Token:     "ghs-before-the-grant",
+			ExpiresAt: time.Now().Add(time.Hour),
+		}, nil)
+
+	on.forgeApp.EXPECT().
+		MintInstallationToken(gomock.Any(), gomock.Any(), "884411").
+		Return(entity.SCMCredential{
+			Token:     "ghs-after-the-grant",
+			ExpiresAt: time.Now().Add(time.Hour),
+		}, nil).
+		After(first)
+
+	if _, err := on.resolver.token(context.Background(), connection); err != nil {
+		t.Fatalf("the first mint: %v", err)
+	}
+
+	token, err := on.resolver.refresh(context.Background(), connection)
+	if err != nil {
+		t.Fatalf("refresh: %v", err)
+	}
+
+	if token != "ghs-after-the-grant" {
+		t.Fatalf(
+			"listing what the installation reaches reused %q. An installation token carries the "+
+				"repositories the installation reached when it was minted, so a repository "+
+				"granted since is invisible to it for the rest of its hour — which is exactly "+
+				"when somebody comes to connect the one they have just granted",
+			token,
+		)
+	}
+
+	if kept, found := on.cache.Get(connection.ID, time.Now()); !found || kept != token {
+		t.Errorf(
+			"the fresh token was not kept, so the connect that follows this listing mints again",
+		)
+	}
+}
