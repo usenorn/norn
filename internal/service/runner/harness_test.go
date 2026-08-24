@@ -41,6 +41,8 @@ type harness struct {
 	workspaceID uuid.UUID
 	agent       entity.Agent
 	scopes      entity.APIScopeSet
+	role        entity.MembershipRole
+	reader      uuid.UUID
 }
 
 func newHarness(t *testing.T) *harness {
@@ -58,6 +60,8 @@ func newHarness(t *testing.T) *harness {
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		audit:       auditsvc.NewMockAudit(ctrl),
 		workspaceID: workspaceID,
+		role:        entity.MembershipRoleAdmin,
+		reader:      uuid.New(),
 		scopes: entity.APIScopeSet{
 			entity.NewAPIScope(entity.ResourceIssue, entity.ActionRead),
 			entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage),
@@ -78,7 +82,8 @@ func newHarness(t *testing.T) *harness {
 		Decide(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, request entity.AccessRequest) (entity.Decision, error) {
 			return entity.Decision{
-				Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()},
+				Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: h.reader},
+				Role:  h.role,
 				Scope: entity.TeamScope{WorkspaceID: request.WorkspaceID, AllTeams: true},
 			}, nil
 		}).

@@ -1,13 +1,18 @@
 <script lang="ts">
 	import Bot from "@lucide/svelte/icons/bot";
+	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
+	import { page } from "$app/state";
 	import { api } from "$lib/api";
+	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Dialog from "$lib/components/ui/dialog/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
+	import Tag from "$lib/components/norn/tag.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import { runnersPath } from "$lib/runners/runners";
 	import { delegateIssueSchema } from "./delegate-schema";
 	import {
 		delegationFailureMessage,
@@ -82,6 +87,7 @@
 	const { form: formData, enhance, submitting } = form;
 
 	const chosen = $derived(agents.find((agent) => agent.accountId === $formData.agentAccountId));
+	const mcpOnly = $derived(chosen !== undefined && !chosen.hasRunner);
 
 	function nameOf(agent: Member): string {
 		return agent.displayName || agent.email || "An agent";
@@ -126,6 +132,9 @@
 										<Select.Item value={agent.accountId} label={nameOf(agent)}>
 											<Bot class="size-3.5 text-muted-foreground" aria-hidden="true" />
 											{nameOf(agent)}
+											{#if !agent.hasRunner}
+												<Tag name="MCP only" class="ml-auto" />
+											{/if}
 										</Select.Item>
 									{/each}
 								</Select.Content>
@@ -134,6 +143,26 @@
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
+
+				{#if mcpOnly && chosen}
+					<Alert.Root variant="muted">
+						<CircleAlert aria-hidden="true" />
+						<Alert.Title>{nameOf(chosen)} has no machine connected</Alert.Title>
+						<Alert.Description>
+							It can still read and change this issue through an AI client, but there is nowhere
+							for it to run code, so the work waits until a computer is connected to it. You can
+							hand it over anyway — it starts as soon as one is.
+						</Alert.Description>
+						<Alert.Action>
+							<a
+								href={runnersPath(page.params.workspace ?? "")}
+								class="text-sm text-link underline-offset-2 hover:underline"
+							>
+								Connect a machine
+							</a>
+						</Alert.Action>
+					</Alert.Root>
+				{/if}
 
 				<Form.Field {form} name="brief">
 					<Form.Control>

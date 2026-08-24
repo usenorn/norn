@@ -30,6 +30,7 @@
 		type AgentFailure,
 		type AgentListing,
 	} from "$lib/agents/agents";
+	import { runnersPath } from "$lib/runners/runners";
 	import { agentsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -210,12 +211,20 @@
 <div class="flex min-h-0 flex-1 flex-col">
 	<div class="flex h-11 flex-none items-center justify-between gap-3 border-b border-line-subtle px-4">
 		<h1 class="text-sm font-medium tracking-snug text-ink-900">Agents</h1>
-		<a
-			href={approvalsPath(workspace.slug)}
-			class="text-xs text-muted-foreground motion-control hover:text-ink-900"
-		>
-			Waiting for approval
-		</a>
+		<div class="flex flex-none items-center gap-3">
+			<a
+				href={runnersPath(workspace.slug)}
+				class="text-xs text-muted-foreground motion-control hover:text-ink-900"
+			>
+				Runners
+			</a>
+			<a
+				href={approvalsPath(workspace.slug)}
+				class="text-xs text-muted-foreground motion-control hover:text-ink-900"
+			>
+				Waiting for approval
+			</a>
+		</div>
 	</div>
 
 	<div class="flex-1 overflow-auto">

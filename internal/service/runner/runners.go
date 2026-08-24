@@ -52,20 +52,63 @@ func New(
 func (s *runnersService) decide(
 	ctx context.Context,
 	workspaceID uuid.UUID,
-	action entity.Action,
 ) (entity.Decision, error) {
 	return s.authorizer.Decide(ctx, entity.AccessRequest{
-		Resource:    entity.ResourceRunner,
-		Action:      action,
+		Resource:    entity.ResourceWorkspace,
+		Action:      entity.ActionRead,
 		WorkspaceID: workspaceID,
 	})
+}
+
+func (s *runnersService) owned(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	decision entity.Decision,
+) (map[uuid.UUID]struct{}, error) {
+	registered, err := s.agents.ListByWorkspaceID(ctx, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	mine := make(map[uuid.UUID]struct{}, len(registered))
+
+	for _, agent := range registered {
+		if agent.OwnerAccountID == decision.Actor.AccountID {
+			mine[agent.ID] = struct{}{}
+		}
+	}
+
+	return mine, nil
+}
+
+func (s *runnersService) reaches(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	decision entity.Decision,
+	machine entity.Runner,
+) error {
+	if decision.Role == entity.MembershipRoleAdmin {
+		return nil
+	}
+
+	agent, err := s.agents.GetByID(ctx, workspaceID, machine.AgentID)
+	if err != nil {
+		return err
+	}
+
+	if agent.OwnerAccountID != decision.Actor.AccountID {
+		return entity.ErrRunnerNotFound
+	}
+
+	return nil
 }
 
 func (s *runnersService) List(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 ) ([]service.RunnerState, error) {
-	if _, err := s.decide(ctx, workspaceID, entity.ActionRead); err != nil {
+	decision, err := s.decide(ctx, workspaceID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -74,9 +117,24 @@ func (s *runnersService) List(
 		return nil, err
 	}
 
+	var mine map[uuid.UUID]struct{}
+
+	if decision.Role != entity.MembershipRoleAdmin {
+		mine, err = s.owned(ctx, workspaceID, decision)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	states := make([]service.RunnerState, 0, len(enrolled))
 
 	for _, machine := range enrolled {
+		if mine != nil {
+			if _, ok := mine[machine.AgentID]; !ok {
+				continue
+			}
+		}
+
 		presence, err := s.channels.Presence(ctx, machine.ID)
 		if err != nil {
 			return nil, err
@@ -112,7 +170,8 @@ func (s *runnersService) standby(
 	workspaceID, runnerID uuid.UUID,
 	pausedAt *time.Time,
 ) (entity.Runner, error) {
-	if _, err := s.decide(ctx, workspaceID, entity.ActionManage); err != nil {
+	decision, err := s.decide(ctx, workspaceID)
+	if err != nil {
 		return entity.Runner{}, err
 	}
 
@@ -123,6 +182,10 @@ func (s *runnersService) standby(
 
 	if held.WorkspaceID != workspaceID {
 		return entity.Runner{}, entity.ErrRunnerNotFound
+	}
+
+	if err := s.reaches(ctx, workspaceID, decision, held); err != nil {
+		return entity.Runner{}, err
 	}
 
 	if held.Paused() == (pausedAt != nil) {
@@ -163,7 +226,8 @@ func (s *runnersService) standby(
 }
 
 func (s *runnersService) Revoke(ctx context.Context, workspaceID, runnerID uuid.UUID) error {
-	if _, err := s.decide(ctx, workspaceID, entity.ActionManage); err != nil {
+	decision, err := s.decide(ctx, workspaceID)
+	if err != nil {
 		return err
 	}
 
@@ -174,6 +238,10 @@ func (s *runnersService) Revoke(ctx context.Context, workspaceID, runnerID uuid.
 
 	if held.WorkspaceID != workspaceID {
 		return entity.ErrRunnerNotFound
+	}
+
+	if err := s.reaches(ctx, workspaceID, decision, held); err != nil {
+		return err
 	}
 
 	if err := s.runners.Revoke(ctx, workspaceID, runnerID, time.Now().UTC()); err != nil {

@@ -9638,6 +9638,13 @@ type ClientInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/codebases (the `ListAgentCodebases` operationId).
 	ListAgentCodebases(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DisconnectAgentCodebase Stop using this folder, leaving everything that already named it resolvable
+	//
+	// Disconnecting is a state rather than a deletion, so a run that named this folder keeps reading. Served to the agent's owner and workspace administrators, the same as the listing.
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId} (the `DisconnectAgentCodebase` operationId).
+	DisconnectAgentCodebase(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 	//
 	// The value is shown once and never stored, so a lost credential is replaced rather than recovered. The old one stops working the moment this returns, and the agent keeps its permissions, its name, and everything it has already done.
@@ -13046,6 +13053,23 @@ func (c *Client) ListWorkspaceAgentActivity(ctx context.Context, workspaceId Wor
 // Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/codebases (the `ListAgentCodebases` operationId).
 func (c *Client) ListAgentCodebases(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAgentCodebasesRequest(c.Server, workspaceId, agentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DisconnectAgentCodebase Stop using this folder, leaving everything that already named it resolvable
+//
+// Disconnecting is a state rather than a deletion, so a run that named this folder keeps reading. Served to the agent's owner and workspace administrators, the same as the listing.
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId} (the `DisconnectAgentCodebase` operationId).
+func (c *Client) DisconnectAgentCodebase(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisconnectAgentCodebaseRequest(c.Server, workspaceId, agentId, codebaseId)
 	if err != nil {
 		return nil, err
 	}
@@ -20627,6 +20651,54 @@ func NewListAgentCodebasesRequest(server string, workspaceId WorkspaceId, agentI
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDisconnectAgentCodebaseRequest constructs an http.Request for the DisconnectAgentCodebase method
+func NewDisconnectAgentCodebaseRequest(server string, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "codebaseId", codebaseId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/codebases/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -33101,6 +33173,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/codebases (the `ListAgentCodebases` operationId).
 	ListAgentCodebasesWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*ListAgentCodebasesResponse, error)
 
+	// DisconnectAgentCodebaseWithResponse Stop using this folder, leaving everything that already named it resolvable
+	//
+	// Disconnecting is a state rather than a deletion, so a run that named this folder keeps reading. Served to the agent's owner and workspace administrators, the same as the listing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId} (the `DisconnectAgentCodebase` operationId).
+	DisconnectAgentCodebaseWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId, reqEditors ...RequestEditorFn) (*DisconnectAgentCodebaseResponse, error)
+
 	// RotateWorkspaceAgentCredentialWithResponse Issue a fresh credential for an agent, revoking the one it had
 	//
 	// The value is shown once and never stored, so a lost credential is replaced rather than recovered. The old one stops working the moment this returns, and the agent keeps its permissions, its name, and everything it has already done.
@@ -39625,6 +39706,82 @@ func (r ListAgentCodebasesResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListAgentCodebasesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DisconnectAgentCodebaseResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Codebase
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *CodebaseConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DisconnectAgentCodebaseResponse) GetJSON200() *Codebase {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DisconnectAgentCodebaseResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DisconnectAgentCodebaseResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DisconnectAgentCodebaseResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r DisconnectAgentCodebaseResponse) GetApplicationproblemJSON409() *CodebaseConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DisconnectAgentCodebaseResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DisconnectAgentCodebaseResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DisconnectAgentCodebaseResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DisconnectAgentCodebaseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DisconnectAgentCodebaseResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -58320,6 +58477,21 @@ func (c *ClientWithResponses) ListAgentCodebasesWithResponse(ctx context.Context
 	return ParseListAgentCodebasesResponse(rsp)
 }
 
+// DisconnectAgentCodebaseWithResponse Stop using this folder, leaving everything that already named it resolvable
+//
+// Disconnecting is a state rather than a deletion, so a run that named this folder keeps reading. Served to the agent's owner and workspace administrators, the same as the listing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId} (the `DisconnectAgentCodebase` operationId).
+func (c *ClientWithResponses) DisconnectAgentCodebaseWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId, reqEditors ...RequestEditorFn) (*DisconnectAgentCodebaseResponse, error) {
+	rsp, err := c.DisconnectAgentCodebase(ctx, workspaceId, agentId, codebaseId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisconnectAgentCodebaseResponse(rsp)
+}
+
 // RotateWorkspaceAgentCredentialWithResponse Issue a fresh credential for an agent, revoking the one it had
 //
 // The value is shown once and never stored, so a lost credential is replaced rather than recovered. The old one stops working the moment this returns, and the agent keeps its permissions, its name, and everything it has already done.
@@ -65910,6 +66082,67 @@ func ParseListAgentCodebasesResponse(rsp *http.Response) (*ListAgentCodebasesRes
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDisconnectAgentCodebaseResponse parses an HTTP response from a DisconnectAgentCodebaseWithResponse call
+func ParseDisconnectAgentCodebaseResponse(rsp *http.Response) (*DisconnectAgentCodebaseResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DisconnectAgentCodebaseResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Codebase
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest CodebaseConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -80147,6 +80380,9 @@ type ServerInterface interface {
 	// ListAgentCodebases The folders this agent's machines hold
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/codebases)
 	ListAgentCodebases(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// DisconnectAgentCodebase Stop using this folder, leaving everything that already named it resolvable
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId})
+	DisconnectAgentCodebase(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId)
 	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
 	RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
@@ -81251,6 +81487,12 @@ func (_ Unimplemented) ListWorkspaceAgentActivity(w http.ResponseWriter, r *http
 // ListAgentCodebases The folders this agent's machines hold
 // (GET /workspaces/{workspaceId}/agents/{agentId}/codebases)
 func (_ Unimplemented) ListAgentCodebases(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DisconnectAgentCodebase Stop using this folder, leaving everything that already named it resolvable
+// (DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId})
+func (_ Unimplemented) DisconnectAgentCodebase(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -84078,6 +84320,50 @@ func (siw *ServerInterfaceWrapper) ListAgentCodebases(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListAgentCodebases(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisconnectAgentCodebase operation middleware
+func (siw *ServerInterfaceWrapper) DisconnectAgentCodebase(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "codebaseId" -------------
+	var codebaseId CodebaseId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "codebaseId", chi.URLParam(r, "codebaseId"), &codebaseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "codebaseId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisconnectAgentCodebase(w, r, workspaceId, agentId, codebaseId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -94011,6 +94297,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/codebases", wrapper.ListAgentCodebases)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId}", wrapper.DisconnectAgentCodebase)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/executions", wrapper.ListWorkspaceIssueExecutions)
 	})
 	r.Group(func(r chi.Router) {
@@ -99181,6 +99470,106 @@ func (response ListAgentCodebases404ApplicationProblemPlusJSONResponse) VisitLis
 type ListAgentCodebases500ApplicationProblemPlusJSONResponse Problem
 
 func (response ListAgentCodebases500ApplicationProblemPlusJSONResponse) VisitListAgentCodebasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectAgentCodebaseRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+	CodebaseId  CodebaseId  `json:"codebaseId"`
+}
+
+type DisconnectAgentCodebaseResponseObject interface {
+	VisitDisconnectAgentCodebaseResponse(w http.ResponseWriter) error
+}
+
+type DisconnectAgentCodebase200JSONResponse Codebase
+
+func (response DisconnectAgentCodebase200JSONResponse) VisitDisconnectAgentCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectAgentCodebase401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectAgentCodebase401ApplicationProblemPlusJSONResponse) VisitDisconnectAgentCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectAgentCodebase403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectAgentCodebase403ApplicationProblemPlusJSONResponse) VisitDisconnectAgentCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectAgentCodebase404ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectAgentCodebase404ApplicationProblemPlusJSONResponse) VisitDisconnectAgentCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectAgentCodebase409ApplicationProblemPlusJSONResponse struct {
+	CodebaseConflictApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectAgentCodebase409ApplicationProblemPlusJSONResponse) VisitDisconnectAgentCodebaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectAgentCodebase500ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectAgentCodebase500ApplicationProblemPlusJSONResponse) VisitDisconnectAgentCodebaseResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -121680,6 +122069,9 @@ type StrictServerInterface interface {
 	// ListAgentCodebases The folders this agent's machines hold
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/codebases)
 	ListAgentCodebases(ctx context.Context, request ListAgentCodebasesRequestObject) (ListAgentCodebasesResponseObject, error)
+	// DisconnectAgentCodebase Stop using this folder, leaving everything that already named it resolvable
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId})
+	DisconnectAgentCodebase(ctx context.Context, request DisconnectAgentCodebaseRequestObject) (DisconnectAgentCodebaseResponseObject, error)
 	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
 	RotateWorkspaceAgentCredential(ctx context.Context, request RotateWorkspaceAgentCredentialRequestObject) (RotateWorkspaceAgentCredentialResponseObject, error)
@@ -124193,6 +124585,34 @@ func (sh *strictHandler) ListAgentCodebases(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListAgentCodebasesResponseObject); ok {
 		if err := validResponse.VisitListAgentCodebasesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisconnectAgentCodebase operation middleware
+func (sh *strictHandler) DisconnectAgentCodebase(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId) {
+	var request DisconnectAgentCodebaseRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+	request.CodebaseId = codebaseId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisconnectAgentCodebase(ctx, request.(DisconnectAgentCodebaseRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisconnectAgentCodebase")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisconnectAgentCodebaseResponseObject); ok {
+		if err := validResponse.VisitDisconnectAgentCodebaseResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

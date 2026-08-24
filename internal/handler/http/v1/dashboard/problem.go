@@ -2167,6 +2167,10 @@ func (r problemResponse) VisitDisconnectCodebaseResponse(w http.ResponseWriter) 
 	return r.write(w)
 }
 
+func (r problemResponse) VisitDisconnectAgentCodebaseResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitListAgentCodebasesResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
