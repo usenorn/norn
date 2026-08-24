@@ -86,6 +86,27 @@ func (s *connections) BranchName(
 	return entity.BranchNameFor(settings, handle, issue, reference), nil
 }
 
+func (s *connections) BranchNameForAgent(
+	ctx context.Context,
+	issue entity.Issue,
+	agentID uuid.UUID,
+) (string, error) {
+	settings, err := s.teamSettings.Get(ctx, issue.WorkspaceID, issue.TeamID)
+	if err != nil {
+		return "", err
+	}
+
+	handle := ""
+
+	if agent, err := s.agents.GetByID(ctx, issue.WorkspaceID, agentID); err == nil {
+		if account, err := s.accounts.GetByID(ctx, agent.OwnerAccountID); err == nil {
+			handle = entity.SlugifyBranchPart(account.DisplayName)
+		}
+	}
+
+	return entity.BranchNameFor(settings, handle, issue, issue.Reference()), nil
+}
+
 func (s *connections) SuppressAutomation(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,

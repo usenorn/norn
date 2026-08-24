@@ -56,6 +56,7 @@ type Offer struct {
 	Reference   string `json:"reference"`
 	Attempt     int    `json:"attempt"`
 	WorkspaceID string `json:"workspace_id"`
+	Branch      string `json:"branch,omitempty"`
 	Issue       Issue  `json:"issue"`
 	Params      Params `json:"params"`
 }

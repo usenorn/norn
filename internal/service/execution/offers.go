@@ -49,12 +49,13 @@ func paramsOf(params entity.ExecutionParams) channelv1.Params {
 	}
 }
 
-func offerOf(execution entity.Execution, issue entity.Issue) channelv1.Offer {
+func offerOf(execution entity.Execution, issue entity.Issue, branch string) channelv1.Offer {
 	return channelv1.Offer{
 		ExecutionID: execution.ID,
 		Reference:   execution.Reference(),
 		Attempt:     execution.Attempt,
 		WorkspaceID: execution.WorkspaceID.String(),
+		Branch:      branch,
 		Issue: channelv1.Issue{
 			ID:          issue.ID.String(),
 			Reference:   issue.Reference(),
@@ -64,6 +65,27 @@ func offerOf(execution entity.Execution, issue entity.Issue) channelv1.Offer {
 		},
 		Params: paramsOf(execution.Params),
 	}
+}
+
+func (s *executionsService) branchOf(
+	ctx context.Context,
+	execution entity.Execution,
+	issue entity.Issue,
+) string {
+	branch, err := s.source.BranchNameForAgent(ctx, issue, execution.AgentID)
+	if err != nil {
+		logging.From(ctx).WarnContext(
+			ctx,
+			"norn could not name the branch for a run, so the machine will name it",
+			"execution_id", execution.ID,
+			"issue_id", issue.ID.String(),
+			"error", err,
+		)
+
+		return ""
+	}
+
+	return branch
 }
 
 func (s *executionsService) OnDelegated(
@@ -171,7 +193,7 @@ func (s *executionsService) hand(
 	}
 
 	if err := s.tell(
-		ctx, bound, entity.ChannelExecutionOffer, offerOf(bound, issue),
+		ctx, bound, entity.ChannelExecutionOffer, offerOf(bound, issue, s.branchOf(ctx, bound, issue)),
 	); err != nil {
 		return err
 	}
@@ -266,7 +288,7 @@ func (s *executionsService) open(
 	}
 
 	if err := s.tell(
-		ctx, opened, entity.ChannelExecutionOffer, offerOf(opened, request.issue),
+		ctx, opened, entity.ChannelExecutionOffer, offerOf(opened, request.issue, s.branchOf(ctx, opened, request.issue)),
 	); err != nil {
 		return entity.Execution{}, err
 	}
