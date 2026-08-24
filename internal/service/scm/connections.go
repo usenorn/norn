@@ -32,6 +32,7 @@ type connections struct {
 	mirrors      repository.IssueMirror
 	states       repository.WorkflowState
 	accounts     repository.Account
+	agents       repository.Agent
 	issues       repository.Issue
 	activity     repository.Activity
 	forges       service.Forges
@@ -61,6 +62,7 @@ func NewConnections(
 	mirrors repository.IssueMirror,
 	states repository.WorkflowState,
 	accounts repository.Account,
+	agents repository.Agent,
 	issues repository.Issue,
 	activity repository.Activity,
 	apps repository.SCMApp,
@@ -92,6 +94,7 @@ func NewConnections(
 		mirrors:      mirrors,
 		states:       states,
 		accounts:     accounts,
+		agents:       agents,
 		issues:       issues,
 		activity:     activity,
 		forges:       forges,

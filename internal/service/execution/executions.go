@@ -27,6 +27,7 @@ type executionsService struct {
 	states     repository.WorkflowState
 	channels   repository.RunnerChannel
 	writer     service.Issues
+	source     service.SourceControl
 	events     service.Events
 	authorizer service.Authorizer
 	audit      service.Audit
@@ -44,6 +45,7 @@ func New(
 	states repository.WorkflowState,
 	channels repository.RunnerChannel,
 	writer service.Issues,
+	source service.SourceControl,
 	events service.Events,
 	authorizer service.Authorizer,
 	audit service.Audit,
@@ -60,6 +62,7 @@ func New(
 		states:     states,
 		channels:   channels,
 		writer:     writer,
+		source:     source,
 		events:     events,
 		authorizer: authorizer,
 		audit:      audit,

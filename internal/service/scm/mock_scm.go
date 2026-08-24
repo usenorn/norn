@@ -793,6 +793,21 @@ func (mr *MockSourceControlMockRecorder) BranchName(ctx, workspaceID, issueID an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BranchName", reflect.TypeOf((*MockSourceControl)(nil).BranchName), ctx, workspaceID, issueID)
 }
 
+// BranchNameForAgent mocks base method.
+func (m *MockSourceControl) BranchNameForAgent(ctx context.Context, issue entity.Issue, agentID uuid.UUID) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BranchNameForAgent", ctx, issue, agentID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BranchNameForAgent indicates an expected call of BranchNameForAgent.
+func (mr *MockSourceControlMockRecorder) BranchNameForAgent(ctx, issue, agentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BranchNameForAgent", reflect.TypeOf((*MockSourceControl)(nil).BranchNameForAgent), ctx, issue, agentID)
+}
+
 // ClearTeamRule mocks base method.
 func (m *MockSourceControl) ClearTeamRule(ctx context.Context, workspaceID, teamID uuid.UUID, trigger entity.CodeChangeState) ([]service.TeamTransitionRule, error) {
 	m.ctrl.T.Helper()

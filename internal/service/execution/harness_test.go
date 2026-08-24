@@ -27,23 +27,27 @@ import (
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
+	scmsvc "github.com/usenorn/norn/internal/service/scm"
 )
 
 type harness struct {
-	executions *executionrepo.MockExecution
-	changesets *changesetrepo.MockChangeSet
-	previews   *previewrepo.MockPreview
-	services   *executionservicerepo.MockExecutionService
-	runners    *runnerrepo.MockRunner
-	codebases  *codebaserepo.MockCodebase
-	issues     *issuerepo.MockIssue
-	states     *statesrepo.MockWorkflowState
-	channels   *channelrepo.MockRunnerChannel
-	writer     *issuesvc.MockIssues
-	events     *eventsvc.MockEvents
-	authorizer *authorizersvc.MockAuthorizer
-	audit      *auditsvc.MockAudit
-	service    service.Executions
+	executions  *executionrepo.MockExecution
+	changesets  *changesetrepo.MockChangeSet
+	previews    *previewrepo.MockPreview
+	services    *executionservicerepo.MockExecutionService
+	runners     *runnerrepo.MockRunner
+	codebases   *codebaserepo.MockCodebase
+	issues      *issuerepo.MockIssue
+	states      *statesrepo.MockWorkflowState
+	channels    *channelrepo.MockRunnerChannel
+	writer      *issuesvc.MockIssues
+	source      *scmsvc.MockSourceControl
+	branch      string
+	branchFails error
+	events      *eventsvc.MockEvents
+	authorizer  *authorizersvc.MockAuthorizer
+	audit       *auditsvc.MockAudit
+	service     service.Executions
 
 	workspaceID uuid.UUID
 	issue       entity.Issue
@@ -78,6 +82,8 @@ func newHarness(t *testing.T) *harness {
 		states:      statesrepo.NewMockWorkflowState(ctrl),
 		channels:    channelrepo.NewMockRunnerChannel(ctrl),
 		writer:      issuesvc.NewMockIssues(ctrl),
+		source:      scmsvc.NewMockSourceControl(ctrl),
+		branch:      "rae/norn-1-a-run",
 		events:      eventsvc.NewMockEvents(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		audit:       auditsvc.NewMockAudit(ctrl),
@@ -178,10 +184,17 @@ func newHarness(t *testing.T) *harness {
 		Return(nil).
 		AnyTimes()
 
+	h.source.EXPECT().
+		BranchNameForAgent(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ entity.Issue, _ uuid.UUID) (string, error) {
+			return h.branch, h.branchFails
+		}).
+		AnyTimes()
+
 	h.service = executionsvc.New(
 		h.executions, h.changesets, h.previews, h.services, h.runners, h.codebases, h.issues,
 		h.states,
-		h.channels, h.writer, h.events, h.authorizer, h.audit, transactor,
+		h.channels, h.writer, h.source, h.events, h.authorizer, h.audit, transactor,
 	)
 
 	return h
