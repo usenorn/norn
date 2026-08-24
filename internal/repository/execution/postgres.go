@@ -33,6 +33,7 @@ const executionColumns = `
        e.issue_id,
        i.reference_key,
        i.number,
+       i.title,
        i.team_id,
        e.delegation_id,
        e.agent_id,
@@ -47,6 +48,7 @@ const executionColumns = `
        e.queued_reason,
        e.params,
        e.lease_expires_at,
+       e.keep_until,
        e.queued_at,
        e.started_at,
        e.finished_at,
@@ -161,6 +163,41 @@ WHERE e.lease_expires_at IS NOT NULL
 ORDER BY e.lease_expires_at
 LIMIT $2`
 
+const visibleExecutionsQuery = `
+SELECT` + executionColumns + `,
+       coalesce(s.repositories, 0),
+       coalesce(s.commits, 0),
+       coalesce(s.additions, 0),
+       coalesce(s.deletions, 0),
+       coalesce(s.files_changed, 0),
+       coalesce(s.pull_requests, 0)` + executionJoins + `
+LEFT JOIN LATERAL (
+    SELECT count(*)                                             AS repositories,
+           sum(ch.commits)                                      AS commits,
+           sum(ch.additions)                                    AS additions,
+           sum(ch.deletions)                                    AS deletions,
+           sum(ch.files_changed)                                AS files_changed,
+           count(*) FILTER (WHERE ch.pull_request_url <> '')    AS pull_requests
+    FROM workspace_execution_changes ch
+    WHERE ch.execution_id = e.id
+) s ON TRUE
+WHERE e.workspace_id = $1
+  AND ($2::boolean IS TRUE OR i.team_id = ANY($3::uuid[]))
+  AND (cardinality($4::text[]) = 0 OR e.state = ANY($4::text[]))
+ORDER BY e.finished_at DESC NULLS LAST, e.queued_at DESC, e.id DESC
+LIMIT $5`
+
+const keepExecutionQuery = `
+WITH kept AS (
+    UPDATE workspace_executions
+    SET keep_until = greatest(keep_until, $2::timestamptz),
+        updated_at = $3::timestamptz
+    WHERE id = $1
+    RETURNING *
+)
+SELECT` + executionColumns + `
+FROM kept e` + executionNames
+
 const executionEventColumns = `
        id,
        execution_id,
@@ -252,7 +289,7 @@ func parseOptionalID(raw string) (uuid.UUID, error) {
 	return uuid.Parse(raw)
 }
 
-func scanExecution(row scanner) (entity.Execution, error) {
+func scanExecution(row scanner, also ...any) (entity.Execution, error) {
 	var (
 		execution    entity.Execution
 		workspaceID  string
@@ -269,12 +306,13 @@ func scanExecution(row scanner) (entity.Execution, error) {
 		params       []byte
 	)
 
-	if err := row.Scan(
+	into := []any{
 		&execution.ID,
 		&workspaceID,
 		&issueID,
 		&referenceKey,
 		&number,
+		&execution.IssueTitle,
 		&teamID,
 		&delegation,
 		&agentID,
@@ -289,11 +327,14 @@ func scanExecution(row scanner) (entity.Execution, error) {
 		&queuedReason,
 		&params,
 		&execution.LeaseExpiresAt,
+		&execution.KeepUntil,
 		&execution.QueuedAt,
 		&execution.StartedAt,
 		&execution.FinishedAt,
 		&execution.UpdatedAt,
-	); err != nil {
+	}
+
+	if err := row.Scan(append(into, also...)...); err != nil {
 		return entity.Execution{}, err
 	}
 
@@ -453,6 +494,93 @@ func (r *executionRepository) list(
 	}
 
 	return executions, nil
+}
+
+func (r *executionRepository) ListVisible(
+	ctx context.Context,
+	scope entity.TeamScope,
+	page entity.ExecutionPage,
+) ([]entity.ExecutionListing, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx,
+		visibleExecutionsQuery,
+		scope.WorkspaceID.String(),
+		scope.AllTeams,
+		teamIDs(scope),
+		states(page.States),
+		page.Size(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list visible executions: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	listings := make([]entity.ExecutionListing, 0)
+
+	for rows.Next() {
+		var listing entity.ExecutionListing
+
+		listing.Execution, err = scanExecution(
+			rows,
+			&listing.Change.Repositories,
+			&listing.Change.Commits,
+			&listing.Change.Additions,
+			&listing.Change.Deletions,
+			&listing.Change.FilesChanged,
+			&listing.Change.PullRequests,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan execution listing: %w", err)
+		}
+
+		listings = append(listings, listing)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate visible executions: %w", err)
+	}
+
+	return listings, nil
+}
+
+func (r *executionRepository) Keep(
+	ctx context.Context,
+	executionID string,
+	keepUntil time.Time,
+) (entity.Execution, error) {
+	kept, err := scanExecution(r.db.Querier(ctx).QueryRowContext(
+		ctx, keepExecutionQuery, executionID, keepUntil, time.Now().UTC(),
+	))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Execution{}, entity.ErrExecutionNotFound
+		}
+
+		return entity.Execution{}, fmt.Errorf("hold an execution workspace: %w", err)
+	}
+
+	return kept, nil
+}
+
+func teamIDs(scope entity.TeamScope) []string {
+	ids := make([]string, 0, len(scope.TeamIDs))
+
+	for _, teamID := range scope.TeamIDs {
+		ids = append(ids, teamID.String())
+	}
+
+	return ids
+}
+
+func states(wanted []entity.ExecutionState) []string {
+	named := make([]string, 0, len(wanted))
+
+	for _, state := range wanted {
+		named = append(named, string(state))
+	}
+
+	return named
 }
 
 func (r *executionRepository) Create(

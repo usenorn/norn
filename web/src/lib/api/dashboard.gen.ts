@@ -3826,6 +3826,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The runs in this workspace, most recently finished first
+         * @description Only runs on issues the caller may read. Pass state to narrow it, which is how the review queue asks for the runs waiting for somebody.
+         */
+        get: operations["listWorkspaceExecutions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/executions/{executionId}": {
         parameters: {
             query?: never;
@@ -5075,6 +5097,8 @@ export interface components {
             /** Format: uuid */
             issueId: string;
             issueReference: string;
+            /** @description The issue this run was taken from, named here so a list of runs reads */
+            issueTitle?: string;
             /** Format: uuid */
             teamId?: string;
             /** Format: uuid */
@@ -5100,6 +5124,11 @@ export interface components {
             restartable?: boolean;
             /** Format: date-time */
             leaseExpiresAt?: string;
+            /**
+             * Format: date-time
+             * @description When the machine gives this run's workspace and previews back. The machine owns the clock, so this is what it reported. Absent while it is still holding them for a decision, and in the past once they are gone.
+             */
+            keepUntil?: string;
             /** Format: date-time */
             queuedAt: string;
             /** Format: date-time */
@@ -5139,6 +5168,19 @@ export interface components {
             services?: components["schemas"]["ExecutionService"][];
             /** @description The machine holding this run and how much room it has. Absent while no machine has taken it. */
             runner?: components["schemas"]["ExecutionRunner"];
+        };
+        /** @description What one run changed, totalled across every repository it touched. */
+        ExecutionChangeSummary: {
+            repositories: number;
+            commits: number;
+            additions: number;
+            deletions: number;
+            filesChanged: number;
+            pullRequests: number;
+        };
+        ExecutionSummary: {
+            execution: components["schemas"]["Execution"];
+            change: components["schemas"]["ExecutionChangeSummary"];
         };
         ExecutionRunner: {
             /** Format: uuid */
@@ -5411,7 +5453,7 @@ export interface components {
         };
         ExecutionProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_no_runner" | "execution_chunk_conflict";
+            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_chunk_conflict";
         };
         PreviewProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -15994,6 +16036,35 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceExecutions: {
+        parameters: {
+            query?: {
+                /** @description Repeat it to ask for more than one state. Left out, every state is answered. */
+                state?: components["schemas"]["ExecutionState"][];
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The runs on record */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionSummary"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
             500: components["responses"]["Problem"];
         };
     };

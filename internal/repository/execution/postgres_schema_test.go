@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -161,6 +162,8 @@ func statements() map[string]string {
 		"insertExecutionQuery":               insertExecutionQuery,
 		"executionByIDQuery":                 executionByIDQuery,
 		"executionsByIssueQuery":             executionsByIssueQuery,
+		"visibleExecutionsQuery":             visibleExecutionsQuery,
+		"keepExecutionQuery":                 keepExecutionQuery,
 		"liveExecutionsByRunnerQuery":        liveExecutionsByRunnerQuery,
 		"queuedExecutionsByAgentQuery":       queuedExecutionsByAgentQuery,
 		"executionsSharingRepositoriesQuery": executionsSharingRepositoriesQuery,
@@ -268,3 +271,138 @@ WITH workspace AS (
 )
 SELECT issue.workspace_id, issue.id, agent.id, delegation.id
 FROM issue, agent, delegation`
+
+func TestTheRunListNeverReachesOutsideTheCallersTeams(t *testing.T) {
+	db := schemaDatabase(t)
+
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+
+	t.Cleanup(func() { _ = tx.Rollback() })
+
+	var delegationID, workspaceID, issueID, agentID string
+
+	if err := tx.QueryRow(delegationFixture).Scan(
+		&workspaceID, &issueID, &agentID, &delegationID,
+	); err != nil {
+		t.Fatalf("build a delegation to run against: %v", err)
+	}
+
+	var teamID string
+
+	if err := tx.QueryRow(
+		`SELECT team_id::text FROM workspace_issues WHERE id = $1`, issueID,
+	).Scan(&teamID); err != nil {
+		t.Fatalf("read the team the issue belongs to: %v", err)
+	}
+
+	if _, err := tx.Exec(`
+INSERT INTO workspace_executions
+    (id, workspace_id, issue_id, delegation_id, agent_id, attempt, state)
+VALUES ($1, $2, $3, $4, $5, 1, 'awaiting_review')`,
+		"exec-scoped", workspaceID, issueID, delegationID, agentID,
+	); err != nil {
+		t.Fatalf("open a run to look for: %v", err)
+	}
+
+	count := func(allTeams bool, teams []string) int {
+		t.Helper()
+
+		rows, err := tx.Query(
+			visibleExecutionsQuery, workspaceID, allTeams, teams,
+			[]string{"awaiting_review"}, 50,
+		)
+		if err != nil {
+			t.Fatalf("list the runs: %v", err)
+		}
+
+		defer func() { _ = rows.Close() }()
+
+		found := 0
+
+		for rows.Next() {
+			found++
+		}
+
+		if err := rows.Err(); err != nil {
+			t.Fatalf("read the runs: %v", err)
+		}
+
+		return found
+	}
+
+	if found := count(false, []string{}); found != 0 {
+		t.Fatalf(
+			"a caller on no team saw %d runs. The review queue is workspace-wide, so a "+
+				"statement that ignores the scope shows somebody every private team's work",
+			found,
+		)
+	}
+
+	if found := count(false, []string{teamID}); found != 1 {
+		t.Fatalf("a caller on the run's own team saw %d runs rather than the one that is there", found)
+	}
+
+	if found := count(true, []string{}); found != 1 {
+		t.Fatalf("a caller who may see every team saw %d runs rather than the one that is there", found)
+	}
+}
+
+func TestAWorkspaceIsHeldForTheLatestDeadlineAMachineHasNamed(t *testing.T) {
+	db := schemaDatabase(t)
+
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+
+	t.Cleanup(func() { _ = tx.Rollback() })
+
+	var delegationID, workspaceID, issueID, agentID string
+
+	if err := tx.QueryRow(delegationFixture).Scan(
+		&workspaceID, &issueID, &agentID, &delegationID,
+	); err != nil {
+		t.Fatalf("build a delegation to run against: %v", err)
+	}
+
+	if _, err := tx.Exec(`
+INSERT INTO workspace_executions
+    (id, workspace_id, issue_id, delegation_id, agent_id, attempt, state, finished_at)
+VALUES ($1, $2, $3, $4, $5, 1, 'completed', now())`,
+		"exec-kept", workspaceID, issueID, delegationID, agentID,
+	); err != nil {
+		t.Fatalf("open a run to hold: %v", err)
+	}
+
+	later := time.Now().UTC().Add(2 * time.Hour)
+	sooner := time.Now().UTC().Add(time.Hour)
+	now := time.Now().UTC()
+
+	if _, err := tx.Exec(keepExecutionQuery, "exec-kept", later, now); err != nil {
+		t.Fatalf("hold the workspace: %v", err)
+	}
+
+	if _, err := tx.Exec(keepExecutionQuery, "exec-kept", sooner, now); err != nil {
+		t.Fatalf("hold the workspace again: %v", err)
+	}
+
+	var held time.Time
+
+	if err := tx.QueryRow(
+		`SELECT keep_until FROM workspace_executions WHERE id = $1`, "exec-kept",
+	).Scan(&held); err != nil {
+		t.Fatalf("read the deadline: %v", err)
+	}
+
+	if !held.Equal(later) {
+		t.Fatalf(
+			"a report that arrived late pulled the deadline back to %s from %s. Delivery is "+
+				"at-least-once and out of order, so an older report has to be a no-op rather "+
+				"than something that takes back an extension somebody asked for",
+			held, later,
+		)
+	}
+}

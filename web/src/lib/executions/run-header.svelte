@@ -3,24 +3,20 @@
 	import RunState from "./run-state.svelte";
 	import { elapsed } from "$lib/time";
 	import {
-		costLine,
-		isSettled,
+		elapsedLabel,
 		slotLine,
 		standingLine,
 		type Execution,
 		type ExecutionRunner,
-		type RunCost,
 	} from "./executions";
 
 	let {
 		execution,
 		runner,
-		cost,
 		now,
 	}: {
 		execution: Execution;
 		runner?: ExecutionRunner;
-		cost: RunCost;
 		now: string;
 	} = $props();
 
@@ -36,7 +32,6 @@
 			{ label: "Machine", value: execution.runnerName || "None yet" },
 			{ label: "Folder", value: execution.codebaseName || "None yet" },
 			{ label: "Slots", value: slots ?? "No machine yet" },
-			{ label: "Cost", value: costLine(cost) },
 		].filter((fact) => fact.value !== "")
 	);
 </script>
@@ -46,7 +41,7 @@
 		<h1 class="font-mono text-lg text-ink-900">{execution.reference}</h1>
 		<RunState state={execution.state} />
 		<span class="font-mono text-xs text-muted-foreground">
-			{isSettled(execution.state) ? "ran for" : "running for"}
+			{elapsedLabel(execution.state)}
 			{ran}
 		</span>
 		{#if execution.attempt > 1}
@@ -54,7 +49,13 @@
 		{/if}
 	</div>
 
-	<p class="max-w-prose text-sm leading-normal break-words text-ink-900 text-pretty">
+	{#if execution.issueTitle}
+		<p class="max-w-prose text-sm leading-normal break-words text-ink-900 text-pretty">
+			{execution.issueTitle}
+		</p>
+	{/if}
+
+	<p class="max-w-prose text-sm leading-normal break-words text-muted-foreground text-pretty">
 		{standingLine(execution)}
 	</p>
 

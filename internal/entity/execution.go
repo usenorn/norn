@@ -24,6 +24,9 @@ const (
 	ExecutionTimelinePageDefaultSize = 100
 	ExecutionTimelinePageMaxSize     = 500
 	ExecutionTimelinePreview         = 50
+
+	ExecutionListDefaultSize = 50
+	ExecutionListMaxSize     = 200
 )
 
 var (
@@ -123,6 +126,7 @@ type Execution struct {
 	WorkspaceID    uuid.UUID
 	IssueID        uuid.UUID
 	IssueReference string
+	IssueTitle     string
 	TeamID         uuid.UUID
 	DelegationID   uuid.UUID
 	AgentID        uuid.UUID
@@ -137,10 +141,24 @@ type Execution struct {
 	QueuedReason   ExecutionQueuedReason
 	Params         ExecutionParams
 	LeaseExpiresAt *time.Time
+	KeepUntil      *time.Time
 	QueuedAt       time.Time
 	StartedAt      *time.Time
 	FinishedAt     *time.Time
 	UpdatedAt      time.Time
+}
+
+type ExecutionPage struct {
+	States []ExecutionState
+	Limit  int
+}
+
+func (p ExecutionPage) Size() int {
+	if p.Limit <= 0 {
+		return ExecutionListDefaultSize
+	}
+
+	return min(p.Limit, ExecutionListMaxSize)
 }
 
 func NewExecutionID(minted string) string {

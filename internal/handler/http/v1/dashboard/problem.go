@@ -502,7 +502,7 @@ func problemFor(err error) (problemResponse, bool) {
 		return executionConflictProblem(api.ExecutionNotReviewable, err), true
 
 	case errors.Is(err, entity.ErrExecutionSelfApproval):
-		return newProblem(http.StatusForbidden, err.Error()), true
+		return executionProblem(http.StatusForbidden, api.ExecutionSelfApproval, err), true
 
 	case errors.Is(err, entity.ErrExecutionNoRunner):
 		return executionConflictProblem(api.ExecutionNoRunner, err), true
@@ -2080,10 +2080,14 @@ func previewConflictProblem(code api.PreviewProblemCode, err error) problemRespo
 }
 
 func executionConflictProblem(code api.ExecutionProblemCode, err error) problemResponse {
-	base := baseProblem(http.StatusConflict, err.Error())
+	return executionProblem(http.StatusConflict, code, err)
+}
+
+func executionProblem(status int, code api.ExecutionProblemCode, err error) problemResponse {
+	base := baseProblem(status, err.Error())
 
 	return problemResponse{
-		status: http.StatusConflict,
+		status: status,
 		body: api.ExecutionProblem{
 			Code:     code,
 			Detail:   base.Detail,
@@ -2370,6 +2374,10 @@ func sourceControlConflict(
 }
 
 func (r problemResponse) VisitListWorkspaceIssueExecutionsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceExecutionsResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

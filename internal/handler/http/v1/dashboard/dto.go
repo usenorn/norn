@@ -1514,6 +1514,10 @@ func ExecutionTimelineEvent(event entity.ExecutionEvent) api.ExecutionEvent {
 	return executionEventDTO(event)
 }
 
+func ChangeSetEvent(changeset entity.ExecutionChangeSet) api.ExecutionChangeSet {
+	return changeSetDTO(changeset.ExecutionID, changeset)
+}
+
 func agentDTO(agent entity.Agent) api.Agent {
 	dto := api.Agent{
 		Id:             agent.ID,
@@ -2043,6 +2047,7 @@ func executionDTO(execution entity.Execution) api.Execution {
 		WorkspaceId:    execution.WorkspaceID,
 		IssueId:        execution.IssueID,
 		IssueReference: execution.IssueReference,
+		IssueTitle:     nilIfEmpty(execution.IssueTitle),
 		TeamId:         nilIfNilID(execution.TeamID),
 		DelegationId:   nilIfNilID(execution.DelegationID),
 		AgentId:        nilIfNilID(execution.AgentID),
@@ -2058,6 +2063,7 @@ func executionDTO(execution entity.Execution) api.Execution {
 		Params:         executionParamsDTO(execution.Params),
 		Restartable:    &restartable,
 		LeaseExpiresAt: execution.LeaseExpiresAt,
+		KeepUntil:      execution.KeepUntil,
 		QueuedAt:       execution.QueuedAt,
 		StartedAt:      execution.StartedAt,
 		FinishedAt:     execution.FinishedAt,
@@ -2532,6 +2538,30 @@ func executionPolicyDTO(policy entity.WorkspaceExecutionPolicy) api.WorkspaceExe
 		WorkspaceId:         policy.WorkspaceID,
 		Telemetry:           api.TelemetryMode(policy.Telemetry),
 		UploadRetentionDays: policy.UploadRetentionDays,
+	}
+}
+
+func executionSummaryDTOs(listings []entity.ExecutionListing) []api.ExecutionSummary {
+	summaries := make([]api.ExecutionSummary, 0, len(listings))
+
+	for _, listing := range listings {
+		summaries = append(summaries, api.ExecutionSummary{
+			Execution: executionDTO(listing.Execution),
+			Change:    changeSummaryDTO(listing.Change),
+		})
+	}
+
+	return summaries
+}
+
+func changeSummaryDTO(summary entity.ExecutionChangeSummary) api.ExecutionChangeSummary {
+	return api.ExecutionChangeSummary{
+		Repositories: summary.Repositories,
+		Commits:      summary.Commits,
+		Additions:    summary.Additions,
+		Deletions:    summary.Deletions,
+		FilesChanged: summary.FilesChanged,
+		PullRequests: summary.PullRequests,
 	}
 }
 

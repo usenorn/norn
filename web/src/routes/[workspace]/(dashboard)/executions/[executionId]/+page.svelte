@@ -12,6 +12,8 @@
 	import RunHeader from "$lib/executions/run-header.svelte";
 	import RunActions from "$lib/executions/run-actions.svelte";
 	import RunTimeline from "$lib/executions/run-timeline.svelte";
+	import ReviewActions from "$lib/executions/review-actions.svelte";
+	import ChangesetPanel from "$lib/executions/changeset-panel.svelte";
 	import ServicesPanel from "$lib/executions/services-panel.svelte";
 	import PreviewsPanel from "$lib/executions/previews-panel.svelte";
 	import Transcript from "$lib/executions/transcript.svelte";
@@ -21,13 +23,17 @@
 		chunkPageSize,
 		isSettled,
 		mergeTimeline,
+		parseDiff,
 		readRunFailure,
+		retainLongerSeconds,
 		runFailureMessage,
 		timelinePageSize,
+		timelinePreviewSize,
+		type DiffView,
 		type Execution,
+		type ExecutionChangeSet,
 		type ExecutionEvent,
 		type IssueQuestion,
-		type RunCost,
 		type RunView,
 	} from "$lib/executions/executions";
 	import { runPreviewStates } from "./preview";
@@ -42,21 +48,25 @@
 	const workspace = $derived(data.workspace);
 	const run = $derived<RunView>(preview?.run ?? data.run);
 	const ready = $derived(run.kind === "ready" ? run : undefined);
-	const cost = $derived<RunCost>(preview?.cost ?? { kind: "unrecorded" });
 
 	let pushedRun = $state.raw<{ source: unknown; execution: Execution } | null>(null);
 	let pushedTimeline = $state.raw<{ source: unknown; events: ExecutionEvent[] }>({
 		source: null,
 		events: [],
 	});
-	let readMore = $state.raw<{ source: unknown; events: ExecutionEvent[] }>({
+	let readMore = $state.raw<{ source: unknown; events: ExecutionEvent[]; full: boolean }>({
 		source: null,
 		events: [],
+		full: false,
 	});
 	let readTranscript = $state.raw<{ source: unknown; entries: unknown[]; cursor?: number }>({
 		source: null,
 		entries: [],
 	});
+	let pushedChangeset = $state.raw<{ source: unknown; changeset: ExecutionChangeSet } | null>(null);
+	let diffs = $state.raw<{ run: string; held: Record<string, DiffView> }>({ run: "", held: {} });
+	let minted = $state.raw<{ run: string; held: Record<string, string> }>({ run: "", held: {} });
+	let openedDiff = $state("");
 
 	let working = $state(false);
 	let failure = $state<string | null>(null);
@@ -83,11 +93,22 @@
 		return [...ready.transcript, ...read] as typeof ready.transcript;
 	});
 
+	const changeset = $derived(
+		ready && pushedChangeset?.source === ready ? pushedChangeset.changeset : ready?.changeset
+	);
+	const shownDiffs = $derived(diffs.run === execution?.id ? diffs.held : {});
+	const shownMinted = $derived(minted.run === execution?.id ? minted.held : {});
+
 	const questions = $derived(ready?.questions ?? []);
 	const asking = $derived(blockingQuestion(questions));
 	const now = $derived(ticked ?? data.now);
 	const live = $derived(Boolean(execution) && !isSettled(execution!.state));
-	const moreTimeline = $derived(timeline.length >= timelinePageSize);
+	const moreTimeline = $derived.by(() => {
+		if (!ready) return false;
+		if (readMore.source === ready) return readMore.full;
+
+		return ready.timeline.length >= timelinePreviewSize;
+	});
 	const moreTranscript = $derived(
 		(readTranscript.source === ready ? readTranscript.cursor : ready?.transcriptCursor) !== undefined
 	);
@@ -107,6 +128,16 @@
 				if (moved.id !== openRun) return;
 
 				pushedRun = { source, execution: moved };
+
+				return;
+			}
+
+			if (event.kind === "execution.changeset") {
+				const reported = event.payload as ExecutionChangeSet;
+
+				if (reported.executionId !== openRun) return;
+
+				pushedChangeset = { source, changeset: reported };
 
 				return;
 			}
@@ -179,9 +210,110 @@
 		void act(() =>
 			api.POST("/workspaces/{workspaceId}/executions/{executionId}/retain", {
 				params: { path: pathOf(execution!.id) },
-				body: { longerSeconds: 3600 },
+				body: { longerSeconds: retainLongerSeconds },
 			})
 		);
+	}
+
+	function approve() {
+		void act(() =>
+			api.POST("/workspaces/{workspaceId}/executions/{executionId}/approve", {
+				params: { path: pathOf(execution!.id) },
+			})
+		);
+	}
+
+	function requestChanges(feedback: string) {
+		void act(() =>
+			api.POST("/workspaces/{workspaceId}/executions/{executionId}/resume", {
+				params: { path: pathOf(execution!.id) },
+				body: { feedback },
+			})
+		);
+	}
+
+	function share(previewName: string, lifetimeSeconds: number, passcode: string) {
+		void act(async () => {
+			const { data: link, error } = await api.POST(
+				"/workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share",
+				{
+					params: { path: { ...pathOf(execution!.id), previewName } },
+					body: { lifetimeSeconds, ...(passcode === "" ? {} : { passcode }) },
+				}
+			);
+
+			if (link) {
+				minted = {
+					run: execution!.id,
+					held: { ...shownMinted, [previewName]: link.url },
+				};
+			}
+
+			return { error };
+		});
+	}
+
+	function revoke(previewName: string, shareLinkId: string) {
+		const held = { ...shownMinted };
+
+		delete held[previewName];
+
+		minted = { run: execution!.id, held };
+
+		void act(() =>
+			api.DELETE(
+				"/workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId}",
+				{ params: { path: { ...pathOf(execution!.id), previewName, shareLinkId } } }
+			)
+		);
+	}
+
+	function diffPath(artifactId: string) {
+		return workspacePath(workspace.slug, `/executions/${execution!.id}/diff/${artifactId}`);
+	}
+
+	function downloadOf(artifactId: string) {
+		return `/v1/workspaces/${workspace.id}/executions/${execution!.id}/artifacts/${artifactId}/content`;
+	}
+
+	async function readDiff(artifactId: string) {
+		if (!ready) return;
+
+		if (openedDiff === artifactId) {
+			openedDiff = "";
+
+			return;
+		}
+
+		openedDiff = artifactId;
+
+		if (shownDiffs[artifactId]?.kind === "ready") return;
+
+		const run = ready.execution.id;
+
+		diffs = { run, held: { ...shownDiffs, [artifactId]: { kind: "loading" } } };
+
+		let view: DiffView;
+
+		try {
+			const answered = await fetch(diffPath(artifactId));
+
+			if (!answered.ok) {
+				view = { kind: "failed", message: "" };
+			} else {
+				view = {
+					kind: "ready",
+					files: parseDiff(await answered.text()),
+					truncated: answered.headers.get("x-diff-truncated") === "true",
+				};
+			}
+		} catch {
+			view = { kind: "failed", message: "" };
+		}
+
+		const held = diffs.run === run ? diffs.held : {};
+
+		diffs = { run, held: { ...held, [artifactId]: view } };
 	}
 
 	async function restart() {
@@ -257,7 +389,11 @@
 
 			const held = readMore.source === ready ? readMore.events : [];
 
-			readMore = { source: ready, events: [...held, ...next] };
+			readMore = {
+				source: ready,
+				events: [...held, ...next],
+				full: next.length >= timelinePageSize,
+			};
 		} finally {
 			working = false;
 		}
@@ -351,7 +487,7 @@
 					</Alert.Root>
 				</div>
 			{:else if execution}
-				<RunHeader {execution} runner={run.runner} {cost} {now} />
+				<RunHeader {execution} runner={run.runner} {now} />
 
 				{#if failure}
 					<Alert.Root variant="destructive">
@@ -378,12 +514,31 @@
 					</section>
 				{/if}
 
+				<ReviewActions
+					{execution}
+					{working}
+					onapprove={approve}
+					onrequestchanges={requestChanges}
+				/>
+
 				<RunActions
 					{execution}
 					{working}
+					{now}
+					timezone={workspace.timezone}
 					oncancel={cancel}
 					onrestart={restart}
 					onretain={retain}
+				/>
+
+				<ChangesetPanel
+					{execution}
+					{changeset}
+					links={run.codeLinks}
+					diffs={shownDiffs}
+					opened={openedDiff}
+					{downloadOf}
+					ondiff={readDiff}
 				/>
 
 				<RunTimeline
@@ -401,7 +556,17 @@
 					timezone={workspace.timezone}
 				/>
 
-				<PreviewsPanel {execution} previews={run.previews} runner={run.runner} />
+				<PreviewsPanel
+					{execution}
+					previews={run.previews}
+					runner={run.runner}
+					minted={shownMinted}
+					{working}
+					{now}
+					timezone={workspace.timezone}
+					onshare={share}
+					onrevoke={revoke}
+				/>
 
 				<Transcript
 					{transcript}

@@ -54,6 +54,7 @@ type harness struct {
 	spooled     []entity.ChannelMessage
 	bound       []entity.Execution
 	recorded    []entity.ExecutionEvent
+	published   []entity.Event
 }
 
 func newHarness(t *testing.T) *harness {
@@ -110,7 +111,12 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.audit.EXPECT().Record(gomock.Any(), gomock.Any()).AnyTimes()
-	h.events.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()
+	h.events.EXPECT().
+		Publish(gomock.Any(), gomock.Any()).
+		Do(func(_ context.Context, event entity.Event) {
+			h.published = append(h.published, event)
+		}).
+		AnyTimes()
 
 	h.issues.EXPECT().
 		GetVisible(gomock.Any(), workspaceID, h.issue.ID, gomock.Any()).
@@ -305,6 +311,16 @@ func (h *harness) sent(kind entity.ChannelMessageType) (entity.ChannelMessage, b
 	}
 
 	return entity.ChannelMessage{}, false
+}
+
+func (h *harness) announced(kind entity.EventKind) (entity.Event, bool) {
+	for _, event := range h.published {
+		if event.Kind == kind {
+			return event, true
+		}
+	}
+
+	return entity.Event{}, false
 }
 
 func (h *harness) states34() []entity.WorkflowState {

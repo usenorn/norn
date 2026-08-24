@@ -23,7 +23,7 @@
 	const shown = $derived(stateTone(state));
 </script>
 
-<span class={cn("inline-flex items-center gap-1.5 text-sm", tone[shown], className)}>
+<span class={cn("inline-flex min-w-0 items-center gap-1.5 text-sm", tone[shown], className)}>
 	<span aria-hidden="true" class={cn("size-1.5 flex-none rounded-full", pip[shown])}></span>
-	{stateLabel(state)}
+	<span class="truncate">{stateLabel(state)}</span>
 </span>
