@@ -2010,11 +2010,13 @@
 								</Eyebrow>
 							</h2>
 							{#if canEdit}
-								<AttachmentPicker
-									disabled={working}
-									label="Attach"
-									onfiles={(files) => begin("body", files)}
-								/>
+								<span data-editing-region class="contents">
+									<AttachmentPicker
+										disabled={working}
+										label="Attach"
+										onfiles={(files) => begin("body", files)}
+									/>
+								</span>
 							{/if}
 						</div>
 
