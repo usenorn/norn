@@ -10,7 +10,7 @@
 
 <svelte:head><title>{title} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col overflow-auto">
+<div class="relative flex min-h-0 flex-1 flex-col overflow-auto">
 	<div class="my-auto flex flex-col items-center gap-4 px-6 py-12 text-center">
 		<span
 			class="flex size-8 items-center justify-center border-b-2 border-line-strong text-ink-300"

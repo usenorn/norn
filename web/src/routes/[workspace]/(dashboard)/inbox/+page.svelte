@@ -245,7 +245,7 @@
 		</div>
 	</div>
 
-	<div class="flex-1 overflow-auto">
+	<div class="relative flex-1 overflow-auto">
 		<div class="pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]">
 
 			{#if failure}

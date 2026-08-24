@@ -192,7 +192,7 @@
 
 <div class="flex h-dvh bg-background">
 	<aside
-		class="hidden w-sidebar flex-none flex-col overflow-y-auto border-r border-line-default bg-card px-2 py-2.5 md:flex"
+		class="relative hidden w-sidebar flex-none flex-col overflow-y-auto border-r border-line-default bg-card px-2 py-2.5 md:flex"
 	>
 		<AccountSwitcher
 			accounts={data.accounts}

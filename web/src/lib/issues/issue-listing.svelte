@@ -1636,7 +1636,7 @@
 				</Button>
 			</div>
 		{:else if data.layout === "list"}
-			<div class="flex-1 overflow-auto">
+			<div class="relative flex-1 overflow-auto">
 				{#each columns as column (column.key)}
 					{@const shut = collapsed.has(column.key)}
 					<section
@@ -1722,7 +1722,7 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="flex-1 overflow-auto bg-background p-4">
+			<div class="relative flex-1 overflow-auto bg-background p-4">
 				<div class="flex min-h-full items-stretch gap-3">
 					{#each columns as column (column.key)}
 						<div

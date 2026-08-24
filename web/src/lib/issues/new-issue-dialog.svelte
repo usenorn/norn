@@ -462,7 +462,7 @@
 				</Button>
 			</div>
 
-			<div class="min-h-0 flex-1 overflow-y-auto">
+			<div class="relative min-h-0 flex-1 overflow-y-auto">
 				<div class="flex flex-col gap-2.5 px-4 pt-4 pb-3">
 					<Form.Field {form} name="title">
 						<Form.Control>

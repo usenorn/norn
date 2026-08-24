@@ -342,7 +342,7 @@
 	{:else}
 		<div class="flex min-h-0 flex-1 flex-col lg:flex-row">
 			<div
-				class="flex max-h-72 min-h-0 w-full flex-none flex-col overflow-auto border-b border-line-default lg:max-h-none lg:w-81.5 lg:border-r lg:border-b-0"
+				class="relative flex max-h-72 min-h-0 w-full flex-none flex-col overflow-auto border-b border-line-default lg:max-h-none lg:w-81.5 lg:border-r lg:border-b-0"
 			>
 				<ul>
 					{#each shown as issue, index (issue.id)}
@@ -390,7 +390,7 @@
 
 			{#if item}
 				<div class="relative flex min-h-0 min-w-0 flex-1 flex-col">
-					<div class="flex-1 overflow-auto px-5 pt-6 pb-5 sm:px-7">
+					<div class="relative flex-1 overflow-auto px-5 pt-6 pb-5 sm:px-7">
 						<div class="flex max-w-180 flex-col gap-5">
 							{#if readOnly}
 								<Alert.Root variant="muted">

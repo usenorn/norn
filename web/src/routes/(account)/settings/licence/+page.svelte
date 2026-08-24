@@ -42,7 +42,7 @@
 		<h1 class="text-sm font-medium tracking-snug text-ink-900">Licence</h1>
 	</div>
 
-	<div class="flex-1 overflow-auto">
+	<div class="relative flex-1 overflow-auto">
 		<div
 			class="mx-auto flex w-full max-w-140 flex-col gap-5 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
 		>

@@ -142,7 +142,7 @@
 		</div>
 	</div>
 
-	<div class="flex-1 overflow-auto">
+	<div class="relative flex-1 overflow-auto">
 		{#if buckets.length === 0}
 			<div class="flex flex-col items-center gap-1.5 px-6 py-12 text-center">
 				<span
