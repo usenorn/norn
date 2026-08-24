@@ -1531,6 +1531,7 @@ export const delegationPreviewStates: Record<string, DelegationPreview> = import
 				working: true,
 			},
 			failed: { panel: { kind: "none" }, failure: { kind: "agent_unusable" } },
+			"not-yours": { panel: { kind: "none" }, failure: { kind: "agent_not_yours" } },
 			unavailable: { panel: { kind: "unavailable" } },
 		}
 	: {};
