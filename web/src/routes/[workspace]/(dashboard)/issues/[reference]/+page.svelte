@@ -1113,6 +1113,8 @@
 	}
 
 	let editingField = $state<"title" | "description" | null>(null);
+	let titleField = $state<HTMLInputElement | null>(null);
+	let descriptionField = $state<HTMLTextAreaElement | null>(null);
 	let parentPicking = $state(false);
 	let pickingDue = $state(false);
 	let addingChild = $state(false);
@@ -1284,6 +1286,17 @@
 		);
 		editingField = field;
 	}
+
+	const editedField = $derived(
+		editingField === "title" ? titleField : editingField === "description" ? descriptionField : null
+	);
+
+	$effect(() => {
+		if (!editedField) return;
+
+		editedField.focus();
+		editedField.setSelectionRange(editedField.value.length, editedField.value.length);
+	});
 
 	function discard() {
 		if (!issue) return;
@@ -1727,6 +1740,7 @@
 											<Form.Label class="sr-only">Title</Form.Label>
 											<input
 												{...props}
+												bind:this={titleField}
 												bind:value={$formData.title}
 												disabled={$submitting}
 												class="-mx-2.25 w-[calc(100%+1.125rem)] border-b-2 border-cyan-500 bg-transparent px-2.25 py-1.25 text-2xl leading-tight font-medium tracking-title text-ink-900 outline-none"
@@ -1802,38 +1816,41 @@
 							</div>
 
 							{#if editingField === "description"}
-								<Form.Field {form} name="description">
-									<Form.Control>
-										{#snippet children({ props })}
-											<Form.Label class="sr-only">Description</Form.Label>
-											<div
-												class="flex flex-col overflow-hidden rounded-md border border-line-strong"
-											>
+								<div data-editing-region class="flex flex-col gap-3">
+									<Form.Field {form} name="description">
+										<Form.Control>
+											{#snippet children({ props })}
+												<Form.Label class="sr-only">Description</Form.Label>
 												<div
-													class="flex h-7.5 items-center gap-0.5 border-b border-line-subtle bg-paper-0 px-1.25"
+													class="flex flex-col overflow-hidden rounded-md border border-line-strong"
 												>
-													<span class="flex-1"></span>
-													<span class="font-mono text-2xs text-muted-foreground">Markdown</span>
+													<div
+														class="flex h-7.5 items-center gap-0.5 border-b border-line-subtle bg-paper-0 px-1.25"
+													>
+														<span class="flex-1"></span>
+														<span class="font-mono text-2xs text-muted-foreground">Markdown</span>
+													</div>
+													<textarea
+														{...props}
+														bind:this={descriptionField}
+														bind:value={$formData.description}
+														disabled={$submitting}
+														rows={8}
+														class="min-h-47 w-full resize-y bg-paper-0 px-3 py-2.75 text-base leading-normal text-ink-900 outline-none"
+													></textarea>
 												</div>
-												<textarea
-													{...props}
-													bind:value={$formData.description}
-													disabled={$submitting}
-													rows={8}
-													class="min-h-47 w-full resize-y bg-paper-0 px-3 py-2.75 text-base leading-normal text-ink-900 outline-none"
-												></textarea>
-											</div>
-										{/snippet}
-									</Form.Control>
-									<Form.FieldErrors />
-								</Form.Field>
+											{/snippet}
+										</Form.Control>
+										<Form.FieldErrors />
+									</Form.Field>
 
-								<UploadList
-									uploads={attachmentPreview?.bodyUploads ?? bodyUploads}
-									oncancel={cancelUpload}
-									onretry={(taskId) => retryUpload("body", taskId)}
-									ondismiss={(taskId) => dismissUpload("body", taskId)}
-								/>
+									<UploadList
+										uploads={attachmentPreview?.bodyUploads ?? bodyUploads}
+										oncancel={cancelUpload}
+										onretry={(taskId) => retryUpload("body", taskId)}
+										ondismiss={(taskId) => dismissUpload("body", taskId)}
+									/>
+								</div>
 							{:else if issue.description.trim()}
 								<button
 									type="button"
