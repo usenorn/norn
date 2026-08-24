@@ -9,57 +9,45 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-func TestAPreviewHostNamesBothThePreviewAndTheRunItBelongsTo(t *testing.T) {
-	cases := map[string]struct {
-		name    string
-		mode    entity.PreviewMode
-		domain  string
-		address string
-	}{
-		"a subdomain per preview": {
-			name:    "web",
-			mode:    entity.PreviewBySubdomain,
-			domain:  "preview.norn.site",
-			address: "web-exec-01abc.preview.norn.site",
-		},
-		"one host for the whole run": {
-			name:    "web",
-			mode:    entity.PreviewByPath,
-			domain:  "preview.norn.site",
-			address: "exec-01abc.preview.norn.site",
-		},
-		"no domain to compose from": {
-			name:    "web",
-			mode:    entity.PreviewBySubdomain,
-			domain:  "",
-			address: "",
-		},
-	}
+func TestAPreviewHostIsTheIssueTheRunAndThePortAndNothingItWasNamed(t *testing.T) {
+	host := entity.PreviewHost(
+		"NORN-75", "A preview address", "exec-01ABC", 43000,
+		entity.PreviewBySubdomain, "preview.norn.site",
+	)
 
-	for name, want := range cases {
-		t.Run(name, func(t *testing.T) {
-			got := entity.PreviewHost(want.name, "exec-01ABC", want.mode, want.domain)
-			if got != want.address {
-				t.Fatalf(
-					"the host came out as %q, want %q. This is the only thing the gateway "+
-						"routes by, so a host nobody agrees on reaches nothing",
-					got, want.address,
-				)
-			}
-		})
+	want := "norn-75-a-preview-address-exec-01abc-43000.preview.norn.site"
+	if host != want {
+		t.Fatalf(
+			"the host came out as %q, want %q. This is the only thing the gateway routes by, "+
+				"so a host nobody agrees on reaches nothing",
+			host, want,
+		)
 	}
 }
 
 func TestAPreviewHostIsLowerCaseBecauseAnExecutionIdIsNot(t *testing.T) {
-	host := entity.PreviewHost("web", "exec-01M0QEGQBR", entity.PreviewBySubdomain, "preview.norn.site")
+	host := entity.PreviewHost(
+		"NORN-75", "web", "exec-01M0QEGQBR", 43000,
+		entity.PreviewBySubdomain, "preview.norn.site",
+	)
 
-	if host != "web-exec-01m0qegqbr.preview.norn.site" {
+	if host != "norn-75-web-exec-01m0qegqbr-43000.preview.norn.site" {
 		t.Fatalf(
 			"the host came out as %q. An execution id is upper-case and a hostname is not "+
 				"case-sensitive, so a browser lower-casing it would ask about a host norn has "+
 				"never heard of and be turned away from its own preview",
 			host,
 		)
+	}
+}
+
+func TestAServerServingNoPreviewDomainComposesNoHostAtAll(t *testing.T) {
+	host := entity.PreviewHost(
+		"NORN-75", "A preview address", "exec-01ABC", 43000, entity.PreviewBySubdomain, "",
+	)
+
+	if host != "" {
+		t.Fatalf("a server with no preview domain composed %q", host)
 	}
 }
 
@@ -75,18 +63,40 @@ func TestAPreviewWithNoHostAnswersWithNoAddressAtAll(t *testing.T) {
 	}
 }
 
-func TestAPathModePreviewPutsItsNameInThePathRatherThanTheHost(t *testing.T) {
+func TestAPathModePreviewPutsItsPortInThePathRatherThanTheHost(t *testing.T) {
 	preview := entity.PreviewSession{
 		Name:  "web",
 		Mode:  entity.PreviewByPath,
-		Host:  "exec-01ABC.preview.norn.site",
+		Host:  "norn-75-exec-01abc.preview.norn.site",
+		Port:  43000,
 		Path:  "/app",
 		State: entity.PreviewOpen,
 	}
 
-	want := "https://exec-01ABC.preview.norn.site/web/app"
+	want := "https://norn-75-exec-01abc.preview.norn.site/43000/app"
 	if got := preview.URL("https"); got != want {
-		t.Fatalf("the address came out as %q, want %q", got, want)
+		t.Fatalf(
+			"the address came out as %q, want %q. One host serves the whole run in that mode, "+
+				"so the port is what tells two previews of it apart",
+			got, want,
+		)
+	}
+}
+
+func TestAPreviewIsRefusedWithoutThePortItsAddressIsDerivedFrom(t *testing.T) {
+	preview := entity.PreviewSession{
+		Name:    "web",
+		Service: "web",
+		Mode:    entity.PreviewBySubdomain,
+		State:   entity.PreviewOpen,
+	}
+
+	if err := entity.ValidatePreviewSession("preview", preview); err == nil {
+		t.Fatal(
+			"a preview carrying no port was accepted. Its address is derived from the port, " +
+				"so a report without one has none of its own and would take the address " +
+				"another preview of the run already holds",
+		)
 	}
 }
 
@@ -123,6 +133,7 @@ func TestAPreviewSessionRefusesAPathThatLeavesTheService(t *testing.T) {
 		Service: "web",
 		Mode:    entity.PreviewBySubdomain,
 		State:   entity.PreviewOpen,
+		Port:    43000,
 		Path:    "app",
 	}
 

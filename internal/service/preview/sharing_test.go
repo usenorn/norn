@@ -22,7 +22,7 @@ func TestAShareLinkLetsSomebodyOutsideTheWorkspaceLookUntilItIsWithdrawn(t *test
 	minted := h.shared(t, "web", "")
 
 	access, err := h.service.Redeem(
-		context.Background(), hostFor("web"), tokenFrom(t, minted.URL), "",
+		context.Background(), h.hostFor("web"), tokenFrom(t, minted.URL), "",
 	)
 	if err != nil {
 		t.Fatalf("redeem the share link: %v", err)
@@ -40,7 +40,7 @@ func TestAShareLinkLetsSomebodyOutsideTheWorkspaceLookUntilItIsWithdrawn(t *test
 	}
 
 	_, err = h.service.Redeem(
-		context.Background(), hostFor("web"), tokenFrom(t, minted.URL), "",
+		context.Background(), h.hostFor("web"), tokenFrom(t, minted.URL), "",
 	)
 
 	refusedWith(t, err, entity.ErrPreviewShareRevoked)
@@ -55,7 +55,7 @@ func TestRevokingAShareLinkAlsoShutsOutEverybodyItAlreadyLetIn(t *testing.T) {
 	minted := h.shared(t, "web", "")
 
 	access, err := h.service.Redeem(
-		context.Background(), hostFor("web"), tokenFrom(t, minted.URL), "",
+		context.Background(), h.hostFor("web"), tokenFrom(t, minted.URL), "",
 	)
 	if err != nil {
 		t.Fatalf("redeem the share link: %v", err)
@@ -69,7 +69,7 @@ func TestRevokingAShareLinkAlsoShutsOutEverybodyItAlreadyLetIn(t *testing.T) {
 	}
 
 	held, err := h.service.Introspect(
-		context.Background(), hostFor("web"), access.Token, viewerFrom("203.0.113.9"),
+		context.Background(), h.hostFor("web"), access.Token, viewerFrom("203.0.113.9"),
 	)
 	if err != nil {
 		t.Fatalf("ask about a session the withdrawn link minted: %v", err)
@@ -93,13 +93,13 @@ func TestOpeningThePasscodePageIsNotAGuessAtThePasscode(t *testing.T) {
 	token := tokenFrom(t, minted.URL)
 
 	for range entity.PreviewShareMaxAttempts * 2 {
-		_, err := h.service.Redeem(context.Background(), hostFor("web"), token, "")
+		_, err := h.service.Redeem(context.Background(), h.hostFor("web"), token, "")
 
 		refusedWith(t, err, entity.ErrPreviewSharePasscodeNeeded)
 	}
 
 	if _, err := h.service.Redeem(
-		context.Background(), hostFor("web"), token, "open-sesame",
+		context.Background(), h.hostFor("web"), token, "open-sesame",
 	); err != nil {
 		t.Fatalf(
 			"asking for the passcode form counted as a guess (%v), so anybody holding the link "+
@@ -131,7 +131,7 @@ func TestAShareLinkWithAPasscodeOpensNothingWithoutIt(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := h.service.Redeem(
-				context.Background(), hostFor("web"), token, expected.given,
+				context.Background(), h.hostFor("web"), token, expected.given,
 			)
 
 			refusedWith(t, err, expected.refuse)
@@ -139,7 +139,7 @@ func TestAShareLinkWithAPasscodeOpensNothingWithoutIt(t *testing.T) {
 	}
 
 	access, err := h.service.Redeem(
-		context.Background(), hostFor("web"), token, "open-sesame",
+		context.Background(), h.hostFor("web"), token, "open-sesame",
 	)
 	if err != nil {
 		t.Fatalf("redeem with the right passcode: %v", err)
@@ -162,12 +162,12 @@ func TestAPasscodeCannotBeGuessedAtOverAndOver(t *testing.T) {
 	var last error
 
 	for range entity.PreviewShareMaxAttempts + 1 {
-		_, last = h.service.Redeem(context.Background(), hostFor("web"), token, "wrong")
+		_, last = h.service.Redeem(context.Background(), h.hostFor("web"), token, "wrong")
 	}
 
 	refusedWith(t, last, entity.ErrPreviewShareGuessed)
 
-	_, err := h.service.Redeem(context.Background(), hostFor("web"), token, "open-sesame")
+	_, err := h.service.Redeem(context.Background(), h.hostFor("web"), token, "open-sesame")
 
 	refusedWith(t, err, entity.ErrPreviewShareGuessed)
 }
@@ -181,7 +181,7 @@ func TestAShareLinkIsAnsweredOnceAndKeptOnlyAsItsHash(t *testing.T) {
 	minted := h.shared(t, "web", "")
 	token := tokenFrom(t, minted.URL)
 
-	if !strings.HasPrefix(minted.URL, "https://"+hostFor("web")) {
+	if !strings.HasPrefix(minted.URL, "https://"+h.hostFor("web")) {
 		t.Fatalf("the share url %q does not point at the preview it opens", minted.URL)
 	}
 
@@ -214,7 +214,7 @@ func TestAShareLinkOnlyEverOpensThePreviewItWasMintedFor(t *testing.T) {
 	minted := h.shared(t, "web", "")
 
 	_, err := h.service.Redeem(
-		context.Background(), hostFor("docs"), tokenFrom(t, minted.URL), "",
+		context.Background(), h.hostFor("docs"), tokenFrom(t, minted.URL), "",
 	)
 
 	refusedWith(t, err, entity.ErrPreviewShareNotFound)
@@ -230,7 +230,7 @@ func TestAShareLinkIsRefusedForAPreviewTheMachineHasClosed(t *testing.T) {
 	h.reported(t, "web", channelv1.PreviewClosed)
 
 	_, err := h.service.Redeem(
-		context.Background(), hostFor("web"), tokenFrom(t, minted.URL), "",
+		context.Background(), h.hostFor("web"), tokenFrom(t, minted.URL), "",
 	)
 
 	refusedWith(t, err, entity.ErrPreviewClosed)
@@ -240,14 +240,15 @@ func TestNobodyOutsideTheWorkspaceCanMintAShareLinkOfTheirOwn(t *testing.T) {
 	h := newHarness(t)
 	h.holds()
 	h.visible(entity.ErrExecutionNotFound)
-	h.stored["web"] = entity.PreviewSession{
+	h.stored[h.portFor("web")] = entity.PreviewSession{
 		ID:          uuid.New(),
 		ExecutionID: h.execution.ID,
 		WorkspaceID: h.workspaceID,
 		Name:        "web",
 		Service:     "web",
+		Port:        h.portFor("web"),
 		Mode:        entity.PreviewBySubdomain,
-		Host:        hostFor("web"),
+		Host:        h.hostFor("web"),
 		State:       entity.PreviewOpen,
 	}
 
@@ -314,14 +315,14 @@ func TestAViewerWhoCameThroughAShareLinkIsRecordedAsHavingDoneSo(t *testing.T) {
 	minted := h.shared(t, "web", "")
 
 	access, err := h.service.Redeem(
-		context.Background(), hostFor("web"), tokenFrom(t, minted.URL), "",
+		context.Background(), h.hostFor("web"), tokenFrom(t, minted.URL), "",
 	)
 	if err != nil {
 		t.Fatalf("redeem the share link: %v", err)
 	}
 
 	if _, err := h.service.Introspect(
-		context.Background(), hostFor("web"), access.Token, viewerFrom("203.0.113.9"),
+		context.Background(), h.hostFor("web"), access.Token, viewerFrom("203.0.113.9"),
 	); err != nil {
 		t.Fatalf("ask about the share-link viewer: %v", err)
 	}

@@ -14,6 +14,7 @@ type Preview interface {
 	ByHost(ctx context.Context, host string) (entity.PreviewSession, error)
 	RouteByHost(ctx context.Context, host string) (entity.PreviewRoute, error)
 	ByName(ctx context.Context, executionID, name string) (entity.PreviewSession, error)
+	ByPort(ctx context.Context, executionID string, port int) (entity.PreviewSession, error)
 	ByExecution(ctx context.Context, executionID string) ([]entity.PreviewSession, error)
 	Count(ctx context.Context, executionID string) (int, error)
 	CloseByExecution(ctx context.Context, executionID string, closedAt time.Time) error

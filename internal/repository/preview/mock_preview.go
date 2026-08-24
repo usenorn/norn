@@ -87,6 +87,21 @@ func (mr *MockPreviewMockRecorder) ByName(ctx, executionID, name any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ByName", reflect.TypeOf((*MockPreview)(nil).ByName), ctx, executionID, name)
 }
 
+// ByPort mocks base method.
+func (m *MockPreview) ByPort(ctx context.Context, executionID string, port int) (entity.PreviewSession, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ByPort", ctx, executionID, port)
+	ret0, _ := ret[0].(entity.PreviewSession)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ByPort indicates an expected call of ByPort.
+func (mr *MockPreviewMockRecorder) ByPort(ctx, executionID, port any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ByPort", reflect.TypeOf((*MockPreview)(nil).ByPort), ctx, executionID, port)
+}
+
 // CloseByExecution mocks base method.
 func (m *MockPreview) CloseByExecution(ctx context.Context, executionID string, closedAt time.Time) error {
 	m.ctrl.T.Helper()
