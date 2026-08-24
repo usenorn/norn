@@ -9,6 +9,7 @@
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import Network from "@lucide/svelte/icons/network";
 	import Plus from "@lucide/svelte/icons/plus";
+	import Server from "@lucide/svelte/icons/server";
 	import Settings from "@lucide/svelte/icons/settings";
 	import Tags from "@lucide/svelte/icons/tags";
 	import Terminal from "@lucide/svelte/icons/terminal";
@@ -54,6 +55,7 @@
 		{ href: "/settings/labels", label: "Labels", icon: Tags },
 		{ href: "/settings/notifications", label: "Notifications", icon: Bell },
 		{ href: "/settings/agents", label: "Agents", icon: Bot },
+		{ href: "/settings/runners", label: "Runners", icon: Server },
 		{ href: "/settings/authentication", label: "Authentication", icon: KeyRound },
 		{ href: "/settings/directory", label: "Directory", icon: Network },
 	];

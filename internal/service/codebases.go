@@ -26,4 +26,5 @@ type Codebases interface {
 	Confirm(ctx context.Context, codebaseID uuid.UUID) (entity.Codebase, error)
 	Disconnect(ctx context.Context, codebaseID uuid.UUID) (entity.Codebase, error)
 	ListByAgent(ctx context.Context, workspaceID, agentID uuid.UUID) ([]entity.Codebase, error)
+	DisconnectAgentCodebase(ctx context.Context, workspaceID, agentID, codebaseID uuid.UUID) (entity.Codebase, error)
 }

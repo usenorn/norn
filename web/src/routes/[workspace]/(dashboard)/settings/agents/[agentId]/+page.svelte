@@ -9,6 +9,7 @@
 	import { api } from "$lib/api";
 	import { onDate, onDateAndTime } from "$lib/time";
 	import { agentsPath } from "$lib/agents/agents";
+	import { runnersPath } from "$lib/runners/runners";
 	import type { ActivityFeed } from "$lib/activity/activity";
 	import { agentRecordPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -104,7 +105,10 @@
 						{/if}
 					</p>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Everything this agent has done, across every issue and project it could reach.
+						Everything this agent has done, across every issue and project it could reach. The
+						computers it acts on, and the folders they hold, are on the
+						<a href={runnersPath(workspace.slug)} class="text-link underline-offset-2 hover:underline">
+							runners screen</a>.
 					</p>
 				</section>
 

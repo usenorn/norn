@@ -3,6 +3,7 @@
 	import Copy from "@lucide/svelte/icons/copy";
 	import * as Dialog from "$lib/components/ui/dialog/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
+	import CommandSnippet from "$lib/components/norn/command-snippet.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import { mcpAddCommand, mcpServerUrl, type Agent } from "./agents";
 
@@ -72,17 +73,10 @@
 				This is the whole setup. Everything the client does arrives as {agent?.name}, bounded by
 				the permissions you chose, and stops the moment you disable it.
 			</p>
-			<p class="min-w-0 rounded-md bg-paper-2 p-3 font-mono text-xs break-all text-ink-900">
-				{command}
-			</p>
-			<div class="flex flex-wrap gap-2">
-				<Button variant="secondary" size="sm" onclick={() => copy(command)}>
-					{copied === command ? "Copied" : "Copy command"}
-				</Button>
-				<Button variant="ghost" size="sm" onclick={() => copy(serverUrl)}>
-					{copied === serverUrl ? "Copied" : "Copy server URL"}
-				</Button>
-			</div>
+			<CommandSnippet {command} label="Copy command" copied={copied === command} oncopy={copy} />
+			<Button variant="ghost" size="sm" class="w-max" onclick={() => copy(serverUrl)}>
+				{copied === serverUrl ? "Copied" : "Copy server URL"}
+			</Button>
 		</div>
 
 		<Dialog.Footer>

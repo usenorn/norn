@@ -245,30 +245,79 @@ func (s *codebasesService) Disconnect(
 	return disconnected, nil
 }
 
-func (s *codebasesService) ListByAgent(
+func (s *codebasesService) reachable(
 	ctx context.Context,
 	workspaceID, agentID uuid.UUID,
-) ([]entity.Codebase, error) {
+) (entity.Agent, error) {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceWorkspace,
 		Action:      entity.ActionRead,
 		WorkspaceID: workspaceID,
 	})
 	if err != nil {
-		return nil, err
+		return entity.Agent{}, err
 	}
 
 	agent, err := s.agents.GetByID(ctx, workspaceID, agentID)
 	if err != nil {
-		return nil, err
+		return entity.Agent{}, err
 	}
 
 	if decision.Role != entity.MembershipRoleAdmin &&
 		agent.OwnerAccountID != decision.Actor.AccountID {
-		return nil, entity.ErrAgentNotFound
+		return entity.Agent{}, entity.ErrAgentNotFound
+	}
+
+	return agent, nil
+}
+
+func (s *codebasesService) ListByAgent(
+	ctx context.Context,
+	workspaceID, agentID uuid.UUID,
+) ([]entity.Codebase, error) {
+	agent, err := s.reachable(ctx, workspaceID, agentID)
+	if err != nil {
+		return nil, err
 	}
 
 	return s.codebases.ListByAgentID(ctx, agent.ID)
+}
+
+func (s *codebasesService) DisconnectAgentCodebase(
+	ctx context.Context,
+	workspaceID, agentID, codebaseID uuid.UUID,
+) (entity.Codebase, error) {
+	agent, err := s.reachable(ctx, workspaceID, agentID)
+	if err != nil {
+		return entity.Codebase{}, err
+	}
+
+	codebase, err := s.codebases.GetByID(ctx, codebaseID)
+	if err != nil {
+		return entity.Codebase{}, err
+	}
+
+	if codebase.WorkspaceID != workspaceID || codebase.AgentID != agent.ID {
+		return entity.Codebase{}, entity.ErrCodebaseNotFound
+	}
+
+	if codebase.Disconnected() {
+		return entity.Codebase{}, entity.ErrCodebaseDisconnected
+	}
+
+	machine, err := s.runners.GetByID(ctx, codebase.RunnerID)
+	if err != nil {
+		return entity.Codebase{}, err
+	}
+
+	disconnected, err := s.codebases.Disconnect(ctx, codebase.ID, time.Now().UTC())
+	if err != nil {
+		return entity.Codebase{}, err
+	}
+
+	s.record(ctx, entity.AuditCodebaseDisconnected, machine, disconnected)
+
+	return disconnected, nil
 }
 
 func (s *codebasesService) record(

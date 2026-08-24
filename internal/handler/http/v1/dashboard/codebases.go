@@ -103,3 +103,21 @@ func (h *handler) ListAgentCodebases(
 
 	return api.ListAgentCodebases200JSONResponse(codebaseDTOs(codebases)), nil
 }
+
+func (h *handler) DisconnectAgentCodebase(
+	ctx context.Context,
+	request api.DisconnectAgentCodebaseRequestObject,
+) (api.DisconnectAgentCodebaseResponseObject, error) {
+	codebase, err := h.codebases.DisconnectAgentCodebase(
+		ctx, request.WorkspaceId, request.AgentId, request.CodebaseId,
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.DisconnectAgentCodebase200JSONResponse(codebaseDTO(codebase)), nil
+}

@@ -332,6 +332,24 @@
 
 			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
 				<div class="flex flex-col gap-1">
+					<h2 class="text-md font-medium tracking-snug text-ink-900">Runners</h2>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						A runner is a computer bound to one of your agents, and it is where delegated work
+						actually runs. Without one an agent is MCP-only: it can read and change issues, but
+						there is nowhere for it to write code. Connecting a machine takes two commands on that
+						computer.
+					</p>
+				</div>
+
+				<div class="flex flex-wrap gap-2">
+					<Button variant="secondary" href={workspacePath(workspace.slug, "/settings/runners")}>
+						Manage runners
+					</Button>
+				</div>
+			</section>
+
+			<section class="flex flex-col gap-4 rounded-lg border border-line-subtle p-4">
+				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">Directory</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Let your identity provider create, update and remove members over SCIM, and drive team

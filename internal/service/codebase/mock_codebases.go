@@ -88,6 +88,21 @@ func (mr *MockCodebasesMockRecorder) Disconnect(ctx, codebaseID any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Disconnect", reflect.TypeOf((*MockCodebases)(nil).Disconnect), ctx, codebaseID)
 }
 
+// DisconnectAgentCodebase mocks base method.
+func (m *MockCodebases) DisconnectAgentCodebase(ctx context.Context, workspaceID, agentID, codebaseID uuid.UUID) (entity.Codebase, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DisconnectAgentCodebase", ctx, workspaceID, agentID, codebaseID)
+	ret0, _ := ret[0].(entity.Codebase)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DisconnectAgentCodebase indicates an expected call of DisconnectAgentCodebase.
+func (mr *MockCodebasesMockRecorder) DisconnectAgentCodebase(ctx, workspaceID, agentID, codebaseID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisconnectAgentCodebase", reflect.TypeOf((*MockCodebases)(nil).DisconnectAgentCodebase), ctx, workspaceID, agentID, codebaseID)
+}
+
 // ListByAgent mocks base method.
 func (m *MockCodebases) ListByAgent(ctx context.Context, workspaceID, agentID uuid.UUID) ([]entity.Codebase, error) {
 	m.ctrl.T.Helper()
