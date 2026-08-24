@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { page } from "$app/state";
+	import { invalidate } from "$app/navigation";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
+	import { keys } from "$lib/api/keys";
 	import * as Alert from "$lib/components/ui/alert";
 	import { Button } from "$lib/components/ui/button";
 	import { Checkbox } from "$lib/components/ui/checkbox";
@@ -48,6 +50,23 @@
 	const offered = $derived(view.kind === "choose" ? view.offered : []);
 	const connected = $derived(view.kind === "choose" ? view.connected : []);
 	const offerUnreadable = $derived(view.kind === "choose" ? view.offerUnreadable : false);
+	const installUrl = $derived(view.kind === "choose" ? view.installUrl : "");
+	const installed = $derived(chosen?.authKind === "app" ? chosen : undefined);
+
+	let rereading = $state(false);
+
+	// What the installation reaches is read once, when the screen loads. Somebody granting a
+	// repository does it on the forge, in another tab, and comes back to a list that predates
+	// the grant — so the offer has to be askable again without a reload nothing here suggests.
+	async function reread() {
+		rereading = true;
+
+		try {
+			await invalidate(keys.page(page.route.id));
+		} finally {
+			rereading = false;
+		}
+	}
 
 	const selectable = $derived(offered.filter((one) => !connected.includes(one.fullName)));
 	const chosenCount = $derived($fields.fullNames.length);
@@ -150,6 +169,19 @@
 			<fieldset class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
 				<legend class="px-1 text-md font-medium tracking-snug text-ink-900">Repositories</legend>
 
+				{#if installed}
+					<div class="flex flex-wrap items-center gap-2">
+						{#if installUrl}
+							<Button variant="secondary" size="sm" href={installUrl} rel="external">
+								Grant more on {providerLabel(installed.provider)}
+							</Button>
+						{/if}
+						<Button variant="ghost" size="sm" type="button" disabled={rereading} onclick={reread}>
+							{rereading ? "Asking…" : "Check again"}
+						</Button>
+					</div>
+				{/if}
+
 				{#if offerUnreadable}
 					<Alert.Root variant="warning">
 						<TriangleAlert class="size-icon-row shrink-0" aria-hidden="true" />
@@ -160,15 +192,17 @@
 						</Alert.Description>
 					</Alert.Root>
 				{:else if selectable.length === 0 && offered.length > 0}
-					<p class="text-sm text-muted-foreground">
-						Everything this credential reaches is already connected.
+					<p class="text-sm text-muted-foreground text-pretty">
+						Everything this credential reaches is already connected. A repository made since is
+						reached only once it is granted on {providerLabel(chosen?.provider ?? "github")}.
 					</p>
-				{:else if offered.length === 0 && chosen?.authKind === "app"}
+				{:else if offered.length === 0 && installed}
 					<p class="text-sm text-muted-foreground text-pretty">
 						This installation was granted no repositories. Grant some on
-						{providerLabel(chosen.provider)} and they appear here — or name one below.
+						{providerLabel(installed.provider)}, check again, and they appear here — or name one
+						below.
 					</p>
-				{:else if chosen?.authKind !== "app"}
+				{:else if !installed}
 					<p class="text-sm text-muted-foreground text-pretty">
 						This credential is a token, and a token cannot be asked what it reaches. Name the
 						repository yourself and Norn checks it when you connect.

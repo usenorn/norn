@@ -23,6 +23,8 @@ export type ConnectRepositoriesView =
 			/** True when the platform could not be asked, which is not the same as offering none. */
 			offerUnreadable: boolean;
 			connected: string[];
+			/** Where on the forge the grant is widened. Empty when no application is registered. */
+			installUrl: string;
 	  }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
@@ -37,7 +39,7 @@ export const load: PageServerLoad = async ({ depends, route, url, locals, parent
 
 	const { workspace } = await parent();
 
-	const [listing, repositories, teams] = await Promise.all([
+	const [listing, repositories, teams, application] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/source-control/connections", {
 			params: { path: { workspaceId: workspace.id } },
 		}),
@@ -45,6 +47,9 @@ export const load: PageServerLoad = async ({ depends, route, url, locals, parent
 			params: { path: { workspaceId: workspace.id } },
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/teams", {
+			params: { path: { workspaceId: workspace.id } },
+		}),
+		locals.api.GET("/workspaces/{workspaceId}/source-control/application", {
 			params: { path: { workspaceId: workspace.id } },
 		}),
 	]);
@@ -96,6 +101,7 @@ export const load: PageServerLoad = async ({ depends, route, url, locals, parent
 			chosen,
 			offered,
 			offerUnreadable,
+			installUrl: application.data?.installUrl ?? "",
 			connected: (repositories.data ?? [])
 				.filter((one) => one.connectionId === chosen.id)
 				.map((one) => one.fullName),
