@@ -114,6 +114,7 @@ type Preview struct {
 	Name     string    `json:"name"`
 	Service  string    `json:"service"`
 	Path     string    `json:"path,omitempty"`
+	Port     int       `json:"port,omitempty"`
 	State    string    `json:"state"`
 	Occurred time.Time `json:"ts"`
 }

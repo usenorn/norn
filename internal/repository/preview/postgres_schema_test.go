@@ -151,6 +151,7 @@ func contains(values []string, wanted string) bool {
 func statements() map[string]string {
 	return map[string]string{
 		"savePreviewQuery":        savePreviewQuery,
+		"previewByHostQuery":      previewByHostQuery,
 		"previewRouteByHostQuery": previewRouteByHostQuery,
 		"previewCountQuery":       previewCountQuery,
 		"closePreviewsQuery":      closePreviewsQuery,

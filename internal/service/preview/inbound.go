@@ -38,6 +38,7 @@ func (s *previewsService) Reported(
 		Name:        strings.TrimSpace(incoming.Name),
 		Service:     strings.TrimSpace(incoming.Service),
 		Path:        strings.TrimSpace(incoming.Path),
+		Port:        incoming.Port,
 		Mode:        entity.PreviewBySubdomain,
 		State:       entity.PreviewState(incoming.State),
 		OpenedAt:    reported,
@@ -45,7 +46,7 @@ func (s *previewsService) Reported(
 	}
 
 	preview.Host = entity.PreviewHost(
-		preview.Name, execution.ID, preview.Mode, s.settings.BaseDomain,
+		execution, preview.Port, preview.Mode, s.settings.BaseDomain,
 	)
 
 	if preview.State == entity.PreviewClosed {

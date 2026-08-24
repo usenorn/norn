@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"hash/fnv"
 	"net/netip"
 	neturl "net/url"
 	"strings"
@@ -31,8 +33,12 @@ import (
 )
 
 const (
-	previewDomain = "preview.norn.test"
-	appBaseURL    = "https://norn.test"
+	previewDomain    = "preview.norn.test"
+	appBaseURL       = "https://norn.test"
+	previewReference = "NORN-75"
+	previewTitle     = "Preview address"
+	previewExecution = "exec-01ABC"
+	previewPortBase  = 43000
 )
 
 type harness struct {
@@ -102,13 +108,15 @@ func newHarnessServing(t *testing.T, domain string) *harness {
 	}
 
 	h.execution = entity.Execution{
-		ID:          "exec-01ABC",
-		WorkspaceID: workspaceID,
-		IssueID:     uuid.New(),
-		TeamID:      teamID,
-		AgentID:     agentID,
-		RunnerID:    h.runner.ID,
-		State:       entity.ExecutionRunning,
+		ID:             previewExecution,
+		WorkspaceID:    workspaceID,
+		IssueID:        uuid.New(),
+		IssueReference: previewReference,
+		IssueTitle:     previewTitle,
+		TeamID:         teamID,
+		AgentID:        agentID,
+		RunnerID:       h.runner.ID,
+		State:          entity.ExecutionRunning,
 	}
 
 	transactor := transactorrepo.NewMockTransactor(ctrl)
@@ -545,6 +553,7 @@ func previewMessage(name, service, state string) entity.ChannelMessage {
 	payload, err := json.Marshal(channelv1.Preview{
 		Name:     name,
 		Service:  service,
+		Port:     previewPort(name),
 		State:    state,
 		Occurred: time.Now().UTC(),
 	})
@@ -553,7 +562,7 @@ func previewMessage(name, service, state string) entity.ChannelMessage {
 	}
 
 	message, err := channelv1.NewRunnerMessage(
-		entity.ChannelPreviewState, "exec-01ABC", payload, time.Now().UTC(),
+		entity.ChannelPreviewState, previewExecution, payload, time.Now().UTC(),
 	)
 	if err != nil {
 		panic(err)
@@ -566,8 +575,18 @@ func viewerFrom(address string) entity.SessionClient {
 	return entity.SessionClient{IP: netip.MustParseAddr(address), UserAgent: "Firefox"}
 }
 
+func previewPort(name string) int {
+	digest := fnv.New32a()
+	_, _ = digest.Write([]byte(name))
+
+	return previewPortBase + int(digest.Sum32()%1000)
+}
+
 func hostFor(name string) string {
-	return strings.ToLower(name + "-exec-01ABC." + previewDomain)
+	return strings.ToLower(fmt.Sprintf(
+		"%s-preview-address-%s-%d.%s",
+		previewReference, previewExecution, previewPort(name), previewDomain,
+	))
 }
 
 func tokenFrom(t *testing.T, url string) string {

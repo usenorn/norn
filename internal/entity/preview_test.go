@@ -1,35 +1,66 @@
 package entity_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
-func TestAPreviewHostNamesBothThePreviewAndTheRunItBelongsTo(t *testing.T) {
+func runFor(reference, title string) entity.Execution {
+	return entity.Execution{ID: "exec-01M0SMJXBJ451KZ0MCQ6TY2GH1", IssueReference: reference, IssueTitle: title}
+}
+
+func TestAPreviewAddressIsTheIssueTheRunAndThePortAndNothingAnAgentChose(t *testing.T) {
 	cases := map[string]struct {
-		name    string
+		run     entity.Execution
+		port    int
 		mode    entity.PreviewMode
 		domain  string
 		address string
 	}{
-		"a subdomain per preview": {
-			name:    "web",
+		"a subdomain per port": {
+			run:     runFor("NORN-75", "A preview address must be one per task, execution and port"),
+			port:    43000,
 			mode:    entity.PreviewBySubdomain,
-			domain:  "preview.norn.site",
-			address: "web-exec-01abc.preview.norn.site",
+			domain:  "norn.ink",
+			address: "norn-75-a-preview-address-exec-01m0smjxbj451kz0mcq6ty2gh1-43000.norn.ink",
+		},
+		"the same run on another port": {
+			run:     runFor("NORN-75", "A preview address must be one per task, execution and port"),
+			port:    5173,
+			mode:    entity.PreviewBySubdomain,
+			domain:  "norn.ink",
+			address: "norn-75-a-preview-address-exec-01m0smjxbj451kz0mcq6ty2gh1-5173.norn.ink",
 		},
 		"one host for the whole run": {
-			name:    "web",
+			run:     runFor("NORN-75", "A preview address must be one per task, execution and port"),
+			port:    43000,
 			mode:    entity.PreviewByPath,
-			domain:  "preview.norn.site",
-			address: "exec-01abc.preview.norn.site",
+			domain:  "norn.ink",
+			address: "norn-75-a-preview-address-must-exec-01m0smjxbj451kz0mcq6ty2gh1.norn.ink",
+		},
+		"a title that slugifies to nothing": {
+			run:     runFor("NORN-75", "—"),
+			port:    43000,
+			mode:    entity.PreviewBySubdomain,
+			domain:  "norn.ink",
+			address: "norn-75-exec-01m0smjxbj451kz0mcq6ty2gh1-43000.norn.ink",
+		},
+		"a reference that leaves the title no room": {
+			run:     runFor("ABCDE-123456789", "A preview address"),
+			port:    43000,
+			mode:    entity.PreviewBySubdomain,
+			domain:  "norn.ink",
+			address: "abcde-123456789-a-preview-exec-01m0smjxbj451kz0mcq6ty2gh1-43000.norn.ink",
 		},
 		"no domain to compose from": {
-			name:    "web",
+			run:     runFor("NORN-75", "A preview address"),
+			port:    43000,
 			mode:    entity.PreviewBySubdomain,
 			domain:  "",
 			address: "",
@@ -38,7 +69,7 @@ func TestAPreviewHostNamesBothThePreviewAndTheRunItBelongsTo(t *testing.T) {
 
 	for name, want := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := entity.PreviewHost(want.name, "exec-01ABC", want.mode, want.domain)
+			got := entity.PreviewHost(want.run, want.port, want.mode, want.domain)
 			if got != want.address {
 				t.Fatalf(
 					"the host came out as %q, want %q. This is the only thing the gateway "+
@@ -50,14 +81,50 @@ func TestAPreviewHostNamesBothThePreviewAndTheRunItBelongsTo(t *testing.T) {
 	}
 }
 
-func TestAPreviewHostIsLowerCaseBecauseAnExecutionIdIsNot(t *testing.T) {
-	host := entity.PreviewHost("web", "exec-01M0QEGQBR", entity.PreviewBySubdomain, "preview.norn.site")
+func TestNoIssueTitleEverPushesAPreviewLabelPastWhatDNSCarries(t *testing.T) {
+	references := []string{"", "AB-1", "NORN-75", "ABCDE-123456789", strings.Repeat("LONG-9", 20)}
+	titles := []string{
+		"",
+		"web",
+		strings.Repeat("a very long title indeed ", 40),
+		strings.Repeat("————— ", 40),
+	}
+	ports := []int{1, 43000, 65535}
 
-	if host != "web-exec-01m0qegqbr.preview.norn.site" {
+	for _, reference := range references {
+		for _, title := range titles {
+			for _, port := range ports {
+				for _, mode := range entity.PreviewModes() {
+					host := entity.PreviewHost(runFor(reference, title), port, mode, "norn.ink")
+
+					label, _, _ := strings.Cut(host, ".")
+					if len(label) > channelv1.PreviewLabelMax {
+						t.Fatalf(
+							"%q is %d characters. DNS stops at %d, so the whole address is "+
+								"refused before it ever reaches norn",
+							label, len(label), channelv1.PreviewLabelMax,
+						)
+					}
+
+					if strings.Contains(label, "--") || strings.HasSuffix(label, "-") {
+						t.Fatalf(
+							"%q holds an empty segment, which is not a label a browser "+
+								"resolves", label,
+						)
+					}
+				}
+			}
+		}
+	}
+}
+
+func TestThePreviewLabelCarriesTheExecutionsOwnPrefixOnlyOnce(t *testing.T) {
+	host := entity.PreviewHost(runFor("NORN-75", "A preview address"), 43000, entity.PreviewBySubdomain, "norn.ink")
+
+	if strings.Contains(host, entity.ExecutionIDPrefix+entity.ExecutionIDPrefix) {
 		t.Fatalf(
-			"the host came out as %q. An execution id is upper-case and a hostname is not "+
-				"case-sensitive, so a browser lower-casing it would ask about a host norn has "+
-				"never heard of and be turned away from its own preview",
+			"the host came out as %q. The execution id already carries its own prefix, so "+
+				"adding a second one names a run that does not exist",
 			host,
 		)
 	}
@@ -75,18 +142,23 @@ func TestAPreviewWithNoHostAnswersWithNoAddressAtAll(t *testing.T) {
 	}
 }
 
-func TestAPathModePreviewPutsItsNameInThePathRatherThanTheHost(t *testing.T) {
+func TestAPathModePreviewPutsItsPortInThePathRatherThanTheNameItWasGiven(t *testing.T) {
 	preview := entity.PreviewSession{
 		Name:  "web",
 		Mode:  entity.PreviewByPath,
-		Host:  "exec-01ABC.preview.norn.site",
+		Host:  "norn-75-exec-01abc.preview.norn.site",
+		Port:  43000,
 		Path:  "/app",
 		State: entity.PreviewOpen,
 	}
 
-	want := "https://exec-01ABC.preview.norn.site/web/app"
+	want := "https://norn-75-exec-01abc.preview.norn.site/43000/app"
 	if got := preview.URL("https"); got != want {
-		t.Fatalf("the address came out as %q, want %q", got, want)
+		t.Fatalf(
+			"the address came out as %q, want %q. Two ports on one run share the host in this "+
+				"mode, so the port is the only thing that tells them apart",
+			got, want,
+		)
 	}
 }
 
