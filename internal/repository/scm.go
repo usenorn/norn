@@ -23,11 +23,11 @@ type SCMConnection interface {
 	GetByInstallation(ctx context.Context, appID uuid.UUID, installationID string) (entity.SCMConnection, error)
 	ListByWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]entity.SCMConnection, error)
 	Token(ctx context.Context, connectionID uuid.UUID) (string, error)
-	ReplaceToken(ctx context.Context, connectionID uuid.UUID, token, hint, login string, at time.Time) error
-	UpdateLabel(ctx context.Context, connectionID uuid.UUID, label string) (entity.SCMConnection, error)
-	MarkVerified(ctx context.Context, connectionID uuid.UUID, login string, capabilities entity.SCMCapabilitySet, at time.Time) error
-	MarkBroken(ctx context.Context, connectionID uuid.UUID, reason entity.SCMBrokenReason, detail string, at time.Time) error
-	Delete(ctx context.Context, connectionID uuid.UUID) error
+	ReplaceToken(ctx context.Context, workspaceID, connectionID uuid.UUID, token, hint, login string, at time.Time) error
+	UpdateLabel(ctx context.Context, workspaceID, connectionID uuid.UUID, label string) (entity.SCMConnection, error)
+	MarkVerified(ctx context.Context, workspaceID, connectionID uuid.UUID, login string, capabilities entity.SCMCapabilitySet, at time.Time) error
+	MarkBroken(ctx context.Context, workspaceID, connectionID uuid.UUID, reason entity.SCMBrokenReason, detail string, at time.Time) error
+	Delete(ctx context.Context, workspaceID, connectionID uuid.UUID) error
 }
 
 type SCMRepositoryInput struct {

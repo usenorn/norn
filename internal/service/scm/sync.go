@@ -407,6 +407,7 @@ func (s *sync) markBroken(
 	// on claiming it works.
 	if err := s.connections.MarkBroken(
 		ctx,
+		from.connection.WorkspaceID,
 		from.connection.ID,
 		reason,
 		detail,

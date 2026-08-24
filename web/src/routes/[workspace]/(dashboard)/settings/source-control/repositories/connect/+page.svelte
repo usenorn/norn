@@ -1,10 +1,13 @@
 <script lang="ts">
+	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
+	import RefreshCw from "@lucide/svelte/icons/refresh-cw";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
+	import { keys } from "$lib/api/keys";
 	import * as Alert from "$lib/components/ui/alert";
 	import { Button } from "$lib/components/ui/button";
 	import { Checkbox } from "$lib/components/ui/checkbox";
@@ -43,6 +46,7 @@
 	const { form: fields, enhance, submitting, delayed, message: outcome } = form;
 
 	let typed = $state("");
+	let refreshing = $state(false);
 
 	const chosen = $derived(view.kind === "choose" ? view.chosen : undefined);
 	const offered = $derived(view.kind === "choose" ? view.offered : []);
@@ -69,6 +73,14 @@
 
 	function connectionHref(connection: SourceControlConnection): string {
 		return `?connection=${connection.id}`;
+	}
+
+	async function refresh() {
+		refreshing = true;
+
+		await invalidate(keys.sourceControlConnect(workspace.id));
+
+		refreshing = false;
 	}
 </script>
 
@@ -148,7 +160,15 @@
 			{/if}
 
 			<fieldset class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
-				<legend class="px-1 text-md font-medium tracking-snug text-ink-900">Repositories</legend>
+				<div class="flex items-center justify-between">
+					<legend class="px-1 text-md font-medium tracking-snug text-ink-900">Repositories</legend>
+					{#if chosen?.authKind === "app"}
+						<Button variant="secondary" size="sm" onclick={refresh} disabled={refreshing}>
+							<RefreshCw class="size-icon-row {refreshing ? 'animate-spin' : ''}" aria-hidden="true" />
+							Refresh
+						</Button>
+					{/if}
+				</div>
 
 				{#if offerUnreadable}
 					<Alert.Root variant="warning">

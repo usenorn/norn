@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/google/uuid"
 
+	dbpostgres "github.com/usenorn/norn/internal/db/postgres"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/crypter"
 	"github.com/usenorn/norn/internal/pkg/postgres"
@@ -324,22 +326,9 @@ func (r *connectionRepository) Token(ctx context.Context, connectionID uuid.UUID
 	return open(r.crypter, sealed)
 }
 
-const replaceTokenQuery = `
-UPDATE workspace_scm_connections
-SET token_sealed = $2,
-    token_hint = $3,
-    identity_login = $4,
-    status = 'connected',
-    broken_reason = '',
-    broken_detail = '',
-    broken_at = NULL,
-    verified_at = $5,
-    updated_at = now()
-WHERE id = $1`
-
 func (r *connectionRepository) ReplaceToken(
 	ctx context.Context,
-	connectionID uuid.UUID,
+	workspaceID, connectionID uuid.UUID,
 	token, hint, login string,
 	at time.Time,
 ) error {
@@ -348,29 +337,44 @@ func (r *connectionRepository) ReplaceToken(
 		return err
 	}
 
-	result, err := r.db.Querier(ctx).ExecContext(
-		ctx, replaceTokenQuery, connectionID, sealed, hint, login, at,
-	)
+	rows, err := dbpostgres.WorkspaceSCMConnections(
+		dbpostgres.WorkspaceSCMConnectionWhere.ID.EQ(connectionID.String()),
+		dbpostgres.WorkspaceSCMConnectionWhere.WorkspaceID.EQ(workspaceID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceSCMConnectionColumns.TokenSealed:   null.BytesFrom(sealed),
+		dbpostgres.WorkspaceSCMConnectionColumns.TokenHint:     hint,
+		dbpostgres.WorkspaceSCMConnectionColumns.IdentityLogin: login,
+		dbpostgres.WorkspaceSCMConnectionColumns.Status:        string(entity.SCMConnectionConnected),
+		dbpostgres.WorkspaceSCMConnectionColumns.BrokenReason:  "",
+		dbpostgres.WorkspaceSCMConnectionColumns.BrokenDetail:  "",
+		dbpostgres.WorkspaceSCMConnectionColumns.BrokenAt:      null.Time{},
+		dbpostgres.WorkspaceSCMConnectionColumns.VerifiedAt:    null.TimeFrom(at),
+		dbpostgres.WorkspaceSCMConnectionColumns.UpdatedAt:     time.Now().UTC(),
+	})
 	if err != nil {
 		return fmt.Errorf("replace source control token: %w", err)
 	}
 
-	return expectOne(result, entity.ErrSCMConnectionNotFound)
+	if rows == 0 {
+		return entity.ErrSCMConnectionNotFound
+	}
+
+	return nil
 }
 
 const updateLabelQuery = `
 UPDATE workspace_scm_connections AS c
-SET label = $2, updated_at = now()
-WHERE c.id = $1
+SET label = $3, updated_at = now()
+WHERE c.id = $1 AND c.workspace_id = $2
 RETURNING` + connectionColumns
 
 func (r *connectionRepository) UpdateLabel(
 	ctx context.Context,
-	connectionID uuid.UUID,
+	workspaceID, connectionID uuid.UUID,
 	label string,
 ) (entity.SCMConnection, error) {
 	connection, err := scanConnection(
-		r.db.Querier(ctx).QueryRowContext(ctx, updateLabelQuery, connectionID, label),
+		r.db.Querier(ctx).QueryRowContext(ctx, updateLabelQuery, connectionID, workspaceID, label),
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return entity.SCMConnection{}, entity.ErrSCMConnectionNotFound
@@ -383,75 +387,77 @@ func (r *connectionRepository) UpdateLabel(
 	return connection, nil
 }
 
-const markVerifiedQuery = `
-UPDATE workspace_scm_connections
-SET identity_login = $2,
-    capabilities = $4,
-    status = 'connected',
-    broken_reason = '',
-    broken_detail = '',
-    broken_at = NULL,
-    verified_at = $3,
-    updated_at = now()
-WHERE id = $1`
-
 func (r *connectionRepository) MarkVerified(
 	ctx context.Context,
-	connectionID uuid.UUID,
+	workspaceID, connectionID uuid.UUID,
 	login string,
 	capabilities entity.SCMCapabilitySet,
 	at time.Time,
 ) error {
-	result, err := r.db.Querier(ctx).ExecContext(
-		ctx,
-		markVerifiedQuery,
-		connectionID,
-		login,
-		at,
-		types.StringArray(capabilities.Strings()),
-	)
+	rows, err := dbpostgres.WorkspaceSCMConnections(
+		dbpostgres.WorkspaceSCMConnectionWhere.ID.EQ(connectionID.String()),
+		dbpostgres.WorkspaceSCMConnectionWhere.WorkspaceID.EQ(workspaceID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceSCMConnectionColumns.IdentityLogin: login,
+		dbpostgres.WorkspaceSCMConnectionColumns.Capabilities:  types.StringArray(capabilities.Strings()),
+		dbpostgres.WorkspaceSCMConnectionColumns.Status:        string(entity.SCMConnectionConnected),
+		dbpostgres.WorkspaceSCMConnectionColumns.BrokenReason:  "",
+		dbpostgres.WorkspaceSCMConnectionColumns.BrokenDetail:  "",
+		dbpostgres.WorkspaceSCMConnectionColumns.BrokenAt:      null.Time{},
+		dbpostgres.WorkspaceSCMConnectionColumns.VerifiedAt:    null.TimeFrom(at),
+		dbpostgres.WorkspaceSCMConnectionColumns.UpdatedAt:     time.Now().UTC(),
+	})
 	if err != nil {
 		return fmt.Errorf("mark source control connection verified: %w", err)
 	}
 
-	return expectOne(result, entity.ErrSCMConnectionNotFound)
-}
+	if rows == 0 {
+		return entity.ErrSCMConnectionNotFound
+	}
 
-const markBrokenQuery = `
-UPDATE workspace_scm_connections
-SET status = 'broken',
-    broken_reason = $2,
-    broken_detail = $3,
-    broken_at = $4,
-    updated_at = now()
-WHERE id = $1`
+	return nil
+}
 
 func (r *connectionRepository) MarkBroken(
 	ctx context.Context,
-	connectionID uuid.UUID,
+	workspaceID, connectionID uuid.UUID,
 	reason entity.SCMBrokenReason,
 	detail string,
 	at time.Time,
 ) error {
-	result, err := r.db.Querier(ctx).ExecContext(
-		ctx, markBrokenQuery, connectionID, reason, detail, at,
-	)
+	rows, err := dbpostgres.WorkspaceSCMConnections(
+		dbpostgres.WorkspaceSCMConnectionWhere.ID.EQ(connectionID.String()),
+		dbpostgres.WorkspaceSCMConnectionWhere.WorkspaceID.EQ(workspaceID.String()),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceSCMConnectionColumns.Status:       string(entity.SCMConnectionBroken),
+		dbpostgres.WorkspaceSCMConnectionColumns.BrokenReason: string(reason),
+		dbpostgres.WorkspaceSCMConnectionColumns.BrokenDetail: detail,
+		dbpostgres.WorkspaceSCMConnectionColumns.BrokenAt:     null.TimeFrom(at),
+		dbpostgres.WorkspaceSCMConnectionColumns.UpdatedAt:    time.Now().UTC(),
+	})
 	if err != nil {
 		return fmt.Errorf("mark source control connection broken: %w", err)
 	}
 
-	return expectOne(result, entity.ErrSCMConnectionNotFound)
+	if rows == 0 {
+		return entity.ErrSCMConnectionNotFound
+	}
+
+	return nil
 }
 
-const deleteConnectionQuery = `
-DELETE FROM workspace_scm_connections
-WHERE id = $1`
-
-func (r *connectionRepository) Delete(ctx context.Context, connectionID uuid.UUID) error {
-	result, err := r.db.Querier(ctx).ExecContext(ctx, deleteConnectionQuery, connectionID)
+func (r *connectionRepository) Delete(ctx context.Context, workspaceID, connectionID uuid.UUID) error {
+	rows, err := dbpostgres.WorkspaceSCMConnections(
+		dbpostgres.WorkspaceSCMConnectionWhere.ID.EQ(connectionID.String()),
+		dbpostgres.WorkspaceSCMConnectionWhere.WorkspaceID.EQ(workspaceID.String()),
+	).DeleteAll(ctx, r.db.Querier(ctx))
 	if err != nil {
 		return fmt.Errorf("delete source control connection: %w", err)
 	}
 
-	return expectOne(result, entity.ErrSCMConnectionNotFound)
+	if rows == 0 {
+		return entity.ErrSCMConnectionNotFound
+	}
+
+	return nil
 }

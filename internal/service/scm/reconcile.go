@@ -66,7 +66,7 @@ func (s *sync) reconcileOne(
 	}
 
 	if err := s.connections.MarkVerified(
-		ctx, from.connection.ID, login, forge.Capabilities(), at,
+		ctx, from.repository.WorkspaceID, from.connection.ID, login, forge.Capabilities(), at,
 	); err != nil {
 		return err
 	}

@@ -37,6 +37,8 @@ export const load: PageServerLoad = async ({ depends, route, url, locals, parent
 
 	const { workspace } = await parent();
 
+	depends(keys.sourceControlConnect(workspace.id));
+
 	const [listing, repositories, teams] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/source-control/connections", {
 			params: { path: { workspaceId: workspace.id } },
