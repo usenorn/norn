@@ -5,6 +5,7 @@ export type ShortcutGroup =
 	| "navigation"
 	| "list"
 	| "issues"
+	| "agents"
 	| "selection"
 	| "triage"
 	| "roam";
@@ -25,6 +26,7 @@ export const shortcutGroupLabels: Record<ShortcutGroup, string> = {
 	navigation: "Going places",
 	list: "Moving through a list",
 	issues: "Issues",
+	agents: "Agents",
 	selection: "What you have selected",
 	triage: "Triage",
 	roam: "Moving like a game",
@@ -35,6 +37,7 @@ export const shortcutGroupOrder: ShortcutGroup[] = [
 	"navigation",
 	"list",
 	"issues",
+	"agents",
 	"selection",
 	"triage",
 	"roam",
@@ -73,6 +76,7 @@ const declared = [
 		group: "issues",
 	},
 	{ id: "issue-edit", keys: ["e"], label: "Edit the description", group: "issues" },
+	{ id: "agent-register", keys: ["shift+a"], label: "Register agent", group: "agents" },
 
 	{ id: "select-toggle", keys: ["x", " "], label: "Select", group: "selection" },
 	{ id: "select-clear", keys: ["escape"], label: "Clear the selection", group: "selection" },

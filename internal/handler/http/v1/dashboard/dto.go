@@ -935,7 +935,7 @@ func apiTokenDTO(token entity.APIToken) api.APIToken {
 	dto := api.APIToken{
 		Id:        token.ID,
 		Name:      token.Name,
-		Scopes:    token.Scopes.Strings(),
+		Scopes:    apiScopeDTOs(token.Scopes),
 		Grants:    apiTokenGrantDTOs(token.Grants),
 		CreatedAt: token.CreatedAt,
 	}
@@ -944,6 +944,16 @@ func apiTokenDTO(token entity.APIToken) api.APIToken {
 	dto.LastUsedAt = token.LastUsedAt
 
 	return dto
+}
+
+func apiScopeDTOs(scopes entity.APIScopeSet) []api.APIScope {
+	values := make([]api.APIScope, 0, len(scopes))
+
+	for _, scope := range scopes {
+		values = append(values, api.APIScope(scope))
+	}
+
+	return values
 }
 
 func apiTokenGrantDTOs(grants entity.APITokenGrants) []api.APITokenGrant {
@@ -1525,6 +1535,7 @@ func agentDTO(agent entity.Agent) api.Agent {
 		AccountId:      agent.AccountID,
 		OwnerAccountId: agent.OwnerAccountID,
 		Name:           agent.Name,
+		Icon:           api.AgentIcon(agent.Icon.Normalized()),
 		Status:         api.AgentStatus(agent.Status),
 		ActionLimit:    int32(agent.Allowance()),
 		CreatedAt:      agent.CreatedAt,
@@ -1536,10 +1547,18 @@ func agentDTO(agent entity.Agent) api.Agent {
 }
 
 func workspaceAgentDTO(owned service.OwnedAgent) api.WorkspaceAgent {
+	teamIDs := make([]uuid.UUID, 0, len(owned.Authority.TeamIDs))
+	teamIDs = append(teamIDs, owned.Authority.TeamIDs...)
+
 	return api.WorkspaceAgent{
 		Agent:      agentDTO(owned.Agent),
 		OwnerName:  owned.OwnerName,
 		OwnerEmail: owned.OwnerEmail,
+		Authority: api.AgentAuthority{
+			Scopes:   apiScopeDTOs(owned.Authority.Scopes),
+			AllTeams: owned.Authority.AllTeams,
+			TeamIds:  teamIDs,
+		},
 	}
 }
 

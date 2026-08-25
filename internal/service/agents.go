@@ -15,6 +15,7 @@ type Agents interface {
 	List(ctx context.Context, workspaceID uuid.UUID) ([]OwnedAgent, error)
 	Get(ctx context.Context, workspaceID, agentID uuid.UUID) (OwnedAgent, error)
 	Disable(ctx context.Context, workspaceID, agentID uuid.UUID) error
+	Enable(ctx context.Context, workspaceID, agentID uuid.UUID) (RegisteredAgent, error)
 	Rotate(ctx context.Context, workspaceID, agentID uuid.UUID) (RegisteredAgent, error)
 	Activity(ctx context.Context, workspaceID, agentID uuid.UUID, page entity.ActivityPage) (ActivityPage, error)
 	Authenticate(ctx context.Context, accountID uuid.UUID, actor entity.Actor) (entity.Actor, error)

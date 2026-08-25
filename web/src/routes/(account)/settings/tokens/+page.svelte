@@ -25,6 +25,7 @@
 		scopeGroups,
 		scopeLabels,
 		writes,
+		type APIScope,
 		type APIToken,
 		type MintOutcome,
 		type TokenFailure,
@@ -124,7 +125,7 @@
 		}));
 	}
 
-	function toggleScope(scope: string, checked: boolean) {
+	function toggleScope(scope: APIScope, checked: boolean) {
 		const next = new Set($formData.scopes);
 
 		if (checked) {

@@ -61,6 +61,7 @@ const (
 
 	AuditAgentRegistered AuditAction = "agent.registered"
 	AuditAgentDisabled   AuditAction = "agent.disabled"
+	AuditAgentEnabled    AuditAction = "agent.enabled"
 	AuditRunnerEnrolled  AuditAction = "runner.enrolled"
 	AuditRunnerRevoked   AuditAction = "runner.revoked"
 	AuditRunnerPaused    AuditAction = "runner.paused"
@@ -115,7 +116,8 @@ func AuditActions() []AuditAction {
 		AuditRecoveryCodesIssued, AuditRecoveryCodeRedeemed, AuditSSOIdentityUnlinked,
 		AuditSSOIdentityLinked, AuditSSOIdentityRefused, AuditSSOAccountOpened,
 		AuditTokenMinted, AuditTokenRevoked,
-		AuditAgentRegistered, AuditAgentDisabled, AuditAgentRotated, AuditAgentProposal,
+		AuditAgentRegistered, AuditAgentDisabled, AuditAgentEnabled, AuditAgentRotated,
+		AuditAgentProposal,
 		AuditRunnerEnrolled, AuditRunnerRevoked, AuditRunnerPaused, AuditRunnerResumed,
 		AuditCodebaseConnected, AuditCodebaseDisconnected,
 		AuditExecutionCancelled, AuditExecutionApproved, AuditExecutionResumed,

@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -83,22 +84,19 @@ func (s *agentsService) Register(
 		return service.RegisteredAgent{}, entity.ErrAPITokenMintForbidden
 	}
 
-	if err := entity.NewValidationError(entity.ValidateAgentName("name", input.Name)); err != nil {
+	if err := entity.NewValidationError(
+		entity.ValidateAgentName("name", input.Name),
+		entity.ValidateAgentIcon("icon", input.Icon),
+		entity.ValidateAgentActionLimit("actionLimit", input.ActionLimit),
+	); err != nil {
 		return service.RegisteredAgent{}, err
 	}
 
-	owner := input.OwnerAccountID
-	if owner == uuid.Nil {
-		owner = decision.Actor.AccountID
-	}
+	owner := decision.Actor.AccountID
 
-	if owner != decision.Actor.AccountID && decision.Role != entity.MembershipRoleAdmin {
-		return service.RegisteredAgent{}, entity.ErrAccountForbidden
-	}
-
-	ownership, err := s.memberships.Get(ctx, input.WorkspaceID, owner)
+	ownership, err := s.ownerMembership(ctx, input.WorkspaceID, owner)
 	if err != nil {
-		return service.RegisteredAgent{}, entity.ErrAgentOwnerInvalid
+		return service.RegisteredAgent{}, err
 	}
 
 	scopes := input.Scopes.Normalized()
@@ -148,6 +146,7 @@ func (s *agentsService) Register(
 			AccountID:      account.ID,
 			OwnerAccountID: owner,
 			Name:           input.Name,
+			Icon:           input.Icon.Normalized(),
 			ActionLimit:    input.ActionLimit,
 		})
 		if err != nil {
@@ -184,6 +183,39 @@ func (s *agentsService) Register(
 	})
 
 	return registered, nil
+}
+
+func (s *agentsService) ownerMembership(
+	ctx context.Context,
+	workspaceID, ownerID uuid.UUID,
+) (entity.Membership, error) {
+	membership, err := s.memberships.Get(ctx, workspaceID, ownerID)
+	if err != nil {
+		if errors.Is(err, entity.ErrMembershipNotFound) {
+			return entity.Membership{}, entity.ErrAgentOwnerInvalid
+		}
+
+		return entity.Membership{}, err
+	}
+
+	if membership.Deactivated() {
+		return entity.Membership{}, entity.ErrAgentOwnerInvalid
+	}
+
+	owner, err := s.accounts.GetByID(ctx, ownerID)
+	if err != nil {
+		if errors.Is(err, entity.ErrAccountNotFound) {
+			return entity.Membership{}, entity.ErrAgentOwnerInvalid
+		}
+
+		return entity.Membership{}, err
+	}
+
+	if owner.Kind != entity.AccountKindPerson || owner.Status != entity.AccountStatusActive {
+		return entity.Membership{}, entity.ErrAgentOwnerInvalid
+	}
+
+	return membership, nil
 }
 
 func (s *agentsService) grant(
@@ -280,10 +312,44 @@ func (s *agentsService) describe(ctx context.Context, agent entity.Agent) (servi
 		return service.OwnedAgent{}, err
 	}
 
+	token, err := s.tokens.GetLatestByOwner(ctx, agent.AccountID)
+	if err != nil {
+		if errors.Is(err, entity.ErrAPITokenNotFound) {
+			return service.OwnedAgent{}, entity.ErrAgentAuthorityMissing
+		}
+
+		return service.OwnedAgent{}, err
+	}
+
+	authority, err := agentAuthority(token, agent.WorkspaceID)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
 	return service.OwnedAgent{
 		Agent:      agent,
 		OwnerName:  owner.DisplayName,
 		OwnerEmail: owner.Email,
+		Authority:  authority,
+	}, nil
+}
+
+func agentAuthority(token entity.APIToken, workspaceID uuid.UUID) (service.AgentAuthority, error) {
+	scopes := token.Scopes.Normalized()
+	grant, ok := token.Grants.For(workspaceID)
+
+	if len(scopes) == 0 || len(scopes) != len(token.Scopes) || !ok ||
+		(!grant.AllTeams && len(grant.TeamIDs) == 0) {
+		return service.AgentAuthority{}, entity.ErrAgentAuthorityMissing
+	}
+
+	teamIDs := make([]uuid.UUID, 0, len(grant.TeamIDs))
+	teamIDs = append(teamIDs, grant.TeamIDs...)
+
+	return service.AgentAuthority{
+		Scopes:   scopes,
+		AllTeams: grant.AllTeams,
+		TeamIDs:  teamIDs,
 	}, nil
 }
 
@@ -335,6 +401,113 @@ func (s *agentsService) Disable(ctx context.Context, workspaceID, agentID uuid.U
 	})
 
 	return nil
+}
+
+func (s *agentsService) Enable(
+	ctx context.Context,
+	workspaceID, agentID uuid.UUID,
+) (service.RegisteredAgent, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceAgent,
+		Action:      entity.ActionManage,
+		WorkspaceID: workspaceID,
+	})
+	if err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	if decision.Actor.Kind != entity.ActorKindUser {
+		return service.RegisteredAgent{}, entity.ErrAPITokenMintForbidden
+	}
+
+	agent, err := s.agents.GetByID(ctx, workspaceID, agentID)
+	if err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	if err := manageable(agent, decision); err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	if !agent.Disabled() {
+		return service.RegisteredAgent{}, entity.ErrAgentActive
+	}
+
+	if _, err := s.ownerMembership(ctx, workspaceID, agent.OwnerAccountID); err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	latest, err := s.tokens.GetLatestByOwner(ctx, agent.AccountID)
+	if err != nil {
+		if errors.Is(err, entity.ErrAPITokenNotFound) {
+			return service.RegisteredAgent{}, entity.ErrAgentAuthorityMissing
+		}
+
+		return service.RegisteredAgent{}, err
+	}
+
+	authority, err := agentAuthority(latest, workspaceID)
+	if err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	value, tokenHash, err := entity.NewAPIToken()
+	if err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	var enabled service.RegisteredAgent
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		now := time.Now().UTC()
+
+		if err := s.agents.Enable(ctx, workspaceID, agentID); err != nil {
+			return err
+		}
+
+		if err := s.tokens.RevokeAllByAccount(ctx, agent.AccountID, now); err != nil {
+			return err
+		}
+
+		if _, err := s.memberships.SetDeactivated(ctx, workspaceID, agent.AccountID, nil); err != nil {
+			return err
+		}
+
+		expiresAt := now.Add(entity.APITokenMaxTTL)
+		token, err := s.tokens.Create(ctx, entity.APIToken{
+			AccountID: agent.AccountID,
+			Name:      agent.Name,
+			TokenHash: tokenHash,
+			Scopes:    authority.Scopes,
+			Grants: entity.APITokenGrants{{
+				WorkspaceID: workspaceID,
+				AllTeams:    authority.AllTeams,
+				TeamIDs:     authority.TeamIDs,
+			}},
+			ExpiresAt: &expiresAt,
+		})
+		if err != nil {
+			return err
+		}
+
+		agent.Status = entity.AgentStatusActive
+		agent.DisabledAt = nil
+		enabled = service.RegisteredAgent{Agent: agent, Token: token, Value: value}
+
+		return nil
+	}); err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  workspaceID,
+		Action:       entity.AuditAgentEnabled,
+		ResourceKind: string(entity.ResourceAgent),
+		ResourceID:   agentID,
+		ResourceName: agent.Name,
+	})
+
+	return enabled, nil
 }
 
 func (s *agentsService) Activity(

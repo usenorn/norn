@@ -6,6 +6,7 @@ export type AgentSettings = components["schemas"]["AgentSettings"];
 export type AgentProposal = components["schemas"]["AgentProposal"];
 export type AgentAction = components["schemas"]["AgentAction"];
 export type APIScope = components["schemas"]["APIScope"];
+export type AgentIcon = components["schemas"]["AgentIcon"];
 
 type RegisterResponses = operations["registerWorkspaceAgent"]["responses"];
 
@@ -20,12 +21,16 @@ export type AgentListing =
 	| { kind: "ready"; agents: WorkspaceAgent[] }
 	| { kind: "registered"; agents: WorkspaceAgent[]; agent: Agent; value: string }
 	| { kind: "forbidden" }
+	| { kind: "authority_missing" }
 	| { kind: "unavailable" };
 
 export type AgentFailure =
 	| { kind: "name_taken" }
 	| { kind: "owner_invalid" }
+	| { kind: "lifecycle_owner_invalid" }
 	| { kind: "disabled" }
+	| { kind: "active" }
+	| { kind: "authority_missing" }
 	| { kind: "scope_exceeds" }
 	| { kind: "scope_invalid" }
 	| { kind: "grant_invalid" }
@@ -48,6 +53,51 @@ export const actionLabels: Record<AgentAction, string> = {
 	issue_edit: "Edit the issue",
 	issue_create: "Raise an issue",
 };
+
+export const agentIcons = [
+	"bot",
+	"inbox",
+	"search",
+	"terminal",
+	"pencil",
+	"git-pull-request",
+	"shield-check",
+	"scroll-text",
+	"target",
+	"sparkles",
+] as const satisfies readonly AgentIcon[];
+
+export const agentIconLabels: Record<AgentIcon, string> = {
+	bot: "General",
+	inbox: "Triage",
+	search: "Research",
+	terminal: "Engineering",
+	pencil: "Writing",
+	"git-pull-request": "Review",
+	"shield-check": "Security",
+	"scroll-text": "Documentation",
+	target: "Planning",
+	sparkles: "Creative",
+};
+
+export const agentScopes = [
+	"issue:read",
+	"issue:manage",
+	"cycle:read",
+	"project:read",
+	"project:manage",
+	"label:read",
+	"label:manage",
+	"team:read",
+	"team:manage",
+	"membership:read",
+	"comment:read",
+	"comment:manage",
+	"notification:read",
+	"notification:manage",
+] as const satisfies readonly APIScope[];
+
+export type AgentScope = (typeof agentScopes)[number];
 
 export const holdOptionLabels: Record<AgentHold, string> = {
 	never: "Never hold",
@@ -91,7 +141,7 @@ export const holdLabels: {
 	},
 ];
 
-export const agentScopeGroups: { title: string; scopes: APIScope[] }[] = [
+export const agentScopeGroups: { title: string; scopes: AgentScope[] }[] = [
 	{ title: "Issues", scopes: ["issue:read", "issue:manage"] },
 	{ title: "Cycles", scopes: ["cycle:read"] },
 	{ title: "Projects", scopes: ["project:read", "project:manage"] },
@@ -133,8 +183,21 @@ export function registerFailure(problem: RegisterProblem): AgentFailure {
 			return { kind: "owner_invalid" };
 		case "agent_disabled":
 			return { kind: "disabled" };
+		case "agent_active":
+			return { kind: "active" };
+		case "agent_authority_missing":
+			return { kind: "authority_missing" };
 		case "agent_proposal_settled":
 			return { kind: "unavailable" };
+		case "token_scope_invalid":
+			return { kind: "scope_invalid" };
+		case "token_scope_exceeds":
+			return { kind: "scope_exceeds" };
+		case "token_may_not_mint":
+			return { kind: "forbidden" };
+		case "token_grant_invalid":
+		case "token_grant_missing":
+			return { kind: "grant_invalid" };
 		default:
 			return { kind: "unavailable" };
 	}
@@ -145,11 +208,17 @@ export function failureMessage(failure: AgentFailure): string {
 		case "name_taken":
 			return "An agent in this workspace already has that name.";
 		case "owner_invalid":
-			return "That person is not a member of this workspace, so they cannot own an agent here.";
+			return "Your account is not an active person in this workspace, so it cannot own an agent here.";
+		case "lifecycle_owner_invalid":
+			return "This agent's owner is no longer an active person in this workspace. Register a replacement agent.";
 		case "disabled":
 			return "That agent has been disabled.";
+		case "active":
+			return "That agent is already active.";
+		case "authority_missing":
+			return "That agent no longer has authority to restore. Register a new agent instead.";
 		case "scope_exceeds":
-			return "An agent cannot do more than the person it acts for. Choose fewer permissions, or a different owner.";
+			return "An agent cannot do more than you can. Choose fewer permissions.";
 		case "scope_invalid":
 			return "One of those permissions is not recognised.";
 		case "grant_invalid":
@@ -207,4 +276,3 @@ export function agentPath(workspace: string, agentId: string): string {
 export function approvalsPath(workspace: string): string {
 	return `/${workspace}/agents/approvals`;
 }
-

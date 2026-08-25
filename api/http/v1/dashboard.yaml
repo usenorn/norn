@@ -2071,6 +2071,7 @@ paths:
                 items: { $ref: '#/components/schemas/WorkspaceAgent' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
         '500': { $ref: '#/components/responses/Problem' }
     post:
       tags: [agents]
@@ -2112,6 +2113,7 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
         '500': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [agents]
@@ -2126,6 +2128,26 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/enable:
+    post:
+      tags: [agents]
+      operationId: enableWorkspaceAgent
+      summary: Re-enable an agent and issue a fresh credential with its previous authority
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/AgentId'
+      responses:
+        '201':
+          description: The re-enabled agent and its new credential
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisteredAgent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/agents/{agentId}/credential:
@@ -6810,7 +6832,7 @@ components:
           schema: { $ref: '#/components/schemas/ResetLinkUsedProblem' }
 
     AgentUnusable:
-      description: The agent cannot be registered or its proposal cannot be decided
+      description: The agent cannot complete the requested lifecycle or proposal operation
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/AgentUnusableProblem' }
@@ -9181,6 +9203,7 @@ components:
         - codebase.connected
         - codebase.disconnected
         - agent.disabled
+        - agent.enabled
         - agent.proposal_decided
         - webhook.registered
         - webhook.removed
@@ -9682,15 +9705,30 @@ components:
       type: string
       enum: [active, disabled]
 
+    AgentIcon:
+      type: string
+      enum:
+        - bot
+        - inbox
+        - search
+        - terminal
+        - pencil
+        - git-pull-request
+        - shield-check
+        - scroll-text
+        - target
+        - sparkles
+
     Agent:
       type: object
-      required: [id, workspaceId, accountId, ownerAccountId, name, status, actionLimit, createdAt]
+      required: [id, workspaceId, accountId, ownerAccountId, name, icon, status, actionLimit, createdAt]
       properties:
         id: { type: string, format: uuid }
         workspaceId: { type: string, format: uuid }
         accountId: { type: string, format: uuid }
         ownerAccountId: { type: string, format: uuid }
         name: { type: string }
+        icon: { $ref: '#/components/schemas/AgentIcon' }
         status: { $ref: '#/components/schemas/AgentStatus' }
         actionLimit:
           type: integer
@@ -9701,21 +9739,17 @@ components:
 
     WorkspaceAgent:
       type: object
-      required: [agent, ownerName, ownerEmail]
+      required: [agent, ownerName, ownerEmail, authority]
       properties:
         agent: { $ref: '#/components/schemas/Agent' }
         ownerName: { type: string }
         ownerEmail: { type: string }
+        authority: { $ref: '#/components/schemas/AgentAuthority' }
 
-    RegisterAgentRequest:
+    AgentAuthority:
       type: object
-      required: [name, scopes, allTeams]
+      required: [scopes, allTeams, teamIds]
       properties:
-        name: { type: string }
-        ownerAccountId:
-          type: string
-          format: uuid
-          description: Defaults to whoever is registering it.
         scopes:
           type: array
           items: { $ref: '#/components/schemas/APIScope' }
@@ -9723,7 +9757,25 @@ components:
         teamIds:
           type: array
           items: { type: string, format: uuid }
-        actionLimit: { type: integer, format: int32 }
+
+    RegisterAgentRequest:
+      type: object
+      required: [name, scopes, allTeams]
+      properties:
+        name: { type: string }
+        icon: { $ref: '#/components/schemas/AgentIcon' }
+        scopes:
+          type: array
+          items: { $ref: '#/components/schemas/APIScope' }
+        allTeams: { type: boolean }
+        teamIds:
+          type: array
+          items: { type: string, format: uuid }
+        actionLimit:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 6000
 
     RegisteredAgent:
       type: object
@@ -9826,7 +9878,14 @@ components:
                 - agent_name_taken
                 - agent_owner_invalid
                 - agent_disabled
+                - agent_active
+                - agent_authority_missing
                 - agent_proposal_settled
+                - token_scope_invalid
+                - token_scope_exceeds
+                - token_may_not_mint
+                - token_grant_invalid
+                - token_grant_missing
 
     AgentHeldProblem:
       allOf:
@@ -9880,6 +9939,29 @@ components:
 
     APIScope:
       type: string
+      enum:
+        - workspace:read
+        - workspace:update
+        - membership:read
+        - membership:manage
+        - invitation:read
+        - invitation:manage
+        - team:read
+        - team:manage
+        - team_membership:read
+        - team_membership:manage
+        - issue:read
+        - issue:manage
+        - cycle:read
+        - label:read
+        - label:manage
+        - project:read
+        - project:manage
+        - comment:read
+        - comment:manage
+        - notification:read
+        - notification:manage
+        - audit_log:read
 
     APITokenGrant:
       type: object

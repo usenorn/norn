@@ -72,6 +72,20 @@ func (mr *MockAgentMockRecorder) Disable(ctx, workspaceID, agentID, disabledAt a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Disable", reflect.TypeOf((*MockAgent)(nil).Disable), ctx, workspaceID, agentID, disabledAt)
 }
 
+// Enable mocks base method.
+func (m *MockAgent) Enable(ctx context.Context, workspaceID, agentID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Enable", ctx, workspaceID, agentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Enable indicates an expected call of Enable.
+func (mr *MockAgentMockRecorder) Enable(ctx, workspaceID, agentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Enable", reflect.TypeOf((*MockAgent)(nil).Enable), ctx, workspaceID, agentID)
+}
+
 // GetByAccountID mocks base method.
 func (m *MockAgent) GetByAccountID(ctx context.Context, accountID uuid.UUID) (entity.Agent, error) {
 	m.ctrl.T.Helper()

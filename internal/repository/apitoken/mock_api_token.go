@@ -88,6 +88,21 @@ func (mr *MockAPITokenMockRecorder) GetByTokenHash(ctx, tokenHash any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTokenHash", reflect.TypeOf((*MockAPIToken)(nil).GetByTokenHash), ctx, tokenHash)
 }
 
+// GetLatestByOwner mocks base method.
+func (m *MockAPIToken) GetLatestByOwner(ctx context.Context, accountID uuid.UUID) (entity.APIToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestByOwner", ctx, accountID)
+	ret0, _ := ret[0].(entity.APIToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLatestByOwner indicates an expected call of GetLatestByOwner.
+func (mr *MockAPITokenMockRecorder) GetLatestByOwner(ctx, accountID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestByOwner", reflect.TypeOf((*MockAPIToken)(nil).GetLatestByOwner), ctx, accountID)
+}
+
 // ListByOwner mocks base method.
 func (m *MockAPIToken) ListByOwner(ctx context.Context, accountID uuid.UUID) ([]entity.APIToken, error) {
 	m.ctrl.T.Helper()

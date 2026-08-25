@@ -21,30 +21,108 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for APIScope.
+const (
+	AuditLogRead         APIScope = "audit_log:read"
+	CommentManage        APIScope = "comment:manage"
+	CommentRead          APIScope = "comment:read"
+	CycleRead            APIScope = "cycle:read"
+	InvitationManage     APIScope = "invitation:manage"
+	InvitationRead       APIScope = "invitation:read"
+	IssueManage          APIScope = "issue:manage"
+	IssueRead            APIScope = "issue:read"
+	LabelManage          APIScope = "label:manage"
+	LabelRead            APIScope = "label:read"
+	MembershipManage     APIScope = "membership:manage"
+	MembershipRead       APIScope = "membership:read"
+	NotificationManage   APIScope = "notification:manage"
+	NotificationRead     APIScope = "notification:read"
+	ProjectManage        APIScope = "project:manage"
+	ProjectRead          APIScope = "project:read"
+	TeamManage           APIScope = "team:manage"
+	TeamMembershipManage APIScope = "team_membership:manage"
+	TeamMembershipRead   APIScope = "team_membership:read"
+	TeamRead             APIScope = "team:read"
+	WorkspaceRead        APIScope = "workspace:read"
+	WorkspaceUpdate      APIScope = "workspace:update"
+)
+
+// Valid indicates whether the value is a known member of the APIScope enum.
+func (e APIScope) Valid() bool {
+	switch e {
+	case AuditLogRead:
+		return true
+	case CommentManage:
+		return true
+	case CommentRead:
+		return true
+	case CycleRead:
+		return true
+	case InvitationManage:
+		return true
+	case InvitationRead:
+		return true
+	case IssueManage:
+		return true
+	case IssueRead:
+		return true
+	case LabelManage:
+		return true
+	case LabelRead:
+		return true
+	case MembershipManage:
+		return true
+	case MembershipRead:
+		return true
+	case NotificationManage:
+		return true
+	case NotificationRead:
+		return true
+	case ProjectManage:
+		return true
+	case ProjectRead:
+		return true
+	case TeamManage:
+		return true
+	case TeamMembershipManage:
+		return true
+	case TeamMembershipRead:
+		return true
+	case TeamRead:
+		return true
+	case WorkspaceRead:
+		return true
+	case WorkspaceUpdate:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for APITokenUnusableProblemCode.
 const (
-	TokenGrantInvalid APITokenUnusableProblemCode = "token_grant_invalid"
-	TokenGrantMissing APITokenUnusableProblemCode = "token_grant_missing"
-	TokenMayNotMint   APITokenUnusableProblemCode = "token_may_not_mint"
-	TokenNameTaken    APITokenUnusableProblemCode = "token_name_taken"
-	TokenScopeExceeds APITokenUnusableProblemCode = "token_scope_exceeds"
-	TokenScopeInvalid APITokenUnusableProblemCode = "token_scope_invalid"
+	APITokenUnusableProblemCodeTokenGrantInvalid APITokenUnusableProblemCode = "token_grant_invalid"
+	APITokenUnusableProblemCodeTokenGrantMissing APITokenUnusableProblemCode = "token_grant_missing"
+	APITokenUnusableProblemCodeTokenMayNotMint   APITokenUnusableProblemCode = "token_may_not_mint"
+	APITokenUnusableProblemCodeTokenNameTaken    APITokenUnusableProblemCode = "token_name_taken"
+	APITokenUnusableProblemCodeTokenScopeExceeds APITokenUnusableProblemCode = "token_scope_exceeds"
+	APITokenUnusableProblemCodeTokenScopeInvalid APITokenUnusableProblemCode = "token_scope_invalid"
 )
 
 // Valid indicates whether the value is a known member of the APITokenUnusableProblemCode enum.
 func (e APITokenUnusableProblemCode) Valid() bool {
 	switch e {
-	case TokenGrantInvalid:
+	case APITokenUnusableProblemCodeTokenGrantInvalid:
 		return true
-	case TokenGrantMissing:
+	case APITokenUnusableProblemCodeTokenGrantMissing:
 		return true
-	case TokenMayNotMint:
+	case APITokenUnusableProblemCodeTokenMayNotMint:
 		return true
-	case TokenNameTaken:
+	case APITokenUnusableProblemCodeTokenNameTaken:
 		return true
-	case TokenScopeExceeds:
+	case APITokenUnusableProblemCodeTokenScopeExceeds:
 		return true
-	case TokenScopeInvalid:
+	case APITokenUnusableProblemCodeTokenScopeInvalid:
 		return true
 	default:
 		return false
@@ -294,6 +372,48 @@ func (e AgentHold) Valid() bool {
 	}
 }
 
+// Defines values for AgentIcon.
+const (
+	Bot            AgentIcon = "bot"
+	GitPullRequest AgentIcon = "git-pull-request"
+	Inbox          AgentIcon = "inbox"
+	Pencil         AgentIcon = "pencil"
+	ScrollText     AgentIcon = "scroll-text"
+	Search         AgentIcon = "search"
+	ShieldCheck    AgentIcon = "shield-check"
+	Sparkles       AgentIcon = "sparkles"
+	Target         AgentIcon = "target"
+	Terminal       AgentIcon = "terminal"
+)
+
+// Valid indicates whether the value is a known member of the AgentIcon enum.
+func (e AgentIcon) Valid() bool {
+	switch e {
+	case Bot:
+		return true
+	case GitPullRequest:
+		return true
+	case Inbox:
+		return true
+	case Pencil:
+		return true
+	case ScrollText:
+		return true
+	case Search:
+		return true
+	case ShieldCheck:
+		return true
+	case Sparkles:
+		return true
+	case Target:
+		return true
+	case Terminal:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AgentProposalStatus.
 const (
 	AgentProposalStatusApplied  AgentProposalStatus = "applied"
@@ -338,15 +458,26 @@ func (e AgentStatus) Valid() bool {
 
 // Defines values for AgentUnusableProblemCode.
 const (
-	AgentUnusableProblemCodeAgentDisabled        AgentUnusableProblemCode = "agent_disabled"
-	AgentUnusableProblemCodeAgentNameTaken       AgentUnusableProblemCode = "agent_name_taken"
-	AgentUnusableProblemCodeAgentOwnerInvalid    AgentUnusableProblemCode = "agent_owner_invalid"
-	AgentUnusableProblemCodeAgentProposalSettled AgentUnusableProblemCode = "agent_proposal_settled"
+	AgentUnusableProblemCodeAgentActive           AgentUnusableProblemCode = "agent_active"
+	AgentUnusableProblemCodeAgentAuthorityMissing AgentUnusableProblemCode = "agent_authority_missing"
+	AgentUnusableProblemCodeAgentDisabled         AgentUnusableProblemCode = "agent_disabled"
+	AgentUnusableProblemCodeAgentNameTaken        AgentUnusableProblemCode = "agent_name_taken"
+	AgentUnusableProblemCodeAgentOwnerInvalid     AgentUnusableProblemCode = "agent_owner_invalid"
+	AgentUnusableProblemCodeAgentProposalSettled  AgentUnusableProblemCode = "agent_proposal_settled"
+	AgentUnusableProblemCodeTokenGrantInvalid     AgentUnusableProblemCode = "token_grant_invalid"
+	AgentUnusableProblemCodeTokenGrantMissing     AgentUnusableProblemCode = "token_grant_missing"
+	AgentUnusableProblemCodeTokenMayNotMint       AgentUnusableProblemCode = "token_may_not_mint"
+	AgentUnusableProblemCodeTokenScopeExceeds     AgentUnusableProblemCode = "token_scope_exceeds"
+	AgentUnusableProblemCodeTokenScopeInvalid     AgentUnusableProblemCode = "token_scope_invalid"
 )
 
 // Valid indicates whether the value is a known member of the AgentUnusableProblemCode enum.
 func (e AgentUnusableProblemCode) Valid() bool {
 	switch e {
+	case AgentUnusableProblemCodeAgentActive:
+		return true
+	case AgentUnusableProblemCodeAgentAuthorityMissing:
+		return true
 	case AgentUnusableProblemCodeAgentDisabled:
 		return true
 	case AgentUnusableProblemCodeAgentNameTaken:
@@ -354,6 +485,16 @@ func (e AgentUnusableProblemCode) Valid() bool {
 	case AgentUnusableProblemCodeAgentOwnerInvalid:
 		return true
 	case AgentUnusableProblemCodeAgentProposalSettled:
+		return true
+	case AgentUnusableProblemCodeTokenGrantInvalid:
+		return true
+	case AgentUnusableProblemCodeTokenGrantMissing:
+		return true
+	case AgentUnusableProblemCodeTokenMayNotMint:
+		return true
+	case AgentUnusableProblemCodeTokenScopeExceeds:
+		return true
+	case AgentUnusableProblemCodeTokenScopeInvalid:
 		return true
 	default:
 		return false
@@ -390,6 +531,7 @@ const (
 	AuditActionAccountPasswordChanged       AuditAction = "account.password_changed"
 	AuditActionAccountPasswordReset         AuditAction = "account.password_reset"
 	AuditActionAgentDisabled                AuditAction = "agent.disabled"
+	AuditActionAgentEnabled                 AuditAction = "agent.enabled"
 	AuditActionAgentProposalDecided         AuditAction = "agent.proposal_decided"
 	AuditActionAgentRegistered              AuditAction = "agent.registered"
 	AuditActionAuditExported                AuditAction = "audit.exported"
@@ -450,6 +592,8 @@ func (e AuditAction) Valid() bool {
 	case AuditActionAccountPasswordReset:
 		return true
 	case AuditActionAgentDisabled:
+		return true
+	case AuditActionAgentEnabled:
 		return true
 	case AuditActionAgentProposalDecided:
 		return true
@@ -4066,7 +4210,7 @@ func (e ListWorkspaceProjectActivityParamsOrder) Valid() bool {
 }
 
 // APIScope defines model for APIScope.
-type APIScope = string
+type APIScope string
 
 // APIToken defines model for APIToken.
 type APIToken struct {
@@ -4250,6 +4394,7 @@ type Agent struct {
 	ActionLimit    int32              `json:"actionLimit"`
 	CreatedAt      time.Time          `json:"createdAt"`
 	DisabledAt     *time.Time         `json:"disabledAt,omitempty"`
+	Icon           AgentIcon          `json:"icon"`
 	Id             openapi_types.UUID `json:"id"`
 	Name           string             `json:"name"`
 	OwnerAccountId openapi_types.UUID `json:"ownerAccountId"`
@@ -4259,6 +4404,13 @@ type Agent struct {
 
 // AgentAction defines model for AgentAction.
 type AgentAction string
+
+// AgentAuthority defines model for AgentAuthority.
+type AgentAuthority struct {
+	AllTeams bool                 `json:"allTeams"`
+	Scopes   []APIScope           `json:"scopes"`
+	TeamIds  []openapi_types.UUID `json:"teamIds"`
+}
 
 // AgentHeldProblem defines model for AgentHeldProblem.
 type AgentHeldProblem struct {
@@ -4277,6 +4429,9 @@ type AgentHeldProblemCode string
 
 // AgentHold Whether a write of this kind waits for a person.
 type AgentHold string
+
+// AgentIcon defines model for AgentIcon.
+type AgentIcon string
 
 // AgentProposal defines model for AgentProposal.
 type AgentProposal struct {
@@ -6793,14 +6948,12 @@ type RedeemRecoveryCodeRequest struct {
 
 // RegisterAgentRequest defines model for RegisterAgentRequest.
 type RegisterAgentRequest struct {
-	ActionLimit *int32 `json:"actionLimit,omitempty"`
-	AllTeams    bool   `json:"allTeams"`
-	Name        string `json:"name"`
-
-	// OwnerAccountId Defaults to whoever is registering it.
-	OwnerAccountId *openapi_types.UUID   `json:"ownerAccountId,omitempty"`
-	Scopes         []APIScope            `json:"scopes"`
-	TeamIds        *[]openapi_types.UUID `json:"teamIds,omitempty"`
+	ActionLimit *int32                `json:"actionLimit,omitempty"`
+	AllTeams    bool                  `json:"allTeams"`
+	Icon        *AgentIcon            `json:"icon,omitempty"`
+	Name        string                `json:"name"`
+	Scopes      []APIScope            `json:"scopes"`
+	TeamIds     *[]openapi_types.UUID `json:"teamIds,omitempty"`
 }
 
 // RegisteredAgent defines model for RegisteredAgent.
@@ -7998,9 +8151,10 @@ type WorkspaceAPIToken struct {
 
 // WorkspaceAgent defines model for WorkspaceAgent.
 type WorkspaceAgent struct {
-	Agent      Agent  `json:"agent"`
-	OwnerEmail string `json:"ownerEmail"`
-	OwnerName  string `json:"ownerName"`
+	Agent      Agent          `json:"agent"`
+	Authority  AgentAuthority `json:"authority"`
+	OwnerEmail string         `json:"ownerEmail"`
+	OwnerName  string         `json:"ownerName"`
 }
 
 // WorkspaceAuthPolicy defines model for WorkspaceAuthPolicy.
@@ -9654,6 +9808,11 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/credential (the `RotateWorkspaceAgentCredential` operationId).
 	RotateWorkspaceAgentCredential(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
+	EnableWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 	//
@@ -13094,6 +13253,21 @@ func (c *Client) DisconnectAgentCodebase(ctx context.Context, workspaceId Worksp
 // Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/credential (the `RotateWorkspaceAgentCredential` operationId).
 func (c *Client) RotateWorkspaceAgentCredential(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRotateWorkspaceAgentCredentialRequest(c.Server, workspaceId, agentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
+func (c *Client) EnableWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEnableWorkspaceAgentRequest(c.Server, workspaceId, agentId)
 	if err != nil {
 		return nil, err
 	}
@@ -20741,6 +20915,47 @@ func NewRotateWorkspaceAgentCredentialRequest(server string, workspaceId Workspa
 	}
 
 	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/credential", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewEnableWorkspaceAgentRequest constructs an http.Request for the EnableWorkspaceAgent method
+func NewEnableWorkspaceAgentRequest(server string, workspaceId WorkspaceId, agentId AgentId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/enable", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -33202,6 +33417,13 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/credential (the `RotateWorkspaceAgentCredential` operationId).
 	RotateWorkspaceAgentCredentialWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*RotateWorkspaceAgentCredentialResponse, error)
 
+	// EnableWorkspaceAgentWithResponse Re-enable an agent and issue a fresh credential with its previous authority
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
+	EnableWorkspaceAgentWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*EnableWorkspaceAgentResponse, error)
+
 	// DownloadWorkspaceAttachmentWithResponse Trade access to the issue for a short-lived link to the bytes
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -39329,6 +39551,8 @@ type ListWorkspaceAgentsResponse struct {
 	ApplicationproblemJSON401 *Problem
 	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
 	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentUnusable
 	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
 	ApplicationproblemJSON500 *Problem
 }
@@ -39346,6 +39570,11 @@ func (r ListWorkspaceAgentsResponse) GetApplicationproblemJSON401() *Problem {
 // GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
 func (r ListWorkspaceAgentsResponse) GetApplicationproblemJSON403() *Forbidden {
 	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ListWorkspaceAgentsResponse) GetApplicationproblemJSON409() *AgentUnusable {
+	return r.ApplicationproblemJSON409
 }
 
 // GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
@@ -39531,6 +39760,8 @@ type GetWorkspaceAgentResponse struct {
 	ApplicationproblemJSON403 *Forbidden
 	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
 	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentUnusable
 	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
 	ApplicationproblemJSON500 *Problem
 }
@@ -39553,6 +39784,11 @@ func (r GetWorkspaceAgentResponse) GetApplicationproblemJSON403() *Forbidden {
 // GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
 func (r GetWorkspaceAgentResponse) GetApplicationproblemJSON404() *Problem {
 	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r GetWorkspaceAgentResponse) GetApplicationproblemJSON409() *AgentUnusable {
+	return r.ApplicationproblemJSON409
 }
 
 // GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
@@ -39873,6 +40109,82 @@ func (r RotateWorkspaceAgentCredentialResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RotateWorkspaceAgentCredentialResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type EnableWorkspaceAgentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *RegisteredAgent
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentUnusable
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r EnableWorkspaceAgentResponse) GetJSON201() *RegisteredAgent {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r EnableWorkspaceAgentResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r EnableWorkspaceAgentResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r EnableWorkspaceAgentResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r EnableWorkspaceAgentResponse) GetApplicationproblemJSON409() *AgentUnusable {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r EnableWorkspaceAgentResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r EnableWorkspaceAgentResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r EnableWorkspaceAgentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EnableWorkspaceAgentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r EnableWorkspaceAgentResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -58522,6 +58834,19 @@ func (c *ClientWithResponses) RotateWorkspaceAgentCredentialWithResponse(ctx con
 	return ParseRotateWorkspaceAgentCredentialResponse(rsp)
 }
 
+// EnableWorkspaceAgentWithResponse Re-enable an agent and issue a fresh credential with its previous authority
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
+func (c *ClientWithResponses) EnableWorkspaceAgentWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*EnableWorkspaceAgentResponse, error) {
+	rsp, err := c.EnableWorkspaceAgent(ctx, workspaceId, agentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEnableWorkspaceAgentResponse(rsp)
+}
+
 // DownloadWorkspaceAttachmentWithResponse Trade access to the issue for a short-lived link to the bytes
 //
 // Returns a wrapper object for the known response body format(s).
@@ -65829,6 +66154,13 @@ func ParseListWorkspaceAgentsResponse(rsp *http.Response) (*ListWorkspaceAgentsR
 		}
 		response.ApplicationproblemJSON403 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentUnusable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -65993,6 +66325,13 @@ func ParseGetWorkspaceAgentResponse(rsp *http.Response) (*GetWorkspaceAgentRespo
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentUnusable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -66184,6 +66523,67 @@ func ParseRotateWorkspaceAgentCredentialResponse(rsp *http.Response) (*RotateWor
 	}
 
 	response := &RotateWorkspaceAgentCredentialResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest RegisteredAgent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentUnusable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseEnableWorkspaceAgentResponse parses an HTTP response from a EnableWorkspaceAgentWithResponse call
+func ParseEnableWorkspaceAgentResponse(rsp *http.Response) (*EnableWorkspaceAgentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EnableWorkspaceAgentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -80405,6 +80805,9 @@ type ServerInterface interface {
 	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
 	RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
+	EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 	// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
 	DownloadWorkspaceAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, attachmentId AttachmentId)
@@ -81518,6 +81921,12 @@ func (_ Unimplemented) DisconnectAgentCodebase(w http.ResponseWriter, r *http.Re
 // RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 // (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
 func (_ Unimplemented) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
+// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
+func (_ Unimplemented) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -84418,6 +84827,41 @@ func (siw *ServerInterfaceWrapper) RotateWorkspaceAgentCredential(w http.Respons
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RotateWorkspaceAgentCredential(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnableWorkspaceAgent operation middleware
+func (siw *ServerInterfaceWrapper) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnableWorkspaceAgent(w, r, workspaceId, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -93809,6 +94253,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}", wrapper.GetWorkspaceAgent)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/enable", wrapper.EnableWorkspaceAgent)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/credential", wrapper.RotateWorkspaceAgentCredential)
 	})
 	r.Group(func(r chi.Router) {
@@ -99060,6 +99507,22 @@ func (response ListWorkspaceAgents403ApplicationProblemPlusJSONResponse) VisitLi
 	return err
 }
 
+type ListWorkspaceAgents409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceAgents409ApplicationProblemPlusJSONResponse) VisitListWorkspaceAgentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceAgents500ApplicationProblemPlusJSONResponse Problem
 
 func (response ListWorkspaceAgents500ApplicationProblemPlusJSONResponse) VisitListWorkspaceAgentsResponse(w http.ResponseWriter) error {
@@ -99315,6 +99778,22 @@ func (response GetWorkspaceAgent404ApplicationProblemPlusJSONResponse) VisitGetW
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAgent409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceAgent409ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -99688,6 +100167,105 @@ func (response RotateWorkspaceAgentCredential409ApplicationProblemPlusJSONRespon
 type RotateWorkspaceAgentCredential500ApplicationProblemPlusJSONResponse Problem
 
 func (response RotateWorkspaceAgentCredential500ApplicationProblemPlusJSONResponse) VisitRotateWorkspaceAgentCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableWorkspaceAgentRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+}
+
+type EnableWorkspaceAgentResponseObject interface {
+	VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error
+}
+
+type EnableWorkspaceAgent201JSONResponse RegisteredAgent
+
+func (response EnableWorkspaceAgent201JSONResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableWorkspaceAgent401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response EnableWorkspaceAgent401ApplicationProblemPlusJSONResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableWorkspaceAgent403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response EnableWorkspaceAgent403ApplicationProblemPlusJSONResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableWorkspaceAgent404ApplicationProblemPlusJSONResponse Problem
+
+func (response EnableWorkspaceAgent404ApplicationProblemPlusJSONResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableWorkspaceAgent409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response EnableWorkspaceAgent409ApplicationProblemPlusJSONResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableWorkspaceAgent500ApplicationProblemPlusJSONResponse Problem
+
+func (response EnableWorkspaceAgent500ApplicationProblemPlusJSONResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -122094,6 +122672,9 @@ type StrictServerInterface interface {
 	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
 	RotateWorkspaceAgentCredential(ctx context.Context, request RotateWorkspaceAgentCredentialRequestObject) (RotateWorkspaceAgentCredentialResponseObject, error)
+	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
+	EnableWorkspaceAgent(ctx context.Context, request EnableWorkspaceAgentRequestObject) (EnableWorkspaceAgentResponseObject, error)
 	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 	// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
 	DownloadWorkspaceAttachment(ctx context.Context, request DownloadWorkspaceAttachmentRequestObject) (DownloadWorkspaceAttachmentResponseObject, error)
@@ -124659,6 +125240,33 @@ func (sh *strictHandler) RotateWorkspaceAgentCredential(w http.ResponseWriter, r
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RotateWorkspaceAgentCredentialResponseObject); ok {
 		if err := validResponse.VisitRotateWorkspaceAgentCredentialResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EnableWorkspaceAgent operation middleware
+func (sh *strictHandler) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request EnableWorkspaceAgentRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EnableWorkspaceAgent(ctx, request.(EnableWorkspaceAgentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EnableWorkspaceAgent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EnableWorkspaceAgentResponseObject); ok {
+		if err := validResponse.VisitEnableWorkspaceAgentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

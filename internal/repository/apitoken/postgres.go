@@ -116,6 +116,21 @@ func (r *apiTokenRepository) GetByID(ctx context.Context, tokenID uuid.UUID) (en
 	return r.one(ctx, `SELECT`+tokenColumns+` FROM api_tokens t WHERE t.id = $1`, tokenID.String())
 }
 
+func (r *apiTokenRepository) GetLatestByOwner(
+	ctx context.Context,
+	accountID uuid.UUID,
+) (entity.APIToken, error) {
+	return r.one(
+		ctx,
+		`SELECT`+tokenColumns+`
+		FROM api_tokens t
+		WHERE t.account_id = $1
+		ORDER BY t.created_at DESC, t.id DESC
+		LIMIT 1`,
+		accountID.String(),
+	)
+}
+
 func (r *apiTokenRepository) ListByOwner(ctx context.Context, accountID uuid.UUID) ([]entity.APIToken, error) {
 	return r.many(
 		ctx,
