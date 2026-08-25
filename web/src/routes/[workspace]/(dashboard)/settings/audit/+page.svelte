@@ -204,9 +204,6 @@
 					</div>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Nothing recorded so far is lost, and nothing is being removed while this is off.
-						<a class="underline underline-offset-2 hover:text-ink-900" href="/settings/licence">
-							See what this instance is licensed for
-						</a>.
 					</p>
 				</section>
 			{:else if record.kind === "forbidden"}

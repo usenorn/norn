@@ -18,29 +18,17 @@ const formId = "workspace-settings-form";
 const defaultTeamMessage = "That team cannot be the default.";
 
 export const load: PageServerLoad = async ({ locals, parent }) => {
-	const { workspace, teams, member } = await parent();
+	const { workspace, teams } = await parent();
 
-	const [protocol, identities, storage] = await Promise.all([
-		locals.api.GET("/workspaces/{workspaceId}/sso", {
-			params: { path: { workspaceId: workspace.id } },
-		}),
-		locals.api.GET("/workspaces/{workspaceId}/sso/identities", {
-			params: { path: { workspaceId: workspace.id } },
-		}),
-		locals.api.GET("/workspaces/{workspaceId}/storage", {
-			params: { path: { workspaceId: workspace.id } },
-		}),
-	]);
+	const storage = await locals.api.GET("/workspaces/{workspaceId}/storage", {
+		params: { path: { workspaceId: workspace.id } },
+	});
 
 	return {
 		settings: settingsFor(workspace),
 		storage: storageReading(storage.data),
 		workspace,
 		teams: (teams ?? []).filter((team) => team.status === "active"),
-		provider: {
-			configured: Boolean(protocol.data?.protocol),
-			linked: (identities.data ?? []).some((identity) => identity.accountId === member.id),
-		},
 		form: await superValidate<WorkspaceSettingsForm, WorkspaceSettings>(
 			{
 				name: workspace.name,

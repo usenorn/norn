@@ -1,34 +1,31 @@
 <script lang="ts">
 	import AccountSwitcher from "$lib/account/account-switcher.svelte";
 	import { withSlot } from "$lib/account/accounts";
-	import { userSettingsNavigation } from "$lib/settings/navigation";
+	import { workspaceSettingsNavigation } from "$lib/settings/navigation";
 	import SettingsShell from "$lib/settings/settings-shell.svelte";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();
 
-	const back = $derived(
-		data.workspaces.length > 0
-			? withSlot(workspacePath(data.workspaces[0].slug, "/my-tasks"), data.account.slot)
-			: "/"
-	);
-	const backLabel = $derived(`Back to ${data.workspaces[0]?.name ?? "Norn"}`);
+	const slug = $derived(data.workspace.slug);
+	const sections = $derived(workspaceSettingsNavigation(slug));
+	const back = $derived(withSlot(workspacePath(slug, "/my-tasks"), data.member.slot));
 </script>
 
 <SettingsShell
-	kindLabel="User settings"
-	scopeName={data.account.name}
+	kindLabel="Workspace settings"
+	scopeName={data.workspace.name}
 	backHref={back}
-	{backLabel}
-	sections={userSettingsNavigation}
+	backLabel={`Back to ${data.workspace.name}`}
+	{sections}
 >
 	{#snippet scope()}
 		<AccountSwitcher
 			accounts={data.accounts}
-			actingAccountId={data.account.id}
-			trigger="person"
-			context="user-settings"
+			actingAccountId={data.member.id}
+			workspace={{ slug, name: data.workspace.name }}
+			context="workspace-settings"
 		/>
 	{/snippet}
 

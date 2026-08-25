@@ -220,9 +220,6 @@
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Provisioning is never charged per person, and members it already created keep their
 						places.
-						<a class="underline underline-offset-2 hover:text-ink-900" href="/settings/licence">
-							See what this instance is licensed for
-						</a>.
 					</p>
 				</section>
 			{:else if view.kind === "forbidden"}
