@@ -34,6 +34,7 @@ type WorkspaceAgent struct {
 	DisabledAt     null.Time `boil:"disabled_at" json:"disabled_at,omitempty" toml:"disabled_at" yaml:"disabled_at,omitempty"`
 	CreatedAt      time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt      time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Icon           string    `boil:"icon" json:"icon" toml:"icon" yaml:"icon"`
 
 	R *workspaceAgentR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceAgentL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -50,6 +51,7 @@ var WorkspaceAgentColumns = struct {
 	DisabledAt     string
 	CreatedAt      string
 	UpdatedAt      string
+	Icon           string
 }{
 	ID:             "id",
 	WorkspaceID:    "workspace_id",
@@ -61,6 +63,7 @@ var WorkspaceAgentColumns = struct {
 	DisabledAt:     "disabled_at",
 	CreatedAt:      "created_at",
 	UpdatedAt:      "updated_at",
+	Icon:           "icon",
 }
 
 var WorkspaceAgentTableColumns = struct {
@@ -74,6 +77,7 @@ var WorkspaceAgentTableColumns = struct {
 	DisabledAt     string
 	CreatedAt      string
 	UpdatedAt      string
+	Icon           string
 }{
 	ID:             "workspace_agents.id",
 	WorkspaceID:    "workspace_agents.workspace_id",
@@ -85,6 +89,7 @@ var WorkspaceAgentTableColumns = struct {
 	DisabledAt:     "workspace_agents.disabled_at",
 	CreatedAt:      "workspace_agents.created_at",
 	UpdatedAt:      "workspace_agents.updated_at",
+	Icon:           "workspace_agents.icon",
 }
 
 // Generated where
@@ -100,6 +105,7 @@ var WorkspaceAgentWhere = struct {
 	DisabledAt     whereHelpernull_Time
 	CreatedAt      whereHelpertime_Time
 	UpdatedAt      whereHelpertime_Time
+	Icon           whereHelperstring
 }{
 	ID:             whereHelperstring{field: "\"workspace_agents\".\"id\""},
 	WorkspaceID:    whereHelperstring{field: "\"workspace_agents\".\"workspace_id\""},
@@ -111,6 +117,7 @@ var WorkspaceAgentWhere = struct {
 	DisabledAt:     whereHelpernull_Time{field: "\"workspace_agents\".\"disabled_at\""},
 	CreatedAt:      whereHelpertime_Time{field: "\"workspace_agents\".\"created_at\""},
 	UpdatedAt:      whereHelpertime_Time{field: "\"workspace_agents\".\"updated_at\""},
+	Icon:           whereHelperstring{field: "\"workspace_agents\".\"icon\""},
 }
 
 // WorkspaceAgentRels is where relationship names are stored.
@@ -264,9 +271,9 @@ func (r *workspaceAgentR) GetAgentWorkspaceRunners() WorkspaceRunnerSlice {
 type workspaceAgentL struct{}
 
 var (
-	workspaceAgentAllColumns            = []string{"id", "workspace_id", "account_id", "owner_account_id", "name", "status", "action_limit", "disabled_at", "created_at", "updated_at"}
+	workspaceAgentAllColumns            = []string{"id", "workspace_id", "account_id", "owner_account_id", "name", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon"}
 	workspaceAgentColumnsWithoutDefault = []string{"workspace_id", "account_id", "owner_account_id", "name"}
-	workspaceAgentColumnsWithDefault    = []string{"id", "status", "action_limit", "disabled_at", "created_at", "updated_at"}
+	workspaceAgentColumnsWithDefault    = []string{"id", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon"}
 	workspaceAgentPrimaryKeyColumns     = []string{"id"}
 	workspaceAgentGeneratedColumns      = []string{}
 )

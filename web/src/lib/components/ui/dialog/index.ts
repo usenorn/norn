@@ -1,5 +1,8 @@
 import Close from "./dialog-close.svelte";
-import Content from "./dialog-content.svelte";
+import Content, {
+	dialogContentVariants,
+	type DialogContentVariant,
+} from "./dialog-content.svelte";
 import Description from "./dialog-description.svelte";
 import Footer from "./dialog-footer.svelte";
 import Header from "./dialog-header.svelte";
@@ -18,9 +21,10 @@ export {
 	Trigger,
 	Overlay,
 	Content,
+	dialogContentVariants,
+	type DialogContentVariant,
 	Description,
 	Close,
-	//
 	Root as Dialog,
 	Title as DialogTitle,
 	Portal as DialogPortal,

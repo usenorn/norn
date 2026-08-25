@@ -1496,6 +1496,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/agents/{agentId}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Re-enable an agent and issue a fresh credential with its previous authority */
+        post: operations["enableWorkspaceAgent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents/{agentId}/credential": {
         parameters: {
             query?: never;
@@ -5800,7 +5817,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -6131,6 +6148,8 @@ export interface components {
         AccountKind: "person" | "agent" | "integration";
         /** @enum {string} */
         AgentStatus: "active" | "disabled";
+        /** @enum {string} */
+        AgentIcon: "bot" | "inbox" | "search" | "terminal" | "pencil" | "git-pull-request" | "shield-check" | "scroll-text" | "target" | "sparkles";
         Agent: {
             /** Format: uuid */
             id: string;
@@ -6141,6 +6160,7 @@ export interface components {
             /** Format: uuid */
             ownerAccountId: string;
             name: string;
+            icon: components["schemas"]["AgentIcon"];
             status: components["schemas"]["AgentStatus"];
             /**
              * Format: int32
@@ -6156,14 +6176,16 @@ export interface components {
             agent: components["schemas"]["Agent"];
             ownerName: string;
             ownerEmail: string;
+            authority: components["schemas"]["AgentAuthority"];
+        };
+        AgentAuthority: {
+            scopes: components["schemas"]["APIScope"][];
+            allTeams: boolean;
+            teamIds: string[];
         };
         RegisterAgentRequest: {
             name: string;
-            /**
-             * Format: uuid
-             * @description Defaults to whoever is registering it.
-             */
-            ownerAccountId?: string;
+            icon?: components["schemas"]["AgentIcon"];
             scopes: components["schemas"]["APIScope"][];
             allTeams: boolean;
             teamIds?: string[];
@@ -6239,7 +6261,7 @@ export interface components {
         };
         AgentUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "agent_name_taken" | "agent_owner_invalid" | "agent_disabled" | "agent_proposal_settled";
+            code: "agent_name_taken" | "agent_owner_invalid" | "agent_disabled" | "agent_active" | "agent_authority_missing" | "agent_proposal_settled" | "token_scope_invalid" | "token_scope_exceeds" | "token_may_not_mint" | "token_grant_invalid" | "token_grant_missing";
         };
         AgentHeldProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -6266,7 +6288,8 @@ export interface components {
             /** @description True for the account the request that asked was acting as. */
             current: boolean;
         };
-        APIScope: string;
+        /** @enum {string} */
+        APIScope: "workspace:read" | "workspace:update" | "membership:read" | "membership:manage" | "invitation:read" | "invitation:manage" | "team:read" | "team:manage" | "team_membership:read" | "team_membership:manage" | "issue:read" | "issue:manage" | "cycle:read" | "label:read" | "label:manage" | "project:read" | "project:manage" | "comment:read" | "comment:manage" | "notification:read" | "notification:manage" | "audit_log:read";
         APITokenGrant: {
             /** Format: uuid */
             workspaceId: string;
@@ -7703,7 +7726,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["ResetLinkUsedProblem"];
             };
         };
-        /** @description The agent cannot be registered or its proposal cannot be decided */
+        /** @description The agent cannot complete the requested lifecycle or proposal operation */
         AgentUnusable: {
             headers: {
                 [name: string]: unknown;
@@ -11012,6 +11035,7 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
+            409: components["responses"]["AgentUnusable"];
             500: components["responses"]["Problem"];
         };
     };
@@ -11070,6 +11094,7 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            409: components["responses"]["AgentUnusable"];
             500: components["responses"]["Problem"];
         };
     };
@@ -11095,6 +11120,34 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    enableWorkspaceAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The re-enabled agent and its new credential */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisteredAgent"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentUnusable"];
             500: components["responses"]["Problem"];
         };
     };

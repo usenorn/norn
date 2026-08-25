@@ -109,14 +109,33 @@ func adminOnlyScopes() entity.APIScopeSet {
 	return entity.APIScopeSet{entity.NewAPIScope(entity.ResourceLabel, entity.ActionManage)}
 }
 
+func expectActivePerson(h *harness, accountID uuid.UUID) {
+	h.accounts.EXPECT().
+		GetByID(gomock.Any(), accountID).
+		Return(entity.Account{
+			ID:     accountID,
+			Kind:   entity.AccountKindPerson,
+			Status: entity.AccountStatusActive,
+		}, nil)
+}
+
+func expectActiveOwner(h *harness, accountID uuid.UUID) {
+	h.members.EXPECT().
+		Get(gomock.Any(), h.workspaceID, accountID).
+		Return(entity.Membership{Role: entity.MembershipRoleMember}, nil)
+	expectActivePerson(h, accountID)
+}
+
 func TestRegisteringAnAgentCreatesANonHumanAccountThatCannotSignIn(t *testing.T) {
 	h := newHarness(t, entity.MembershipRoleAdmin)
 
 	var created entity.Account
+	var createdAgent entity.Agent
 
 	h.members.EXPECT().
 		Get(gomock.Any(), h.workspaceID, h.adminID).
 		Return(entity.Membership{Role: entity.MembershipRoleAdmin}, nil)
+	expectActivePerson(h, h.adminID)
 
 	h.accounts.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
@@ -132,6 +151,7 @@ func TestRegisteringAnAgentCreatesANonHumanAccountThatCannotSignIn(t *testing.T)
 		Create(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, agent entity.Agent) (entity.Agent, error) {
 			agent.ID = uuid.New()
+			createdAgent = agent
 
 			return agent, nil
 		})
@@ -162,6 +182,14 @@ func TestRegisteringAnAgentCreatesANonHumanAccountThatCannotSignIn(t *testing.T)
 	if !strings.HasPrefix(registered.Value, entity.APITokenPrefix) {
 		t.Error("the agent was not handed a usable credential")
 	}
+
+	if createdAgent.Icon != entity.AgentIconBot {
+		t.Fatalf("default icon = %q, want bot", createdAgent.Icon)
+	}
+
+	if createdAgent.OwnerAccountID != h.adminID {
+		t.Fatalf("owner account = %s, want current account %s", createdAgent.OwnerAccountID, h.adminID)
+	}
 }
 
 func TestAnAgentIsRegisteredAsAViewerBecauseItsMembershipConfersNothing(t *testing.T) {
@@ -170,6 +198,7 @@ func TestAnAgentIsRegisteredAsAViewerBecauseItsMembershipConfersNothing(t *testi
 	h.members.EXPECT().
 		Get(gomock.Any(), h.workspaceID, h.adminID).
 		Return(entity.Membership{Role: entity.MembershipRoleAdmin}, nil)
+	expectActivePerson(h, h.adminID)
 
 	var membership entity.Membership
 
@@ -217,51 +246,114 @@ func TestAnAgentIsRegisteredAsAViewerBecauseItsMembershipConfersNothing(t *testi
 	}
 }
 
-func TestAnAgentCannotBeGivenMoreThanItsOwnerHas(t *testing.T) {
-	h := newHarness(t, entity.MembershipRoleAdmin)
-
-	owner := uuid.New()
+func TestAnAgentCannotBeGivenMoreThanItsCurrentOwnerHas(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
 
 	h.members.EXPECT().
-		Get(gomock.Any(), h.workspaceID, owner).
+		Get(gomock.Any(), h.workspaceID, h.adminID).
 		Return(entity.Membership{Role: entity.MembershipRoleMember}, nil)
+	expectActivePerson(h, h.adminID)
 
 	_, err := h.service.Register(context.Background(), service.RegisterAgentInput{
-		WorkspaceID:    h.workspaceID,
-		Name:           "triage-bot",
-		OwnerAccountID: owner,
-		Scopes:         adminOnlyScopes(),
-		AllTeams:       true,
+		WorkspaceID: h.workspaceID,
+		Name:        "triage-bot",
+		Scopes:      adminOnlyScopes(),
+		AllTeams:    true,
 	})
 
 	if !errors.Is(err, entity.ErrAPITokenScopeExceeds) {
 		t.Fatalf(
-			"Register error = %v, want ErrAPITokenScopeExceeds. An admin registering an agent for "+
-				"somebody else must not hand it more than that person can do.",
+			"Register error = %v, want ErrAPITokenScopeExceeds. An agent must not receive more "+
+				"than the current person can do.",
 			err,
 		)
 	}
 }
 
-func TestAnAgentCannotBeOwnedBySomebodyOutsideTheWorkspace(t *testing.T) {
+func TestRegisteringAnAgentValidatesItsIconAndActionLimitBeforeWriting(t *testing.T) {
+	limit := entity.AgentActionLimitMax + 1
 	h := newHarness(t, entity.MembershipRoleAdmin)
 
-	outsider := uuid.New()
-
-	h.members.EXPECT().
-		Get(gomock.Any(), h.workspaceID, outsider).
-		Return(entity.Membership{}, entity.ErrMembershipNotFound)
-
 	_, err := h.service.Register(context.Background(), service.RegisterAgentInput{
-		WorkspaceID:    h.workspaceID,
-		Name:           "triage-bot",
-		OwnerAccountID: outsider,
-		Scopes:         readScopes(),
-		AllTeams:       true,
+		WorkspaceID: h.workspaceID,
+		Name:        "triage-bot",
+		Icon:        "wand",
+		Scopes:      readScopes(),
+		AllTeams:    true,
+		ActionLimit: &limit,
 	})
 
-	if !errors.Is(err, entity.ErrAgentOwnerInvalid) {
-		t.Fatalf("Register error = %v, want ErrAgentOwnerInvalid", err)
+	var validation entity.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("Register error = %v, want ValidationError", err)
+	}
+
+	if len(validation.Fields) != 2 {
+		t.Fatalf("validation fields = %+v, want icon and actionLimit", validation.Fields)
+	}
+}
+
+func TestAnAgentOwnerMustBeAnActivePerson(t *testing.T) {
+	now := time.Now().UTC()
+
+	for _, test := range []struct {
+		name       string
+		membership entity.Membership
+		account    *entity.Account
+	}{
+		{
+			name:       "deactivated membership",
+			membership: entity.Membership{Role: entity.MembershipRoleMember, DeactivatedAt: &now},
+		},
+		{
+			name:       "agent account",
+			membership: entity.Membership{Role: entity.MembershipRoleMember},
+			account: &entity.Account{
+				Kind:   entity.AccountKindAgent,
+				Status: entity.AccountStatusActive,
+			},
+		},
+		{
+			name:       "integration account",
+			membership: entity.Membership{Role: entity.MembershipRoleMember},
+			account: &entity.Account{
+				Kind:   entity.AccountKindIntegration,
+				Status: entity.AccountStatusActive,
+			},
+		},
+		{
+			name:       "deactivated person",
+			membership: entity.Membership{Role: entity.MembershipRoleMember},
+			account: &entity.Account{
+				Kind:   entity.AccountKindPerson,
+				Status: entity.AccountStatusDeactivated,
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			h := newHarness(t, entity.MembershipRoleAdmin)
+			ownerID := h.adminID
+
+			h.members.EXPECT().
+				Get(gomock.Any(), h.workspaceID, ownerID).
+				Return(test.membership, nil)
+
+			if test.account != nil {
+				test.account.ID = ownerID
+				h.accounts.EXPECT().GetByID(gomock.Any(), ownerID).Return(*test.account, nil)
+			}
+
+			_, err := h.service.Register(context.Background(), service.RegisterAgentInput{
+				WorkspaceID: h.workspaceID,
+				Name:        "triage-bot",
+				Scopes:      readScopes(),
+				AllTeams:    true,
+			})
+
+			if !errors.Is(err, entity.ErrAgentOwnerInvalid) {
+				t.Fatalf("Register error = %v, want ErrAgentOwnerInvalid", err)
+			}
+		})
 	}
 }
 
@@ -334,6 +426,159 @@ func TestDisablingAnAgentTakesItsWorkspaceMembershipOutOfUse(t *testing.T) {
 			"disabling an agent left its membership active. Every surface that offers agents " +
 				"reads the membership, so a disabled one stays selectable.",
 		)
+	}
+}
+
+func TestEnablingAnAgentRestoresItsMembershipAndPreviousAuthority(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	agentID, accountID, ownerID, teamID := uuid.New(), uuid.New(), uuid.New(), uuid.New()
+	disabledAt := time.Now().UTC()
+	agent := entity.Agent{
+		ID:             agentID,
+		WorkspaceID:    h.workspaceID,
+		AccountID:      accountID,
+		OwnerAccountID: ownerID,
+		Name:           "opsy",
+		Status:         entity.AgentStatusDisabled,
+		DisabledAt:     &disabledAt,
+	}
+	scopes := entity.APIScopeSet{entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage)}
+	grants := entity.APITokenGrants{{WorkspaceID: h.workspaceID, TeamIDs: []uuid.UUID{teamID}}}
+
+	h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, agentID).Return(agent, nil)
+	expectActiveOwner(h, ownerID)
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), accountID).
+		Return(entity.APIToken{AccountID: accountID, Scopes: scopes, Grants: grants}, nil)
+	h.agents.EXPECT().Enable(gomock.Any(), h.workspaceID, agentID).Return(nil)
+	h.tokens.EXPECT().RevokeAllByAccount(gomock.Any(), accountID, gomock.Any()).Return(nil)
+
+	membershipRestored := false
+	h.members.EXPECT().
+		SetDeactivated(gomock.Any(), h.workspaceID, accountID, nil).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID, at *time.Time) (entity.Membership, error) {
+			membershipRestored = at == nil
+
+			return entity.Membership{}, nil
+		})
+
+	var minted entity.APIToken
+	h.tokens.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, token entity.APIToken) (entity.APIToken, error) {
+			minted = token
+
+			return token, nil
+		})
+
+	enabled, err := h.service.Enable(context.Background(), h.workspaceID, agentID)
+	if err != nil {
+		t.Fatalf("Enable: %v", err)
+	}
+
+	if enabled.Agent.Status != entity.AgentStatusActive || enabled.Agent.DisabledAt != nil {
+		t.Fatalf("enabled agent = %+v, want active without disabledAt", enabled.Agent)
+	}
+
+	if !membershipRestored {
+		t.Fatal("enabling an agent kept its membership deactivated")
+	}
+
+	if !strings.HasPrefix(enabled.Value, entity.APITokenPrefix) {
+		t.Fatal("enabling an agent returned no fresh credential")
+	}
+
+	if len(minted.Scopes) != 1 || len(minted.Grants) != 1 ||
+		len(minted.Grants[0].TeamIDs) != 1 || minted.Grants[0].TeamIDs[0] != teamID {
+		t.Fatalf("minted authority = scopes %v grants %+v, want the previous authority", minted.Scopes, minted.Grants)
+	}
+}
+
+func TestAnActiveAgentCannotBeEnabledAgain(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+	agentID := uuid.New()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{ID: agentID, Status: entity.AgentStatusActive}, nil)
+
+	_, err := h.service.Enable(context.Background(), h.workspaceID, agentID)
+	if !errors.Is(err, entity.ErrAgentActive) {
+		t.Fatalf("Enable error = %v, want ErrAgentActive", err)
+	}
+}
+
+func TestEnablingAnAgentWithoutRestorableAuthorityIsRefused(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+	agentID, accountID, ownerID := uuid.New(), uuid.New(), uuid.New()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{
+			ID:             agentID,
+			AccountID:      accountID,
+			OwnerAccountID: ownerID,
+			Status:         entity.AgentStatusDisabled,
+		}, nil)
+	expectActiveOwner(h, ownerID)
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), accountID).
+		Return(entity.APIToken{}, entity.ErrAPITokenNotFound)
+
+	_, err := h.service.Enable(context.Background(), h.workspaceID, agentID)
+	if !errors.Is(err, entity.ErrAgentAuthorityMissing) {
+		t.Fatalf("Enable error = %v, want ErrAgentAuthorityMissing", err)
+	}
+}
+
+func TestConcurrentAgentEnableReturnsTheTypedActiveConflict(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+	agentID, accountID, ownerID := uuid.New(), uuid.New(), uuid.New()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{
+			ID:             agentID,
+			WorkspaceID:    h.workspaceID,
+			AccountID:      accountID,
+			OwnerAccountID: ownerID,
+			Status:         entity.AgentStatusDisabled,
+		}, nil)
+	expectActiveOwner(h, ownerID)
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), accountID).
+		Return(entity.APIToken{
+			Scopes: readScopes(),
+			Grants: entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}},
+		}, nil)
+	h.agents.EXPECT().Enable(gomock.Any(), h.workspaceID, agentID).Return(entity.ErrAgentActive)
+
+	_, err := h.service.Enable(context.Background(), h.workspaceID, agentID)
+	if !errors.Is(err, entity.ErrAgentActive) {
+		t.Fatalf("Enable error = %v, want ErrAgentActive", err)
+	}
+}
+
+func TestAnAgentWithAnInvalidOwnerCannotBeReEnabled(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+	agentID, accountID, ownerID := uuid.New(), uuid.New(), uuid.New()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{
+			ID:             agentID,
+			AccountID:      accountID,
+			OwnerAccountID: ownerID,
+			Status:         entity.AgentStatusDisabled,
+		}, nil)
+	h.members.EXPECT().
+		Get(gomock.Any(), h.workspaceID, ownerID).
+		Return(entity.Membership{}, entity.ErrMembershipNotFound)
+
+	_, err := h.service.Enable(context.Background(), h.workspaceID, agentID)
+	if !errors.Is(err, entity.ErrAgentOwnerInvalid) {
+		t.Fatalf("Enable error = %v, want ErrAgentOwnerInvalid", err)
 	}
 }
 
@@ -514,6 +759,7 @@ func TestAMemberRegistersAnAgentThatActsForItself(t *testing.T) {
 	h.members.EXPECT().
 		Get(gomock.Any(), h.workspaceID, h.adminID).
 		Return(entity.Membership{Role: entity.MembershipRoleMember}, nil)
+	expectActivePerson(h, h.adminID)
 
 	h.accounts.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
@@ -555,31 +801,16 @@ func TestAMemberRegistersAnAgentThatActsForItself(t *testing.T) {
 	}
 }
 
-func TestOnlyAnAdministratorRegistersAnAgentForSomebodyElse(t *testing.T) {
-	h := newHarness(t, entity.MembershipRoleMember)
-
-	_, err := h.service.Register(context.Background(), service.RegisterAgentInput{
-		WorkspaceID:    h.workspaceID,
-		OwnerAccountID: uuid.New(),
-		Name:           "triage-bot",
-		Scopes:         readScopes(),
-		AllTeams:       true,
-	})
-
-	if !errors.Is(err, entity.ErrAccountForbidden) {
-		t.Fatalf(
-			"a member registered an agent acting for somebody else: err = %v, want forbidden. "+
-				"The scope ceiling is read from the owner, so naming an administrator would "+
-				"mint an agent that outranks the person who asked for it.",
-			err,
-		)
-	}
-}
-
 func TestAMemberIsShownOnlyTheAgentsItActsFor(t *testing.T) {
 	h := newHarness(t, entity.MembershipRoleMember)
 
-	mine := entity.Agent{ID: uuid.New(), OwnerAccountID: h.adminID, Name: "mine"}
+	mine := entity.Agent{
+		ID:             uuid.New(),
+		WorkspaceID:    h.workspaceID,
+		AccountID:      uuid.New(),
+		OwnerAccountID: h.adminID,
+		Name:           "mine",
+	}
 	theirs := entity.Agent{ID: uuid.New(), OwnerAccountID: uuid.New(), Name: "theirs"}
 
 	h.agents.EXPECT().
@@ -589,6 +820,14 @@ func TestAMemberIsShownOnlyTheAgentsItActsFor(t *testing.T) {
 	h.accounts.EXPECT().
 		GetByID(gomock.Any(), h.adminID).
 		Return(entity.Account{ID: h.adminID, DisplayName: "Rae"}, nil)
+	revokedAt := time.Now().UTC()
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), mine.AccountID).
+		Return(entity.APIToken{
+			Scopes:    readScopes(),
+			Grants:    entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}},
+			RevokedAt: &revokedAt,
+		}, nil)
 
 	listed, err := h.service.List(context.Background(), h.workspaceID)
 	if err != nil {
@@ -601,6 +840,10 @@ func TestAMemberIsShownOnlyTheAgentsItActsFor(t *testing.T) {
 				"owner of every agent, so somebody else's is somebody else's business.",
 			len(listed),
 		)
+	}
+
+	if !listed[0].Authority.AllTeams || len(listed[0].Authority.Scopes) != 1 {
+		t.Fatalf("agent authority = %+v, want the latest credential's workspace authority", listed[0].Authority)
 	}
 }
 

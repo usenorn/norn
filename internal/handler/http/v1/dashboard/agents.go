@@ -31,12 +31,12 @@ func (h *handler) RegisterWorkspaceAgent(
 	input := service.RegisterAgentInput{
 		WorkspaceID: request.WorkspaceId,
 		Name:        request.Body.Name,
-		Scopes:      entity.NewAPIScopeSet(request.Body.Scopes),
+		Scopes:      apiScopes(request.Body.Scopes),
 		AllTeams:    request.Body.AllTeams,
 	}
 
-	if request.Body.OwnerAccountId != nil {
-		input.OwnerAccountID = *request.Body.OwnerAccountId
+	if request.Body.Icon != nil {
+		input.Icon = entity.AgentIcon(*request.Body.Icon)
 	}
 
 	if request.Body.TeamIds != nil {
@@ -92,6 +92,25 @@ func (h *handler) DisableWorkspaceAgent(
 	}
 
 	return api.DisableWorkspaceAgent204Response{}, nil
+}
+
+func (h *handler) EnableWorkspaceAgent(
+	ctx context.Context,
+	request api.EnableWorkspaceAgentRequestObject,
+) (api.EnableWorkspaceAgentResponseObject, error) {
+	enabled, err := h.agents.Enable(ctx, request.WorkspaceId, request.AgentId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.EnableWorkspaceAgent201JSONResponse{
+		Agent: agentDTO(enabled.Agent),
+		Value: enabled.Value,
+	}, nil
 }
 
 func (h *handler) RotateWorkspaceAgentCredential(

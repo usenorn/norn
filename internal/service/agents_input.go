@@ -7,13 +7,13 @@ import (
 )
 
 type RegisterAgentInput struct {
-	WorkspaceID    uuid.UUID
-	Name           string
-	OwnerAccountID uuid.UUID
-	Scopes         entity.APIScopeSet
-	AllTeams       bool
-	TeamIDs        []uuid.UUID
-	ActionLimit    *int
+	WorkspaceID uuid.UUID
+	Name        string
+	Scopes      entity.APIScopeSet
+	Icon        entity.AgentIcon
+	AllTeams    bool
+	TeamIDs     []uuid.UUID
+	ActionLimit *int
 }
 
 type RegisteredAgent struct {
@@ -26,6 +26,13 @@ type OwnedAgent struct {
 	Agent      entity.Agent
 	OwnerName  string
 	OwnerEmail string
+	Authority  AgentAuthority
+}
+
+type AgentAuthority struct {
+	Scopes   entity.APIScopeSet
+	AllTeams bool
+	TeamIDs  []uuid.UUID
 }
 
 type ConfigureAgentInput struct {

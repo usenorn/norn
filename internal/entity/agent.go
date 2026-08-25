@@ -10,19 +10,65 @@ import (
 )
 
 const (
-	AgentNameMaxLen = 80
+	AgentNameMaxLen     = 80
+	AgentActionLimitMin = 1
+	AgentActionLimitMax = 6000
+	DefaultAgentIcon    = AgentIconBot
 
 	AgentActionWindow     = time.Minute
 	AgentActionsPerWindow = 120
 )
 
 var (
-	ErrAgentNotFound     = errors.New("agent not found")
-	ErrAgentNameTaken    = errors.New("agent name already used in this workspace")
-	ErrAgentDisabled     = errors.New("agent is disabled")
-	ErrAgentRateLimited  = errors.New("agent is acting faster than its allowance")
-	ErrAgentOwnerInvalid = errors.New("agent owner is not a member of this workspace")
+	ErrAgentNotFound         = errors.New("agent not found")
+	ErrAgentNameTaken        = errors.New("agent name already used in this workspace")
+	ErrAgentDisabled         = errors.New("agent is disabled")
+	ErrAgentActive           = errors.New("agent is active")
+	ErrAgentAuthorityMissing = errors.New("agent authority cannot be restored")
+	ErrAgentRateLimited      = errors.New("agent is acting faster than its allowance")
+	ErrAgentOwnerInvalid     = errors.New("agent owner must be an active person in this workspace")
 )
+
+type AgentIcon string
+
+const (
+	AgentIconBot            AgentIcon = "bot"
+	AgentIconInbox          AgentIcon = "inbox"
+	AgentIconSearch         AgentIcon = "search"
+	AgentIconTerminal       AgentIcon = "terminal"
+	AgentIconPencil         AgentIcon = "pencil"
+	AgentIconGitPullRequest AgentIcon = "git-pull-request"
+	AgentIconShieldCheck    AgentIcon = "shield-check"
+	AgentIconScrollText     AgentIcon = "scroll-text"
+	AgentIconTarget         AgentIcon = "target"
+	AgentIconSparkles       AgentIcon = "sparkles"
+)
+
+func (i AgentIcon) Valid() bool {
+	switch i {
+	case AgentIconBot,
+		AgentIconInbox,
+		AgentIconSearch,
+		AgentIconTerminal,
+		AgentIconPencil,
+		AgentIconGitPullRequest,
+		AgentIconShieldCheck,
+		AgentIconScrollText,
+		AgentIconTarget,
+		AgentIconSparkles:
+		return true
+	default:
+		return false
+	}
+}
+
+func (i AgentIcon) Normalized() AgentIcon {
+	if i == "" {
+		return DefaultAgentIcon
+	}
+
+	return i
+}
 
 type AgentStatus string
 
@@ -53,6 +99,7 @@ type Agent struct {
 	AccountID      uuid.UUID
 	OwnerAccountID uuid.UUID
 	Name           string
+	Icon           AgentIcon
 	Status         AgentStatus
 	ActionLimit    *int
 	DisabledAt     *time.Time
@@ -91,4 +138,20 @@ func ValidateAgentName(field, name string) FieldError {
 	default:
 		return FieldError{}
 	}
+}
+
+func ValidateAgentIcon(field string, icon AgentIcon) FieldError {
+	if !icon.Normalized().Valid() {
+		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
+	}
+
+	return FieldError{}
+}
+
+func ValidateAgentActionLimit(field string, limit *int) FieldError {
+	if limit != nil && (*limit < AgentActionLimitMin || *limit > AgentActionLimitMax) {
+		return FieldError{Field: field, Code: ValidationCodeOutOfRange}
+	}
+
+	return FieldError{}
 }

@@ -17,4 +17,5 @@ type Agent interface {
 	GetByAccountID(ctx context.Context, accountID uuid.UUID) (entity.Agent, error)
 	ListByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]entity.Agent, error)
 	Disable(ctx context.Context, workspaceID, agentID uuid.UUID, disabledAt time.Time) error
+	Enable(ctx context.Context, workspaceID, agentID uuid.UUID) error
 }

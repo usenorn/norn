@@ -30,7 +30,7 @@ func (h *handler) MintAPIToken(
 ) (api.MintAPITokenResponseObject, error) {
 	minted, err := h.apiTokens.Mint(ctx, service.MintAPITokenInput{
 		Name:      request.Body.Name,
-		Scopes:    entity.NewAPIScopeSet(request.Body.Scopes),
+		Scopes:    apiScopes(request.Body.Scopes),
 		Grants:    apiTokenGrants(request.Body.Grants),
 		ExpiresAt: request.Body.ExpiresAt,
 	})
@@ -46,6 +46,16 @@ func (h *handler) MintAPIToken(
 		Token: apiTokenDTO(minted.Token),
 		Value: minted.Value,
 	}, nil
+}
+
+func apiScopes(scopes []api.APIScope) entity.APIScopeSet {
+	values := make(entity.APIScopeSet, 0, len(scopes))
+
+	for _, scope := range scopes {
+		values = append(values, entity.APIScope(scope))
+	}
+
+	return values
 }
 
 func (h *handler) RevokeAPIToken(

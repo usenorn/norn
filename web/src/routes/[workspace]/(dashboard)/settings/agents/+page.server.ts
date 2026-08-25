@@ -21,40 +21,38 @@ type AgentOutcome = { kind: "issued"; agent: Agent; value: string } | AgentFailu
 export const load: PageServerLoad = async ({ depends, route, locals, parent }) => {
 	depends(keys.page(route.id));
 
-	const { workspace, teams, member } = await parent();
+	const { workspace, teams } = await parent();
+	depends(keys.agents(workspace.id));
+	const form = await superValidate<RegisterForm, AgentOutcome>(zod4(registerAgentSchema), {
+		id: formId,
+	});
 
-	const [agents, members] = await Promise.all([
-		locals.api.GET("/workspaces/{workspaceId}/agents", {
-			params: { path: { workspaceId: workspace.id } },
-		}),
-		locals.api.GET("/workspaces/{workspaceId}/members", {
-			params: { path: { workspaceId: workspace.id }, query: { limit: 200 } },
-		}),
-	]);
-
-	const everybody = members.data?.members ?? [];
-	const people = everybody.filter((entry) => entry.kind !== "agent");
+	const agents = await locals.api.GET("/workspaces/{workspaceId}/agents", {
+		params: { path: { workspaceId: workspace.id } },
+	});
 	const reachable = (teams ?? []).filter((team) => team.status === "active");
-	const role = everybody.find((entry) => entry.accountId === member.id)?.role;
 
 	if (agents.error) {
 		return {
-			people,
-			role,
+			form,
 			teams: reachable,
 			listing: {
-				kind: agents.error.status === 403 ? "forbidden" : "unavailable",
+				kind:
+					agents.error.status === 403
+						? "forbidden"
+						: agents.error.status === 409
+							? "authority_missing"
+							: "unavailable",
 			} as AgentListing,
 		};
 	}
 
 	if (!agents.data || agents.data.length === 0) {
-		return { people, role, teams: reachable, listing: { kind: "empty" } as AgentListing };
+		return { form, teams: reachable, listing: { kind: "empty" } as AgentListing };
 	}
 
 	return {
-		people,
-		role,
+		form,
 		teams: reachable,
 		listing: { kind: "ready", agents: agents.data } as AgentListing,
 	};
@@ -75,7 +73,7 @@ export const actions: Actions = {
 			params: { path: { workspaceId } },
 			body: {
 				name: form.data.name,
-				ownerAccountId: form.data.ownerAccountId,
+				icon: form.data.icon,
 				scopes: form.data.scopes,
 				allTeams: form.data.allTeams,
 				teamIds: form.data.allTeams ? undefined : form.data.teamIds,
@@ -84,6 +82,28 @@ export const actions: Actions = {
 		});
 
 		if (error) {
+			let handled = false;
+
+			for (const field of error.errors ?? []) {
+				if (field.field === "name") {
+					setError(
+						form,
+						"name",
+						field.code === "too_long" ? "Keep the name under 80 characters." : "Name this agent."
+					);
+				} else if (field.field === "icon") {
+					setError(form, "icon", "Choose a supported icon.");
+				} else if (field.field === "actionLimit") {
+					setError(form, "actionLimit", "Choose between 1 and 6000 actions a minute.");
+				} else {
+					continue;
+				}
+
+				handled = true;
+			}
+
+			if (handled) return fail(400, { form });
+
 			const failure = registerFailure(error);
 
 			if (failure.kind === "name_taken") {

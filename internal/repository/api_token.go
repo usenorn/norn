@@ -15,6 +15,7 @@ type APIToken interface {
 	Create(ctx context.Context, token entity.APIToken) (entity.APIToken, error)
 	GetByTokenHash(ctx context.Context, tokenHash []byte) (entity.APIToken, error)
 	GetByID(ctx context.Context, tokenID uuid.UUID) (entity.APIToken, error)
+	GetLatestByOwner(ctx context.Context, accountID uuid.UUID) (entity.APIToken, error)
 	ListByOwner(ctx context.Context, accountID uuid.UUID) ([]entity.APIToken, error)
 	ListByWorkspaceGrant(ctx context.Context, workspaceID uuid.UUID) ([]entity.APIToken, error)
 	Revoke(ctx context.Context, tokenID uuid.UUID, revokedAt time.Time) error

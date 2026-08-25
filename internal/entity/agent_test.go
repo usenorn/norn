@@ -80,6 +80,63 @@ func TestAnAgentWithoutAnExplicitAllowanceIsStillBounded(t *testing.T) {
 	}
 }
 
+func TestAgentIconsHaveAStableDefaultAndFixedCatalog(t *testing.T) {
+	if got := (entity.AgentIcon("")).Normalized(); got != entity.AgentIconBot {
+		t.Fatalf("default icon = %q, want bot", got)
+	}
+
+	valid := []entity.AgentIcon{
+		entity.AgentIconBot,
+		entity.AgentIconInbox,
+		entity.AgentIconSearch,
+		entity.AgentIconTerminal,
+		entity.AgentIconPencil,
+		entity.AgentIconGitPullRequest,
+		entity.AgentIconShieldCheck,
+		entity.AgentIconScrollText,
+		entity.AgentIconTarget,
+		entity.AgentIconSparkles,
+	}
+
+	for _, icon := range valid {
+		if !icon.Valid() {
+			t.Errorf("catalog icon %q was rejected", icon)
+		}
+	}
+
+	if (entity.AgentIcon("wand")).Valid() {
+		t.Fatal("an icon outside the catalog was accepted")
+	}
+
+	if got := entity.ValidateAgentIcon("icon", "wand"); got.Code != entity.ValidationCodeUnsupportedValue {
+		t.Fatalf("invalid icon code = %q, want unsupported_value", got.Code)
+	}
+}
+
+func TestAgentActionLimitAcceptsOnlyTheSupportedRange(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		limit *int
+		code  string
+	}{
+		{name: "absent"},
+		{name: "minimum", limit: intPointer(entity.AgentActionLimitMin)},
+		{name: "maximum", limit: intPointer(entity.AgentActionLimitMax)},
+		{name: "below minimum", limit: intPointer(entity.AgentActionLimitMin - 1), code: entity.ValidationCodeOutOfRange},
+		{name: "above maximum", limit: intPointer(entity.AgentActionLimitMax + 1), code: entity.ValidationCodeOutOfRange},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if got := entity.ValidateAgentActionLimit("actionLimit", test.limit); got.Code != test.code {
+				t.Fatalf("validation code = %q, want %q", got.Code, test.code)
+			}
+		})
+	}
+}
+
+func intPointer(value int) *int {
+	return &value
+}
+
 func TestOnlyTheActionsATeamNamedAreHeld(t *testing.T) {
 	settings := entity.AgentSettings{HoldStateChanges: entity.AgentHoldAlways}
 

@@ -860,19 +860,19 @@ func problemFor(err error) (problemResponse, bool) {
 		return newProblem(http.StatusNotFound, err.Error()), true
 
 	case errors.Is(err, entity.ErrAPITokenNameTaken):
-		return apiTokenUnusableProblem(api.TokenNameTaken, err), true
+		return apiTokenUnusableProblem(api.APITokenUnusableProblemCodeTokenNameTaken, err), true
 
 	case errors.Is(err, entity.ErrAPITokenScopeInvalid):
-		return apiTokenUnusableProblem(api.TokenScopeInvalid, err), true
+		return apiTokenUnusableProblem(api.APITokenUnusableProblemCodeTokenScopeInvalid, err), true
 
 	case errors.Is(err, entity.ErrAPITokenScopeExceeds):
-		return apiTokenUnusableProblem(api.TokenScopeExceeds, err), true
+		return apiTokenUnusableProblem(api.APITokenUnusableProblemCodeTokenScopeExceeds, err), true
 
 	case errors.Is(err, entity.ErrAPITokenMintForbidden):
-		return apiTokenUnusableProblem(api.TokenMayNotMint, err), true
+		return apiTokenUnusableProblem(api.APITokenUnusableProblemCodeTokenMayNotMint, err), true
 
 	case errors.Is(err, entity.ErrAPITokenGrantInvalid):
-		return apiTokenUnusableProblem(api.TokenGrantInvalid, err), true
+		return apiTokenUnusableProblem(api.APITokenUnusableProblemCodeTokenGrantInvalid, err), true
 
 	case errors.Is(err, entity.ErrAgentRateLimited):
 		return problemResponse{
@@ -883,6 +883,12 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrAgentDisabled):
 		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentDisabled, err), true
+
+	case errors.Is(err, entity.ErrAgentActive):
+		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentActive, err), true
+
+	case errors.Is(err, entity.ErrAgentAuthorityMissing):
+		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentAuthorityMissing, err), true
 
 	case errors.Is(err, entity.ErrAgentNameTaken):
 		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentNameTaken, err), true
@@ -897,7 +903,7 @@ func problemFor(err error) (problemResponse, bool) {
 		return newProblem(http.StatusNotFound, err.Error()), true
 
 	case errors.Is(err, entity.ErrAPITokenGrantMissing):
-		return apiTokenUnusableProblem(api.TokenGrantMissing, err), true
+		return apiTokenUnusableProblem(api.APITokenUnusableProblemCodeTokenGrantMissing, err), true
 
 	case errors.Is(err, entity.ErrWebhookNotFound),
 		errors.Is(err, entity.ErrWebhookDeliveryNotFound):
@@ -1386,6 +1392,10 @@ func (r problemResponse) VisitGetWorkspaceAgentResponse(w http.ResponseWriter) e
 }
 
 func (r problemResponse) VisitDisableWorkspaceAgentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

@@ -21,12 +21,12 @@ const (
 )
 
 const agentColumns = `
-	a.id, a.workspace_id, a.account_id, a.owner_account_id, a.name, a.status,
+	a.id, a.workspace_id, a.account_id, a.owner_account_id, a.name, a.icon, a.status,
 	a.action_limit, a.disabled_at, a.created_at, a.updated_at`
 
 const insertAgentQuery = `
-	INSERT INTO workspace_agents (id, workspace_id, account_id, owner_account_id, name, action_limit)
-	VALUES ($1, $2, $3, $4, $5, $6)`
+	INSERT INTO workspace_agents (id, workspace_id, account_id, owner_account_id, name, icon, action_limit)
+	VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
 type agentRepository struct {
 	db *postgres.Client
@@ -54,6 +54,7 @@ func (r *agentRepository) Create(ctx context.Context, agent entity.Agent) (entit
 		agent.AccountID.String(),
 		agent.OwnerAccountID.String(),
 		agent.Name,
+		agent.Icon.Normalized(),
 		limit,
 	); err != nil {
 		var pgErr *pgconn.PgError
@@ -125,6 +126,31 @@ func (r *agentRepository) Disable(
 	return nil
 }
 
+func (r *agentRepository) Enable(ctx context.Context, workspaceID, agentID uuid.UUID) error {
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx,
+		`UPDATE workspace_agents
+		 SET status = 'active', disabled_at = NULL, updated_at = now()
+		 WHERE workspace_id = $1 AND id = $2 AND status = 'disabled'`,
+		workspaceID.String(),
+		agentID.String(),
+	)
+	if err != nil {
+		return fmt.Errorf("enable agent: %w", err)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("enable agent: %w", err)
+	}
+
+	if affected == 0 {
+		return entity.ErrAgentActive
+	}
+
+	return nil
+}
+
 func (r *agentRepository) one(ctx context.Context, query string, args ...any) (entity.Agent, error) {
 	agents, err := r.many(ctx, query, args...)
 	if err != nil {
@@ -152,14 +178,14 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 		var (
 			rawID, rawWorkspace  string
 			rawAccount, rawOwner string
-			name, status         string
+			name, icon, status   string
 			limit                sql.NullInt64
 			disabledAt           sql.NullTime
 			createdAt, updatedAt time.Time
 		)
 
 		if err := rows.Scan(
-			&rawID, &rawWorkspace, &rawAccount, &rawOwner, &name, &status,
+			&rawID, &rawWorkspace, &rawAccount, &rawOwner, &name, &icon, &status,
 			&limit, &disabledAt, &createdAt, &updatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan agent: %w", err)
@@ -167,6 +193,7 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 
 		agent := entity.Agent{
 			Name:      name,
+			Icon:      entity.AgentIcon(icon),
 			Status:    entity.AgentStatus(status),
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
