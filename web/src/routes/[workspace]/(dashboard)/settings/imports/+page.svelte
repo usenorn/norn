@@ -7,10 +7,13 @@
 	import Import from "@lucide/svelte/icons/import";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Empty from "$lib/components/ui/empty/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
 	import { onDateAndTime } from "$lib/time";
@@ -102,16 +105,12 @@
 
 <svelte:head><title>Imports · {workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex h-11 flex-none items-center gap-2 border-b border-line-subtle px-4">
-		<Import class="size-4 text-muted-foreground" aria-hidden="true" />
-		<h1 class="text-sm font-medium tracking-snug text-ink-900">Imports</h1>
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-180 flex-col gap-5 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+<SettingsPage
+	title="Imports"
+	description="Stage, review and reverse backlog migrations."
+	Icon={Import}
+	meta={view.kind === "loading" ? "loading" : `${runs.length} recent runs`}
+>
 			{#if failure}
 				<Alert.Root variant="destructive">
 					<TriangleAlert aria-hidden="true" />
@@ -133,7 +132,10 @@
 					<Alert.Description>Check your connection and reload.</Alert.Description>
 				</Alert.Root>
 			{:else if view.kind === "loading"}
-				<p class="text-sm text-muted-foreground">Loading imports…</p>
+				<div class="flex flex-col gap-3" aria-busy="true" aria-label="Loading imports">
+					<Skeleton class="h-32 w-full" />
+					<Skeleton class="h-20 w-full" />
+				</div>
 			{:else}
 				<form method="POST" id={formId} use:enhance class="flex flex-col gap-5">
 					<div class="flex flex-col gap-1">
@@ -222,14 +224,13 @@
 					</div>
 
 					{#if runs.length === 0}
-						<div
-							class="flex flex-col items-center gap-2 rounded-lg border border-line-default bg-paper-0 px-6 py-10 text-center"
-						>
-							<Import class="size-5 text-muted-foreground" aria-hidden="true" />
-							<p class="max-w-100 text-sm leading-normal text-muted-foreground text-pretty">
-								Nothing has been imported into {workspace.name} yet.
-							</p>
-						</div>
+						<Empty.Root>
+							<Empty.Media variant="icon"><Import aria-hidden="true" /></Empty.Media>
+							<Empty.Header>
+								<Empty.Title>No import runs yet</Empty.Title>
+								<Empty.Description>Nothing has been imported into {workspace.name} yet.</Empty.Description>
+							</Empty.Header>
+						</Empty.Root>
 					{:else}
 						<ul class="rounded-lg border border-line-subtle bg-paper-0">
 							{#each runs as run (run.id)}
@@ -273,6 +274,4 @@
 					{/if}
 				</section>
 			{/if}
-		</div>
-	</div>
-</div>
+</SettingsPage>

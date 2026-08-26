@@ -8,12 +8,15 @@
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import * as Empty from "$lib/components/ui/empty/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { withSlot } from "$lib/account/accounts";
 	import { api } from "$lib/api";
 	import { initialsOf } from "$lib/team/members";
@@ -402,20 +405,15 @@
 
 <svelte:head><title>Members · {workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex-none border-b border-line-default">
-		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
-			<UserRound class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Members</h1>
-			<div class="flex-1"></div>
-			<Button size="sm" href={invitePath}>Invite people</Button>
-		</div>
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+<SettingsPage
+	title="Members"
+	description="People, roles, invitations and workspace API access."
+	Icon={UserRound}
+	meta={`${members.length} in view`}
+>
+	{#snippet actions()}
+		<Button size="sm" href={invitePath}>Invite people</Button>
+	{/snippet}
 			<p class="sr-only" aria-live="polite" aria-atomic="true">{announcement}</p>
 
 			{#if notice}
@@ -483,9 +481,15 @@
 				</div>
 
 				{#if listing.kind === "loading"}
-					<ul class="flex flex-col gap-px" aria-busy="true">
+					<ul class="flex flex-col gap-px" aria-busy="true" aria-label="Loading members">
 						{#each [0, 1, 2] as row (row)}
-							<li class="h-14 animate-breathe rounded-md bg-paper-2"></li>
+							<li class="flex h-14 items-center gap-3 px-3">
+								<Skeleton class="size-8 shrink-0" />
+								<div class="flex flex-1 flex-col gap-2">
+									<Skeleton class="h-3 w-36" />
+									<Skeleton class="h-2.5 w-52 max-w-full" />
+								</div>
+							</li>
 						{/each}
 					</ul>
 				{:else if listing.kind === "unavailable"}
@@ -495,20 +499,29 @@
 						<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
 					</Alert.Root>
 				{:else if listing.kind === "empty"}
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						This workspace has no members yet.
-					</p>
+					<Empty.Root>
+						<Empty.Media variant="icon"><UserRound aria-hidden="true" /></Empty.Media>
+						<Empty.Header>
+							<Empty.Title>No members yet</Empty.Title>
+							<Empty.Description>Invite the first person to {workspace.name}.</Empty.Description>
+						</Empty.Header>
+						<Empty.Content>
+							<Button size="sm" href={invitePath}>Invite people</Button>
+						</Empty.Content>
+					</Empty.Root>
 				{:else if listing.kind === "no_matches"}
-					<div class="flex flex-col gap-2">
-						<p class="text-sm leading-normal text-muted-foreground text-pretty">
-							Nobody in {workspace.name} matches “{listing.query}”.
-						</p>
-						<div>
+					<Empty.Root>
+						<Empty.Media variant="icon"><UserRound aria-hidden="true" /></Empty.Media>
+						<Empty.Header>
+							<Empty.Title>No matching members</Empty.Title>
+							<Empty.Description>Nobody in {workspace.name} matches “{listing.query}”.</Empty.Description>
+						</Empty.Header>
+						<Empty.Content>
 							<Button variant="secondary" size="sm" href={workspacePath(slug, "/settings/members")}>
 								Clear search
 							</Button>
-						</div>
-					</div>
+						</Empty.Content>
+					</Empty.Root>
 				{:else}
 					<ul class="flex flex-col rounded-lg border border-line-default">
 						{#each members as member (member.accountId)}
@@ -789,6 +802,4 @@
 				{/if}
 			</section>
 			{/if}
-		</div>
-	</div>
-</div>
+</SettingsPage>

@@ -7,10 +7,13 @@
 	import KeyRound from "@lucide/svelte/icons/key-round";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Empty from "$lib/components/ui/empty/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
 	import { keys } from "$lib/api/keys";
@@ -192,15 +195,13 @@
 
 <svelte:head><title>API tokens · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex h-11 flex-none items-center border-b border-line-subtle px-4">
-		<h1 class="text-sm font-medium tracking-snug text-ink-900">API tokens</h1>
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-140 flex-col gap-5 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+<SettingsPage
+	title="API tokens"
+	description="Personal credentials for scripts, CLIs and MCP clients."
+	Icon={KeyRound}
+	meta={listing.kind === "loading" ? "loading" : `${current.length} active`}
+	width="compact"
+>
 			{#if failure}
 				<Alert.Root variant="destructive">
 					<TriangleAlert aria-hidden="true" />
@@ -435,9 +436,18 @@
 			{/if}
 
 			{#if listing.kind === "loading"}
-				<p class="text-sm text-muted-foreground">Loading your tokens…</p>
+				<div class="flex flex-col gap-2" aria-busy="true" aria-label="Loading API tokens">
+					<Skeleton class="h-14 w-full" />
+					<Skeleton class="h-14 w-full" />
+				</div>
 			{:else if current.length === 0 && showForm}
-				<p class="text-sm text-muted-foreground">You have no live tokens.</p>
+				<Empty.Root>
+					<Empty.Media variant="icon"><KeyRound aria-hidden="true" /></Empty.Media>
+					<Empty.Header>
+						<Empty.Title>No live tokens</Empty.Title>
+						<Empty.Description>Mint one above when a tool needs access to your account.</Empty.Description>
+					</Empty.Header>
+				</Empty.Root>
 			{:else if current.length > 0}
 				<section class="flex flex-col gap-2">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">Your tokens</h2>
@@ -486,6 +496,4 @@
 					</ul>
 				</section>
 			{/if}
-		</div>
-	</div>
-</div>
+</SettingsPage>

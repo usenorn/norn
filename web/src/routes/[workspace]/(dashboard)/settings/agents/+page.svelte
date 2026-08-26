@@ -2,6 +2,7 @@
 	import { goto, invalidate } from "$app/navigation";
 	import { page } from "$app/state";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
+	import Bot from "@lucide/svelte/icons/bot";
 	import MoreHorizontal from "@lucide/svelte/icons/more-horizontal";
 	import Plus from "@lucide/svelte/icons/plus";
 	import RotateCw from "@lucide/svelte/icons/rotate-cw";
@@ -17,6 +18,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import AgentIdentity from "$lib/agents/agent-identity.svelte";
 	import CredentialDialog from "$lib/agents/credential-dialog.svelte";
 	import RegisterAgentDialog from "$lib/agents/register-agent-dialog.svelte";
@@ -300,17 +302,14 @@
 
 <svelte:head><title>Agents · {workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<header
-		class="flex flex-none flex-col gap-2 border-b border-line-default px-4 py-2 sm:h-11 sm:flex-row sm:items-center sm:py-0"
-	>
-		<div class="flex min-w-0 items-center gap-2">
-			<h1 class="text-md font-medium tracking-snug text-ink-900">Agents</h1>
-			<span class="font-mono text-2xs text-muted-foreground">
-				{activeCount} active / {allAgents.length} total
-			</span>
-		</div>
-		<div class="flex min-w-0 flex-1 items-center justify-end gap-3">
+<SettingsPage
+	title="Agents"
+	description="Bound identities for MCP clients and delegated work."
+	Icon={Bot}
+	meta={listing.kind === "loading" ? "loading" : `${activeCount} active / ${allAgents.length} total`}
+>
+	{#snippet actions()}
+		<div class="flex items-center gap-3">
 			<a
 				href={runnersPath(workspace.slug)}
 				class="text-xs text-muted-foreground motion-control hover:text-ink-900"
@@ -330,12 +329,8 @@
 				</Button>
 			{/if}
 		</div>
-	</header>
+	{/snippet}
 
-	<div class="flex-1 overflow-auto">
-		<main
-			class="mx-auto flex w-full max-w-224 flex-col gap-5 px-4 py-5 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
 			<p class="sr-only" aria-live="polite" aria-atomic="true">{announced}</p>
 
 			{#if inlineRegistration && showRegister}
@@ -546,11 +541,9 @@
 					</section>
 				{/if}
 			{/if}
-		</main>
-	</div>
+</SettingsPage>
 
-	<ShortcutBar ids={["cursor-down", "cursor-open", "agent-register", "search", "help"]} />
-</div>
+<ShortcutBar ids={["cursor-down", "cursor-open", "agent-register", "search", "help"]} />
 
 {#if showRegister && !inlineRegistration}
 	{@render registration(false)}

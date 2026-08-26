@@ -6,6 +6,8 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
+	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { api } from "$lib/api";
 	import PreferenceGrid from "$lib/notifications/preference-grid.svelte";
 	import type { NotificationPreferences } from "$lib/notifications/notifications";
@@ -64,21 +66,13 @@
 
 <svelte:head><title>Notifications · {data.workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex-none border-b border-line-default">
-		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
-			<Bell class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">
-				Notifications
-			</h1>
-			<span class="text-sm text-muted-foreground">What reaches you, and how</span>
-		</div>
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-140 flex-col gap-5 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+<SettingsPage
+	title="Notifications"
+	description="Choose which activity from this workspace reaches you, and how."
+	Icon={Bell}
+	meta="per workspace"
+	width="compact"
+>
 
 			{#if failed}
 				<Alert.Root variant="destructive">
@@ -89,12 +83,17 @@
 			{/if}
 
 			{#if panel.kind === "loading"}
-				<div class="h-60 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
+				<div class="flex flex-col gap-3" aria-busy="true" aria-label="Loading notification settings">
+					<Skeleton class="h-7 w-48" />
+					<Skeleton class="h-44 w-full" />
+					<Skeleton class="h-8 w-28" />
+				</div>
 			{:else if panel.kind === "unavailable"}
-				<p class="text-md leading-normal text-muted-foreground">
-					We could not load your notification settings. Nothing changed &mdash; wait a moment and
-					try again.
-				</p>
+				<Alert.Root variant="destructive">
+					<CircleX aria-hidden="true" />
+					<Alert.Title>Could not load your notification settings</Alert.Title>
+					<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
+				</Alert.Root>
 			{:else if preferences}
 				<PreferenceGrid
 					{preferences}
@@ -128,6 +127,4 @@
 					>.
 				</p>
 			{/if}
-		</div>
-	</div>
-</div>
+</SettingsPage>

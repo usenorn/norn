@@ -8,9 +8,11 @@
 	import { api } from "$lib/api";
 	import * as Alert from "$lib/components/ui/alert";
 	import { Button } from "$lib/components/ui/button";
+	import * as Empty from "$lib/components/ui/empty";
 	import * as Form from "$lib/components/ui/form";
 	import { Input } from "$lib/components/ui/input";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import { Skeleton } from "$lib/components/ui/skeleton";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import GithubAppPanel from "$lib/source-control/github-app-panel.svelte";
 	import VerdictBanner from "$lib/source-control/verdict-banner.svelte";
 	import {
@@ -133,19 +135,18 @@
 
 <svelte:head><title>Source control · {workspace.name} · Norn</title></svelte:head>
 
-<div class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6">
-	<div class="flex flex-col gap-1">
-		<Eyebrow>Settings</Eyebrow>
-		<h1 class="text-lg font-medium tracking-snug text-ink-900">Source control</h1>
-		<p class="text-sm leading-normal text-muted-foreground text-pretty">
-			Hold one credential per forge, then attach the repositories it reaches. Norn links the
-			branches, commits and pull requests that name an issue to that issue, and a route decides
-			which team the changes under a path belong to.
-		</p>
-	</div>
+<SettingsPage
+	title="Source control"
+	description="Connections and repositories that attach code activity to issues."
+	Icon={GitBranch}
+	meta={`${connections.length} connections / ${repositories.length} repositories`}
+>
 
 	{#if view.kind === "loading"}
-		<p class="text-sm text-muted-foreground">Reading your connections…</p>
+		<div class="flex flex-col gap-3" aria-busy="true" aria-label="Loading source control">
+			<Skeleton class="h-24 w-full" />
+			<Skeleton class="h-32 w-full" />
+		</div>
 	{:else if view.kind === "forbidden"}
 		<Alert.Root>
 			<Alert.Title>You cannot manage connections</Alert.Title>
@@ -260,20 +261,21 @@
 					</Alert.Description>
 				</Alert.Root>
 			{:else if repositories.length === 0}
-				<div
-					class="flex flex-col items-center gap-2 rounded-lg border border-line-default bg-paper-0 px-6 py-10 text-center"
-				>
-					<GitBranch class="size-5 text-muted-foreground" aria-hidden="true" />
-					<p class="max-w-100 text-sm leading-normal text-muted-foreground text-pretty">
+				<Empty.Root>
+					<Empty.Media variant="icon"><GitBranch aria-hidden="true" /></Empty.Media>
+					<Empty.Header>
+						<Empty.Title>No repositories connected</Empty.Title>
+						<Empty.Description>
 						Norn is watching nothing yet, so every event GitHub sends is discarded. Connect a
 						repository and its branches, commits and pull requests start reaching their issues.
-					</p>
+						</Empty.Description>
+					</Empty.Header>
 					{#if connections.length > 0}
-						<Button href={sourceControlConnectPath(workspace.slug)} class="mt-1">
-							Connect a repository
-						</Button>
+						<Empty.Content>
+							<Button href={sourceControlConnectPath(workspace.slug)}>Connect a repository</Button>
+						</Empty.Content>
 					{/if}
-				</div>
+				</Empty.Root>
 			{:else}
 				<ul class="flex flex-col gap-3">
 					{#each repositories as repository (repository.id)}
@@ -397,4 +399,4 @@
 			</form>
 		</details>
 	{/if}
-</div>
+</SettingsPage>

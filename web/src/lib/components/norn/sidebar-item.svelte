@@ -13,6 +13,7 @@
 		count,
 		active = false,
 		indent = false,
+		onclick,
 		class: className,
 	}: {
 		href: string;
@@ -25,6 +26,7 @@
 		count?: number;
 		active?: boolean;
 		indent?: boolean;
+		onclick?: (event: MouseEvent) => void;
 		class?: string;
 	} = $props();
 
@@ -38,6 +40,7 @@
 	aria-current={active ? "page" : undefined}
 	onpointerenter={() => (hovered = true)}
 	onpointerleave={() => (hovered = false)}
+	{onclick}
 	class={cn(
 		"flex h-6.75 w-full items-center gap-2 rounded-xs px-2 text-md font-medium tracking-snug text-ink-600 motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[active=true]:rule-inset data-[active=true]:bg-accent data-[active=true]:text-ink-900",
 		indent && "pl-6",

@@ -14,6 +14,8 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import { api } from "$lib/api";
 	import { onDate } from "$lib/time";
@@ -218,22 +220,18 @@
 
 <svelte:head><title>Authentication · {workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex-none border-b border-line-default">
-		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
-			<KeyRound class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">
-				Authentication
-			</h1>
-		</div>
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+<SettingsPage
+	title="Authentication"
+	description="How members prove who they are when they enter this workspace."
+	Icon={KeyRound}
+	meta={anyConnection ? "provider connected" : "password sign-in"}
+	width="compact"
+>
 			{#if configuration.kind === "loading"}
-				<p class="text-md text-muted-foreground" aria-live="polite">Loading…</p>
+				<div class="flex flex-col gap-3" aria-busy="true" aria-label="Loading authentication settings">
+					<Skeleton class="h-8 w-56" />
+					<Skeleton class="h-48 w-full" />
+				</div>
 			{:else if configuration.kind === "forbidden"}
 				<Alert.Root variant="destructive">
 					<CircleX aria-hidden="true" />
@@ -710,6 +708,4 @@
 					</section>
 				{/if}
 			{/if}
-		</div>
-	</div>
-</div>
+</SettingsPage>

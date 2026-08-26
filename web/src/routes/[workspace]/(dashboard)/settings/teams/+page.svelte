@@ -14,6 +14,8 @@
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { createTeamSchema } from "$lib/team/create-team-schema";
 	import {
 		teamKeyFromName,
@@ -112,22 +114,18 @@
 
 <svelte:head><title>Teams · {data.workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex-none border-b border-line-default">
-		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
-			<Users class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Teams</h1>
-			<div class="flex-1"></div>
-			{#if !creating}
-				<Button size="sm" href={workspacePath(slug, "/settings/teams?new")}>New team</Button>
-			{/if}
-		</div>
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+<SettingsPage
+	title="Teams"
+	description="Ownership boundaries for issues, projects and permissions."
+	Icon={Users}
+	meta={listing.kind === "loading" ? "loading" : `${teams.length} total`}
+	width="compact"
+>
+	{#snippet actions()}
+		{#if !creating}
+			<Button size="sm" href={workspacePath(slug, "/settings/teams?new")}>New team</Button>
+		{/if}
+	{/snippet}
 			{#if listing.kind === "created"}
 				<Alert.Root variant="success">
 					<CircleCheck aria-hidden="true" />
@@ -289,9 +287,12 @@
 			{/if}
 
 			{#if listing.kind === "loading"}
-				<ul class="flex flex-col gap-px" aria-busy="true">
+				<ul class="flex flex-col gap-px" aria-busy="true" aria-label="Loading teams">
 					{#each [0, 1, 2] as row (row)}
-						<li class="h-12 animate-breathe rounded-md bg-paper-2"></li>
+						<li class="flex h-12 items-center gap-3 px-3">
+							<Skeleton class="size-7 shrink-0" />
+							<Skeleton class="h-3 w-40" />
+						</li>
 					{/each}
 				</ul>
 			{:else if listing.kind === "empty"}
@@ -348,6 +349,4 @@
 					{/if}
 				</section>
 			{/if}
-		</div>
-	</div>
-</div>
+</SettingsPage>
