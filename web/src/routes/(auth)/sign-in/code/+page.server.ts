@@ -5,7 +5,7 @@ import { signInCodeSchema } from "$lib/auth/sign-in-code-schema";
 import { signInCodeFailure } from "$lib/auth/sign-in-code";
 import { safeReturn } from "$lib/auth/return-to";
 import { withSlot } from "$lib/account/accounts";
-import { addingAccount, leaveIfSignedIn } from "$lib/auth/signed-in";
+import { leaveIfSignedIn } from "$lib/auth/signed-in";
 import type { SignInCodeFailure } from "$lib/auth/types";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -43,8 +43,6 @@ export const actions: Actions = {
 			});
 		}
 
-		const landing = addingAccount(url) ? "/" : safeReturn(url.searchParams.get("return"));
-
-		redirect(303, withSlot(landing, data.slot));
+		redirect(303, withSlot(safeReturn(url.searchParams.get("return")), data.slot));
 	},
 };
