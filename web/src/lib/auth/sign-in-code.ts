@@ -1,6 +1,5 @@
 import type { operations } from "$lib/api/dashboard.gen";
-import { addingAccount } from "./signed-in";
-import { safeReturn } from "./return-to";
+import { authPath } from "./return-to";
 import type { SignInCodeFailure } from "./types";
 
 type VerifyResponses = operations["verifySignInCode"]["responses"];
@@ -28,11 +27,5 @@ export function signInCodeFailure(problem: VerifySignInCodeProblem): SignInCodeF
 }
 
 export function codeEntry(challengeId: string, url: URL): string {
-	const entry = new URLSearchParams({ challenge: challengeId });
-	const returnTo = safeReturn(url.searchParams.get("return"));
-
-	if (returnTo !== "/") entry.set("return", returnTo);
-	if (addingAccount(url)) entry.set("adding", "1");
-
-	return `/sign-in/code?${entry}`;
+	return authPath(url, `/sign-in/code?challenge=${encodeURIComponent(challengeId)}`);
 }
