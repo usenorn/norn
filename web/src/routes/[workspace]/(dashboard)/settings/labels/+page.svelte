@@ -10,12 +10,15 @@
 	import Tags from "@lucide/svelte/icons/tags";
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Empty from "$lib/components/ui/empty/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { api } from "$lib/api";
 	import {
 		colorLabels,
@@ -298,18 +301,13 @@
 
 <svelte:head><title>Labels · {data.workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex-none border-b border-line-default">
-		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
-			<Tags class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Labels</h1>
-		</div>
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+<SettingsPage
+	title="Labels"
+	description="A shared vocabulary for classifying and routing work."
+	Icon={Tags}
+	meta={board.kind === "loading" ? "loading" : `${labels.length} labels / ${groups.length} groups`}
+	width="compact"
+>
 
 			{#if failure}
 				<Alert.Root variant="destructive">
@@ -329,16 +327,27 @@
 				</div>
 
 				{#if board.kind === "loading"}
-					<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
+					<div class="flex flex-col gap-2" aria-busy="true" aria-label="Loading labels">
+						{#each [0, 1, 2, 3] as row (row)}
+							<Skeleton class="h-11 w-full" />
+						{/each}
+					</div>
 				{:else if board.kind === "unavailable"}
-					<p class="text-sm leading-normal text-muted-foreground">
-						We could not load this workspace's labels.
-					</p>
+					<Alert.Root variant="destructive">
+						<CircleX aria-hidden="true" />
+						<Alert.Title>Could not load the labels</Alert.Title>
+						<Alert.Description>Check your connection and reload.</Alert.Description>
+					</Alert.Root>
 				{:else if labels.length === 0 && groups.length === 0}
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						No labels yet. Add the first one below — it becomes available on every issue in
-						{data.workspace.name}.
-					</p>
+					<Empty.Root>
+						<Empty.Media variant="icon"><Tags aria-hidden="true" /></Empty.Media>
+						<Empty.Header>
+							<Empty.Title>No labels yet</Empty.Title>
+							<Empty.Description>
+								Add the first one below and it becomes available on every issue in {data.workspace.name}.
+							</Empty.Description>
+						</Empty.Header>
+					</Empty.Root>
 				{:else}
 					{#each sections as section (section.group?.id ?? "ungrouped")}
 						<div class="flex flex-col gap-2">
@@ -736,6 +745,4 @@
 					the issue board
 				</a>.
 			</p>
-		</div>
-	</div>
-</div>
+</SettingsPage>

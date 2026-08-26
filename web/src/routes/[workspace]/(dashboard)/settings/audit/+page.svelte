@@ -5,10 +5,13 @@
 	import ScrollText from "@lucide/svelte/icons/scroll-text";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Empty from "$lib/components/ui/empty/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Label } from "$lib/components/ui/label/index.js";
+	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { api } from "$lib/api";
 	import { sessionHeader } from "$lib/account/accounts";
 	import {
@@ -163,9 +166,14 @@
 
 <svelte:head><title>Audit log · {workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex h-11 flex-none items-center justify-between gap-3 border-b border-line-subtle px-4">
-		<h1 class="text-sm font-medium tracking-snug text-ink-900">Audit log</h1>
+<SettingsPage
+	title="Audit log"
+	description="Security and administrative activity across this workspace."
+	Icon={ScrollText}
+	meta={readable ? `${events.length} events / ${retention}d retention` : record.kind}
+	width="wide"
+>
+	{#snippet actions()}
 		{#if readable}
 			<Button
 				variant="ghost"
@@ -177,12 +185,7 @@
 				{exporting ? "Exporting…" : "Export"}
 			</Button>
 		{/if}
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-240 flex-col gap-5 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+	{/snippet}
 			{#if exportFailed}
 				<Alert.Root variant="destructive">
 					<TriangleAlert aria-hidden="true" />
@@ -191,7 +194,16 @@
 				</Alert.Root>
 			{/if}
 
-			{#if record.kind === "unlicensed"}
+			{#if record.kind === "loading"}
+				<div class="flex flex-col gap-3" aria-busy="true" aria-label="Loading audit events">
+					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+						{#each [0, 1, 2, 3] as field (field)}
+							<Skeleton class="h-14 w-full" />
+						{/each}
+					</div>
+					<Skeleton class="h-64 w-full" />
+				</div>
+			{:else if record.kind === "unlicensed"}
 				<section class="flex flex-col gap-3 rounded-lg border border-line-default bg-paper-0 p-5">
 					<div class="flex flex-col gap-1">
 						<h2 class="text-md font-medium tracking-snug text-ink-900">
@@ -297,14 +309,13 @@
 				</section>
 
 				{#if record.kind === "empty"}
-					<section
-						class="flex flex-col items-center gap-2 rounded-lg border border-line-default bg-paper-0 px-6 py-12 text-center"
-					>
-						<ScrollText class="size-5 text-muted-foreground" aria-hidden="true" />
-						<h2 class="text-md font-medium tracking-snug text-ink-900">
+					<Empty.Root>
+						<Empty.Media variant="icon"><ScrollText aria-hidden="true" /></Empty.Media>
+						<Empty.Header>
+							<Empty.Title>
 							{filtersApplied(shown) ? "Nothing matches those filters" : "Nothing recorded yet"}
-						</h2>
-						<p class="max-w-100 text-sm leading-normal text-muted-foreground text-pretty">
+							</Empty.Title>
+							<Empty.Description>
 							{#if filtersApplied(shown)}
 								Widen the date range or clear the filters.
 							{:else}
@@ -312,8 +323,9 @@
 								happen.
 							{/if}
 							Records are kept for {retention} days.
-						</p>
-					</section>
+							</Empty.Description>
+						</Empty.Header>
+					</Empty.Root>
 				{:else}
 					<div class="overflow-x-auto rounded-lg border border-line-default bg-paper-0">
 						<table class="w-full min-w-160 border-collapse text-left text-sm">
@@ -380,6 +392,4 @@
 					</div>
 				{/if}
 			{/if}
-		</div>
-	</div>
-</div>
+</SettingsPage>

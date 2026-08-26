@@ -14,6 +14,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Progress } from "$lib/components/ui/progress/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { workspaceSettingsSchema } from "$lib/workspace/settings-schema";
 	import { purgeDate, timezones, type WorkspaceSettings } from "$lib/workspace/settings";
 	import {
@@ -86,18 +87,13 @@
 
 <svelte:head><title>General · {workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex-none border-b border-line-default">
-		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
-			<Settings class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">General</h1>
-		</div>
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+<SettingsPage
+	title="General"
+	description="Identity, defaults, storage and workspace lifecycle."
+	Icon={Settings}
+	meta={workspace.slug}
+	width="compact"
+>
 			{#if pending}
 				<Alert.Root variant="destructive">
 					<TriangleAlert aria-hidden="true" />
@@ -313,6 +309,4 @@
 					</form>
 				</section>
 			{/if}
-		</div>
-	</div>
-</div>
+</SettingsPage>

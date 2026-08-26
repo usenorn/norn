@@ -8,6 +8,8 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Label } from "$lib/components/ui/label/index.js";
+	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { api } from "$lib/api";
 	import {
 		absentPolicies,
@@ -187,16 +189,12 @@
 
 <svelte:head><title>Directory · {workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex h-11 flex-none items-center gap-2 border-b border-line-subtle px-4">
-		<Network class="size-4 text-muted-foreground" aria-hidden="true" />
-		<h1 class="text-sm font-medium tracking-snug text-ink-900">Directory</h1>
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-180 flex-col gap-5 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+<SettingsPage
+	title="Directory"
+	description="Provision members and team membership from your identity provider."
+	Icon={Network}
+	meta={view.kind.replaceAll("_", " ")}
+>
 			{#if failure}
 				<Alert.Root variant="destructive">
 					<TriangleAlert aria-hidden="true" />
@@ -205,7 +203,12 @@
 				</Alert.Root>
 			{/if}
 
-			{#if view.kind === "unlicensed"}
+			{#if view.kind === "loading"}
+				<div class="flex flex-col gap-3" aria-busy="true" aria-label="Loading directory settings">
+					<Skeleton class="h-28 w-full" />
+					<Skeleton class="h-40 w-full" />
+				</div>
+			{:else if view.kind === "unlicensed"}
 				<section class="flex flex-col gap-3 rounded-lg border border-line-default bg-paper-0 p-5">
 					<div class="flex flex-col gap-1">
 						<h2 class="text-md font-medium tracking-snug text-ink-900">
@@ -426,6 +429,4 @@
 					{/if}
 				</section>
 			{/if}
-		</div>
-	</div>
-</div>
+</SettingsPage>

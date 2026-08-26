@@ -5,7 +5,10 @@
 	import Server from "@lucide/svelte/icons/server";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Empty from "$lib/components/ui/empty/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
+	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { api } from "$lib/api";
 	import { keys } from "$lib/api/keys";
 	import { agentsPath } from "$lib/agents/agents";
@@ -138,21 +141,17 @@
 
 <svelte:head><title>Runners · {workspace.name} · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex h-11 flex-none items-center justify-between gap-3 border-b border-line-subtle px-4">
-		<div class="flex min-w-0 items-center gap-2">
-			<Server class="size-icon-toolbar flex-none text-muted-foreground" aria-hidden="true" />
-			<h1 class="truncate text-sm font-medium tracking-snug text-ink-900">Runners</h1>
-		</div>
+<SettingsPage
+	title="Runners"
+	description="Machines that execute delegated work on behalf of an agent."
+	Icon={Server}
+	meta={`${groups.length} agent groups`}
+>
+	{#snippet actions()}
 		{#if view.kind === "ready" || view.kind === "empty"}
 			<Button size="sm" onclick={() => (connecting = true)}>Connect a machine</Button>
 		{/if}
-	</div>
-
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-180 flex-col gap-5 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
+	{/snippet}
 			<p class="text-sm leading-normal text-muted-foreground text-pretty">
 				A runner is one computer bound to one of your agents. It is where delegated work actually
 				runs: it holds the folders, starts the coding agent and puts the change up for review.
@@ -169,7 +168,10 @@
 			{/if}
 
 			{#if view.kind === "loading"}
-				<p class="text-sm text-muted-foreground">Reading what is connected…</p>
+				<div class="flex flex-col gap-3" aria-busy="true" aria-label="Loading runners">
+					<Skeleton class="h-20 w-full" />
+					<Skeleton class="h-20 w-full" />
+				</div>
 			{:else if view.kind === "forbidden"}
 				<Alert.Root variant="muted">
 					<CircleAlert aria-hidden="true" />
@@ -186,18 +188,21 @@
 					<Alert.Description>Check your connection and reload.</Alert.Description>
 				</Alert.Root>
 			{:else if view.kind === "no_agents"}
-				<div
-					class="flex flex-col items-center gap-3 rounded-lg border border-line-default bg-paper-0 px-6 py-10 text-center"
-				>
-					<Server class="size-5 text-muted-foreground" aria-hidden="true" />
-					<p class="max-w-100 text-sm leading-normal text-muted-foreground text-pretty">
+				<Empty.Root>
+					<Empty.Media variant="icon"><Server aria-hidden="true" /></Empty.Media>
+					<Empty.Header>
+						<Empty.Title>No agents available</Empty.Title>
+						<Empty.Description>
 						A machine acts as an agent, and this workspace has none yet. Register an agent first;
 						a computer can then be bound to it, and delegated work runs there.
-					</p>
-					<Button variant="secondary" size="sm" href={agentsPath(workspace.slug)}>
-						Register an agent
-					</Button>
-				</div>
+						</Empty.Description>
+					</Empty.Header>
+					<Empty.Content>
+						<Button variant="secondary" size="sm" href={agentsPath(workspace.slug)}>
+							Register an agent
+						</Button>
+					</Empty.Content>
+				</Empty.Root>
 			{:else}
 				{#each groups as group (group.agent.id)}
 					<AgentGroup
@@ -217,9 +222,7 @@
 					/>
 				{/each}
 			{/if}
-		</div>
-	</div>
-</div>
+</SettingsPage>
 
 <ConnectDialog
 	bind:open={connecting}
