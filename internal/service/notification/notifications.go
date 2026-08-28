@@ -72,6 +72,7 @@ func (s *notificationsService) decide(
 func (s *notificationsService) Directed(
 	ctx context.Context,
 	workspaceID, recipientID, subjectID uuid.UUID,
+	window time.Duration,
 	limit int,
 ) ([]entity.DirectedNotice, error) {
 	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
@@ -95,8 +96,48 @@ func (s *notificationsService) Directed(
 	}
 
 	return s.notifications.Directed(
-		ctx, workspaceID, decision.Actor.Authority(), recipientID, subjectID, limit,
+		ctx, workspaceID, decision.Actor.Authority(), recipientID, subjectID,
+		directedSince(subjectID, window), limit,
 	)
+}
+
+func (s *notificationsService) DirectedTally(
+	ctx context.Context,
+	workspaceID, recipientID, subjectID uuid.UUID,
+	window time.Duration,
+) (entity.DirectedTally, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
+	if err != nil {
+		return entity.DirectedTally{}, err
+	}
+
+	if recipientID == uuid.Nil {
+		return entity.DirectedTally{}, entity.NewValidationError(entity.FieldError{
+			Field: "recipientId",
+			Code:  entity.ValidationCodeRequired,
+		})
+	}
+
+	return s.notifications.DirectedTally(
+		ctx, workspaceID, decision.Actor.Authority(), recipientID, subjectID,
+		directedSince(subjectID, window),
+	)
+}
+
+func directedSince(subjectID uuid.UUID, window time.Duration) time.Time {
+	if subjectID != uuid.Nil {
+		return time.Time{}
+	}
+
+	if window <= 0 {
+		window = entity.DirectedWindowDefault
+	}
+
+	if window > entity.DirectedWindowMax {
+		window = entity.DirectedWindowMax
+	}
+
+	return time.Now().UTC().Add(-window)
 }
 
 func (s *notificationsService) Inbox(

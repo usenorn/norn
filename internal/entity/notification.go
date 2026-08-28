@@ -15,6 +15,8 @@ const (
 	NotificationCursorIDLen     = 36
 	NotificationDigestWindow    = 15 * time.Minute
 	NotificationFanOutBatchSize = 200
+	DirectedWindowDefault       = 30 * 24 * time.Hour
+	DirectedWindowMax           = 365 * 24 * time.Hour
 )
 
 var (
@@ -323,6 +325,14 @@ func (n DirectedNotice) Cleared() bool {
 
 func (n DirectedNotice) Opened() bool {
 	return !n.OpenedAt.IsZero() && !n.OpenedAt.Before(n.SentAt)
+}
+
+type DirectedTally struct {
+	Sent             int
+	Opened           int
+	ClearedUnopened  int
+	OldestUnopenedAt time.Time
+	Since            time.Time
 }
 
 type NotificationFilter string
