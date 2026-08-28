@@ -2252,10 +2252,6 @@ func (r problemResponse) VisitReadAllWorkspaceNotificationsResponse(w http.Respo
 	return r.write(w)
 }
 
-func (r problemResponse) VisitListDirectedNotificationsResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
 func (r problemResponse) VisitReadWorkspaceNotificationResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

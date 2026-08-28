@@ -5188,32 +5188,6 @@ type DelegationTargets struct {
 	Warnings []SharedRepositoryWarning `json:"warnings"`
 }
 
-// DirectedNotice defines model for DirectedNotice.
-type DirectedNotice struct {
-	// Cleared The subject was dismissed from that person's inbox after this was sent. It does not say they read anything: clearing the inbox and opening the subject are separate acts.
-	Cleared   bool                 `json:"cleared"`
-	ClearedAt *time.Time           `json:"clearedAt,omitempty"`
-	Delivered NotificationChannels `json:"delivered"`
-	EventId   openapi_types.UUID   `json:"eventId"`
-	Kind      NotificationKind     `json:"kind"`
-
-	// Opened They opened the subject itself after this was sent.
-	Opened      bool                    `json:"opened"`
-	OpenedAt    *time.Time              `json:"openedAt,omitempty"`
-	Reason      NotificationReason      `json:"reason"`
-	RecipientId openapi_types.UUID      `json:"recipientId"`
-	Reference   *string                 `json:"reference,omitempty"`
-	SentAt      time.Time               `json:"sentAt"`
-	SubjectId   openapi_types.UUID      `json:"subjectId"`
-	SubjectKind NotificationSubjectKind `json:"subjectKind"`
-	Title       *string                 `json:"title,omitempty"`
-}
-
-// DirectedNoticePage defines model for DirectedNoticePage.
-type DirectedNoticePage struct {
-	Notices []DirectedNotice `json:"notices"`
-}
-
 // DirectoryAbsentPolicy defines model for DirectoryAbsentPolicy.
 type DirectoryAbsentPolicy string
 
@@ -8776,12 +8750,6 @@ type ListWorkspaceNotificationsParams struct {
 // ListWorkspaceNotificationsParamsFilter defines parameters for ListWorkspaceNotifications.
 type ListWorkspaceNotificationsParamsFilter string
 
-// ListDirectedNotificationsParams defines parameters for ListDirectedNotifications.
-type ListDirectedNotificationsParams struct {
-	RecipientId openapi_types.UUID `form:"recipientId" json:"recipientId"`
-	Limit       *int32             `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
 // ListWorkspaceProjectsParams defines parameters for ListWorkspaceProjects.
 type ListWorkspaceProjectsParams struct {
 	State *ProjectState `form:"state,omitempty" json:"state,omitempty"`
@@ -10883,13 +10851,6 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/notifications (the `ListWorkspaceNotifications` operationId).
 	ListWorkspaceNotifications(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceNotificationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ListDirectedNotifications What you sent one person, and whether it reached them
-	//
-	// Everything you assigned to somebody or mentioned them in, newest first, with what is known about each: that it was delivered, that they cleared it from their inbox, and that they opened the subject. Only the person who caused the event sees this, and a notice somebody received by following an issue is not included because nobody directed it at them.
-	//
-	// Corresponds with GET /workspaces/{workspaceId}/notifications/directed (the `ListDirectedNotifications` operationId).
-	ListDirectedNotifications(ctx context.Context, workspaceId WorkspaceId, params *ListDirectedNotificationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ReadAllWorkspaceNotifications Mark everything currently in your inbox as read
 	//
@@ -16005,23 +15966,6 @@ func (c *Client) SetWorkspaceNotificationSettings(ctx context.Context, workspace
 // Corresponds with GET /workspaces/{workspaceId}/notifications (the `ListWorkspaceNotifications` operationId).
 func (c *Client) ListWorkspaceNotifications(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceNotificationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListWorkspaceNotificationsRequest(c.Server, workspaceId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// ListDirectedNotifications What you sent one person, and whether it reached them
-//
-// Everything you assigned to somebody or mentioned them in, newest first, with what is known about each: that it was delivered, that they cleared it from their inbox, and that they opened the subject. Only the person who caused the event sees this, and a notice somebody received by following an issue is not included because nobody directed it at them.
-//
-// Corresponds with GET /workspaces/{workspaceId}/notifications/directed (the `ListDirectedNotifications` operationId).
-func (c *Client) ListDirectedNotifications(ctx context.Context, workspaceId WorkspaceId, params *ListDirectedNotificationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListDirectedNotificationsRequest(c.Server, workspaceId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -27389,75 +27333,6 @@ func NewListWorkspaceNotificationsRequest(server string, workspaceId WorkspaceId
 	return req, nil
 }
 
-// NewListDirectedNotificationsRequest constructs an http.Request for the ListDirectedNotifications method
-func NewListDirectedNotificationsRequest(server string, workspaceId WorkspaceId, params *ListDirectedNotificationsParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/workspaces/%s/notifications/directed", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		// queryValues collects non-styled parameters (passthrough, JSON)
-		// that are safe to round-trip through url.Values.Encode().
-		queryValues := queryURL.Query()
-		// rawQueryFragments collects pre-encoded query fragments from
-		// styled parameters, preserving literal commas as delimiters
-		// per the OpenAPI spec (e.g. "color=blue,black,brown").
-		var rawQueryFragments []string
-
-		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "recipientId", params.RecipientId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
-			return nil, err
-		} else {
-			for _, qp := range strings.Split(queryFrag, "&") {
-				rawQueryFragments = append(rawQueryFragments, qp)
-			}
-		}
-
-		if params.Limit != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if encoded := queryValues.Encode(); encoded != "" {
-			rawQueryFragments = append(rawQueryFragments, encoded)
-		}
-		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewReadAllWorkspaceNotificationsRequest constructs an http.Request for the ReadAllWorkspaceNotifications method
 func NewReadAllWorkspaceNotificationsRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
 	var err error
@@ -34752,15 +34627,6 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/notifications (the `ListWorkspaceNotifications` operationId).
 	ListWorkspaceNotificationsWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceNotificationsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceNotificationsResponse, error)
-
-	// ListDirectedNotificationsWithResponse What you sent one person, and whether it reached them
-	//
-	// Everything you assigned to somebody or mentioned them in, newest first, with what is known about each: that it was delivered, that they cleared it from their inbox, and that they opened the subject. Only the person who caused the event sees this, and a notice somebody received by following an issue is not included because nobody directed it at them.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with GET /workspaces/{workspaceId}/notifications/directed (the `ListDirectedNotifications` operationId).
-	ListDirectedNotificationsWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ListDirectedNotificationsParams, reqEditors ...RequestEditorFn) (*ListDirectedNotificationsResponse, error)
 
 	// ReadAllWorkspaceNotificationsWithResponse Mark everything currently in your inbox as read
 	//
@@ -49512,75 +49378,6 @@ func (r ListWorkspaceNotificationsResponse) ContentType() string {
 	return ""
 }
 
-type ListDirectedNotificationsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *DirectedNoticePage
-	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
-	ApplicationproblemJSON401 *Problem
-	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
-	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
-	ApplicationproblemJSON422 *Problem
-	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
-	ApplicationproblemJSON500 *Problem
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListDirectedNotificationsResponse) GetJSON200() *DirectedNoticePage {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
-func (r ListDirectedNotificationsResponse) GetApplicationproblemJSON401() *Problem {
-	return r.ApplicationproblemJSON401
-}
-
-// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
-func (r ListDirectedNotificationsResponse) GetApplicationproblemJSON403() *Forbidden {
-	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
-func (r ListDirectedNotificationsResponse) GetApplicationproblemJSON422() *Problem {
-	return r.ApplicationproblemJSON422
-}
-
-// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
-func (r ListDirectedNotificationsResponse) GetApplicationproblemJSON500() *Problem {
-	return r.ApplicationproblemJSON500
-}
-
-// GetBody returns the raw response body bytes
-func (r ListDirectedNotificationsResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r ListDirectedNotificationsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListDirectedNotificationsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r ListDirectedNotificationsResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
 type ReadAllWorkspaceNotificationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -61248,21 +61045,6 @@ func (c *ClientWithResponses) ListWorkspaceNotificationsWithResponse(ctx context
 		return nil, err
 	}
 	return ParseListWorkspaceNotificationsResponse(rsp)
-}
-
-// ListDirectedNotificationsWithResponse What you sent one person, and whether it reached them
-//
-// Everything you assigned to somebody or mentioned them in, newest first, with what is known about each: that it was delivered, that they cleared it from their inbox, and that they opened the subject. Only the person who caused the event sees this, and a notice somebody received by following an issue is not included because nobody directed it at them.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with GET /workspaces/{workspaceId}/notifications/directed (the `ListDirectedNotifications` operationId).
-func (c *ClientWithResponses) ListDirectedNotificationsWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ListDirectedNotificationsParams, reqEditors ...RequestEditorFn) (*ListDirectedNotificationsResponse, error) {
-	rsp, err := c.ListDirectedNotifications(ctx, workspaceId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListDirectedNotificationsResponse(rsp)
 }
 
 // ReadAllWorkspaceNotificationsWithResponse Mark everything currently in your inbox as read
@@ -74238,60 +74020,6 @@ func ParseListWorkspaceNotificationsResponse(rsp *http.Response) (*ListWorkspace
 	return response, nil
 }
 
-// ParseListDirectedNotificationsResponse parses an HTTP response from a ListDirectedNotificationsWithResponse call
-func ParseListDirectedNotificationsResponse(rsp *http.Response) (*ListDirectedNotificationsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListDirectedNotificationsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest DirectedNoticePage
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON422 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseReadAllWorkspaceNotificationsResponse parses an HTTP response from a ReadAllWorkspaceNotificationsWithResponse call
 func ParseReadAllWorkspaceNotificationsResponse(rsp *http.Response) (*ReadAllWorkspaceNotificationsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -81455,9 +81183,6 @@ type ServerInterface interface {
 	// ListWorkspaceNotifications Read your inbox, one entry per thing that changed, newest first
 	// (GET /workspaces/{workspaceId}/notifications)
 	ListWorkspaceNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceNotificationsParams)
-	// ListDirectedNotifications What you sent one person, and whether it reached them
-	// (GET /workspaces/{workspaceId}/notifications/directed)
-	ListDirectedNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListDirectedNotificationsParams)
 	// ReadAllWorkspaceNotifications Mark everything currently in your inbox as read
 	// (POST /workspaces/{workspaceId}/notifications/read)
 	ReadAllWorkspaceNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -82952,12 +82677,6 @@ func (_ Unimplemented) SetWorkspaceNotificationSettings(w http.ResponseWriter, r
 // ListWorkspaceNotifications Read your inbox, one entry per thing that changed, newest first
 // (GET /workspaces/{workspaceId}/notifications)
 func (_ Unimplemented) ListWorkspaceNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceNotificationsParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ListDirectedNotifications What you sent one person, and whether it reached them
-// (GET /workspaces/{workspaceId}/notifications/directed)
-func (_ Unimplemented) ListDirectedNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListDirectedNotificationsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -90030,61 +89749,6 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceNotifications(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
-// ListDirectedNotifications operation middleware
-func (siw *ServerInterfaceWrapper) ListDirectedNotifications(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "workspaceId" -------------
-	var workspaceId WorkspaceId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
-		return
-	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListDirectedNotificationsParams
-
-	// ------------- Required query parameter "recipientId" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "recipientId", r.URL.Query(), &params.RecipientId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "recipientId"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipientId", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListDirectedNotifications(w, r, workspaceId, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // ReadAllWorkspaceNotifications operation middleware
 func (siw *ServerInterfaceWrapper) ReadAllWorkspaceNotifications(w http.ResponseWriter, r *http.Request) {
 
@@ -94911,9 +94575,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/notifications", wrapper.ListWorkspaceNotifications)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/workspaces/{workspaceId}/notifications/directed", wrapper.ListDirectedNotifications)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/notifications/read", wrapper.ReadAllWorkspaceNotifications)
@@ -112350,89 +112011,6 @@ func (response ListWorkspaceNotifications500ApplicationProblemPlusJSONResponse) 
 	return err
 }
 
-type ListDirectedNotificationsRequestObject struct {
-	WorkspaceId WorkspaceId `json:"workspaceId"`
-	Params      ListDirectedNotificationsParams
-}
-
-type ListDirectedNotificationsResponseObject interface {
-	VisitListDirectedNotificationsResponse(w http.ResponseWriter) error
-}
-
-type ListDirectedNotifications200JSONResponse DirectedNoticePage
-
-func (response ListDirectedNotifications200JSONResponse) VisitListDirectedNotificationsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListDirectedNotifications401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response ListDirectedNotifications401ApplicationProblemPlusJSONResponse) VisitListDirectedNotificationsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListDirectedNotifications403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response ListDirectedNotifications403ApplicationProblemPlusJSONResponse) VisitListDirectedNotificationsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListDirectedNotifications422ApplicationProblemPlusJSONResponse Problem
-
-func (response ListDirectedNotifications422ApplicationProblemPlusJSONResponse) VisitListDirectedNotificationsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListDirectedNotifications500ApplicationProblemPlusJSONResponse Problem
-
-func (response ListDirectedNotifications500ApplicationProblemPlusJSONResponse) VisitListDirectedNotificationsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type ReadAllWorkspaceNotificationsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -123472,9 +123050,6 @@ type StrictServerInterface interface {
 	// ListWorkspaceNotifications Read your inbox, one entry per thing that changed, newest first
 	// (GET /workspaces/{workspaceId}/notifications)
 	ListWorkspaceNotifications(ctx context.Context, request ListWorkspaceNotificationsRequestObject) (ListWorkspaceNotificationsResponseObject, error)
-	// ListDirectedNotifications What you sent one person, and whether it reached them
-	// (GET /workspaces/{workspaceId}/notifications/directed)
-	ListDirectedNotifications(ctx context.Context, request ListDirectedNotificationsRequestObject) (ListDirectedNotificationsResponseObject, error)
 	// ReadAllWorkspaceNotifications Mark everything currently in your inbox as read
 	// (POST /workspaces/{workspaceId}/notifications/read)
 	ReadAllWorkspaceNotifications(ctx context.Context, request ReadAllWorkspaceNotificationsRequestObject) (ReadAllWorkspaceNotificationsResponseObject, error)
@@ -129367,33 +128942,6 @@ func (sh *strictHandler) ListWorkspaceNotifications(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListWorkspaceNotificationsResponseObject); ok {
 		if err := validResponse.VisitListWorkspaceNotificationsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListDirectedNotifications operation middleware
-func (sh *strictHandler) ListDirectedNotifications(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListDirectedNotificationsParams) {
-	var request ListDirectedNotificationsRequestObject
-
-	request.WorkspaceId = workspaceId
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListDirectedNotifications(ctx, request.(ListDirectedNotificationsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListDirectedNotifications")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListDirectedNotificationsResponseObject); ok {
-		if err := validResponse.VisitListDirectedNotificationsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

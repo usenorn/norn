@@ -118,21 +118,6 @@ func (mr *MockNotificationMockRecorder) DigestRecipients(ctx, window any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DigestRecipients", reflect.TypeOf((*MockNotification)(nil).DigestRecipients), ctx, window)
 }
 
-// Directed mocks base method.
-func (m *MockNotification) Directed(ctx context.Context, workspaceID, actorID, recipientID uuid.UUID, limit int) ([]entity.DirectedNotice, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Directed", ctx, workspaceID, actorID, recipientID, limit)
-	ret0, _ := ret[0].([]entity.DirectedNotice)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Directed indicates an expected call of Directed.
-func (mr *MockNotificationMockRecorder) Directed(ctx, workspaceID, actorID, recipientID, limit any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Directed", reflect.TypeOf((*MockNotification)(nil).Directed), ctx, workspaceID, actorID, recipientID, limit)
-}
-
 // ListInbox mocks base method.
 func (m *MockNotification) ListInbox(ctx context.Context, workspaceID, accountID uuid.UUID, page entity.NotificationPage) ([]entity.Notification, error) {
 	m.ctrl.T.Helper()
@@ -188,20 +173,6 @@ func (m *MockNotification) RecordDigestOutcome(ctx context.Context, claim entity
 func (mr *MockNotificationMockRecorder) RecordDigestOutcome(ctx, claim, failure any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordDigestOutcome", reflect.TypeOf((*MockNotification)(nil).RecordDigestOutcome), ctx, claim, failure)
-}
-
-// RecordView mocks base method.
-func (m *MockNotification) RecordView(ctx context.Context, workspaceID, accountID uuid.UUID, subject entity.NotificationSubject, at time.Time) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordView", ctx, workspaceID, accountID, subject, at)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecordView indicates an expected call of RecordView.
-func (mr *MockNotificationMockRecorder) RecordView(ctx, workspaceID, accountID, subject, at any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordView", reflect.TypeOf((*MockNotification)(nil).RecordView), ctx, workspaceID, accountID, subject, at)
 }
 
 // Snooze mocks base method.

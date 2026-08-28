@@ -73,21 +73,6 @@ func (mr *MockNotificationsMockRecorder) Digest(ctx, now any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Digest", reflect.TypeOf((*MockNotifications)(nil).Digest), ctx, now)
 }
 
-// Directed mocks base method.
-func (m *MockNotifications) Directed(ctx context.Context, workspaceID, recipientID uuid.UUID, limit int) ([]entity.DirectedNotice, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Directed", ctx, workspaceID, recipientID, limit)
-	ret0, _ := ret[0].([]entity.DirectedNotice)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Directed indicates an expected call of Directed.
-func (mr *MockNotificationsMockRecorder) Directed(ctx, workspaceID, recipientID, limit any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Directed", reflect.TypeOf((*MockNotifications)(nil).Directed), ctx, workspaceID, recipientID, limit)
-}
-
 // FanOut mocks base method.
 func (m *MockNotifications) FanOut(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()

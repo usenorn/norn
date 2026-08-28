@@ -54,11 +54,6 @@ type Notifications interface {
 		preferences entity.NotificationPreferences,
 	) (NotificationSettingsView, error)
 	ClearSettings(ctx context.Context, workspaceID, teamID uuid.UUID) (NotificationSettingsView, error)
-	Directed(
-		ctx context.Context,
-		workspaceID, recipientID uuid.UUID,
-		limit int,
-	) ([]entity.DirectedNotice, error)
 	FanOut(ctx context.Context) (int, error)
 	Digest(ctx context.Context, now time.Time) error
 }

@@ -21,7 +21,6 @@ import (
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
 	issuequestionsvc "github.com/usenorn/norn/internal/service/issuequestion"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
-	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	scmsvc "github.com/usenorn/norn/internal/service/scm"
 	searchsvc "github.com/usenorn/norn/internal/service/search"
@@ -92,7 +91,6 @@ func newHarness(t *testing.T) *harness {
 		labelsvc.NewMockLabels(ctrl),
 		searchsvc.NewMockSearches(ctrl),
 		h.sourceControl,
-		notificationsvc.NewMockNotifications(ctrl),
 		config.App{Version: "test"},
 		config.MCP{Enabled: true},
 	)
@@ -208,15 +206,14 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		"norn_whoami",
 		"norn_ask",
 		"norn_start_issue",
-		"norn_list_directed",
 	} {
 		if !registered[name] {
 			t.Errorf("tool %s is not registered", name)
 		}
 	}
 
-	if len(tools.Tools) != 19 {
-		t.Errorf("registered %d tools, want 19", len(tools.Tools))
+	if len(tools.Tools) != 18 {
+		t.Errorf("registered %d tools, want 18", len(tools.Tools))
 	}
 }
 
@@ -385,7 +382,6 @@ func TestDisabledMCPAnswers404(t *testing.T) {
 		labelsvc.NewMockLabels(ctrl),
 		searchsvc.NewMockSearches(ctrl),
 		scmsvc.NewMockSourceControl(ctrl),
-		notificationsvc.NewMockNotifications(ctrl),
 		config.App{Version: "test"},
 		config.MCP{Enabled: false},
 	)
