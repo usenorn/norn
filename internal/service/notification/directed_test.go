@@ -25,10 +25,10 @@ func TestAnAgentAsksOnBehalfOfWhoeverOwnsIt(t *testing.T) {
 	var askedFor uuid.UUID
 
 	h.notifications.EXPECT().
-		Directed(gomock.Any(), h.workspaceID, gomock.Any(), recipient, gomock.Any(), gomock.Any()).
+		Directed(gomock.Any(), h.workspaceID, gomock.Any(), recipient, gomock.Any()).
 		DoAndReturn(func(
 			_ context.Context,
-			_, actorID, _, _ uuid.UUID,
+			_, actorID, _ uuid.UUID,
 			_ int,
 		) ([]entity.DirectedNotice, error) {
 			askedFor = actorID
@@ -36,7 +36,7 @@ func TestAnAgentAsksOnBehalfOfWhoeverOwnsIt(t *testing.T) {
 			return nil, nil
 		})
 
-	if _, err := h.service.Directed(context.Background(), h.workspaceID, recipient, uuid.Nil, 0); err != nil {
+	if _, err := h.service.Directed(context.Background(), h.workspaceID, recipient, 0); err != nil {
 		t.Fatalf("Directed: %v", err)
 	}
 
@@ -54,7 +54,7 @@ func TestAskingWithoutNamingSomebodyIsRefused(t *testing.T) {
 
 	h.actingAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()})
 
-	_, err := h.service.Directed(context.Background(), h.workspaceID, uuid.Nil, uuid.Nil, 0)
+	_, err := h.service.Directed(context.Background(), h.workspaceID, uuid.Nil, 0)
 
 	var invalid entity.ValidationError
 	if !errors.As(err, &invalid) {

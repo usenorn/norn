@@ -52,7 +52,7 @@ type Notification interface {
 	) error
 	Directed(
 		ctx context.Context,
-		workspaceID, actorID, recipientID, subjectID uuid.UUID,
+		workspaceID, actorID, recipientID uuid.UUID,
 		limit int,
 	) ([]entity.DirectedNotice, error)
 	DigestRecipients(ctx context.Context, window time.Time) ([]entity.NotificationDigestClaim, error)

@@ -4,8 +4,6 @@
 	import { page } from "$app/state";
 	import Archive from "@lucide/svelte/icons/archive";
 	import BellOff from "@lucide/svelte/icons/bell-off";
-	import Check from "@lucide/svelte/icons/check";
-	import CheckCheck from "@lucide/svelte/icons/check-check";
 	import BellRing from "@lucide/svelte/icons/bell-ring";
 	import CalendarDays from "@lucide/svelte/icons/calendar-days";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
@@ -57,15 +55,7 @@
 	import { showToast } from "$lib/toast/toasts";
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
-	import {
-		calendarDate,
-		cycleWindow,
-		dueLabel,
-		onDate,
-		onDateAndTime,
-		overdue,
-		seenLabel,
-	} from "$lib/time";
+	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import {
 		issueFailureMessage,
@@ -2274,20 +2264,6 @@
 							</span>
 						{/snippet}
 					</IssueField>
-
-					{#if ready && ready.receipt.kind !== "none"}
-						<p
-							class="-mt-0.5 ml-21 flex items-center gap-1.25 text-2xs text-muted-foreground"
-						>
-							{#if ready.receipt.kind === "opened"}
-								<CheckCheck class="size-3 flex-none" aria-hidden="true" />
-								{seenLabel(ready.receipt.at, data.now, data.workspace.timezone)}
-							{:else}
-								<Check class="size-3 flex-none" aria-hidden="true" />
-								Delivered, not opened yet
-							{/if}
-						</p>
-					{/if}
 
 					<DelegationField
 						panel={delegation}

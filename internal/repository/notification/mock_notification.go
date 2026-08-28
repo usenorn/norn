@@ -119,18 +119,18 @@ func (mr *MockNotificationMockRecorder) DigestRecipients(ctx, window any) *gomoc
 }
 
 // Directed mocks base method.
-func (m *MockNotification) Directed(ctx context.Context, workspaceID, actorID, recipientID, subjectID uuid.UUID, limit int) ([]entity.DirectedNotice, error) {
+func (m *MockNotification) Directed(ctx context.Context, workspaceID, actorID, recipientID uuid.UUID, limit int) ([]entity.DirectedNotice, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Directed", ctx, workspaceID, actorID, recipientID, subjectID, limit)
+	ret := m.ctrl.Call(m, "Directed", ctx, workspaceID, actorID, recipientID, limit)
 	ret0, _ := ret[0].([]entity.DirectedNotice)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Directed indicates an expected call of Directed.
-func (mr *MockNotificationMockRecorder) Directed(ctx, workspaceID, actorID, recipientID, subjectID, limit any) *gomock.Call {
+func (mr *MockNotificationMockRecorder) Directed(ctx, workspaceID, actorID, recipientID, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Directed", reflect.TypeOf((*MockNotification)(nil).Directed), ctx, workspaceID, actorID, recipientID, subjectID, limit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Directed", reflect.TypeOf((*MockNotification)(nil).Directed), ctx, workspaceID, actorID, recipientID, limit)
 }
 
 // ListInbox mocks base method.

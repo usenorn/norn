@@ -209,9 +209,8 @@ WHERE e.workspace_id = $1
   AND (e.team_id IS NULL
        OR (t.id IS NOT NULL
            AND (m.role = 'admin' OR t.visibility = 'public' OR tm.account_id IS NOT NULL)))
-  AND ($4 = '' OR e.subject_id::text = $4)
 ORDER BY e.created_at DESC, e.id DESC
-LIMIT $5`
+LIMIT $4`
 
 const markAllReadQuery = `
 INSERT INTO workspace_notification_reads (
@@ -376,18 +375,12 @@ func (r *notificationRepository) RecordView(
 
 func (r *notificationRepository) Directed(
 	ctx context.Context,
-	workspaceID, actorID, recipientID, subjectID uuid.UUID,
+	workspaceID, actorID, recipientID uuid.UUID,
 	limit int,
 ) ([]entity.DirectedNotice, error) {
-	subject := ""
-
-	if subjectID != uuid.Nil {
-		subject = subjectID.String()
-	}
-
 	rows, err := r.db.Querier(ctx).QueryContext(
 		ctx, directedQuery,
-		workspaceID.String(), actorID.String(), recipientID.String(), subject, limit,
+		workspaceID.String(), actorID.String(), recipientID.String(), limit,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("read directed notices: %w", err)

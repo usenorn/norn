@@ -14371,8 +14371,6 @@ export interface operations {
         parameters: {
             query: {
                 recipientId: string;
-                /** @description Narrow the answer to one issue, project or team. */
-                subjectId?: string;
                 limit?: number;
             };
             header?: never;

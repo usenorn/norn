@@ -6,7 +6,7 @@ import type { Project } from "$lib/projects/projects";
 import { candidateOf, type Issue, type IssueCandidate } from "$lib/issues/issues";
 import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
-import { readReceipt, type AssigneeReceipt, type FollowState } from "$lib/notifications/notifications";
+import type { FollowState } from "$lib/notifications/notifications";
 import { currentDelegation, type DelegationPanel } from "$lib/agents/delegation";
 import type { Execution, IssueChangeSet } from "$lib/executions/executions";
 import type { IssueQuestion } from "$lib/questions/questions";
@@ -55,7 +55,6 @@ export type IssueDetail =
 			questions: IssueQuestion[];
 			mirrorConflicts: MirrorConflict[];
 			shipping: IssueShipping;
-			receipt: AssigneeReceipt;
 	  }
 	| { kind: "unavailable" };
 
@@ -116,7 +115,6 @@ export const load: PageServerLoad = async ({
 		questions,
 		runs,
 		changeset,
-		directed,
 	] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -159,18 +157,6 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/questions", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/executions", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/changeset", { params: { path } }),
-		issue.data.assigneeAccountId
-			? locals.api.GET("/workspaces/{workspaceId}/notifications/directed", {
-					params: {
-						path: { workspaceId: workspace.id },
-						query: {
-							recipientId: issue.data.assigneeAccountId,
-							subjectId: issue.data.id,
-							limit: 1,
-						},
-					},
-				})
-			: Promise.resolve(undefined),
 	]);
 
 	if (
@@ -211,7 +197,6 @@ export const load: PageServerLoad = async ({
 			runs: runs.data ?? [],
 			changeset: changeset.data,
 			questions: questions.data?.questions ?? [],
-			receipt: readReceipt(directed?.data),
 			mirrorConflicts: mirrorConflicts.data ?? [],
 			shipping: shipping.data ?? { releases: [], deployments: [] },
 		},

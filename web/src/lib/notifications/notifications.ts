@@ -172,21 +172,3 @@ export function defaultPreferences(): NotificationPreferences {
 		agents: { inbox: true, email: true },
 	};
 }
-
-export type DirectedNotice = components["schemas"]["DirectedNotice"];
-
-export type AssigneeReceipt =
-	| { kind: "none" }
-	| { kind: "waiting" }
-	| { kind: "opened"; at: string };
-
-export function readReceipt(
-	page: components["schemas"]["DirectedNoticePage"] | undefined
-): AssigneeReceipt {
-	const notice = page?.notices?.[0];
-
-	if (!notice) return { kind: "none" };
-	if (!notice.opened || !notice.openedAt) return { kind: "waiting" };
-
-	return { kind: "opened", at: notice.openedAt };
-}

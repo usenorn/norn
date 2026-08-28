@@ -71,7 +71,7 @@ func (s *notificationsService) decide(
 
 func (s *notificationsService) Directed(
 	ctx context.Context,
-	workspaceID, recipientID, subjectID uuid.UUID,
+	workspaceID, recipientID uuid.UUID,
 	limit int,
 ) ([]entity.DirectedNotice, error) {
 	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
@@ -94,9 +94,7 @@ func (s *notificationsService) Directed(
 		limit = entity.NotificationPageMaxSize
 	}
 
-	return s.notifications.Directed(
-		ctx, workspaceID, decision.Actor.Authority(), recipientID, subjectID, limit,
-	)
+	return s.notifications.Directed(ctx, workspaceID, decision.Actor.Authority(), recipientID, limit)
 }
 
 func (s *notificationsService) Inbox(

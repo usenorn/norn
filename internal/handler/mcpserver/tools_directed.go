@@ -48,7 +48,7 @@ func (t *toolset) listDirected(
 		return nil, listDirectedOutput{}, toolFailure(ctx, err)
 	}
 
-	notices, err := t.notifications.Directed(ctx, workspace.ID, recipientID, uuid.Nil, input.Limit)
+	notices, err := t.notifications.Directed(ctx, workspace.ID, recipientID, input.Limit)
 	if err != nil {
 		return nil, listDirectedOutput{}, toolFailure(ctx, err)
 	}
