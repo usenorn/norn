@@ -12,9 +12,9 @@ import (
 )
 
 const preferenceColumns = `inbox_assigned, inbox_mentioned, inbox_commented,
-       inbox_state_changed, inbox_membership, inbox_approvals, inbox_agents,
+       inbox_state_changed, inbox_membership, inbox_approvals, inbox_opened, inbox_agents,
        email_assigned, email_mentioned, email_commented,
-       email_state_changed, email_membership, email_approvals, email_agents`
+       email_state_changed, email_membership, email_approvals, email_opened, email_agents`
 
 const listQuery = `
 SELECT '' AS team_id, ` + preferenceColumns + `
@@ -38,11 +38,11 @@ const saveGlobalQuery = `
 INSERT INTO workspace_notification_settings (
     workspace_id, account_id,
     inbox_assigned, inbox_mentioned, inbox_commented,
-    inbox_state_changed, inbox_membership, inbox_approvals, inbox_agents,
+    inbox_state_changed, inbox_membership, inbox_approvals, inbox_opened, inbox_agents,
     email_assigned, email_mentioned, email_commented,
-    email_state_changed, email_membership, email_approvals, email_agents
+    email_state_changed, email_membership, email_approvals, email_opened, email_agents
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 ON CONFLICT (workspace_id, account_id) DO UPDATE SET
     inbox_assigned = excluded.inbox_assigned,
     inbox_mentioned = excluded.inbox_mentioned,
@@ -50,6 +50,7 @@ ON CONFLICT (workspace_id, account_id) DO UPDATE SET
     inbox_state_changed = excluded.inbox_state_changed,
     inbox_membership = excluded.inbox_membership,
     inbox_approvals = excluded.inbox_approvals,
+    inbox_opened = excluded.inbox_opened,
     inbox_agents = excluded.inbox_agents,
     email_assigned = excluded.email_assigned,
     email_mentioned = excluded.email_mentioned,
@@ -57,6 +58,7 @@ ON CONFLICT (workspace_id, account_id) DO UPDATE SET
     email_state_changed = excluded.email_state_changed,
     email_membership = excluded.email_membership,
     email_approvals = excluded.email_approvals,
+    email_opened = excluded.email_opened,
     email_agents = excluded.email_agents,
     updated_at = now()`
 
@@ -64,11 +66,11 @@ const saveTeamQuery = `
 INSERT INTO workspace_team_notification_settings (
     workspace_id, account_id, team_id,
     inbox_assigned, inbox_mentioned, inbox_commented,
-    inbox_state_changed, inbox_membership, inbox_approvals, inbox_agents,
+    inbox_state_changed, inbox_membership, inbox_approvals, inbox_opened, inbox_agents,
     email_assigned, email_mentioned, email_commented,
-    email_state_changed, email_membership, email_approvals, email_agents
+    email_state_changed, email_membership, email_approvals, email_opened, email_agents
 )
-VALUES ($1, $2, $17, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+VALUES ($1, $2, $19, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 ON CONFLICT (workspace_id, account_id, team_id) DO UPDATE SET
     inbox_assigned = excluded.inbox_assigned,
     inbox_mentioned = excluded.inbox_mentioned,
@@ -76,6 +78,7 @@ ON CONFLICT (workspace_id, account_id, team_id) DO UPDATE SET
     inbox_state_changed = excluded.inbox_state_changed,
     inbox_membership = excluded.inbox_membership,
     inbox_approvals = excluded.inbox_approvals,
+    inbox_opened = excluded.inbox_opened,
     inbox_agents = excluded.inbox_agents,
     email_assigned = excluded.email_assigned,
     email_mentioned = excluded.email_mentioned,
@@ -83,6 +86,7 @@ ON CONFLICT (workspace_id, account_id, team_id) DO UPDATE SET
     email_state_changed = excluded.email_state_changed,
     email_membership = excluded.email_membership,
     email_approvals = excluded.email_approvals,
+    email_opened = excluded.email_opened,
     email_agents = excluded.email_agents,
     updated_at = now()`
 
@@ -248,6 +252,7 @@ func targets(preferences *entity.NotificationPreferences) []any {
 		&preferences.StateChanged.Inbox,
 		&preferences.Membership.Inbox,
 		&preferences.Approvals.Inbox,
+		&preferences.Opened.Inbox,
 		&preferences.Agents.Inbox,
 		&preferences.Assigned.Email,
 		&preferences.Mentioned.Email,
@@ -255,6 +260,7 @@ func targets(preferences *entity.NotificationPreferences) []any {
 		&preferences.StateChanged.Email,
 		&preferences.Membership.Email,
 		&preferences.Approvals.Email,
+		&preferences.Opened.Email,
 		&preferences.Agents.Email,
 	}
 }
@@ -267,6 +273,7 @@ func values(preferences entity.NotificationPreferences) []any {
 		preferences.StateChanged.Inbox,
 		preferences.Membership.Inbox,
 		preferences.Approvals.Inbox,
+		preferences.Opened.Inbox,
 		preferences.Agents.Inbox,
 		preferences.Assigned.Email,
 		preferences.Mentioned.Email,
@@ -274,6 +281,7 @@ func values(preferences entity.NotificationPreferences) []any {
 		preferences.StateChanged.Email,
 		preferences.Membership.Email,
 		preferences.Approvals.Email,
+		preferences.Opened.Email,
 		preferences.Agents.Email,
 	}
 }

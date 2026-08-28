@@ -49,7 +49,12 @@ type Notification interface {
 		workspaceID, accountID uuid.UUID,
 		subject entity.NotificationSubject,
 		at time.Time,
-	) error
+	) (bool, error)
+	SendersAwaitingReceipt(
+		ctx context.Context,
+		workspaceID, accountID uuid.UUID,
+		subject entity.NotificationSubject,
+	) ([]uuid.UUID, error)
 	Directed(
 		ctx context.Context,
 		workspaceID, actorID, recipientID uuid.UUID,

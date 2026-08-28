@@ -161,3 +161,23 @@ func TestAReasonThatIsReadAgainDropsBackToTheWeakerOne(t *testing.T) {
 		)
 	}
 }
+
+func TestAReceiptDoesNotWaitForTheFanOut(t *testing.T) {
+	if strings.Contains(sendersAwaitingReceiptQuery, "workspace_notification_deliveries") {
+		t.Fatal(
+			"the receipt looks for the sender through a delivery row. Deliveries are written by " +
+				"the worker after the event, so somebody who opens the issue before the fan-out " +
+				"lands finds no sender and no receipt is ever sent — and because a receipt fires " +
+				"only on the first view, that one is lost for good. The event carries the target " +
+				"and is written with the assignment itself, so read that instead.",
+		)
+	}
+
+	if !strings.Contains(sendersAwaitingReceiptQuery, "e.target_account_id = $2") {
+		t.Fatal(
+			"the receipt does not narrow to events aimed at the reader, so opening an issue " +
+				"would send a receipt to whoever last touched it rather than to whoever put it " +
+				"in front of them",
+		)
+	}
+}
