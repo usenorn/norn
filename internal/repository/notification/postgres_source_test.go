@@ -63,16 +63,21 @@ func TestEveryReadJoinsLiveVisibilityRatherThanTrustingTheDeliveryRow(t *testing
 		"tm.account_id IS NOT NULL",
 	}
 
-	for _, rule := range rules {
-		if !strings.Contains(visibleDeliveries, rule) {
-			t.Fatalf(
-				"the delivery read is missing %q. A delivery row records that someone was "+
-					"notified, not that they may still look: an issue moved to a private team, a "+
-					"team flipped to private, a member removed from a team and an archived issue "+
-					"all revoke access after the row was written. Nothing sweeps those rows up, so "+
-					"this join is the only thing standing between a revocation and a leak.",
-				rule,
-			)
+	for name, query := range map[string]string{
+		"visibleDeliveries": visibleDeliveries,
+		"directedQuery":     directedQuery,
+	} {
+		for _, rule := range rules {
+			if !strings.Contains(query, rule) {
+				t.Fatalf(
+					"%s is missing %q. A delivery row records that someone was "+
+						"notified, not that they may still look: an issue moved to a private team, a "+
+						"team flipped to private, a member removed from a team and an archived issue "+
+						"all revoke access after the row was written. Nothing sweeps those rows up, so "+
+						"this join is the only thing standing between a revocation and a leak.",
+					name, rule,
+				)
+			}
 		}
 	}
 
