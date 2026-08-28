@@ -166,26 +166,53 @@ func TestSigningUpWithATakenAddressIsRefusedBeforeAnythingIsStored(t *testing.T)
 	}
 }
 
-func TestSigningUpWithAPersonalAddressIsRefusedBeforeAnythingIsStored(t *testing.T) {
-	h := newHarness(t)
+func TestTheAddressSomebodyActuallyUsesCanSignUp(t *testing.T) {
+	for _, email := range []string{
+		"rae@gmail.com",
+		"rae@outlook.com",
+		"rae@yahoo.co.uk",
+		"rae@proton.me",
+		"Rae@ICloud.com",
+	} {
+		t.Run(email, func(t *testing.T) {
+			h := newHarness(t)
 
-	h.expectAddressAllowed()
+			var stored entity.SignUp
 
-	input := signUpInput()
-	input.Email = "rae@gmail.com"
+			normalized := entity.NormalizeEmail(email)
 
-	_, err := h.service.RequestSignUp(context.Background(), input)
+			h.expectAddressAllowed()
+			h.accounts.EXPECT().
+				GetByEmail(gomock.Any(), normalized).
+				Return(entity.Account{}, entity.ErrAccountNotFound)
+			h.breaches.EXPECT().Compromised(gomock.Any(), signUpPassword).Return(false, nil)
+			h.signUps.EXPECT().DeletePendingByEmail(gomock.Any(), normalized).Return(nil)
+			h.signUps.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(_ context.Context, signUp entity.SignUp) (entity.SignUp, error) {
+					signUp.ID = uuid.New()
+					stored = signUp
 
-	var validation entity.ValidationError
-	if !errors.As(err, &validation) {
-		t.Fatalf("RequestSignUp error = %v, want a validation error", err)
-	}
+					return signUp, nil
+				})
+			h.producer.EXPECT().EnqueueSignUpVerification(gomock.Any(), gomock.Any()).Return(nil)
 
-	if len(validation.Fields) != 1 || validation.Fields[0] != (entity.FieldError{
-		Field: "email",
-		Code:  entity.ValidationCodePersonalEmail,
-	}) {
-		t.Fatalf("fields = %v, want email: %s", validation.Fields, entity.ValidationCodePersonalEmail)
+			input := signUpInput()
+			input.Email = email
+
+			if _, err := h.service.RequestSignUp(context.Background(), input); err != nil {
+				t.Fatalf(
+					"signing up with %s failed: %v. Most people arriving from the landing page "+
+						"type the address they read mail at; refusing it spends the click and "+
+						"leaves no account behind.",
+					email, err,
+				)
+			}
+
+			if stored.Email != normalized {
+				t.Fatalf("stored email = %q, want the normalized %q", stored.Email, normalized)
+			}
+		})
 	}
 }
 

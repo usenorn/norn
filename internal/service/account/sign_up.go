@@ -34,7 +34,7 @@ func (s *accountsService) RequestSignUp(ctx context.Context, input service.Reque
 	}
 
 	if err := entity.NewValidationError(
-		entity.ValidateWorkEmail("email", email),
+		entity.ValidateEmail("email", email),
 		entity.ValidateDisplayName("display_name", input.DisplayName),
 		entity.ValidateTimezone("timezone", timezone),
 		entity.ValidatePassword("password", input.Password),
