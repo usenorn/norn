@@ -26,7 +26,6 @@ import (
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
-	notificationrepo "github.com/usenorn/norn/internal/repository/notification"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	scmrepo "github.com/usenorn/norn/internal/repository/scm"
@@ -54,7 +53,6 @@ type harness struct {
 	teams       *teamrepo.MockTeam
 	triage      *triagerepo.MockTriage
 	notify      *notificationeventrepo.MockNotificationEvent
-	notices     *notificationrepo.MockNotification
 	delegations *delegationrepo.MockIssueDelegation
 	questions   *questionrepo.MockIssueQuestion
 	notified    []entity.NotificationEvent
@@ -92,7 +90,6 @@ func newHarness(t *testing.T) *harness {
 		teams:       teamrepo.NewMockTeam(ctrl),
 		triage:      triagerepo.NewMockTriage(ctrl),
 		notify:      notificationeventrepo.NewMockNotificationEvent(ctrl),
-		notices:     notificationrepo.NewMockNotification(ctrl),
 		delegations: delegationrepo.NewMockIssueDelegation(ctrl),
 		questions:   questionrepo.NewMockIssueQuestion(ctrl),
 		events:      eventsvc.NewMockEvents(ctrl),
@@ -116,7 +113,7 @@ func newHarness(t *testing.T) *harness {
 
 	h.service = issuesvc.New(
 		h.issues, h.states, h.activity, h.labels, h.accounts, h.memberships,
-		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.notices, h.events,
+		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.events,
 		silentEmitter(ctrl), h.followers,
 		h.jobs,
 		agenthold.New(
@@ -1142,73 +1139,6 @@ func TestADropWithNoNeighboursLeavesTheOrderAlone(t *testing.T) {
 	}
 }
 
-func TestOpeningAnIssueRecordsThatThePersonSawIt(t *testing.T) {
-	h := newHarness(t)
-	workspaceID := uuid.New()
-	issueID := uuid.New()
-	reader := uuid.New()
-
-	h.authorizer.EXPECT().
-		Decide(gomock.Any(), gomock.Any()).
-		Return(entity.Decision{
-			Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: reader},
-			Scope: entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true},
-		}, nil)
-
-	h.issues.EXPECT().
-		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
-		Return(entity.Issue{ID: issueID, WorkspaceID: workspaceID}, nil)
-
-	var seen entity.NotificationSubject
-
-	h.notices.EXPECT().
-		RecordView(gomock.Any(), workspaceID, reader, gomock.Any(), gomock.Any()).
-		DoAndReturn(func(
-			_ context.Context,
-			_, _ uuid.UUID,
-			subject entity.NotificationSubject,
-			_ time.Time,
-		) (bool, error) {
-			seen = subject
-
-			return false, nil
-		})
-
-	if _, err := h.service.Get(context.Background(), workspaceID, issueID); err != nil {
-		t.Fatalf("Get: %v", err)
-	}
-
-	if seen.Kind != entity.NotificationSubjectIssue || seen.ID != issueID {
-		t.Fatalf("recorded a view of %s %s, want the issue %s", seen.Kind, seen.ID, issueID)
-	}
-}
-
-func TestAnAgentReadingAnIssueIsNotThePersonSeeingIt(t *testing.T) {
-	h := newHarness(t)
-	workspaceID := uuid.New()
-	issueID := uuid.New()
-	owner := uuid.New()
-
-	h.authorizer.EXPECT().
-		Decide(gomock.Any(), gomock.Any()).
-		Return(entity.Decision{
-			Actor: entity.Actor{
-				Kind:           entity.ActorKindAgent,
-				AccountID:      uuid.New(),
-				OwnerAccountID: owner,
-			},
-			Scope: entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true},
-		}, nil)
-
-	h.issues.EXPECT().
-		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
-		Return(entity.Issue{ID: issueID, WorkspaceID: workspaceID}, nil)
-
-	if _, err := h.service.Get(context.Background(), workspaceID, issueID); err != nil {
-		t.Fatalf("Get: %v", err)
-	}
-}
-
 func (h *harness) expectGateDecision() {
 	h.authorizer.EXPECT().
 		Decide(gomock.Any(), gomock.Any()).
@@ -1225,90 +1155,4 @@ func (h *harness) expectStateWrite(issueID uuid.UUID) {
 		Update(gomock.Any(), issueID, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
-}
-
-func TestTheFirstOpenTellsWhoeverSentIt(t *testing.T) {
-	h := newHarness(t)
-	workspaceID := uuid.New()
-	issueID := uuid.New()
-	reader := uuid.New()
-	sender := uuid.New()
-
-	h.authorizer.EXPECT().
-		Decide(gomock.Any(), gomock.Any()).
-		Return(entity.Decision{
-			Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: reader},
-			Scope: entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true},
-		}, nil)
-
-	h.issues.EXPECT().
-		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
-		Return(entity.Issue{ID: issueID, WorkspaceID: workspaceID}, nil)
-
-	h.notices.EXPECT().
-		RecordView(gomock.Any(), workspaceID, reader, gomock.Any(), gomock.Any()).
-		Return(true, nil)
-
-	h.notices.EXPECT().
-		SendersAwaitingReceipt(gomock.Any(), workspaceID, reader, gomock.Any()).
-		Return([]uuid.UUID{sender}, nil)
-
-	if _, err := h.service.Get(context.Background(), workspaceID, issueID); err != nil {
-		t.Fatalf("Get: %v", err)
-	}
-
-	if len(h.notified) != 1 {
-		t.Fatalf("recorded %d notification events, want exactly one receipt", len(h.notified))
-	}
-
-	recorded := h.notified[0]
-
-	if recorded.Kind != entity.NotificationKindOpened {
-		t.Fatalf("recorded a %s event, want %s", recorded.Kind, entity.NotificationKindOpened)
-	}
-
-	if recorded.Target != sender {
-		t.Fatalf(
-			"told %s that the issue was opened, want the sender %s — a receipt is for whoever "+
-				"put the issue in front of the reader",
-			recorded.Target, sender,
-		)
-	}
-
-	if recorded.Actor != reader {
-		t.Fatalf("attributed the open to %s, want the reader %s", recorded.Actor, reader)
-	}
-}
-
-func TestOpeningAnIssueAgainTellsNobody(t *testing.T) {
-	h := newHarness(t)
-	workspaceID := uuid.New()
-	issueID := uuid.New()
-	reader := uuid.New()
-
-	h.authorizer.EXPECT().
-		Decide(gomock.Any(), gomock.Any()).
-		Return(entity.Decision{
-			Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: reader},
-			Scope: entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true},
-		}, nil)
-
-	h.issues.EXPECT().
-		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
-		Return(entity.Issue{ID: issueID, WorkspaceID: workspaceID}, nil)
-
-	h.notices.EXPECT().
-		RecordView(gomock.Any(), workspaceID, reader, gomock.Any(), gomock.Any()).
-		Return(false, nil)
-
-	if _, err := h.service.Get(context.Background(), workspaceID, issueID); err != nil {
-		t.Fatalf("Get: %v", err)
-	}
-
-	if len(h.notified) != 0 {
-		t.Fatalf(
-			"recorded %d notification events on a repeat open, want none — a receipt is sent once",
-			len(h.notified),
-		)
-	}
 }

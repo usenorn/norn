@@ -63,22 +63,16 @@ func TestEveryReadJoinsLiveVisibilityRatherThanTrustingTheDeliveryRow(t *testing
 		"tm.account_id IS NOT NULL",
 	}
 
-	for name, query := range map[string]string{
-		"visibleDeliveries":  visibleDeliveries,
-		"directedQuery":      directedQuery,
-		"directedTallyQuery": directedTallyQuery,
-	} {
-		for _, rule := range rules {
-			if !strings.Contains(query, rule) {
-				t.Fatalf(
-					"%s is missing %q. A delivery row records that someone was "+
-						"notified, not that they may still look: an issue moved to a private team, a "+
-						"team flipped to private, a member removed from a team and an archived issue "+
-						"all revoke access after the row was written. Nothing sweeps those rows up, so "+
-						"this join is the only thing standing between a revocation and a leak.",
-					name, rule,
-				)
-			}
+	for _, rule := range rules {
+		if !strings.Contains(visibleDeliveries, rule) {
+			t.Fatalf(
+				"the delivery read is missing %q. A delivery row records that someone was "+
+					"notified, not that they may still look: an issue moved to a private team, a "+
+					"team flipped to private, a member removed from a team and an archived issue "+
+					"all revoke access after the row was written. Nothing sweeps those rows up, so "+
+					"this join is the only thing standing between a revocation and a leak.",
+				rule,
+			)
 		}
 	}
 
@@ -159,59 +153,6 @@ func TestAReasonThatIsReadAgainDropsBackToTheWeakerOne(t *testing.T) {
 		t.Fatal(
 			"the reason is folded over every delivery rather than the unread ones, so an entry " +
 				"read after a mention would stay labelled as a mention forever",
-		)
-	}
-}
-
-func TestAReceiptDoesNotWaitForTheFanOut(t *testing.T) {
-	if strings.Contains(sendersAwaitingReceiptQuery, "workspace_notification_deliveries") {
-		t.Fatal(
-			"the receipt looks for the sender through a delivery row. Deliveries are written by " +
-				"the worker after the event, so somebody who opens the issue before the fan-out " +
-				"lands finds no sender and no receipt is ever sent — and because a receipt fires " +
-				"only on the first view, that one is lost for good. The event carries the target " +
-				"and is written with the assignment itself, so read that instead.",
-		)
-	}
-
-	if !strings.Contains(sendersAwaitingReceiptQuery, "e.target_account_id = $2") {
-		t.Fatal(
-			"the receipt does not narrow to events aimed at the reader, so opening an issue " +
-				"would send a receipt to whoever last touched it rather than to whoever put it " +
-				"in front of them",
-		)
-	}
-}
-
-func TestTheTallyCountsOnlyWhatTheAskerSent(t *testing.T) {
-	for _, rule := range []string{
-		"e.actor_account_id = $2",
-		"d.account_id = $3",
-		"e.created_at >= $5",
-	} {
-		if !strings.Contains(directedTallyQuery, rule) {
-			t.Fatalf(
-				"the tally is missing %q. A figure computed over anything wider than what this "+
-					"asker sent to this one person is a fact about work they may not be able to "+
-					"see, and unlike a list a count cannot be inspected for what it folded in.",
-				rule,
-			)
-		}
-	}
-}
-
-func TestTheTallyIsCountedInTheQueryRatherThanOverAPage(t *testing.T) {
-	if strings.Contains(directedTallyQuery, "LIMIT") {
-		t.Fatal(
-			"the tally is bounded by a page limit, so somebody who has sent more than one page " +
-				"would be told a smaller number than the truth and have no sign that it was cut",
-		)
-	}
-
-	if !strings.Contains(directedTallyQuery, "count(*)") {
-		t.Fatal(
-			"the tally does not count in the query, which leaves the counting to whoever calls " +
-				"it and lets the same question be answered differently each time it is asked",
 		)
 	}
 }

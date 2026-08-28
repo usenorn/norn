@@ -118,36 +118,6 @@ func (mr *MockNotificationMockRecorder) DigestRecipients(ctx, window any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DigestRecipients", reflect.TypeOf((*MockNotification)(nil).DigestRecipients), ctx, window)
 }
 
-// Directed mocks base method.
-func (m *MockNotification) Directed(ctx context.Context, workspaceID, actorID, recipientID, subjectID uuid.UUID, since time.Time, limit int) ([]entity.DirectedNotice, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Directed", ctx, workspaceID, actorID, recipientID, subjectID, since, limit)
-	ret0, _ := ret[0].([]entity.DirectedNotice)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Directed indicates an expected call of Directed.
-func (mr *MockNotificationMockRecorder) Directed(ctx, workspaceID, actorID, recipientID, subjectID, since, limit any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Directed", reflect.TypeOf((*MockNotification)(nil).Directed), ctx, workspaceID, actorID, recipientID, subjectID, since, limit)
-}
-
-// DirectedTally mocks base method.
-func (m *MockNotification) DirectedTally(ctx context.Context, workspaceID, actorID, recipientID, subjectID uuid.UUID, since time.Time) (entity.DirectedTally, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DirectedTally", ctx, workspaceID, actorID, recipientID, subjectID, since)
-	ret0, _ := ret[0].(entity.DirectedTally)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DirectedTally indicates an expected call of DirectedTally.
-func (mr *MockNotificationMockRecorder) DirectedTally(ctx, workspaceID, actorID, recipientID, subjectID, since any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DirectedTally", reflect.TypeOf((*MockNotification)(nil).DirectedTally), ctx, workspaceID, actorID, recipientID, subjectID, since)
-}
-
 // ListInbox mocks base method.
 func (m *MockNotification) ListInbox(ctx context.Context, workspaceID, accountID uuid.UUID, page entity.NotificationPage) ([]entity.Notification, error) {
 	m.ctrl.T.Helper()
@@ -203,36 +173,6 @@ func (m *MockNotification) RecordDigestOutcome(ctx context.Context, claim entity
 func (mr *MockNotificationMockRecorder) RecordDigestOutcome(ctx, claim, failure any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordDigestOutcome", reflect.TypeOf((*MockNotification)(nil).RecordDigestOutcome), ctx, claim, failure)
-}
-
-// RecordView mocks base method.
-func (m *MockNotification) RecordView(ctx context.Context, workspaceID, accountID uuid.UUID, subject entity.NotificationSubject, at time.Time) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordView", ctx, workspaceID, accountID, subject, at)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// RecordView indicates an expected call of RecordView.
-func (mr *MockNotificationMockRecorder) RecordView(ctx, workspaceID, accountID, subject, at any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordView", reflect.TypeOf((*MockNotification)(nil).RecordView), ctx, workspaceID, accountID, subject, at)
-}
-
-// SendersAwaitingReceipt mocks base method.
-func (m *MockNotification) SendersAwaitingReceipt(ctx context.Context, workspaceID, accountID uuid.UUID, subject entity.NotificationSubject) ([]uuid.UUID, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendersAwaitingReceipt", ctx, workspaceID, accountID, subject)
-	ret0, _ := ret[0].([]uuid.UUID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SendersAwaitingReceipt indicates an expected call of SendersAwaitingReceipt.
-func (mr *MockNotificationMockRecorder) SendersAwaitingReceipt(ctx, workspaceID, accountID, subject any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendersAwaitingReceipt", reflect.TypeOf((*MockNotification)(nil).SendersAwaitingReceipt), ctx, workspaceID, accountID, subject)
 }
 
 // Snooze mocks base method.

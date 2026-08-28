@@ -2916,26 +2916,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/workspaces/{workspaceId}/notifications/directed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What you sent one person, and whether it reached them
-         * @description Everything you assigned to somebody or mentioned them in, newest first, with what is known about each: that it was delivered, that they cleared it from their inbox, and that they opened the subject. Only the person who caused the event sees this, and a notice somebody received by following an issue is not included because nobody directed it at them.
-         */
-        get: operations["listDirectedNotifications"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/workspaces/{workspaceId}/notifications/read": {
         parameters: {
             query?: never;
@@ -7565,33 +7545,6 @@ export interface components {
             /** @description The session this call issued. Name it to act as the account the link created. */
             slot: string;
         };
-        DirectedNoticePage: {
-            notices: components["schemas"]["DirectedNotice"][];
-        };
-        DirectedNotice: {
-            /** Format: uuid */
-            eventId: string;
-            subjectKind: components["schemas"]["NotificationSubjectKind"];
-            /** Format: uuid */
-            subjectId: string;
-            reference?: string;
-            title?: string;
-            kind: components["schemas"]["NotificationKind"];
-            reason: components["schemas"]["NotificationReason"];
-            /** Format: uuid */
-            recipientId: string;
-            /** Format: date-time */
-            sentAt: string;
-            delivered: components["schemas"]["NotificationChannels"];
-            /** @description The subject was dismissed from that person's inbox after this was sent. It does not say they read anything: clearing the inbox and opening the subject are separate acts. */
-            cleared: boolean;
-            /** Format: date-time */
-            clearedAt?: string;
-            /** @description They opened the subject itself after this was sent. */
-            opened: boolean;
-            /** Format: date-time */
-            openedAt?: string;
-        };
         NotificationPage: {
             notifications: components["schemas"]["Notification"][];
             /** Format: int32 */
@@ -7621,9 +7574,9 @@ export interface components {
         /** @enum {string} */
         NotificationSubjectKind: "issue" | "project" | "team";
         /** @enum {string} */
-        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting" | "opened";
+        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting";
         /** @enum {string} */
-        NotificationReason: "mentioned" | "approval" | "assigned" | "membership" | "opened" | "following";
+        NotificationReason: "mentioned" | "approval" | "assigned" | "membership" | "following";
         /** @enum {string} */
         NotificationActorKind: "user" | "token" | "agent" | "system";
         SnoozeNotificationRequest: {
@@ -7655,8 +7608,6 @@ export interface components {
             membership: components["schemas"]["NotificationChannels"];
             /** @description An agent is waiting for you to approve something before it can carry on. */
             approvals: components["schemas"]["NotificationChannels"];
-            /** @description Somebody opened an issue you assigned to them. Told once, the first time they look, and only to whoever assigned it. */
-            opened: components["schemas"]["NotificationChannels"];
             agents: components["schemas"]["NotificationChannels"];
         };
         NotificationChannels: {
@@ -14361,37 +14312,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationPage"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    listDirectedNotifications: {
-        parameters: {
-            query: {
-                recipientId: string;
-                /** @description Narrow the answer to one issue, project or team. */
-                subjectId?: string;
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description What was directed at that person */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DirectedNoticePage"];
                 };
             };
             401: components["responses"]["Problem"];

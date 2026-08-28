@@ -1383,49 +1383,6 @@ func notificationPageDTO(inbox service.Inbox) api.NotificationPage {
 	}
 }
 
-func directedNoticePageDTO(notices []entity.DirectedNotice) api.DirectedNoticePage {
-	page := api.DirectedNoticePage{Notices: make([]api.DirectedNotice, 0, len(notices))}
-
-	for _, notice := range notices {
-		page.Notices = append(page.Notices, directedNoticeDTO(notice))
-	}
-
-	return page
-}
-
-func directedNoticeDTO(notice entity.DirectedNotice) api.DirectedNotice {
-	dto := api.DirectedNotice{
-		EventId:     notice.EventID,
-		SubjectKind: api.NotificationSubjectKind(notice.Subject.Kind),
-		SubjectId:   notice.Subject.ID,
-		Kind:        api.NotificationKind(notice.Kind),
-		Reason:      api.NotificationReason(notice.Reason),
-		RecipientId: notice.RecipientID,
-		SentAt:      notice.SentAt,
-		Delivered: api.NotificationChannels{
-			Inbox: notice.Channels.Inbox,
-			Email: notice.Channels.Email,
-		},
-		Cleared: notice.Cleared(),
-		Opened:  notice.Opened(),
-		Title:   nilIfEmpty(notice.Title),
-	}
-
-	dto.Reference = nilIfEmpty(notice.Reference)
-
-	if notice.Cleared() {
-		clearedAt := notice.ClearedAt
-		dto.ClearedAt = &clearedAt
-	}
-
-	if notice.Opened() {
-		openedAt := notice.OpenedAt
-		dto.OpenedAt = &openedAt
-	}
-
-	return dto
-}
-
 func notificationDTO(notification entity.Notification) api.Notification {
 	dto := api.Notification{
 		SubjectKind: api.NotificationSubjectKind(notification.Subject.Kind),

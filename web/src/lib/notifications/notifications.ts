@@ -75,7 +75,6 @@ export const reasonLabels: Record<NotificationReason, string> = {
 	approval: "Waiting on you",
 	assigned: "Assigned to you",
 	membership: "Added you",
-	opened: "Read receipt",
 	following: "Following",
 };
 
@@ -93,7 +92,6 @@ const kindVerbs: Record<NotificationKind, string> = {
 	state_changed: "changed the state",
 	membership: "added you",
 	approval_waiting: "is waiting for you to approve what it proposed",
-	opened: "opened what you sent",
 };
 
 export function summary(notification: Notification): string {
@@ -161,11 +159,6 @@ export const preferenceRows: PreferenceRow[] = [
 		label: "Waiting on you",
 		description: "An agent has stopped and cannot carry on until you approve what it proposed.",
 	},
-	{
-		key: "opened",
-		label: "Read receipts",
-		description: "Someone opened an issue you assigned them. Told once, the first time they look.",
-	},
 ];
 
 export function defaultPreferences(): NotificationPreferences {
@@ -176,25 +169,6 @@ export function defaultPreferences(): NotificationPreferences {
 		stateChanged: { inbox: true, email: false },
 		membership: { inbox: true, email: false },
 		approvals: { inbox: true, email: true },
-		opened: { inbox: true, email: false },
 		agents: { inbox: true, email: true },
 	};
-}
-
-export type DirectedNotice = components["schemas"]["DirectedNotice"];
-
-export type AssigneeReceipt =
-	| { kind: "none" }
-	| { kind: "waiting" }
-	| { kind: "opened"; at: string };
-
-export function readReceipt(
-	page: components["schemas"]["DirectedNoticePage"] | undefined
-): AssigneeReceipt {
-	const notice = page?.notices?.[0];
-
-	if (!notice) return { kind: "none" };
-	if (!notice.opened || !notice.openedAt) return { kind: "waiting" };
-
-	return { kind: "opened", at: notice.openedAt };
 }

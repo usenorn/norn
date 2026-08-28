@@ -159,12 +159,3 @@ func (h *harness) captureDeliveries() *[]repository.NotificationDelivery {
 
 	return &captured
 }
-
-func (h *harness) actingAs(actor entity.Actor) {
-	h.authorizer.EXPECT().
-		Decide(gomock.Any(), gomock.Any()).
-		Return(entity.Decision{
-			Actor: actor,
-			Scope: entity.TeamScope{WorkspaceID: h.workspaceID, AllTeams: true},
-		}, nil)
-}
