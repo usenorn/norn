@@ -2,6 +2,7 @@ package notification
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -177,20 +178,7 @@ WHERE e.workspace_id = $1
   AND e.actor_account_id <> $2
   AND e.actor_kind = 'user'`
 
-const directedQuery = `
-SELECT e.id,
-       e.subject_kind,
-       e.subject_id,
-       e.kind,
-       d.reason,
-       d.account_id,
-       e.created_at,
-       d.inbox,
-       d.email,
-       coalesce(i.title, p.name, t.name, '') AS title,
-       coalesce(i.reference_key || '-' || i.number::text, '') AS reference,
-       r.read_through,
-       v.last_viewed_at
+const directedScope = `
 FROM workspace_notification_events e
 JOIN workspace_notification_deliveries d ON d.event_id = e.id
 JOIN workspace_memberships m ON m.workspace_id = e.workspace_id AND m.account_id = $2
@@ -222,8 +210,33 @@ WHERE e.workspace_id = $1
        OR (t.id IS NOT NULL
            AND (m.role = 'admin' OR t.visibility = 'public' OR tm.account_id IS NOT NULL)))
   AND ($4 = '' OR e.subject_id::text = $4)
+  AND e.created_at >= $5`
+
+const directedQuery = `
+SELECT e.id,
+       e.subject_kind,
+       e.subject_id,
+       e.kind,
+       d.reason,
+       d.account_id,
+       e.created_at,
+       d.inbox,
+       d.email,
+       coalesce(i.title, p.name, t.name, '') AS title,
+       coalesce(i.reference_key || '-' || i.number::text, '') AS reference,
+       r.read_through,
+       v.last_viewed_at
+` + directedScope + `
 ORDER BY e.created_at DESC, e.id DESC
-LIMIT $5`
+LIMIT $6`
+
+const directedTallyQuery = `
+SELECT count(*),
+       count(*) FILTER (WHERE v.last_viewed_at IS NOT NULL AND v.last_viewed_at >= e.created_at),
+       count(*) FILTER (WHERE (v.last_viewed_at IS NULL OR v.last_viewed_at < e.created_at)
+                          AND r.read_through IS NOT NULL AND r.read_through >= e.created_at),
+       min(e.created_at) FILTER (WHERE (v.last_viewed_at IS NULL OR v.last_viewed_at < e.created_at))
+` + directedScope
 
 const markAllReadQuery = `
 INSERT INTO workspace_notification_reads (
@@ -428,20 +441,48 @@ func (r *notificationRepository) SendersAwaitingReceipt(
 	return senders, nil
 }
 
+func directedSubject(subjectID uuid.UUID) string {
+	if subjectID == uuid.Nil {
+		return ""
+	}
+
+	return subjectID.String()
+}
+
+func (r *notificationRepository) DirectedTally(
+	ctx context.Context,
+	workspaceID, actorID, recipientID, subjectID uuid.UUID,
+	since time.Time,
+) (entity.DirectedTally, error) {
+	tally := entity.DirectedTally{Since: since}
+
+	var oldest sql.NullTime
+
+	if err := r.db.Querier(ctx).QueryRowContext(
+		ctx, directedTallyQuery,
+		workspaceID.String(), actorID.String(), recipientID.String(),
+		directedSubject(subjectID), since,
+	).Scan(&tally.Sent, &tally.Opened, &tally.ClearedUnopened, &oldest); err != nil {
+		return entity.DirectedTally{}, fmt.Errorf("tally directed notices: %w", err)
+	}
+
+	if oldest.Valid {
+		tally.OldestUnopenedAt = oldest.Time
+	}
+
+	return tally, nil
+}
+
 func (r *notificationRepository) Directed(
 	ctx context.Context,
 	workspaceID, actorID, recipientID, subjectID uuid.UUID,
+	since time.Time,
 	limit int,
 ) ([]entity.DirectedNotice, error) {
-	subject := ""
-
-	if subjectID != uuid.Nil {
-		subject = subjectID.String()
-	}
-
 	rows, err := r.db.Querier(ctx).QueryContext(
 		ctx, directedQuery,
-		workspaceID.String(), actorID.String(), recipientID.String(), subject, limit,
+		workspaceID.String(), actorID.String(), recipientID.String(),
+		directedSubject(subjectID), since, limit,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("read directed notices: %w", err)
