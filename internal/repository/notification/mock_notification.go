@@ -191,17 +191,33 @@ func (mr *MockNotificationMockRecorder) RecordDigestOutcome(ctx, claim, failure 
 }
 
 // RecordView mocks base method.
-func (m *MockNotification) RecordView(ctx context.Context, workspaceID, accountID uuid.UUID, subject entity.NotificationSubject, at time.Time) error {
+func (m *MockNotification) RecordView(ctx context.Context, workspaceID, accountID uuid.UUID, subject entity.NotificationSubject, at time.Time) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RecordView", ctx, workspaceID, accountID, subject, at)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // RecordView indicates an expected call of RecordView.
 func (mr *MockNotificationMockRecorder) RecordView(ctx, workspaceID, accountID, subject, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordView", reflect.TypeOf((*MockNotification)(nil).RecordView), ctx, workspaceID, accountID, subject, at)
+}
+
+// SendersAwaitingReceipt mocks base method.
+func (m *MockNotification) SendersAwaitingReceipt(ctx context.Context, workspaceID, accountID uuid.UUID, subject entity.NotificationSubject) ([]uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendersAwaitingReceipt", ctx, workspaceID, accountID, subject)
+	ret0, _ := ret[0].([]uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SendersAwaitingReceipt indicates an expected call of SendersAwaitingReceipt.
+func (mr *MockNotificationMockRecorder) SendersAwaitingReceipt(ctx, workspaceID, accountID, subject any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendersAwaitingReceipt", reflect.TypeOf((*MockNotification)(nil).SendersAwaitingReceipt), ctx, workspaceID, accountID, subject)
 }
 
 // Snooze mocks base method.

@@ -65,3 +65,30 @@ func (s *issuesService) notifyStateChanged(
 		BulkActionID: bulkActionID,
 	})
 }
+
+func (s *issuesService) notifyOpened(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	subject entity.NotificationSubject,
+	viewer uuid.UUID,
+) error {
+	senders, err := s.notices.SendersAwaitingReceipt(ctx, workspaceID, viewer, subject)
+	if err != nil {
+		return err
+	}
+
+	for _, sender := range senders {
+		if err := s.notify.Record(ctx, entity.NotificationEvent{
+			WorkspaceID: workspaceID,
+			Subject:     subject,
+			Kind:        entity.NotificationKindOpened,
+			Actor:       viewer,
+			ActorKind:   entity.ActorKindUser,
+			Target:      sender,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

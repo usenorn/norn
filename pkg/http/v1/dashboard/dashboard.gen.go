@@ -2701,6 +2701,7 @@ const (
 	NotificationKindCommented       NotificationKind = "commented"
 	NotificationKindMembership      NotificationKind = "membership"
 	NotificationKindMentioned       NotificationKind = "mentioned"
+	NotificationKindOpened          NotificationKind = "opened"
 	NotificationKindStateChanged    NotificationKind = "state_changed"
 )
 
@@ -2717,6 +2718,8 @@ func (e NotificationKind) Valid() bool {
 		return true
 	case NotificationKindMentioned:
 		return true
+	case NotificationKindOpened:
+		return true
 	case NotificationKindStateChanged:
 		return true
 	default:
@@ -2731,6 +2734,7 @@ const (
 	NotificationReasonFollowing  NotificationReason = "following"
 	NotificationReasonMembership NotificationReason = "membership"
 	NotificationReasonMentioned  NotificationReason = "mentioned"
+	NotificationReasonOpened     NotificationReason = "opened"
 )
 
 // Valid indicates whether the value is a known member of the NotificationReason enum.
@@ -2745,6 +2749,8 @@ func (e NotificationReason) Valid() bool {
 	case NotificationReasonMembership:
 		return true
 	case NotificationReasonMentioned:
+		return true
+	case NotificationReasonOpened:
 		return true
 	default:
 		return false
@@ -6768,6 +6774,7 @@ type NotificationPreferences struct {
 	Commented    NotificationChannels `json:"commented"`
 	Membership   NotificationChannels `json:"membership"`
 	Mentioned    NotificationChannels `json:"mentioned"`
+	Opened       NotificationChannels `json:"opened"`
 	StateChanged NotificationChannels `json:"stateChanged"`
 }
 

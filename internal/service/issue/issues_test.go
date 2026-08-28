@@ -1168,10 +1168,10 @@ func TestOpeningAnIssueRecordsThatThePersonSawIt(t *testing.T) {
 			_, _ uuid.UUID,
 			subject entity.NotificationSubject,
 			_ time.Time,
-		) error {
+		) (bool, error) {
 			seen = subject
 
-			return nil
+			return false, nil
 		})
 
 	if _, err := h.service.Get(context.Background(), workspaceID, issueID); err != nil {
@@ -1225,4 +1225,90 @@ func (h *harness) expectStateWrite(issueID uuid.UUID) {
 		Update(gomock.Any(), issueID, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
+}
+
+func TestTheFirstOpenTellsWhoeverSentIt(t *testing.T) {
+	h := newHarness(t)
+	workspaceID := uuid.New()
+	issueID := uuid.New()
+	reader := uuid.New()
+	sender := uuid.New()
+
+	h.authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{
+			Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: reader},
+			Scope: entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true},
+		}, nil)
+
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
+		Return(entity.Issue{ID: issueID, WorkspaceID: workspaceID}, nil)
+
+	h.notices.EXPECT().
+		RecordView(gomock.Any(), workspaceID, reader, gomock.Any(), gomock.Any()).
+		Return(true, nil)
+
+	h.notices.EXPECT().
+		SendersAwaitingReceipt(gomock.Any(), workspaceID, reader, gomock.Any()).
+		Return([]uuid.UUID{sender}, nil)
+
+	if _, err := h.service.Get(context.Background(), workspaceID, issueID); err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+
+	if len(h.notified) != 1 {
+		t.Fatalf("recorded %d notification events, want exactly one receipt", len(h.notified))
+	}
+
+	recorded := h.notified[0]
+
+	if recorded.Kind != entity.NotificationKindOpened {
+		t.Fatalf("recorded a %s event, want %s", recorded.Kind, entity.NotificationKindOpened)
+	}
+
+	if recorded.Target != sender {
+		t.Fatalf(
+			"told %s that the issue was opened, want the sender %s — a receipt is for whoever "+
+				"put the issue in front of the reader",
+			recorded.Target, sender,
+		)
+	}
+
+	if recorded.Actor != reader {
+		t.Fatalf("attributed the open to %s, want the reader %s", recorded.Actor, reader)
+	}
+}
+
+func TestOpeningAnIssueAgainTellsNobody(t *testing.T) {
+	h := newHarness(t)
+	workspaceID := uuid.New()
+	issueID := uuid.New()
+	reader := uuid.New()
+
+	h.authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{
+			Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: reader},
+			Scope: entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true},
+		}, nil)
+
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
+		Return(entity.Issue{ID: issueID, WorkspaceID: workspaceID}, nil)
+
+	h.notices.EXPECT().
+		RecordView(gomock.Any(), workspaceID, reader, gomock.Any(), gomock.Any()).
+		Return(false, nil)
+
+	if _, err := h.service.Get(context.Background(), workspaceID, issueID); err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+
+	if len(h.notified) != 0 {
+		t.Fatalf(
+			"recorded %d notification events on a repeat open, want none — a receipt is sent once",
+			len(h.notified),
+		)
+	}
 }
