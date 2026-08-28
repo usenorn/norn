@@ -96,8 +96,19 @@ SELECT m.comment_id,
        coalesce(m.account_id::text, ''),
        coalesce(m.team_id::text, ''),
        m.mentioned_name,
-       m.visible
+       m.visible,
+       $2 <> ''
+        AND c.author_account_id::text = $2
+        AND m.kind = 'account'
+        AND m.account_id::text <> $2 AS receipted,
+       v.last_viewed_at
 FROM workspace_issue_comment_mentions m
+JOIN workspace_issue_comments c ON c.id = m.comment_id
+LEFT JOIN workspace_subject_views v
+    ON v.workspace_id = c.workspace_id
+   AND v.account_id = m.account_id
+   AND v.subject_kind = 'issue'
+   AND v.subject_id = c.issue_id
 WHERE m.comment_id = ANY($1::uuid[])
 ORDER BY m.created_at, m.mentioned_name`
 
@@ -332,7 +343,7 @@ func (r *issueCommentRepository) hydrated(
 	}
 
 	found := []entity.IssueComment{comment}
-	if err := r.hydrate(ctx, found); err != nil {
+	if err := r.hydrate(ctx, found, ""); err != nil {
 		return entity.IssueComment{}, err
 	}
 
@@ -341,7 +352,7 @@ func (r *issueCommentRepository) hydrated(
 
 func (r *issueCommentRepository) ListThread(
 	ctx context.Context,
-	issueID uuid.UUID,
+	issueID, readerID uuid.UUID,
 	page entity.CommentPage,
 ) ([]entity.IssueComment, error) {
 	cursorCreatedAt := time.Time{}
@@ -378,7 +389,7 @@ func (r *issueCommentRepository) ListThread(
 	thread = append(thread, roots...)
 	thread = append(thread, replies...)
 
-	if err := r.hydrate(ctx, thread); err != nil {
+	if err := r.hydrate(ctx, thread, reader(readerID)); err != nil {
 		return nil, err
 	}
 
@@ -402,6 +413,7 @@ func (r *issueCommentRepository) ListThread(
 func (r *issueCommentRepository) hydrate(
 	ctx context.Context,
 	comments []entity.IssueComment,
+	reader string,
 ) error {
 	if len(comments) == 0 {
 		return nil
@@ -417,7 +429,7 @@ func (r *issueCommentRepository) hydrate(
 
 	raw := identifiers(ids)
 
-	mentions, err := r.db.Querier(ctx).QueryContext(ctx, mentionsQuery, raw)
+	mentions, err := r.db.Querier(ctx).QueryContext(ctx, mentionsQuery, raw, reader)
 	if err != nil {
 		return fmt.Errorf("read comment mentions: %w", err)
 	}
@@ -429,12 +441,18 @@ func (r *issueCommentRepository) hydrate(
 			mention       entity.CommentMention
 			comment, kind string
 			account, team string
+			seen          sql.NullTime
 		)
 
 		if err := mentions.Scan(
 			&comment, &kind, &account, &team, &mention.Name, &mention.Visible,
+			&mention.Receipt.Applies, &seen,
 		); err != nil {
 			return fmt.Errorf("scan comment mention: %w", err)
+		}
+
+		if mention.Receipt.Applies && seen.Valid {
+			mention.Receipt.SeenAt = seen.Time
 		}
 
 		mention.Kind = entity.MentionKind(kind)
@@ -755,4 +773,12 @@ func (r *issueCommentRepository) Unreact(
 	}
 
 	return nil
+}
+
+func reader(readerID uuid.UUID) string {
+	if readerID == uuid.Nil {
+		return ""
+	}
+
+	return readerID.String()
 }

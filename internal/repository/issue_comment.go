@@ -21,7 +21,11 @@ type IssueComment interface {
 	Create(ctx context.Context, comment entity.IssueComment) (entity.IssueComment, error)
 	GetByID(ctx context.Context, workspaceID, commentID uuid.UUID) (entity.IssueComment, error)
 	LockByID(ctx context.Context, workspaceID, commentID uuid.UUID) (entity.IssueComment, error)
-	ListThread(ctx context.Context, issueID uuid.UUID, page entity.CommentPage) ([]entity.IssueComment, error)
+	ListThread(
+		ctx context.Context,
+		issueID, readerID uuid.UUID,
+		page entity.CommentPage,
+	) ([]entity.IssueComment, error)
 	CursorBefore(ctx context.Context, issueID, commentID uuid.UUID) (*entity.CommentCursor, error)
 	Edit(ctx context.Context, commentID uuid.UUID, body string, at time.Time) error
 	Tombstone(ctx context.Context, commentID uuid.UUID, at time.Time) error

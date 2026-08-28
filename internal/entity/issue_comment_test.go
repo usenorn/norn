@@ -238,3 +238,43 @@ func TestBothCommentActivityKindsAreRecognised(t *testing.T) {
 		}
 	}
 }
+
+func TestLookingBeforeTheCommentWasWrittenIsNotHavingReadIt(t *testing.T) {
+	posted := time.Date(2026, 8, 28, 12, 0, 0, 0, time.UTC)
+
+	cases := map[string]struct {
+		receipt entity.MentionReceipt
+		seen    bool
+	}{
+		"looked an hour before it was posted": {
+			receipt: entity.MentionReceipt{Applies: true, SeenAt: posted.Add(-time.Hour)},
+		},
+		"looked a second after it was posted": {
+			receipt: entity.MentionReceipt{Applies: true, SeenAt: posted.Add(time.Second)},
+			seen:    true,
+		},
+		"looked at the very moment it was posted": {
+			receipt: entity.MentionReceipt{Applies: true, SeenAt: posted},
+			seen:    true,
+		},
+		"never looked at all": {
+			receipt: entity.MentionReceipt{Applies: true},
+		},
+		"looked, but the reader is not the author": {
+			receipt: entity.MentionReceipt{SeenAt: posted.Add(time.Hour)},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			if got := tc.receipt.Seen(posted); got != tc.seen {
+				t.Fatalf(
+					"%s reads as seen=%v, want %v. A view is recorded against the issue, not the "+
+						"comment, so only a look after the comment was written says anything "+
+						"about whether it was read",
+					name, got, tc.seen,
+				)
+			}
+		})
+	}
+}

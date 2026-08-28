@@ -70,12 +70,22 @@ func (k MentionKind) Valid() bool {
 	return slices.Contains(MentionKinds(), k)
 }
 
+type MentionReceipt struct {
+	Applies bool
+	SeenAt  time.Time
+}
+
+func (r MentionReceipt) Seen(postedAt time.Time) bool {
+	return r.Applies && !r.SeenAt.IsZero() && !r.SeenAt.Before(postedAt)
+}
+
 type CommentMention struct {
 	Kind      MentionKind
 	AccountID uuid.UUID
 	TeamID    uuid.UUID
 	Name      string
 	Visible   bool
+	Receipt   MentionReceipt
 }
 
 func (m CommentMention) TargetID() uuid.UUID {

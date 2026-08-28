@@ -574,7 +574,7 @@ func TestACommentWithAReplyUnderneathIsLeftStanding(t *testing.T) {
 		GetByID(gomock.Any(), h.run().WorkspaceID, comment.ID).
 		Return(comment, nil)
 	h.comments.EXPECT().
-		ListThread(gomock.Any(), comment.IssueID, gomock.Any()).
+		ListThread(gomock.Any(), comment.IssueID, gomock.Any(), gomock.Any()).
 		Return([]entity.IssueComment{comment}, nil)
 
 	h.alreadyMade(entity.ImportLedgerEntry{

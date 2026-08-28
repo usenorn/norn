@@ -756,8 +756,12 @@ func TestAFullPageHandsBackACursorPointingAtItsLastRoot(t *testing.T) {
 	}
 
 	h.comments.EXPECT().
-		ListThread(gomock.Any(), h.issueID, gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ uuid.UUID, page entity.CommentPage) ([]entity.IssueComment, error) {
+		ListThread(gomock.Any(), h.issueID, gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_, _ uuid.UUID,
+			page entity.CommentPage,
+		) ([]entity.IssueComment, error) {
 			if page.Limit != limit+1 {
 				t.Fatalf(
 					"the thread was read with a limit of %d. One row beyond the page is how the "+
@@ -803,7 +807,7 @@ func TestAShortPageEndsTheThread(t *testing.T) {
 	h.seesTheIssue()
 
 	h.comments.EXPECT().
-		ListThread(gomock.Any(), gomock.Any(), gomock.Any()).
+		ListThread(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return([]entity.IssueComment{{ID: uuid.New(), Body: "only one"}}, nil)
 
 	thread, err := h.service.List(

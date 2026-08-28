@@ -117,7 +117,8 @@ func (s *issueCommentsService) List(
 	workspaceID, issueID uuid.UUID,
 	input service.ListCommentsInput,
 ) (service.CommentThread, error) {
-	if _, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionRead); err != nil {
+	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionRead)
+	if err != nil {
 		return service.CommentThread{}, err
 	}
 
@@ -140,7 +141,7 @@ func (s *issueCommentsService) List(
 		page.Cursor = &cursor
 	}
 
-	comments, err := s.comments.ListThread(ctx, issueID, page.Lookahead())
+	comments, err := s.comments.ListThread(ctx, issueID, decision.Actor.Authority(), page.Lookahead())
 	if err != nil {
 		return service.CommentThread{}, err
 	}

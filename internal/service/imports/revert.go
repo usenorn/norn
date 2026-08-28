@@ -391,7 +391,7 @@ func (s *importsService) replied(ctx context.Context, comment entity.IssueCommen
 	page := entity.CommentPage{Limit: s.cfg.PageSize}.Normalized()
 
 	for {
-		thread, err := s.comments.ListThread(ctx, comment.IssueID, page.Lookahead())
+		thread, err := s.comments.ListThread(ctx, comment.IssueID, uuid.Nil, page.Lookahead())
 		if err != nil {
 			return false, err
 		}

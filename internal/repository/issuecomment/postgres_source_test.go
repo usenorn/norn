@@ -240,3 +240,45 @@ func TestTheThreadPagesForwardOverRootsAlone(t *testing.T) {
 		)
 	}
 }
+
+func TestOnlyTheAuthorOfACommentIsToldWhoReadIt(t *testing.T) {
+	for _, rule := range []string{
+		"c.author_account_id::text = $2",
+		"m.account_id::text <> $2",
+		"$2 <> ''",
+	} {
+		if !strings.Contains(mentionsQuery, rule) {
+			t.Fatalf(
+				"the mention read is missing %q. Whether somebody has read what you wrote is "+
+					"yours to see and nobody else's, so the check belongs here rather than in "+
+					"whatever renders it: a caller that forgets to hide it would otherwise show "+
+					"the whole team who has read whom.",
+				rule,
+			)
+		}
+	}
+
+	if !strings.Contains(mentionsQuery, "m.kind = 'account'") {
+		t.Fatal(
+			"the mention read does not narrow the receipt to a person. A team mention stands " +
+				"for everybody in it, and there is no single view to report for it, so it would " +
+				"read as never seen no matter who looked.",
+		)
+	}
+}
+
+func TestAMentionReceiptFollowsTheIssueThatCarriesTheComment(t *testing.T) {
+	for _, rule := range []string{
+		"v.subject_kind = 'issue'",
+		"v.subject_id = c.issue_id",
+		"v.account_id = m.account_id",
+	} {
+		if !strings.Contains(mentionsQuery, rule) {
+			t.Fatalf(
+				"the mention read is missing %q, so the view it reports would belong to some "+
+					"other person or some other issue than the one the comment is on",
+				rule,
+			)
+		}
+	}
+}

@@ -119,18 +119,18 @@ func (mr *MockIssueCommentMockRecorder) GetByID(ctx, workspaceID, commentID any)
 }
 
 // ListThread mocks base method.
-func (m *MockIssueComment) ListThread(ctx context.Context, issueID uuid.UUID, page entity.CommentPage) ([]entity.IssueComment, error) {
+func (m *MockIssueComment) ListThread(ctx context.Context, issueID, readerID uuid.UUID, page entity.CommentPage) ([]entity.IssueComment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListThread", ctx, issueID, page)
+	ret := m.ctrl.Call(m, "ListThread", ctx, issueID, readerID, page)
 	ret0, _ := ret[0].([]entity.IssueComment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListThread indicates an expected call of ListThread.
-func (mr *MockIssueCommentMockRecorder) ListThread(ctx, issueID, page any) *gomock.Call {
+func (mr *MockIssueCommentMockRecorder) ListThread(ctx, issueID, readerID, page any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListThread", reflect.TypeOf((*MockIssueComment)(nil).ListThread), ctx, issueID, page)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListThread", reflect.TypeOf((*MockIssueComment)(nil).ListThread), ctx, issueID, readerID, page)
 }
 
 // LockByID mocks base method.
