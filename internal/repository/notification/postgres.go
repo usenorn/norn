@@ -181,9 +181,13 @@ SELECT e.id,
        v.last_viewed_at
 FROM workspace_notification_events e
 JOIN workspace_notification_deliveries d ON d.event_id = e.id
+JOIN workspace_memberships m ON m.workspace_id = e.workspace_id AND m.account_id = $2
 LEFT JOIN workspace_issues i ON i.id = e.issue_id AND i.status = 'active'
+LEFT JOIN workspace_teams it ON it.id = i.team_id AND it.status = 'active'
+LEFT JOIN workspace_team_members itm ON itm.team_id = it.id AND itm.account_id = $2
 LEFT JOIN workspace_projects p ON p.id = e.project_id AND p.archived_at IS NULL
 LEFT JOIN workspace_teams t ON t.id = e.team_id AND t.status = 'active'
+LEFT JOIN workspace_team_members tm ON tm.team_id = t.id AND tm.account_id = $2
 LEFT JOIN workspace_notification_reads r
     ON r.workspace_id = d.workspace_id
    AND r.account_id = d.account_id
@@ -198,6 +202,13 @@ WHERE e.workspace_id = $1
   AND e.actor_account_id = $2
   AND d.account_id = $3
   AND d.reason <> 'following'
+  AND (e.issue_id IS NULL
+       OR (i.id IS NOT NULL
+           AND (m.role = 'admin' OR it.visibility = 'public' OR itm.account_id IS NOT NULL)))
+  AND (e.project_id IS NULL OR p.id IS NOT NULL)
+  AND (e.team_id IS NULL
+       OR (t.id IS NOT NULL
+           AND (m.role = 'admin' OR t.visibility = 'public' OR tm.account_id IS NOT NULL)))
 ORDER BY e.created_at DESC, e.id DESC
 LIMIT $4`
 
