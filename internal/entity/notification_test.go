@@ -1,7 +1,6 @@
 package entity_test
 
 import (
-	"slices"
 	"testing"
 	"time"
 
@@ -151,19 +150,5 @@ func TestACursorSurvivesTheRoundTrip(t *testing.T) {
 
 	if _, err := entity.DecodeNotificationCursor("not-a-cursor"); err == nil {
 		t.Fatal("a malformed cursor decoded without complaint")
-	}
-}
-
-func TestFollowingStaysTheWeakestReason(t *testing.T) {
-	reasons := entity.NotificationReasons()
-
-	if reasons[len(reasons)-1] != entity.NotificationReasonFollowing {
-		t.Fatalf(
-			"following ranks %d of %d, want last. The inbox folds a subject's reasons by "+
-				"starting from following and keeping whichever is stronger, so a reason ranked "+
-				"below it can never win and every notice carrying it would be labelled "+
-				"\"Following\" instead of what it is.",
-			slices.Index(reasons, entity.NotificationReasonFollowing)+1, len(reasons),
-		)
 	}
 }

@@ -167,8 +167,6 @@ func summarise(notification entity.Notification) string {
 		change = "added you"
 	case entity.NotificationKindApprovalWaiting:
 		change = "is waiting for you to approve what it proposed"
-	case entity.NotificationKindOpened:
-		change = "opened what you sent"
 	}
 
 	if notification.Reason == entity.NotificationReasonMentioned {

@@ -7621,9 +7621,9 @@ export interface components {
         /** @enum {string} */
         NotificationSubjectKind: "issue" | "project" | "team";
         /** @enum {string} */
-        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting" | "opened";
+        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting";
         /** @enum {string} */
-        NotificationReason: "mentioned" | "approval" | "assigned" | "membership" | "opened" | "following";
+        NotificationReason: "mentioned" | "approval" | "assigned" | "membership" | "following";
         /** @enum {string} */
         NotificationActorKind: "user" | "token" | "agent" | "system";
         SnoozeNotificationRequest: {
@@ -7655,8 +7655,6 @@ export interface components {
             membership: components["schemas"]["NotificationChannels"];
             /** @description An agent is waiting for you to approve something before it can carry on. */
             approvals: components["schemas"]["NotificationChannels"];
-            /** @description Somebody opened an issue you assigned to them. Told once, the first time they look, and only to whoever assigned it. */
-            opened: components["schemas"]["NotificationChannels"];
             agents: components["schemas"]["NotificationChannels"];
         };
         NotificationChannels: {

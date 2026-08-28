@@ -163,19 +163,7 @@ VALUES ($1, $2, $3, $4, $5, $5)
 ON CONFLICT (workspace_id, account_id, subject_kind, subject_id)
 DO UPDATE SET last_viewed_at = greatest(
     workspace_subject_views.last_viewed_at, excluded.last_viewed_at
-)
-RETURNING first_viewed_at = $5`
-
-const sendersAwaitingReceiptQuery = `
-SELECT DISTINCT e.actor_account_id::text
-FROM workspace_notification_events e
-WHERE e.workspace_id = $1
-  AND e.target_account_id = $2
-  AND e.subject_kind = $3
-  AND e.subject_id = $4
-  AND e.kind <> 'opened'
-  AND e.actor_account_id <> $2
-  AND e.actor_kind = 'user'`
+)`
 
 const directedQuery = `
 SELECT e.id,
@@ -374,58 +362,16 @@ func (r *notificationRepository) RecordView(
 	workspaceID, accountID uuid.UUID,
 	subject entity.NotificationSubject,
 	at time.Time,
-) (bool, error) {
-	var first bool
-
-	if err := r.db.Querier(ctx).QueryRowContext(
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
 		ctx, recordViewQuery,
 		workspaceID.String(), accountID.String(),
 		string(subject.Kind), subject.ID.String(), at,
-	).Scan(&first); err != nil {
-		return false, fmt.Errorf("record subject view: %w", err)
+	); err != nil {
+		return fmt.Errorf("record subject view: %w", err)
 	}
 
-	return first, nil
-}
-
-func (r *notificationRepository) SendersAwaitingReceipt(
-	ctx context.Context,
-	workspaceID, accountID uuid.UUID,
-	subject entity.NotificationSubject,
-) ([]uuid.UUID, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(
-		ctx, sendersAwaitingReceiptQuery,
-		workspaceID.String(), accountID.String(),
-		string(subject.Kind), subject.ID.String(),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("read senders awaiting a receipt: %w", err)
-	}
-
-	defer func() { _ = rows.Close() }()
-
-	senders := make([]uuid.UUID, 0)
-
-	for rows.Next() {
-		var raw string
-
-		if err := rows.Scan(&raw); err != nil {
-			return nil, fmt.Errorf("scan sender awaiting a receipt: %w", err)
-		}
-
-		sender, err := uuid.Parse(raw)
-		if err != nil {
-			return nil, fmt.Errorf("parse sender awaiting a receipt: %w", err)
-		}
-
-		senders = append(senders, sender)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("read senders awaiting a receipt: %w", err)
-	}
-
-	return senders, nil
+	return nil
 }
 
 func (r *notificationRepository) Directed(

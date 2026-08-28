@@ -33,7 +33,6 @@ const (
 	NotificationKindMembership   NotificationKind = "membership"
 
 	NotificationKindApprovalWaiting NotificationKind = "approval_waiting"
-	NotificationKindOpened          NotificationKind = "opened"
 )
 
 func NotificationKinds() []NotificationKind {
@@ -44,7 +43,6 @@ func NotificationKinds() []NotificationKind {
 		NotificationKindStateChanged,
 		NotificationKindMembership,
 		NotificationKindApprovalWaiting,
-		NotificationKindOpened,
 	}
 }
 
@@ -97,7 +95,6 @@ const (
 	NotificationReasonApproval   NotificationReason = "approval"
 	NotificationReasonAssigned   NotificationReason = "assigned"
 	NotificationReasonMembership NotificationReason = "membership"
-	NotificationReasonOpened     NotificationReason = "opened"
 	NotificationReasonFollowing  NotificationReason = "following"
 )
 
@@ -107,7 +104,6 @@ func NotificationReasons() []NotificationReason {
 		NotificationReasonApproval,
 		NotificationReasonAssigned,
 		NotificationReasonMembership,
-		NotificationReasonOpened,
 		NotificationReasonFollowing,
 	}
 }
@@ -187,7 +183,6 @@ type NotificationPreferences struct {
 	StateChanged NotificationChannels
 	Membership   NotificationChannels
 	Approvals    NotificationChannels
-	Opened       NotificationChannels
 	Agents       NotificationChannels
 }
 
@@ -199,7 +194,6 @@ func DefaultNotificationPreferences() NotificationPreferences {
 		StateChanged: NotificationChannels{Inbox: true, Email: false},
 		Membership:   NotificationChannels{Inbox: true, Email: false},
 		Approvals:    NotificationChannels{Inbox: true, Email: true},
-		Opened:       NotificationChannels{Inbox: true, Email: false},
 		Agents:       NotificationChannels{Inbox: true, Email: true},
 	}
 }
@@ -218,8 +212,6 @@ func (p NotificationPreferences) For(kind NotificationKind) NotificationChannels
 		return p.Membership
 	case NotificationKindApprovalWaiting:
 		return p.Approvals
-	case NotificationKindOpened:
-		return p.Opened
 	default:
 		return NotificationChannels{}
 	}

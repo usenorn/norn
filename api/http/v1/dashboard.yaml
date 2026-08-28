@@ -12000,11 +12000,11 @@ components:
 
     NotificationKind:
       type: string
-      enum: [assigned, mentioned, commented, state_changed, membership, approval_waiting, opened]
+      enum: [assigned, mentioned, commented, state_changed, membership, approval_waiting]
 
     NotificationReason:
       type: string
-      enum: [mentioned, approval, assigned, membership, opened, following]
+      enum: [mentioned, approval, assigned, membership, following]
 
     NotificationActorKind:
       type: string
@@ -12050,7 +12050,7 @@ components:
 
     NotificationPreferences:
       type: object
-      required: [assigned, mentioned, commented, stateChanged, membership, approvals, opened, agents]
+      required: [assigned, mentioned, commented, stateChanged, membership, approvals, agents]
       properties:
         assigned: { $ref: '#/components/schemas/NotificationChannels' }
         mentioned: { $ref: '#/components/schemas/NotificationChannels' }
@@ -12060,11 +12060,6 @@ components:
         approvals:
           $ref: '#/components/schemas/NotificationChannels'
           description: An agent is waiting for you to approve something before it can carry on.
-        opened:
-          $ref: '#/components/schemas/NotificationChannels'
-          description: >-
-            Somebody opened an issue you assigned to them. Told once, the first time
-            they look, and only to whoever assigned it.
         agents: { $ref: '#/components/schemas/NotificationChannels' }
 
     NotificationChannels:

@@ -172,8 +172,7 @@ func (s *notificationsService) candidates(
 		add(event.Target, targetReason(event.Kind))
 	}
 
-	if event.Subject.Kind == entity.NotificationSubjectIssue &&
-		event.Kind != entity.NotificationKindOpened {
+	if event.Subject.Kind == entity.NotificationSubjectIssue {
 		followers, err := s.followers.List(ctx, event.Subject.ID)
 		if err != nil {
 			return nil, err
@@ -202,8 +201,6 @@ func targetReason(kind entity.NotificationKind) entity.NotificationReason {
 		return entity.NotificationReasonMembership
 	case entity.NotificationKindApprovalWaiting:
 		return entity.NotificationReasonApproval
-	case entity.NotificationKindOpened:
-		return entity.NotificationReasonOpened
 	default:
 		return entity.NotificationReasonAssigned
 	}
