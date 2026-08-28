@@ -228,7 +228,7 @@
 										autocomplete="email"
 										autocapitalize="none"
 										spellcheck="false"
-										placeholder="you@company.com"
+										placeholder="you@example.com"
 										disabled={busy}
 										bind:value={$requestData.email}
 									/>

@@ -33,27 +33,6 @@ export function signUpSent(requested: SignUpRequested): SignUpOutcome {
 	};
 }
 
-const personalEmailProviders = new Set([
-	"aol",
-	"gmail",
-	"hotmail",
-	"icloud",
-	"live",
-	"outlook",
-	"proton",
-	"yahoo",
-]);
-
-export function personalEmail(email: string): boolean {
-	const at = email.lastIndexOf("@");
-
-	if (at < 0) return false;
-
-	const [label, ...rest] = email.slice(at + 1).toLowerCase().split(".");
-
-	return rest.length > 0 && personalEmailProviders.has(label);
-}
-
 export function signUpFailure(problem: SignUpProblem): SignUpOutcome | null {
 	if (!codedRequest(problem)) return null;
 

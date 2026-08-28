@@ -59,8 +59,8 @@
 		ssoOnly
 			? `${workspace?.name ?? "This instance"} signs in through ${provider}. Password sign-in is off for this workspace.`
 			: showSso
-				? "Use your work email, or your identity provider."
-				: "Use your work email."
+				? "Use your email, or your identity provider."
+				: "Use the email you signed up with."
 	);
 
 	const notice = $derived.by(() => {
@@ -193,7 +193,7 @@
 									autocomplete="email"
 									autocapitalize="none"
 									spellcheck="false"
-									placeholder="you@company.com"
+									placeholder="you@example.com"
 									disabled={locked}
 									aria-invalid={credentialError ? "true" : undefined}
 									bind:value={$formData.email}

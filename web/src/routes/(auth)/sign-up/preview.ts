@@ -32,15 +32,6 @@ export const signUpPreviewStates: Record<string, SignUpPreview> = import.meta.en
 					terms: true,
 				},
 			},
-			blocked: {
-				form: {
-					name: "Rae Okafor",
-					email: "rae@gmail.com",
-					password: "northwind-cycle-24",
-					passwordConfirm: "northwind-cycle-24",
-					terms: true,
-				},
-			},
 			failed: {
 				form: {
 					name: "Rae Okafor",
