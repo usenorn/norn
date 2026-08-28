@@ -57,14 +57,8 @@ type Notifications interface {
 	Directed(
 		ctx context.Context,
 		workspaceID, recipientID, subjectID uuid.UUID,
-		window time.Duration,
 		limit int,
 	) ([]entity.DirectedNotice, error)
-	DirectedTally(
-		ctx context.Context,
-		workspaceID, recipientID, subjectID uuid.UUID,
-		window time.Duration,
-	) (entity.DirectedTally, error)
 	FanOut(ctx context.Context) (int, error)
 	Digest(ctx context.Context, now time.Time) error
 }

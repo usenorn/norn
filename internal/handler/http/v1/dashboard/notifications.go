@@ -57,7 +57,7 @@ func (h *handler) ListDirectedNotifications(
 	}
 
 	notices, err := h.notifications.Directed(
-		ctx, request.WorkspaceId, request.Params.RecipientId, subjectID, 0, limit,
+		ctx, request.WorkspaceId, request.Params.RecipientId, subjectID, limit,
 	)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

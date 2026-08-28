@@ -58,14 +58,8 @@ type Notification interface {
 	Directed(
 		ctx context.Context,
 		workspaceID, actorID, recipientID, subjectID uuid.UUID,
-		since time.Time,
 		limit int,
 	) ([]entity.DirectedNotice, error)
-	DirectedTally(
-		ctx context.Context,
-		workspaceID, actorID, recipientID, subjectID uuid.UUID,
-		since time.Time,
-	) (entity.DirectedTally, error)
 	DigestRecipients(ctx context.Context, window time.Time) ([]entity.NotificationDigestClaim, error)
 	DigestEntries(
 		ctx context.Context,

@@ -64,9 +64,8 @@ func TestEveryReadJoinsLiveVisibilityRatherThanTrustingTheDeliveryRow(t *testing
 	}
 
 	for name, query := range map[string]string{
-		"visibleDeliveries":  visibleDeliveries,
-		"directedQuery":      directedQuery,
-		"directedTallyQuery": directedTallyQuery,
+		"visibleDeliveries": visibleDeliveries,
+		"directedQuery":     directedQuery,
 	} {
 		for _, rule := range rules {
 			if !strings.Contains(query, rule) {
@@ -179,39 +178,6 @@ func TestAReceiptDoesNotWaitForTheFanOut(t *testing.T) {
 			"the receipt does not narrow to events aimed at the reader, so opening an issue " +
 				"would send a receipt to whoever last touched it rather than to whoever put it " +
 				"in front of them",
-		)
-	}
-}
-
-func TestTheTallyCountsOnlyWhatTheAskerSent(t *testing.T) {
-	for _, rule := range []string{
-		"e.actor_account_id = $2",
-		"d.account_id = $3",
-		"e.created_at >= $5",
-	} {
-		if !strings.Contains(directedTallyQuery, rule) {
-			t.Fatalf(
-				"the tally is missing %q. A figure computed over anything wider than what this "+
-					"asker sent to this one person is a fact about work they may not be able to "+
-					"see, and unlike a list a count cannot be inspected for what it folded in.",
-				rule,
-			)
-		}
-	}
-}
-
-func TestTheTallyIsCountedInTheQueryRatherThanOverAPage(t *testing.T) {
-	if strings.Contains(directedTallyQuery, "LIMIT") {
-		t.Fatal(
-			"the tally is bounded by a page limit, so somebody who has sent more than one page " +
-				"would be told a smaller number than the truth and have no sign that it was cut",
-		)
-	}
-
-	if !strings.Contains(directedTallyQuery, "count(*)") {
-		t.Fatal(
-			"the tally does not count in the query, which leaves the counting to whoever calls " +
-				"it and lets the same question be answered differently each time it is asked",
 		)
 	}
 }
