@@ -86,8 +86,6 @@ export function emailMessage(code: string): string {
 			return "Enter your email address.";
 		case "malformed":
 			return "Enter a valid email address.";
-		case "personal_email":
-			return "Use the address your team uses.";
 		default:
 			return "That address can't be used.";
 	}

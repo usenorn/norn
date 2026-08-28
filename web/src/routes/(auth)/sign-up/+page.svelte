@@ -17,7 +17,6 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import InstanceLine from "$lib/components/norn/instance-line.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { personalEmail } from "$lib/auth/sign-up";
 	import { minPasswordLength, signUpSchema } from "$lib/auth/sign-up-schema";
 	import type { SignUpOutcome } from "$lib/auth/types";
 	import { atClock } from "$lib/time";
@@ -64,8 +63,7 @@
 	});
 
 	const busy = $derived(Boolean(preview?.busy) || $submitting);
-	const blocked = $derived(personalEmail($formData.email));
-	const valid = $derived(!blocked && signUpSchema.safeParse($formData).success);
+	const valid = $derived(signUpSchema.safeParse($formData).success);
 
 	const verification = $derived(outcome?.kind === "verification_sent" ? outcome : null);
 	const ssoDomain = $derived(outcome?.kind === "domain_uses_sso" ? outcome : null);
@@ -129,14 +127,6 @@
 				icon: CircleAlert,
 				title: "An account already exists for this email",
 				body: "Sign in instead, or reset the password from the sign-in screen.",
-			};
-		}
-		if (blocked) {
-			return {
-				variant: "muted" as const,
-				icon: Info,
-				title: "Norn needs a work email",
-				body: "Personal addresses cannot start a workspace. Use the address your team uses.",
 			};
 		}
 		if (outcome?.kind === "undeliverable") {
@@ -372,7 +362,7 @@
 					<Form.Field {form} name="email">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Work email</Form.Label>
+								<Form.Label>Email</Form.Label>
 								<Input
 									{...props}
 									type="email"
@@ -380,18 +370,15 @@
 									autocomplete="email"
 									autocapitalize="none"
 									spellcheck="false"
-									placeholder="you@company.com"
+									placeholder="you@example.com"
 									disabled={busy}
-									aria-invalid={blocked ? "true" : undefined}
 									bind:value={$formData.email}
 								/>
 							{/snippet}
 						</Form.Control>
-						{#if !blocked}
-							<Form.Description class="text-sm text-muted-foreground">
-								Used for sign-in and notifications.
-							</Form.Description>
-						{/if}
+						<Form.Description class="text-sm text-muted-foreground">
+							Used for sign-in and notifications.
+						</Form.Description>
 						<Form.FieldErrors />
 					</Form.Field>
 
