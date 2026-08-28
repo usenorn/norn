@@ -65,6 +65,15 @@ export function lastActive(instant: string | undefined, now: string, timezone: s
 	return `Active ${onMonth(instant, timezone)}`;
 }
 
+export function seenLabel(instant: string, now: string, timezone: string): string {
+	const days = daysBetween(instant, now);
+
+	if (days <= 0) return `Seen at ${atClock(instant, timezone)}`;
+	if (days === 1) return "Seen yesterday";
+
+	return `Seen ${onDayMonth(instant, now, timezone)}`;
+}
+
 export function onDayMonth(instant: string, now: string, timezone: string): string {
 	const year = { year: "numeric" } as const;
 	const sameYear = parts(instant, timezone, year) === parts(now, timezone, year);

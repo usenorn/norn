@@ -50,8 +50,14 @@ func (h *handler) ListDirectedNotifications(
 		limit = int(*request.Params.Limit)
 	}
 
+	subjectID := uuid.Nil
+
+	if request.Params.SubjectId != nil {
+		subjectID = *request.Params.SubjectId
+	}
+
 	notices, err := h.notifications.Directed(
-		ctx, request.WorkspaceId, request.Params.RecipientId, limit,
+		ctx, request.WorkspaceId, request.Params.RecipientId, subjectID, limit,
 	)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

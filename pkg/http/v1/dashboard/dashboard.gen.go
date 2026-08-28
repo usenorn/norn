@@ -8779,7 +8779,10 @@ type ListWorkspaceNotificationsParamsFilter string
 // ListDirectedNotificationsParams defines parameters for ListDirectedNotifications.
 type ListDirectedNotificationsParams struct {
 	RecipientId openapi_types.UUID `form:"recipientId" json:"recipientId"`
-	Limit       *int32             `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// SubjectId Narrow the answer to one issue, project or team.
+	SubjectId *openapi_types.UUID `form:"subjectId,omitempty" json:"subjectId,omitempty"`
+	Limit     *int32              `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListWorkspaceProjectsParams defines parameters for ListWorkspaceProjects.
@@ -27430,6 +27433,18 @@ func NewListDirectedNotificationsRequest(server string, workspaceId WorkspaceId,
 			for _, qp := range strings.Split(queryFrag, "&") {
 				rawQueryFragments = append(rawQueryFragments, qp)
 			}
+		}
+
+		if params.SubjectId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "subjectId", *params.SubjectId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
 		}
 
 		if params.Limit != nil {
@@ -90057,6 +90072,19 @@ func (siw *ServerInterfaceWrapper) ListDirectedNotifications(w http.ResponseWrit
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "recipientId"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipientId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "subjectId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "subjectId", r.URL.Query(), &params.SubjectId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "subjectId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subjectId", Err: err})
 		}
 		return
 	}
