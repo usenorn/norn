@@ -4894,7 +4894,11 @@ type CommentMention struct {
 	Kind      CommentMentionKind  `json:"kind"`
 	Name      string              `json:"name"`
 	Notified  bool                `json:"notified"`
-	TeamId    *openapi_types.UUID `json:"teamId,omitempty"`
+
+	// Seen Whether this person has looked at the issue since the comment was posted. Present only for somebody reading a comment they wrote themselves, and only for a mention of another person; absent for everybody else.
+	Seen   *bool               `json:"seen,omitempty"`
+	SeenAt *time.Time          `json:"seenAt,omitempty"`
+	TeamId *openapi_types.UUID `json:"teamId,omitempty"`
 }
 
 // CommentMentionKind defines model for CommentMentionKind.

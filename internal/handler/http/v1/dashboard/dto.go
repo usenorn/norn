@@ -1200,7 +1200,7 @@ func commentDTO(comment entity.IssueComment) api.IssueComment {
 		Deleted:    comment.Deleted(),
 		EditedAt:   comment.EditedAt,
 		DeletedAt:  comment.DeletedAt,
-		Mentions:   commentMentionDTOs(comment.Mentions),
+		Mentions:   commentMentions(comment.Mentions, comment.CreatedAt),
 		Reactions:  commentReactionDTOs(comment.Reactions),
 		Replies:    commentDTOs(comment.Replies),
 		CreatedAt:  comment.CreatedAt,
@@ -1241,6 +1241,26 @@ func postedCommentDTO(posted service.CommentPosted) api.PostedComment {
 		Comment:     commentDTO(posted.Comment),
 		Unreachable: commentMentionDTOs(posted.Unreachable),
 	}
+}
+
+func commentMentions(mentions []entity.CommentMention, postedAt time.Time) []api.CommentMention {
+	dtos := commentMentionDTOs(mentions)
+
+	for i, mention := range mentions {
+		if !mention.Receipt.Applies {
+			continue
+		}
+
+		seen := mention.Receipt.Seen(postedAt)
+		dtos[i].Seen = &seen
+
+		if seen {
+			at := mention.Receipt.SeenAt
+			dtos[i].SeenAt = &at
+		}
+	}
+
+	return dtos
 }
 
 func commentMentionDTOs(mentions []entity.CommentMention) []api.CommentMention {

@@ -4937,6 +4937,10 @@ export interface components {
             teamId?: string;
             name: string;
             notified: boolean;
+            /** @description Whether this person has looked at the issue since the comment was posted. Present only for somebody reading a comment they wrote themselves, and only for a mention of another person; absent for everybody else. */
+            seen?: boolean;
+            /** Format: date-time */
+            seenAt?: string;
         };
         MentionTarget: {
             kind: components["schemas"]["CommentMentionKind"];

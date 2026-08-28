@@ -992,6 +992,43 @@ export const commentPreviewStates: Record<string, CommentPreview> = import.meta.
 					],
 				},
 			},
+			mention_receipts: {
+				thread: {
+					kind: "ready",
+					comments: [
+						{
+							id: "00000000-0000-4000-8000-000000000c20",
+							issueId: "00000000-0000-4000-8000-000000000501",
+							authorAccountId: "00000000-0000-4000-8000-000000000201",
+							authorName: "Rae Whitfield",
+							authorKind: "person" as const,
+							body: "@Tomas Vogel @Ines Barlow one of you wrote the backoff — which of the two caps is the one that matters?",
+							edited: false,
+							deleted: false,
+							mentions: [
+								{
+									kind: "account" as const,
+									accountId: "00000000-0000-4000-8000-000000000203",
+									name: "Tomas Vogel",
+									notified: true,
+									seen: true,
+									seenAt: "2026-08-03T11:20:00Z",
+								},
+								{
+									kind: "account" as const,
+									accountId: "00000000-0000-4000-8000-000000000204",
+									name: "Ines Barlow",
+									notified: true,
+									seen: false,
+								},
+							],
+							reactions: [],
+							replies: [],
+							createdAt: "2026-08-03T09:00:00Z",
+						},
+					],
+				},
+			},
 			long_thread: {
 				thread: {
 					kind: "ready",

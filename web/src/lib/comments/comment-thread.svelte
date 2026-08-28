@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Bot from "@lucide/svelte/icons/bot";
+	import Check from "@lucide/svelte/icons/check";
+	import CheckCheck from "@lucide/svelte/icons/check-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Dot from "@lucide/svelte/icons/dot";
 	import Info from "@lucide/svelte/icons/info";
@@ -28,6 +30,9 @@
 	import type { UploadTask } from "$lib/attachments/upload";
 	import type { Member } from "$lib/issues/members";
 	import type { Team } from "$lib/team/teams";
+
+	const receipts = (comment: IssueComment) =>
+		comment.mentions.filter((mention) => mention.seen !== undefined);
 
 	let {
 		thread,
@@ -148,6 +153,22 @@
 				<p class="text-xs text-muted-foreground">
 					Mentioned {comment.mentions.map((mention) => mention.name).join(", ")}
 				</p>
+			{/if}
+
+			{#if receipts(comment).length > 0}
+				<ul class="flex flex-wrap gap-x-3 gap-y-0.5 text-2xs text-muted-foreground">
+					{#each receipts(comment) as mention (mention.accountId ?? mention.name)}
+						<li class="flex items-center gap-1">
+							{#if mention.seen && mention.seenAt}
+								<CheckCheck class="size-3 flex-none" aria-hidden="true" />
+								{mention.name} read this {when(mention.seenAt)}
+							{:else}
+								<Check class="size-3 flex-none" aria-hidden="true" />
+								{mention.name} has not opened this yet
+							{/if}
+						</li>
+					{/each}
+				</ul>
 			{/if}
 		{/if}
 

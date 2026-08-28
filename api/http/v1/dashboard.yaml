@@ -7840,6 +7840,13 @@ components:
         teamId: { type: string, format: uuid }
         name: { type: string }
         notified: { type: boolean }
+        seen:
+          type: boolean
+          description: >-
+            Whether this person has looked at the issue since the comment was posted.
+            Present only for somebody reading a comment they wrote themselves, and only
+            for a mention of another person; absent for everybody else.
+        seenAt: { type: string, format: date-time }
 
     MentionTarget:
       type: object
