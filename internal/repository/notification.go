@@ -44,6 +44,17 @@ type Notification interface {
 		subject entity.NotificationSubject,
 		until time.Time,
 	) error
+	RecordView(
+		ctx context.Context,
+		workspaceID, accountID uuid.UUID,
+		subject entity.NotificationSubject,
+		at time.Time,
+	) error
+	Directed(
+		ctx context.Context,
+		workspaceID, actorID, recipientID uuid.UUID,
+		limit int,
+	) ([]entity.DirectedNotice, error)
 	DigestRecipients(ctx context.Context, window time.Time) ([]entity.NotificationDigestClaim, error)
 	DigestEntries(
 		ctx context.Context,

@@ -69,6 +69,34 @@ func (s *notificationsService) decide(
 	})
 }
 
+func (s *notificationsService) Directed(
+	ctx context.Context,
+	workspaceID, recipientID uuid.UUID,
+	limit int,
+) ([]entity.DirectedNotice, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
+	if err != nil {
+		return nil, err
+	}
+
+	if recipientID == uuid.Nil {
+		return nil, entity.NewValidationError(entity.FieldError{
+			Field: "recipientId",
+			Code:  entity.ValidationCodeRequired,
+		})
+	}
+
+	if limit <= 0 {
+		limit = entity.NotificationPageDefaultSize
+	}
+
+	if limit > entity.NotificationPageMaxSize {
+		limit = entity.NotificationPageMaxSize
+	}
+
+	return s.notifications.Directed(ctx, workspaceID, decision.Actor.Authority(), recipientID, limit)
+}
+
 func (s *notificationsService) Inbox(
 	ctx context.Context,
 	workspaceID uuid.UUID,

@@ -155,6 +155,52 @@ VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (workspace_id, account_id, subject_kind, subject_id)
 DO UPDATE SET read_through = excluded.read_through, updated_at = now()`
 
+const recordViewQuery = `
+INSERT INTO workspace_subject_views (
+    workspace_id, account_id, subject_kind, subject_id, first_viewed_at, last_viewed_at
+)
+VALUES ($1, $2, $3, $4, $5, $5)
+ON CONFLICT (workspace_id, account_id, subject_kind, subject_id)
+DO UPDATE SET last_viewed_at = greatest(
+    workspace_subject_views.last_viewed_at, excluded.last_viewed_at
+)`
+
+const directedQuery = `
+SELECT e.id,
+       e.subject_kind,
+       e.subject_id,
+       e.kind,
+       d.reason,
+       d.account_id,
+       e.created_at,
+       d.inbox,
+       d.email,
+       coalesce(i.title, p.name, t.name, '') AS title,
+       coalesce(i.reference_key || '-' || i.number::text, '') AS reference,
+       r.read_through,
+       v.last_viewed_at
+FROM workspace_notification_events e
+JOIN workspace_notification_deliveries d ON d.event_id = e.id
+LEFT JOIN workspace_issues i ON i.id = e.issue_id AND i.status = 'active'
+LEFT JOIN workspace_projects p ON p.id = e.project_id AND p.archived_at IS NULL
+LEFT JOIN workspace_teams t ON t.id = e.team_id AND t.status = 'active'
+LEFT JOIN workspace_notification_reads r
+    ON r.workspace_id = d.workspace_id
+   AND r.account_id = d.account_id
+   AND r.subject_kind = e.subject_kind
+   AND r.subject_id = e.subject_id
+LEFT JOIN workspace_subject_views v
+    ON v.workspace_id = d.workspace_id
+   AND v.account_id = d.account_id
+   AND v.subject_kind = e.subject_kind
+   AND v.subject_id = e.subject_id
+WHERE e.workspace_id = $1
+  AND e.actor_account_id = $2
+  AND d.account_id = $3
+  AND d.reason <> 'following'
+ORDER BY e.created_at DESC, e.id DESC
+LIMIT $4`
+
 const markAllReadQuery = `
 INSERT INTO workspace_notification_reads (
     workspace_id, account_id, subject_kind, subject_id, read_through
@@ -297,6 +343,85 @@ func (r *notificationRepository) ListInbox(
 		page.Filter == entity.NotificationFilterUnread,
 		page.Cursor != nil, cursorAt, cursorID, page.Limit,
 	)
+}
+
+func (r *notificationRepository) RecordView(
+	ctx context.Context,
+	workspaceID, accountID uuid.UUID,
+	subject entity.NotificationSubject,
+	at time.Time,
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, recordViewQuery,
+		workspaceID.String(), accountID.String(),
+		string(subject.Kind), subject.ID.String(), at,
+	); err != nil {
+		return fmt.Errorf("record subject view: %w", err)
+	}
+
+	return nil
+}
+
+func (r *notificationRepository) Directed(
+	ctx context.Context,
+	workspaceID, actorID, recipientID uuid.UUID,
+	limit int,
+) ([]entity.DirectedNotice, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx, directedQuery,
+		workspaceID.String(), actorID.String(), recipientID.String(), limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("read directed notices: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	notices := make([]entity.DirectedNotice, 0)
+
+	for rows.Next() {
+		var (
+			notice               entity.DirectedNotice
+			eventID              string
+			subjectKind, subject string
+			kind, reason         string
+			recipient            string
+			clearedAt, openedAt  *time.Time
+		)
+
+		if err := rows.Scan(
+			&eventID, &subjectKind, &subject, &kind, &reason, &recipient,
+			&notice.SentAt, &notice.Channels.Inbox, &notice.Channels.Email,
+			&notice.Title, &notice.Reference, &clearedAt, &openedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan directed notice: %w", err)
+		}
+
+		notice.EventID = parse(eventID)
+		notice.Subject = entity.NotificationSubject{
+			Kind: entity.NotificationSubjectKind(subjectKind),
+			ID:   parse(subject),
+		}
+		notice.Kind = entity.NotificationKind(kind)
+		notice.Reason = entity.NotificationReason(reason)
+		notice.RecipientID = parse(recipient)
+
+		if clearedAt != nil {
+			notice.ClearedAt = *clearedAt
+		}
+
+		if openedAt != nil {
+			notice.OpenedAt = *openedAt
+		}
+
+		notices = append(notices, notice)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read directed notices: %w", err)
+	}
+
+	return notices, nil
 }
 
 func (r *notificationRepository) DigestEntries(
