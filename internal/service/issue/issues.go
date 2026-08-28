@@ -314,10 +314,24 @@ func (s *issuesService) recordView(
 		return
 	}
 
-	if err := s.notices.RecordView(
-		ctx, workspaceID, decision.Actor.AccountID, entity.NotifyIssue(issueID), time.Now().UTC(),
-	); err != nil {
+	subject := entity.NotifyIssue(issueID)
+
+	first, err := s.notices.RecordView(
+		ctx, workspaceID, decision.Actor.AccountID, subject, time.Now().UTC(),
+	)
+	if err != nil {
 		logging.From(ctx).WarnContext(ctx, "could not record that the issue was opened",
+			"issue_id", issueID, "error", err)
+
+		return
+	}
+
+	if !first {
+		return
+	}
+
+	if err := s.notifyOpened(ctx, workspaceID, subject, decision.Actor.AccountID); err != nil {
+		logging.From(ctx).WarnContext(ctx, "could not tell the sender their issue was opened",
 			"issue_id", issueID, "error", err)
 	}
 }
