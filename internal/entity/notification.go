@@ -288,6 +288,35 @@ func (n Notification) Cursor() NotificationCursor {
 	return NotificationCursor{LastEventAt: n.LastEventAt, SubjectID: n.Subject.ID}
 }
 
+type SubjectView struct {
+	Subject       NotificationSubject
+	AccountID     uuid.UUID
+	FirstViewedAt time.Time
+	LastViewedAt  time.Time
+}
+
+type DirectedNotice struct {
+	EventID     uuid.UUID
+	Subject     NotificationSubject
+	Reference   string
+	Title       string
+	Kind        NotificationKind
+	Reason      NotificationReason
+	RecipientID uuid.UUID
+	SentAt      time.Time
+	Channels    NotificationChannels
+	ClearedAt   time.Time
+	OpenedAt    time.Time
+}
+
+func (n DirectedNotice) Cleared() bool {
+	return !n.ClearedAt.IsZero() && !n.ClearedAt.Before(n.SentAt)
+}
+
+func (n DirectedNotice) Opened() bool {
+	return !n.OpenedAt.IsZero() && !n.OpenedAt.Before(n.SentAt)
+}
+
 type NotificationFilter string
 
 const (

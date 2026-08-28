@@ -40,6 +40,30 @@ func (h *handler) ListWorkspaceNotifications(
 	return api.ListWorkspaceNotifications200JSONResponse(notificationPageDTO(inbox)), nil
 }
 
+func (h *handler) ListDirectedNotifications(
+	ctx context.Context,
+	request api.ListDirectedNotificationsRequestObject,
+) (api.ListDirectedNotificationsResponseObject, error) {
+	limit := 0
+
+	if request.Params.Limit != nil {
+		limit = int(*request.Params.Limit)
+	}
+
+	notices, err := h.notifications.Directed(
+		ctx, request.WorkspaceId, request.Params.RecipientId, limit,
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListDirectedNotifications200JSONResponse(directedNoticePageDTO(notices)), nil
+}
+
 func (h *handler) ReadAllWorkspaceNotifications(
 	ctx context.Context,
 	request api.ReadAllWorkspaceNotificationsRequestObject,

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
@@ -29,6 +30,7 @@ type issuesService struct {
 	teams        repository.Team
 	triage       repository.Triage
 	notify       repository.NotificationEvent
+	notices      repository.Notification
 	events       service.Events
 	emitter      service.WebhookEmitter
 	followers    repository.IssueFollower
@@ -51,6 +53,7 @@ func New(
 	teams repository.Team,
 	triage repository.Triage,
 	notify repository.NotificationEvent,
+	notices repository.Notification,
 	events service.Events,
 	emitter service.WebhookEmitter,
 	followers repository.IssueFollower,
@@ -72,6 +75,7 @@ func New(
 		teams:        teams,
 		triage:       triage,
 		notify:       notify,
+		notices:      notices,
 		events:       events,
 		emitter:      emitter,
 		followers:    followers,
@@ -291,7 +295,31 @@ func (s *issuesService) Get(ctx context.Context, workspaceID, issueID uuid.UUID)
 		return entity.Issue{}, err
 	}
 
-	return s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
+	issue, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
+	if err != nil {
+		return entity.Issue{}, err
+	}
+
+	s.recordView(ctx, workspaceID, issue.ID, decision)
+
+	return issue, nil
+}
+
+func (s *issuesService) recordView(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	decision entity.Decision,
+) {
+	if decision.Actor.Kind != entity.ActorKindUser {
+		return
+	}
+
+	if err := s.notices.RecordView(
+		ctx, workspaceID, decision.Actor.AccountID, entity.NotifyIssue(issueID), time.Now().UTC(),
+	); err != nil {
+		logging.From(ctx).WarnContext(ctx, "could not record that the issue was opened",
+			"issue_id", issueID, "error", err)
+	}
 }
 
 func (s *issuesService) GetByReference(
