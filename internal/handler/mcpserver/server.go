@@ -42,6 +42,7 @@ type toolset struct {
 	labels         service.Labels
 	searches       service.Searches
 	sourceControl  service.SourceControl
+	notifications  service.Notifications
 }
 
 type Edge struct {
@@ -62,6 +63,7 @@ func New(
 	labels service.Labels,
 	searches service.Searches,
 	sourceControl service.SourceControl,
+	notifications service.Notifications,
 	app config.App,
 	cfg config.MCP,
 ) *Edge {
@@ -78,6 +80,7 @@ func New(
 		labels:         labels,
 		searches:       searches,
 		sourceControl:  sourceControl,
+		notifications:  notifications,
 	}
 
 	server := mcp.NewServer(
@@ -127,6 +130,17 @@ func (t *toolset) register(server *mcp.Server) {
 			"Use it to resolve team keys and state names before creating or updating issues.",
 		Annotations: read,
 	}, t.getWorkspaceStructure)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "norn_list_directed",
+		Description: "What you assigned to one person or mentioned them in, newest first, " +
+			"and how far each one got: delivered, cleared from their inbox, opened. " +
+			"Cleared and opened are different claims — somebody can clear an inbox without " +
+			"reading, and can open an issue without touching their inbox. Only what you " +
+			"yourself directed at them is listed; a notice they got by following an issue " +
+			"is not, because nobody aimed it at them.",
+		Annotations: read,
+	}, t.listDirected)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_list_workspace_members",
