@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { tick } from "svelte";
+	import { caretAfterPaste, pastedMarkdown, withPasted } from "$lib/issues/paste";
 	import CalendarDays from "@lucide/svelte/icons/calendar-days";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
@@ -86,7 +88,11 @@
 	function pasteFiles(event: ClipboardEvent) {
 		const files = Array.from(event.clipboardData?.files ?? []);
 
-		if (files.length === 0) return;
+		if (files.length === 0) {
+			pasteMarkup(event);
+
+			return;
+		}
 
 		event.preventDefault();
 
@@ -99,6 +105,22 @@
 				file,
 			})),
 		];
+	}
+
+	function pasteMarkup(event: ClipboardEvent) {
+		const markdown = pastedMarkdown(event);
+
+		if (!markdown) return;
+
+		event.preventDefault();
+
+		const field = event.currentTarget as HTMLTextAreaElement;
+		const caret = caretAfterPaste(field, markdown);
+		const next = withPasted(field, markdown);
+
+		formData.update((current) => ({ ...current, description: next }), { taint: true });
+
+		tick().then(() => field.setSelectionRange(caret, caret));
 	}
 
 	function dropPending(key: string) {
