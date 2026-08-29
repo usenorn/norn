@@ -136,10 +136,11 @@ export function landing(
 
 	if (ordering === "due" && !carried.dueOn) cleared.push("dueOn");
 
+	const ranked = ordering === "manual" ? { afterIssueId: above?.id, beforeIssueId: below?.id } : {};
+
 	const move: IssueMove = {
 		...grouped,
-		afterIssueId: above?.id,
-		beforeIssueId: below?.id,
+		...ranked,
 		...(carried.priority ? { priority: carried.priority } : {}),
 		...(carried.dueOn ? { dueOn: carried.dueOn } : {}),
 		...(cleared.length > 0 ? { clear: cleared } : {}),
