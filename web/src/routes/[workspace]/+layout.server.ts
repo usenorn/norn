@@ -1,6 +1,7 @@
 import { error, redirect } from "@sveltejs/kit";
 import { keys } from "$lib/api/keys";
 import { reachOfSlug, type SignedInAccount } from "$lib/account/accounts";
+import { lastWorkspaceCookie } from "$lib/account/last-workspace";
 import type { components } from "$lib/api/dashboard.gen";
 import type { TeamCycle } from "$lib/cycles/cycles";
 import type { Label } from "$lib/labels/labels";
@@ -51,6 +52,13 @@ export const load: LayoutServerLoad = async ({
 
 	const workspace = reach.workspace.workspace;
 	const signedIn = reach.account;
+
+	cookies.set(lastWorkspaceCookie(signedIn.account.id), workspace.slug, {
+		path: "/",
+		httpOnly: true,
+		sameSite: "lax",
+		maxAge: 60 * 60 * 24 * 365,
+	});
 
 	depends(keys.workspaceScope(workspace.id));
 	depends(keys.projects(workspace.id));
