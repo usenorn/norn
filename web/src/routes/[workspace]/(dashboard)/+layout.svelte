@@ -192,7 +192,7 @@
 
 <div class="flex h-dvh bg-background">
 	<aside
-		class="hidden w-sidebar flex-none flex-col overflow-y-auto border-r border-line-default bg-card px-2 py-2.5 md:flex"
+		class="hidden w-sidebar flex-none flex-col border-r border-line-default bg-card px-2 py-2.5 md:flex"
 	>
 		<AccountSwitcher
 			accounts={data.accounts}
@@ -210,7 +210,7 @@
 			<Kbd keys="⌘ K" />
 		</button>
 
-		<nav aria-label="Workspace" data-roam="nav">
+		<nav aria-label="Workspace" data-roam="nav" class="min-h-0 flex-1 overflow-y-auto">
 			{#each nav as entry (entry.href)}
 				<SidebarItem
 					href={entry.href}
@@ -335,8 +335,6 @@
 				active={exactly(viewsPath(slug))}
 			/>
 		</nav>
-
-		<div class="flex-1"></div>
 
 		<div class="flex h-6 items-center px-2">
 			<ConnectionIndicator state={realtime.state} />
