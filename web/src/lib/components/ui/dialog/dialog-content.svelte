@@ -7,7 +7,7 @@
 			variant: {
 				default: "",
 				scrollable:
-					"top-[max(1rem,env(safe-area-inset-top))] max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:top-[12vh] sm:max-h-[76dvh] sm:pb-6",
+					"top-[max(1rem,env(safe-area-inset-top))] grid-rows-[minmax(0,1fr)] max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:top-[12vh] sm:max-h-[76dvh] sm:pb-6",
 			},
 		},
 		defaultVariants: {
@@ -55,7 +55,13 @@
 		)}
 		{...restProps}
 	>
-		{@render children?.()}
+		{#if variant === "scrollable"}
+			<div class="grid min-h-0 gap-6 overflow-y-auto overscroll-contain">
+				{@render children?.()}
+			</div>
+		{:else}
+			{@render children?.()}
+		{/if}
 		{#if showCloseButton}
 			<DialogPrimitive.Close data-slot="dialog-close">
 				{#snippet child({ props })}
