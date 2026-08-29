@@ -2,7 +2,7 @@
 	import { type VariantProps, tv } from "tailwind-variants";
 
 	export const dropdownMenuContentVariants = tv({
-		base: "notch min-w-46 text-popover-foreground data-open:animate-pop data-closed:animate-dismiss z-50 overflow-x-hidden overflow-y-auto outline-none data-closed:overflow-hidden",
+		base: "notch flex max-h-(--bits-dropdown-menu-content-available-height) min-w-46 flex-col text-popover-foreground data-open:animate-pop data-closed:animate-dismiss z-50 overflow-hidden outline-none",
 		variants: {
 			width: {
 				anchor: "w-(--bits-dropdown-menu-anchor-width)",
@@ -30,6 +30,7 @@
 		width = "anchor",
 		portalProps,
 		class: className,
+		children,
 		...restProps
 	}: DropdownMenuPrimitive.ContentProps & {
 		width?: DropdownMenuContentWidth;
@@ -45,5 +46,9 @@
 		{align}
 		class={cn(dropdownMenuContentVariants({ width }), className)}
 		{...restProps}
-	/>
+	>
+		<div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+			{@render children?.()}
+		</div>
+	</DropdownMenuPrimitive.Content>
 </DropdownMenuPortal>
