@@ -1769,21 +1769,32 @@
 								</div>
 							</div>
 						{:else}
-							<button
-								type="button"
-								disabled={!canEdit}
-								onclick={() => startEditing("title")}
-								title={canEdit ? "Click to rename" : ""}
-								class="-mx-2.25 -my-1.25 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-							>
-								<h1
-									class="text-2xl leading-tight font-medium tracking-title text-ink-900 text-pretty {closedIssue
-										? 'line-through decoration-line-strong'
-										: ''}"
+							<div class="flex items-start gap-1">
+								<button
+									type="button"
+									disabled={!canEdit}
+									onclick={() => startEditing("title")}
+									title={canEdit ? "Click to rename" : ""}
+									class="-mx-2.25 -my-1.25 min-w-0 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
-									{issue.title}
-								</h1>
-							</button>
+									<h1
+										class="text-2xl leading-tight font-medium tracking-title text-ink-900 text-pretty {closedIssue
+											? 'line-through decoration-line-strong'
+											: ''}"
+									>
+										{issue.title}
+									</h1>
+								</button>
+								<Button
+									variant="ghost"
+									size="icon-xs"
+									aria-label="Copy the title"
+									class="mt-1"
+									onclick={() => copy(issue.title, "Copied the title")}
+								>
+									<Copy aria-hidden="true" />
+								</Button>
+							</div>
 						{/if}
 
 						<div class="flex flex-wrap items-center gap-2">
