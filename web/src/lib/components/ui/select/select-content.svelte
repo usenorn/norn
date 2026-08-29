@@ -27,7 +27,7 @@
 		{preventScroll}
 		data-slot="select-content"
 		class={cn(
-			"notch min-w-36 text-popover-foreground data-open:animate-pop data-closed:animate-dismiss relative isolate z-50 overflow-x-hidden overflow-y-auto",
+			"notch flex max-h-(--bits-select-content-available-height) min-w-36 flex-col text-popover-foreground data-open:animate-pop data-closed:animate-dismiss relative isolate z-50 overflow-hidden",
 			className
 		)}
 		{...restProps}
@@ -35,7 +35,7 @@
 		<SelectScrollUpButton />
 		<SelectPrimitive.Viewport
 			class={cn(
-				"h-(--bits-select-anchor-height) w-full min-w-(--bits-select-anchor-width) scroll-my-1 p-[3px]"
+				"w-full min-w-(--bits-select-anchor-width) min-h-0 flex-1 scroll-my-1 overflow-y-auto p-[3px]"
 			)}
 		>
 			{@render children?.()}
