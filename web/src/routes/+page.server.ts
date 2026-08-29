@@ -1,8 +1,9 @@
 import { redirect } from "@sveltejs/kit";
 import { withSlot } from "$lib/account/accounts";
+import { lastWorkspaceCookie, rememberedWorkspace } from "$lib/account/last-workspace";
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ parent }) => {
+export const load: PageServerLoad = async ({ cookies, parent }) => {
 	const { accounts, acting } = await parent();
 
 	if (!acting) redirect(307, "/sign-in");
@@ -10,9 +11,14 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const signedIn =
 		accounts.find((candidate) => candidate.account.id === acting.accountId) ?? accounts[0];
 
-	const [first] = signedIn?.workspaces ?? [];
+	const reached = signedIn?.workspaces ?? [];
+	const remembered = signedIn
+		? rememberedWorkspace(reached, cookies.get(lastWorkspaceCookie(signedIn.account.id)))
+		: undefined;
 
-	if (!first) redirect(307, withSlot("/create-workspace", acting.slot));
+	const landing = remembered ?? reached[0];
 
-	redirect(307, withSlot(`/${first.workspace.slug}`, first.slot));
+	if (!landing) redirect(307, withSlot("/create-workspace", acting.slot));
+
+	redirect(307, withSlot(`/${landing.workspace.slug}`, landing.slot));
 };
