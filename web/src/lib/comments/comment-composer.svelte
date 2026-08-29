@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { untrack } from "svelte";
+	import { tick, untrack } from "svelte";
 	import AtSign from "@lucide/svelte/icons/at-sign";
 	import Bot from "@lucide/svelte/icons/bot";
 	import X from "@lucide/svelte/icons/x";
@@ -10,6 +10,7 @@
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
+	import { caretAfterPaste, pastedMarkdown, withPasted } from "$lib/issues/paste";
 	import { attachmentMarkdown } from "$lib/attachments/attachments";
 	import { settled, type UploadTask } from "$lib/attachments/upload";
 	import type { MentionTarget } from "$lib/comments/comments";
@@ -119,10 +120,25 @@
 	function pasted(event: ClipboardEvent) {
 		const files = Array.from(event.clipboardData?.files ?? []);
 
-		if (files.length === 0) return;
+		if (files.length > 0) {
+			event.preventDefault();
+			take(files);
+
+			return;
+		}
+
+		const markdown = pastedMarkdown(event);
+
+		if (!markdown) return;
 
 		event.preventDefault();
-		take(files);
+
+		const field = event.currentTarget as HTMLTextAreaElement;
+		const caret = caretAfterPaste(field, markdown);
+
+		draft = withPasted(field, markdown);
+
+		tick().then(() => field.setSelectionRange(caret, caret));
 	}
 
 	function mention(candidate: Candidate) {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from "svelte";
 	import type { Snippet } from "svelte";
 	import { goto, invalidate } from "$app/navigation";
 	import { page } from "$app/state";
@@ -56,6 +57,7 @@
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
+	import { caretAfterPaste, pastedMarkdown, withPasted } from "$lib/issues/paste";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import {
 		issueFailureMessage,
@@ -1116,6 +1118,22 @@
 	let editingField = $state<"title" | "description" | null>(null);
 	let titleField = $state<HTMLInputElement | null>(null);
 	let descriptionField = $state<HTMLTextAreaElement | null>(null);
+
+	function pasteDescription(event: ClipboardEvent) {
+		const field = event.currentTarget as HTMLTextAreaElement;
+		const markdown = pastedMarkdown(event);
+
+		if (!markdown) return;
+
+		event.preventDefault();
+
+		const caret = caretAfterPaste(field, markdown);
+		const next = withPasted(field, markdown);
+
+		formData.update((current) => ({ ...current, description: next }), { taint: true });
+
+		tick().then(() => field.setSelectionRange(caret, caret));
+	}
 	let parentPicking = $state(false);
 	let pickingDue = $state(false);
 	let addingChild = $state(false);
@@ -1848,6 +1866,7 @@
 														bind:value={$formData.description}
 														disabled={$submitting}
 														rows={8}
+														onpaste={pasteDescription}
 														class="min-h-47 w-full resize-y bg-paper-0 px-3 py-2.75 text-base leading-normal text-ink-900 outline-none"
 													></textarea>
 												</div>
