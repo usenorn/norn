@@ -1538,6 +1538,7 @@ export const delegationPreviewStates: Record<string, DelegationPreview> = import
 				assigned: false,
 				failure: { kind: "unassigned" },
 			},
+			"not-yours": { panel: { kind: "none" }, failure: { kind: "agent_not_yours" } },
 			unavailable: { panel: { kind: "unavailable" } },
 		}
 	: {};

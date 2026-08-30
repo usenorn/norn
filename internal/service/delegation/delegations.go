@@ -110,6 +110,10 @@ func (s *delegationsService) Delegate(
 			return entity.ErrAgentNotFound
 		}
 
+		if !agent.OwnedBy(decision.Actor.Authority()) {
+			return entity.ErrIssueDelegationAgentNotYours
+		}
+
 		if agent.Disabled() {
 			return entity.ErrIssueDelegationAgentUnusable
 		}
@@ -180,6 +184,10 @@ func (s *delegationsService) Targets(
 
 	if agent.WorkspaceID != workspaceID {
 		return service.DelegationTargets{}, entity.ErrAgentNotFound
+	}
+
+	if !agent.OwnedBy(decision.Actor.Authority()) {
+		return service.DelegationTargets{}, entity.ErrIssueDelegationAgentNotYours
 	}
 
 	placement, err := s.executions.Placement(ctx, issue, agent.ID)

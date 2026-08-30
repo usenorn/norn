@@ -441,6 +441,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrIssueDelegationAgentUnusable):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationAgentUnusable, err), true
 
+	case errors.Is(err, entity.ErrIssueDelegationAgentNotYours):
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationAgentNotYours, err), true
+
 	case errors.Is(err, entity.ErrIssueDelegationUnassigned):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationUnassigned, err), true
 

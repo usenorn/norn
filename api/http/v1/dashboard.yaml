@@ -8727,6 +8727,7 @@ components:
                 - issue_children_open
                 - issue_delegation_held
                 - issue_delegation_agent_unusable
+                - issue_delegation_agent_not_yours
                 - issue_delegation_unassigned
                 - issue_relation_exists
                 - issue_relation_self
@@ -11342,6 +11343,13 @@ components:
             Whether this member is an agent with at least one machine connected. False for people
             and for an agent that is MCP-only. What lets the delegate picker say so before the
             work is handed over; it never blocks the delegation.
+        ownerAccountId:
+          type: string
+          format: uuid
+          description: >-
+            Who registered this member, set only when it is an agent. Absent for people. What lets
+            the delegate picker offer somebody only the agents they own, matching the rule the
+            server enforces.
         deactivatedAt: { type: string, format: date-time }
 
     MemberPage:
