@@ -20,6 +20,7 @@ export type DelegationFailure =
 	| { kind: "held" }
 	| { kind: "agent_unusable" }
 	| { kind: "unassigned" }
+	| { kind: "agent_not_yours" }
 	| { kind: "gone" }
 	| { kind: "invalid" }
 	| { kind: "forbidden" }
@@ -38,6 +39,7 @@ export function readDelegationFailure(error: unknown): DelegationFailure {
 		if (problem.code === "issue_delegation_held") return { kind: "held" };
 		if (problem.code === "issue_delegation_agent_unusable") return { kind: "agent_unusable" };
 		if (problem.code === "issue_delegation_unassigned") return { kind: "unassigned" };
+		if (problem.code === "issue_delegation_agent_not_yours") return { kind: "agent_not_yours" };
 	}
 
 	if (problem.errors) return { kind: "invalid" };
@@ -55,6 +57,8 @@ export function delegationFailureMessage(failure: DelegationFailure): string {
 			return "That agent is disabled, so it cannot take work.";
 		case "unassigned":
 			return "Somebody cleared the assignee while you were deciding. Assign it again before handing it over.";
+		case "agent_not_yours":
+			return "Somebody else registered that agent, so only they can hand work to it.";
 		case "gone":
 			return "Nobody is holding this issue.";
 		case "invalid":
@@ -72,6 +76,11 @@ export function currentDelegation(delegations: IssueDelegation[]): DelegationPan
 	return held ? { kind: "held", delegation: held } : { kind: "none" };
 }
 
-export function agentMembers(members: Member[]): Member[] {
-	return members.filter((member) => member.kind === "agent" && !member.deactivatedAt);
+export function agentMembers(members: Member[], ownerAccountId: string): Member[] {
+	return members.filter(
+		(member) =>
+			member.kind === "agent" &&
+			!member.deactivatedAt &&
+			member.ownerAccountId === ownerAccountId
+	);
 }

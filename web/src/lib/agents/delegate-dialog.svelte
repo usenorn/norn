@@ -13,6 +13,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import { runnersPath } from "$lib/runners/runners";
+	import { agentsPath } from "./agents";
 	import { delegateIssueSchema } from "./delegate-schema";
 	import {
 		delegationFailureMessage,
@@ -106,9 +107,15 @@
 
 		{#if agents.length === 0}
 			<p class="text-md leading-normal text-muted-foreground text-pretty">
-				No agents are registered in this workspace yet. Register one in settings, and it appears
-				here once it exists.
+				You have not registered an agent yet. Norn only hands work to agents you registered, so
+				this stays empty until one of yours exists.
 			</p>
+			<a
+				href={agentsPath(page.params.workspace ?? "")}
+				class="w-fit text-sm text-link underline-offset-2 hover:underline"
+			>
+				Register an agent
+			</a>
 			<Dialog.Footer>
 				<Button variant="secondary" onclick={() => (open = false)}>Close</Button>
 			</Dialog.Footer>

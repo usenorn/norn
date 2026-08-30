@@ -271,7 +271,7 @@
 	const delegation = $derived<DelegationPanel>(
 		delegationPreview?.panel ?? delegated ?? (ready ? ready.delegation : { kind: "loading" })
 	);
-	const agents = $derived(agentMembers(ready?.members ?? []));
+	const agents = $derived(agentMembers(ready?.members ?? [], data.member.id));
 	const people = $derived(assignees(ready?.members ?? []));
 	const delegationFailure = $derived(delegationFailed ?? delegationPreview?.failure ?? null);
 	const issue = $derived((pushed?.source === ready ? pushed.issue : null) ?? ready?.issue ?? null);

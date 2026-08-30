@@ -74,7 +74,12 @@ SELECT m.id,
            FROM workspace_agents g
            JOIN workspace_runners n ON n.agent_id = g.id AND n.status <> 'revoked'
            WHERE g.account_id = m.account_id AND g.workspace_id = m.workspace_id
-       ) AS has_runner
+       ) AS has_runner,
+       (
+           SELECT g.owner_account_id
+           FROM workspace_agents g
+           WHERE g.account_id = m.account_id AND g.workspace_id = m.workspace_id
+       ) AS owner_account_id
 FROM workspace_memberships m
 JOIN accounts a ON a.id = m.account_id
 WHERE m.workspace_id = $1
@@ -268,6 +273,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		email          string
 		sortName       string
 		hasRunner      bool
+		rawOwnerID     sql.NullString
 	)
 
 	if err := rows.Scan(
@@ -287,6 +293,7 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		&email,
 		&sortName,
 		&hasRunner,
+		&rawOwnerID,
 	); err != nil {
 		return entity.WorkspaceMember{}, fmt.Errorf("scan workspace member: %w", err)
 	}
@@ -331,14 +338,25 @@ func scanWorkspaceMember(rows *sql.Rows) (entity.WorkspaceMember, error) {
 		membership.DeactivatedAt = &stoppedAt
 	}
 
-	return entity.WorkspaceMember{
+	member := entity.WorkspaceMember{
 		AccountKind: entity.AccountKind(accountKind),
 		Membership:  membership,
 		DisplayName: displayName,
 		Email:       email,
 		SortName:    sortName,
 		HasRunner:   hasRunner,
-	}, nil
+	}
+
+	if rawOwnerID.Valid {
+		ownerID, err := uuid.Parse(rawOwnerID.String)
+		if err != nil {
+			return entity.WorkspaceMember{}, fmt.Errorf("parse agent owner account id: %w", err)
+		}
+
+		member.OwnerAccountID = ownerID
+	}
+
+	return member, nil
 }
 
 func (r *membershipRepository) RecordActivity(

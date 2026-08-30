@@ -34,6 +34,8 @@ type harness struct {
 	actorID     uuid.UUID
 	actorKind   entity.ActorKind
 	actorAgent  *uuid.UUID
+	actorOwner  uuid.UUID
+	actorRole   entity.MembershipRole
 }
 
 func newHarness(t *testing.T) *harness {
@@ -52,6 +54,7 @@ func newHarness(t *testing.T) *harness {
 		workspaceID: uuid.New(),
 		actorID:     uuid.New(),
 		actorKind:   entity.ActorKindUser,
+		actorRole:   entity.MembershipRoleMember,
 	}
 
 	transactor := transactorrepo.NewMockTransactor(ctrl)
@@ -67,10 +70,12 @@ func newHarness(t *testing.T) *harness {
 		DoAndReturn(func(_ context.Context, request entity.AccessRequest) (entity.Decision, error) {
 			return entity.Decision{
 				Actor: entity.Actor{
-					Kind:      h.actorKind,
-					AccountID: h.actorID,
-					AgentID:   h.actorAgent,
+					Kind:           h.actorKind,
+					AccountID:      h.actorID,
+					AgentID:        h.actorAgent,
+					OwnerAccountID: h.actorOwner,
 				},
+				Role:  h.actorRole,
 				Scope: entity.TeamScope{WorkspaceID: request.WorkspaceID, AllTeams: true},
 			}, nil
 		}).
@@ -103,6 +108,20 @@ func (h *harness) expectAgent(agent entity.Agent) {
 		AnyTimes()
 }
 
+func (h *harness) expectDelegation(issue entity.Issue, agent entity.Agent) {
+	h.delegations.EXPECT().
+		Delegate(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, held entity.IssueDelegation) (entity.IssueDelegation, error) {
+			held.AgentName = agent.Name
+			held.AgentAccountID = agent.AccountID
+
+			return held, nil
+		})
+
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil)
+	h.emitter.EXPECT().Emit(gomock.Any(), gomock.Any()).Return(nil)
+}
+
 func (h *harness) issue() entity.Issue {
 	return entity.Issue{
 		ID:                uuid.New(),
@@ -118,10 +137,11 @@ func (h *harness) issue() entity.Issue {
 
 func (h *harness) agent() entity.Agent {
 	return entity.Agent{
-		ID:          uuid.New(),
-		WorkspaceID: h.workspaceID,
-		AccountID:   uuid.New(),
-		Name:        "opsy",
-		Status:      entity.AgentStatusActive,
+		ID:             uuid.New(),
+		WorkspaceID:    h.workspaceID,
+		AccountID:      uuid.New(),
+		OwnerAccountID: h.actorID,
+		Name:           "opsy",
+		Status:         entity.AgentStatusActive,
 	}
 }

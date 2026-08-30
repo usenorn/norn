@@ -267,3 +267,91 @@ func TestADelegationCannotAskForARuntimeNoMachineHas(t *testing.T) {
 		)
 	}
 }
+
+func TestAnAgentSomebodyElseRegisteredCannotBeHandedWork(t *testing.T) {
+	h := newHarness(t)
+	issue := h.issue()
+
+	agent := h.agent()
+	agent.OwnerAccountID = uuid.New()
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+
+	_, err := h.service.Delegate(context.Background(), h.workspaceID, issue.ID, service.DelegateIssueInput{
+		AgentAccountID: agent.AccountID,
+	})
+
+	if !errors.Is(err, entity.ErrIssueDelegationAgentNotYours) {
+		t.Fatalf("delegate to somebody else's agent returned %v, want %v",
+			err, entity.ErrIssueDelegationAgentNotYours)
+	}
+}
+
+func TestBeingAnAdministratorDoesNotOpenSomebodyElsesAgent(t *testing.T) {
+	h := newHarness(t)
+	h.actorRole = entity.MembershipRoleAdmin
+
+	issue := h.issue()
+
+	agent := h.agent()
+	agent.OwnerAccountID = uuid.New()
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+
+	_, err := h.service.Delegate(context.Background(), h.workspaceID, issue.ID, service.DelegateIssueInput{
+		AgentAccountID: agent.AccountID,
+	})
+
+	if !errors.Is(err, entity.ErrIssueDelegationAgentNotYours) {
+		t.Fatalf("an administrator delegating to somebody else's agent returned %v, want %v",
+			err, entity.ErrIssueDelegationAgentNotYours)
+	}
+}
+
+func TestAnAgentActingForSomebodyReachesTheAgentsThatPersonOwns(t *testing.T) {
+	h := newHarness(t)
+
+	owner := uuid.New()
+	acting := uuid.New()
+
+	h.actorKind = entity.ActorKindAgent
+	h.actorID = acting
+	h.actorAgent = &acting
+	h.actorOwner = owner
+
+	issue := h.issue()
+
+	agent := h.agent()
+	agent.OwnerAccountID = owner
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+	h.expectDelegation(issue, agent)
+
+	if _, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID,
+		service.DelegateIssueInput{AgentAccountID: agent.AccountID},
+	); err != nil {
+		t.Fatalf("an agent delegating to its owner's other agent returned %v, want it to be allowed", err)
+	}
+}
+
+func TestTargetsWillNotDescribeAnAgentSomebodyElseRegistered(t *testing.T) {
+	h := newHarness(t)
+	issue := h.issue()
+
+	agent := h.agent()
+	agent.OwnerAccountID = uuid.New()
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+
+	_, err := h.service.Targets(context.Background(), h.workspaceID, issue.ID, agent.AccountID)
+
+	if !errors.Is(err, entity.ErrIssueDelegationAgentNotYours) {
+		t.Fatalf("targets for somebody else's agent returned %v, want %v",
+			err, entity.ErrIssueDelegationAgentNotYours)
+	}
+}
