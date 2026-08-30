@@ -12,7 +12,7 @@ type issueBranchNameInput struct {
 }
 
 type issueBranchNameOutput struct {
-	Branch string `json:"branch"`
+	Branch string `json:"branch" jsonschema:"the branch to work on, to be cut from a freshly-pulled main and named exactly as it appears here"`
 }
 
 func (t *toolset) issueBranchName(
