@@ -393,3 +393,148 @@ func TestDisabledMCPAnswers404(t *testing.T) {
 		t.Fatalf("disabled mcp answered %d, want 404", recorder.Code)
 	}
 }
+
+func TestStartingAnIssueTellsTheAgentToUseTheBranchNameAsWritten(t *testing.T) {
+	h := newHarness(t)
+
+	workspace := entity.Workspace{ID: uuid.New(), Slug: "acme", Name: "Acme"}
+	issue := entity.Issue{
+		ID:           uuid.New(),
+		WorkspaceID:  workspace.ID,
+		TeamID:       uuid.New(),
+		ReferenceKey: "GAM",
+		Number:       6,
+		Title:        "Ship the branch name tool",
+		State:        entity.IssueState{Category: entity.StateCategoryActive},
+	}
+
+	h.workspaces.EXPECT().
+		ListForAccount(gomock.Any(), h.actor.AccountID).
+		Return([]entity.Workspace{workspace}, nil)
+
+	h.issues.EXPECT().
+		GetByReference(gomock.Any(), workspace.ID, "GAM-6").
+		Return(issue, nil)
+
+	h.sourceControl.EXPECT().
+		BranchName(gomock.Any(), workspace.ID, issue.ID).
+		Return("rae/gam-6-ship-the-branch-name-tool", nil)
+
+	session := h.session(t)
+
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name:      "norn_start_issue",
+		Arguments: map[string]any{"workspace": "acme", "issue": "gam-6"},
+	})
+	if err != nil {
+		t.Fatalf("call tool: %v", err)
+	}
+
+	if result.IsError {
+		t.Fatalf("tool errored: %v", result.Content)
+	}
+
+	payload, err := json.Marshal(result.StructuredContent)
+	if err != nil {
+		t.Fatalf("marshal structured content: %v", err)
+	}
+
+	var output struct {
+		Branch   string `json:"branch"`
+		Reminder string `json:"reminder"`
+	}
+
+	if err := json.Unmarshal(payload, &output); err != nil {
+		t.Fatalf("unmarshal structured content: %v", err)
+	}
+
+	if output.Branch != "rae/gam-6-ship-the-branch-name-tool" {
+		t.Fatalf("branch is %q, want the name the service built", output.Branch)
+	}
+
+	for _, phrase := range []string{"exactly", "freshly-pulled main"} {
+		if !strings.Contains(output.Reminder, phrase) {
+			t.Fatalf(
+				"the reminder %q does not say %q, so nothing in the result tells the agent "+
+					"how to create the branch",
+				output.Reminder,
+				phrase,
+			)
+		}
+	}
+}
+
+func TestEveryToolThatIssuesABranchDescribesHowToNameIt(t *testing.T) {
+	h := newHarness(t)
+	session := h.session(t)
+
+	tools, err := session.ListTools(t.Context(), &mcp.ListToolsParams{})
+	if err != nil {
+		t.Fatalf("list tools: %v", err)
+	}
+
+	issuing := 0
+
+	for _, tool := range tools.Tools {
+		if tool.OutputSchema == nil {
+			continue
+		}
+
+		schema, err := json.Marshal(tool.OutputSchema)
+		if err != nil {
+			t.Fatalf("marshal %s output schema: %v", tool.Name, err)
+		}
+
+		var described struct {
+			Properties map[string]struct {
+				Description string `json:"description"`
+			} `json:"properties"`
+		}
+
+		if err := json.Unmarshal(schema, &described); err != nil {
+			t.Fatalf("unmarshal %s output schema: %v", tool.Name, err)
+		}
+
+		branch, carries := described.Properties["branch"]
+		if !carries {
+			continue
+		}
+
+		issuing++
+
+		if !strings.Contains(branch.Description, "exactly") {
+			t.Errorf(
+				"%s describes its branch as %q, which does not tell the agent to keep the "+
+					"name as issued",
+				tool.Name,
+				branch.Description,
+			)
+		}
+	}
+
+	if issuing != 2 {
+		t.Fatalf(
+			"found %d tools answering with a branch, want norn_start_issue and "+
+				"norn_issue_branch_name; a branch reaching an agent without the naming rule "+
+				"is how the rule gets ignored",
+			issuing,
+		)
+	}
+}
+
+func TestTheServerInstructionsCarryTheBranchNamingRule(t *testing.T) {
+	h := newHarness(t)
+	session := h.session(t)
+
+	instructions := session.InitializeResult().Instructions
+
+	for _, phrase := range []string{"exactly the name Norn returned", "freshly-pulled"} {
+		if !strings.Contains(instructions, phrase) {
+			t.Fatalf(
+				"the server instructions do not say %q, so an agent reading only them has "+
+					"nothing telling it to keep the branch name as issued",
+				phrase,
+			)
+		}
+	}
+}

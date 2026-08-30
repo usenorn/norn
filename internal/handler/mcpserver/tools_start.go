@@ -10,7 +10,9 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-const startReminder = "Work on the branch above. Any question below is one an agent asked and " +
+const startReminder = "Work on the branch above, cut from a freshly-pulled main and named " +
+	"exactly as it is written there — not a shortened, re-prefixed or otherwise tidied version " +
+	"of it. Any question below is one an agent asked and " +
 	"nobody has answered; the default it recorded is what stands until somebody does."
 
 type startIssueInput struct {
@@ -20,7 +22,7 @@ type startIssueInput struct {
 
 type startIssueOutput struct {
 	Issue     issueDTO      `json:"issue"`
-	Branch    string        `json:"branch"`
+	Branch    string        `json:"branch" jsonschema:"the branch to work on, to be cut from a freshly-pulled main and named exactly as it appears here"`
 	Questions []questionDTO `json:"questions"`
 	Reminder  string        `json:"reminder"`
 }

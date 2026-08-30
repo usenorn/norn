@@ -14,8 +14,10 @@ const Path = "/mcp"
 
 const workingInstructions = "How work runs here. Claim the issue with norn_start_issue before " +
 	"you write anything: it puts the issue in an active state, so people can see the work has " +
-	"begun, and it hands you the branch name to use — take that name from Norn rather than " +
-	"inventing one. When you need a decision that is not yours to make, use norn_ask and keep " +
+	"begun, and it hands you the branch name to use. Create that branch from a freshly-pulled " +
+	"main and give it exactly the name Norn returned, character for character: shortening it, " +
+	"re-prefixing it or tidying it up leaves the work on a branch nobody is looking for. " +
+	"When you need a decision that is not yours to make, use norn_ask and keep " +
 	"working on the default you declared; norn_get_issue answers with the questions on an " +
 	"issue that nobody has answered yet. If a write comes back held for approval, that is the " +
 	"expected outcome: end your turn, do not retry it, and do not wait for the answer.\n\n"
@@ -187,7 +189,7 @@ func (t *toolset) register(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_issue_branch_name",
 		Description: "Build the branch name for an issue from its team's branch template, " +
-			"ready for git checkout -b.",
+			"ready for git checkout -b. Use it exactly as returned.",
 		Annotations: read,
 	}, t.issueBranchName)
 
@@ -238,7 +240,8 @@ func (t *toolset) register(server *mcp.Server) {
 		Name: "norn_start_issue",
 		Description: "Claim an issue and begin. It moves the issue into the team's first " +
 			"active state and answers with the branch name to use, what done means so far, " +
-			"and any question still open on it. Call this before writing code.",
+			"and any question still open on it. Call this before writing code, and create the " +
+			"branch under exactly the name it returns.",
 		Annotations: update,
 	}, t.startIssue)
 }
