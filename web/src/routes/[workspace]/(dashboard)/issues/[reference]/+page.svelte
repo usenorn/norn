@@ -1670,7 +1670,7 @@
 		</div>
 	{:else}
 		<div class="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-			<div class="min-w-0 flex-1 lg:overflow-auto">
+			<div class="relative min-w-0 flex-1 lg:overflow-auto">
 				<div
 					class="mx-auto flex max-w-192 flex-col gap-6.5 px-4 pt-5 pb-16 sm:px-8 pb-[calc(--spacing(16)+env(safe-area-inset-bottom))]"
 				>
@@ -2222,7 +2222,7 @@
 			</div>
 
 			<aside
-				class="w-full flex-none border-t border-line-default px-3.5 pt-3.5 pb-6 lg:w-75 lg:overflow-auto lg:border-t-0 lg:border-l"
+				class="relative w-full flex-none border-t border-line-default px-3.5 pt-3.5 pb-6 lg:w-75 lg:overflow-auto lg:border-t-0 lg:border-l"
 			>
 				<div class="flex flex-col gap-0.75">
 					<IssueField
