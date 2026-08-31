@@ -2,6 +2,7 @@ import { error, redirect } from "@sveltejs/kit";
 import { keys } from "$lib/api/keys";
 import { reachOfSlug, type SignedInAccount } from "$lib/account/accounts";
 import { lastWorkspaceCookie } from "$lib/account/last-workspace";
+import { panelCookie, readPanel, type PanelSizes } from "$lib/layout/panels";
 import type { components } from "$lib/api/dashboard.gen";
 import type { TeamCycle } from "$lib/cycles/cycles";
 import type { Label } from "$lib/labels/labels";
@@ -33,6 +34,7 @@ export type WorkspaceScope = {
 	unread: number;
 	narrowed: boolean;
 	expanded: string[];
+	panels: PanelSizes;
 };
 
 export const load: LayoutServerLoad = async ({
@@ -122,6 +124,10 @@ export const load: LayoutServerLoad = async ({
 			cookies.get(expansionCookie(signedIn.account.id, workspace.id)),
 			reachable.filter((team) => team.status === "active").map((team) => team.key)
 		),
+		panels: {
+			sidebar: readPanel("sidebar", cookies.get(panelCookie("sidebar"))),
+			properties: readPanel("properties", cookies.get(panelCookie("properties"))),
+		},
 	};
 };
 

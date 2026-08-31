@@ -60,6 +60,12 @@
 	import { teamIssuesPath } from "$lib/issues/listing";
 	import { teamPath } from "$lib/team/teams";
 	import { expansionCookie, toggledExpansion, writeExpanded } from "$lib/workspace/sidebar";
+	import { untrack } from "svelte";
+	import { cn } from "$lib/utils.js";
+	import { panelBounds } from "$lib/layout/panels";
+	import { providePanels } from "$lib/layout/panels.svelte";
+	import ResizeHandle from "$lib/components/norn/resize-handle.svelte";
+	import PanelRestore from "$lib/components/norn/panel-restore.svelte";
 	import { projectPath, projectsPath } from "$lib/projects/projects";
 	import type { LayoutProps } from "./$types";
 
@@ -98,6 +104,9 @@
 
 		document.cookie = `${name}=${writeExpanded(keys)}; path=/; max-age=${year}; samesite=lax`;
 	}
+
+	const panels = providePanels(untrack(() => data.panels));
+	const sidebar = panelBounds("sidebar");
 
 	const realtime = provideRealtime();
 
@@ -190,9 +199,21 @@
 	const cycleFor = $derived((teamId: string) => data.cycles.find((entry) => entry.teamId === teamId));
 </script>
 
-<div class="flex h-dvh bg-background">
+<div class="relative flex h-dvh bg-background" style="--sidebar-width: {panels.width('sidebar')}px">
+	{#if panels.collapsed("sidebar")}
+		<PanelRestore
+			side="leading"
+			label="Show the workspace sidebar"
+			onrestore={() => panels.restore("sidebar")}
+			class="hidden md:flex"
+		/>
+	{/if}
+
 	<aside
-		class="hidden w-sidebar flex-none flex-col border-r border-line-default bg-card px-2 py-2.5 md:flex"
+		class={cn(
+			"relative hidden w-(--sidebar-width) flex-none flex-col border-r border-line-default bg-card px-2 py-2.5",
+			!panels.collapsed("sidebar") && "md:flex"
+		)}
 	>
 		<AccountSwitcher
 			accounts={data.accounts}
@@ -356,6 +377,17 @@
 				<Settings aria-hidden="true" />
 			</Button>
 		</div>
+
+		<ResizeHandle
+			side="leading"
+			width={panels.width("sidebar")}
+			minimum={sidebar.minimum}
+			maximum={sidebar.maximum}
+			label="Workspace sidebar width"
+			onresize={(width, room) => panels.resize("sidebar", width, room)}
+			oncollapse={() => panels.collapse("sidebar")}
+			class="hidden md:flex"
+		/>
 	</aside>
 
 	<div class="flex min-w-0 flex-1 flex-col bg-card">
