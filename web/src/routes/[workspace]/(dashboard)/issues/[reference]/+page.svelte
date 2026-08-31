@@ -33,6 +33,11 @@
 	import { Calendar } from "$lib/components/ui/calendar/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import Kbd from "$lib/components/norn/kbd.svelte";
+	import ResizeHandle from "$lib/components/norn/resize-handle.svelte";
+	import PanelRestore from "$lib/components/norn/panel-restore.svelte";
+	import { panelBounds } from "$lib/layout/panels";
+	import { usePanels } from "$lib/layout/panels.svelte";
+	import { cn } from "$lib/utils.js";
 	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
@@ -150,6 +155,9 @@
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();
+
+	const panels = usePanels();
+	const properties = panelBounds("properties");
 
 	const preview = $derived(
 		import.meta.env.DEV
@@ -1625,7 +1633,7 @@
 	{/if}
 
 	{#if detail.kind === "loading"}
-		<div class="flex min-h-0 flex-1">
+		<div class="flex min-h-0 flex-1" style="--properties-width: {panels.width('properties')}px">
 			<div class="min-w-0 flex-1 px-8 py-6">
 				<div class="mx-auto flex max-w-192 flex-col gap-3.5" aria-busy="true">
 					<span class="h-6 w-3/5 animate-breathe rounded-xs bg-paper-3"></span>
@@ -1636,7 +1644,12 @@
 					{/each}
 				</div>
 			</div>
-			<aside class="hidden w-75 flex-none flex-col gap-3 border-l border-line-default p-3.5 lg:flex">
+			<aside
+				class={cn(
+					"hidden w-(--properties-width) flex-none flex-col gap-3 border-l border-line-default p-3.5",
+					!panels.collapsed("properties") && "lg:flex"
+				)}
+			>
 				{#each [1, 2, 3, 4, 5, 6] as row (row)}
 					<span class="flex items-center gap-2.5">
 						<span class="h-2.5 w-15 animate-breathe rounded-xs bg-paper-2"></span>
@@ -1669,7 +1682,19 @@
 			</Alert.Root>
 		</div>
 	{:else}
-		<div class="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+		<div
+			class="relative flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden"
+			style="--properties-width: {panels.width('properties')}px"
+		>
+			{#if panels.collapsed("properties")}
+				<PanelRestore
+					side="trailing"
+					label="Show the issue properties"
+					onrestore={() => panels.restore("properties")}
+					class="hidden lg:flex"
+				/>
+			{/if}
+
 			<div class="relative min-w-0 flex-1 lg:overflow-auto">
 				<div
 					class="mx-auto flex max-w-192 flex-col gap-6.5 px-4 pt-5 pb-16 sm:px-8 pb-[calc(--spacing(16)+env(safe-area-inset-bottom))]"
@@ -2222,8 +2247,22 @@
 			</div>
 
 			<aside
-				class="relative w-full flex-none border-t border-line-default px-3.5 pt-3.5 pb-6 lg:w-75 lg:overflow-auto lg:border-t-0 lg:border-l"
+				class={cn(
+					"relative w-full flex-none border-t border-line-default px-3.5 pt-3.5 pb-6 lg:w-(--properties-width) lg:overflow-auto lg:border-t-0 lg:border-l",
+					panels.collapsed("properties") && "lg:hidden"
+				)}
 			>
+				<ResizeHandle
+					side="trailing"
+					width={panels.width("properties")}
+					minimum={properties.minimum}
+					maximum={properties.maximum}
+					label="Issue properties width"
+					onresize={(width, room) => panels.resize("properties", width, room)}
+					oncollapse={() => panels.collapse("properties")}
+					class="hidden lg:flex"
+				/>
+
 				<div class="flex flex-col gap-0.75">
 					<IssueField
 						label="Status"
