@@ -58,7 +58,7 @@
 	const settled = $derived(
 		issue.state.category === "complete" || issue.state.category === "abandoned"
 	);
-	const late = $derived(!settled && overdue(due, now));
+	const late = $derived(!settled && overdue(due, now, timezone));
 
 	const initials = $derived(
 		assignee

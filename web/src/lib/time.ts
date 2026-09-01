@@ -79,18 +79,29 @@ export function onDayMonth(instant: string, now: string, timezone: string): stri
 export function dueLabel(due: string | undefined, now: string, timezone: string): string {
 	if (!due) return "No due date";
 
-	const days = daysBetween(now, due);
+	const today = calendarDate(now, timezone);
 
-	if (days === -1) return "Overdue by a day";
-	if (days === 0) return "Due today";
-	if (days === 1) return "Due tomorrow";
-	if (days < -1) return `Overdue · ${onDayMonth(due, now, timezone)}`;
+	if (due === today) return "Due today";
+	if (due === shiftDays(today, 1)) return "Due tomorrow";
+	if (due === shiftDays(today, -1)) return "Overdue by a day";
+	if (due < today) return `Overdue · ${onDueDate(due, today)}`;
 
-	return `Due ${onDayMonth(due, now, timezone)}`;
+	return `Due ${onDueDate(due, today)}`;
 }
 
-export function overdue(due: string | undefined, now: string): boolean {
-	return Boolean(due) && daysBetween(now, due as string) < 0;
+export function overdue(due: string | undefined, now: string, timezone: string): boolean {
+	return Boolean(due) && (due as string) < calendarDate(now, timezone);
+}
+
+function onDueDate(due: string, today: string): string {
+	const sameYear = due.slice(0, 4) === today.slice(0, 4);
+
+	return new Date(`${due}T00:00:00Z`).toLocaleString(locale, {
+		...(sameYear ? {} : { year: "numeric" }),
+		month: "short",
+		day: "numeric",
+		timeZone: "UTC",
+	});
 }
 
 export function calendarDate(instant: string, timezone: string): string {
