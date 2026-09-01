@@ -2450,7 +2450,7 @@
 											<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
 											<span
 												class="truncate {issue.dueOn
-													? overdue(issue.dueOn, data.now)
+													? overdue(issue.dueOn, data.now, data.workspace.timezone)
 														? 'text-priority-urgent'
 														: 'text-ink-900'
 													: 'text-muted-foreground'}"

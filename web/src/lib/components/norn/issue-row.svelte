@@ -62,7 +62,7 @@
 	const settled = $derived(
 		issue.state.category === "complete" || issue.state.category === "abandoned"
 	);
-	const late = $derived(!settled && overdue(due, now));
+	const late = $derived(!settled && overdue(due, now, timezone));
 	const children = $derived(issue.childProgress);
 	const hasChildren = $derived(children ? totalIssues(children) > 0 : false);
 
