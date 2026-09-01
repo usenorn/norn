@@ -1,14 +1,14 @@
 import * as Sentry from '@sentry/sveltekit';
+import { env } from '$env/dynamic/public';
+import { dataCollection, sampleRate } from '$lib/telemetry';
 
-Sentry.init({
-	dsn: 'https://bcd796095f6fab40204c63f2931ef8c9@events.hexmere.com/5',
-	tracesSampleRate: 1.0,
-	enableLogs: true,
-	dataCollection: {
-		userInfo: false,
-		cookies: false,
-		httpBodies: [],
-		urlQueryParams: { deny: ['token', 'code', 'state'] },
-		stackFrameVariables: false
-	}
-});
+const dsn = env.PUBLIC_SENTRY_DSN?.trim();
+
+if (dsn) {
+	Sentry.init({
+		dsn,
+		tracesSampleRate: sampleRate(env.PUBLIC_SENTRY_TRACES_SAMPLE_RATE),
+		enableLogs: true,
+		dataCollection: dataCollection()
+	});
+}
