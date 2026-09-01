@@ -1,28 +1,30 @@
 import * as Sentry from "@sentry/sveltekit";
+import { env } from "$env/dynamic/public";
 import type { HandleClientError } from "@sveltejs/kit";
+import { dataCollection, recordsSessions, reportingFrom } from "$lib/telemetry";
 
-Sentry.init({
-	dsn: "https://bcd796095f6fab40204c63f2931ef8c9@events.hexmere.com/5",
-	tracesSampleRate: 1,
-	replaysSessionSampleRate: 0.1,
-	replaysOnErrorSampleRate: 1,
-	integrations: [Sentry.replayIntegration()],
-	enableLogs: true,
-	dataCollection: {
-		userInfo: false,
-		cookies: false,
-		httpBodies: [],
-		urlQueryParams: { deny: ["token", "code", "state"] },
-		stackFrameVariables: false,
-	},
-});
+const reporting = reportingFrom(env);
 
-export const handleError: HandleClientError = Sentry.handleErrorWithSentry(
-	({ error, status, message }) => {
-		if (status === 404) return { message, code: "not_found" };
+if (reporting) {
+	Sentry.init({
+		dsn: reporting.dsn,
+		tracesSampleRate: reporting.tracesSampleRate,
+		replaysSessionSampleRate: reporting.replaysSessionSampleRate,
+		replaysOnErrorSampleRate: reporting.replaysOnErrorSampleRate,
+		integrations: recordsSessions(reporting) ? [Sentry.replayIntegration()] : [],
+		enableLogs: true,
+		dataCollection: dataCollection(),
+	});
+}
 
-		console.error(error);
+const report: HandleClientError = ({ error, status, message }) => {
+	if (status === 404) return { message, code: "not_found" };
 
-		return { message: "Something went wrong.", code: "unexpected" };
-	},
-);
+	console.error(error);
+
+	return { message: "Something went wrong.", code: "unexpected" };
+};
+
+export const handleError: HandleClientError = reporting
+	? Sentry.handleErrorWithSentry(report)
+	: report;
