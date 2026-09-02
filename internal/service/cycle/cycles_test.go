@@ -393,7 +393,7 @@ func TestScopeSeparatesWhatWasPlannedFromWhatArrivedLater(t *testing.T) {
 	h.cycles.EXPECT().
 		GetVisible(gomock.Any(), h.workspaceID, running.ID, gomock.Any()).
 		Return(running, nil)
-	h.scope.EXPECT().ListByCycleID(gomock.Any(), running.ID).Return([]entity.CycleScopeChange{{
+	h.scope.EXPECT().ListByCycleID(gomock.Any(), running.ID, gomock.Any()).Return([]entity.CycleScopeChange{{
 		ID:      uuid.New(),
 		CycleID: running.ID,
 		IssueID: late.ID,
@@ -714,4 +714,57 @@ func TestOnlyAClosingDateKeepsAnImportedCycleOutOfTheCurrentSlot(t *testing.T) {
 			)
 		}
 	})
+}
+
+func TestTheCyclesHistoryIsAskedForOnlyWhatTheReaderMaySee(t *testing.T) {
+	h := newHarness(t)
+
+	h.authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{
+			Actor:     entity.Actor{Kind: entity.ActorKindUser, AccountID: h.accountID},
+			Workspace: entity.Workspace{ID: h.workspaceID, Timezone: "UTC"},
+			Scope:     entity.TeamScope{WorkspaceID: h.workspaceID, TeamIDs: []uuid.UUID{h.teamID}},
+		}, nil).
+		AnyTimes()
+
+	running := h.cycle(4, lastMonth(), entity.Today(time.Now().UTC().AddDate(0, 0, 7), "UTC"))
+
+	var asked entity.TeamScope
+
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), h.workspaceID, running.ID, gomock.Any()).
+		Return(running, nil)
+
+	h.scope.EXPECT().
+		ListByCycleID(gomock.Any(), running.ID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_ uuid.UUID,
+			narrowed entity.TeamScope,
+		) ([]entity.CycleScopeChange, error) {
+			asked = narrowed
+
+			return nil, nil
+		})
+
+	h.issues.EXPECT().
+		ListVisible(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, nil).
+		AnyTimes()
+
+	if _, err := h.service.Scope(context.Background(), h.workspaceID, running.ID); err != nil {
+		t.Fatalf("scope: %v", err)
+	}
+
+	if asked.AllTeams {
+		t.Fatal(
+			"the history was asked for across every team. Being entitled to a cycle is not " +
+				"being entitled to the title of every issue that ever passed through it.",
+		)
+	}
+
+	if len(asked.TeamIDs) != 1 || asked.TeamIDs[0] != h.teamID {
+		t.Fatalf("the history was scoped to %v, want the reader's own team %v", asked.TeamIDs, h.teamID)
+	}
 }

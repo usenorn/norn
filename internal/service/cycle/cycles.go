@@ -499,7 +499,7 @@ func (s *cyclesService) Scope(
 		return service.CycleScope{}, err
 	}
 
-	changes, err := s.scopeChanges.ListByCycleID(ctx, cycle.ID)
+	changes, err := s.scopeChanges.ListByCycleID(ctx, cycle.ID, decision.Scope)
 	if err != nil {
 		return service.CycleScope{}, err
 	}

@@ -45,5 +45,9 @@ type CycleCadence interface {
 
 type CycleScopeChange interface {
 	Record(ctx context.Context, change entity.CycleScopeChange) error
-	ListByCycleID(ctx context.Context, cycleID uuid.UUID) ([]entity.CycleScopeChange, error)
+	ListByCycleID(
+		ctx context.Context,
+		cycleID uuid.UUID,
+		scope entity.TeamScope,
+	) ([]entity.CycleScopeChange, error)
 }
