@@ -507,3 +507,47 @@ func TestAnAlreadySettledActionIsNotRunAgainWhenTheTaskIsRedelivered(t *testing.
 func ptr(n int) *int { return &n }
 
 func ptrTime(t time.Time) *time.Time { return &t }
+
+func TestReadingAnActionAsksOnlyForOutcomesTheReaderMaySee(t *testing.T) {
+	workspaceID, mine, actionID := uuid.New(), uuid.New(), uuid.New()
+
+	scope := entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{mine}}
+	h := newHarness(t, scope)
+
+	var asked entity.TeamScope
+
+	h.actions.EXPECT().
+		GetByID(gomock.Any(), workspaceID, actionID).
+		Return(entity.BulkAction{ID: actionID, WorkspaceID: workspaceID}, nil)
+
+	h.actions.EXPECT().
+		ListOutcomes(gomock.Any(), actionID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_ uuid.UUID,
+			narrowed entity.TeamScope,
+		) ([]entity.BulkActionOutcome, error) {
+			asked = narrowed
+
+			return nil, nil
+		})
+
+	if _, _, err := h.service.Get(context.Background(), workspaceID, actionID); err != nil {
+		t.Fatalf("reading the action failed: %v", err)
+	}
+
+	if asked.AllTeams {
+		t.Fatal(
+			"the outcome read asked for every team. A member who may read issues is not " +
+				"thereby entitled to the references of issues on teams they are not in.",
+		)
+	}
+
+	if len(asked.TeamIDs) != 1 || asked.TeamIDs[0] != mine {
+		t.Fatalf(
+			"the outcome read was scoped to %v, want only the reader's own team %v",
+			asked.TeamIDs,
+			mine,
+		)
+	}
+}

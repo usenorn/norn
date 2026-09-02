@@ -18,5 +18,5 @@ type BulkAction interface {
 	Advance(ctx context.Context, actionID uuid.UUID, by int) error
 	Settle(ctx context.Context, actionID uuid.UUID, status entity.BulkActionStatus, at time.Time) error
 	RecordOutcomes(ctx context.Context, actionID uuid.UUID, outcomes []entity.BulkActionOutcome) error
-	ListOutcomes(ctx context.Context, actionID uuid.UUID) ([]entity.BulkActionOutcome, error)
+	ListOutcomes(ctx context.Context, actionID uuid.UUID, scope entity.TeamScope) ([]entity.BulkActionOutcome, error)
 }

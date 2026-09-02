@@ -102,18 +102,18 @@ func (mr *MockBulkActionMockRecorder) GetByID(ctx, workspaceID, actionID any) *g
 }
 
 // ListOutcomes mocks base method.
-func (m *MockBulkAction) ListOutcomes(ctx context.Context, actionID uuid.UUID) ([]entity.BulkActionOutcome, error) {
+func (m *MockBulkAction) ListOutcomes(ctx context.Context, actionID uuid.UUID, scope entity.TeamScope) ([]entity.BulkActionOutcome, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListOutcomes", ctx, actionID)
+	ret := m.ctrl.Call(m, "ListOutcomes", ctx, actionID, scope)
 	ret0, _ := ret[0].([]entity.BulkActionOutcome)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListOutcomes indicates an expected call of ListOutcomes.
-func (mr *MockBulkActionMockRecorder) ListOutcomes(ctx, actionID any) *gomock.Call {
+func (mr *MockBulkActionMockRecorder) ListOutcomes(ctx, actionID, scope any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOutcomes", reflect.TypeOf((*MockBulkAction)(nil).ListOutcomes), ctx, actionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOutcomes", reflect.TypeOf((*MockBulkAction)(nil).ListOutcomes), ctx, actionID, scope)
 }
 
 // RecordOutcomes mocks base method.

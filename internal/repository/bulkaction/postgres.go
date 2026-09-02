@@ -53,10 +53,12 @@ SET status = $2, finished_at = $3, updated_at = $3
 WHERE id = $1 AND status = 'running'`
 
 const outcomesQuery = `
-SELECT issue_id, reference, outcome
-FROM workspace_bulk_action_outcomes
-WHERE bulk_action_id = $1
-ORDER BY created_at, issue_id`
+SELECT o.issue_id, o.reference, o.outcome
+FROM workspace_bulk_action_outcomes o
+JOIN workspace_issues i ON i.id = o.issue_id
+WHERE o.bulk_action_id = $1
+  AND ($2::boolean IS TRUE OR i.team_id = ANY($3::uuid[]))
+ORDER BY o.created_at, o.issue_id`
 
 type actionRepository struct {
 	db *postgres.Client
@@ -289,8 +291,15 @@ ON CONFLICT (bulk_action_id, issue_id) DO UPDATE SET outcome = excluded.outcome`
 func (r *actionRepository) ListOutcomes(
 	ctx context.Context,
 	actionID uuid.UUID,
+	scope entity.TeamScope,
 ) ([]entity.BulkActionOutcome, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, outcomesQuery, actionID.String())
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx,
+		outcomesQuery,
+		actionID.String(),
+		scope.AllTeams,
+		teamIDs(scope),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("list bulk action outcomes: %w", err)
 	}
@@ -333,4 +342,14 @@ func nullableStrings(values []string) any {
 	}
 
 	return types.StringArray(values)
+}
+
+func teamIDs(scope entity.TeamScope) []string {
+	ids := make([]string, 0, len(scope.TeamIDs))
+
+	for _, id := range scope.TeamIDs {
+		ids = append(ids, id.String())
+	}
+
+	return ids
 }

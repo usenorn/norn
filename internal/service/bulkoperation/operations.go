@@ -236,12 +236,13 @@ func (s *operationsService) Get(
 	ctx context.Context,
 	workspaceID, actionID uuid.UUID,
 ) (entity.BulkAction, []entity.BulkActionOutcome, error) {
-	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceIssue,
 		Action:      entity.ActionRead,
 		WorkspaceID: workspaceID,
 		Scoped:      true,
-	}); err != nil {
+	})
+	if err != nil {
 		return entity.BulkAction{}, nil, err
 	}
 
@@ -250,7 +251,7 @@ func (s *operationsService) Get(
 		return entity.BulkAction{}, nil, err
 	}
 
-	outcomes, err := s.actions.ListOutcomes(ctx, actionID)
+	outcomes, err := s.actions.ListOutcomes(ctx, actionID, decision.Scope)
 	if err != nil {
 		return entity.BulkAction{}, nil, err
 	}
