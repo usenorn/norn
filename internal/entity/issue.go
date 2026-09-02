@@ -86,6 +86,7 @@ type Issue struct {
 	CycleNumber             int
 	ProjectID               uuid.UUID
 	ProjectName             string
+	ProjectSlug             string
 	Children                IssueProgress
 	Blocked                 bool
 	CreatedByAccountID      uuid.UUID

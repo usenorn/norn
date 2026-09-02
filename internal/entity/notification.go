@@ -274,6 +274,7 @@ type Notification struct {
 	Title        string
 	Reference    string
 	TeamKey      string
+	ProjectSlug  string
 	UnreadCount  int
 	LastEventAt  time.Time
 	ReadThrough  time.Time

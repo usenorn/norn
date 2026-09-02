@@ -9318,6 +9318,7 @@ components:
         cycleNumber: { type: integer, format: int32 }
         projectId: { type: string, format: uuid }
         projectName: { type: string }
+        projectSlug: { type: string }
         childProgress: { $ref: '#/components/schemas/IssueProgress' }
         blocked: { type: boolean }
         state: { $ref: '#/components/schemas/IssueState' }
@@ -11929,6 +11930,7 @@ components:
         title: { type: string }
         reference: { type: string }
         teamKey: { type: string }
+        projectSlug: { type: string }
         unreadCount: { type: integer, format: int32 }
         lastEventAt: { type: string, format: date-time }
         snoozedUntil: { type: string, format: date-time }

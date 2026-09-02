@@ -49,6 +49,7 @@ SELECT d.event_id,
        coalesce(i.title, p.name, t.name, '') AS title,
        coalesce(i.reference_key || '-' || i.number::text, '') AS reference,
        coalesce(it.key, t.key, '') AS team_key,
+       coalesce(p.slug, '') AS project_slug,
        r.read_through,
        r.snoozed_until
 FROM workspace_notification_deliveries d
@@ -91,6 +92,7 @@ SELECT subject_kind,
        (array_agg(title ` + latest + `,
        (array_agg(reference ` + latest + `,
        (array_agg(team_key ` + latest + `,
+       (array_agg(project_slug ` + latest + `,
        coalesce(string_agg(DISTINCT reason, ' ') FILTER (WHERE ` + unreadRows + `),
                 string_agg(DISTINCT reason, ' ')) AS reasons,
        count(*) FILTER (WHERE ` + unreadRows + `) AS unread,
@@ -475,11 +477,12 @@ func (r *notificationRepository) grouped(
 			reasons                 string
 			readThrough, snoozedAt  *time.Time
 			title, reference, teamK string
+			projectSlug             string
 		)
 
 		if err := rows.Scan(
 			&subjectKind, &subject, &kind, &actor, &actorKind, &notification.ActorName,
-			&title, &reference, &teamK, &reasons,
+			&title, &reference, &teamK, &projectSlug, &reasons,
 			&notification.UnreadCount, &notification.LastEventAt, &readThrough, &snoozedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan notification: %w", err)
@@ -497,6 +500,7 @@ func (r *notificationRepository) grouped(
 		notification.Title = title
 		notification.Reference = reference
 		notification.TeamKey = teamK
+		notification.ProjectSlug = projectSlug
 		notification.Reason = strongest(reasons)
 
 		if readThrough != nil {

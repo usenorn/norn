@@ -375,6 +375,7 @@ func issueDTO(issue entity.Issue) api.Issue {
 		project := issue.ProjectID
 		dto.ProjectId = &project
 		dto.ProjectName = nilIfEmpty(issue.ProjectName)
+		dto.ProjectSlug = nilIfEmpty(issue.ProjectSlug)
 	}
 
 	dto.ParentReference = nilIfEmpty(issue.ParentReference)
@@ -1399,6 +1400,7 @@ func notificationDTO(notification entity.Notification) api.Notification {
 		Title:       notification.Title,
 		Reference:   nilIfEmpty(notification.Reference),
 		TeamKey:     nilIfEmpty(notification.TeamKey),
+		ProjectSlug: nilIfEmpty(notification.ProjectSlug),
 		UnreadCount: int32(notification.UnreadCount),
 		LastEventAt: notification.LastEventAt,
 	}

@@ -5912,6 +5912,7 @@ export interface components {
             /** Format: uuid */
             projectId?: string;
             projectName?: string;
+            projectSlug?: string;
             childProgress?: components["schemas"]["IssueProgress"];
             blocked?: boolean;
             state: components["schemas"]["IssueState"];
@@ -7569,6 +7570,7 @@ export interface components {
             title: string;
             reference?: string;
             teamKey?: string;
+            projectSlug?: string;
             /** Format: int32 */
             unreadCount: number;
             /** Format: date-time */
