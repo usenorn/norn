@@ -61,7 +61,11 @@
 	const cursor = listCursor(() => ({
 		rows,
 		keyOf: key,
-		open: (notification) => void goto(subjectPath(slug, notification)),
+		open: (notification) => {
+			const path = subjectPath(slug, notification);
+
+			if (path) void goto(path);
+		},
 	}));
 
 	function mergeLoaded(
@@ -288,11 +292,12 @@
 				<ul>
 					{#each listing.notifications as notification (key(notification))}
 						{@const Marker = marker(notification)}
+						{@const path = subjectPath(slug, notification)}
 						{@const snoozed = notification.snoozedUntil}
 						<li class="cursor-row border-b border-line-subtle" {...cursor.props(notification)}>
 							<div class="flex flex-wrap items-center gap-2 pr-3">
 								<a
-									href={subjectPath(slug, notification)}
+									href={path ?? undefined}
 									class="flex min-w-0 flex-[1_1_240px] items-center gap-2 py-2 pl-4 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
 								>
 									<span

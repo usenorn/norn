@@ -106,17 +106,17 @@ export function summary(notification: Notification): string {
 	return `${actor} ${verb}`;
 }
 
-export function subjectPath(workspace: string, notification: Notification): string {
+export function subjectPath(workspace: string, notification: Notification): string | null {
 	if (notification.kind === "approval_waiting") {
 		return `/${workspace}/agents/approvals`;
 	}
 
 	if (notification.subjectKind === "project") {
-		return `/${workspace}/projects/${notification.subjectId}`;
+		return notification.projectSlug ? `/${workspace}/projects/${notification.projectSlug}` : null;
 	}
 
 	if (notification.subjectKind === "team") {
-		return `/${workspace}/settings/teams/${notification.subjectId}`;
+		return notification.teamKey ? `/${workspace}/settings/teams/${notification.teamKey}` : null;
 	}
 
 	return `/${workspace}/issues/${notification.reference ?? notification.subjectId}`;

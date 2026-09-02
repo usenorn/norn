@@ -1444,10 +1444,10 @@
 				Issues
 			</a>
 			{#if issue}
-				{#if issue.projectName}
+				{#if issue.projectName && issue.projectSlug}
 					<span class="text-sm text-text-disabled" aria-hidden="true">/</span>
 					<a
-						href={at(`/projects/${issue.projectId}`)}
+						href={at(`/projects/${issue.projectSlug}`)}
 						class="hidden text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline"
 					>
 						{issue.projectName}

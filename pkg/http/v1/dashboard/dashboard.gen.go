@@ -6106,6 +6106,7 @@ type Issue struct {
 	Priority                 IssuePriority       `json:"priority"`
 	ProjectId                *openapi_types.UUID `json:"projectId,omitempty"`
 	ProjectName              *string             `json:"projectName,omitempty"`
+	ProjectSlug              *string             `json:"projectSlug,omitempty"`
 	Reference                string              `json:"reference"`
 	ReferenceKey             string              `json:"referenceKey"`
 	State                    IssueState          `json:"state"`
@@ -6711,6 +6712,7 @@ type Notification struct {
 	ActorName      *string                 `json:"actorName,omitempty"`
 	Kind           NotificationKind        `json:"kind"`
 	LastEventAt    time.Time               `json:"lastEventAt"`
+	ProjectSlug    *string                 `json:"projectSlug,omitempty"`
 	Reason         NotificationReason      `json:"reason"`
 	Reference      *string                 `json:"reference,omitempty"`
 	SnoozedUntil   *time.Time              `json:"snoozedUntil,omitempty"`
