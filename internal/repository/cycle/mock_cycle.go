@@ -345,18 +345,18 @@ func (m *MockCycleScopeChange) EXPECT() *MockCycleScopeChangeMockRecorder {
 }
 
 // ListByCycleID mocks base method.
-func (m *MockCycleScopeChange) ListByCycleID(ctx context.Context, cycleID uuid.UUID) ([]entity.CycleScopeChange, error) {
+func (m *MockCycleScopeChange) ListByCycleID(ctx context.Context, cycleID uuid.UUID, scope entity.TeamScope) ([]entity.CycleScopeChange, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListByCycleID", ctx, cycleID)
+	ret := m.ctrl.Call(m, "ListByCycleID", ctx, cycleID, scope)
 	ret0, _ := ret[0].([]entity.CycleScopeChange)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListByCycleID indicates an expected call of ListByCycleID.
-func (mr *MockCycleScopeChangeMockRecorder) ListByCycleID(ctx, cycleID any) *gomock.Call {
+func (mr *MockCycleScopeChangeMockRecorder) ListByCycleID(ctx, cycleID, scope any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByCycleID", reflect.TypeOf((*MockCycleScopeChange)(nil).ListByCycleID), ctx, cycleID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByCycleID", reflect.TypeOf((*MockCycleScopeChange)(nil).ListByCycleID), ctx, cycleID, scope)
 }
 
 // Record mocks base method.

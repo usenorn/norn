@@ -30,6 +30,7 @@ SELECT s.id,
 FROM workspace_cycle_scope_changes s
 JOIN workspace_issues i ON i.id = s.issue_id
 WHERE s.cycle_id = $1
+  AND ($2::boolean IS TRUE OR i.team_id = ANY($3::uuid[]))
 ORDER BY s.changed_at, s.id`
 
 type scopeChangeRepository struct {
@@ -74,8 +75,15 @@ func (r *scopeChangeRepository) Record(ctx context.Context, change entity.CycleS
 func (r *scopeChangeRepository) ListByCycleID(
 	ctx context.Context,
 	cycleID uuid.UUID,
+	scope entity.TeamScope,
 ) ([]entity.CycleScopeChange, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, scopeChangesForCycleQuery, cycleID.String())
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx,
+		scopeChangesForCycleQuery,
+		cycleID.String(),
+		scope.AllTeams,
+		teamIDs(scope),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("list cycle scope changes: %w", err)
 	}
