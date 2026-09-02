@@ -655,7 +655,18 @@
 				</section>
 
 				<section class="flex flex-col gap-2">
-					<Eyebrow class="text-ink-600">Issues</Eyebrow>
+					<div class="flex items-baseline justify-between gap-2">
+						<Eyebrow class="text-ink-600">Issues</Eyebrow>
+						{#if groups.length > 0}
+							<Button
+								variant="ghost"
+								size="sm"
+								href={workspacePath(slug, `/issues?project=${project.id}`)}
+							>
+								Open in issues
+							</Button>
+						{/if}
+					</div>
 					{#if groups.length === 0}
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
 							No issues are in this project yet. Put one in from the issue itself.
