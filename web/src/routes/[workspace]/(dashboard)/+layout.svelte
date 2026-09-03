@@ -66,7 +66,7 @@
 	import { providePanels } from "$lib/layout/panels.svelte";
 	import ResizeHandle from "$lib/components/norn/resize-handle.svelte";
 	import PanelRestore from "$lib/components/norn/panel-restore.svelte";
-	import { projectPath, projectsPath } from "$lib/projects/projects";
+	import { projectPath, projectsPath, teamProjectsPath } from "$lib/projects/projects";
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();
@@ -197,6 +197,7 @@
 	const teams = $derived((data.teams ?? []).filter((team) => team.status === "active"));
 	const today = $derived(calendarDate(data.now, data.workspace.timezone));
 	const cycleFor = $derived((teamId: string) => data.cycles.find((entry) => entry.teamId === teamId));
+
 </script>
 
 <div class="relative flex h-dvh bg-background" style="--sidebar-width: {panels.width('sidebar')}px">
@@ -275,6 +276,14 @@
 						glyphEngaged={ListChecksGlyph}
 						indent
 						active={current(teamIssuesPath(slug, team.key))}
+					/>
+					<SidebarItem
+						href={teamProjectsPath(slug, team.id)}
+						label="Projects"
+						glyph={TargetGlyph}
+						glyphEngaged={CrosshairGlyph}
+						indent
+						active={current(teamProjectsPath(slug, team.id))}
 					/>
 					{#if running}
 						<SidebarItem
