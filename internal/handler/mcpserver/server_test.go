@@ -15,6 +15,7 @@ import (
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/identity"
+	"github.com/usenorn/norn/internal/service"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
@@ -53,6 +54,7 @@ type harness struct {
 	teams         *teamsvc.MockTeams
 	states        *workflowstatesvc.MockWorkflowStates
 	workspaces    *workspacesvc.MockWorkspaces
+	projects      *projectsvc.MockProjects
 	sourceControl *scmsvc.MockSourceControl
 	edge          *mcpserver.Edge
 	actor         entity.Actor
@@ -70,6 +72,7 @@ func newHarness(t *testing.T) *harness {
 		questions:     issuequestionsvc.NewMockIssueQuestions(ctrl),
 		states:        workflowstatesvc.NewMockWorkflowStates(ctrl),
 		workspaces:    workspacesvc.NewMockWorkspaces(ctrl),
+		projects:      projectsvc.NewMockProjects(ctrl),
 		sourceControl: scmsvc.NewMockSourceControl(ctrl),
 		actor: entity.Actor{
 			Kind:      entity.ActorKindToken,
@@ -83,7 +86,7 @@ func newHarness(t *testing.T) *harness {
 		h.questions,
 		h.agents,
 		issuecommentsvc.NewMockIssueComments(ctrl),
-		projectsvc.NewMockProjects(ctrl),
+		h.projects,
 		cyclesvc.NewMockCycles(ctrl),
 		h.teams,
 		h.workspaces,
@@ -536,5 +539,72 @@ func TestTheServerInstructionsCarryTheBranchNamingRule(t *testing.T) {
 				phrase,
 			)
 		}
+	}
+}
+
+func TestAnIssueCanBeRaisedInItsProjectWithoutASecondCall(t *testing.T) {
+	h := newHarness(t)
+
+	workspace := entity.Workspace{ID: uuid.New(), Slug: "acme", Name: "Acme"}
+	team := entity.Team{ID: uuid.New(), WorkspaceID: workspace.ID, Key: "GAM", Status: entity.TeamStatusActive}
+	project := entity.Project{ID: uuid.New(), WorkspaceID: workspace.ID, Slug: "atlas", Name: "Atlas"}
+
+	h.workspaces.EXPECT().
+		ListForAccount(gomock.Any(), h.actor.AccountID).
+		Return([]entity.Workspace{workspace}, nil)
+
+	h.teams.EXPECT().
+		List(gomock.Any(), workspace.ID, gomock.Any()).
+		Return([]entity.Team{team}, nil).
+		AnyTimes()
+
+	h.projects.EXPECT().
+		GetBySlug(gomock.Any(), workspace.ID, "atlas").
+		Return(service.ProjectView{Project: project}, nil)
+
+	var raised service.CreateIssueInput
+
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, in service.CreateIssueInput) (entity.Issue, error) {
+			raised = in
+
+			return entity.Issue{
+				ID:           uuid.New(),
+				WorkspaceID:  workspace.ID,
+				TeamID:       team.ID,
+				ReferenceKey: "GAM",
+				Number:       9,
+				Title:        in.Title,
+				ProjectID:    in.ProjectID,
+			}, nil
+		})
+
+	session := h.session(t)
+
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "norn_create_issue",
+		Arguments: map[string]any{
+			"workspace": "acme",
+			"team":      "GAM",
+			"title":     "Wire the probe",
+			"project":   "atlas",
+		},
+	})
+	if err != nil {
+		t.Fatalf("call tool: %v", err)
+	}
+
+	if result.IsError {
+		t.Fatalf("tool errored: %v", result.Content)
+	}
+
+	if raised.ProjectID != project.ID {
+		t.Fatalf(
+			"the issue was raised with project %v, want %v. An agent that names a project must "+
+				"not have to discover that a second call is required.",
+			raised.ProjectID,
+			project.ID,
+		)
 	}
 }

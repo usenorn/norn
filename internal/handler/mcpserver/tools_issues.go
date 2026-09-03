@@ -201,6 +201,7 @@ type createIssueInput struct {
 	Description string `json:"description,omitempty" jsonschema:"the issue description, markdown"`
 	Priority    string `json:"priority,omitempty" jsonschema:"urgent, high, medium, low, or none"`
 	Assignee    string `json:"assignee,omitempty" jsonschema:"an account id, or me for the authorizing person"`
+	Project     string `json:"project,omitempty" jsonschema:"a project slug or id to raise the issue in"`
 	Estimate    int    `json:"estimate,omitempty" jsonschema:"the effort estimate in points"`
 	DueOn       string `json:"due_on,omitempty" jsonschema:"the due date as YYYY-MM-DD"`
 }
@@ -241,6 +242,15 @@ func (t *toolset) createIssue(
 		}
 
 		create.AssigneeAccountID = accountID
+	}
+
+	if input.Project != "" {
+		project, err := t.resolveProject(ctx, workspace.ID, input.Project)
+		if err != nil {
+			return nil, issueOutput{}, toolFailure(ctx, err)
+		}
+
+		create.ProjectID = project.Project.ID
 	}
 
 	issue, err := t.issues.Create(ctx, create)
