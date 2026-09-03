@@ -194,8 +194,9 @@ func (t *toolset) register(server *mcp.Server) {
 	}, t.issueBranchName)
 
 	mcp.AddTool(server, &mcp.Tool{
-		Name:        "norn_create_issue",
-		Description: "Create an issue on a team. Requires the write capability.",
+		Name: "norn_create_issue",
+		Description: "Create an issue on a team, optionally in a project. Requires the write " +
+			"capability.",
 		Annotations: create,
 	}, t.createIssue)
 
