@@ -55,6 +55,7 @@ type harness struct {
 	states        *workflowstatesvc.MockWorkflowStates
 	workspaces    *workspacesvc.MockWorkspaces
 	projects      *projectsvc.MockProjects
+	labels        *labelsvc.MockLabels
 	sourceControl *scmsvc.MockSourceControl
 	edge          *mcpserver.Edge
 	actor         entity.Actor
@@ -73,6 +74,7 @@ func newHarness(t *testing.T) *harness {
 		states:        workflowstatesvc.NewMockWorkflowStates(ctrl),
 		workspaces:    workspacesvc.NewMockWorkspaces(ctrl),
 		projects:      projectsvc.NewMockProjects(ctrl),
+		labels:        labelsvc.NewMockLabels(ctrl),
 		sourceControl: scmsvc.NewMockSourceControl(ctrl),
 		actor: entity.Actor{
 			Kind:      entity.ActorKindToken,
@@ -91,7 +93,7 @@ func newHarness(t *testing.T) *harness {
 		h.teams,
 		h.workspaces,
 		h.states,
-		labelsvc.NewMockLabels(ctrl),
+		h.labels,
 		searchsvc.NewMockSearches(ctrl),
 		h.sourceControl,
 		config.App{Version: "test"},
@@ -609,7 +611,7 @@ func TestAnIssueCanBeRaisedInItsProjectWithoutASecondCall(t *testing.T) {
 	}
 }
 
-func TestAnIssueOnTheWrongTeamCanBeMovedAndKeepsNoOldReference(t *testing.T) {
+func TestAnIssueOnTheWrongTeamCanBeMovedAndKeepsItsReference(t *testing.T) {
 	h := newHarness(t)
 
 	workspace := entity.Workspace{ID: uuid.New(), Slug: "acme", Name: "Acme"}
@@ -645,7 +647,7 @@ func TestAnIssueOnTheWrongTeamCanBeMovedAndKeepsNoOldReference(t *testing.T) {
 
 			return entity.Issue{
 				ID: issue.ID, WorkspaceID: workspace.ID, TeamID: to.ID,
-				ReferenceKey: "MAD", Number: 1, Version: 4, Title: issue.Title,
+				ReferenceKey: "GAM", Number: 116, Version: 4, Title: issue.Title,
 			}, nil
 		})
 
@@ -684,11 +686,117 @@ func TestAnIssueOnTheWrongTeamCanBeMovedAndKeepsNoOldReference(t *testing.T) {
 		t.Fatalf("marshal structured content: %v", err)
 	}
 
-	if !strings.Contains(string(payload), "MAD-1") {
+	if !strings.Contains(string(payload), "GAM-116") {
 		t.Fatalf(
-			"the result is %s and does not carry the new reference. The agent may already have "+
-				"quoted the old one, so the answer has to say what it became.",
+			"the result is %s and does not carry the issue's reference. A move changes the team "+
+				"and nothing else about how the issue is named: moveIssueTeamQuery leaves "+
+				"reference_key and number alone, so a number already quoted stays valid.",
 			payload,
+		)
+	}
+}
+
+func TestAnAgentCanLabelAnIssueByNameWhenRaisingIt(t *testing.T) {
+	h := newHarness(t)
+
+	workspace := entity.Workspace{ID: uuid.New(), Slug: "acme", Name: "Acme"}
+	team := entity.Team{ID: uuid.New(), WorkspaceID: workspace.ID, Key: "GAM", Status: entity.TeamStatusActive}
+	bug := entity.Label{ID: uuid.New(), WorkspaceID: workspace.ID, Name: "bug"}
+	chore := entity.Label{ID: uuid.New(), WorkspaceID: workspace.ID, Name: "chore"}
+
+	h.workspaces.EXPECT().
+		ListForAccount(gomock.Any(), h.actor.AccountID).
+		Return([]entity.Workspace{workspace}, nil)
+
+	h.teams.EXPECT().
+		List(gomock.Any(), workspace.ID, gomock.Any()).
+		Return([]entity.Team{team}, nil).
+		AnyTimes()
+
+	h.labels.EXPECT().
+		List(gomock.Any(), workspace.ID).
+		Return([]entity.Label{bug, chore}, nil)
+
+	var raised service.CreateIssueInput
+
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, in service.CreateIssueInput) (entity.Issue, error) {
+			raised = in
+
+			return entity.Issue{
+				ID: uuid.New(), WorkspaceID: workspace.ID, TeamID: team.ID,
+				ReferenceKey: "GAM", Number: 4, Title: in.Title,
+			}, nil
+		})
+
+	session := h.session(t)
+
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "norn_create_issue",
+		Arguments: map[string]any{
+			"workspace": "acme",
+			"team":      "GAM",
+			"title":     "Something is wrong",
+			"labels":    []string{"BUG"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("call tool: %v", err)
+	}
+
+	if result.IsError {
+		t.Fatalf("tool errored: %v", result.Content)
+	}
+
+	if len(raised.LabelIDs) != 1 || raised.LabelIDs[0] != bug.ID {
+		t.Fatalf(
+			"the issue was raised with labels %v, want just %v. An agent names a label the way a "+
+				"person does, not by its id.",
+			raised.LabelIDs,
+			bug.ID,
+		)
+	}
+}
+
+func TestALabelThatDoesNotExistIsRefusedRatherThanDropped(t *testing.T) {
+	h := newHarness(t)
+
+	workspace := entity.Workspace{ID: uuid.New(), Slug: "acme", Name: "Acme"}
+	team := entity.Team{ID: uuid.New(), WorkspaceID: workspace.ID, Key: "GAM", Status: entity.TeamStatusActive}
+
+	h.workspaces.EXPECT().
+		ListForAccount(gomock.Any(), h.actor.AccountID).
+		Return([]entity.Workspace{workspace}, nil)
+
+	h.teams.EXPECT().
+		List(gomock.Any(), workspace.ID, gomock.Any()).
+		Return([]entity.Team{team}, nil).
+		AnyTimes()
+
+	h.labels.EXPECT().
+		List(gomock.Any(), workspace.ID).
+		Return([]entity.Label{{ID: uuid.New(), Name: "bug"}}, nil)
+
+	session := h.session(t)
+
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "norn_create_issue",
+		Arguments: map[string]any{
+			"workspace": "acme",
+			"team":      "GAM",
+			"title":     "Something is wrong",
+			"labels":    []string{"regression"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("call tool: %v", err)
+	}
+
+	if !result.IsError {
+		t.Fatal(
+			"naming a label that does not exist succeeded. Silently raising the issue without " +
+				"it is how an agent believes it filed something it did not.",
 		)
 	}
 }

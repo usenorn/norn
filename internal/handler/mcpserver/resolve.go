@@ -117,3 +117,53 @@ func resolveAssignee(ctx context.Context, ref string) (uuid.UUID, error) {
 
 	return accountID, nil
 }
+
+func (t *toolset) resolveLabels(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	refs []string,
+) ([]uuid.UUID, error) {
+	if len(refs) == 0 {
+		return []uuid.UUID{}, nil
+	}
+
+	labels, err := t.labels.List(ctx, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	resolved := make([]uuid.UUID, 0, len(refs))
+
+	for _, ref := range refs {
+		id, found := matchLabel(labels, ref)
+		if !found {
+			return nil, entity.ErrLabelNotFound
+		}
+
+		resolved = append(resolved, id)
+	}
+
+	return resolved, nil
+}
+
+func matchLabel(labels []entity.Label, ref string) (uuid.UUID, bool) {
+	if labelID, err := uuid.Parse(ref); err == nil {
+		for _, label := range labels {
+			if label.ID == labelID {
+				return label.ID, true
+			}
+		}
+
+		return uuid.Nil, false
+	}
+
+	wanted := strings.TrimSpace(ref)
+
+	for _, label := range labels {
+		if strings.EqualFold(label.Name, wanted) {
+			return label.ID, true
+		}
+	}
+
+	return uuid.Nil, false
+}

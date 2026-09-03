@@ -195,15 +195,16 @@ func (t *toolset) compileFilter(
 }
 
 type createIssueInput struct {
-	Workspace   string `json:"workspace" jsonschema:"the workspace slug or id"`
-	Team        string `json:"team" jsonschema:"the team key like ENG, or a team id"`
-	Title       string `json:"title" jsonschema:"the issue title"`
-	Description string `json:"description,omitempty" jsonschema:"the issue description, markdown"`
-	Priority    string `json:"priority,omitempty" jsonschema:"urgent, high, medium, low, or none"`
-	Assignee    string `json:"assignee,omitempty" jsonschema:"an account id, or me for the authorizing person"`
-	Project     string `json:"project,omitempty" jsonschema:"a project slug or id to raise the issue in"`
-	Estimate    int    `json:"estimate,omitempty" jsonschema:"the effort estimate in points"`
-	DueOn       string `json:"due_on,omitempty" jsonschema:"the due date as YYYY-MM-DD"`
+	Workspace   string   `json:"workspace" jsonschema:"the workspace slug or id"`
+	Team        string   `json:"team" jsonschema:"the team key like ENG, or a team id"`
+	Title       string   `json:"title" jsonschema:"the issue title"`
+	Description string   `json:"description,omitempty" jsonschema:"the issue description, markdown"`
+	Priority    string   `json:"priority,omitempty" jsonschema:"urgent, high, medium, low, or none"`
+	Assignee    string   `json:"assignee,omitempty" jsonschema:"an account id, or me for the authorizing person"`
+	Project     string   `json:"project,omitempty" jsonschema:"a project slug or id to raise the issue in"`
+	Labels      []string `json:"labels,omitempty" jsonschema:"label names or ids to put on the issue"`
+	Estimate    int      `json:"estimate,omitempty" jsonschema:"the effort estimate in points"`
+	DueOn       string   `json:"due_on,omitempty" jsonschema:"the due date as YYYY-MM-DD"`
 }
 
 type issueOutput struct {
@@ -253,6 +254,15 @@ func (t *toolset) createIssue(
 		create.ProjectID = project.Project.ID
 	}
 
+	if len(input.Labels) > 0 {
+		labelIDs, err := t.resolveLabels(ctx, workspace.ID, input.Labels)
+		if err != nil {
+			return nil, issueOutput{}, toolFailure(ctx, err)
+		}
+
+		create.LabelIDs = labelIDs
+	}
+
 	issue, err := t.issues.Create(ctx, create)
 	if err != nil {
 		return nil, issueOutput{}, toolFailure(ctx, err)
@@ -273,8 +283,9 @@ type updateIssueInput struct {
 	DueOn              *string  `json:"due_on,omitempty" jsonschema:"a new due date as YYYY-MM-DD"`
 	State              *string  `json:"state,omitempty" jsonschema:"a workflow state name or id"`
 	Project            *string  `json:"project,omitempty" jsonschema:"a project slug or id"`
-	Team               *string  `json:"team,omitempty" jsonschema:"move the issue to this team key or id; the reference changes with it"`
+	Team               *string  `json:"team,omitempty" jsonschema:"move the issue to this team key or id; the issue keeps its reference"`
 	DropStrandedLabels *bool    `json:"drop_stranded_labels,omitempty" jsonschema:"allow a move that loses labels the destination team cannot hold"`
+	Labels             []string `json:"labels,omitempty" jsonschema:"replace the issue's labels with these names or ids"`
 	Clear              []string `json:"clear,omitempty" jsonschema:"fields to clear: assignee, estimate, dueOn, cycle, or project"`
 }
 
@@ -316,7 +327,7 @@ func (t *toolset) updateIssue(
 		issue = moved
 		input.ExpectedVersion = moved.Version
 
-		if !changesBeyondTeam(input) {
+		if !changesBeyondTeam(input) && input.Labels == nil {
 			return nil, issueOutput{Issue: issueDTOFrom(moved)}, nil
 		}
 	}
@@ -367,9 +378,32 @@ func (t *toolset) updateIssue(
 		update.ProjectID = &projectID
 	}
 
-	updated, err := t.issues.Update(ctx, workspace.ID, issue.ID, update)
-	if err != nil {
-		return nil, issueOutput{}, toolFailure(ctx, err)
+	updated := issue
+
+	if changesBeyondTeam(input) {
+		updated, err = t.issues.Update(ctx, workspace.ID, issue.ID, update)
+		if err != nil {
+			return nil, issueOutput{}, toolFailure(ctx, err)
+		}
+	}
+
+	if input.Labels != nil {
+		labelIDs, err := t.resolveLabels(ctx, workspace.ID, input.Labels)
+		if err != nil {
+			return nil, issueOutput{}, toolFailure(ctx, err)
+		}
+
+		if _, err := t.issues.SetLabels(ctx, workspace.ID, issue.ID, service.SetIssueLabelsInput{
+			ExpectedVersion: updated.Version,
+			LabelIDs:        labelIDs,
+		}); err != nil {
+			return nil, issueOutput{}, toolFailure(ctx, err)
+		}
+
+		updated, err = t.issues.Get(ctx, workspace.ID, issue.ID)
+		if err != nil {
+			return nil, issueOutput{}, toolFailure(ctx, err)
+		}
 	}
 
 	return nil, issueOutput{Issue: issueDTOFrom(updated)}, nil
