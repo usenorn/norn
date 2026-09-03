@@ -5559,6 +5559,8 @@ export interface components {
             /** Format: date-time */
             archivedAt?: string;
             health?: components["schemas"]["ProjectHealth"];
+            /** @description The teams this project serves. Empty means it belongs to no team in particular and is the whole workspace's, which is what every project was before teams could be named. */
+            teamIds?: string[];
             /** @description True when the project holds issues on teams the caller cannot see. The figures they are given cover only their own teams; no count of the concealed work is disclosed. */
             concealedWork: boolean;
             /** Format: date-time */
@@ -5572,6 +5574,7 @@ export interface components {
             leadAccountId?: string;
             /** Format: date */
             targetOn?: string;
+            teamIds?: string[];
         };
         UpdateProjectRequest: {
             name?: string;
@@ -5581,6 +5584,8 @@ export interface components {
             /** Format: date */
             targetOn?: string;
             state?: components["schemas"]["ProjectState"];
+            /** @description Replaces the teams the project serves. Omit to leave them alone. */
+            teamIds?: string[];
             clear?: ("lead" | "targetOn")[];
         };
         ProjectMember: {
@@ -13954,6 +13959,8 @@ export interface operations {
                 state?: components["schemas"]["ProjectState"];
                 /** @description Include archived projects; they are left out by default */
                 archived?: boolean;
+                /** @description Only projects that serve this team. */
+                teamId?: string;
                 /** @description Only projects the caller leads or belongs to */
                 mine?: boolean;
             };

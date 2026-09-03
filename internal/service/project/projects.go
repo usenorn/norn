@@ -108,6 +108,10 @@ func (s *projectsService) Create(
 		return service.ProjectView{}, err
 	}
 
+	if err := reachableTeams(decision.Scope, input.TeamIDs); err != nil {
+		return service.ProjectView{}, err
+	}
+
 	project := entity.Project{
 		WorkspaceID: input.WorkspaceID,
 		Slug:        input.Slug,
@@ -128,6 +132,14 @@ func (s *projectsService) Create(
 		created, err = s.projects.Create(ctx, project)
 		if err != nil {
 			return err
+		}
+
+		if len(input.TeamIDs) > 0 {
+			if err := s.projects.SetTeams(ctx, created.WorkspaceID, created.ID, input.TeamIDs); err != nil {
+				return err
+			}
+
+			created.TeamIDs = input.TeamIDs
 		}
 
 		if _, err := s.members.Create(ctx, entity.ProjectMembership{
@@ -221,7 +233,11 @@ func (s *projectsService) List(
 		return nil, err
 	}
 
-	filter := repository.ProjectFilter{State: input.State, IncludeArchived: input.Archived}
+	filter := repository.ProjectFilter{
+		State:           input.State,
+		IncludeArchived: input.Archived,
+		ForTeamID:       input.TeamID,
+	}
 
 	if input.Mine {
 		actor := decision.Actor.AccountID
@@ -309,6 +325,12 @@ func (s *projectsService) Update(
 		return service.ProjectView{}, err
 	}
 
+	if input.TeamIDs != nil {
+		if err := reachableTeams(decision.Scope, *input.TeamIDs); err != nil {
+			return service.ProjectView{}, err
+		}
+	}
+
 	settings := repository.ProjectSettings{
 		LeadAccountID: input.LeadAccountID,
 		ClearLead:     slices.Contains(input.Clear, projectFieldLead),
@@ -333,6 +355,14 @@ func (s *projectsService) Update(
 		updated, err = s.projects.UpdateSettings(ctx, projectID, settings)
 		if err != nil {
 			return err
+		}
+
+		if input.TeamIDs != nil {
+			if err := s.projects.SetTeams(ctx, workspaceID, projectID, *input.TeamIDs); err != nil {
+				return err
+			}
+
+			updated.TeamIDs = *input.TeamIDs
 		}
 
 		if err := s.recordSettings(ctx, before, updated, decision); err != nil {
@@ -832,4 +862,16 @@ func (s *projectsService) Activity(
 		Events:     events,
 		NextCursor: events[len(events)-1].Cursor().Encode(),
 	}, nil
+}
+
+// A project naming a team the actor cannot see would tell them that team exists, which every
+// other read refuses to do. Answering as though the team were absent keeps that consistent.
+func reachableTeams(scope entity.TeamScope, teamIDs []uuid.UUID) error {
+	for _, teamID := range teamIDs {
+		if !scope.Covers(teamID) {
+			return entity.ErrTeamNotFound
+		}
+	}
+
+	return nil
 }

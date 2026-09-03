@@ -509,6 +509,11 @@ func projectDTO(view service.ProjectView) api.Project {
 		CreatedAt:     project.CreatedAt,
 	}
 
+	if len(project.TeamIDs) > 0 {
+		teams := project.TeamIDs
+		dto.TeamIds = &teams
+	}
+
 	if project.LeadAccountID != uuid.Nil {
 		lead := project.LeadAccountID
 		dto.LeadAccountId = &lead

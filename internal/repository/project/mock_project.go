@@ -178,6 +178,20 @@ func (mr *MockProjectMockRecorder) SetState(ctx, projectID, state any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetState", reflect.TypeOf((*MockProject)(nil).SetState), ctx, projectID, state)
 }
 
+// SetTeams mocks base method.
+func (m *MockProject) SetTeams(ctx context.Context, workspaceID, projectID uuid.UUID, teamIDs []uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetTeams", ctx, workspaceID, projectID, teamIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetTeams indicates an expected call of SetTeams.
+func (mr *MockProjectMockRecorder) SetTeams(ctx, workspaceID, projectID, teamIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTeams", reflect.TypeOf((*MockProject)(nil).SetTeams), ctx, workspaceID, projectID, teamIDs)
+}
+
 // Unarchive mocks base method.
 func (m *MockProject) Unarchive(ctx context.Context, projectID uuid.UUID) (entity.Project, error) {
 	m.ctrl.T.Helper()

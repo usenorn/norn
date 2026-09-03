@@ -29,6 +29,7 @@ type CreateProjectInput struct {
 	Description   string
 	LeadAccountID *uuid.UUID
 	TargetOn      string
+	TeamIDs       []uuid.UUID
 	Origin        *entity.ImportOrigin
 }
 
@@ -37,6 +38,7 @@ type UpdateProjectInput struct {
 	Description   *string
 	LeadAccountID *uuid.UUID
 	TargetOn      *string
+	TeamIDs       *[]uuid.UUID
 	Clear         []string
 }
 
@@ -44,6 +46,7 @@ type ListProjectsInput struct {
 	State    entity.ProjectState
 	Archived bool
 	Mine     bool
+	TeamID   *uuid.UUID
 }
 
 type PostProjectStatusInput struct {
