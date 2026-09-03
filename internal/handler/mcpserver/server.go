@@ -202,8 +202,9 @@ func (t *toolset) register(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_update_issue",
-		Description: "Update an issue's fields. Requires expected_version from a prior " +
-			"norn_get_issue; on a version conflict, re-read and retry.",
+		Description: "Update an issue's fields, including moving it to another team. Requires " +
+			"expected_version from a prior norn_get_issue; on a version conflict, re-read and " +
+			"retry. A move changes the issue's reference, so quote the one the result returns.",
 		Annotations: update,
 	}, t.updateIssue)
 
