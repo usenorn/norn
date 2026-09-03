@@ -195,8 +195,8 @@ func (t *toolset) register(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_create_issue",
-		Description: "Create an issue on a team, optionally in a project. Requires the write " +
-			"capability.",
+		Description: "Create an issue on a team, optionally in a project and with labels. " +
+			"Requires the write capability.",
 		Annotations: create,
 	}, t.createIssue)
 
@@ -204,7 +204,8 @@ func (t *toolset) register(server *mcp.Server) {
 		Name: "norn_update_issue",
 		Description: "Update an issue's fields, including moving it to another team. Requires " +
 			"expected_version from a prior norn_get_issue; on a version conflict, re-read and " +
-			"retry. A move changes the issue's reference, so quote the one the result returns.",
+			"retry. A move keeps the issue's reference, so a number already quoted stays valid. " +
+			"Labels given here replace the issue's labels rather than adding to them.",
 		Annotations: update,
 	}, t.updateIssue)
 
