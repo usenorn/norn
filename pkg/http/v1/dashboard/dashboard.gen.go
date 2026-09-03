@@ -5013,11 +5013,12 @@ type CreateLabelRequest struct {
 
 // CreateProjectRequest defines model for CreateProjectRequest.
 type CreateProjectRequest struct {
-	Description   *string             `json:"description,omitempty"`
-	LeadAccountId *openapi_types.UUID `json:"leadAccountId,omitempty"`
-	Name          string              `json:"name"`
-	Slug          string              `json:"slug"`
-	TargetOn      *openapi_types.Date `json:"targetOn,omitempty"`
+	Description   *string               `json:"description,omitempty"`
+	LeadAccountId *openapi_types.UUID   `json:"leadAccountId,omitempty"`
+	Name          string                `json:"name"`
+	Slug          string                `json:"slug"`
+	TargetOn      *openapi_types.Date   `json:"targetOn,omitempty"`
+	TeamIds       *[]openapi_types.UUID `json:"teamIds,omitempty"`
 }
 
 // CreateSavedViewRequest defines model for CreateSavedViewRequest.
@@ -6878,7 +6879,10 @@ type Project struct {
 	Slug          string              `json:"slug"`
 	State         ProjectState        `json:"state"`
 	TargetOn      *openapi_types.Date `json:"targetOn,omitempty"`
-	WorkspaceId   openapi_types.UUID  `json:"workspaceId"`
+
+	// TeamIds The teams this project serves. Empty means it belongs to no team in particular and is the whole workspace's, which is what every project was before teams could be named.
+	TeamIds     *[]openapi_types.UUID `json:"teamIds,omitempty"`
+	WorkspaceId openapi_types.UUID    `json:"workspaceId"`
 }
 
 // ProjectConflictProblem defines model for ProjectConflictProblem.
@@ -7927,6 +7931,9 @@ type UpdateProjectRequest struct {
 	Name          *string                      `json:"name,omitempty"`
 	State         *ProjectState                `json:"state,omitempty"`
 	TargetOn      *openapi_types.Date          `json:"targetOn,omitempty"`
+
+	// TeamIds Replaces the teams the project serves. Omit to leave them alone.
+	TeamIds *[]openapi_types.UUID `json:"teamIds,omitempty"`
 }
 
 // UpdateProjectRequestClear defines model for UpdateProjectRequest.Clear.
@@ -8764,6 +8771,9 @@ type ListWorkspaceProjectsParams struct {
 
 	// Archived Include archived projects; they are left out by default
 	Archived *bool `form:"archived,omitempty" json:"archived,omitempty"`
+
+	// TeamId Only projects that serve this team.
+	TeamId *openapi_types.UUID `form:"teamId,omitempty" json:"teamId,omitempty"`
 
 	// Mine Only projects the caller leads or belongs to
 	Mine *bool `form:"mine,omitempty" json:"mine,omitempty"`
@@ -27534,6 +27544,18 @@ func NewListWorkspaceProjectsRequest(server string, workspaceId WorkspaceId, par
 		if params.Archived != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archived", *params.Archived, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.TeamId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "teamId", *params.TeamId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -89911,6 +89933,19 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceProjects(w http.ResponseWriter, 
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "archived"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "archived", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "teamId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "teamId", r.URL.Query(), &params.TeamId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "teamId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
 		}
 		return
 	}

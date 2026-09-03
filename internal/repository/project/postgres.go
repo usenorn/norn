@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,10 +17,12 @@ import (
 )
 
 const (
-	uniqueViolationCode = "23505"
-	slugUniqueIndex     = "workspace_projects_slug_key"
-	archiveCheck        = "workspace_projects_archive_check"
-	checkViolationCode  = "23514"
+	uniqueViolationCode  = "23505"
+	foreignKeyViolation  = "23503"
+	projectTeamsTeamFkey = "workspace_project_teams_team_fkey"
+	slugUniqueIndex      = "workspace_projects_slug_key"
+	archiveCheck         = "workspace_projects_archive_check"
+	checkViolationCode   = "23514"
 )
 
 const projectColumns = `
@@ -34,6 +37,11 @@ const projectColumns = `
        coalesce(to_char(p.target_on, 'YYYY-MM-DD'), ''),
        p.archived_at,
        coalesce(u.health, ''),
+       coalesce((
+           SELECT string_agg(pt.team_id::text, ',' ORDER BY pt.team_id)
+           FROM workspace_project_teams pt
+           WHERE pt.project_id = p.id
+       ), ''),
        p.created_at,
        p.updated_at`
 
@@ -83,6 +91,10 @@ WHERE p.workspace_id = $1
         SELECT 1 FROM workspace_project_members m
         WHERE m.project_id = p.id AND m.account_id = $6::uuid
       ) OR p.lead_account_id = $6::uuid)
+  AND ($7::boolean IS NOT TRUE OR EXISTS (
+        SELECT 1 FROM workspace_project_teams pt
+        WHERE pt.project_id = p.id AND pt.team_id = $8::uuid
+      ))
 ORDER BY lower(p.name), p.id`
 
 const updateProjectQuery = `
@@ -177,6 +189,8 @@ func translateWriteError(err error) error {
 		return entity.ErrProjectSlugTaken
 	case pgErr.Code == checkViolationCode && pgErr.ConstraintName == archiveCheck:
 		return entity.ErrProjectNotFinished
+	case pgErr.Code == foreignKeyViolation && pgErr.ConstraintName == projectTeamsTeamFkey:
+		return entity.ErrTeamNotFound
 	}
 
 	return err
@@ -212,6 +226,7 @@ func scanProject(row scanner) (entity.Project, error) {
 		lead      string
 		state     string
 		health    string
+		teams     string
 	)
 
 	if err := row.Scan(
@@ -226,6 +241,7 @@ func scanProject(row scanner) (entity.Project, error) {
 		&project.TargetOn,
 		&project.ArchivedAt,
 		&health,
+		&teams,
 		&project.CreatedAt,
 		&project.UpdatedAt,
 	); err != nil {
@@ -234,6 +250,21 @@ func scanProject(row scanner) (entity.Project, error) {
 
 	project.State = entity.ProjectState(state)
 	project.Health = entity.ProjectHealth(health)
+
+	project.TeamIDs = make([]uuid.UUID, 0)
+
+	for _, raw := range strings.Split(teams, ",") {
+		if raw == "" {
+			continue
+		}
+
+		teamID, err := uuid.Parse(raw)
+		if err != nil {
+			return entity.Project{}, fmt.Errorf("parse project team id: %w", err)
+		}
+
+		project.TeamIDs = append(project.TeamIDs, teamID)
+	}
 
 	parsed, err := uuid.Parse(id)
 	if err != nil {
@@ -353,6 +384,12 @@ func (r *projectRepository) ListByWorkspaceID(
 		account = *filter.ForAccountID
 	}
 
+	team := uuid.Nil
+
+	if filter.ForTeamID != nil {
+		team = *filter.ForTeamID
+	}
+
 	rows, err := r.db.Querier(ctx).QueryContext(
 		ctx,
 		projectsQuery,
@@ -362,6 +399,8 @@ func (r *projectRepository) ListByWorkspaceID(
 		string(filter.State),
 		filter.ForAccountID != nil,
 		account.String(),
+		filter.ForTeamID != nil,
+		team.String(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("list projects: %w", err)
@@ -550,4 +589,33 @@ func (r *projectRepository) HasConcealedWork(
 	}
 
 	return concealed, nil
+}
+
+const clearProjectTeamsQuery = `DELETE FROM workspace_project_teams WHERE project_id = $1`
+
+const addProjectTeamQuery = `
+INSERT INTO workspace_project_teams (workspace_id, project_id, team_id)
+VALUES ($1, $2, $3)
+ON CONFLICT (project_id, team_id) DO NOTHING`
+
+func (r *projectRepository) SetTeams(
+	ctx context.Context,
+	workspaceID, projectID uuid.UUID,
+	teamIDs []uuid.UUID,
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, clearProjectTeamsQuery, projectID.String(),
+	); err != nil {
+		return fmt.Errorf("clear project teams: %w", err)
+	}
+
+	for _, teamID := range teamIDs {
+		if _, err := r.db.Querier(ctx).ExecContext(
+			ctx, addProjectTeamQuery, workspaceID.String(), projectID.String(), teamID.String(),
+		); err != nil {
+			return translateWriteError(err)
+		}
+	}
+
+	return nil
 }

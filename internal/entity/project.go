@@ -88,6 +88,7 @@ type Project struct {
 	LeadName      string
 	TargetOn      string
 	ArchivedAt    *time.Time
+	TeamIDs       []uuid.UUID
 	Health        ProjectHealth
 	CreatedAt     time.Time
 	UpdatedAt     time.Time

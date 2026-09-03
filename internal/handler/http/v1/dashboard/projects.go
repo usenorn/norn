@@ -22,6 +22,8 @@ func (h *handler) ListWorkspaceProjects(
 		input.State = entity.ProjectState(*request.Params.State)
 	}
 
+	input.TeamID = request.Params.TeamId
+
 	views, err := h.projects.List(ctx, request.WorkspaceId, input)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
@@ -51,6 +53,10 @@ func (h *handler) CreateWorkspaceProject(
 
 	if request.Body.TargetOn != nil {
 		input.TargetOn = request.Body.TargetOn.Format(time.DateOnly)
+	}
+
+	if request.Body.TeamIds != nil {
+		input.TeamIDs = *request.Body.TeamIds
 	}
 
 	view, err := h.projects.Create(ctx, input)
@@ -112,6 +118,11 @@ func (h *handler) UpdateWorkspaceProject(
 	if request.Body.TargetOn != nil {
 		target := request.Body.TargetOn.Format(time.DateOnly)
 		input.TargetOn = &target
+	}
+
+	if request.Body.TeamIds != nil {
+		teams := *request.Body.TeamIds
+		input.TeamIDs = &teams
 	}
 
 	if request.Body.Clear != nil {

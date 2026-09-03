@@ -14,6 +14,7 @@ import (
 type ProjectFilter struct {
 	State           entity.ProjectState
 	ForAccountID    *uuid.UUID
+	ForTeamID       *uuid.UUID
 	IncludeArchived bool
 }
 
@@ -37,6 +38,7 @@ type Project interface {
 	Archive(ctx context.Context, projectID uuid.UUID, archivedAt time.Time) (entity.Project, error)
 	Unarchive(ctx context.Context, projectID uuid.UUID) (entity.Project, error)
 	Delete(ctx context.Context, projectID uuid.UUID) error
+	SetTeams(ctx context.Context, workspaceID, projectID uuid.UUID, teamIDs []uuid.UUID) error
 	HasConcealedWork(ctx context.Context, scope entity.TeamScope, projectID uuid.UUID) (bool, error)
 }
 

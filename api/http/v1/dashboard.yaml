@@ -4261,6 +4261,10 @@ paths:
           in: query
           description: Include archived projects; they are left out by default
           schema: { type: boolean }
+        - name: teamId
+          in: query
+          description: Only projects that serve this team.
+          schema: { type: string, format: uuid }
         - name: mine
           in: query
           description: Only projects the caller leads or belongs to
@@ -8800,6 +8804,12 @@ components:
         archived: { type: boolean }
         archivedAt: { type: string, format: date-time }
         health: { $ref: '#/components/schemas/ProjectHealth' }
+        teamIds:
+          type: array
+          description: >-
+            The teams this project serves. Empty means it belongs to no team in particular and is
+            the whole workspace's, which is what every project was before teams could be named.
+          items: { type: string, format: uuid }
         concealedWork:
           type: boolean
           description: >-
@@ -8816,6 +8826,9 @@ components:
         description: { type: string }
         leadAccountId: { type: string, format: uuid }
         targetOn: { type: string, format: date }
+        teamIds:
+          type: array
+          items: { type: string, format: uuid }
 
     UpdateProjectRequest:
       type: object
@@ -8825,6 +8838,10 @@ components:
         leadAccountId: { type: string, format: uuid }
         targetOn: { type: string, format: date }
         state: { $ref: '#/components/schemas/ProjectState' }
+        teamIds:
+          type: array
+          description: Replaces the teams the project serves. Omit to leave them alone.
+          items: { type: string, format: uuid }
         clear:
           type: array
           items:
