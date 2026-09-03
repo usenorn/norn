@@ -200,6 +200,9 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		"norn_list_issues",
 		"norn_search",
 		"norn_list_projects",
+		"norn_create_project",
+		"norn_update_project",
+		"norn_archive_project",
 		"norn_get_project",
 		"norn_list_cycles",
 		"norn_get_cycle",
@@ -217,8 +220,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		}
 	}
 
-	if len(tools.Tools) != 18 {
-		t.Errorf("registered %d tools, want 18", len(tools.Tools))
+	if len(tools.Tools) != 21 {
+		t.Errorf("registered %d tools, want 21", len(tools.Tools))
 	}
 }
 
@@ -797,6 +800,63 @@ func TestALabelThatDoesNotExistIsRefusedRatherThanDropped(t *testing.T) {
 		t.Fatal(
 			"naming a label that does not exist succeeded. Silently raising the issue without " +
 				"it is how an agent believes it filed something it did not.",
+		)
+	}
+}
+
+func TestAProjectIsRaisedWithTheTeamsNamedByKey(t *testing.T) {
+	h := newHarness(t)
+
+	workspace := entity.Workspace{ID: uuid.New(), Slug: "acme", Name: "Acme"}
+	team := entity.Team{ID: uuid.New(), WorkspaceID: workspace.ID, Key: "GAM", Status: entity.TeamStatusActive}
+
+	h.workspaces.EXPECT().
+		ListForAccount(gomock.Any(), h.actor.AccountID).
+		Return([]entity.Workspace{workspace}, nil)
+
+	h.teams.EXPECT().
+		List(gomock.Any(), workspace.ID, gomock.Any()).
+		Return([]entity.Team{team}, nil).
+		AnyTimes()
+
+	var raised service.CreateProjectInput
+
+	h.projects.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, in service.CreateProjectInput) (service.ProjectView, error) {
+			raised = in
+
+			return service.ProjectView{Project: entity.Project{
+				ID: uuid.New(), WorkspaceID: workspace.ID, Slug: in.Slug, Name: in.Name,
+				TeamIDs: in.TeamIDs,
+			}}, nil
+		})
+
+	session := h.session(t)
+
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "norn_create_project",
+		Arguments: map[string]any{
+			"workspace": "acme",
+			"slug":      "atlas",
+			"name":      "Atlas",
+			"teams":     []string{"GAM"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("call tool: %v", err)
+	}
+
+	if result.IsError {
+		t.Fatalf("tool errored: %v", result.Content)
+	}
+
+	if len(raised.TeamIDs) != 1 || raised.TeamIDs[0] != team.ID {
+		t.Fatalf(
+			"the project was raised for teams %v, want %v. An agent names a team by its key, "+
+				"the way a person does.",
+			raised.TeamIDs,
+			team.ID,
 		)
 	}
 }

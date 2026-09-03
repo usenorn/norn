@@ -161,8 +161,9 @@ func (t *toolset) register(server *mcp.Server) {
 	}, t.search)
 
 	mcp.AddTool(server, &mcp.Tool{
-		Name:        "norn_list_projects",
-		Description: "List the projects of a workspace with state, health, and lead.",
+		Name: "norn_list_projects",
+		Description: "List the projects of a workspace with state, health, and lead, optionally " +
+			"only those serving one team.",
 		Annotations: read,
 	}, t.listProjects)
 
@@ -192,6 +193,27 @@ func (t *toolset) register(server *mcp.Server) {
 			"ready for git checkout -b. Use it exactly as returned.",
 		Annotations: read,
 	}, t.issueBranchName)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "norn_create_project",
+		Description: "Create a project, optionally naming the teams it serves. A project with no " +
+			"teams belongs to the whole workspace. Requires the write capability.",
+		Annotations: create,
+	}, t.createProject)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "norn_update_project",
+		Description: "Change a project's name, description, state, lead, target date or the teams " +
+			"it serves. Teams given here replace the ones it had.",
+		Annotations: update,
+	}, t.updateProject)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "norn_archive_project",
+		Description: "Archive a project or bring it back. Archiving leaves its issues alone; a " +
+			"project cannot be deleted through this connection.",
+		Annotations: update,
+	}, t.archiveProject)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_create_issue",

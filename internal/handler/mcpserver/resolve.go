@@ -167,3 +167,22 @@ func matchLabel(labels []entity.Label, ref string) (uuid.UUID, bool) {
 
 	return uuid.Nil, false
 }
+
+func (t *toolset) resolveTeams(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	refs []string,
+) ([]uuid.UUID, error) {
+	resolved := make([]uuid.UUID, 0, len(refs))
+
+	for _, ref := range refs {
+		team, err := t.resolveTeam(ctx, workspaceID, ref)
+		if err != nil {
+			return nil, err
+		}
+
+		resolved = append(resolved, team.ID)
+	}
+
+	return resolved, nil
+}
